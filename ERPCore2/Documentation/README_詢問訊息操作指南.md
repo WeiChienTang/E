@@ -152,6 +152,13 @@ Components/Shared/UI/GenericConfirmModalComponent.razor
 | `Red` | 紅色（危險/刪除） |
 | `Gray` | 灰色（取消/次要） |
 | `DarkBlue` | 深藍色 |
+| `Cyan` | 青色 |
+| `Purple` | 紫色 |
+| `Pink` | 粉紅色 |
+| `Orange` | 橙色 |
+| `Black` | 黑色 |
+| `White` | 白色 |
+| `Outline*` | 以上所有顏色的輪廓版本 (如 OutlineBlue, OutlineCyan 等) |
 
 ## 實際應用範例
 

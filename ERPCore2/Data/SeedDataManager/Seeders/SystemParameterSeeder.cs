@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
+using ERPCore2.Data.Navigation;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Data.SeedDataManager.Interfaces;
@@ -26,17 +27,17 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             var (createdAt, createdBy) = SeedDataHelper.GetSystemCreateInfo(0);
 
-            var systemParameters = new[]
+            var parameter = new SystemParameter
             {
-                new SystemParameter
-                {
-                    TaxRate = 5.00m, // 預設稅率 5%
-                    Status = EntityStatus.Active,
-                    CreatedAt = createdAt,
-                    CreatedBy = createdBy,
-                    Remarks = "系統預設稅率設定"
-                }
+                Status = EntityStatus.Active,
+                CreatedAt = createdAt,
+                CreatedBy = createdBy
             };
+
+            // 從 SystemParameterDefaults 套用預設值（Single Source of Truth）
+            SystemParameterDefaults.ApplyDefaults(parameter);
+
+            var systemParameters = new[] { parameter };
 
             await context.SystemParameters.AddRangeAsync(systemParameters);
             await context.SaveChangesAsync();

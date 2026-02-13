@@ -30,11 +30,11 @@ public static class NavigationConfig
             // ==================== 人力資源管理 ====================
             new NavigationItem
             {
-                Name = "人力資源管理",
+                Name = "人力管理",
                 Description = "員工相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-person-badge-fill",
-                Category = "人力資源管理",
+                Category = "人力管理",
                 IsParent = true,
                 MenuKey = "employee_management",
                 SearchKeywords = new List<string> { "員工", "人員", "人事", "HR", "employee", "staff" },
@@ -46,9 +46,9 @@ public static class NavigationConfig
                         Description = "管理員工資料和人事資訊",
                         Route = "/employees",
                         IconClass = "bi bi-caret-right-fill",
-                        Category = "人力資源管理",
+                        Category = "人力管理",
                         RequiredPermission = "Employee.Read",
-                        SearchKeywords = new List<string> { "員工管理", "員工資料", "人員管理" },
+                        SearchKeywords = new List<string> { "員工管理", "員工資料", "人力管理" },
                         QuickActionId = "NewEmployee",
                         QuickActionName = "新增員工"
                     },
@@ -58,7 +58,7 @@ public static class NavigationConfig
                         Description = "管理公司部門組織架構",
                         Route = "/departments",
                         IconClass = "",
-                        Category = "人力資源管理",
+                        Category = "人力管理",
                         RequiredPermission = "Department.Read",
                         SearchKeywords = new List<string> { "部門", "組織", "department" },
                         QuickActionId = "NewDepartment",
@@ -70,7 +70,7 @@ public static class NavigationConfig
                         Description = "管理員工職位設定",
                         Route = "/employee-positions",
                         IconClass = "",
-                        Category = "人力資源管理",
+                        Category = "人力管理",
                         RequiredPermission = "EmployeePosition.Read",
                         SearchKeywords = new List<string> { "職位", "職稱", "position" },
                         QuickActionId = "NewEmployeePosition",
@@ -81,7 +81,7 @@ public static class NavigationConfig
                         description: "管理權限組與權限關係",
                         iconClass: "bi bi-caret-right-fill",
                         actionId: "OpenRolePermissionManagement",
-                        category: "人力資源管理",
+                        category: "人力管理",
                         requiredPermission: "Role.Read",
                         searchKeywords: new List<string> { "權限分配", "角色權限", "role permission", "權限設定" }
                     ),
@@ -91,7 +91,7 @@ public static class NavigationConfig
                         Description = "管理使用者權限組",
                         Route = "/roles",
                         IconClass = "",
-                        Category = "人力資源管理",
+                        Category = "人力管理",
                         RequiredPermission = "Role.Read",
                         SearchKeywords = new List<string> { "權限組", "角色", "role" },
                         QuickActionId = "NewRole",
@@ -103,7 +103,7 @@ public static class NavigationConfig
                         Description = "管理系統權限設定",
                         Route = "/permissions",
                         IconClass = "",
-                        Category = "人力資源管理",
+                        Category = "人力管理",
                         RequiredPermission = "Permission.Read",
                         SearchKeywords = new List<string> { "權限", "permission", "授權" },
                         QuickActionId = "NewPermission",
@@ -288,7 +288,7 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "生產排程管理",
+                        Name = "生產排程",
                         Description = "管理生產排程的詳細資料",
                         Route = "/production-schedules",
                         IconClass = "bi bi-caret-right-fill",
@@ -657,22 +657,10 @@ public static class NavigationConfig
                 SearchKeywords = new List<string> { "系統管理", "管理", "system", "admin", "administration" },
                 Children = new List<NavigationItem>
                 {
-                    new NavigationItem
-                    {
-                        Name = "公司",
-                        Description = "管理公司基本資料",
-                        Route = "/companies",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "系統管理",
-                        RequiredPermission = "Company.Read",
-                        SearchKeywords = new List<string> { "公司資料", "公司設定", "company" },
-                        QuickActionId = "NewCompany",
-                        QuickActionName = "新增公司"
-                    },
                     NavigationActionHelper.CreateActionItem(
                         name: "系統參數",
                         description: "管理系統參數設定",
-                        iconClass: "bi bi-gear-fill",
+                        iconClass: "bi bi-caret-right-fill",
                         actionId: "OpenSystemParameterSettings",
                         category: "系統管理",
                         requiredPermission: "SystemParameter.Read",
@@ -680,10 +668,22 @@ public static class NavigationConfig
                     ),
                     new NavigationItem
                     {
+                        Name = "公司",
+                        Description = "管理公司基本資料",
+                        Route = "/companies",
+                        IconClass = "",
+                        Category = "系統管理",
+                        RequiredPermission = "Company.Read",
+                        SearchKeywords = new List<string> { "公司資料", "公司設定", "company" },
+                        QuickActionId = "NewCompany",
+                        QuickActionName = "新增公司"
+                    },
+                    new NavigationItem
+                    {
                         Name = "錯誤記錄",
                         Description = "檢視和管理系統錯誤記錄",
                         Route = "/error-logs",
-                        IconClass = "bi bi-caret-right-fill",
+                        IconClass = "",
                         Category = "系統管理",
                         RequiredPermission = "SystemControl.Read",
                         SearchKeywords = new List<string> { "錯誤記錄", "錯誤", "log", "error", "system error" }
@@ -693,7 +693,7 @@ public static class NavigationConfig
                         Name = "印表機",
                         Description = "管理印表機配置",
                         Route = "/printerCconfigurations",
-                        IconClass = "bi bi-caret-right-fill",
+                        IconClass = "",
                         Category = "系統管理",
                         RequiredPermission = "PrinterSetting.Read",
                         SearchKeywords = new List<string> { "印表機", "列印設定", "printer" },
@@ -705,7 +705,7 @@ public static class NavigationConfig
                         Name = "紙張",
                         Description = "管理列印紙張設定",
                         Route = "/paper-settings",
-                        IconClass = "bi bi-caret-right-fill",
+                        IconClass = "",
                         Category = "系統管理",
                         RequiredPermission = "PaperSetting.Read",
                         SearchKeywords = new List<string> { "紙張設定", "列印設定", "paper setting" },
@@ -717,7 +717,7 @@ public static class NavigationConfig
                         Name = "報表",
                         Description = "管理報表列印配置",
                         Route = "/reportPrintConfigurations",
-                        IconClass = "bi bi-caret-right-fill",
+                        IconClass = "",
                         Category = "系統管理",
                         RequiredPermission = "ReportPrintConfiguration.Read",
                         SearchKeywords = new List<string> { "報表設定", "報表配置", "report configuration" },

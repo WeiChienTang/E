@@ -66,6 +66,48 @@
     color: var(--primary-white);
 }
 
+/* 青色按鈕樣式 */
+.btn-cyan {
+    background-color: var(--cyan-color);
+    border-color: var(--cyan-color);
+    color: var(--primary-white);
+}
+
+/* 紫色按鈕樣式 */
+.btn-purple {
+    background-color: var(--purple-color);
+    border-color: var(--purple-color);
+    color: var(--primary-white);
+}
+
+/* 粉紅色按鈕樣式 */
+.btn-pink {
+    background-color: var(--pink-color);
+    border-color: var(--pink-color);
+    color: var(--primary-white);
+}
+
+/* 橙色按鈕樣式 */
+.btn-orange {
+    background-color: var(--orange-color);
+    border-color: var(--orange-color);
+    color: var(--primary-white);
+}
+
+/* 黑色按鈕樣式 */
+.btn-black {
+    background-color: var(--black-color);
+    border-color: var(--black-color);
+    color: var(--primary-white);
+}
+
+/* 白色按鈕樣式 */
+.btn-white {
+    background-color: var(--primary-white);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
 /* 輪廓按鈕樣式 */
 .btn-outline-primary {
     color: var(--primary-blue);
@@ -103,6 +145,42 @@
     background-color: transparent;
 }
 
+.btn-outline-cyan {
+    color: var(--cyan-color);
+    border-color: var(--cyan-color);
+    background-color: transparent;
+}
+
+.btn-outline-purple {
+    color: var(--purple-color);
+    border-color: var(--purple-color);
+    background-color: transparent;
+}
+
+.btn-outline-pink {
+    color: var(--pink-color);
+    border-color: var(--pink-color);
+    background-color: transparent;
+}
+
+.btn-outline-orange {
+    color: var(--orange-color);
+    border-color: var(--orange-color);
+    background-color: transparent;
+}
+
+.btn-outline-black {
+    color: var(--black-color);
+    border-color: var(--black-color);
+    background-color: transparent;
+}
+
+.btn-outline-white {
+    color: var(--primary-white);
+    border-color: var(--primary-white);
+    background-color: transparent;
+}
+
 /* 統一的 hover 效果 - 所有按鈕變體 */
 .btn-primary:hover,
 .btn-secondary:hover,
@@ -110,12 +188,24 @@
 .btn-warning:hover,
 .btn-danger:hover,
 .btn-info:hover,
+.btn-cyan:hover,
+.btn-purple:hover,
+.btn-pink:hover,
+.btn-orange:hover,
+.btn-black:hover,
+.btn-white:hover,
 .btn-outline-primary:hover,
 .btn-outline-secondary:hover,
 .btn-outline-success:hover,
 .btn-outline-warning:hover,
 .btn-outline-danger:hover,
-.btn-outline-info:hover {
+.btn-outline-info:hover,
+.btn-outline-cyan:hover,
+.btn-outline-purple:hover,
+.btn-outline-pink:hover,
+.btn-outline-orange:hover,
+.btn-outline-black:hover,
+.btn-outline-white:hover {
     background-color: var(--table-hover-bg-striped);
     border-color: var(--table-hover-bg-striped);
     color: var(--table-hover-text);
@@ -129,12 +219,24 @@
 .btn-warning:hover i,
 .btn-danger:hover i,
 .btn-info:hover i,
+.btn-cyan:hover i,
+.btn-purple:hover i,
+.btn-pink:hover i,
+.btn-orange:hover i,
+.btn-black:hover i,
+.btn-white:hover i,
 .btn-outline-primary:hover i,
 .btn-outline-secondary:hover i,
 .btn-outline-success:hover i,
 .btn-outline-warning:hover i,
 .btn-outline-danger:hover i,
-.btn-outline-info:hover i {
+.btn-outline-info:hover i,
+.btn-outline-cyan:hover i,
+.btn-outline-purple:hover i,
+.btn-outline-pink:hover i,
+.btn-outline-orange:hover i,
+.btn-outline-black:hover i,
+.btn-outline-white:hover i {
     color: var(--table-hover-text) !important;
 }
 

@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
+using ERPCore2.Data.Navigation;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -281,5 +282,49 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<bool> IsInventoryTransferApprovalEnabledAsync()
             => await IsApprovalEnabledAsync(ApprovalType.InventoryTransfer);
+
+        // ===== 恢復預設 =====
+
+        /// <summary>
+        /// 將系統參數重置為預設值
+        /// </summary>
+        public async Task<ServiceResult<SystemParameter>> ResetToDefaultAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var parameter = await context.SystemParameters
+                    .Where(sp => sp.Status == EntityStatus.Active)
+                    .OrderBy(sp => sp.Id)
+                    .FirstOrDefaultAsync();
+
+                if (parameter == null)
+                {
+                    return ServiceResult<SystemParameter>.Failure("找不到系統參數記錄");
+                }
+
+                // 從 SystemParameterDefaults 套用預設值（保留 Id、CreatedAt、CreatedBy）
+                SystemParameterDefaults.ApplyDefaults(parameter);
+
+                parameter.UpdatedAt = DateTime.UtcNow;
+                parameter.UpdatedBy = "System";
+
+                context.SystemParameters.Update(parameter);
+                await context.SaveChangesAsync();
+
+                ClearApprovalConfigCache();
+
+                return ServiceResult<SystemParameter>.Success(parameter);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ResetToDefaultAsync), GetType(), _logger, new
+                {
+                    Method = nameof(ResetToDefaultAsync),
+                    ServiceType = GetType().Name
+                });
+                return ServiceResult<SystemParameter>.Failure("重置系統參數時發生錯誤");
+            }
+        }
     }
 }

@@ -63,6 +63,66 @@ namespace ERPCore2.Components.Shared.UI.Button
         /// <summary>
         /// 資訊輪廓按鈕 - 透明背景藍色邊框
         /// </summary>
-        OutlineBlue
+        OutlineBlue,
+
+        /// <summary>
+        /// 青色按鈕
+        /// </summary>
+        Cyan,
+
+        /// <summary>
+        /// 紫色按鈕
+        /// </summary>
+        Purple,
+
+        /// <summary>
+        /// 粉紅色按鈕
+        /// </summary>
+        Pink,
+
+        /// <summary>
+        /// 橙色按鈕
+        /// </summary>
+        Orange,
+
+        /// <summary>
+        /// 黑色按鈕
+        /// </summary>
+        Black,
+
+        /// <summary>
+        /// 白色按鈕
+        /// </summary>
+        White,
+
+        /// <summary>
+        /// 青色輪廓按鈕
+        /// </summary>
+        OutlineCyan,
+
+        /// <summary>
+        /// 紫色輪廓按鈕
+        /// </summary>
+        OutlinePurple,
+
+        /// <summary>
+        /// 粉紅色輪廓按鈕
+        /// </summary>
+        OutlinePink,
+
+        /// <summary>
+        /// 橙色輪廓按鈕
+        /// </summary>
+        OutlineOrange,
+
+        /// <summary>
+        /// 黑色輪廓按鈕
+        /// </summary>
+        OutlineBlack,
+
+        /// <summary>
+        /// 白色輪廓按鈕
+        /// </summary>
+        OutlineWhite
     }
 }

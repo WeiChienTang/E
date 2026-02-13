@@ -95,5 +95,11 @@ namespace ERPCore2.Services
         /// 清除審核配置快取（當系統參數更新時使用）
         /// </summary>
         void ClearApprovalConfigCache();
+
+        /// <summary>
+        /// 將系統參數重置為預設值
+        /// </summary>
+        /// <returns>操作結果</returns>
+        Task<ServiceResult<SystemParameter>> ResetToDefaultAsync();
     }
 }

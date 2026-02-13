@@ -27,6 +27,16 @@
   --danger-color-hover: #b91c1c;
   --info-color: #1E3A8A;
   --info-color-hover: #1e40af;
+  --cyan-color: #06B6D4;
+  --cyan-color-hover: #0891B2;
+  --purple-color: #8B5CF6;
+  --purple-color-hover: #7C3AED;
+  --pink-color: #EC4899;
+  --pink-color-hover: #DB2777;
+  --orange-color: #F97316;
+  --orange-color-hover: #EA580C;
+  --black-color: #000000;
+  --black-color-hover: #333333;
 
     /* 背景色彩 */
   --bg-primary: #FFFFFF;
