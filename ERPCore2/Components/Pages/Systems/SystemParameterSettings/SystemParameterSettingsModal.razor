@@ -1,0 +1,281 @@
+@* 系統參數設定 Modal（參考 DashboardWidgetPickerModal 設計） *@
+@using Microsoft.AspNetCore.Components.Forms
+@using ERPCore2.Data.Entities
+@using ERPCore2.Components.Pages.Systems.SystemParameterSettings.Shared.Tabs
+
+@inject ISystemParameterService SystemParameterService
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="系統參數設定"
+                    Icon="bi-gear-fill"
+                    Size="BaseModalComponent.ModalSize.Desktop"
+                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                    UseWhiteCloseButton="true"
+                    CloseOnEscape="true"
+                    CloseOnBackdropClick="false"
+                    IsLoading="@isLoading"
+                    ErrorMessage="@errorMessage"
+                    OnClose="@HandleClose">
+    <HeaderButtons>
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                               Text="確定"
+                               IconClass="fas fa-save"
+                               OnClick="HandleSaveAsync"
+                               IsDisabled="@(isSaving || isLoading)"
+                               IsLoading="@isSaving"
+                               Title="儲存系統參數設定" />
+        <GenericButtonComponent Variant="ButtonVariant.Gray"
+                               Text="重整"
+                               IconClass="fas fa-undo"
+                               OnClick="ReloadData"
+                               IsDisabled="@(isSaving || isLoading)"
+                               Title="重整資料" />
+        <GenericButtonComponent Variant="ButtonVariant.Red"
+                               Text="取消"
+                               OnClick="HandleClose"
+                               Title="關閉" />
+    </HeaderButtons>
+    <BodyContent>
+        @* Tab 切換 *@
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "basic" ? "active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "basic")'>
+                    <i class="bi bi-gear me-1"></i>系統基本設定
+                </button>
+            </li>
+            @* 以下 Tab 暫時關閉，等完善後再開啟 *@
+            @* <li class="nav-item">
+                <button class="nav-link @(activeTab == "approval" ? "active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "approval")'>
+                    <i class="bi bi-check2-square me-1"></i>審核流程設定
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "appearance" ? "active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "appearance")'>
+                    <i class="bi bi-palette me-1"></i>外觀設定
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "order" ? "active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "order")'>
+                    <i class="bi bi-cart me-1"></i>訂單設定
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "print" ? "active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "print")'>
+                    <i class="bi bi-printer me-1"></i>列印設定
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "company" ? "active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "company")'>
+                    <i class="bi bi-building me-1"></i>公司資訊
+                </button>
+            </li> *@
+        </ul>
+
+        @* Tab 內容 *@
+        <EditForm Model="@systemParameter" OnValidSubmit="@HandleSaveAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger mb-3" />
+
+            @if (activeTab == "basic")
+            {
+                <BasicSettingsTab Model="@systemParameter" />
+            }
+
+            @* 其他 Tab 內容（暫時關閉）*@
+            @* @if (activeTab == "approval")
+            {
+                <ApprovalSettingsTab Model="@systemParameter" />
+            }
+            @if (activeTab == "appearance")
+            {
+                <AppearanceSettingsTab />
+            }
+            @if (activeTab == "order")
+            {
+                <OrderSettingsTab />
+            }
+            @if (activeTab == "print")
+            {
+                <PrintSettingsTab />
+            }
+            @if (activeTab == "company")
+            {
+                <CompanyInfoTab />
+            } *@
+        </EditForm>
+
+        @* 底部審計資訊 *@
+        @if (systemParameter.Id > 0)
+        {
+            <div class="mt-4 pt-3 border-top">
+                <div class="text-muted small d-flex flex-wrap gap-3">
+                    <span><strong>建立時間：</strong>@systemParameter.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                    <span><strong>創建者：</strong>@(systemParameter.CreatedBy ?? "系統")</span>
+                    @if (systemParameter.UpdatedAt.HasValue)
+                    {
+                        <span><strong>最後更新：</strong>@systemParameter.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                        <span><strong>最後修改者：</strong>@(systemParameter.UpdatedBy ?? "系統")</span>
+                    }
+                </div>
+            </div>
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+@code {
+    // ===== 參數 =====
+
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // ===== 狀態變數 =====
+    private bool isLoading = false;
+    private bool isSaving = false;
+    private string errorMessage = string.Empty;
+    private SystemParameter systemParameter = new();
+    private string activeTab = "basic";
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // 當 Modal 開啟時載入資料
+        if (IsVisible && systemParameter.Id == 0 && !isLoading)
+        {
+            await LoadSystemParameterAsync();
+        }
+    }
+
+    // ===== 資料載入方法 =====
+
+    private async Task LoadSystemParameterAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            StateHasChanged();
+
+            // 嘗試載入現有的系統參數
+            var existingParameter = await SystemParameterService.GetSystemParameterAsync();
+
+            if (existingParameter != null)
+            {
+                systemParameter = existingParameter;
+            }
+            else
+            {
+                // 如果沒有現有參數，創建新的預設值
+                systemParameter = new SystemParameter
+                {
+                    TaxRate = 5.00m,
+                    Remarks = "系統預設稅率設定"
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"載入系統參數時發生錯誤：{ex.Message}";
+            await NotificationService.ShowErrorAsync("載入系統參數失敗");
+
+            // 使用預設值
+            systemParameter = new SystemParameter
+            {
+                TaxRate = 5.00m,
+                Remarks = "系統預設稅率設定"
+            };
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 事件處理方法 =====
+
+    private async Task HandleSaveAsync()
+    {
+        if (isSaving) return;
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            ServiceResult<SystemParameter> result;
+
+            if (systemParameter.Id > 0)
+            {
+                // 更新現有參數
+                result = await SystemParameterService.UpdateAsync(systemParameter);
+            }
+            else
+            {
+                // 創建新參數
+                result = await SystemParameterService.CreateAsync(systemParameter);
+            }
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("系統參數已成功儲存！");
+
+                // 更新當前實體
+                if (result.Data != null)
+                {
+                    systemParameter = result.Data;
+                }
+            }
+            else
+            {
+                var errorMsg = !string.IsNullOrEmpty(result.ErrorMessage)
+                    ? result.ErrorMessage
+                    : "儲存失敗";
+                await NotificationService.ShowErrorAsync($"儲存系統參數失敗：{errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存系統參數時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ReloadData()
+    {
+        await LoadSystemParameterAsync();
+        await NotificationService.ShowSuccessAsync("資料已重新載入");
+    }
+
+    private async Task HandleClose()
+    {
+        // 重置狀態
+        activeTab = "basic";
+        
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+}

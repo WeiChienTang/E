@@ -42,7 +42,7 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "員工管理",
+                        Name = "員工",
                         Description = "管理員工資料和人事資訊",
                         Route = "/employees",
                         IconClass = "bi bi-caret-right-fill",
@@ -77,9 +77,9 @@ public static class NavigationConfig
                         QuickActionName = "新增職位"
                     },
                     NavigationActionHelper.CreateActionItem(
-                        name: "權限分配管理",
+                        name: "權限分配",
                         description: "管理權限組與權限關係",
-                        iconClass: "bi bi-shield-lock",
+                        iconClass: "bi bi-caret-right-fill",
                         actionId: "OpenRolePermissionManagement",
                         category: "人力資源管理",
                         requiredPermission: "Role.Read",
@@ -145,13 +145,13 @@ public static class NavigationConfig
                     },
                     
                     NavigationActionHelper.CreateActionItem(
-                        name: "廠商報表中心",
+                        name: "廠商報表集",
                         description: "查看和列印所有廠商相關報表",
                         iconClass: "bi bi-printer-fill",
                         actionId: "OpenSupplierReportIndex",
                         category: "供應鏈管理",
                         requiredPermission: "Supplier.Read",
-                        searchKeywords: new List<string> { "廠商報表", "廠商報表中心", "supplier report", "應付帳款" }
+                        searchKeywords: new List<string> { "廠商報表", "廠商報表集", "supplier report", "應付帳款" }
                     ),
                 }
             },
@@ -189,13 +189,13 @@ public static class NavigationConfig
                     },
                     
                     NavigationActionHelper.CreateActionItem(
-                        name: "客戶報表中心",
+                        name: "客戶報表集",
                         description: "查看和列印所有客戶相關報表",
                         iconClass: "bi bi-printer-fill",
                         actionId: "OpenCustomerReportIndex",
                         category: "客戶關係管理",
                         requiredPermission: "Customer.Read",
-                        searchKeywords: new List<string> { "客戶報表", "客戶報表中心", "customer report", "應收帳款" }
+                        searchKeywords: new List<string> { "客戶報表", "客戶報表集", "customer report", "應收帳款" }
                     ),
                 }
             },
@@ -276,7 +276,7 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "物料清單類型",
+                        Name = "物料類型",
                         Description = "管理物料清單的類型分類",
                         Route = "/composition-categories",
                         IconClass = "",
@@ -306,13 +306,13 @@ public static class NavigationConfig
                     },
                     
                     NavigationActionHelper.CreateActionItem(
-                        name: "商品報表中心",
+                        name: "商品報表集",
                         description: "查看和列印所有商品相關報表",
                         iconClass: "bi bi-printer-fill",
                         actionId: "OpenProductReportIndex",
                         category: "商品管理",
                         requiredPermission: "Product.Read",
-                        searchKeywords: new List<string> { "商品報表", "商品報表中心", "product report", "產品報表" }
+                        searchKeywords: new List<string> { "商品報表", "商品報表集", "product report", "產品報表" }
                     ),
                 }
             },
@@ -462,13 +462,13 @@ public static class NavigationConfig
                     },
                     
                     NavigationActionHelper.CreateActionItem(
-                        name: "採購報表中心",
+                        name: "採購報表集",
                         description: "查看和列印所有採購相關報表",
                         iconClass: "bi bi-printer-fill",
                         actionId: "OpenPurchaseReportIndex",
                         category: "採購管理",
                         requiredPermission: "PurchaseOrder.Read",
-                        searchKeywords: new List<string> { "採購報表", "採購報表中心", "purchase report", "進貨報表" }
+                        searchKeywords: new List<string> { "採購報表", "採購報表集", "purchase report", "進貨報表" }
                     ),
                 }
             },
@@ -488,7 +488,7 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "報價單管理",
+                        Name = "報價管理",
                         Description = "管理銷售報價單",
                         Route = "/quotations",
                         IconClass = "bi bi-caret-right-fill",
@@ -537,7 +537,7 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "銷貨退回原因",
+                        Name = "銷退原因",
                         Description = "管理退貨原因分類",
                         Route = "/salesReturnReasons",
                         IconClass = "",
@@ -555,13 +555,13 @@ public static class NavigationConfig
                     },
                     
                     NavigationActionHelper.CreateActionItem(
-                        name: "銷貨報表中心",
+                        name: "銷貨報表集",
                         description: "查看和列印所有銷貨相關報表",
                         iconClass: "bi bi-printer-fill",
                         actionId: "OpenSalesReportIndex",
                         category: "銷售管理",
                         requiredPermission: "SalesOrder.Read",
-                        searchKeywords: new List<string> { "銷貨報表", "銷貨報表中心", "sales report", "銷售報表" }
+                        searchKeywords: new List<string> { "銷貨報表", "銷貨報表集", "sales report", "銷售報表" }
                     ),
                 }
             },
@@ -582,7 +582,7 @@ public static class NavigationConfig
 
                     new NavigationItem
                     {
-                        Name = "應收帳款沖款",
+                        Name = "應收沖款",
                         Description = "管理應收帳款沖款",
                         Route = "/accountsReceivableSetoff",
                         IconClass = "bi bi-caret-right-fill",
@@ -591,6 +591,18 @@ public static class NavigationConfig
                         SearchKeywords = new List<string> { "應收帳款", "AR", "receivable", "收款","沖款" },
                         QuickActionId = "NewARSetoff",
                         QuickActionName = "新增應收沖款"
+                    },
+                    new NavigationItem
+                    {
+                        Name = "應付沖款",
+                        Description = "管理應付帳款沖款",
+                        Route = "/accountsPayableSetoff",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "財務管理",
+                        RequiredPermission = "SetoffDocument.Read",
+                        SearchKeywords = new List<string> { "應付帳款", "AP", "payable", "付款","沖款" },
+                        QuickActionId = "NewAPSetoff",
+                        QuickActionName = "新增應付沖款"
                     },
                     new NavigationItem
                     {
@@ -628,18 +640,7 @@ public static class NavigationConfig
                         QuickActionId = "NewCurrency",
                         QuickActionName = "新增貨幣"
                     },
-                    new NavigationItem
-                    {
-                        Name = "應付帳款沖款",
-                        Description = "管理應付帳款沖款",
-                        Route = "/accountsPayableSetoff",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "財務管理",
-                        RequiredPermission = "SetoffDocument.Read",
-                        SearchKeywords = new List<string> { "應付帳款", "AP", "payable", "付款","沖款" },
-                        QuickActionId = "NewAPSetoff",
-                        QuickActionName = "新增應付沖款"
-                    },
+
                 }
             },
 
@@ -658,7 +659,7 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "公司管理",
+                        Name = "公司",
                         Description = "管理公司基本資料",
                         Route = "/companies",
                         IconClass = "bi bi-caret-right-fill",
@@ -668,16 +669,15 @@ public static class NavigationConfig
                         QuickActionId = "NewCompany",
                         QuickActionName = "新增公司"
                     },
-                    new NavigationItem
-                    {
-                        Name = "系統參數",
-                        Description = "管理系統參數設定",
-                        Route = "/system-parameters",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "系統管理",
-                        RequiredPermission = "SystemParameter.Read",
-                        SearchKeywords = new List<string> { "系統參數", "參數設定", "parameter", "config" }
-                    },
+                    NavigationActionHelper.CreateActionItem(
+                        name: "系統參數",
+                        description: "管理系統參數設定",
+                        iconClass: "bi bi-gear-fill",
+                        actionId: "OpenSystemParameterSettings",
+                        category: "系統管理",
+                        requiredPermission: "SystemParameter.Read",
+                        searchKeywords: new List<string> { "系統參數", "參數設定", "parameter", "config", "設定" }
+                    ),
                     new NavigationItem
                     {
                         Name = "錯誤記錄",
@@ -690,7 +690,7 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "印表機設定",
+                        Name = "印表機",
                         Description = "管理印表機配置",
                         Route = "/printerCconfigurations",
                         IconClass = "bi bi-caret-right-fill",
@@ -702,7 +702,7 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "紙張設定",
+                        Name = "紙張",
                         Description = "管理列印紙張設定",
                         Route = "/paper-settings",
                         IconClass = "bi bi-caret-right-fill",
@@ -714,7 +714,7 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "報表設定",
+                        Name = "報表",
                         Description = "管理報表列印配置",
                         Route = "/reportPrintConfigurations",
                         IconClass = "bi bi-caret-right-fill",

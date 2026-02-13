@@ -6,15 +6,15 @@
                     IsVisibleChanged="@IsVisibleChanged"
                     Title="新增捷徑項目"
                     Icon="bi-grid-3x3-gap-fill"
-                    Size="BaseModalComponent.ModalSize.Large"
-                    HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                    Size="BaseModalComponent.ModalSize.Desktop"
+                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                     UseWhiteCloseButton="true"
                     CloseOnEscape="true"
                     CloseOnBackdropClick="true"
                     OnClose="@HandleCancel">
     <HeaderButtons>
         <GenericButtonComponent Variant="ButtonVariant.Blue"
-                               Text="@($"確認新增 ({selectedItemKeys.Count})")"
+                               Text="確定"
                                OnClick="HandleConfirm"
                                IsDisabled="@(!selectedItemKeys.Any())"
                                Title="新增選取的項目" />

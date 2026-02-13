@@ -678,8 +678,8 @@
                                                    RemarksPropertyName="Remarks"
                                                    IsReceivingCompletedPropertyName="IsReceivingCompleted"
                                                    IsReadOnly="false"
-                                                   IsApproved="@(editModalComponent.Entity.IsApproved)"
-                                                   TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
+                                                   IsApproved="@(editModalComponent?.Entity?.IsApproved ?? false)"
+                                                   TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
                                                    OnHasUndeletableDetailsChanged="@(async (hasUndeletable) => await HandleHasUndeletableDetailsChanged(hasUndeletable))"
                                                    OnOpenRelatedDocument="@(async (doc) => await HandleOpenRelatedDocument(doc))" />
                     </div>

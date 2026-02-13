@@ -2,6 +2,7 @@
 @using ERPCore2.Components.Shared.Report
 @using ERPCore2.Components.Pages.Reports
 @using ERPCore2.Components.Pages.Employees
+@using ERPCore2.Components.Pages.Systems.SystemParameterSettings
 @using ERPCore2.Helpers
 @using ERPCore2.Services
 @using ERPCore2.Services.Reports.Interfaces
@@ -86,6 +87,10 @@
 <RolePermissionManagement IsVisible="@showRolePermissionManagement"
                          IsVisibleChanged="@((bool visible) => showRolePermissionManagement = visible)" />
 
+@* 系統參數設定 Modal *@
+<SystemParameterSettingsModal IsVisible="@showSystemParameterSettings"
+                             IsVisibleChanged="@((bool visible) => showSystemParameterSettings = visible)" />
+
 @* 快速功能表（右下角浮動按鈕） *@
 <QuickActionMenu @rendermode="InteractiveServer" 
                 OnPageSearchClick="@OpenPageSearch"
@@ -116,6 +121,9 @@
     // 角色權限管理 Modal 狀態
     private bool showRolePermissionManagement = false;
     
+    // 系統參數設定 Modal 狀態
+    private bool showSystemParameterSettings = false;
+    
     // Action 處理器註册表
     private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;
 
@@ -144,7 +152,8 @@
         
         // 註册所有 Action 處理器
         actionRegistry.Register("OpenAccountsReceivableReport", OpenAccountsReceivableReport);
-        actionRegistry.Register("OpenRolePermissionManagement", OpenRolePermissionManagement);        
+        actionRegistry.Register("OpenRolePermissionManagement", OpenRolePermissionManagement);
+        actionRegistry.Register("OpenSystemParameterSettings", OpenSystemParameterSettings);
         actionRegistry.Register("OpenCustomerReportIndex", OpenCustomerReportIndex);
         actionRegistry.Register("OpenSupplierReportIndex", OpenSupplierReportIndex);        
         actionRegistry.Register("OpenProductReportIndex", OpenProductReportIndex);
@@ -325,6 +334,24 @@
         catch
         {
             // 忽略開啟權限組權限管理失敗
+        }
+    }
+    
+    /// <summary>
+    /// 開啟系統參數設定 Modal
+    /// JavaScript 可呼叫此方法
+    /// </summary>
+    [JSInvokable]
+    public void OpenSystemParameterSettings()
+    {
+        try
+        {
+            showSystemParameterSettings = true;
+            StateHasChanged();
+        }
+        catch
+        {
+            // 忽略開啟系統參數設定失敗
         }
     }
     

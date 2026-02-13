@@ -34,14 +34,14 @@
     }
     else
     {
-        @* ==================== 動態面板列表 ==================== *@
+        @* ==================== 動態區塊列表 ==================== *@
         @foreach (var panelWithItems in panels)
         {
             var panel = panelWithItems.Panel;
             var isEditMode = editingPanelId == panel.Id;
 
             <div class="dashboard-panel mb-4">
-                @* 面板標題列 *@
+                @* 區塊標題列 *@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0 fw-bold">
                         <i class="@(panel.IconClass ?? "bi bi-grid-fill") me-2"></i>
@@ -70,7 +70,7 @@
                             {
                                 <GenericButtonComponent Variant="ButtonVariant.Red"
                                                         Size="ButtonSize.Small"
-                                                        Text="預設"
+                                                        Text="恢復預設"
                                                         Title="重置為預設配置"
                                                         CssClass="ms-1"
                                                         OnClick="@(() => HandleResetPanelToDefault(panel))" />
@@ -80,7 +80,7 @@
                                 <GenericButtonComponent Variant="ButtonVariant.Red"
                                                         Size="ButtonSize.Small"
                                                         Text="刪除"
-                                                        Title="刪除此面板"
+                                                        Title="刪除此區塊"
                                                         CssClass="ms-1"
                                                         OnClick="@(() => HandleDeletePanel(panel))" />
                             }
@@ -90,7 +90,7 @@
                             <GenericButtonComponent Variant="ButtonVariant.Green"
                                                     Size="ButtonSize.Small"
                                                     Text="編輯"
-                                                    Title="編輯此面板"
+                                                    Title="編輯此區塊"
                                                     OnClick="@(() => StartEditPanel(panel.Id))" />
                         }
                     </div>
@@ -98,7 +98,7 @@
 
                 <hr class="mt-2 mb-3" />
 
-                @* 面板內容 *@
+                @* 區塊內容 *@
                 @if (panelWithItems.Items.Any())
                 {
                     <div class="row g-3">
@@ -135,7 +135,7 @@
                 {
                     <div class="text-center py-4">
                         <i class="bi bi-grid-1x2 text-muted" style="font-size: 2.5rem;"></i>
-                        <p class="text-muted mt-3 mb-2">此面板尚無項目</p>
+                        <p class="text-muted mt-3 mb-2">此區塊尚無項目</p>
                         @if (isEditMode)
                         {
                             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
@@ -148,28 +148,27 @@
             </div>
         }
 
-        @* 新增面板按鈕（僅在有編輯中的面板時顯示，且未達上限） *@
-        @if (editingPanelId.HasValue && panels.Count < DashboardDefaults.MaxPanelCount)
+        @* 新增區塊按鈕（未達上限時顯示） *@
+        @if (panels.Count < DashboardDefaults.MaxPanelCount)
         {
             <div class="text-center mt-4 mb-4">
                 <GenericButtonComponent Variant="ButtonVariant.Green"
                                         Size="ButtonSize.Normal"
-                                        IconClass="bi bi-plus-lg"
-                                        Text="新增面板"
+                                        Text="新增區塊"
                                         OnClick="@HandleCreatePanel" />
             </div>
         }
 
-        @* 沒有任何面板時的空狀態 *@
+        @* 沒有任何區塊時的空狀態 *@
         @if (!panels.Any())
         {
             <div class="text-center py-5">
                 <i class="bi bi-grid text-muted" style="font-size: 4rem;"></i>
-                <p class="text-muted mt-3 mb-3">尚未設定任何面板</p>
+                <p class="text-muted mt-3 mb-3">尚未設定任何區塊</p>
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                         Size="ButtonSize.Normal"
                                         IconClass="bi bi-plus-lg"
-                                        Text="建立第一個面板"
+                                        Text="建立第一個區塊"
                                         OnClick="@HandleCreatePanel" />
             </div>
         }
@@ -188,28 +187,27 @@
 @* 重置確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showResetConfirm"
                              IsVisibleChanged="@((bool v) => showResetConfirm = v)"
-                             Title="重置面板"
+                             Title="重置區塊"
                              Icon="bi-arrow-counterclockwise"
                              Message="@resetConfirmMessage"
                              ConfirmButtonText="確定重置"
                              HeaderColor="BaseModalComponent.HeaderVariant.Warning"
                              OnConfirm="@ConfirmResetPanelToDefault" />
 
-@* 刪除面板確認 Modal *@
+@* 刪除區塊確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showDeletePanelConfirm"
                              IsVisibleChanged="@((bool v) => showDeletePanelConfirm = v)"
-                             Title="刪除面板"
+                             Title="刪除區塊"
                              Icon="bi-trash"
                              Message="@deleteConfirmMessage"
                              ConfirmButtonText="確定"
                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
                              OnConfirm="@ConfirmDeletePanel" />
 
-@* 新增面板 Modal *@
+@* 新增區塊 Modal *@
 <BaseModalComponent IsVisible="@showCreatePanelModal"
                     IsVisibleChanged="@((bool v) => showCreatePanelModal = v)"
-                    Title="新增面板"
-                    Icon="bi-plus-lg"
+                    Title="新增區塊"
                     Size="BaseModalComponent.ModalSize.Small"
                     HeaderColor="BaseModalComponent.HeaderVariant.Primary"
                     UseWhiteCloseButton="true">
@@ -224,10 +222,10 @@
     </HeaderButtons>
     <BodyContent>
         <div class="mb-3">
-            <label class="form-label">面板標題</label>
+            <label class="form-label">區塊標題</label>
             <input type="text"
                    class="form-control"
-                   placeholder="請輸入面板標題"
+                   placeholder="請輸入區塊標題"
                    maxlength="@DashboardDefaults.MaxPanelTitleLength"
                    @bind="newPanelTitle"
                    @bind:event="oninput" />
@@ -245,7 +243,7 @@
     private int currentEmployeeId = 0;
     private bool isLoading = true;
 
-    // 面板資料
+    // 區塊資料
     private List<DashboardPanelWithItems> panels = new();
 
     // 編輯狀態
@@ -263,12 +261,12 @@
     private string resetConfirmMessage = "";
     private int resetPanelId = 0;
 
-    // 刪除面板確認 Modal
+    // 刪除區塊確認 Modal
     private bool showDeletePanelConfirm = false;
     private string deleteConfirmMessage = "";
     private int deletePanelId = 0;
 
-    // 新增面板 Modal
+    // 新增區塊 Modal
     private bool showCreatePanelModal = false;
     private string newPanelTitle = "";
 
@@ -323,14 +321,14 @@
     }
 
     /// <summary>
-    /// 檢查面板標題是否有對應的預設定義
+    /// 檢查區塊標題是否有對應的預設定義
     /// </summary>
     private bool HasDefaultDefinition(string title)
     {
         return DashboardDefaults.DefaultPanelDefinitions.Any(d => d.Title == title);
     }
 
-    // ===== 面板編輯 =====
+    // ===== 區塊編輯 =====
 
     private void StartEditPanel(int panelId)
     {
@@ -369,7 +367,7 @@
         }
     }
 
-    // ===== 新增面板 =====
+    // ===== 新增區塊 =====
 
     private void HandleCreatePanel()
     {
@@ -387,7 +385,7 @@
     {
         if (string.IsNullOrWhiteSpace(newPanelTitle))
         {
-            await NotificationService.ShowWarningAsync("請輸入面板標題");
+            await NotificationService.ShowWarningAsync("請輸入區塊標題");
             return;
         }
 
@@ -400,7 +398,7 @@
                 editingPanelId = result.Data.Panel.Id; // 自動進入編輯模式
                 showCreatePanelModal = false;
                 newPanelTitle = "";
-                await NotificationService.ShowSuccessAsync("面板已建立");
+                await NotificationService.ShowSuccessAsync("區塊已建立");
             }
             else
             {
@@ -410,16 +408,16 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmCreatePanel), GetType());
-            await NotificationService.ShowErrorAsync("建立面板失敗");
+            await NotificationService.ShowErrorAsync("建立區塊失敗");
         }
     }
 
-    // ===== 刪除面板 =====
+    // ===== 刪除區塊 =====
 
     private void HandleDeletePanel(EmployeeDashboardPanel panel)
     {
         deletePanelId = panel.Id;
-        deleteConfirmMessage = $"確定要刪除「{panel.Title}」面板嗎？面板內的所有項目將一併刪除。";
+        deleteConfirmMessage = $"確定要刪除「{panel.Title}」區塊嗎？區塊內的所有項目將一併刪除。";
         showDeletePanelConfirm = true;
     }
 
@@ -432,7 +430,7 @@
             {
                 panels.RemoveAll(p => p.Panel.Id == deletePanelId);
                 editingPanelId = null;
-                await NotificationService.ShowSuccessAsync("面板已刪除");
+                await NotificationService.ShowSuccessAsync("區塊已刪除");
             }
             else
             {
@@ -442,11 +440,11 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmDeletePanel), GetType());
-            await NotificationService.ShowErrorAsync("刪除面板失敗");
+            await NotificationService.ShowErrorAsync("刪除區塊失敗");
         }
     }
 
-    // ===== 重置面板 =====
+    // ===== 重置區塊 =====
 
     private void HandleResetPanelToDefault(EmployeeDashboardPanel panel)
     {
@@ -599,7 +597,7 @@
 
     private async Task HandleDrop(DashboardConfigWithNavItem target, int panelId)
     {
-        // 不允許跨面板拖曳
+        // 不允許跨區塊拖曳
         if (draggedItem == null || draggedPanelId != panelId || draggedItem.Config.Id == target.Config.Id)
         {
             draggedItem = null;
