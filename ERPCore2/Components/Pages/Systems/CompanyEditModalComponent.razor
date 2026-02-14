@@ -308,6 +308,13 @@
                     Options = EntityStatusHelper.GetEntityStatusOptions(),
                     HelpText = "公司的使用狀態"
                 },
+                new()
+                {
+                    PropertyName = nameof(Company.IsDefault),
+                    Label = "預設公司",
+                    FieldType = FormFieldType.Checkbox,
+                    HelpText = "勾選後此公司將顯示於首頁標題"
+                },
 
                 FormFieldConfigurationHelper.CreateRemarksField<Company>()
             };
@@ -321,7 +328,8 @@
                     c => c.ShortNameEn,
                     c => c.TaxId,
                     c => c.InvoiceTitle,
-                    c => c.Status)
+                    c => c.Status,
+                    c => c.IsDefault)
                 .AddToSection(FormSectionNames.CompanyData,
                     c => c.EstablishedDate,
                     c => c.CapitalAmount,

@@ -4,16 +4,18 @@
 @using ERPCore2.Data.Navigation
 @using ERPCore2.Models.Navigation
 @using ERPCore2.Components.Shared.Dashboard
+@using ERPCore2.Components.Pages.Systems
 @inject IDashboardService DashboardService
 @inject INotificationService NotificationService
 @inject IPermissionService PermissionService
+@inject ICompanyService CompanyService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>美莊磚業 - 系統首頁</PageTitle>
+<PageTitle>@(primaryCompany?.CompanyName ?? "ERP系統") - 系統首頁</PageTitle>
 
 @* 從 MainLayout 接收 Action 處理器 *@
 @code {
@@ -234,6 +236,24 @@
     </BodyContent>
 </BaseModalComponent>
 
+@* ==================== 公司設定確認 Modal ==================== *@
+<GenericConfirmModalComponent IsVisible="@showCompanySetupConfirm"
+                             IsVisibleChanged="@((bool v) => showCompanySetupConfirm = v)"
+                             Title="設定公司資料"
+                             Icon="bi-building"
+                             Message="系統尚未設定公司資料，是否立即設定？"
+                             ConfirmButtonText="立即設定"
+                             CancelButtonText="稍後設定"
+                             HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                             OnConfirm="@OpenCompanySetupModal" />
+
+@* ==================== 公司編輯 Modal ==================== *@
+<CompanyEditModalComponent IsVisible="@showCompanyEditModal"
+                          IsVisibleChanged="@((bool v) => showCompanyEditModal = v)"
+                          CompanyId="@null"
+                          OnCompanySaved="@HandleCompanySetupComplete"
+                          OnCancel="@(() => showCompanyEditModal = false)" />
+
 @* ==================== 快速功能 Modal Host ==================== *@
 <QuickActionModalHost @ref="quickActionHost" 
                       ConfiguredActionIds="@GetConfiguredQuickActionIds()" />
@@ -242,6 +262,11 @@
     // ===== 狀態欄位 =====
     private int currentEmployeeId = 0;
     private bool isLoading = true;
+
+    // 公司資料
+    private Company? primaryCompany;
+    private bool showCompanySetupConfirm = false;
+    private bool showCompanyEditModal = false;
 
     // 區塊資料
     private List<DashboardPanelWithItems> panels = new();
@@ -281,6 +306,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // 載入預設公司資料
+        await LoadPrimaryCompanyAsync();
+
         var employeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
 
         if (employeeId.HasValue)
@@ -293,6 +321,27 @@
     }
 
     // ===== 資料載入 =====
+
+    /// <summary>
+    /// 載入預設公司資料
+    /// </summary>
+    private async Task LoadPrimaryCompanyAsync()
+    {
+        try
+        {
+            primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
+            
+            // 如果沒有任何公司資料，顯示設定提示
+            if (primaryCompany == null)
+            {
+                showCompanySetupConfirm = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPrimaryCompanyAsync), GetType());
+        }
+    }
 
     private async Task LoadDashboardAsync()
     {
@@ -636,6 +685,42 @@
         finally
         {
             draggedItem = null;
+        }
+    }
+
+    // ===== 公司設定處理 =====
+
+    /// <summary>
+    /// 開啟公司設定 Modal
+    /// </summary>
+    private void OpenCompanySetupModal()
+    {
+        showCompanySetupConfirm = false;
+        showCompanyEditModal = true;
+    }
+
+    /// <summary>
+    /// 處理公司設定完成事件
+    /// </summary>
+    private async Task HandleCompanySetupComplete(Company savedCompany)
+    {
+        try
+        {
+            // 將新建立的公司設為預設
+            await CompanyService.SetDefaultCompanyAsync(savedCompany.Id);
+
+            // 重新載入公司資料
+            primaryCompany = savedCompany;
+            primaryCompany.IsDefault = true;
+
+            showCompanyEditModal = false;
+            await NotificationService.ShowSuccessAsync("公司設定完成");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCompanySetupComplete), GetType());
+            await NotificationService.ShowErrorAsync("設定公司時發生錯誤");
         }
     }
 

@@ -54,7 +54,17 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 返回第一個啟用的公司
+                // 優先返回 IsDefault = true 的公司
+                var defaultCompany = await context.Companies
+                    .Where(c => c.Status == EntityStatus.Active && c.IsDefault)
+                    .FirstOrDefaultAsync();
+
+                if (defaultCompany != null)
+                {
+                    return defaultCompany;
+                }
+
+                // 若無預設公司，則返回第一個啟用的公司
                 return await context.Companies
                     .Where(c => c.Status == EntityStatus.Active)
                     .OrderBy(c => c.Code)
@@ -284,6 +294,64 @@ namespace ERPCore2.Services
                     LogoPath = logoPath
                 });
                 return ServiceResult.Failure("更新 LOGO 路徑時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 設定指定公司為預設公司
+        /// </summary>
+        public async Task<ServiceResult> SetDefaultCompanyAsync(int companyId)
+        {
+            try
+            {
+                if (companyId <= 0)
+                {
+                    return ServiceResult.Failure("公司 ID 無效");
+                }
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    // 先將所有公司的 IsDefault 設為 false
+                    var allCompanies = await context.Companies.ToListAsync();
+                    foreach (var company in allCompanies)
+                    {
+                        company.IsDefault = false;
+                    }
+
+                    // 設定指定公司為預設
+                    var targetCompany = allCompanies.FirstOrDefault(c => c.Id == companyId);
+                    if (targetCompany == null)
+                    {
+                        await transaction.RollbackAsync();
+                        return ServiceResult.Failure("找不到指定的公司");
+                    }
+
+                    targetCompany.IsDefault = true;
+                    targetCompany.UpdatedAt = DateTime.Now;
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return ServiceResult.Success();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetDefaultCompanyAsync), GetType(), _logger, new
+                {
+                    Method = nameof(SetDefaultCompanyAsync),
+                    ServiceType = GetType().Name,
+                    CompanyId = companyId
+                });
+                return ServiceResult.Failure("設定預設公司時發生錯誤");
             }
         }
     }

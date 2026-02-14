@@ -48,5 +48,12 @@ namespace ERPCore2.Services
         /// <param name="logoPath">LOGO 檔案路徑</param>
         /// <returns>更新結果</returns>
         Task<ServiceResult> UpdateLogoPathAsync(int companyId, string logoPath);
+
+        /// <summary>
+        /// 設定指定公司為預設公司
+        /// </summary>
+        /// <param name="companyId">要設為預設的公司 ID</param>
+        /// <returns>設定結果</returns>
+        Task<ServiceResult> SetDefaultCompanyAsync(int companyId);
     }
 }

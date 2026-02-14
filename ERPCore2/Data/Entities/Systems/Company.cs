@@ -118,5 +118,11 @@ namespace ERPCore2.Data.Entities
         [MaxLength(100)]
         [Display(Name = "發票抬頭")]
         public string? InvoiceTitle { get; set; }
+
+        /// <summary>
+        /// 是否為預設公司（用於首頁標題、報表預設公司等）
+        /// </summary>
+        [Display(Name = "預設公司")]
+        public bool IsDefault { get; set; } = false;
     }
 }

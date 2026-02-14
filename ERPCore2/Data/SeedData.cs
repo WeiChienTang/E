@@ -64,8 +64,7 @@ namespace ERPCore2.Data
             if (isTest)
             {
                 return new List<IDataSeeder>
-                {
-                    new CompanySeeder(),            
+                {        
                     new SystemParameterSeeder(),    
                     new PermissionSeeder(),                    
                     new RoleSeeder(),
