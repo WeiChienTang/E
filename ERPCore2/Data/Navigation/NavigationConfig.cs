@@ -298,8 +298,7 @@ public static class NavigationConfig
                         QuickActionId = "NewProductionSchedule",
                         QuickActionName = "新增生產排程"
                     },
-
-                                        // 分隔線 - 區分資料維護與報表
+                    // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
                         IsDivider = true
