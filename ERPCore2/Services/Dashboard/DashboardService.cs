@@ -203,6 +203,47 @@ namespace ERPCore2.Services
         }
 
         /// <inheritdoc/>
+        public async Task<ServiceResult> UpdatePanelIconAsync(int panelId, string iconClass)
+        {
+            try
+            {
+                // 驗證圖示
+                if (string.IsNullOrWhiteSpace(iconClass))
+                    return ServiceResult.Failure("圖示不可為空");
+
+                iconClass = iconClass.Trim();
+                if (iconClass.Length > 50)
+                    return ServiceResult.Failure("圖示名稱過長");
+
+                // 驗證是否為有效的圖示（必須在可選清單中）
+                if (!DashboardDefaults.AvailableIcons.Any(i => i.IconClass == iconClass))
+                    return ServiceResult.Failure("無效的圖示選擇");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var panel = await context.EmployeeDashboardPanels.FindAsync(panelId);
+                if (panel == null)
+                    return ServiceResult.Failure("找不到該面板");
+
+                panel.IconClass = iconClass;
+                panel.UpdatedAt = DateTime.Now;
+
+                await context.SaveChangesAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdatePanelIconAsync), GetType(), _logger, new
+                {
+                    PanelId = panelId,
+                    IconClass = iconClass
+                });
+                return ServiceResult.Failure("更新面板圖示失敗");
+            }
+        }
+
+        /// <inheritdoc/>
         public async Task<ServiceResult> DeletePanelAsync(int panelId)
         {
             try

@@ -89,6 +89,96 @@ public static class DashboardDefaults
         var index = panel.ItemKeys.IndexOf(navigationItemKey);
         return index >= 0 ? (index + 1) * 10 : 1000;
     }
+
+    /// <summary>
+    /// 可選用的面板圖示清單（精選 Bootstrap Icons）
+    /// </summary>
+    public static readonly List<IconOption> AvailableIcons = new()
+    {
+        // 常用
+        new IconOption("bi bi-grid-fill", "格狀", "常用"),
+        new IconOption("bi bi-lightning-fill", "閃電", "常用"),
+        new IconOption("bi bi-star-fill", "星號", "常用"),
+        new IconOption("bi bi-heart-fill", "愛心", "常用"),
+        new IconOption("bi bi-bookmark-fill", "書籤", "常用"),
+        new IconOption("bi bi-pin-fill", "圖釘", "常用"),
+        new IconOption("bi bi-flag-fill", "旗幟", "常用"),
+        new IconOption("bi bi-bell-fill", "鈴鐺", "常用"),
+
+        // 商業
+        new IconOption("bi bi-building", "大樓", "商業"),
+        new IconOption("bi bi-shop", "商店", "商業"),
+        new IconOption("bi bi-cart-fill", "購物車", "商業"),
+        new IconOption("bi bi-bag-fill", "購物袋", "商業"),
+        new IconOption("bi bi-cash-stack", "現金", "商業"),
+        new IconOption("bi bi-currency-dollar", "美元", "商業"),
+        new IconOption("bi bi-credit-card-fill", "信用卡", "商業"),
+        new IconOption("bi bi-receipt", "收據", "商業"),
+
+        // 文件
+        new IconOption("bi bi-file-earmark-text-fill", "文件", "文件"),
+        new IconOption("bi bi-folder-fill", "資料夾", "文件"),
+        new IconOption("bi bi-clipboard-fill", "剪貼板", "文件"),
+        new IconOption("bi bi-journal-text", "日誌", "文件"),
+        new IconOption("bi bi-file-earmark-pdf-fill", "PDF", "文件"),
+        new IconOption("bi bi-file-earmark-spreadsheet-fill", "表格", "文件"),
+
+        // 導航/系統
+        new IconOption("bi bi-house-fill", "首頁", "系統"),
+        new IconOption("bi bi-gear-fill", "設定", "系統"),
+        new IconOption("bi bi-tools", "工具", "系統"),
+        new IconOption("bi bi-sliders", "調整", "系統"),
+        new IconOption("bi bi-speedometer2", "儀表板", "系統"),
+        new IconOption("bi bi-pie-chart-fill", "圓餅圖", "系統"),
+
+        // 資料/庫存
+        new IconOption("bi bi-box-fill", "箱子", "資料"),
+        new IconOption("bi bi-box-seam-fill", "包裹", "資料"),
+        new IconOption("bi bi-archive-fill", "封存", "資料"),
+        new IconOption("bi bi-database-fill", "資料庫", "資料"),
+        new IconOption("bi bi-graph-up", "上升圖", "資料"),
+        new IconOption("bi bi-bar-chart-fill", "長條圖", "資料"),
+
+        // 人員
+        new IconOption("bi bi-person-fill", "單人", "人員"),
+        new IconOption("bi bi-people-fill", "多人", "人員"),
+        new IconOption("bi bi-person-badge-fill", "員工證", "人員"),
+        new IconOption("bi bi-person-gear", "帳號設定", "人員"),
+
+        // 物流
+        new IconOption("bi bi-truck", "卡車", "物流"),
+        new IconOption("bi bi-send-fill", "寄送", "物流"),
+        new IconOption("bi bi-geo-alt-fill", "地點", "物流"),
+        new IconOption("bi bi-calendar-check-fill", "排程", "物流"),
+    };
+}
+
+/// <summary>
+/// 圖示選項定義
+/// </summary>
+public class IconOption
+{
+    /// <summary>
+    /// Bootstrap Icon CSS class
+    /// </summary>
+    public string IconClass { get; set; }
+
+    /// <summary>
+    /// 圖示顯示名稱
+    /// </summary>
+    public string DisplayName { get; set; }
+
+    /// <summary>
+    /// 圖示分類
+    /// </summary>
+    public string Category { get; set; }
+
+    public IconOption(string iconClass, string displayName, string category)
+    {
+        IconClass = iconClass;
+        DisplayName = displayName;
+        Category = category;
+    }
 }
 
 /// <summary>

@@ -1,0 +1,230 @@
+@using ERPCore2.Data.Navigation
+
+@* 面板圖示選擇 Modal *@
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="選擇面板圖示"
+                    Icon="bi-palette-fill"
+                    Size="BaseModalComponent.ModalSize.Large"
+                    HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                    UseWhiteCloseButton="true"
+                    CloseOnEscape="true"
+                    CloseOnBackdropClick="true"
+                    OnClose="@HandleCancel">
+    <HeaderButtons>
+        <GenericButtonComponent Variant="ButtonVariant.Blue"
+                               Text="確定"
+                               OnClick="HandleConfirm"
+                               IsDisabled="@string.IsNullOrEmpty(selectedIconClass)"
+                               Title="套用選取的圖示" />
+        <GenericButtonComponent Variant="ButtonVariant.Red"
+                               Text="取消"
+                               OnClick="HandleCancel"
+                               Title="取消" />
+    </HeaderButtons>
+    <BodyContent>
+        @* 預覽區域 *@
+        <div class="icon-preview-area mb-3">
+            <div class="d-flex align-items-center justify-content-center p-3 bg-light rounded">
+                <i class="@(string.IsNullOrEmpty(selectedIconClass) ? (CurrentIcon ?? "bi bi-grid-fill") : selectedIconClass) fs-1 me-3"></i>
+                <div>
+                    <div class="small text-muted">目前選擇</div>
+                    <div class="fw-bold">@GetSelectedIconDisplayName()</div>
+                </div>
+            </div>
+        </div>
+
+        @* 依分類分組顯示圖示 *@
+        @foreach (var group in DashboardDefaults.AvailableIcons
+            .GroupBy(i => i.Category)
+            .OrderBy(g => GetCategoryOrder(g.Key)))
+        {
+            <div class="mb-3">
+                <h6 class="fw-bold text-muted border-bottom pb-2 mb-2">
+                    @group.Key
+                </h6>
+                <div class="row g-2">
+                    @foreach (var icon in group)
+                    {
+                        var capturedIcon = icon;
+                        var isSelected = selectedIconClass == icon.IconClass;
+                        var isCurrent = CurrentIcon == icon.IconClass && string.IsNullOrEmpty(selectedIconClass);
+
+                        <div class="col-xl-2 col-lg-3 col-md-3 col-sm-4 col-4">
+                            <div class="icon-picker-item @(isSelected ? "selected" : isCurrent ? "current" : "")"
+                                 @onclick="@(() => SelectIcon(capturedIcon.IconClass))"
+                                 title="@capturedIcon.DisplayName">
+                                <i class="@capturedIcon.IconClass fs-4"></i>
+                                <span class="icon-name small mt-1">@capturedIcon.DisplayName</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+<style>
+    .icon-preview-area {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+    }
+
+    .icon-picker-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 0.5rem;
+        border: 2px solid #e9ecef;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-height: 80px;
+        background-color: #fff;
+    }
+
+    .icon-picker-item:hover {
+        border-color: #0d6efd;
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .icon-picker-item.selected {
+        border-color: #0d6efd;
+        background-color: #e7f0ff;
+    }
+
+    .icon-picker-item.selected i {
+        color: #0d6efd;
+    }
+
+    .icon-picker-item.current {
+        border-color: #6c757d;
+        background-color: #f8f9fa;
+    }
+
+    .icon-picker-item .icon-name {
+        text-align: center;
+        color: #6c757d;
+        font-size: 0.75rem;
+        line-height: 1.2;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .icon-picker-item.selected .icon-name {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    /// <summary>
+    /// Modal 是否顯示
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    /// <summary>
+    /// 目前的圖示（用於標示當前選擇）
+    /// </summary>
+    [Parameter]
+    public string? CurrentIcon { get; set; }
+
+    /// <summary>
+    /// 確認選擇時的回調，傳回選中的圖示 CSS class
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnConfirm { get; set; }
+
+    // 選中的圖示
+    private string selectedIconClass = "";
+
+    /// <summary>
+    /// Modal 開啟時重置選擇狀態
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            // Modal 開啟時，預設選中當前圖示
+            selectedIconClass = CurrentIcon ?? "";
+        }
+    }
+
+    /// <summary>
+    /// 選擇圖示
+    /// </summary>
+    private void SelectIcon(string iconClass)
+    {
+        selectedIconClass = iconClass;
+    }
+
+    /// <summary>
+    /// 取得選中圖示的顯示名稱
+    /// </summary>
+    private string GetSelectedIconDisplayName()
+    {
+        var iconClass = string.IsNullOrEmpty(selectedIconClass) ? CurrentIcon : selectedIconClass;
+        var icon = DashboardDefaults.AvailableIcons.FirstOrDefault(i => i.IconClass == iconClass);
+        return icon?.DisplayName ?? "未選擇";
+    }
+
+    /// <summary>
+    /// 取得分類排序順序
+    /// </summary>
+    private int GetCategoryOrder(string category)
+    {
+        return category switch
+        {
+            "常用" => 0,
+            "商業" => 1,
+            "文件" => 2,
+            "系統" => 3,
+            "資料" => 4,
+            "人員" => 5,
+            "物流" => 6,
+            _ => 99
+        };
+    }
+
+    /// <summary>
+    /// 確認選擇
+    /// </summary>
+    private async Task HandleConfirm()
+    {
+        if (!string.IsNullOrEmpty(selectedIconClass))
+        {
+            await OnConfirm.InvokeAsync(selectedIconClass);
+        }
+        await CloseModal();
+    }
+
+    /// <summary>
+    /// 取消選擇
+    /// </summary>
+    private async Task HandleCancel()
+    {
+        await CloseModal();
+    }
+
+    /// <summary>
+    /// 關閉 Modal
+    /// </summary>
+    private async Task CloseModal()
+    {
+        selectedIconClass = "";
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+}

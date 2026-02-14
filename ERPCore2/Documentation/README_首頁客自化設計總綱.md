@@ -95,9 +95,15 @@ DashboardDefaults（靜態類）
   ├─ MaxPanelCount                  → 面板最大數量限制（6）
   ├─ MaxPanelTitleLength            → 面板標題最大長度（20）
   ├─ DefaultPanelDefinitions        → 預設面板定義清單
+  ├─ AvailableIcons                 → 可選用的面板圖示清單（精選 Bootstrap Icons）
   ├─ GetNavigationItemKey(item)     → 從 NavigationItem 生成識別鍵
   ├─ IsQuickActionKey(key)          → 判斷 Key 是否為 QuickAction 類型
   └─ GetDefaultItemSortOrder(...)   → 取得預設面板中項目的排序
+
+IconOption（圖示選項類別）
+  ├─ IconClass                      → Bootstrap Icon CSS class
+  ├─ DisplayName                    → 圖示顯示名稱
+  └─ Category                       → 圖示分類（常用 / 商業 / 文件 / 系統 / 資料 / 人員 / 物流）
 
 EmployeeDashboardPanel（資料表）
   └─ 儲存員工的面板定義（Title + SortOrder + IconClass）
@@ -208,6 +214,7 @@ Components/
         ├─ DashboardShortcutCard.razor      # 捷徑卡片元件
         ├─ DashboardShortcutCard.razor.css  # 卡片樣式
         ├─ DashboardWidgetPickerModal.razor # 項目選擇 Modal（雙 Tab）
+        ├─ IconPickerModal.razor            # 面板圖示選擇 Modal
         └─ QuickActionModalHost.razor       # 集中管理所有 QuickAction Modal
 ```
 
@@ -220,12 +227,14 @@ Components/
 ```
 Home.razor
 ├─ 動態面板迴圈
+│   ├─ 面板圖示（編輯模式下可點擊更換）
 │   ├─ 面板標題（編輯模式下可修改）
-│   ├─ [編輯] / [完成] [預設] [刪除] 按鈕
+│   ├─ [編輯] / [完成] [刪除] 按鈕
 │   ├─ DashboardShortcutCard × N（Route + Action + QuickAction 混放）
 │   └─ 編輯模式：拖曳排序 + 移除按鈕 + [新增項目] 卡片
-├─ [新增面板] 按鈕（編輯模式且未達上限時顯示）
+├─ [新增區塊] [恢復預設] 按鈕
 ├─ DashboardWidgetPickerModal（雙 Tab：頁面連結 / 快速功能）
+├─ IconPickerModal（面板圖示選擇）
 ├─ GenericConfirmModalComponent（重置/刪除確認）
 ├─ BaseModalComponent（新增面板）
 └─ <QuickActionModalHost @ref="quickActionHost" />
@@ -241,6 +250,19 @@ Home.razor
 | OnConfirm | EventCallback\<List\<string\>\> | 確認新增事件 |
 
 **雙 Tab 設計**：頂部有「頁面連結」和「快速功能」兩個 Tab，使用者可切換查看不同類型的項目，選擇後一起新增到面板中。
+
+### IconPickerModal.razor
+
+面板圖示選擇 Modal，提供分類瀏覽的 Bootstrap Icons 選擇介面。
+
+| Parameter | 型別 | 說明 |
+|-----------|------|------|
+| IsVisible | bool | Modal 是否顯示 |
+| IsVisibleChanged | EventCallback\<bool\> | 顯示狀態變更事件 |
+| CurrentIcon | string? | 目前的圖示（用於標示當前選擇） |
+| OnConfirm | EventCallback\<string\> | 確認選擇事件，傳回選中的圖示 CSS class |
+
+**圖示分類**：常用、商業、文件、系統、資料、人員、物流（共約 40 個精選圖示）。
 
 ### QuickActionModalHost.razor
 
@@ -322,6 +344,7 @@ new NavigationItem
 | `GetEmployeePanelsAsync(employeeId)` | 取得員工所有面板（含項目） |
 | `CreatePanelAsync(employeeId, title)` | 建立新面板 |
 | `UpdatePanelTitleAsync(panelId, title)` | 更新面板標題 |
+| `UpdatePanelIconAsync(panelId, iconClass)` | 更新面板圖示 |
 | `DeletePanelAsync(panelId)` | 刪除面板（連同其項目） |
 | `UpdatePanelSortOrderAsync(employeeId, panelIds)` | 更新面板排序 |
 

@@ -46,7 +46,19 @@
                 @* 區塊標題列 *@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0 fw-bold">
-                        <i class="@(panel.IconClass ?? "bi bi-grid-fill") me-2"></i>
+                        @if (isEditMode)
+                        {
+                            <span class="panel-icon-edit me-2" 
+                                  @onclick="@(() => OpenIconPicker(panel.Id, panel.IconClass))"
+                                  title="點擊更換圖示">
+                                <i class="@(panel.IconClass ?? "bi bi-grid-fill")"></i>
+                                <i class="bi bi-pencil-fill icon-edit-badge"></i>
+                            </span>
+                        }
+                        else
+                        {
+                            <i class="@(panel.IconClass ?? "bi bi-grid-fill") me-2"></i>
+                        }
                         @if (isEditMode)
                         {
                             <input type="text"
@@ -68,15 +80,6 @@
                                                     Size="ButtonSize.Small"
                                                     Text="完成"
                                                     OnClick="@(() => FinishEditPanel())" />
-                            @if (HasDefaultDefinition(panel.Title))
-                            {
-                                <GenericButtonComponent Variant="ButtonVariant.Red"
-                                                        Size="ButtonSize.Small"
-                                                        Text="恢復預設"
-                                                        Title="重置為預設配置"
-                                                        CssClass="ms-1"
-                                                        OnClick="@(() => HandleResetPanelToDefault(panel))" />
-                            }
                             @if (panels.Count > 1)
                             {
                                 <GenericButtonComponent Variant="ButtonVariant.Red"
@@ -150,16 +153,22 @@
             </div>
         }
 
-        @* 新增區塊按鈕（未達上限時顯示） *@
-        @if (panels.Count < DashboardDefaults.MaxPanelCount)
-        {
-            <div class="text-center mt-4 mb-4">
+        @* 區塊管理按鈕區 *@
+        <div class="text-center mt-4 mb-4">
+            @if (panels.Count < DashboardDefaults.MaxPanelCount)
+            {
                 <GenericButtonComponent Variant="ButtonVariant.Green"
                                         Size="ButtonSize.Normal"
                                         Text="新增區塊"
                                         OnClick="@HandleCreatePanel" />
-            </div>
-        }
+            }
+            <GenericButtonComponent Variant="ButtonVariant.Orange"
+                                    Size="ButtonSize.Normal"
+                                    Text="恢復預設"
+                                    Title="將首頁恢復為系統預設配置"
+                                    CssClass="ms-2"
+                                    OnClick="@HandleResetAllToDefault" />
+        </div>
 
         @* 沒有任何區塊時的空狀態 *@
         @if (!panels.Any())
@@ -172,6 +181,11 @@
                                         IconClass="bi bi-plus-lg"
                                         Text="建立第一個區塊"
                                         OnClick="@HandleCreatePanel" />
+                <GenericButtonComponent Variant="ButtonVariant.Orange"
+                                        Size="ButtonSize.Normal"
+                                        Text="恢復預設"
+                                        CssClass="ms-2"
+                                        OnClick="@HandleResetAllToDefault" />
             </div>
         }
     }
@@ -189,12 +203,12 @@
 @* 重置確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showResetConfirm"
                              IsVisibleChanged="@((bool v) => showResetConfirm = v)"
-                             Title="重置區塊"
+                             Title="恢復預設配置"
                              Icon="bi-arrow-counterclockwise"
-                             Message="@resetConfirmMessage"
-                             ConfirmButtonText="確定重置"
+                             Message="確定要將首頁恢復為預設配置嗎？所有自訂區塊將被清除，並重新建立預設的「頁面捷徑」與「快速功能」區塊。"
+                             ConfirmButtonText="確定恢復"
                              HeaderColor="BaseModalComponent.HeaderVariant.Warning"
-                             OnConfirm="@ConfirmResetPanelToDefault" />
+                             OnConfirm="@ConfirmResetAllToDefault" />
 
 @* 刪除區塊確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showDeletePanelConfirm"
@@ -235,6 +249,12 @@
         </div>
     </BodyContent>
 </BaseModalComponent>
+
+@* ==================== 圖示選擇 Modal ==================== *@
+<IconPickerModal IsVisible="@showIconPicker"
+                 IsVisibleChanged="@((bool v) => showIconPicker = v)"
+                 CurrentIcon="@iconPickerCurrentIcon"
+                 OnConfirm="@HandleIconSelected" />
 
 @* ==================== 公司設定確認 Modal ==================== *@
 <GenericConfirmModalComponent IsVisible="@showCompanySetupConfirm"
@@ -283,8 +303,6 @@
 
     // 重置確認 Modal
     private bool showResetConfirm = false;
-    private string resetConfirmMessage = "";
-    private int resetPanelId = 0;
 
     // 刪除區塊確認 Modal
     private bool showDeletePanelConfirm = false;
@@ -294,6 +312,11 @@
     // 新增區塊 Modal
     private bool showCreatePanelModal = false;
     private string newPanelTitle = "";
+
+    // 圖示選擇器 Modal
+    private bool showIconPicker = false;
+    private int iconPickerPanelId = 0;
+    private string? iconPickerCurrentIcon = null;
 
     // 拖曳排序
     private DashboardConfigWithNavItem? draggedItem = null;
@@ -369,14 +392,6 @@
             .ToList();
     }
 
-    /// <summary>
-    /// 檢查區塊標題是否有對應的預設定義
-    /// </summary>
-    private bool HasDefaultDefinition(string title)
-    {
-        return DashboardDefaults.DefaultPanelDefinitions.Any(d => d.Title == title);
-    }
-
     // ===== 區塊編輯 =====
 
     private void StartEditPanel(int panelId)
@@ -413,6 +428,51 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePanelTitleChange), GetType());
             await NotificationService.ShowErrorAsync("更新標題失敗");
+        }
+    }
+
+    // ===== 圖示編輯 =====
+
+    /// <summary>
+    /// 開啟圖示選擇器 Modal
+    /// </summary>
+    private void OpenIconPicker(int panelId, string? currentIcon)
+    {
+        iconPickerPanelId = panelId;
+        iconPickerCurrentIcon = currentIcon;
+        showIconPicker = true;
+    }
+
+    /// <summary>
+    /// 處理圖示選擇確認
+    /// </summary>
+    private async Task HandleIconSelected(string iconClass)
+    {
+        try
+        {
+            var result = await DashboardService.UpdatePanelIconAsync(iconPickerPanelId, iconClass);
+            if (result.IsSuccess)
+            {
+                var panel = panels.FirstOrDefault(p => p.Panel.Id == iconPickerPanelId);
+                if (panel != null)
+                {
+                    panel.Panel.IconClass = iconClass;
+                }
+                await NotificationService.ShowSuccessAsync("圖示已更新");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleIconSelected), GetType());
+            await NotificationService.ShowErrorAsync("更新圖示失敗");
+        }
+        finally
+        {
+            showIconPicker = false;
         }
     }
 
@@ -493,23 +553,28 @@
         }
     }
 
-    // ===== 重置區塊 =====
+    // ===== 恢復預設配置 =====
 
-    private void HandleResetPanelToDefault(EmployeeDashboardPanel panel)
+    /// <summary>
+    /// 顯示恢復預設配置確認 Modal
+    /// </summary>
+    private void HandleResetAllToDefault()
     {
-        resetPanelId = panel.Id;
-        resetConfirmMessage = $"確定要將「{panel.Title}」重置為預設配置嗎？現有的自訂配置將被清除。";
         showResetConfirm = true;
     }
 
-    private async Task ConfirmResetPanelToDefault()
+    /// <summary>
+    /// 確認恢復預設配置，刪除所有自訂區塊並重建預設區塊
+    /// </summary>
+    private async Task ConfirmResetAllToDefault()
     {
         try
         {
-            var result = await DashboardService.ResetPanelToDefaultAsync(resetPanelId);
+            var result = await DashboardService.ResetAllPanelsToDefaultAsync(currentEmployeeId);
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync("已重置為預設配置");
+                editingPanelId = null; // 退出編輯模式
+                await NotificationService.ShowSuccessAsync("已恢復為預設配置");
                 await LoadDashboardAsync();
             }
             else
@@ -519,8 +584,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmResetPanelToDefault), GetType());
-            await NotificationService.ShowErrorAsync("重置配置失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmResetAllToDefault), GetType());
+            await NotificationService.ShowErrorAsync("恢復預設配置失敗");
         }
     }
 

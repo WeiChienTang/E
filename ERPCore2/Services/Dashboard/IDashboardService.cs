@@ -30,6 +30,13 @@ namespace ERPCore2.Services
         Task<ServiceResult> UpdatePanelTitleAsync(int panelId, string title);
 
         /// <summary>
+        /// 更新面板圖示
+        /// </summary>
+        /// <param name="panelId">面板ID</param>
+        /// <param name="iconClass">Bootstrap Icon CSS class（如 "bi bi-star-fill"）</param>
+        Task<ServiceResult> UpdatePanelIconAsync(int panelId, string iconClass);
+
+        /// <summary>
         /// 刪除面板（連同其下所有項目）
         /// </summary>
         Task<ServiceResult> DeletePanelAsync(int panelId);
