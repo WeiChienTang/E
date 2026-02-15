@@ -16,8 +16,8 @@ namespace ERPCore2.Helpers
         {
             return new List<SelectOption>
             {
-                new() { Text = "啟用", Value = EntityStatus.Active.ToString() },
-                new() { Text = "停用", Value = EntityStatus.Inactive.ToString() }
+                new() { Text = "啟用", Value = ((int)EntityStatus.Active).ToString() },
+                new() { Text = "停用", Value = ((int)EntityStatus.Inactive).ToString() }
             };
         }
 

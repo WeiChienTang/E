@@ -18,18 +18,6 @@ public static class ReportRegistry
             // ==================== 客戶報表 ====================
             new ReportDefinition
             {
-                Id = ReportIds.AccountsReceivable,
-                Name = "應收帳款報表",
-                Description = "查詢和列印客戶應收帳款明細資料",
-                IconClass = "bi bi-cash-stack",
-                Category = ReportCategory.Customer,
-                RequiredPermission = "SetoffDocument.Read",
-                ActionId = "OpenAccountsReceivableReport",
-                SortOrder = 1,
-                IsEnabled = false  // 尚未實作
-            },
-            new ReportDefinition
-            {
                 Id = ReportIds.CustomerStatement,
                 Name = "客戶對帳單",
                 Description = "產生指定期間的客戶對帳單",
@@ -66,18 +54,6 @@ public static class ReportRegistry
             },
             
             // ==================== 廠商報表 ====================
-            new ReportDefinition
-            {
-                Id = ReportIds.AccountsPayable,
-                Name = "應付帳款報表",
-                Description = "查詢和列印廠商應付帳款明細資料",
-                IconClass = "bi bi-cash-stack",
-                Category = ReportCategory.Supplier,
-                RequiredPermission = "SetoffDocument.Read",
-                ActionId = "OpenAccountsPayableReport",
-                SortOrder = 1,
-                IsEnabled = false  // 尚未實作
-            },
             new ReportDefinition
             {
                 Id = ReportIds.SupplierStatement,

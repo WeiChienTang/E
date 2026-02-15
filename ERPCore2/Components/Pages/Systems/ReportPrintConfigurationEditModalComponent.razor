@@ -6,6 +6,8 @@
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject IPaperSettingService PaperSettingService
 @inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IEmployeeService EmployeeService
 
 <GenericEditModalComponent TEntity="ReportPrintConfiguration" 
                           TService="IReportPrintConfigurationService"
@@ -64,6 +66,9 @@
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
+
+    // 管理員權限
+    private bool isCurrentUserSuperAdmin = false;
 
     // ===== 生命週期 =====
     
@@ -213,10 +218,31 @@
             return null;
         }
     }
+    /// <summary>
+    /// 檢查當前使用者是否為管理員
+    /// </summary>
+    private async Task CheckCurrentUserSuperAdminAsync()
+    {
+        try
+        {
+            var currentEmployeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (currentEmployeeId.HasValue)
+            {
+                var currentEmployee = await EmployeeService.GetByIdAsync(currentEmployeeId.Value);
+                isCurrentUserSuperAdmin = currentEmployee?.IsSuperAdmin == true;
+            }
+        }
+        catch
+        {
+            isCurrentUserSuperAdmin = false;
+        }
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible && !isDataLoaded)
         {
+            await CheckCurrentUserSuperAdminAsync();
             await LoadAdditionalDataAsync();
             InitializeFormFields();
             isDataLoaded = true;
@@ -225,7 +251,7 @@
         {
             isDataLoaded = false;
         }
-        
+
         await base.OnParametersSetAsync();
     }
 
@@ -302,15 +328,41 @@
                 }
             };
 
-            formSections = FormSectionHelper<ReportPrintConfiguration>.Create()
+            // 狀態欄位（僅管理員可見）
+            if (isCurrentUserSuperAdmin)
+            {
+                formFields.Add(new()
+                {
+                    PropertyName = nameof(ReportPrintConfiguration.Status),
+                    Label = "狀態",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = EntityStatusHelper.GetEntityStatusOptions(),
+                    HelpText = "控制此報表列印配置是否啟用（僅管理員可修改）"
+                });
+            }
+
+            var sectionBuilder = FormSectionHelper<ReportPrintConfiguration>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     rpc => rpc.Code,
                     rpc => rpc.ReportId,
-                    rpc => rpc.ReportName,
-                    rpc => rpc.Status)
-                .AddToSection("列印設定",
+                    rpc => rpc.ReportName);
+
+            if (isCurrentUserSuperAdmin)
+            {
+                sectionBuilder = sectionBuilder.AddToSection("列印設定",
                     rpc => rpc.PrinterConfigurationId,
-                    rpc => rpc.PaperSettingId)
+                    rpc => rpc.PaperSettingId,
+                    rpc => rpc.Status);
+            }
+            else
+            {
+                sectionBuilder = sectionBuilder.AddToSection("列印設定",
+                    rpc => rpc.PrinterConfigurationId,
+                    rpc => rpc.PaperSettingId);
+            }
+
+            formSections = sectionBuilder
                 .AddToSection(FormSectionNames.AdditionalData,
                     rpc => rpc.Remarks)
                 .Build();

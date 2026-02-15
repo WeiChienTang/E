@@ -3,7 +3,9 @@
     "allow": [
       "Edit",
       "Bash(dotnet build:*)",
-      "Bash(rm *)"
+      "Bash(rm *)",
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ]
   }
 }
