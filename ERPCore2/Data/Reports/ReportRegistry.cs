@@ -32,25 +32,25 @@ public static class ReportRegistry
             {
                 Id = ReportIds.CustomerSalesAnalysis,
                 Name = "客戶銷售分析",
-                Description = "分析客戶銷售金額與趨勢",
+                Description = "按銷售額由高至低排列，分析客戶銷售金額佔比與排名",
                 IconClass = "bi bi-graph-up",
                 Category = ReportCategory.Customer,
                 RequiredPermission = "Customer.Read",
                 ActionId = "OpenCustomerSalesAnalysisReport",
                 SortOrder = 3,
-                IsEnabled = false  // 尚未實作
+                IsEnabled = true
             },
             new ReportDefinition
             {
                 Id = ReportIds.CustomerTransaction,
                 Name = "客戶交易明細",
-                Description = "查詢客戶所有交易記錄明細",
+                Description = "查詢客戶出貨與退貨交易記錄明細，依客戶分組顯示",
                 IconClass = "bi bi-list-check",
                 Category = ReportCategory.Customer,
                 RequiredPermission = "Customer.Read",
                 ActionId = "OpenCustomerTransactionReport",
                 SortOrder = 4,
-                IsEnabled = false  // 尚未實作
+                IsEnabled = true
             },
             
             // ==================== 廠商報表 ====================

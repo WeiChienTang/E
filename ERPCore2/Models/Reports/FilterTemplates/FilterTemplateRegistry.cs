@@ -36,18 +36,58 @@ public static class FilterTemplateRegistry
             PreviewTitle = "應收帳款報表預覽",
             FilterTitle = "應收帳款報表篩選條件",
             IconClass = "bi-cash-stack",
-            GetDocumentName = criteria => 
+            GetDocumentName = criteria =>
             {
                 var c = (AccountsReceivableCriteria)criteria;
-                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
-                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"應收帳款報表-{dateRange}";
             }
         });
-        
+
+        // 客戶銷售分析（按銷售額由高至低排列）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.CustomerSalesAnalysis,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerSalesAnalysisBatchFilterTemplate",
+            CriteriaType = typeof(CustomerSalesAnalysisCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerSalesAnalysisReportService),
+            PreviewTitle = "客戶銷售分析預覽",
+            FilterTitle = "客戶銷售分析篩選條件",
+            IconClass = "bi-graph-up",
+            GetDocumentName = criteria =>
+            {
+                var c = (CustomerSalesAnalysisCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"客戶銷售分析-{dateRange}";
+            }
+        });
+
+        // 客戶交易明細（依客戶分組，列出出貨與退貨明細）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.CustomerTransaction,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerTransactionBatchFilterTemplate",
+            CriteriaType = typeof(CustomerTransactionCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerTransactionReportService),
+            PreviewTitle = "客戶交易明細預覽",
+            FilterTitle = "客戶交易明細篩選條件",
+            IconClass = "bi-list-check",
+            GetDocumentName = criteria =>
+            {
+                var c = (CustomerTransactionCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"客戶交易明細-{dateRange}";
+            }
+        });
+
         // ==================== 採購報表 ====================
-        
+
         // 採購單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {

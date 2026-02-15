@@ -1,0 +1,104 @@
+@*
+    客戶銷售分析篩選模板
+    實作 IFilterTemplateComponent 介面，提供客戶銷售分析的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Enums
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject ICustomerService CustomerService
+@inject INotificationService NotificationService
+
+<div>
+    @* 第一行: 客戶選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <MultiSelectFilterComponent TItem="Customer"
+                                       Items="@customers"
+                                       @bind-SelectedItems="@selectedCustomers"
+                                       DisplayProperty="CompanyName"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋客戶..."
+                                       EmptyMessage="未選擇客戶（分析全部客戶）"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
+    </div>
+
+    @* 第二行: 日期範圍 + 快速選擇 *@
+    <div class="mb-2">
+        <DateRangeFilterComponent @bind-StartDate="startDate"
+                                  @bind-EndDate="endDate"
+                                  ShowQuickSelectors="true"
+                                  AutoValidate="true"
+                                  ShowValidationMessage="true" />
+    </div>
+
+    @* 第三行: 排除已取消 *@
+    <div class="row g-2 align-items-end">
+        <div class="col-4 d-flex align-items-end">
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" id="excludeCancelled" @bind="excludeCancelled">
+                <label class="form-check-label small" for="excludeCancelled">
+                    排除已取消
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 內部狀態 =====
+
+    private List<Customer> customers = new();
+    private List<Customer> selectedCustomers = new();
+    private DateTime? startDate = new DateTime(DateTime.Today.Year, 1, 1);
+    private DateTime? endDate = DateTime.Today;
+    private bool excludeCancelled = true;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            customers = await CustomerService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
+            customers = new List<Customer>();
+        }
+    }
+
+    // ===== IFilterTemplateComponent 實作 =====
+
+    public IReportFilterCriteria GetCriteria()
+    {
+        return new CustomerSalesAnalysisCriteria
+        {
+            CustomerIds = selectedCustomers.Select(c => c.Id).ToList(),
+            StartDate = startDate,
+            EndDate = endDate,
+            ExcludeCancelled = excludeCancelled
+        };
+    }
+
+    public void Reset()
+    {
+        selectedCustomers = new();
+        startDate = new DateTime(DateTime.Today.Year, 1, 1);
+        endDate = DateTime.Today;
+        excludeCancelled = true;
+        StateHasChanged();
+    }
+}

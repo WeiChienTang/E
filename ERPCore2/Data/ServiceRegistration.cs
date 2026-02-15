@@ -215,6 +215,10 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISetoffDocumentReportService, SetoffDocumentReportService>();
             // 商品資料表報表服務（PD001）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductListReportService, ProductListReportService>();
+            // 客戶銷售分析報表服務（AR003）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerSalesAnalysisReportService, CustomerSalesAnalysisReportService>();
+            // 客戶交易明細報表服務（AR004）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerTransactionReportService, CustomerTransactionReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
         }
