@@ -1,0 +1,102 @@
+@*
+    應付沖款單批次列印篩選模板
+    實作 IFilterTemplateComponent 介面，提供應付沖款單批次列印的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Enums
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject ISupplierService SupplierService
+@inject INotificationService NotificationService
+
+<div>
+    @* 第一行: 廠商選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <MultiSelectFilterComponent TItem="Supplier"
+                                       Items="@suppliers"
+                                       @bind-SelectedItems="@selectedSuppliers"
+                                       DisplayProperty="CompanyName"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋廠商..."
+                                       EmptyMessage="未選擇廠商"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
+    </div>
+
+    @* 第二行: 日期範圍 + 快速選擇 *@
+    <div class="mb-2">
+        <DateRangeFilterComponent @bind-StartDate="startDate"
+                                  @bind-EndDate="endDate"
+                                  ShowQuickSelectors="true"
+                                  AutoValidate="true"
+                                  ShowValidationMessage="true" />
+    </div>
+
+    @* 第三行: 單號 *@
+    <div class="row g-2 align-items-end">
+        <div class="col-12">
+            <TextSearchFilterComponent @bind-Value="documentNumberKeyword"
+                                       Label="單號"
+                                       Placeholder="模糊搜尋..." />
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 內部狀態 =====
+
+    private List<Supplier> suppliers = new();
+    private List<Supplier> selectedSuppliers = new();
+    private DateTime? startDate = null;
+    private DateTime? endDate = null;
+    private string? documentNumberKeyword = null;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            suppliers = await SupplierService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入廠商資料失敗");
+            suppliers = new List<Supplier>();
+        }
+    }
+
+    // ===== IFilterTemplateComponent 實作 =====
+
+    public IReportFilterCriteria GetCriteria()
+    {
+        return new SetoffDocumentBatchPrintCriteria
+        {
+            SetoffType = SetoffType.AccountsPayable,
+            RelatedPartyIds = selectedSuppliers.Select(s => s.Id).ToList(),
+            StartDate = startDate,
+            EndDate = endDate,
+            DocumentNumberKeyword = documentNumberKeyword
+        };
+    }
+
+    public void Reset()
+    {
+        selectedSuppliers = new();
+        startDate = null;
+        endDate = null;
+        documentNumberKeyword = null;
+        StateHasChanged();
+    }
+}

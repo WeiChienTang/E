@@ -230,7 +230,30 @@ public static class ReportRegistry
             },
             
             // ==================== 財務報表 ====================
-            // 可依需求繼續擴充...
+            new ReportDefinition
+            {
+                Id = ReportIds.AccountsReceivableSetoff,
+                Name = "應收沖款單",
+                Description = "列印應收帳款沖款單（含客戶資訊、沖銷明細、收款記錄）",
+                IconClass = "bi bi-receipt-cutoff",
+                Category = ReportCategory.Financial,
+                RequiredPermission = "SetoffDocument.Read",
+                ActionId = "PrintAccountsReceivableSetoff",
+                SortOrder = 1,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.AccountsPayableSetoff,
+                Name = "應付沖款單",
+                Description = "列印應付帳款沖款單（含廠商資訊、沖銷明細、付款記錄）",
+                IconClass = "bi bi-receipt-cutoff",
+                Category = ReportCategory.Financial,
+                RequiredPermission = "SetoffDocument.Read",
+                ActionId = "PrintAccountsPayableSetoff",
+                SortOrder = 2,
+                IsEnabled = true
+            },
         };
     }
     

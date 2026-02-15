@@ -640,6 +640,22 @@ public static class NavigationConfig
                         QuickActionName = "新增貨幣"
                     },
 
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
+                    NavigationActionHelper.CreateActionItem(
+                        name: "財務報表集",
+                        description: "查看和列印所有財務相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenFinancialReportIndex",
+                        category: "財務管理",
+                        requiredPermission: "SetoffDocument.Read",
+                        searchKeywords: new List<string> { "財務報表", "財務報表集", "financial report", "沖款單報表", "應收沖款", "應付沖款" }
+                    ),
+
                 }
             },
 

@@ -76,10 +76,16 @@ public static class ReportIds
     public const string InventoryStatus = "IV003";
     
     // ==================== 財務報表 (FN) ====================
-    
+
     /// <summary>收款單</summary>
     public const string PaymentReceipt = "FN001";
-    
+
     /// <summary>付款單</summary>
     public const string PaymentVoucher = "FN002";
+
+    /// <summary>應收沖款單</summary>
+    public const string AccountsReceivableSetoff = "FN003";
+
+    /// <summary>應付沖款單</summary>
+    public const string AccountsPayableSetoff = "FN004";
 }

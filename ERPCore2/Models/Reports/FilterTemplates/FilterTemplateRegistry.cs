@@ -48,7 +48,7 @@ public static class FilterTemplateRegistry
         
         // ==================== 採購報表 ====================
         
-        // 採購單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        // 採購單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.PurchaseOrder,
@@ -68,7 +68,7 @@ public static class FilterTemplateRegistry
             }
         });
         
-        // 進貨單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        // 進貨單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.PurchaseReceiving,
@@ -88,7 +88,7 @@ public static class FilterTemplateRegistry
             }
         });
         
-        // 進貨退出單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        // 進貨退出單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.PurchaseReturn,
@@ -110,7 +110,7 @@ public static class FilterTemplateRegistry
         
         // ==================== 銷售報表 ====================
         
-        // 報價單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        // 報價單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.Quotation,
@@ -130,7 +130,7 @@ public static class FilterTemplateRegistry
             }
         });
         
-        // 訂單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        // 訂單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.SalesOrder,
@@ -150,7 +150,7 @@ public static class FilterTemplateRegistry
             }
         });
         
-        // 銷貨單（出貨單）（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        // 銷貨單（出貨單）（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.SalesDelivery,
@@ -170,7 +170,7 @@ public static class FilterTemplateRegistry
             }
         });
         
-        // 銷貨退回單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        // 銷貨退回單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.SalesReturn,
@@ -211,8 +211,48 @@ public static class FilterTemplateRegistry
             }
         });
         
-        // 可在此繼續註冊其他報表...
-        
+        // ==================== 財務報表 ====================
+
+        // 應收沖款單（報表集進入時顯示篩選，EditModal 直接單筆列印）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.AccountsReceivableSetoff,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.AccountsReceivableSetoffBatchFilterTemplate",
+            CriteriaType = typeof(SetoffDocumentBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISetoffDocumentReportService),
+            PreviewTitle = "應收沖款單列印預覽",
+            FilterTitle = "應收沖款單列印篩選條件",
+            IconClass = "bi-receipt-cutoff",
+            GetDocumentName = criteria =>
+            {
+                var c = (SetoffDocumentBatchPrintCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"應收沖款單-{dateRange}";
+            }
+        });
+
+        // 應付沖款單（報表集進入時顯示篩選，EditModal 直接單筆列印）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.AccountsPayableSetoff,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.AccountsPayableSetoffBatchFilterTemplate",
+            CriteriaType = typeof(SetoffDocumentBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISetoffDocumentReportService),
+            PreviewTitle = "應付沖款單列印預覽",
+            FilterTitle = "應付沖款單列印篩選條件",
+            IconClass = "bi-receipt-cutoff",
+            GetDocumentName = criteria =>
+            {
+                var c = (SetoffDocumentBatchPrintCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"應付沖款單-{dateRange}";
+            }
+        });
+
             _isInitialized = true;
         }
     }

@@ -10,6 +10,8 @@
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
+@inject ISetoffDocumentReportService SetoffDocumentReportService
+@using ERPCore2.Models.Reports
 
 <GenericEditModalComponent TEntity="SetoffDocument" 
                           TService="ISetoffDocumentService"
@@ -41,7 +43,12 @@
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomModules="@GetCustomModules()"
-                          OnEntityLoaded="@HandleEntityLoaded">
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ShowPrintButton="true"
+                          ReportService="@SetoffDocumentReportService"
+                          ReportId="@GetCurrentReportId()"
+                          ReportPreviewTitle="@GetReportPreviewTitle()"
+                          GetReportDocumentName="@(e => GetDocumentName(e))">
 </GenericEditModalComponent>
 
 <CompanyEditModalComponent @ref="companyEditModal"
@@ -1407,6 +1414,39 @@
     private async Task OnSupplierSavedWrapper(Supplier supplier)
     {
         await supplierModalManager.HandleEntitySavedAsync(supplier, shouldAutoSelect: true);
+    }
+
+    // ===== 列印相關方法 =====
+
+    /// <summary>
+    /// 根據沖款類型取得對應的報表 ID
+    /// </summary>
+    private string GetCurrentReportId()
+    {
+        var currentType = editModalComponent?.Entity?.SetoffType ?? DefaultSetoffType ?? SetoffType.AccountsReceivable;
+        return currentType == SetoffType.AccountsReceivable
+            ? ReportIds.AccountsReceivableSetoff
+            : ReportIds.AccountsPayableSetoff;
+    }
+
+    /// <summary>
+    /// 根據沖款類型取得報表預覽標題
+    /// </summary>
+    private string GetReportPreviewTitle()
+    {
+        var currentType = editModalComponent?.Entity?.SetoffType ?? DefaultSetoffType ?? SetoffType.AccountsReceivable;
+        return currentType == SetoffType.AccountsReceivable
+            ? "應收沖款單預覽"
+            : "應付沖款單預覽";
+    }
+
+    /// <summary>
+    /// 根據沖款類型取得列印文件名稱
+    /// </summary>
+    private string GetDocumentName(SetoffDocument entity)
+    {
+        var prefix = entity.IsAccountsReceivable ? "應收沖款單" : "應付沖款單";
+        return $"{prefix}-{entity.Code}";
     }
 
     /// <summary>
