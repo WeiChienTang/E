@@ -170,19 +170,19 @@ public static class ReportRegistry
             // ==================== 商品報表 ====================
             new ReportDefinition
             {
-                Id = "PD001",  // 尚未定義在 ReportIds
+                Id = ReportIds.ProductList,
                 Name = "商品資料表",
-                Description = "列印商品基本資料清單",
+                Description = "列印商品基本資料清單（含品號、品名、規格、條碼、分類、單位）",
                 IconClass = "bi bi-box-seam",
                 Category = ReportCategory.Product,
                 RequiredPermission = "Product.Read",
                 ActionId = "PrintProductList",
                 SortOrder = 1,
-                IsEnabled = false  // 尚未實作
+                IsEnabled = true
             },
             new ReportDefinition
             {
-                Id = "PD002",  // 尚未定義在 ReportIds
+                Id = ReportIds.BOMReport,
                 Name = "物料清單報表",
                 Description = "列印商品BOM物料清單",
                 IconClass = "bi bi-diagram-3",

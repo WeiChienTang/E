@@ -211,6 +211,24 @@ public static class FilterTemplateRegistry
             }
         });
         
+        // ==================== 商品報表（清單式）====================
+
+        // 商品資料表（報表集進入時顯示篩選，清單式報表）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.ProductList,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ProductListBatchFilterTemplate",
+            CriteriaType = typeof(ProductListBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductListReportService),
+            PreviewTitle = "商品資料表預覽",
+            FilterTitle = "商品資料表篩選條件",
+            IconClass = "bi-box-seam",
+            GetDocumentName = criteria =>
+            {
+                return $"商品資料表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
         // ==================== 財務報表 ====================
 
         // 應收沖款單（報表集進入時顯示篩選，EditModal 直接單筆列印）

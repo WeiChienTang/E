@@ -61,6 +61,12 @@ public static class ReportIds
     
     // ==================== 商品報表 (PD) ====================
     
+    /// <summary>商品資料表</summary>
+    public const string ProductList = "PD001";
+
+    /// <summary>物料清單報表</summary>
+    public const string BOMReport = "PD002";
+
     /// <summary>商品條碼標籤</summary>
     public const string ProductBarcode = "PD003";
     

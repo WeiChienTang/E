@@ -1,0 +1,119 @@
+@*
+    商品資料表批次列印篩選模板
+    實作 IFilterTemplateComponent 介面，提供商品資料表的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Enums
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject IProductService ProductService
+@inject INotificationService NotificationService
+
+<div>
+    @* 第一行: 商品分類選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <MultiSelectFilterComponent TItem="ProductCategory"
+                                       Items="@categories"
+                                       @bind-SelectedItems="@selectedCategories"
+                                       DisplayProperty="Name"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋商品分類..."
+                                       EmptyMessage="未選擇分類（列印全部分類）"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
+    </div>
+
+    @* 第二行: 採購類型 + 僅啟用 *@
+    <div class="row g-2 mb-2">
+        <div class="col-8">
+            <label class="form-label mb-1 small text-muted">採購類型</label>
+            <select class="form-select form-select-sm" @bind="selectedProcurementType">
+                <option value="">全部</option>
+                <option value="Purchased">外購</option>
+                <option value="Manufactured">自製</option>
+                <option value="Outsourced">委外</option>
+            </select>
+        </div>
+        <div class="col-4 d-flex align-items-end">
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
+                <label class="form-check-label small" for="activeOnly">
+                    僅啟用
+                </label>
+            </div>
+        </div>
+    </div>
+
+    @* 第三行: 關鍵字搜尋 *@
+    <div class="row g-2 align-items-end">
+        <div class="col-12">
+            <TextSearchFilterComponent @bind-Value="keyword"
+                                       Label="關鍵字"
+                                       Placeholder="搜尋品號、品名、條碼、規格..." />
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 內部狀態 =====
+
+    private List<ProductCategory> categories = new();
+    private List<ProductCategory> selectedCategories = new();
+    private string? selectedProcurementType = null;
+    private string? keyword = null;
+    private bool activeOnly = true;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            categories = await ProductService.GetProductCategoriesAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入商品分類資料失敗");
+            categories = new List<ProductCategory>();
+        }
+    }
+
+    // ===== IFilterTemplateComponent 實作 =====
+
+    public IReportFilterCriteria GetCriteria()
+    {
+        ProcurementType? procurementType = null;
+        if (!string.IsNullOrEmpty(selectedProcurementType))
+        {
+            procurementType = Enum.Parse<ProcurementType>(selectedProcurementType);
+        }
+
+        return new ProductListBatchPrintCriteria
+        {
+            CategoryIds = selectedCategories.Select(c => c.Id).ToList(),
+            ProcurementType = procurementType,
+            Keyword = keyword,
+            ActiveOnly = activeOnly
+        };
+    }
+
+    public void Reset()
+    {
+        selectedCategories = new();
+        selectedProcurementType = null;
+        keyword = null;
+        activeOnly = true;
+        StateHasChanged();
+    }
+}
