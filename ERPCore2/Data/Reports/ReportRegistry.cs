@@ -255,6 +255,20 @@ public static class ReportRegistry
                 IsEnabled = true
             },
 
+            // ==================== 人力報表 ====================
+            new ReportDefinition
+            {
+                Id = ReportIds.EmployeeRoster,
+                Name = "員工名冊表",
+                Description = "列印員工基本資料清單，含員工編號、姓名、部門、職位、到職日期、在職狀態等",
+                IconClass = "bi bi-person-lines-fill",
+                Category = ReportCategory.HR,
+                RequiredPermission = "Employee.Read",
+                ActionId = "OpenEmployeeRosterReport",
+                SortOrder = 1,
+                IsEnabled = true
+            },
+
             // ==================== 財務報表 ====================
             new ReportDefinition
             {
@@ -349,7 +363,15 @@ public static class ReportRegistry
     {
         return GetReportsByCategory(ReportCategory.Product);
     }
-    
+
+    /// <summary>
+    /// 取得人力相關報表
+    /// </summary>
+    public static List<ReportDefinition> GetHRReports()
+    {
+        return GetReportsByCategory(ReportCategory.HR);
+    }
+
     /// <summary>
     /// 根據報表識別碼取得報表定義
     /// </summary>

@@ -84,6 +84,11 @@ public static class ReportIds
     /// <summary>庫存現況表</summary>
     public const string InventoryStatus = "IV003";
     
+    // ==================== 人力報表 (HR) ====================
+
+    /// <summary>員工名冊表</summary>
+    public const string EmployeeRoster = "HR001";
+
     // ==================== 財務報表 (FN) ====================
 
     /// <summary>收款單</summary>

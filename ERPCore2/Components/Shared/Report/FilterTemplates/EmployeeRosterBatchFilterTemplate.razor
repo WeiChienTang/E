@@ -1,0 +1,96 @@
+@*
+    員工名冊表篩選模板
+    實作 IFilterTemplateComponent 介面，提供員工名冊表的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject IDepartmentService DepartmentService
+@inject INotificationService NotificationService
+
+<div>
+    @* 第一行: 部門選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <MultiSelectFilterComponent TItem="Department"
+                                       Items="@departments"
+                                       @bind-SelectedItems="@selectedDepartments"
+                                       DisplayProperty="Name"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋部門..."
+                                       EmptyMessage="未選擇部門（查詢全部部門）"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
+    </div>
+
+    @* 第二行: 關鍵字搜尋 + 僅在職 *@
+    <div class="row g-2 align-items-end">
+        <div class="col-8">
+            <TextSearchFilterComponent @bind-Value="keyword"
+                                       Label="關鍵字"
+                                       Placeholder="搜尋員工編號、姓名..." />
+        </div>
+        <div class="col-4 d-flex align-items-end">
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
+                <label class="form-check-label small" for="activeOnly">
+                    僅在職
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 內部狀態 =====
+
+    private List<Department> departments = new();
+    private List<Department> selectedDepartments = new();
+    private string? keyword = null;
+    private bool activeOnly = true;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            departments = await DepartmentService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入部門資料失敗");
+            departments = new List<Department>();
+        }
+    }
+
+    // ===== IFilterTemplateComponent 實作 =====
+
+    public IReportFilterCriteria GetCriteria()
+    {
+        return new EmployeeRosterCriteria
+        {
+            DepartmentIds = selectedDepartments.Select(d => d.Id).ToList(),
+            Keyword = keyword,
+            ActiveOnly = activeOnly
+        };
+    }
+
+    public void Reset()
+    {
+        selectedDepartments = new();
+        keyword = null;
+        activeOnly = true;
+        StateHasChanged();
+    }
+}

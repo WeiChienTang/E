@@ -68,6 +68,12 @@ public class ReportCategoryConfig
                 Category = ReportCategory.Financial,
                 Title = "財務報表集",
                 Icon = "bi-currency-dollar"
+            },
+            [ReportCategory.HR] = new ReportCategoryConfig
+            {
+                Category = ReportCategory.HR,
+                Title = "人力報表集",
+                Icon = "bi-person-badge"
             }
         };
     }

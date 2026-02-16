@@ -369,6 +369,24 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // ==================== 人力報表 ====================
+
+        // 員工名冊表（依部門分組顯示員工基本資料）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.EmployeeRoster,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.EmployeeRosterBatchFilterTemplate",
+            CriteriaType = typeof(EmployeeRosterCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IEmployeeRosterReportService),
+            PreviewTitle = "員工名冊表預覽",
+            FilterTitle = "員工名冊表篩選條件",
+            IconClass = "bi-person-lines-fill",
+            GetDocumentName = criteria =>
+            {
+                return $"員工名冊表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
         // ==================== 財務報表 ====================
 
         // 應收沖款單（報表集進入時顯示篩選，EditModal 直接單筆列印）

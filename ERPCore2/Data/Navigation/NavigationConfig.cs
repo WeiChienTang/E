@@ -108,7 +108,23 @@ public static class NavigationConfig
                         SearchKeywords = new List<string> { "權限", "permission", "授權" },
                         QuickActionId = "NewPermission",
                         QuickActionName = "新增權限"
-                    }
+                    },
+
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
+                    NavigationActionHelper.CreateActionItem(
+                        name: "人力報表集",
+                        description: "查看和列印所有人力相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenHRReportIndex",
+                        category: "人力管理",
+                        requiredPermission: "Employee.Read",
+                        searchKeywords: new List<string> { "人力報表", "人力報表集", "HR report", "員工名冊" }
+                    ),
                 }
             },
 

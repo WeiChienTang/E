@@ -229,6 +229,8 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IInventoryStatusReportService, InventoryStatusReportService>();
             // 庫存盤點差異表報表服務（IV002）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IStockTakingDifferenceReportService, StockTakingDifferenceReportService>();
+            // 員工名冊表報表服務（HR001）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IEmployeeRosterReportService, EmployeeRosterReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
         }
