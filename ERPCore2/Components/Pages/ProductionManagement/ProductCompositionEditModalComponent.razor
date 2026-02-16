@@ -1,4 +1,6 @@
 @* 可重用的商品合成編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
 @inject IProductCompositionService ProductCompositionService
 @inject IProductCompositionDetailService ProductCompositionDetailService
 @inject IProductService ProductService
@@ -9,6 +11,7 @@
 @inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
+@inject IBOMReportService BOMReportService
 
 <GenericEditModalComponent TEntity="ProductComposition" 
                           TService="IProductCompositionService"
@@ -38,6 +41,12 @@
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@BOMReportService"
+                          ReportId="@ReportIds.BOMReport"
+                          ReportPreviewTitle="物料清單預覽"
+                          GetReportDocumentName="@(e => $"物料清單-{e.Code}")"
                           CustomModules="@GetCustomModules()" />
 
 @* 客戶編輯 Modal *@

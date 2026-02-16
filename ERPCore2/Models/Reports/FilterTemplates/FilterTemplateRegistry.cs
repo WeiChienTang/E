@@ -343,6 +343,22 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // PD002 - 物料清單報表（依配方分組顯示組件明細）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.BOMReport,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.BOMBatchFilterTemplate",
+            CriteriaType = typeof(BOMReportCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IBOMReportService),
+            PreviewTitle = "物料清單報表預覽",
+            FilterTitle = "物料清單報表篩選條件",
+            IconClass = "bi-diagram-3",
+            GetDocumentName = criteria =>
+            {
+                return $"物料清單報表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
         // 生產排程表（依排程單分組顯示排程項目明細）
         RegisterConfig(new ReportFilterConfig
         {

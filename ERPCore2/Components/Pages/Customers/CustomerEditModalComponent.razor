@@ -458,9 +458,8 @@
                 c => c.InvoiceTitle,
                 c => c.CreditLimit,
                 c => c.CurrentBalance)
-            .AddToSection(FormSectionNames.SalesInfo,
-                c => c.EmployeeId)
             .AddToSection(FormSectionNames.OtherInfo,
+                c => c.EmployeeId,
                 c => c.Remarks)
             .Build();
         }

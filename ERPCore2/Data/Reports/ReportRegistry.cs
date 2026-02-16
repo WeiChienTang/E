@@ -209,13 +209,13 @@ public static class ReportRegistry
             {
                 Id = ReportIds.BOMReport,
                 Name = "物料清單報表",
-                Description = "列印商品BOM物料清單",
+                Description = "列印商品BOM物料清單，依配方分組顯示組件品號、品名、數量、單位、成本",
                 IconClass = "bi bi-diagram-3",
                 Category = ReportCategory.Product,
                 RequiredPermission = "ProductComposition.Read",
-                ActionId = "PrintBOMReport",
+                ActionId = "OpenBOMReport",
                 SortOrder = 2,
-                IsEnabled = false  // 尚未實作
+                IsEnabled = true
             },
             new ReportDefinition
             {

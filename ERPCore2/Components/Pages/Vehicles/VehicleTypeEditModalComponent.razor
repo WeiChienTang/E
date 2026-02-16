@@ -129,8 +129,8 @@
                 FieldType = FormFieldType.TextArea,
                 Placeholder = "請輸入車型描述",
                 IsRequired = false,
-                MaxLength = 200,
-                HelpText = "車型的詳細說明，最多200個字元"
+                MaxLength = 100,
+                HelpText = "車型的詳細說明，最多100個字元"
             },
 
             FormFieldConfigurationHelper.CreateRemarksField<VehicleType>()
@@ -139,9 +139,9 @@
         formSections = FormSectionHelper<VehicleType>.Create()
             .AddToSection(FormSectionNames.BasicInfo,
                 vt => vt.Code,
-                vt => vt.Name,
-                vt => vt.Description)
+                vt => vt.Name)
             .AddToSection(FormSectionNames.AdditionalInfo,
+                vt => vt.Description,
                 vt => vt.Remarks)
             .Build();
     }

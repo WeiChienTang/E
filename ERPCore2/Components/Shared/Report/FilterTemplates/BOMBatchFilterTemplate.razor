@@ -1,0 +1,96 @@
+@*
+    物料清單報表篩選模板
+    實作 IFilterTemplateComponent 介面，提供物料清單報表的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject ICompositionCategoryService CompositionCategoryService
+@inject INotificationService NotificationService
+
+<div>
+    @* 第一行: 物料清單類型選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <MultiSelectFilterComponent TItem="CompositionCategory"
+                                       Items="@compositionCategories"
+                                       @bind-SelectedItems="@selectedCategories"
+                                       DisplayProperty="Name"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋清單類型..."
+                                       EmptyMessage="未選擇清單類型（查詢全部）"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
+    </div>
+
+    @* 第二行: 關鍵字搜尋 + 僅啟用 *@
+    <div class="row g-2 align-items-end">
+        <div class="col-8">
+            <TextSearchFilterComponent @bind-Value="keyword"
+                                       Label="關鍵字"
+                                       Placeholder="搜尋配方編號、成品品號、成品品名..." />
+        </div>
+        <div class="col-4 d-flex align-items-end">
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
+                <label class="form-check-label small" for="activeOnly">
+                    僅啟用
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 內部狀態 =====
+
+    private List<CompositionCategory> compositionCategories = new();
+    private List<CompositionCategory> selectedCategories = new();
+    private string? keyword = null;
+    private bool activeOnly = true;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            compositionCategories = await CompositionCategoryService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入物料清單類型資料失敗");
+            compositionCategories = new List<CompositionCategory>();
+        }
+    }
+
+    // ===== IFilterTemplateComponent 實作 =====
+
+    public IReportFilterCriteria GetCriteria()
+    {
+        return new BOMReportCriteria
+        {
+            CompositionCategoryIds = selectedCategories.Select(c => c.Id).ToList(),
+            Keyword = keyword,
+            ActiveOnly = activeOnly
+        };
+    }
+
+    public void Reset()
+    {
+        selectedCategories = new();
+        keyword = null;
+        activeOnly = true;
+        StateHasChanged();
+    }
+}

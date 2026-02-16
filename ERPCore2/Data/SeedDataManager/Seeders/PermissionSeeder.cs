@@ -83,6 +83,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 車輛管理權限
                 new Permission { Code = "Vehicle.Read", Name = "檢視車輛", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視車輛基本資料與相關資訊" },
                 new Permission { Code = "VehicleType.Read", Name = "檢視車輛類型", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視車輛類型基本資料與相關資訊" },
+                new Permission { Code = "VehicleMaintenance.Read", Name = "檢視保養紀錄", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視車輛保養紀錄與維修歷史" },
                 
                 // 倉庫管理權限
                 new Permission { Code = "Warehouse.Read", Name = "檢視倉庫", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視倉庫基本資料與儲位設定" },
