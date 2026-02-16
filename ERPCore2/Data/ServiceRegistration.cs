@@ -219,6 +219,12 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerSalesAnalysisReportService, CustomerSalesAnalysisReportService>();
             // 客戶交易明細報表服務（AR004）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerTransactionReportService, CustomerTransactionReportService>();
+            // 客戶對帳單報表服務（AR002）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerStatementReportService, CustomerStatementReportService>();
+            // 廠商對帳單報表服務（AP002）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierStatementReportService, SupplierStatementReportService>();
+            // 生產排程表報表服務（PD004）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductionScheduleReportService, ProductionScheduleReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
         }

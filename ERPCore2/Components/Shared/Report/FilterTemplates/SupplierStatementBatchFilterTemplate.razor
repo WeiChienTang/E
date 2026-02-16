@@ -1,0 +1,137 @@
+@*
+    廠商對帳單篩選模板
+    實作 IFilterTemplateComponent 介面，提供廠商對帳單的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Enums
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject ISupplierService SupplierService
+@inject INotificationService NotificationService
+
+<div>
+    @* 第一行: 廠商選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <MultiSelectFilterComponent TItem="Supplier"
+                                       Items="@suppliers"
+                                       @bind-SelectedItems="@selectedSuppliers"
+                                       DisplayProperty="CompanyName"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋廠商..."
+                                       EmptyMessage="未選擇廠商（查詢全部廠商）"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
+    </div>
+
+    @* 第二行: 日期範圍 + 快速選擇 *@
+    <div class="mb-2">
+        <DateRangeFilterComponent @bind-StartDate="startDate"
+                                  @bind-EndDate="endDate"
+                                  ShowQuickSelectors="true"
+                                  AutoValidate="true"
+                                  ShowValidationMessage="true" />
+    </div>
+
+    @* 第三行: 交易類型 + 排除已取消 *@
+    <div class="row g-2 align-items-end">
+        <div class="col-2 d-flex align-items-end">
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" id="includeReceivings" @bind="includeReceivings">
+                <label class="form-check-label small" for="includeReceivings">
+                    進貨單
+                </label>
+            </div>
+        </div>
+        <div class="col-2 d-flex align-items-end">
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" id="includeReturns" @bind="includeReturns">
+                <label class="form-check-label small" for="includeReturns">
+                    退貨單
+                </label>
+            </div>
+        </div>
+        <div class="col-2 d-flex align-items-end">
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" id="includePayments" @bind="includePayments">
+                <label class="form-check-label small" for="includePayments">
+                    付款
+                </label>
+            </div>
+        </div>
+        <div class="col-4 d-flex align-items-end">
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" id="excludeCancelled" @bind="excludeCancelled">
+                <label class="form-check-label small" for="excludeCancelled">
+                    排除已取消
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 內部狀態 =====
+
+    private List<Supplier> suppliers = new();
+    private List<Supplier> selectedSuppliers = new();
+    private DateTime? startDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateTime? endDate = DateTime.Today;
+    private bool includeReceivings = true;
+    private bool includeReturns = true;
+    private bool includePayments = true;
+    private bool excludeCancelled = true;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            suppliers = await SupplierService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入廠商資料失敗");
+            suppliers = new List<Supplier>();
+        }
+    }
+
+    // ===== IFilterTemplateComponent 實作 =====
+
+    public IReportFilterCriteria GetCriteria()
+    {
+        return new SupplierStatementCriteria
+        {
+            SupplierIds = selectedSuppliers.Select(s => s.Id).ToList(),
+            StartDate = startDate,
+            EndDate = endDate,
+            IncludeReceivings = includeReceivings,
+            IncludeReturns = includeReturns,
+            IncludePayments = includePayments,
+            ExcludeCancelled = excludeCancelled
+        };
+    }
+
+    public void Reset()
+    {
+        selectedSuppliers = new();
+        startDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        endDate = DateTime.Today;
+        includeReceivings = true;
+        includeReturns = true;
+        includePayments = true;
+        excludeCancelled = true;
+        StateHasChanged();
+    }
+}

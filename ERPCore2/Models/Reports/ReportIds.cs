@@ -69,7 +69,10 @@ public static class ReportIds
 
     /// <summary>商品條碼標籤</summary>
     public const string ProductBarcode = "PD003";
-    
+
+    /// <summary>生產排程表</summary>
+    public const string ProductionSchedule = "PD004";
+
     // ==================== 庫存報表 (IV) ====================
     
     /// <summary>庫存異動明細</summary>

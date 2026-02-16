@@ -20,13 +20,13 @@ public static class ReportRegistry
             {
                 Id = ReportIds.CustomerStatement,
                 Name = "客戶對帳單",
-                Description = "產生指定期間的客戶對帳單",
+                Description = "產生指定期間客戶對帳單，含出貨、退貨、收款明細及期初期末餘額",
                 IconClass = "bi bi-file-earmark-ruled",
                 Category = ReportCategory.Customer,
                 RequiredPermission = "Customer.Read",
                 ActionId = "OpenCustomerStatementReport",
                 SortOrder = 2,
-                IsEnabled = false  // 尚未實作
+                IsEnabled = true
             },
             new ReportDefinition
             {
@@ -58,13 +58,13 @@ public static class ReportRegistry
             {
                 Id = ReportIds.SupplierStatement,
                 Name = "廠商對帳單",
-                Description = "產生指定期間的廠商對帳單",
+                Description = "產生指定期間廠商對帳單，含進貨、退貨、付款明細及期初期末餘額",
                 IconClass = "bi bi-file-earmark-ruled",
                 Category = ReportCategory.Supplier,
                 RequiredPermission = "Supplier.Read",
                 ActionId = "OpenSupplierStatementReport",
                 SortOrder = 2,
-                IsEnabled = false  // 尚未實作
+                IsEnabled = true
             },
             new ReportDefinition
             {
@@ -204,7 +204,19 @@ public static class ReportRegistry
                 SortOrder = 3,
                 IsEnabled = true
             },
-            
+            new ReportDefinition
+            {
+                Id = ReportIds.ProductionSchedule,
+                Name = "生產排程表",
+                Description = "查詢生產排程，含排程項目、數量、狀態、預計日期等明細",
+                IconClass = "bi bi-calendar-check",
+                Category = ReportCategory.Product,
+                RequiredPermission = "ProductionSchedule.Read",
+                ActionId = "OpenProductionScheduleReport",
+                SortOrder = 4,
+                IsEnabled = true
+            },
+
             // ==================== 財務報表 ====================
             new ReportDefinition
             {

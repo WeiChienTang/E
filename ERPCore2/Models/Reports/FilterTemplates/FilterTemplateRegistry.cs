@@ -25,7 +25,27 @@ public static class FilterTemplateRegistry
             if (_isInitialized) return;
         
         // ==================== 客戶報表 ====================
-        
+
+        // 客戶對帳單（含期初餘額、出貨/退貨/收款明細、期末餘額）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.CustomerStatement,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerStatementBatchFilterTemplate",
+            CriteriaType = typeof(CustomerStatementCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerStatementReportService),
+            PreviewTitle = "客戶對帳單預覽",
+            FilterTitle = "客戶對帳單篩選條件",
+            IconClass = "bi-file-earmark-ruled",
+            GetDocumentName = criteria =>
+            {
+                var c = (CustomerStatementCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"客戶對帳單-{dateRange}";
+            }
+        });
+
         // 應收帳款報表
         RegisterConfig(new ReportFilterConfig
         {
@@ -83,6 +103,28 @@ public static class FilterTemplateRegistry
                     ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"客戶交易明細-{dateRange}";
+            }
+        });
+
+        // ==================== 廠商報表 ====================
+
+        // 廠商對帳單（含期初餘額、進貨/退貨/付款明細、期末餘額）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.SupplierStatement,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SupplierStatementBatchFilterTemplate",
+            CriteriaType = typeof(SupplierStatementCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISupplierStatementReportService),
+            PreviewTitle = "廠商對帳單預覽",
+            FilterTitle = "廠商對帳單篩選條件",
+            IconClass = "bi-file-earmark-ruled",
+            GetDocumentName = criteria =>
+            {
+                var c = (SupplierStatementCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"廠商對帳單-{dateRange}";
             }
         });
 
@@ -266,6 +308,26 @@ public static class FilterTemplateRegistry
             GetDocumentName = criteria =>
             {
                 return $"商品資料表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
+        // 生產排程表（依排程單分組顯示排程項目明細）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.ProductionSchedule,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ProductionScheduleBatchFilterTemplate",
+            CriteriaType = typeof(ProductionScheduleCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductionScheduleReportService),
+            PreviewTitle = "生產排程表預覽",
+            FilterTitle = "生產排程表篩選條件",
+            IconClass = "bi-calendar-check",
+            GetDocumentName = criteria =>
+            {
+                var c = (ProductionScheduleCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"生產排程表-{dateRange}";
             }
         });
 

@@ -1,0 +1,106 @@
+using ERPCore2.Data.Entities;
+using ERPCore2.Models.Enums;
+using ERPCore2.Models.Reports.FilterCriteria;
+
+namespace ERPCore2.Models.Reports.FilterCriteria;
+
+/// <summary>
+/// 生產排程表篩選條件
+/// </summary>
+public class ProductionScheduleCriteria : IReportFilterCriteria
+{
+    /// <summary>
+    /// 排程日期起始
+    /// </summary>
+    public DateTime? StartDate { get; set; }
+
+    /// <summary>
+    /// 排程日期結束
+    /// </summary>
+    public DateTime? EndDate { get; set; }
+
+    /// <summary>
+    /// 指定客戶 ID 清單（空表示所有客戶）
+    /// </summary>
+    public List<int> CustomerIds { get; set; } = new();
+
+    /// <summary>
+    /// 生產狀態篩選（空表示所有狀態）
+    /// </summary>
+    public List<ProductionItemStatus> StatusFilters { get; set; } = new();
+
+    /// <summary>
+    /// 是否包含已結案項目
+    /// </summary>
+    public bool IncludeClosed { get; set; } = false;
+
+    /// <summary>
+    /// 紙張設定
+    /// </summary>
+    public PaperSetting? PaperSetting { get; set; }
+
+    public bool Validate(out string? errorMessage)
+    {
+        if (StartDate.HasValue && EndDate.HasValue && StartDate > EndDate)
+        {
+            errorMessage = "起始日期不可大於結束日期";
+            return false;
+        }
+
+        if (!StartDate.HasValue && !EndDate.HasValue)
+        {
+            errorMessage = "請指定查詢日期範圍";
+            return false;
+        }
+
+        errorMessage = null;
+        return true;
+    }
+
+    public Dictionary<string, object?> ToQueryParameters()
+    {
+        return new Dictionary<string, object?>
+        {
+            ["startDate"] = StartDate,
+            ["endDate"] = EndDate,
+            ["customerIds"] = CustomerIds.Any() ? CustomerIds : null,
+            ["statusFilters"] = StatusFilters.Any() ? StatusFilters : null,
+            ["includeClosed"] = IncludeClosed
+        };
+    }
+
+    /// <summary>
+    /// 取得篩選條件摘要
+    /// </summary>
+    public string GetSummary()
+    {
+        var summary = new List<string>();
+
+        if (StartDate.HasValue)
+            summary.Add($"起始：{StartDate:yyyy/MM/dd}");
+
+        if (EndDate.HasValue)
+            summary.Add($"結束：{EndDate:yyyy/MM/dd}");
+
+        if (CustomerIds.Any())
+            summary.Add($"客戶：{CustomerIds.Count} 個");
+
+        if (StatusFilters.Any())
+        {
+            var statusNames = StatusFilters.Select(s => s switch
+            {
+                ProductionItemStatus.Pending => "待生產",
+                ProductionItemStatus.InProgress => "生產中",
+                ProductionItemStatus.Completed => "已完成",
+                ProductionItemStatus.Discontinued => "已停產",
+                _ => s.ToString()
+            });
+            summary.Add($"狀態：{string.Join("、", statusNames)}");
+        }
+
+        if (IncludeClosed)
+            summary.Add("含已結案");
+
+        return summary.Any() ? string.Join(" | ", summary) : "全部";
+    }
+}
