@@ -161,6 +161,7 @@
         actionRegistry.Register("OpenFinancialReportIndex", OpenFinancialReportIndex);
         actionRegistry.Register("OpenInventoryReportIndex", OpenInventoryReportIndex);
         actionRegistry.Register("OpenHRReportIndex", OpenHRReportIndex);
+        actionRegistry.Register("OpenVehicleReportIndex", OpenVehicleReportIndex);
         // actionRegistry.Register("OpenAnotherModal", OpenAnotherModal);
     }
 
@@ -421,6 +422,12 @@
     /// </summary>
     [JSInvokable]
     public void OpenHRReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.HR);
+
+    /// <summary>
+    /// 開啟車輛報表中心 Modal（保留供 JSInvokable 使用）
+    /// </summary>
+    [JSInvokable]
+    public void OpenVehicleReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Vehicle);
 
     /// <summary>
     /// 處理報表中心選擇的報表

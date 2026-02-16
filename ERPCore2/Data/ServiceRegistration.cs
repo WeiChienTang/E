@@ -132,6 +132,11 @@ namespace ERPCore2.Data
             services.AddScoped<IProductionScheduleCompletionService, ProductionScheduleCompletionService>();
             services.AddScoped<IProductionScheduleAllocationService, ProductionScheduleAllocationService>();
 
+            // 車輛管理服務
+            services.AddScoped<IVehicleTypeService, VehicleTypeService>();
+            services.AddScoped<IVehicleService, VehicleService>();
+            services.AddScoped<IVehicleMaintenanceService, VehicleMaintenanceService>();
+
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IEmployeePositionService, EmployeePositionService>();
@@ -229,8 +234,16 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IInventoryStatusReportService, InventoryStatusReportService>();
             // 庫存盤點差異表報表服務（IV002）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IStockTakingDifferenceReportService, StockTakingDifferenceReportService>();
+            // 車輛管理表報表服務（VH001）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IVehicleListReportService, VehicleListReportService>();
+            // 車輛保養表報表服務（VH002）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IVehicleMaintenanceReportService, VehicleMaintenanceReportService>();
             // 員工名冊表報表服務（HR001）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IEmployeeRosterReportService, EmployeeRosterReportService>();
+            // 客戶名冊表報表服務（AR005）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerRosterReportService, CustomerRosterReportService>();
+            // 廠商名冊表報表服務（AP004）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierRosterReportService, SupplierRosterReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
         }

@@ -1,6 +1,8 @@
 @* 可重用的商品編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Helpers
 @using ERPCore2.Models
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
 @inject IProductService ProductService
 @inject ISizeService SizeService
 @inject IProductCategoryService ProductCategoryService
@@ -10,6 +12,7 @@
 @inject ISystemParameterService SystemParameterService
 @inject IProductCompositionService ProductCompositionService
 @inject INotificationService NotificationService
+@inject IProductListReportService ProductListReportService
 @inject ActionButtonHelper ActionButtonHelper
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
 
@@ -41,6 +44,12 @@
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@ProductListReportService"
+                          ReportId="@ReportIds.ProductList"
+                          ReportPreviewTitle="商品資料預覽"
+                          GetReportDocumentName="@(e => $"商品-{e.Code}")"
                           CustomActionButtons="@CustomActionButtons" />
 
 @* 商品分類編輯 Modal *@

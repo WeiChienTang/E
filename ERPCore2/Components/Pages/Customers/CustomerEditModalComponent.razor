@@ -1,8 +1,11 @@
 @* 可重用的客戶編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
 @inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
+@inject ICustomerRosterReportService CustomerRosterReportService
 @inject ActionButtonHelper ActionButtonHelper
 
 <GenericEditModalComponent TEntity="Customer" 
@@ -32,7 +35,13 @@
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@CustomerRosterReportService"
+                          ReportId="@ReportIds.CustomerRoster"
+                          ReportPreviewTitle="客戶資料預覽"
+                          GetReportDocumentName="@(e => $"客戶-{e.Code}")" />
 
 @* 員工編輯 Modal *@
 <EmployeeEditModalComponent @ref="employeeEditModal"

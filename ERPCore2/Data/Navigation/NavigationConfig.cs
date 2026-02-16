@@ -597,6 +597,74 @@ public static class NavigationConfig
                 }
             },
 
+            // ==================== 車輛管理 ====================
+            new NavigationItem
+            {
+                Name = "車輛管理",
+                Description = "車輛相關功能管理",
+                Route = "#",
+                IconClass = "bi bi-truck-front-fill",
+                Category = "車輛管理",
+                IsParent = true,
+                MenuKey = "vehicle_management",
+                SearchKeywords = new List<string> { "車輛", "車輛管理", "vehicle", "fleet", "車隊" },
+                Children = new List<NavigationItem>
+                {
+                    new NavigationItem
+                    {
+                        Name = "車輛管理",
+                        Description = "管理車輛基本資料",
+                        Route = "/vehicles",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "車輛管理",
+                        RequiredPermission = "Vehicle.Read",
+                        SearchKeywords = new List<string> { "車輛管理", "車輛資料", "vehicle management" },
+                        QuickActionId = "NewVehicle",
+                        QuickActionName = "新增車輛"
+                    },
+                    new NavigationItem
+                    {
+                        Name = "車型",
+                        Description = "管理車輛類型設定",
+                        Route = "/vehicle-types",
+                        IconClass = "",
+                        Category = "車輛管理",
+                        RequiredPermission = "VehicleType.Read",
+                        SearchKeywords = new List<string> { "車型", "車輛類型", "vehicle type" },
+                        QuickActionId = "NewVehicleType",
+                        QuickActionName = "新增車型"
+                    },
+                    new NavigationItem
+                    {
+                        Name = "保養紀錄",
+                        Description = "管理車輛保養與維修紀錄",
+                        Route = "/vehicle-maintenances",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "車輛管理",
+                        RequiredPermission = "VehicleMaintenance.Read",
+                        SearchKeywords = new List<string> { "保養紀錄", "維修紀錄", "vehicle maintenance" },
+                        QuickActionId = "NewVehicleMaintenance",
+                        QuickActionName = "新增保養紀錄"
+                    },
+
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
+                    NavigationActionHelper.CreateActionItem(
+                        name: "車輛報表集",
+                        description: "查看和列印所有車輛相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenVehicleReportIndex",
+                        category: "車輛管理",
+                        requiredPermission: "Vehicle.Read",
+                        searchKeywords: new List<string> { "車輛報表", "車輛報表集", "vehicle report", "保養報表" }
+                    ),
+                }
+            },
+
             // ==================== 財務管理 ====================
             new NavigationItem
             {
@@ -912,6 +980,7 @@ public static class NavigationConfig
             "採購管理" => "bi bi-truck",
             "銷售管理" => "bi bi-cart-fill",
             "財務管理" => "bi bi-journal-text",
+            "車輛管理" => "bi bi-truck-front-fill",
             "系統管理" => "bi bi-gear-fill",
             "基礎功能" => "bi bi-house-door-fill",
             _ => "bi bi-link-45deg" // 預設圖示

@@ -53,6 +53,19 @@ public static class ReportRegistry
                 IsEnabled = true
             },
             
+            new ReportDefinition
+            {
+                Id = ReportIds.CustomerRoster,
+                Name = "客戶名冊表",
+                Description = "列印客戶基本資料清單，含客戶編號、公司名稱、聯絡人、統編、聯絡電話、地址等",
+                IconClass = "bi bi-person-vcard",
+                Category = ReportCategory.Customer,
+                RequiredPermission = "Customer.Read",
+                ActionId = "OpenCustomerRosterReport",
+                SortOrder = 5,
+                IsEnabled = true
+            },
+
             // ==================== 廠商報表 ====================
             new ReportDefinition
             {
@@ -78,7 +91,19 @@ public static class ReportRegistry
                 SortOrder = 3,
                 IsEnabled = false  // 尚未實作
             },
-            
+            new ReportDefinition
+            {
+                Id = ReportIds.SupplierRoster,
+                Name = "廠商名冊表",
+                Description = "列印廠商基本資料清單，含廠商編號、廠商名稱、聯絡人、統編、聯絡電話、地址等",
+                IconClass = "bi bi-building",
+                Category = ReportCategory.Supplier,
+                RequiredPermission = "Supplier.Read",
+                ActionId = "OpenSupplierRosterReport",
+                SortOrder = 4,
+                IsEnabled = true
+            },
+
             // ==================== 採購報表 ====================
             new ReportDefinition
             {
@@ -255,6 +280,32 @@ public static class ReportRegistry
                 IsEnabled = true
             },
 
+            // ==================== 車輛報表 ====================
+            new ReportDefinition
+            {
+                Id = ReportIds.VehicleList,
+                Name = "車輛管理表",
+                Description = "列印車輛基本資料清單，含車牌號碼、車輛名稱、車型、廠牌、負責人、保險到期日等",
+                IconClass = "bi bi-truck-front-fill",
+                Category = ReportCategory.Vehicle,
+                RequiredPermission = "Vehicle.Read",
+                ActionId = "OpenVehicleListReport",
+                SortOrder = 1,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.VehicleMaintenance,
+                Name = "車輛保養表",
+                Description = "列印車輛保養紀錄，含保養類型、保養日期、里程數、費用、維修廠等明細",
+                IconClass = "bi bi-wrench-adjustable",
+                Category = ReportCategory.Vehicle,
+                RequiredPermission = "VehicleMaintenance.Read",
+                ActionId = "OpenVehicleMaintenanceReport",
+                SortOrder = 2,
+                IsEnabled = true
+            },
+
             // ==================== 人力報表 ====================
             new ReportDefinition
             {
@@ -370,6 +421,14 @@ public static class ReportRegistry
     public static List<ReportDefinition> GetHRReports()
     {
         return GetReportsByCategory(ReportCategory.HR);
+    }
+
+    /// <summary>
+    /// 取得車輛相關報表
+    /// </summary>
+    public static List<ReportDefinition> GetVehicleReports()
+    {
+        return GetReportsByCategory(ReportCategory.Vehicle);
     }
 
     /// <summary>

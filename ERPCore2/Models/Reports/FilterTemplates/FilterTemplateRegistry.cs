@@ -106,6 +106,22 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // AR005 - 客戶名冊表（依業務負責人篩選，顯示客戶基本資料清單）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.CustomerRoster,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerRosterBatchFilterTemplate",
+            CriteriaType = typeof(CustomerRosterCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerRosterReportService),
+            PreviewTitle = "客戶名冊表預覽",
+            FilterTitle = "客戶名冊表篩選條件",
+            IconClass = "bi-person-vcard",
+            GetDocumentName = criteria =>
+            {
+                return $"客戶名冊表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
         // ==================== 廠商報表 ====================
 
         // 廠商對帳單（含期初餘額、進貨/退貨/付款明細、期末餘額）
@@ -125,6 +141,22 @@ public static class FilterTemplateRegistry
                     ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"廠商對帳單-{dateRange}";
+            }
+        });
+
+        // AP004 - 廠商名冊表（顯示廠商基本資料清單）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.SupplierRoster,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SupplierRosterBatchFilterTemplate",
+            CriteriaType = typeof(SupplierRosterCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISupplierRosterReportService),
+            PreviewTitle = "廠商名冊表預覽",
+            FilterTitle = "廠商名冊表篩選條件",
+            IconClass = "bi-building",
+            GetDocumentName = criteria =>
+            {
+                return $"廠商名冊表-{DateTime.Now:yyyyMMddHHmm}";
             }
         });
 
@@ -366,6 +398,44 @@ public static class FilterTemplateRegistry
                     ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"庫存盤點差異表-{dateRange}";
+            }
+        });
+
+        // ==================== 車輛報表 ====================
+
+        // 車輛管理表（依車型分組顯示車輛基本資料）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.VehicleList,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.VehicleListBatchFilterTemplate",
+            CriteriaType = typeof(VehicleListCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IVehicleListReportService),
+            PreviewTitle = "車輛管理表預覽",
+            FilterTitle = "車輛管理表篩選條件",
+            IconClass = "bi-truck-front-fill",
+            GetDocumentName = criteria =>
+            {
+                return $"車輛管理表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
+        // 車輛保養表（依車輛分組顯示保養紀錄明細）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.VehicleMaintenance,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.VehicleMaintenanceBatchFilterTemplate",
+            CriteriaType = typeof(VehicleMaintenanceCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IVehicleMaintenanceReportService),
+            PreviewTitle = "車輛保養表預覽",
+            FilterTitle = "車輛保養表篩選條件",
+            IconClass = "bi-wrench-adjustable",
+            GetDocumentName = criteria =>
+            {
+                var c = (VehicleMaintenanceCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"車輛保養表-{dateRange}";
             }
         });
 

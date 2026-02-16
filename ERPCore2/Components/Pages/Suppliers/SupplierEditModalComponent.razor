@@ -1,7 +1,10 @@
 @* 可重用的廠商編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
 @inject ISupplierService SupplierService
 @inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
+@inject ISupplierRosterReportService SupplierRosterReportService
 @inject ActionButtonHelper ActionButtonHelper
 
 <GenericEditModalComponent TEntity="Supplier" 
@@ -30,6 +33,12 @@
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@SupplierRosterReportService"
+                          ReportId="@ReportIds.SupplierRoster"
+                          ReportPreviewTitle="廠商資料預覽"
+                          GetReportDocumentName="@(e => $"廠商-{e.Code}")"
                           CustomModules="@GetCustomModules()" />
 
 @* 付款方式編輯 Modal *@

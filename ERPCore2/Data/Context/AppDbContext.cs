@@ -95,6 +95,9 @@ namespace ERPCore2.Data.Context
       public DbSet<TextMessageTemplate> TextMessageTemplates { get; set; }
       public DbSet<EmployeeDashboardPanel> EmployeeDashboardPanels { get; set; }
       public DbSet<EmployeeDashboardConfig> EmployeeDashboardConfigs { get; set; }
+      public DbSet<VehicleType> VehicleTypes { get; set; }
+      public DbSet<Vehicle> Vehicles { get; set; }
+      public DbSet<VehicleMaintenance> VehicleMaintenances { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {

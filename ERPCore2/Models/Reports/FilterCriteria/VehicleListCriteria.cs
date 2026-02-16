@@ -1,0 +1,73 @@
+using ERPCore2.Data.Entities;
+
+namespace ERPCore2.Models.Reports.FilterCriteria;
+
+/// <summary>
+/// 車輛管理表篩選條件
+/// </summary>
+public class VehicleListCriteria : IReportFilterCriteria
+{
+    /// <summary>
+    /// 指定車型 ID 清單（空表示所有車型）
+    /// </summary>
+    public List<int> VehicleTypeIds { get; set; } = new();
+
+    /// <summary>
+    /// 歸屬類型篩選（null 表示全部）
+    /// </summary>
+    public VehicleOwnershipType? OwnershipType { get; set; }
+
+    /// <summary>
+    /// 關鍵字搜尋（車牌號碼、車輛名稱、廠牌）
+    /// </summary>
+    public string? Keyword { get; set; }
+
+    /// <summary>
+    /// 是否僅顯示啟用車輛（預設 true）
+    /// </summary>
+    public bool ActiveOnly { get; set; } = true;
+
+    /// <summary>
+    /// 紙張設定
+    /// </summary>
+    public PaperSetting? PaperSetting { get; set; }
+
+    public bool Validate(out string? errorMessage)
+    {
+        errorMessage = null;
+        return true;
+    }
+
+    public Dictionary<string, object?> ToQueryParameters()
+    {
+        return new Dictionary<string, object?>
+        {
+            ["vehicleTypeIds"] = VehicleTypeIds.Any() ? VehicleTypeIds : null,
+            ["ownershipType"] = OwnershipType,
+            ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword,
+            ["activeOnly"] = ActiveOnly
+        };
+    }
+
+    /// <summary>
+    /// 取得篩選條件摘要
+    /// </summary>
+    public string GetSummary()
+    {
+        var summary = new List<string>();
+
+        if (VehicleTypeIds.Any())
+            summary.Add($"車型：{VehicleTypeIds.Count} 個");
+
+        if (OwnershipType.HasValue)
+            summary.Add($"歸屬：{(OwnershipType == VehicleOwnershipType.Company ? "公司" : "客戶")}");
+
+        if (!string.IsNullOrEmpty(Keyword))
+            summary.Add($"關鍵字：{Keyword}");
+
+        if (ActiveOnly)
+            summary.Add("僅啟用");
+
+        return summary.Any() ? string.Join(" | ", summary) : "全部";
+    }
+}

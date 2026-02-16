@@ -1,0 +1,77 @@
+@page "/vehicle-maintenances"
+@inject IVehicleMaintenanceService VehicleMaintenanceService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="VehicleMaintenance" 
+                          TService="IVehicleMaintenanceService"
+                          Service="@VehicleMaintenanceService"
+                          EntityBasePath="/vehicle-maintenances"
+                          PageTitle="保養紀錄維護"
+                          PageSubtitle="管理車輛保養與維修紀錄"
+                          EntityName="保養紀錄"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadMaintenancesAsync"
+                          FilterApplier="@ApplyMaintenanceFilters"
+                          GetEntityDisplayName="@(vm => $"{vm.Vehicle?.LicensePlate} - {vm.MaintenanceDate:yyyy/MM/dd}")"
+                          RequiredPermission="VehicleMaintenance.Read"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+<VehicleMaintenanceEditModalComponent IsVisible="@showEditModal"
+                                      IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                      VehicleMaintenanceId="@editingMaintenanceId"
+                                      OnVehicleMaintenanceSaved="@modalHandler.OnEntitySavedAsync"
+                                      OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<VehicleMaintenance, IVehicleMaintenanceService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingMaintenanceId = null;
+
+    private ModalHandler<VehicleMaintenance, GenericIndexPageComponent<VehicleMaintenance, IVehicleMaintenanceService>> modalHandler = default!;
+
+    private VehicleMaintenanceFieldConfiguration fieldConfiguration = default!;
+
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<VehicleMaintenance, GenericIndexPageComponent<VehicleMaintenance, IVehicleMaintenanceService>>(
+                id => editingMaintenanceId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new VehicleMaintenanceFieldConfiguration(NotificationService);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化保養紀錄頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化保養紀錄頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("車輛管理", "保養紀錄維護", "#", NotificationService, GetType());
+
+    private Task<List<VehicleMaintenance>> LoadMaintenancesAsync() => DataLoaderHelper.LoadAsync(() => VehicleMaintenanceService.GetAllAsync(), "保養紀錄", NotificationService, GetType());
+
+    private IQueryable<VehicleMaintenance> ApplyMaintenanceFilters(SearchFilterModel searchModel, IQueryable<VehicleMaintenance> query)
+    {
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyMaintenanceFilters), GetType());
+    }
+}

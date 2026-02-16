@@ -19,17 +19,23 @@ public static class ReportIds
     
     /// <summary>客戶交易明細</summary>
     public const string CustomerTransaction = "AR004";
-    
+
+    /// <summary>客戶名冊表</summary>
+    public const string CustomerRoster = "AR005";
+
     // ==================== 廠商報表 (AP) ====================
-    
+
     /// <summary>應付帳款報表</summary>
     public const string AccountsPayable = "AP001";
-    
+
     /// <summary>廠商對帳單</summary>
     public const string SupplierStatement = "AP002";
-    
+
     /// <summary>廠商進貨分析</summary>
     public const string SupplierPurchaseAnalysis = "AP003";
+
+    /// <summary>廠商名冊表</summary>
+    public const string SupplierRoster = "AP004";
     
     // ==================== 採購報表 (PO) ====================
     
@@ -84,6 +90,14 @@ public static class ReportIds
     /// <summary>庫存現況表</summary>
     public const string InventoryStatus = "IV003";
     
+    // ==================== 車輛報表 (VH) ====================
+
+    /// <summary>車輛管理表</summary>
+    public const string VehicleList = "VH001";
+
+    /// <summary>車輛保養表</summary>
+    public const string VehicleMaintenance = "VH002";
+
     // ==================== 人力報表 (HR) ====================
 
     /// <summary>員工名冊表</summary>

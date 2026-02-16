@@ -37,7 +37,7 @@ namespace ERPCore2.Services.Reports
         #region 報表生成
 
         /// <summary>
-        /// 生成單一商品資料報表
+        /// 生成單一商品資料報表（與批次列印使用相同格式）
         /// </summary>
         public async Task<FormattedDocument> GenerateReportAsync(int productId)
         {
@@ -49,7 +49,7 @@ namespace ERPCore2.Services.Reports
 
             var company = await _companyService.GetPrimaryCompanyAsync();
 
-            return BuildSingleProductDocument(product, company);
+            return BuildProductListDocument(new List<Product> { product }, company, null);
         }
 
         /// <summary>
@@ -377,97 +377,6 @@ namespace ERPCore2.Services.Reports
             return doc;
         }
 
-        /// <summary>
-        /// 建構單一商品資料報表
-        /// </summary>
-        private FormattedDocument BuildSingleProductDocument(Product product, Company? company)
-        {
-            var doc = new FormattedDocument()
-                .SetDocumentName($"商品資料-{product.Code}")
-                .SetMargins(0.8f, 0.3f, 0.8f, 0.3f);
-
-            // === 頁首區 ===
-            doc.BeginHeader(header =>
-            {
-                header.AddReportHeaderBlock(
-                    centerLines: new List<(string, float, bool)>
-                    {
-                        (company?.CompanyName ?? "公司名稱", 14f, true),
-                        ("商 品 資 料", 16f, true)
-                    },
-                    rightLines: new List<string>
-                    {
-                        $"列印日期：{DateTime.Now:yyyy/MM/dd}",
-                        $"頁次：{{PAGE}}/{{PAGES}}"
-                    },
-                    rightFontSize: 10f);
-
-                header.AddSpacing(5);
-
-                // 商品基本資訊
-                header.AddKeyValueRow(
-                    ("品號", product.Code ?? ""),
-                    ("品名", product.Name ?? ""));
-
-                header.AddKeyValueRow(
-                    ("條碼", product.Barcode ?? ""),
-                    ("規格", product.Specification ?? ""));
-
-                header.AddKeyValueRow(
-                    ("分類", product.ProductCategory?.Name ?? ""),
-                    ("單位", product.Unit?.Name ?? ""));
-
-                var procurementTypeText = product.ProcurementType switch
-                {
-                    ProcurementType.Purchased => "外購",
-                    ProcurementType.Manufactured => "自製",
-                    ProcurementType.Outsourced => "委外",
-                    _ => ""
-                };
-
-                header.AddKeyValueRow(
-                    ("採購類型", procurementTypeText),
-                    ("稅率", product.TaxRate.HasValue ? $"{product.TaxRate.Value}%" : ""));
-
-                if (product.PurchaseUnit != null)
-                {
-                    header.AddKeyValueRow(
-                        ("採購單位", product.PurchaseUnit.Name ?? ""),
-                        ("採購換算率", product.PurchaseUnitConversionRate?.ToString("N6") ?? ""));
-                }
-
-                if (product.ProductionUnit != null)
-                {
-                    header.AddKeyValueRow(
-                        ("製程單位", product.ProductionUnit.Name ?? ""),
-                        ("製程換算率", product.ProductionUnitConversionRate?.ToString("N6") ?? ""));
-                }
-
-                if (product.Size != null)
-                {
-                    header.AddKeyValueRow(
-                        ("尺寸", product.Size.Name ?? ""));
-                }
-
-                if (!string.IsNullOrWhiteSpace(product.Remarks))
-                {
-                    header.AddSpacing(5);
-                    header.AddKeyValueRow(
-                        ("備註", product.Remarks));
-                }
-
-                header.AddSpacing(5);
-            });
-
-            // === 頁尾區 ===
-            doc.BeginFooter(footer =>
-            {
-                footer.AddSpacing(20)
-                      .AddSignatureSection(new[] { "製表人員", "主管" });
-            });
-
-            return doc;
-        }
 
         #endregion
     }

@@ -70,5 +70,6 @@ namespace ERPCore2.Models.Reports
         public const string Sales = "Sales";
         public const string Purchase = "Purchase";
         public const string HR = "HR";
+        public const string Vehicle = "Vehicle";
     }
 }

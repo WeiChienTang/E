@@ -1,0 +1,97 @@
+@*
+    客戶名冊表篩選模板
+    實作 IFilterTemplateComponent 介面，提供客戶名冊表的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+
+<div>
+    @* 第一行: 業務負責人選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <MultiSelectFilterComponent TItem="Employee"
+                                       Items="@employees"
+                                       @bind-SelectedItems="@selectedEmployees"
+                                       DisplayProperty="Name"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋業務負責人..."
+                                       EmptyMessage="未選擇業務負責人（查詢全部）"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
+    </div>
+
+    @* 第二行: 關鍵字搜尋 + 僅啟用 *@
+    <div class="row g-2 align-items-end">
+        <div class="col-8">
+            <TextSearchFilterComponent @bind-Value="keyword"
+                                       Label="關鍵字"
+                                       Placeholder="搜尋客戶編號、公司名稱、聯絡人、統編..." />
+        </div>
+        <div class="col-4 d-flex align-items-end">
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
+                <label class="form-check-label small" for="activeOnly">
+                    僅啟用
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 內部狀態 =====
+
+    private List<Employee> employees = new();
+    private List<Employee> selectedEmployees = new();
+    private string? keyword = null;
+    private bool activeOnly = true;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            var allEmployees = await EmployeeService.GetAllAsync();
+            employees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入業務負責人資料失敗");
+            employees = new List<Employee>();
+        }
+    }
+
+    // ===== IFilterTemplateComponent 實作 =====
+
+    public IReportFilterCriteria GetCriteria()
+    {
+        return new CustomerRosterCriteria
+        {
+            EmployeeIds = selectedEmployees.Select(e => e.Id).ToList(),
+            Keyword = keyword,
+            ActiveOnly = activeOnly
+        };
+    }
+
+    public void Reset()
+    {
+        selectedEmployees = new();
+        keyword = null;
+        activeOnly = true;
+        StateHasChanged();
+    }
+}

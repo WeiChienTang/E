@@ -74,6 +74,12 @@ public class ReportCategoryConfig
                 Category = ReportCategory.HR,
                 Title = "人力報表集",
                 Icon = "bi-person-badge"
+            },
+            [ReportCategory.Vehicle] = new ReportCategoryConfig
+            {
+                Category = ReportCategory.Vehicle,
+                Title = "車輛報表集",
+                Icon = "bi-truck-front-fill"
             }
         };
     }

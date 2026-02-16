@@ -1,0 +1,199 @@
+@* 可重用的車型編輯組件 - 可在任何頁面中嵌入 *@
+@inject IVehicleTypeService VehicleTypeService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="VehicleType" 
+                          TService="IVehicleTypeService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@VehicleTypeId"
+                          Service="@VehicleTypeService"
+                          EntityName="車型"
+                          EntityNamePlural="車型"
+                          ModalTitle="@(VehicleTypeId.HasValue ? "編輯車型" : "新增車型")"
+                          Size="GenericEditModalComponent<VehicleType, IVehicleTypeService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadVehicleTypeData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(VehicleTypeId.HasValue ? "車型更新成功" : "車型新增成功")"
+                          SaveFailureMessage="車型儲存失敗"
+                          RequiredPermission="VehicleType.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnEntityLoaded="@HandleEntityLoaded" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? VehicleTypeId { get; set; }
+    [Parameter] public EventCallback<VehicleType> OnVehicleTypeSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<VehicleType, IVehicleTypeService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            StateHasChanged();
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task<VehicleType?> LoadVehicleTypeData()
+    {
+        try
+        {
+            if (!VehicleTypeId.HasValue)
+            {
+                var newVehicleType = new VehicleType
+                {
+                    Name = string.Empty,
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<VehicleType, IVehicleTypeService>(VehicleTypeService, "VT"),
+                    Status = EntityStatus.Active
+                };
+
+                PrefilledValueHelper.ApplyPrefilledValues(newVehicleType, PrefilledValues);
+
+                return newVehicleType;
+            }
+
+            return await VehicleTypeService.GetByIdAsync(VehicleTypeId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入車型資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(VehicleType.Code),
+                Label = "車型編號",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入車型編號",
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "唯一識別此車型的編號，最多50個字元"
+            },
+            new()
+            {
+                PropertyName = nameof(VehicleType.Name),
+                Label = "車型名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入車型名稱",
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "顯示用的車型名稱，最多50個字元"
+            },
+            new()
+            {
+                PropertyName = nameof(VehicleType.Description),
+                Label = "車型描述",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入車型描述",
+                IsRequired = false,
+                MaxLength = 200,
+                HelpText = "車型的詳細說明，最多200個字元"
+            },
+
+            FormFieldConfigurationHelper.CreateRemarksField<VehicleType>()
+        };
+
+        formSections = FormSectionHelper<VehicleType>.Create()
+            .AddToSection(FormSectionNames.BasicInfo,
+                vt => vt.Code,
+                vt => vt.Name,
+                vt => vt.Description)
+            .AddToSection(FormSectionNames.AdditionalInfo,
+                vt => vt.Remarks)
+            .Build();
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnVehicleTypeSaved.HasDelegate)
+            {
+                await OnVehicleTypeSaved.InvokeAsync(editModalComponent?.Entity ?? new VehicleType());
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        try
+        {
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"關閉對話框時發生錯誤：{ex.Message}");
+        }
+    }
+}

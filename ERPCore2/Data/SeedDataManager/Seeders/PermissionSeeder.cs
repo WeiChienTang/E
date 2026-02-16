@@ -80,6 +80,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { Code = "Unit.Read", Name = "檢視單位", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視度量衡單位與換算設定" },
                 new Permission { Code = "CustomerType.Read", Name = "檢視客戶類型", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視客戶分類與類型設定" },
                 
+                // 車輛管理權限
+                new Permission { Code = "Vehicle.Read", Name = "檢視車輛", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視車輛基本資料與相關資訊" },
+                new Permission { Code = "VehicleType.Read", Name = "檢視車輛類型", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視車輛類型基本資料與相關資訊" },
+                
                 // 倉庫管理權限
                 new Permission { Code = "Warehouse.Read", Name = "檢視倉庫", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視倉庫基本資料與儲位設定" },
                 new Permission { Code = "Inventory.Read", Name = "檢視庫存", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存數量與庫存狀況" },

@@ -1,0 +1,417 @@
+@* 可重用的車輛保養紀錄編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
+@inject IVehicleMaintenanceService VehicleMaintenanceService
+@inject IVehicleService VehicleService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IVehicleMaintenanceReportService VehicleMaintenanceReportService
+@inject ActionButtonHelper ActionButtonHelper
+
+<GenericEditModalComponent TEntity="VehicleMaintenance" 
+                          TService="IVehicleMaintenanceService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@VehicleMaintenanceId"
+                          Service="@VehicleMaintenanceService"
+                          EntityName="保養紀錄"
+                          EntityNamePlural="保養紀錄"
+                          ModalTitle="@(VehicleMaintenanceId.HasValue ? "編輯保養紀錄" : "新增保養紀錄")"
+                          Size="GenericEditModalComponent<VehicleMaintenance, IVehicleMaintenanceService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          ModalManagers="@GetModalManagers()"
+                          DataLoader="@LoadMaintenanceData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(VehicleMaintenanceId.HasValue ? "保養紀錄更新成功" : "保養紀錄新增成功")"
+                          SaveFailureMessage="保養紀錄儲存失敗"
+                          RequiredPermission="VehicleMaintenance.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@VehicleMaintenanceReportService"
+                          ReportId="@ReportIds.VehicleMaintenance"
+                          ReportPreviewTitle="保養紀錄預覽"
+                          GetReportDocumentName="@(e => $"保養紀錄-{e.Code}")" />
+
+@* 車輛編輯 Modal *@
+<VehicleEditModalComponent @ref="vehicleEditModal"
+                           IsVisible="@vehicleModalManager.IsModalVisible"
+                           IsVisibleChanged="@vehicleModalManager.HandleModalVisibilityChangedAsync"
+                           VehicleId="@vehicleModalManager.SelectedEntityId"
+                           OnVehicleSaved="@OnVehicleSavedWrapper"
+                           OnCancel="@vehicleModalManager.HandleModalCancelAsync" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? VehicleMaintenanceId { get; set; }
+    [Parameter] public EventCallback<VehicleMaintenance> OnVehicleMaintenanceSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<VehicleMaintenance, IVehicleMaintenanceService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    // 選項資料
+    private List<Vehicle> availableVehicles = new();
+    private List<Employee> availableEmployees = new();
+
+    // Modal Manager 集合
+    private ModalManagerCollection? modalManagers;
+
+    // 車輛編輯 Modal
+    private VehicleEditModalComponent? vehicleEditModal;
+    private RelatedEntityModalManager<Vehicle> vehicleModalManager = default!;
+
+    // 員工編輯 Modal
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            StateHasChanged();
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalManagers = ModalManagerInitHelper.CreateBuilder<VehicleMaintenance, IVehicleMaintenanceService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Vehicle>(nameof(VehicleMaintenance.VehicleId), "車輛")
+                .AddManager<Employee>(nameof(VehicleMaintenance.EmployeeId), "員工")
+                .Build();
+
+            vehicleModalManager = modalManagers.Get<Vehicle>(nameof(VehicleMaintenance.VehicleId));
+            employeeModalManager = modalManagers.Get<Employee>(nameof(VehicleMaintenance.EmployeeId));
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化保養紀錄編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<VehicleMaintenance>()
+                .AddField(nameof(VehicleMaintenance.VehicleId), "LicensePlate", availableVehicles)
+                .AddField(nameof(VehicleMaintenance.EmployeeId), "Name", availableEmployees)
+                .Build();
+
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        if (editModalComponent?.Entity != null)
+        {
+            await OnVehicleMaintenanceSaved.InvokeAsync(editModalComponent.Entity);
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+        await CloseModal();
+    }
+
+    private async Task CloseModal()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task<VehicleMaintenance?> LoadMaintenanceData()
+    {
+        try
+        {
+            if (!VehicleMaintenanceId.HasValue)
+            {
+                var newMaintenance = new VehicleMaintenance
+                {
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<VehicleMaintenance, IVehicleMaintenanceService>(VehicleMaintenanceService, "VM"),
+                    MaintenanceDate = DateTime.Today,
+                    MaintenanceType = MaintenanceType.RegularService,
+                    Status = EntityStatus.Active
+                };
+
+                return newMaintenance;
+            }
+
+            return await VehicleMaintenanceService.GetByIdAsync(VehicleMaintenanceId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入保養紀錄資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(VehicleMaintenance.Code),
+                    Label = "保養編號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入保養編號",
+                    IsRequired = true,
+                    MaxLength = 50,
+                    HelpText = "保養紀錄的唯一識別編號"
+                },
+                new()
+                {
+                    PropertyName = nameof(VehicleMaintenance.VehicleId),
+                    Label = "所屬車輛",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇車輛",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "選擇需要保養的車輛",
+                    ActionButtons = await GetVehicleActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(VehicleMaintenance.MaintenanceType),
+                    Label = "保養類型",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "保養的類型（定期保養、維修、換機油等）",
+                    Options = Enum.GetValues(typeof(MaintenanceType))
+                        .Cast<MaintenanceType>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = EnumHelper.GetDisplayName(e),
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(VehicleMaintenance.MaintenanceDate),
+                    Label = "保養日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "進行保養的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(VehicleMaintenance.MileageAtMaintenance),
+                    Label = "保養時里程(公里)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入保養時的里程數",
+                    IsRequired = false,
+                    HelpText = "進行保養時車輛的里程數"
+                },
+                new()
+                {
+                    PropertyName = nameof(VehicleMaintenance.Description),
+                    Label = "保養描述",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入保養描述",
+                    IsRequired = false,
+                    MaxLength = 500,
+                    HelpText = "詳細記錄此次保養做了哪些項目"
+                },
+                new()
+                {
+                    PropertyName = nameof(VehicleMaintenance.Cost),
+                    Label = "費用",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入費用",
+                    IsRequired = false,
+                    HelpText = "此次保養的費用金額"
+                },
+                new()
+                {
+                    PropertyName = nameof(VehicleMaintenance.ServiceProvider),
+                    Label = "維修廠",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入維修廠名稱",
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "進行保養的維修廠或服務商"
+                },
+                new()
+                {
+                    PropertyName = nameof(VehicleMaintenance.NextMaintenanceDate),
+                    Label = "下次保養",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "預計下次保養的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(VehicleMaintenance.EmployeeId),
+                    Label = "經手人",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇經手人",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "負責此次保養的經手人",
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<VehicleMaintenance>()
+            };
+
+            formSections = FormSectionHelper<VehicleMaintenance>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    vm => vm.Code,
+                    vm => vm.VehicleId,
+                    vm => vm.MaintenanceType,
+                    vm => vm.MaintenanceDate,
+                    vm => vm.MileageAtMaintenance)
+                .AddToSection("詳細資訊",
+                    vm => vm.Description,
+                    vm => vm.Cost,
+                    vm => vm.ServiceProvider)
+                .AddToSection("排程資訊",
+                    vm => vm.NextMaintenanceDate,
+                    vm => vm.EmployeeId)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    vm => vm.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化保養紀錄表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            availableVehicles = await VehicleService.GetAllAsync();
+
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<VehicleMaintenance>()
+                .AddField(nameof(VehicleMaintenance.VehicleId), "LicensePlate", availableVehicles)
+                .AddField(nameof(VehicleMaintenance.EmployeeId), "Name", availableEmployees)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入保養紀錄編輯相關資料時發生錯誤");
+            availableVehicles = new List<Vehicle>();
+            availableEmployees = new List<Employee>();
+        }
+    }
+
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(VehicleMaintenance.VehicleId), vehicleModalManager },
+            { nameof(VehicleMaintenance.EmployeeId), employeeModalManager }
+        };
+    }
+
+    private async Task<List<FieldActionButton>> GetVehicleActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            vehicleModalManager,
+            nameof(VehicleMaintenance.VehicleId)
+        );
+    }
+
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            employeeModalManager,
+            nameof(VehicleMaintenance.EmployeeId)
+        );
+    }
+
+    private async Task OnVehicleSavedWrapper(Vehicle savedVehicle)
+    {
+        await vehicleModalManager.HandleEntitySavedAsync(savedVehicle, shouldAutoSelect: true);
+    }
+
+    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
+    {
+        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
+    }
+
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            if (fieldChange.PropertyName == nameof(VehicleMaintenance.VehicleId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    vehicleModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+            else if (fieldChange.PropertyName == nameof(VehicleMaintenance.EmployeeId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
+        }
+    }
+}

@@ -1,0 +1,650 @@
+@* 可重用的車輛編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
+@inject IVehicleService VehicleService
+@inject IVehicleTypeService VehicleTypeService
+@inject IEmployeeService EmployeeService
+@inject ICustomerService CustomerService
+@inject ICompanyService CompanyService
+@inject INotificationService NotificationService
+@inject IVehicleListReportService VehicleListReportService
+@inject ActionButtonHelper ActionButtonHelper
+
+<GenericEditModalComponent TEntity="Vehicle" 
+                          TService="IVehicleService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@VehicleId"
+                          Service="@VehicleService"
+                          EntityName="車輛"
+                          EntityNamePlural="車輛"
+                          ModalTitle="@(VehicleId.HasValue ? "編輯車輛" : "新增車輛")"
+                          Size="GenericEditModalComponent<Vehicle, IVehicleService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          ModalManagers="@GetModalManagers()"
+                          DataLoader="@LoadVehicleData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(VehicleId.HasValue ? "車輛更新成功" : "車輛新增成功")"
+                          SaveFailureMessage="車輛儲存失敗"
+                          RequiredPermission="Vehicle.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@VehicleListReportService"
+                          ReportId="@ReportIds.VehicleList"
+                          ReportPreviewTitle="車輛資料預覽"
+                          GetReportDocumentName="@(e => $"車輛-{e.LicensePlate}")" />
+
+@* 車型編輯 Modal *@
+<VehicleTypeEditModalComponent @ref="vehicleTypeEditModal"
+                               IsVisible="@vehicleTypeModalManager.IsModalVisible"
+                               IsVisibleChanged="@vehicleTypeModalManager.HandleModalVisibilityChangedAsync"
+                               VehicleTypeId="@vehicleTypeModalManager.SelectedEntityId"
+                               OnVehicleTypeSaved="@OnVehicleTypeSavedWrapper"
+                               OnCancel="@vehicleTypeModalManager.HandleModalCancelAsync" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@* 客戶編輯 Modal *@
+<CustomerEditModalComponent @ref="customerEditModal"
+                           IsVisible="@customerModalManager.IsModalVisible"
+                           IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
+                           CustomerId="@customerModalManager.SelectedEntityId"
+                           OnCustomerSaved="@OnCustomerSavedWrapper"
+                           OnCancel="@customerModalManager.HandleModalCancelAsync" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? VehicleId { get; set; }
+    [Parameter] public EventCallback<Vehicle> OnVehicleSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<Vehicle, IVehicleService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    // 選項資料
+    private List<VehicleType> availableVehicleTypes = new();
+    private List<Employee> availableEmployees = new();
+    private List<Customer> availableCustomers = new();
+    private List<Company> availableCompanies = new();
+
+    // Modal Manager 集合
+    private ModalManagerCollection? modalManagers;
+
+    // 車型編輯 Modal
+    private VehicleTypeEditModalComponent? vehicleTypeEditModal;
+    private RelatedEntityModalManager<VehicleType> vehicleTypeModalManager = default!;
+
+    // 員工編輯 Modal
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+
+    // 客戶編輯 Modal
+    private CustomerEditModalComponent? customerEditModal;
+    private RelatedEntityModalManager<Customer> customerModalManager = default!;
+
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            StateHasChanged();
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 使用 ModalManagerInitHelper 初始化所有 Manager
+            modalManagers = ModalManagerInitHelper.CreateBuilder<Vehicle, IVehicleService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<VehicleType>(nameof(Vehicle.VehicleTypeId), "車型")
+                .AddManager<Employee>(nameof(Vehicle.EmployeeId), "員工")
+                .AddManager<Customer>(nameof(Vehicle.CustomerId), "客戶")
+                .Build();
+
+            // 取得個別 Manager 供組件使用
+            vehicleTypeModalManager = modalManagers.Get<VehicleType>(nameof(Vehicle.VehicleTypeId));
+            employeeModalManager = modalManagers.Get<Employee>(nameof(Vehicle.EmployeeId));
+            customerModalManager = modalManagers.Get<Customer>(nameof(Vehicle.CustomerId));
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化車輛編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+
+            // 使用 AutoCompleteConfigHelper 建立配置
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Vehicle>()
+                .AddField(nameof(Vehicle.VehicleTypeId), "Name", availableVehicleTypes)
+                .AddField(nameof(Vehicle.EmployeeId), "Name", availableEmployees)
+                .AddField(nameof(Vehicle.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(Vehicle.CompanyId), "CompanyName", availableCompanies)
+                .Build();
+
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        if (editModalComponent?.Entity != null)
+        {
+            await OnVehicleSaved.InvokeAsync(editModalComponent.Entity);
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+        await CloseModal();
+    }
+
+    private async Task CloseModal()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task<Vehicle?> LoadVehicleData()
+    {
+        try
+        {
+            if (!VehicleId.HasValue)
+            {
+                // 新增模式
+                var newVehicle = new Vehicle
+                {
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Vehicle, IVehicleService>(VehicleService, "VH"),
+                    LicensePlate = string.Empty,
+                    VehicleName = string.Empty,
+                    OwnershipType = VehicleOwnershipType.Company,
+                    Status = EntityStatus.Active
+                };
+
+                return newVehicle;
+            }
+
+            // 編輯模式
+            return await VehicleService.GetByIdAsync(VehicleId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入車輛資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Vehicle.Code),
+                    Label = "車輛編號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入車輛編號",
+                    IsRequired = true,
+                    MaxLength = 50,
+                    HelpText = "車輛的唯一識別編號，新增時系統會自動產生"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.LicensePlate),
+                    Label = "車牌號碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入車牌號碼",
+                    IsRequired = true,
+                    MaxLength = 20,
+                    HelpText = "車輛的法定車牌號碼"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.VehicleName),
+                    Label = "車輛名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入車輛名稱（如：3.5噸冷藏車）",
+                    IsRequired = true,
+                    MaxLength = 100,
+                    HelpText = "方便辨識用途的車輛描述名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.OwnershipType),
+                    Label = "歸屬類型",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "車輛歸屬於公司或客戶",
+                    Options = Enum.GetValues(typeof(VehicleOwnershipType))
+                        .Cast<VehicleOwnershipType>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = EnumHelper.GetDisplayName(e),
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.VehicleTypeId),
+                    Label = "車型",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇車型",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "車輛的類型分類",
+                    ActionButtons = await GetVehicleTypeActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.Brand),
+                    Label = "廠牌",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入廠牌（如：Toyota）",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "車輛的製造廠牌"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.Model),
+                    Label = "車款型號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入車款型號",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "車輛的具體型號"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.ManufactureYear),
+                    Label = "出廠年份",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入出廠年份",
+                    IsRequired = false,
+                    HelpText = "車輛的出廠年份"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.Color),
+                    Label = "車身顏色",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入車身顏色",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "車輛的外觀顏色"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.FuelType),
+                    Label = "燃料類型",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    HelpText = "車輛使用的燃料類型",
+                    Options = Enum.GetValues(typeof(FuelType))
+                        .Cast<FuelType>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = EnumHelper.GetDisplayName(e),
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.LoadCapacity),
+                    Label = "乘載量(公噸)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入乘載量",
+                    IsRequired = false,
+                    HelpText = "車輛最大載重能力（單位：公噸）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.Mileage),
+                    Label = "里程數",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入里程數",
+                    IsRequired = false,
+                    HelpText = "車輛目前的累計里程數"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.EngineNumber),
+                    Label = "引擎號碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入引擎號碼",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "引擎的序號"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.ChassisNumber),
+                    Label = "車身號碼(VIN)",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入車身號碼",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "車輛識別號碼（Vehicle Identification Number）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.PurchaseDate),
+                    Label = "購入日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "車輛的購買日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.PurchasePrice),
+                    Label = "購入金額",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入購入金額",
+                    IsRequired = false,
+                    HelpText = "車輛的購入價格"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.InsuranceCompany),
+                    Label = "保險公司",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入保險公司名稱",
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "車輛投保的保險公司"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.InsurancePolicyNumber),
+                    Label = "保險單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入保險單號",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "保險單的單號"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.InsuranceExpiryDate),
+                    Label = "保險到期日",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "保險的到期日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.InspectionExpiryDate),
+                    Label = "驗車到期日",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "下次驗車的到期日"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.LastMaintenanceDate),
+                    Label = "最近保養日",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "最近一次保養的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.NextMaintenanceMileage),
+                    Label = "下次保養里程",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入下次保養里程",
+                    IsRequired = false,
+                    HelpText = "下次需要保養時的里程數"
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.EmployeeId),
+                    Label = "司機",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇負責人",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "負責此車輛的員工或主要駕駛人",
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.CustomerId),
+                    Label = "所屬客戶",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇所屬客戶",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "車輛所屬的客戶（歸屬類型為「客戶」時填寫）",
+                    ActionButtons = await GetCustomerActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(Vehicle.CompanyId),
+                    Label = "所屬公司",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇所屬公司",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "車輛所屬的公司"
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<Vehicle>()
+            };
+
+            formSections = FormSectionHelper<Vehicle>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    v => v.Code,
+                    v => v.LicensePlate,
+                    v => v.VehicleName,
+                    v => v.OwnershipType,
+                    v => v.VehicleTypeId,
+                    v => v.Brand,
+                    v => v.Model,
+                    v => v.ManufactureYear,
+                    v => v.Color,
+                    v => v.FuelType,
+                    v => v.LoadCapacity,
+                    v => v.Mileage)
+                .AddToSection("詳細資訊",
+                    v => v.EngineNumber,
+                    v => v.ChassisNumber,
+                    v => v.PurchaseDate,
+                    v => v.PurchasePrice,
+                    v => v.InsuranceCompany,
+                    v => v.InsurancePolicyNumber,
+                    v => v.InsuranceExpiryDate,
+                    v => v.InspectionExpiryDate,
+                    v => v.LastMaintenanceDate,
+                    v => v.NextMaintenanceMileage)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    v => v.EmployeeId,
+                    v => v.CustomerId,
+                    v => v.CompanyId,
+                    v => v.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化車輛表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            availableVehicleTypes = await VehicleTypeService.GetAllAsync();
+
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+
+            availableCustomers = await CustomerService.GetAllAsync();
+            availableCompanies = await CompanyService.GetAllAsync();
+
+            // 重新建立 AutoComplete 配置
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Vehicle>()
+                .AddField(nameof(Vehicle.VehicleTypeId), "Name", availableVehicleTypes)
+                .AddField(nameof(Vehicle.EmployeeId), "Name", availableEmployees)
+                .AddField(nameof(Vehicle.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(Vehicle.CompanyId), "CompanyName", availableCompanies)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入車輛編輯相關資料時發生錯誤");
+            availableVehicleTypes = new List<VehicleType>();
+            availableEmployees = new List<Employee>();
+            availableCustomers = new List<Customer>();
+            availableCompanies = new List<Company>();
+        }
+    }
+
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(Vehicle.VehicleTypeId), vehicleTypeModalManager },
+            { nameof(Vehicle.EmployeeId), employeeModalManager },
+            { nameof(Vehicle.CustomerId), customerModalManager }
+        };
+    }
+
+    private async Task<List<FieldActionButton>> GetVehicleTypeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            vehicleTypeModalManager,
+            nameof(Vehicle.VehicleTypeId)
+        );
+    }
+
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            employeeModalManager,
+            nameof(Vehicle.EmployeeId)
+        );
+    }
+
+    private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            customerModalManager,
+            nameof(Vehicle.CustomerId)
+        );
+    }
+
+    /// <summary>
+    /// 包裝車型儲存事件
+    /// </summary>
+    private async Task OnVehicleTypeSavedWrapper(VehicleType savedVehicleType)
+    {
+        await vehicleTypeModalManager.HandleEntitySavedAsync(savedVehicleType, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 包裝員工儲存事件
+    /// </summary>
+    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
+    {
+        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 包裝客戶儲存事件
+    /// </summary>
+    private async Task OnCustomerSavedWrapper(Customer savedCustomer)
+    {
+        await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 處理欄位值變更事件
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            if (fieldChange.PropertyName == nameof(Vehicle.VehicleTypeId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    vehicleTypeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+            else if (fieldChange.PropertyName == nameof(Vehicle.EmployeeId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+            else if (fieldChange.PropertyName == nameof(Vehicle.CustomerId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
+        }
+    }
+}

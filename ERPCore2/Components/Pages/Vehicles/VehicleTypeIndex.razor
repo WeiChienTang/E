@@ -1,0 +1,77 @@
+@page "/vehicle-types"
+@inject IVehicleTypeService VehicleTypeService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="VehicleType" 
+                          TService="IVehicleTypeService"
+                          Service="@VehicleTypeService"
+                          EntityBasePath="/vehicle-types"
+                          PageTitle="車型維護"
+                          PageSubtitle="管理車輛類型分類資料"
+                          EntityName="車型"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadVehicleTypesAsync"
+                          FilterApplier="@ApplyVehicleTypeFilters"
+                          GetEntityDisplayName="@(vt => vt.Name)"
+                          RequiredPermission="VehicleType.Read"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+<VehicleTypeEditModalComponent IsVisible="@showEditModal"
+                               IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                               VehicleTypeId="@editingVehicleTypeId"
+                               OnVehicleTypeSaved="@modalHandler.OnEntitySavedAsync"
+                               OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<VehicleType, IVehicleTypeService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingVehicleTypeId = null;
+
+    private ModalHandler<VehicleType, GenericIndexPageComponent<VehicleType, IVehicleTypeService>> modalHandler = default!;
+
+    private VehicleTypeFieldConfiguration fieldConfiguration = default!;
+
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<VehicleType, GenericIndexPageComponent<VehicleType, IVehicleTypeService>>(
+                id => editingVehicleTypeId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new VehicleTypeFieldConfiguration(NotificationService);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化車型頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化車型頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("車輛管理", "車型維護", "#", NotificationService, GetType());
+
+    private Task<List<VehicleType>> LoadVehicleTypesAsync() => DataLoaderHelper.LoadAsync(() => VehicleTypeService.GetAllAsync(), "車型", NotificationService, GetType());
+
+    private IQueryable<VehicleType> ApplyVehicleTypeFilters(SearchFilterModel searchModel, IQueryable<VehicleType> query)
+    {
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyVehicleTypeFilters), GetType());
+    }
+}
