@@ -20,6 +20,11 @@ public class ProductionScheduleCriteria : IReportFilterCriteria
     public DateTime? EndDate { get; set; }
 
     /// <summary>
+    /// 指定排程單 ID 清單（空表示不限定，用於從編輯畫面列印單一排程）
+    /// </summary>
+    public List<int> ScheduleIds { get; set; } = new();
+
+    /// <summary>
     /// 指定客戶 ID 清單（空表示所有客戶）
     /// </summary>
     public List<int> CustomerIds { get; set; } = new();
@@ -47,7 +52,8 @@ public class ProductionScheduleCriteria : IReportFilterCriteria
             return false;
         }
 
-        if (!StartDate.HasValue && !EndDate.HasValue)
+        // 有指定排程單 ID 時不需要日期範圍
+        if (!ScheduleIds.Any() && !StartDate.HasValue && !EndDate.HasValue)
         {
             errorMessage = "請指定查詢日期範圍";
             return false;

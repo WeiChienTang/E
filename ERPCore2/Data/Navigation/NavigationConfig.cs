@@ -399,7 +399,23 @@ public static class NavigationConfig
                         SearchKeywords = new List<string> { "領料", "物料領用", "material issue" },
                         QuickActionId = "NewMaterialIssue",
                         QuickActionName = "新增領料"
-                    }
+                    },
+
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
+                    NavigationActionHelper.CreateActionItem(
+                        name: "倉庫報表集",
+                        description: "查看和列印所有倉庫庫存相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenInventoryReportIndex",
+                        category: "庫存管理",
+                        requiredPermission: "InventoryStock.Read",
+                        searchKeywords: new List<string> { "倉庫報表", "庫存報表", "倉庫報表集", "inventory report", "庫存現況" }
+                    ),
                 }
             },
 

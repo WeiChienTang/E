@@ -1,0 +1,111 @@
+@*
+    庫存盤點差異表篩選模板
+    實作 IFilterTemplateComponent 介面，提供庫存盤點差異表的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject IWarehouseService WarehouseService
+@inject INotificationService NotificationService
+
+<div>
+    @* 第一行: 倉庫選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <MultiSelectFilterComponent TItem="Warehouse"
+                                       Items="@warehouses"
+                                       @bind-SelectedItems="@selectedWarehouses"
+                                       DisplayProperty="Name"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋倉庫..."
+                                       EmptyMessage="未選擇倉庫（查詢全部倉庫）"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
+    </div>
+
+    @* 第二行: 日期範圍 + 快速選擇 *@
+    <div class="mb-2">
+        <DateRangeFilterComponent @bind-StartDate="startDate"
+                                  @bind-EndDate="endDate"
+                                  ShowQuickSelectors="true"
+                                  AutoValidate="true"
+                                  ShowValidationMessage="true" />
+    </div>
+
+    @* 第三行: 關鍵字搜尋 + 僅差異項目 *@
+    <div class="row g-2 align-items-end">
+        <div class="col-8">
+            <TextSearchFilterComponent @bind-Value="keyword"
+                                       Label="關鍵字"
+                                       Placeholder="搜尋盤點單號、品號、品名..." />
+        </div>
+        <div class="col-4 d-flex align-items-end">
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" id="onlyDifferenceItems" @bind="onlyDifferenceItems">
+                <label class="form-check-label small" for="onlyDifferenceItems">
+                    僅差異項目
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 內部狀態 =====
+
+    private List<Warehouse> warehouses = new();
+    private List<Warehouse> selectedWarehouses = new();
+    private DateTime? startDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateTime? endDate = DateTime.Today;
+    private string? keyword = null;
+    private bool onlyDifferenceItems = false;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入篩選資料失敗");
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    // ===== IFilterTemplateComponent 實作 =====
+
+    public IReportFilterCriteria GetCriteria()
+    {
+        return new StockTakingDifferenceCriteria
+        {
+            WarehouseIds = selectedWarehouses.Select(w => w.Id).ToList(),
+            StartDate = startDate,
+            EndDate = endDate,
+            Keyword = keyword,
+            OnlyDifferenceItems = onlyDifferenceItems
+        };
+    }
+
+    public void Reset()
+    {
+        selectedWarehouses = new();
+        startDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        endDate = DateTime.Today;
+        keyword = null;
+        onlyDifferenceItems = false;
+        StateHasChanged();
+    }
+}

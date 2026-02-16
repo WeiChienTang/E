@@ -68,6 +68,128 @@ namespace ERPCore2.Services.Reports
             }
         }
 
+        #region IEntityReportService<ProductionSchedule> 實作
+
+        /// <summary>
+        /// 生成單一排程的格式化報表文件
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<FormattedDocument> GenerateReportAsync(int entityId)
+        {
+            var criteria = new ProductionScheduleCriteria
+            {
+                ScheduleIds = new List<int> { entityId },
+                IncludeClosed = true
+            };
+
+            var scheduleGroups = await GetScheduleDataAsync(criteria);
+            var company = await _companyService.GetPrimaryCompanyAsync();
+            return BuildScheduleDocument(scheduleGroups, company, criteria);
+        }
+
+        /// <summary>
+        /// 將報表渲染為圖片（預設紙張）
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<List<byte[]>> RenderToImagesAsync(int entityId)
+        {
+            var document = await GenerateReportAsync(entityId);
+            return _formattedPrintService.RenderToImages(document);
+        }
+
+        /// <summary>
+        /// 將報表渲染為圖片（指定紙張設定）
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<List<byte[]>> RenderToImagesAsync(int entityId, PaperSetting paperSetting)
+        {
+            var document = await GenerateReportAsync(entityId);
+            return _formattedPrintService.RenderToImages(document, paperSetting);
+        }
+
+        /// <summary>
+        /// 直接列印
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<ServiceResult> DirectPrintAsync(int entityId, string reportId, int copies = 1)
+        {
+            try
+            {
+                var document = await GenerateReportAsync(entityId);
+                return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "直接列印生產排程表時發生錯誤，排程ID: {ScheduleId}", entityId);
+                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 批次直接列印（BatchPrintCriteria）
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<ServiceResult> DirectPrintBatchAsync(BatchPrintCriteria criteria, string reportId)
+        {
+            try
+            {
+                var productionCriteria = new ProductionScheduleCriteria
+                {
+                    StartDate = criteria.StartDate,
+                    EndDate = criteria.EndDate
+                };
+
+                var scheduleGroups = await GetScheduleDataAsync(productionCriteria);
+
+                if (!scheduleGroups.Any())
+                {
+                    return ServiceResult.Failure($"無符合條件的生產排程資料\n篩選條件：{criteria.GetSummary()}");
+                }
+
+                foreach (var group in scheduleGroups)
+                {
+                    var result = await DirectPrintAsync(group.ScheduleId, reportId, 1);
+                    if (!result.IsSuccess)
+                    {
+                        _logger?.LogWarning("批次列印中生產排程 {ScheduleId} 失敗：{ErrorMessage}", group.ScheduleId, result.ErrorMessage);
+                    }
+                }
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "批次列印生產排程表時發生錯誤");
+                return ServiceResult.Failure($"批次列印時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 批次渲染報表為圖片（BatchPrintCriteria）
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<BatchPreviewResult> RenderBatchToImagesAsync(BatchPrintCriteria criteria)
+        {
+            try
+            {
+                var productionCriteria = new ProductionScheduleCriteria
+                {
+                    StartDate = criteria.StartDate,
+                    EndDate = criteria.EndDate,
+                    PaperSetting = criteria.PaperSetting
+                };
+
+                return await RenderBatchToImagesAsync(productionCriteria);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "批次渲染生產排程表時發生錯誤");
+                return BatchPreviewResult.Failure($"產生預覽時發生錯誤: {ex.Message}");
+            }
+        }
+
+        #endregion
+
         #region 私有方法 - 資料查詢
 
         /// <summary>
@@ -75,11 +197,23 @@ namespace ERPCore2.Services.Reports
         /// </summary>
         private async Task<List<ScheduleGroup>> GetScheduleDataAsync(ProductionScheduleCriteria criteria)
         {
-            var startDate = criteria.StartDate ?? DateTime.Today.AddMonths(-1);
-            var endDate = criteria.EndDate ?? DateTime.Today;
+            List<ProductionSchedule> schedules;
 
-            // 取得日期範圍內的排程主檔
-            var schedules = await _scheduleService.GetByDateRangeAsync(startDate.Date, endDate.Date);
+            // 優先使用指定的排程單 ID（從編輯畫面列印時使用）
+            if (criteria.ScheduleIds.Any())
+            {
+                var tasks = criteria.ScheduleIds.Select(id => _scheduleService.GetByIdAsync(id));
+                var results = await Task.WhenAll(tasks);
+                schedules = results.Where(s => s != null).Cast<ProductionSchedule>().ToList();
+            }
+            else
+            {
+                var startDate = criteria.StartDate ?? DateTime.Today.AddMonths(-1);
+                var endDate = criteria.EndDate ?? DateTime.Today;
+
+                // 取得日期範圍內的排程主檔
+                schedules = await _scheduleService.GetByDateRangeAsync(startDate.Date, endDate.Date);
+            }
 
             // 篩選客戶
             if (criteria.CustomerIds.Any())

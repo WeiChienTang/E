@@ -3,12 +3,15 @@
 @using ERPCore2.Helpers
 @using ERPCore2.Models
 @using ERPCore2.Models.Enums
+@using ERPCore2.Models.Reports
+@using ERPCore2.Services.Reports.Interfaces
 @inject IStockTakingService StockTakingService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
 @inject IEmployeeService EmployeeService
 @inject IProductService ProductService
 @inject INotificationService NotificationService
+@inject IStockTakingDifferenceReportService StockTakingDifferenceReportService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -41,7 +44,13 @@
                           CustomModules="@GetCustomModules()"
                           OnEntityLoaded="@HandleEntityLoaded"
                           FormHeaderContent="@WarningMessage"
-                          CustomActionButtons="@CustomActionButtons">
+                          CustomActionButtons="@CustomActionButtons"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@StockTakingDifferenceReportService"
+                          ReportId="@ReportIds.InventoryCount"
+                          ReportPreviewTitle="盤點差異表預覽"
+                          GetReportDocumentName="@(e => $"盤點差異表-{e.TakingNumber}")">
 </GenericEditModalComponent>
 
 <!-- 庫存調整確認 Modal -->

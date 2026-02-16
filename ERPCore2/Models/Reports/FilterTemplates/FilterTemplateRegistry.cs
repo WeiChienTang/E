@@ -331,6 +331,44 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // ==================== 庫存報表 ====================
+
+        // 庫存現況表（依倉庫分組顯示各商品庫存數量及金額）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.InventoryStatus,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.InventoryStatusBatchFilterTemplate",
+            CriteriaType = typeof(InventoryStatusCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IInventoryStatusReportService),
+            PreviewTitle = "庫存現況表預覽",
+            FilterTitle = "庫存現況表篩選條件",
+            IconClass = "bi-clipboard-data",
+            GetDocumentName = criteria =>
+            {
+                return $"庫存現況表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
+        // 庫存盤點差異表（依盤點單分組顯示系統庫存、實盤數量及差異）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.InventoryCount,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.StockTakingDifferenceBatchFilterTemplate",
+            CriteriaType = typeof(StockTakingDifferenceCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IStockTakingDifferenceReportService),
+            PreviewTitle = "庫存盤點差異表預覽",
+            FilterTitle = "庫存盤點差異表篩選條件",
+            IconClass = "bi-card-checklist",
+            GetDocumentName = criteria =>
+            {
+                var c = (StockTakingDifferenceCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"庫存盤點差異表-{dateRange}";
+            }
+        });
+
         // ==================== 財務報表 ====================
 
         // 應收沖款單（報表集進入時顯示篩選，EditModal 直接單筆列印）

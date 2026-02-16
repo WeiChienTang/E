@@ -30,43 +30,43 @@ public class ReportCategoryConfig
             [ReportCategory.Customer] = new ReportCategoryConfig
             {
                 Category = ReportCategory.Customer,
-                Title = "客戶報表中心",
+                Title = "客戶報表集",
                 Icon = "bi-people"
             },
             [ReportCategory.Supplier] = new ReportCategoryConfig
             {
                 Category = ReportCategory.Supplier,
-                Title = "廠商報表中心",
+                Title = "廠商報表集",
                 Icon = "bi-building"
             },
             [ReportCategory.Product] = new ReportCategoryConfig
             {
                 Category = ReportCategory.Product,
-                Title = "產品報表中心",
+                Title = "產品報表集",
                 Icon = "bi-box"
             },
             [ReportCategory.Inventory] = new ReportCategoryConfig
             {
                 Category = ReportCategory.Inventory,
-                Title = "庫存報表中心",
+                Title = "庫存報表集",
                 Icon = "bi-box-seam"
             },
             [ReportCategory.Sales] = new ReportCategoryConfig
             {
                 Category = ReportCategory.Sales,
-                Title = "銷售報表中心",
+                Title = "銷售報表集",
                 Icon = "bi-cart"
             },
             [ReportCategory.Purchase] = new ReportCategoryConfig
             {
                 Category = ReportCategory.Purchase,
-                Title = "採購報表中心",
+                Title = "採購報表集",
                 Icon = "bi-cart-plus"
             },
             [ReportCategory.Financial] = new ReportCategoryConfig
             {
                 Category = ReportCategory.Financial,
-                Title = "財務報表中心",
+                Title = "財務報表集",
                 Icon = "bi-currency-dollar"
             }
         };
@@ -89,7 +89,7 @@ public class ReportCategoryConfig
         return new ReportCategoryConfig
         {
             Category = category,
-            Title = "報表中心",
+            Title = "報表集",
             Icon = "bi-printer"
         };
     }

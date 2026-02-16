@@ -5,7 +5,8 @@
       "Bash(dotnet build:*)",
       "Bash(rm *)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

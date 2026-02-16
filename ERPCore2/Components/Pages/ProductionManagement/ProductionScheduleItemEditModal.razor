@@ -26,22 +26,22 @@
     // ===== 參數定義 =====
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    
+
     /// <summary>
     /// 排程項目 ID
     /// </summary>
     [Parameter] public int? ProductionScheduleItemId { get; set; }
-    
+
     /// <summary>
     /// 是否唯讀模式
     /// </summary>
     [Parameter] public bool IsReadOnly { get; set; } = false;
-    
+
     /// <summary>
     /// 儲存成功回調
     /// </summary>
     [Parameter] public EventCallback<ProductionScheduleItem> OnSaved { get; set; }
-    
+
     /// <summary>
     /// 取消回調
     /// </summary>
@@ -74,15 +74,15 @@
             // 載入參考資料
             availableProducts = await ProductService.GetAllAsync();
             availableWarehouses = await WarehouseService.GetAllAsync();
-            
+
             // 載入庫存資訊
             await LoadStockQuantitiesAsync();
-            
+
             // 載入排程項目
             if (ProductionScheduleItemId.HasValue)
             {
                 scheduleItem = await ProductionScheduleItemService.GetByIdAsync(ProductionScheduleItemId.Value);
-                
+
                 if (scheduleItem != null)
                 {
                     // 載入組件明細
@@ -106,7 +106,7 @@
         try
         {
             productStockQuantities.Clear();
-            
+
             foreach (var product in availableProducts)
             {
                 var stocks = await InventoryStockService.GetByProductIdAsync(product.Id);
@@ -132,7 +132,7 @@
     private BaseModalComponent.HeaderVariant GetHeaderColor()
     {
         if (scheduleItem == null) return BaseModalComponent.HeaderVariant.Info;
-        
+
         return scheduleItem.ProductionItemStatus switch
         {
             ProductionItemStatus.Pending => BaseModalComponent.HeaderVariant.Info,
@@ -277,7 +277,7 @@
                                         var stockQty = productStockQuantities.GetValueOrDefault(detail.ComponentProductId, 0);
                                         var issuedQty = detail.IssuedQuantity;
                                         var isEnough = stockQty >= detail.RequiredQuantity;
-                                        
+
                                         <tr>
                                             <td>
                                                 @if (product != null)
@@ -342,19 +342,19 @@
                     </div>
                     <div class="card-body">
                         @{
-                            var progressPercent = scheduleItem.ScheduledQuantity > 0 
-                                ? (scheduleItem.CompletedQuantity / scheduleItem.ScheduledQuantity) * 100 
+                            var progressPercent = scheduleItem.ScheduledQuantity > 0
+                                ? (scheduleItem.CompletedQuantity / scheduleItem.ScheduledQuantity) * 100
                                 : 0;
-                            var progressClass = progressPercent >= 100 ? "bg-success" 
-                                : progressPercent >= 50 ? "bg-warning" 
+                            var progressClass = progressPercent >= 100 ? "bg-success"
+                                : progressPercent >= 50 ? "bg-warning"
                                 : "bg-info";
                         }
                         <div class="progress" style="height: 25px;">
-                            <div class="progress-bar @progressClass" 
-                                 role="progressbar" 
-                                 style="width: @progressPercent%;" 
-                                 aria-valuenow="@progressPercent" 
-                                 aria-valuemin="0" 
+                            <div class="progress-bar @progressClass"
+                                 role="progressbar"
+                                 style="width: @progressPercent%;"
+                                 aria-valuenow="@progressPercent"
+                                 aria-valuemin="0"
                                  aria-valuemax="100">
                                 @progressPercent.ToString("N1")%
                             </div>
@@ -385,7 +385,7 @@
             ProductionItemStatus.Completed => ("bg-success", "bi-check-circle", "已完成"),
             _ => ("bg-secondary", "bi-question-circle", "未知")
         };
-        
+
         <span class="badge @badgeClass">
             <i class="@icon me-1"></i>@text
         </span>
@@ -395,15 +395,15 @@
     private async Task HandleStartProduction()
     {
         if (scheduleItem == null) return;
-        
+
         try
         {
             isLoading = true;
             StateHasChanged();
-            
+
             scheduleItem.ProductionItemStatus = ProductionItemStatus.InProgress;
             scheduleItem.ActualStartDate = DateTime.Now;
-            
+
             var result = await ProductionScheduleItemService.UpdateAsync(scheduleItem);
             if (result.IsSuccess)
             {
@@ -429,22 +429,22 @@
     private async Task HandleSave()
     {
         if (scheduleItem == null) return;
-        
+
         try
         {
             isLoading = true;
             StateHasChanged();
-            
+
             var result = await ProductionScheduleItemService.UpdateAsync(scheduleItem);
             if (result.IsSuccess)
             {
                 await NotificationService.ShowSuccessAsync("儲存成功");
-                
+
                 if (OnSaved.HasDelegate)
                 {
                     await OnSaved.InvokeAsync(scheduleItem);
                 }
-                
+
                 await CloseModal();
             }
             else
@@ -475,10 +475,10 @@
     private async Task HandleCompletionRecorded(ProductionScheduleCompletion completion)
     {
         showCompletionModal = false;
-        
+
         // 重新載入資料以更新狀態
         await LoadDataAsync();
-        
+
         await NotificationService.ShowSuccessAsync($"完工登錄成功，完成數量：{completion.CompletedQuantity:N2}");
     }
 
@@ -494,7 +494,7 @@
     private async Task HandleMaterialIssued()
     {
         showMaterialIssueModal = false;
-        
+
         // 重新載入資料以更新已領數量
         await LoadDataAsync();
     }
@@ -505,7 +505,7 @@
         {
             await OnCancel.InvokeAsync();
         }
-        
+
         await CloseModal();
     }
 

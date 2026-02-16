@@ -1,4 +1,4 @@
-# 報表中心設計說明
+# 報表集設計說明
 
 ## 更新日期
 2026-02-10
@@ -7,7 +7,7 @@
 
 ## 📋 功能概述
 
-報表中心提供統一入口，讓使用者瀏覽並選擇特定模組下的所有報表。系統支援兩種報表流程：
+報表集提供統一入口，讓使用者瀏覽並選擇特定模組下的所有報表。系統支援兩種報表流程：
 
 1. **需要篩選的報表**：經由 `GenericReportFilterModalComponent` 顯示篩選條件
 2. **不需要篩選的報表**：直接執行 ActionRegistry 中註冊的動作
@@ -40,7 +40,7 @@ Components/
 │
 └── Pages/
     └── Reports/
-        └── GenericReportIndexPage.razor     # 通用報表中心
+        └── GenericReportIndexPage.razor     # 通用報表集
 ```
 
 ### 組件關係圖
@@ -49,7 +49,7 @@ Components/
 ┌─────────────────────────────────────────────────────────────────┐
 │                         MainLayout                               │
 ├─────────────────────────────────────────────────────────────────┤
-│  入口點 A：導航選單 → 報表中心                                   │
+│  入口點 A：導航選單 → 報表集                                   │
 │  ┌─────────────────────────────────────────────────────────────┐│
 │  │      GenericReportIndexPage (Category=Purchase/Sales/...)   ││
 │  │      顯示報表清單，點擊「列印」觸發 OnReportSelected        ││
@@ -116,7 +116,7 @@ actionRegistry.Register("PrintPurchaseAnalysis", OpenPurchaseAnalysisReport);
 ## 🔄 完整流程
 
 ```
-1. 使用者從導航選單點擊「採購報表中心」或按 Alt+R 搜尋
+1. 使用者從導航選單點擊「採購報表集」或按 Alt+R 搜尋
    ↓
 2. 選擇報表，觸發 HandleReportSelected(actionId)
    ↓
@@ -150,27 +150,27 @@ public static class ReportCategory
 
 ## ✅ 目前已實作
 
-### 報表中心
+### 報表集
 
-| 報表中心 | Category 參數 | Action ID |
+| 報表集 | Category 參數 | Action ID |
 |----------|---------------|-----------|
-| 客戶報表中心 | `Customer` | `OpenCustomerReportIndex` |
-| 廠商報表中心 | `Supplier` | `OpenSupplierReportIndex` |
-| 庫存報表中心 | `Inventory` | `OpenInventoryReportIndex` |
-| 銷售報表中心 | `Sales` | `OpenSalesReportIndex` |
-| 採購報表中心 | `Purchase` | `OpenPurchaseReportIndex` |
-| 財務報表中心 | `Financial` | `OpenFinancialReportIndex` |
+| 客戶報表集 | `Customer` | `OpenCustomerReportIndex` |
+| 廠商報表集 | `Supplier` | `OpenSupplierReportIndex` |
+| 庫存報表集 | `Inventory` | `OpenInventoryReportIndex` |
+| 銷售報表集 | `Sales` | `OpenSalesReportIndex` |
+| 採購報表集 | `Purchase` | `OpenPurchaseReportIndex` |
+| 財務報表集 | `Financial` | `OpenFinancialReportIndex` |
 
 ### 已配置篩選的報表
 
 | 報表 ID | 名稱 | 篩選模板 | 說明 |
 |---------|------|----------|------|
 | AR001 | 應收帳款報表 | AccountsReceivableFilterTemplate | 客戶應收帳款 |
-| PO001 | 採購單 | PurchaseOrderBatchFilterTemplate | 報表中心進入時顯示篩選 |
+| PO001 | 採購單 | PurchaseOrderBatchFilterTemplate | 報表集進入時顯示篩選 |
 
 > **設計原則**：每個單據類型只有一個報表 ID，入口點決定行為：
 > - **EditModal 列印按鈕**：直接單筆列印（不經過篩選）
-> - **報表中心 / Alt+R 快捷搜尋**：顯示篩選 Modal，可批次列印
+> - **報表集 / Alt+R 快捷搜尋**：顯示篩選 Modal，可批次列印
 
 ---
 

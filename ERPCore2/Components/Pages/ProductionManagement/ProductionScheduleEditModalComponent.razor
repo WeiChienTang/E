@@ -3,7 +3,10 @@
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Models.Enums
 @using ERPCore2.Models
+@using ERPCore2.Models.Reports
+@using ERPCore2.Services.Reports.Interfaces
 @inject IProductionScheduleService ProductionScheduleService
+@inject IProductionScheduleReportService ProductionScheduleReportService
 @inject IProductionScheduleItemService ProductionScheduleItemService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
@@ -41,6 +44,12 @@
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@ProductionScheduleReportService"
+                          ReportId="@ReportIds.ProductionSchedule"
+                          ReportPreviewTitle="生產排程表預覽"
+                          GetReportDocumentName="@(e => $"生產排程表-{e.Code}")"
                           CustomModules="@GetCustomModules()" />
 
 @* 排程項目編輯 Modal *@

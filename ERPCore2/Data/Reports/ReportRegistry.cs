@@ -217,6 +217,44 @@ public static class ReportRegistry
                 IsEnabled = true
             },
 
+            // ==================== 庫存報表 ====================
+            new ReportDefinition
+            {
+                Id = ReportIds.InventoryStatus,
+                Name = "庫存現況表",
+                Description = "查詢各倉庫商品庫存現況，含現有庫存、預留庫存、可用庫存及庫存金額",
+                IconClass = "bi bi-clipboard-data",
+                Category = ReportCategory.Inventory,
+                RequiredPermission = "InventoryStock.Read",
+                ActionId = "OpenInventoryStatusReport",
+                SortOrder = 1,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.InventoryTransaction,
+                Name = "庫存異動明細",
+                Description = "查詢庫存進出異動記錄明細",
+                IconClass = "bi bi-arrow-left-right",
+                Category = ReportCategory.Inventory,
+                RequiredPermission = "InventoryStock.Read",
+                ActionId = "OpenInventoryTransactionReport",
+                SortOrder = 2,
+                IsEnabled = false  // 尚未實作
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.InventoryCount,
+                Name = "盤點差異表",
+                Description = "依盤點單分組顯示各商品系統庫存、實盤數量及差異金額，支援僅差異項目篩選",
+                IconClass = "bi bi-card-checklist",
+                Category = ReportCategory.Inventory,
+                RequiredPermission = "StockTaking.Read",
+                ActionId = "OpenInventoryCountReport",
+                SortOrder = 3,
+                IsEnabled = true
+            },
+
             // ==================== 財務報表 ====================
             new ReportDefinition
             {
