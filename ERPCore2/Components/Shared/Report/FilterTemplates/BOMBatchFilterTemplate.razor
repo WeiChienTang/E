@@ -5,23 +5,24 @@
 *@
 
 @using ERPCore2.Models
+@using ERPCore2.Models.Enums
 @using ERPCore2.Models.Reports.FilterCriteria
 @using ERPCore2.Models.Reports.FilterTemplates
 @implements IFilterTemplateComponent
-@inject ICompositionCategoryService CompositionCategoryService
+@inject IProductCompositionService ProductCompositionService
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 物料清單類型選擇 *@
+    @* 第一行: 成品選擇（從現有物料清單中取得成品） *@
     <div class="row g-2 mb-2">
         <div class="col-12">
-            <MultiSelectFilterComponent TItem="CompositionCategory"
-                                       Items="@compositionCategories"
-                                       @bind-SelectedItems="@selectedCategories"
-                                       DisplayProperty="Name"
+            <MultiSelectFilterComponent TItem="ProductDisplayItem"
+                                       Items="@availableProducts"
+                                       @bind-SelectedItems="@selectedProducts"
+                                       DisplayProperty="DisplayName"
                                        ValueProperty="Id"
-                                       Placeholder="搜尋清單類型..."
-                                       EmptyMessage="未選擇清單類型（查詢全部）"
+                                       Placeholder="搜尋成品品號或品名..."
+                                       EmptyMessage="未選擇成品（查詢全部）"
                                        ListHeight="120px"
                                        ShowCard="false" />
         </div>
@@ -36,8 +37,8 @@
         </div>
         <div class="col-4 d-flex align-items-end">
             <div class="form-check mb-1">
-                <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
-                <label class="form-check-label small" for="activeOnly">
+                <input class="form-check-input" type="checkbox" id="bomActiveOnly" @bind="activeOnly">
+                <label class="form-check-label small" for="bomActiveOnly">
                     僅啟用
                 </label>
             </div>
@@ -48,8 +49,8 @@
 @code {
     // ===== 內部狀態 =====
 
-    private List<CompositionCategory> compositionCategories = new();
-    private List<CompositionCategory> selectedCategories = new();
+    private List<ProductDisplayItem> availableProducts = new();
+    private List<ProductDisplayItem> selectedProducts = new();
     private string? keyword = null;
     private bool activeOnly = true;
 
@@ -64,13 +65,25 @@
     {
         try
         {
-            compositionCategories = await CompositionCategoryService.GetAllAsync();
+            // 從現有物料清單中取得不重複的成品清單
+            var compositions = await ProductCompositionService.GetAllAsync();
+            availableProducts = compositions
+                .Where(c => c.ParentProduct != null)
+                .Select(c => new ProductDisplayItem
+                {
+                    Id = c.ParentProductId,
+                    DisplayName = $"{c.ParentProduct!.Code} - {c.ParentProduct.Name}"
+                })
+                .GroupBy(p => p.Id)
+                .Select(g => g.First())
+                .OrderBy(p => p.DisplayName)
+                .ToList();
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
-            await NotificationService.ShowErrorAsync("載入物料清單類型資料失敗");
-            compositionCategories = new List<CompositionCategory>();
+            await NotificationService.ShowErrorAsync("載入物料清單資料失敗");
+            availableProducts = new List<ProductDisplayItem>();
         }
     }
 
@@ -80,7 +93,7 @@
     {
         return new BOMReportCriteria
         {
-            CompositionCategoryIds = selectedCategories.Select(c => c.Id).ToList(),
+            ParentProductIds = selectedProducts.Select(p => p.Id).ToList(),
             Keyword = keyword,
             ActiveOnly = activeOnly
         };
@@ -88,9 +101,20 @@
 
     public void Reset()
     {
-        selectedCategories = new();
+        selectedProducts = new();
         keyword = null;
         activeOnly = true;
         StateHasChanged();
+    }
+
+    // ===== 內部模型 =====
+
+    /// <summary>
+    /// 成品顯示項目（用於 MultiSelect）
+    /// </summary>
+    private class ProductDisplayItem
+    {
+        public int Id { get; set; }
+        public string DisplayName { get; set; } = "";
     }
 }

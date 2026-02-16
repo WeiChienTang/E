@@ -15,20 +15,9 @@
     <div class="card-body p-2">
         @* 篩選區域 *@
         <div class="mb-2">
-            <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" 
-                       class="form-control" 
-                       placeholder="搜尋商品/訂單/客戶..."
-                       @bind="searchKeyword"
-                       @bind:event="oninput" />
-                @if (!string.IsNullOrEmpty(searchKeyword))
-                {
-                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="ClearSearch">
-                        <i class="bi bi-x"></i>
-                    </button>
-                }
-            </div>
+            <SearchInputComponent @bind-Value="searchKeyword"
+                                  Placeholder="搜尋商品/訂單/客戶..."
+                                  ButtonSize="btn-sm" />
         </div>
         
         @* 明細列表 - 使用 InteractiveTableComponent *@

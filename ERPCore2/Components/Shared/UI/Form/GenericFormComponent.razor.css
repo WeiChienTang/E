@@ -36,21 +36,6 @@
     max-width: calc(33.333% - 0.67rem);
 }
 
-.section-col-quarter {
-    flex: 1 1 calc(25% - 0.75rem);
-    max-width: calc(25% - 0.75rem);
-}
-
-.section-col-fifth {
-    flex: 1 1 calc(20% - 0.8rem);
-    max-width: calc(20% - 0.8rem);
-}
-
-.section-col-sixth {
-    flex: 1 1 0; /* 使用 flex: 1 讓 6 個 section 平均分配空間 */
-    min-width: 0; /* 允許收縮到任意小 */
-}
-
 /* 區段標題 */
 .form-section-header {
     padding: 0.25rem 0;
@@ -298,14 +283,6 @@
 
 /* 平板尺寸 */
 @media (max-width: 992px) {
-    /* 平板版區段最多 3 欄 */
-    .section-col-quarter,
-    .section-col-fifth,
-    .section-col-sixth {
-        flex: 1 1 calc(33.333% - 0.67rem);
-        max-width: calc(33.333% - 0.67rem);
-    }
-    
     .input-action-button {
         width: 30px;
         height: 30px;
@@ -329,10 +306,7 @@
     }
     
     .section-col-half,
-    .section-col-third,
-    .section-col-quarter,
-    .section-col-fifth,
-    .section-col-sixth {
+    .section-col-third {
         flex: 1 1 100% !important;
         max-width: 100% !important;
         width: 100% !important;

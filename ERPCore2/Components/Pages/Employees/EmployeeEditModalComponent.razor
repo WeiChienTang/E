@@ -423,25 +423,23 @@
                     e => e.Name,
                     e => e.Gender,
                     e => e.BirthDate,
-                    e => e.IdNumber)
-                .AddToSection(FormSectionNames.ContactInfo,
+                    e => e.IdNumber,
                     e => e.Mobile,
                     e => e.Email,
                     e => e.EmergencyContact,
                     e => e.EmergencyPhone)
-                .AddToSection(FormSectionNames.OrganizationStructure,
-                    e => e.DepartmentId,
-                    e => e.EmployeePositionId)
                 .AddToSection(FormSectionNames.EmploymentInfo,
+                    e => e.DepartmentId,
+                    e => e.EmployeePositionId,
                     e => e.HireDate,
                     e => e.ResignationDate,
                     e => e.EmploymentStatus)
-                .AddToSection(FormSectionNames.AdditionalData,
-                    e => e.Remarks)
-                .AddIf(hasAccountPasswordPermission, FormSectionNames.AccountInfo,
+                .AddIf(hasAccountPasswordPermission, FormSectionNames.EmploymentInfo,
                     e => e.Account,
                     e => e.Password,
                     e => e.RoleId)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    e => e.Remarks)
                 .Build();
         }
         catch (Exception)

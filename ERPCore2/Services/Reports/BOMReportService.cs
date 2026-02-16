@@ -259,11 +259,11 @@ namespace ERPCore2.Services.Reports
                 results = results.Where(c => c.Status == EntityStatus.Active).ToList();
             }
 
-            // 篩選物料清單類型
-            if (criteria.CompositionCategoryIds.Any())
+            // 篩選成品（父商品）
+            if (criteria.ParentProductIds.Any())
             {
-                results = results.Where(c => c.CompositionCategoryId.HasValue &&
-                    criteria.CompositionCategoryIds.Contains(c.CompositionCategoryId.Value)).ToList();
+                results = results.Where(c =>
+                    criteria.ParentProductIds.Contains(c.ParentProductId)).ToList();
             }
 
             // 關鍵字搜尋

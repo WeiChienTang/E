@@ -1,0 +1,120 @@
+@* 通用搜尋輸入框組件 *@
+@* 提供一致的搜尋 UI：搜尋圖示 + 輸入框 + 清除按鈕 *@
+
+<div class="input-group @CssClass">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input @ref="inputRef"
+           type="text" 
+           class="form-control @InputCssClass" 
+           placeholder="@Placeholder"
+           @bind="Value"
+           @bind:event="oninput"
+           @bind:after="OnValueChangedAsync"
+           disabled="@IsDisabled" />
+    @if (!string.IsNullOrEmpty(Value))
+    {
+        <button class="btn btn-outline-secondary @ButtonSize" 
+                type="button" 
+                @onclick="ClearValueAsync"
+                disabled="@IsDisabled">
+            <i class="bi bi-x"></i>
+        </button>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// 搜尋關鍵字值（支援雙向綁定）
+    /// </summary>
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 值變更時的回調
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    /// <summary>
+    /// 輸入框的 placeholder 文字
+    /// </summary>
+    [Parameter]
+    public string Placeholder { get; set; } = "搜尋...";
+
+    /// <summary>
+    /// 外層 input-group 的額外 CSS class
+    /// </summary>
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 輸入框的額外 CSS class
+    /// </summary>
+    [Parameter]
+    public string InputCssClass { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 清除按鈕的大小 class（例如 "btn-sm"）
+    /// </summary>
+    [Parameter]
+    public string ButtonSize { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 是否停用輸入框
+    /// </summary>
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
+    /// <summary>
+    /// 清除時的額外回調
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClear { get; set; }
+
+    private ElementReference inputRef;
+
+    /// <summary>
+    /// 值變更時觸發
+    /// </summary>
+    private async Task OnValueChangedAsync()
+    {
+        if (ValueChanged.HasDelegate)
+        {
+            await ValueChanged.InvokeAsync(Value);
+        }
+    }
+
+    /// <summary>
+    /// 清除搜尋值
+    /// </summary>
+    private async Task ClearValueAsync()
+    {
+        Value = string.Empty;
+        
+        if (ValueChanged.HasDelegate)
+        {
+            await ValueChanged.InvokeAsync(Value);
+        }
+        
+        if (OnClear.HasDelegate)
+        {
+            await OnClear.InvokeAsync();
+        }
+    }
+
+    /// <summary>
+    /// 聚焦到輸入框
+    /// </summary>
+    public ValueTask FocusAsync()
+    {
+        return inputRef.FocusAsync();
+    }
+
+    /// <summary>
+    /// 清除搜尋值（供外部呼叫）
+    /// </summary>
+    public async Task ClearAsync()
+    {
+        await ClearValueAsync();
+    }
+}

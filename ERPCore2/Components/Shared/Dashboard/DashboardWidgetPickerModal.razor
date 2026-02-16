@@ -24,106 +24,203 @@
                                Title="取消" />
     </HeaderButtons>
     <BodyContent>
-        @* Tab 切換 *@
-        <ul class="nav nav-tabs mb-3">
-            <li class="nav-item">
-                <button class="nav-link @(activeTab == "shortcut" ? "active" : "")"
-                        type="button"
-                        @onclick='@(() => activeTab = "shortcut")'>
-                    <i class="bi bi-link-45deg me-1"></i>頁面連結
-                    @if (AvailableShortcutWidgets.Any())
-                    {
-                        <span class="badge bg-secondary ms-1">@AvailableShortcutWidgets.Count</span>
-                    }
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link @(activeTab == "quickaction" ? "active" : "")"
-                        type="button"
-                        @onclick='@(() => activeTab = "quickaction")'>
-                    <i class="bi bi-lightning-fill me-1"></i>快速功能
-                    @if (AvailableQuickActionWidgets.Any())
-                    {
-                        <span class="badge bg-secondary ms-1">@AvailableQuickActionWidgets.Count</span>
-                    }
-                </button>
-            </li>
-        </ul>
+        @* 搜尋框 *@
+        <div class="mb-3">
+            <SearchInputComponent @bind-Value="searchKeyword"
+                                  Placeholder="搜尋名稱、描述或分類..." />
+        </div>
 
-        @* Tab 內容 *@
-        @{
-            var currentWidgets = activeTab == "quickaction" ? AvailableQuickActionWidgets : AvailableShortcutWidgets;
-        }
-
-        @if (currentWidgets == null || !currentWidgets.Any())
+        @if (IsSearchMode)
         {
-            <div class="text-center py-4 text-muted">
-                <i class="bi bi-emoji-neutral fs-1"></i>
-                <p class="mt-2">目前沒有可新增的@(activeTab == "quickaction" ? "快速功能" : "頁面連結")</p>
-            </div>
+            @* 搜尋結果模式：合併顯示所有類型 *@
+            @if (!FilteredAllWidgets.Any())
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-search fs-1"></i>
+                    <p class="mt-2">找不到符合「@searchKeyword」的項目</p>
+                </div>
+            }
+            else
+            {
+                @* 頁面連結搜尋結果 *@
+                @if (FilteredShortcutWidgets.Any())
+                {
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">
+                            <i class="bi bi-link-45deg me-1"></i>頁面連結
+                            <span class="badge bg-primary ms-1">@FilteredShortcutWidgets.Count</span>
+                        </h6>
+                        @RenderWidgetGrid(FilteredShortcutWidgets)
+                    </div>
+                }
+
+                @* 快速功能搜尋結果 *@
+                @if (FilteredQuickActionWidgets.Any())
+                {
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-warning border-bottom pb-2 mb-2">
+                            <i class="bi bi-lightning-fill me-1"></i>快速功能
+                            <span class="badge bg-warning text-dark ms-1">@FilteredQuickActionWidgets.Count</span>
+                        </h6>
+                        @RenderWidgetGrid(FilteredQuickActionWidgets)
+                    </div>
+                }
+            }
         }
         else
         {
-            @* 依分類分組顯示 *@
-            @foreach (var group in currentWidgets
-                .GroupBy(w => w.Category)
-                .OrderBy(g => g.Key))
-            {
-                <div class="mb-3">
-                    <h6 class="fw-bold text-muted border-bottom pb-2 mb-2">
-                        <i class="bi bi-folder2 me-1"></i>
-                        @group.Key
-                    </h6>
-                    <div class="row g-2">
-                        @foreach (var widget in group.OrderBy(w => w.Name))
+            @* 一般模式：Tab 切換 *@
+            <ul class="nav nav-tabs mb-3">
+                <li class="nav-item">
+                    <button class="nav-link @(activeTab == "shortcut" ? "active" : "")"
+                            type="button"
+                            @onclick='@(() => activeTab = "shortcut")'>
+                        <i class="bi bi-link-45deg me-1"></i>頁面連結
+                        @if (AvailableShortcutWidgets.Any())
                         {
-                            var itemKey = DashboardDefaults.GetNavigationItemKey(widget);
-                            var isExisting = ExistingWidgetKeys.Contains(itemKey);
-                            var isSelected = selectedItemKeys.Contains(itemKey);
-                            var capturedItemKey = itemKey;
-
-                            <div class="col-lg-4 col-md-6">
-                                <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"
-                                     @onclick="@(() => ToggleWidget(capturedItemKey, isExisting))">
-                                    <div class="d-flex align-items-center">
-                                        <div class="picker-checkbox me-2">
-                                            @if (isExisting)
-                                            {
-                                                <i class="bi bi-check-square-fill text-success"></i>
-                                            }
-                                            else if (isSelected)
-                                            {
-                                                <i class="bi bi-check-square-fill text-success"></i>
-                                            }
-                                            else
-                                            {
-                                                <i class="bi bi-square text-muted"></i>
-                                            }
-                                        </div>
-                                        <div class="picker-icon me-2">
-                                            <i class="@widget.IconClass"></i>
-                                        </div>
-                                        <div class="picker-info">
-                                            <div class="picker-name">@widget.Name</div>
-                                            @if (!string.IsNullOrEmpty(widget.Description))
-                                            {
-                                                <div class="picker-desc">@widget.Description</div>
-                                            }
-                                        </div>
-                                    </div>
-                                    @if (isExisting)
-                                    {
-                                        <span class="badge bg-success ms-auto">已加入</span>
-                                    }
-                                </div>
-                            </div>
+                            <span class="badge bg-secondary ms-1">@AvailableShortcutWidgets.Count</span>
                         }
-                    </div>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(activeTab == "quickaction" ? "active" : "")"
+                            type="button"
+                            @onclick='@(() => activeTab = "quickaction")'>
+                        <i class="bi bi-lightning-fill me-1"></i>快速功能
+                        @if (AvailableQuickActionWidgets.Any())
+                        {
+                            <span class="badge bg-secondary ms-1">@AvailableQuickActionWidgets.Count</span>
+                        }
+                    </button>
+                </li>
+            </ul>
+
+            @* Tab 內容 *@
+            var currentWidgets = activeTab == "quickaction" ? AvailableQuickActionWidgets : AvailableShortcutWidgets;
+
+            @if (currentWidgets == null || !currentWidgets.Any())
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-emoji-neutral fs-1"></i>
+                    <p class="mt-2">目前沒有可新增的@(activeTab == "quickaction" ? "快速功能" : "頁面連結")</p>
                 </div>
+            }
+            else
+            {
+                @* 依分類分組顯示 *@
+                @foreach (var group in currentWidgets
+                    .GroupBy(w => w.Category)
+                    .OrderBy(g => g.Key))
+                {
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-2">
+                            <i class="bi bi-folder2 me-1"></i>
+                            @group.Key
+                        </h6>
+                        <div class="row g-2">
+                            @foreach (var widget in group.OrderBy(w => w.Name))
+                            {
+                                var itemKey = DashboardDefaults.GetNavigationItemKey(widget);
+                                var isExisting = ExistingWidgetKeys.Contains(itemKey);
+                                var isSelected = selectedItemKeys.Contains(itemKey);
+                                var capturedItemKey = itemKey;
+
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"
+                                         @onclick="@(() => ToggleWidget(capturedItemKey, isExisting))">
+                                        <div class="d-flex align-items-center">
+                                            <div class="picker-checkbox me-2">
+                                                @if (isExisting)
+                                                {
+                                                    <i class="bi bi-check-square-fill text-success"></i>
+                                                }
+                                                else if (isSelected)
+                                                {
+                                                    <i class="bi bi-check-square-fill text-success"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-square text-muted"></i>
+                                                }
+                                            </div>
+                                            <div class="picker-icon me-2">
+                                                <i class="@widget.IconClass"></i>
+                                            </div>
+                                            <div class="picker-info">
+                                                <div class="picker-name">@widget.Name</div>
+                                                @if (!string.IsNullOrEmpty(widget.Description))
+                                                {
+                                                    <div class="picker-desc">@widget.Description</div>
+                                                }
+                                            </div>
+                                        </div>
+                                        @if (isExisting)
+                                        {
+                                            <span class="badge bg-success ms-auto">已加入</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
             }
         }
     </BodyContent>
 </BaseModalComponent>
+
+@* 共用的項目格線渲染方法 *@
+@code {
+    private RenderFragment RenderWidgetGrid(List<NavigationItem> widgets) => __builder =>
+    {
+        <div class="row g-2">
+            @foreach (var widget in widgets.OrderBy(w => w.Category).ThenBy(w => w.Name))
+            {
+                var itemKey = DashboardDefaults.GetNavigationItemKey(widget);
+                var isExisting = ExistingWidgetKeys.Contains(itemKey);
+                var isSelected = selectedItemKeys.Contains(itemKey);
+                var capturedItemKey = itemKey;
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"
+                         @onclick="@(() => ToggleWidget(capturedItemKey, isExisting))">
+                        <div class="d-flex align-items-center">
+                            <div class="picker-checkbox me-2">
+                                @if (isExisting)
+                                {
+                                    <i class="bi bi-check-square-fill text-success"></i>
+                                }
+                                else if (isSelected)
+                                {
+                                    <i class="bi bi-check-square-fill text-success"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-square text-muted"></i>
+                                }
+                            </div>
+                            <div class="picker-icon me-2">
+                                <i class="@widget.IconClass"></i>
+                            </div>
+                            <div class="picker-info">
+                                <div class="picker-name">@widget.Name</div>
+                                @if (!string.IsNullOrEmpty(widget.Description))
+                                {
+                                    <div class="picker-desc">@widget.Description</div>
+                                }
+                                <div class="picker-category text-muted small">@widget.Category</div>
+                            </div>
+                        </div>
+                        @if (isExisting)
+                        {
+                            <span class="badge bg-success ms-auto">已加入</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    };
+}
 
 @code {
     // ===== 參數 =====
@@ -162,6 +259,55 @@
 
     private string activeTab = "shortcut"; // "shortcut" 或 "quickaction"
     private HashSet<string> selectedItemKeys = new();
+    private string searchKeyword = string.Empty;
+
+    /// <summary>
+    /// 是否處於搜尋模式
+    /// </summary>
+    private bool IsSearchMode => !string.IsNullOrWhiteSpace(searchKeyword);
+
+    /// <summary>
+    /// 篩選後的頁面連結項目
+    /// </summary>
+    private List<NavigationItem> FilteredShortcutWidgets => FilterWidgets(AvailableShortcutWidgets);
+
+    /// <summary>
+    /// 篩選後的快速功能項目
+    /// </summary>
+    private List<NavigationItem> FilteredQuickActionWidgets => FilterWidgets(AvailableQuickActionWidgets);
+
+    /// <summary>
+    /// 所有篩選後的項目（合併）
+    /// </summary>
+    private List<NavigationItem> FilteredAllWidgets => 
+        FilteredShortcutWidgets.Concat(FilteredQuickActionWidgets).ToList();
+
+    /// <summary>
+    /// 篩選項目的共用方法
+    /// </summary>
+    private List<NavigationItem> FilterWidgets(List<NavigationItem> widgets)
+    {
+        if (string.IsNullOrWhiteSpace(searchKeyword))
+            return widgets;
+
+        var keyword = searchKeyword.Trim().ToLower();
+        return widgets.Where(w =>
+            (w.Name?.ToLower().Contains(keyword) ?? false) ||
+            (w.Description?.ToLower().Contains(keyword) ?? false) ||
+            (w.Category?.ToLower().Contains(keyword) ?? false) ||
+            (w.QuickActionName?.ToLower().Contains(keyword) ?? false) ||
+            (w.QuickActionDescription?.ToLower().Contains(keyword) ?? false) ||
+            (w.SearchKeywords?.Any(k => k.ToLower().Contains(keyword)) ?? false)
+        ).ToList();
+    }
+
+    /// <summary>
+    /// 清除搜尋
+    /// </summary>
+    private void ClearSearch()
+    {
+        searchKeyword = string.Empty;
+    }
 
     // ===== 方法 =====
 
@@ -211,6 +357,7 @@
     private async Task HandleCancel()
     {
         selectedItemKeys.Clear();
+        searchKeyword = string.Empty;
         await CloseModal();
     }
 

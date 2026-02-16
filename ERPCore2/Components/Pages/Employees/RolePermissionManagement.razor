@@ -135,6 +135,12 @@
                                             Type="GenericLockedFieldMessage.MessageType.Info"
                                             IconClass="bi bi-lightbulb" />
                     }                    
+                    @* 權限搜尋框 *@
+                    <div class="mb-3">
+                        <SearchInputComponent @bind-Value="permissionSearchKeyword"
+                                              Placeholder="搜尋權限名稱..." />
+                    </div>
+                    
                     @* 一般權限表格 *@
                     <div class="mb-4">
                         <InteractiveTableComponent TItem="Permission"
@@ -157,10 +163,12 @@
                     @if (permissions.Any(p => IsSystemPermission(p)))
                     {
                         <div class="mt-4">
-                            <div class="alert alert-danger">
-                                <i class="bi bi-exclamation-triangle me-1"></i>
-                                <strong>注意：</strong>以下為敏感權限，@(IsAdminRole(selectedRole) ? "管理員權限組擁有所有權限。" : "請謹慎授權！這些權限可能影響系統安全性和穩定性。")
-                            </div>
+
+                            <GenericLockedFieldMessage IsVisible="true"
+                                Message="@("以下為敏感權限，" + (IsAdminRole(selectedRole) ? "管理員權限組擁有所有權限。" : "請謹慎授權！這些權限可能影響系統安全性和穩定性。"))"
+                                Type="GenericLockedFieldMessage.MessageType.Danger"
+                                IconClass="bi bi-exclamation-triangle" />
+
                             <InteractiveTableComponent TItem="Permission"
                                                       Items="@GetSystemPermissions()"
                                                       ColumnDefinitions="@systemPermissionColumns"
@@ -206,6 +214,9 @@
     private List<Permission> permissions = new();
     private Role? selectedRole;
     private Dictionary<int, bool> permissionSelections = new();
+    
+    // 搜尋狀態
+    private string permissionSearchKeyword = string.Empty;
     
     // 載入狀態
     private bool isLoadingRoles = true;
@@ -732,7 +743,17 @@
     /// </summary>
     private List<Permission> GetNormalPermissions()
     {
-        return permissions.Where(p => !IsSystemPermission(p)).ToList();
+        var result = permissions.Where(p => !IsSystemPermission(p));
+        
+        // 套用搜尋篩選
+        if (!string.IsNullOrWhiteSpace(permissionSearchKeyword))
+        {
+            var keyword = permissionSearchKeyword.Trim().ToLower();
+            result = result.Where(p => 
+                (p.Name?.ToLower().Contains(keyword) ?? false));
+        }
+        
+        return result.ToList();
     }
     
     /// <summary>
@@ -740,7 +761,17 @@
     /// </summary>
     private List<Permission> GetSystemPermissions()
     {
-        return permissions.Where(p => IsSystemPermission(p)).ToList();
+        var result = permissions.Where(p => IsSystemPermission(p));
+        
+        // 套用搜尋篩選
+        if (!string.IsNullOrWhiteSpace(permissionSearchKeyword))
+        {
+            var keyword = permissionSearchKeyword.Trim().ToLower();
+            result = result.Where(p => 
+                (p.Name?.ToLower().Contains(keyword) ?? false));
+        }
+        
+        return result.ToList();
     }
     
     /// <summary>

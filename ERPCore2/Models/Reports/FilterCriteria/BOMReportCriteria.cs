@@ -9,9 +9,9 @@ namespace ERPCore2.Models.Reports.FilterCriteria;
 public class BOMReportCriteria : IReportFilterCriteria
 {
     /// <summary>
-    /// 物料清單類型 ID 清單（空表示所有類型）
+    /// 成品（父商品）ID 清單（空表示所有成品）
     /// </summary>
-    public List<int> CompositionCategoryIds { get; set; } = new();
+    public List<int> ParentProductIds { get; set; } = new();
 
     /// <summary>
     /// 關鍵字搜尋（配方編號、成品品號、成品品名）
@@ -38,7 +38,7 @@ public class BOMReportCriteria : IReportFilterCriteria
     {
         return new Dictionary<string, object?>
         {
-            ["compositionCategoryIds"] = CompositionCategoryIds.Any() ? CompositionCategoryIds : null,
+            ["parentProductIds"] = ParentProductIds.Any() ? ParentProductIds : null,
             ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword,
             ["activeOnly"] = ActiveOnly
         };
@@ -51,8 +51,8 @@ public class BOMReportCriteria : IReportFilterCriteria
     {
         var summary = new List<string>();
 
-        if (CompositionCategoryIds.Any())
-            summary.Add($"清單類型：{CompositionCategoryIds.Count} 個");
+        if (ParentProductIds.Any())
+            summary.Add($"成品：{ParentProductIds.Count} 個");
 
         if (!string.IsNullOrEmpty(Keyword))
             summary.Add($"關鍵字：{Keyword}");

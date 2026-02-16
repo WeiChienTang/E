@@ -80,11 +80,7 @@
         {
             1 => "section-col-full",
             2 => "section-col-half",
-            3 => "section-col-third",
-            4 => "section-col-quarter",
-            5 => "section-col-fifth",
-            6 => "section-col-sixth",
-            _ => "section-col-sixth"  // 超過6組時，仍使用六分之一寬度
+            _ => "section-col-third"  // 3個以上時，每列最多3個，超過自動換行
         };
     }
 
