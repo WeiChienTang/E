@@ -44,7 +44,7 @@
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
     [Parameter] public int? WarehouseLocationId { get; set; }
-    [Parameter] public EventCallback OnWarehouseLocationSaved { get; set; }
+    [Parameter] public EventCallback<WarehouseLocation> OnWarehouseLocationSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
     // ===== 內部狀態 =====

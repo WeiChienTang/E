@@ -600,7 +600,7 @@
     /// <summary>
     /// 包裝倉庫位置儲存事件
     /// </summary>
-    private async Task OnWarehouseLocationSavedWrapper()
+    private async Task OnWarehouseLocationSavedWrapper(WarehouseLocation savedWarehouseLocation)
     {
         try
         {
@@ -613,8 +613,7 @@
             // 執行自訂後處理邏輯
             if (warehouseLocationModalManager.CustomPostProcessCallback != null)
             {
-                var dummyWarehouseLocation = new WarehouseLocation();
-                await warehouseLocationModalManager.CustomPostProcessCallback(dummyWarehouseLocation);
+                await warehouseLocationModalManager.CustomPostProcessCallback(savedWarehouseLocation);
             }
             
             // 關閉 Modal

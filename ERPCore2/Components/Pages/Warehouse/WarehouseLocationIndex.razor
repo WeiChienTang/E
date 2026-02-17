@@ -25,7 +25,7 @@
 <WarehouseLocationEditModalComponent IsVisible="@showEditModal"
                            IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                            WarehouseLocationId="@editingWarehouseLocationId"
-                           OnWarehouseLocationSaved="@OnWarehouseLocationSavedAsync"
+                           OnWarehouseLocationSaved="@modalHandler.OnEntitySavedAsync"
                            OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
@@ -94,22 +94,5 @@
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWarehouseLocationFilters), GetType());
     }
 
-    // 處理倉庫內位置儲存成功事件
-    private async Task OnWarehouseLocationSavedAsync()
-    {
-        try
-        {
-            await modalHandler.OnModalCancelAsync(); // 關閉 Modal
-            if (indexComponent != null)
-            {
-                await indexComponent.ReloadData(); // 刷新頁面資料
-            }
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnWarehouseLocationSavedAsync), GetType(), additionalData: "處理倉庫內位置儲存成功事件失敗");
-            await NotificationService.ShowErrorAsync("處理儲存成功事件失敗");
-        }
-    }
+
 }

@@ -653,7 +653,9 @@ else
                         {
                             var warehouseName = stockDetail.Warehouse?.Name ?? "未知倉庫";
                             var locationName = stockDetail.WarehouseLocation?.Name ?? "預設位置";
-                            var displayText = $"{warehouseName} - {locationName} (可用: {NumberFormatHelper.FormatSmart(stockDetail.AvailableStock)})";
+                            // 編輯模式：若是原始倉庫位置，顯示的可用量加回原始出貨量
+                            var effectiveStock = stockDetail.AvailableStock + deliveryItem.GetOriginalQuantityBonus(stockDetail.Id);
+                            var displayText = $"{warehouseName} - {locationName} (可用: {NumberFormatHelper.FormatSmart(effectiveStock)})";
                             <option value="@stockDetail.Id">@displayText</option>
                         }
                     </select>;
@@ -969,6 +971,11 @@ else
             // ✅ 修正：同步等待庫存資訊載入完成（與 PurchaseReceivingTable、PurchaseReturnTable 保持一致）
             // 這確保在用戶點擊儲存前，所有庫存資料都已載入完成
             await LoadStockQuantityAsync(deliveryItem);
+            
+            // 記錄原始值（用於編輯模式下的庫存驗證）
+            // 必須在 LoadStockQuantityAsync 之後設定，因為該方法會透過倉庫/庫位匹配找出 InventoryStockDetailId
+            deliveryItem.OriginalDeliveryQuantity = quantity;
+            deliveryItem.OriginalInventoryStockDetailId = deliveryItem.InventoryStockDetailId;
 
             DeliveryItems.Add(deliveryItem);
         }
@@ -1040,6 +1047,12 @@ else
             if (!string.IsNullOrEmpty(WarehouseIdPropertyName))
             {
                 SetPropertyValue(detailEntity, WarehouseIdPropertyName, item.WarehouseId);
+            }
+            
+            // 修正：設定庫位（之前遺漏，導致庫位選擇無法儲存到資料庫）
+            if (!string.IsNullOrEmpty(WarehouseLocationIdPropertyName))
+            {
+                SetPropertyValue(detailEntity, WarehouseLocationIdPropertyName, item.WarehouseLocationId);
             }
 
             detailEntities.Add(detailEntity);
@@ -1151,7 +1164,8 @@ else
                 item.WarehouseId = selectedDetail.WarehouseId;
                 item.WarehouseLocationId = selectedDetail.WarehouseLocationId;
                 item.InventoryStockDetailId = detailId;
-                item.CurrentStockQuantity = selectedDetail.AvailableStock;
+                // 編輯模式：若選回原始倉庫位置，加回原始出貨量；選新倉庫則用原始 AvailableStock
+                item.CurrentStockQuantity = selectedDetail.AvailableStock + item.GetOriginalQuantityBonus(detailId);
             }
         }
         
@@ -1177,15 +1191,20 @@ else
             var inventoryStocks = await InventoryStockService.GetByProductIdAsync(item.ProductId);
             
             // 從庫存主檔中提取所有庫存明細
-            var stockDetails = inventoryStocks
+            // 修正：保留有庫存的位置 + 編輯模式下原始選擇的位置（即使庫存已被扣完）
+            var allStockDetails = inventoryStocks
                 .SelectMany(s => s.InventoryStockDetails ?? new List<InventoryStockDetail>())
-                .Where(d => d.AvailableStock > 0) // 只保留有庫存的位置
+                .ToList();
+            
+            var stockDetails = allStockDetails
+                .Where(d => d.AvailableStock > 0 || 
+                            (item.OriginalInventoryStockDetailId.HasValue && d.Id == item.OriginalInventoryStockDetailId.Value))
                 .OrderByDescending(d => d.AvailableStock)
                 .ToList();
             
             item.AvailableWarehouseLocations = stockDetails;
 
-            // 🔑 關鍵修正：根據不同情況設置庫存量
+            // 🔑 關鍵修正：根據不同情況設置庫存量（編輯模式下加回原始出貨量）
             if (item.InventoryStockDetailId.HasValue)
             {
                 // 情況1: 已選擇庫存明細ID（編輯模式下有倉庫和庫位）
@@ -1193,7 +1212,8 @@ else
                     .FirstOrDefault(d => d.Id == item.InventoryStockDetailId.Value);
                 if (selectedDetail != null)
                 {
-                    item.CurrentStockQuantity = selectedDetail.AvailableStock;
+                    // 編輯模式：若是原始倉庫位置，加回原始出貨量
+                    item.CurrentStockQuantity = selectedDetail.AvailableStock + item.GetOriginalQuantityBonus();
                 }
                 else
                 {
@@ -1203,19 +1223,20 @@ else
             else if (item.WarehouseId.HasValue && item.WarehouseId.Value > 0)
             {
                 // 情況2: 有倉庫ID，嘗試根據倉庫ID和庫位ID找到對應的庫存明細
+                // 修正：搜尋範圍改為包含原始位置的 allStockDetails
                 InventoryStockDetail? matchingDetail = null;
                 
                 if (item.WarehouseLocationId.HasValue && item.WarehouseLocationId.Value > 0)
                 {
                     // 有庫位ID，精確匹配倉庫+庫位
-                    matchingDetail = stockDetails.FirstOrDefault(d => 
+                    matchingDetail = allStockDetails.FirstOrDefault(d => 
                         d.WarehouseId == item.WarehouseId.Value && 
                         d.WarehouseLocationId == item.WarehouseLocationId.Value);
                 }
                 else
                 {
                     // 沒有庫位ID，只匹配倉庫（取第一個符合的）
-                    matchingDetail = stockDetails.FirstOrDefault(d => 
+                    matchingDetail = allStockDetails.FirstOrDefault(d => 
                         d.WarehouseId == item.WarehouseId.Value);
                 }
                 
@@ -1223,7 +1244,15 @@ else
                 {
                     // 找到匹配的庫存明細，設定 InventoryStockDetailId 讓下拉選單能正確顯示
                     item.InventoryStockDetailId = matchingDetail.Id;
-                    item.CurrentStockQuantity = matchingDetail.AvailableStock;
+                    // 編輯模式：若是原始倉庫位置，加回原始出貨量
+                    item.CurrentStockQuantity = matchingDetail.AvailableStock + item.GetOriginalQuantityBonus(matchingDetail.Id);
+                    
+                    // 確保此位置在下拉選單中（可能 AvailableStock 為 0 但是原始位置）
+                    if (!stockDetails.Any(d => d.Id == matchingDetail.Id))
+                    {
+                        stockDetails.Add(matchingDetail);
+                        item.AvailableWarehouseLocations = stockDetails;
+                    }
                 }
                 else
                 {
@@ -1939,6 +1968,8 @@ else
                 return false;
             }
 
+            // 編輯模式庫存驗證：CurrentStockQuantity 已在載入和切換倉庫時計算好有效可用庫存
+            // （原始倉庫位置 = AvailableStock + OriginalDeliveryQuantity，新倉庫位置 = AvailableStock）
             if (item.CurrentStockQuantity.Value < item.DeliveryQuantity.Value)
             {
                 var product = AvailableProducts.FirstOrDefault(p => p.Id == item.ProductId);
@@ -2028,5 +2059,42 @@ else
         /// 可用的倉庫位置清單（僅顯示有庫存的位置）
         /// </summary>
         public List<InventoryStockDetail> AvailableWarehouseLocations { get; set; } = new();
+        
+        // ===== 編輯模式庫存追蹤欄位 =====
+        
+        /// <summary>
+        /// 原始出貨數量（編輯模式下從 ExistingDetailEntity 載入時記錄）
+        /// 用於計算編輯模式下的實際可用庫存
+        /// </summary>
+        public decimal? OriginalDeliveryQuantity { get; set; }
+        
+        /// <summary>
+        /// 原始庫存明細ID（編輯模式下記錄原始選擇的倉庫-庫位組合）
+        /// 用於判斷使用者是否更換了倉庫/庫位
+        /// </summary>
+        public int? OriginalInventoryStockDetailId { get; set; }
+        
+        /// <summary>
+        /// 判斷倉庫/庫位是否已被更改（相對於原始值）
+        /// </summary>
+        public bool IsWarehouseChanged => 
+            OriginalInventoryStockDetailId.HasValue && 
+            InventoryStockDetailId != OriginalInventoryStockDetailId;
+        
+        /// <summary>
+        /// 取得該庫存明細位置在編輯模式下應加回的原始出貨量
+        /// 只有在未更換倉庫且有原始出貨量時才加回
+        /// </summary>
+        public decimal GetOriginalQuantityBonus(int? stockDetailId = null)
+        {
+            var checkId = stockDetailId ?? InventoryStockDetailId;
+            if (OriginalDeliveryQuantity.HasValue && 
+                OriginalInventoryStockDetailId.HasValue &&
+                checkId == OriginalInventoryStockDetailId)
+            {
+                return OriginalDeliveryQuantity.Value;
+            }
+            return 0;
+        }
     }
 }
