@@ -353,7 +353,7 @@ new ReportDefinition
 
 ## 相關檔案
 
-- [README_報表系統總綱.md](../../../Documentation/README_報表系統總綱.md) - 報表系統入口
-- [README_報表中心設計.md](../../Pages/Reports/README_報表中心設計.md) - 報表中心入口
-- [README_報表檔設計總綱.md](../../../Documentation/README_報表檔設計總綱.md) - 報表服務與列印
-- [README_Index列印實作指南.md](../../../Documentation/README_Index列印實作指南.md) - Index 批次列印
+- [README_報表系統總綱.md](README_報表系統總綱.md) - 報表系統入口
+- [README_報表中心設計.md](README_報表中心設計.md) - 報表中心入口
+- [README_報表檔設計總綱.md](README_報表檔設計.md) - 報表服務與列印
+- [README_Index列印實作指南.md](README_報表Index設計.md) - Index 批次列印

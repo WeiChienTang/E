@@ -307,6 +307,6 @@ Index 批次列印流程：
 ## 相關檔案
 
 - [README_報表系統總綱.md](README_報表系統總綱.md) - 報表系統入口
-- [README_報表篩選架構設計總綱.md](../Components/Shared/Report/README_報表篩選架構設計總綱.md) - 篩選模板機制
-- [README_報表中心設計.md](../Components/Pages/Reports/README_報表中心設計.md) - 報表中心入口
-- [README_報表檔設計總綱.md](README_報表檔設計總綱.md) - 報表服務與列印
+- [README_報表篩選架構設計.md](README_報表篩選架構設計.md) - 篩選模板機制
+- [README_報表中心設計.md](README_報表中心設計.md) - 報表中心入口
+- [README_報表檔設計.md](README_報表檔設計.md) - 報表服務與列印

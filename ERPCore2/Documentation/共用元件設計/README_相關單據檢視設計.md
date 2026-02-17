@@ -318,3 +318,4 @@ public class RelatedDocumentInfo
 - `Models/Documents/RelatedDocument.cs` - 資料模型定義
 - `Models/Enums/RelatedDocumentType.cs` - 單據類型枚舉
 - `Helpers/RelatedDocumentsHelper.cs` - 服務層輔助方法
+- [README_共用元件設計總綱.md](README_共用元件設計總綱.md) - 共用元件設計總綱

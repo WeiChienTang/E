@@ -81,7 +81,7 @@ Components/Shared/Report/
 
 流程：報表中心 → 篩選 Modal → 預覽 → 列印
 
-參考 [README_報表篩選架構設計總綱.md](../Components/Shared/Report/README_報表篩選架構設計總綱.md)
+參考 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)
 
 ---
 
@@ -333,7 +333,7 @@ mergedDocument.MergeFrom(document);
 2. **建立服務實作**（參考 `PurchaseOrderReportService.cs`）
 3. **在 ServiceRegistration.cs 註冊服務**
 4. **在 ReportRegistry.cs 註冊報表定義**
-5. **（可選）建立篩選模板**（參考 [README_報表篩選架構設計總綱.md](../Components/Shared/Report/README_報表篩選架構設計總綱.md)）
+5. **（可選）建立篩選模板**（參考 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)）
 
 ### 報表 ID 命名規則
 
@@ -360,6 +360,6 @@ mergedDocument.MergeFrom(document);
 ## 相關檔案
 
 - [README_報表系統總綱.md](README_報表系統總綱.md) - 報表系統入口
-- [README_報表篩選架構設計總綱.md](../Components/Shared/Report/README_報表篩選架構設計總綱.md) - 篩選模板機制
-- [README_報表中心設計.md](../Components/Pages/Reports/README_報表中心設計.md) - 報表中心入口
-- [README_報表Index設計總綱.md](README_報表Index設計總綱.md) - Index 批次列印
+- [README_報表篩選架構設計.md](README_報表篩選架構設計.md) - 篩選模板機制
+- [README_報表中心設計.md](README_報表中心設計.md) - 報表中心入口
+- [README_報表Index設計.md](README_報表Index設計.md) - Index 批次列印

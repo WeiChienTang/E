@@ -332,6 +332,5 @@ var config = CreateConfig(prop1, prop2, prop3, prop4, prop5, ...);
 4. **單元測試**：Helper 類別應該要能夠獨立進行單元測試
 
 5. **相關文件**：
-   - [Shared 元件結構說明](../Components/Shared/README_Shared結構圖.md)
-   - [EditModal Helper 建構指南](./EditModal/README_EditModal_Helper建構.md)
-   - [InteractiveTable Helper 說明](./InteractiveTableComponentHelper/README_InteractiveTable重構計劃.md)
+   - [README_專案架構總綱.md](README_專案架構總綱.md) - 專案架構總綱
+   - [README_互動式表格設計.md](../共用元件設計/README_互動式表格設計.md) - InteractiveTable Helper 說明

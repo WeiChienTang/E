@@ -433,8 +433,9 @@ private void OpenNewFeature()
 
 ## 相關檔案
 
-- [Components/Layout/MainLayout.razor](../Components/Layout/MainLayout.razor) - 快捷鍵整合入口
-- [Components/Shared/QuickAction/](../Components/Shared/QuickAction/) - 快速功能組件
-- [Data/Navigation/NavigationConfig.cs](../Data/Navigation/NavigationConfig.cs) - 導航配置
-- [Helpers/Common/NavigationActionHelper.cs](../Helpers/Common/NavigationActionHelper.cs) - Action 輔助類
-- [wwwroot/js/keyboard-shortcuts.js](../wwwroot/js/keyboard-shortcuts.js) - 全域快捷鍵 JS
+- `Components/Layout/MainLayout.razor` - 快捷鍵整合入口
+- `Components/Shared/QuickAction/` - 快速功能組件
+- `Data/Navigation/NavigationConfig.cs` - 導航配置
+- `Helpers/Common/NavigationActionHelper.cs` - Action 輔助類
+- `wwwroot/js/keyboard-shortcuts.js` - 全域快捷鍵 JS
+- [README_共用元件設計總綱.md](README_共用元件設計總綱.md) - 共用元件設計總綱

@@ -101,7 +101,7 @@ new ReportDefinition
 
 #### 方案 A：需要篩選（推薦）
 
-參考 [README_報表篩選架構設計總綱.md](../../Shared/Report/README_報表篩選架構設計總綱.md) 建立篩選模板。
+參考 [README_報表篩選架構設計總綱.md](README_報表篩選架構設計.md) 建立篩選模板。
 
 #### 方案 B：不需要篩選
 
@@ -176,7 +176,7 @@ public static class ReportCategory
 
 ## 相關檔案
 
-- [README_報表系統總綱.md](../../Documentation/README_報表系統總綱.md) - 報表系統入口
-- [README_報表篩選架構設計總綱.md](../../Shared/Report/README_報表篩選架構設計總綱.md) - 篩選模板機制
-- [README_報表檔設計總綱.md](../../Documentation/README_報表檔設計總綱.md) - 報表服務與列印
-- [README_報表Index設計總綱.md](../../Documentation/README_報表Index設計總綱.md) - Index 批次列印
+- [README_報表系統總綱.md](README_報表系統總綱.md) - 報表系統入口
+- [README_報表篩選架構設計總綱.md](README_報表篩選架構設計.md) - 篩選模板機制
+- [README_報表檔設計總綱.md](README_報表檔設計.md) - 報表服務與列印
+- [README_報表Index設計總綱.md](README_報表Index設計.md) - Index 批次列印
