@@ -397,3 +397,86 @@
 .input-with-action-buttons .list-group {
     z-index: 1000; /* 確保下拉選單在按鈕上方 */
 }
+
+/* ===== Tab 佈局模式 - 按鈕樣式 ===== */
+
+/* Tab 容器 - 緊貼上方功能按鈕 */
+.form-tab-container {
+    width: 100%;
+}
+
+/* Tab 按鈕群組容器 */
+.form-tab-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Tab 按鈕基礎樣式 */
+.form-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.form-tab-btn:hover {
+    color: #0d6efd;
+    background-color: #e7f1ff;
+    border-color: #b6d4fe;
+}
+
+/* 作用中的 Tab 按鈕 */
+.form-tab-btn.active {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    font-weight: 600;
+}
+
+.form-tab-btn.active:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    color: #fff;
+}
+
+/* Tab 按鈕圖示 */
+.form-tab-btn i {
+    font-size: 0.8rem;
+}
+
+/* Tab 內容區域 */
+.form-tab-content {
+    padding: 0.5rem 0 0 0;
+}
+
+.form-tab-content .tab-pane {
+    width: 100%;
+}
+
+/* 手機版 Tab 響應式 */
+@media (max-width: 576px) {
+    .form-tab-btn-group {
+        gap: 0.25rem;
+    }
+
+    .form-tab-btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    .form-tab-content {
+        padding: 0.35rem 0 0 0;
+    }
+}

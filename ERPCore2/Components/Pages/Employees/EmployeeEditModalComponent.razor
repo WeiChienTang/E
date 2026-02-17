@@ -9,8 +9,9 @@
 @inject INavigationPermissionService NavigationPermissionService
 @inject ActionButtonHelper ActionButtonHelper
 @using ERPCore2.Helpers
+@using ERPCore2.Helpers.EditModal
 
-<GenericEditModalComponent TEntity="Employee" 
+<GenericEditModalComponent TEntity="Employee"
                           TService="IEmployeeService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
@@ -24,6 +25,7 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
@@ -76,6 +78,7 @@
     private GenericEditModalComponent<Employee, IEmployeeService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
     
     // 部門編輯 Modal 相關變數 - 使用泛型管理器
     private DepartmentEditModalComponent? departmentEditModal;
@@ -416,8 +419,8 @@
 
             formFields.Add(FormFieldConfigurationHelper.CreateRemarksField<Employee>());
 
-            // 更新表單區段定義
-            formSections = FormSectionHelper<Employee>.Create()
+            // 更新表單區段定義與 Tab 分組
+            var layout = FormSectionHelper<Employee>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     e => e.Code,
                     e => e.Name,
@@ -440,7 +443,12 @@
                     e => e.RoleId)
                 .AddToSection(FormSectionNames.AdditionalData,
                     e => e.Remarks)
-                .Build();
+                .GroupIntoTab("員工資料", "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData)
+                .GroupIntoTab("配給裝備", "bi-tools", FormSectionNames.EquipmentAssignment)
+                .BuildAll();
+
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
         }
         catch (Exception)
         {

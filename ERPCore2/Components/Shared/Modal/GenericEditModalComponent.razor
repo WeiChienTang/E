@@ -4,6 +4,7 @@
 @inject INotificationService NotificationService
 @using System.Reflection
 @using ERPCore2.Helpers
+@using ERPCore2.Helpers.EditModal
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
 @typeparam TEntity where TEntity : BaseEntity, new()
@@ -185,6 +186,7 @@
                                     Model="@Entity"
                                     FieldDefinitions="@GetProcessedFormFields()"
                                     FieldSections="@FormSections"
+                                    TabDefinitions="@TabDefinitions"
                                     OnFieldChanged="@HandleFieldChanged" />
             </div>
         }
@@ -356,6 +358,7 @@
     [Parameter] public bool UseGenericForm { get; set; } = true;
     [Parameter] public List<FormFieldDefinition> FormFields { get; set; } = new();
     [Parameter] public Dictionary<string, string> FormSections { get; set; } = new();
+    [Parameter] public List<FormTabDefinition>? TabDefinitions { get; set; }
     
     // AutoComplete 智能預填支援
     [Parameter] public Dictionary<string, Func<string, Dictionary<string, object?>>>? AutoCompletePrefillers { get; set; }

@@ -1,7 +1,8 @@
-@* 系統參數設定 Modal - 使用 Tab 面板 + GenericFormComponent 分區顯示 *@
+@* 系統參數設定 Modal - 使用統一 Tab 佈局 *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Navigation
 @using ERPCore2.Components.Shared.UI.Form
+@using ERPCore2.Helpers.EditModal
 @using System.ComponentModel.DataAnnotations
 
 @inject ISystemParameterService SystemParameterService
@@ -42,30 +43,11 @@
                                Title="關閉" />
     </HeaderButtons>
     <BodyContent>
-        @* ===== Tab 面板導航 ===== *@
-        <ul class="nav nav-tabs mb-3">
-            @foreach (var tab in tabConfigs)
-            {
-                <li class="nav-item">
-                    <button class="nav-link @(activeTab == tab.Key ? "active" : "")"
-                            type="button"
-                            @onclick="@(() => activeTab = tab.Key)">
-                        <i class="@tab.Icon me-1"></i>@tab.Label
-                    </button>
-                </li>
-            }
-        </ul>
-
-        @* ===== Tab 面板內容（依選取的面板顯示對應欄位）===== *@
-        @{
-            var currentTab = tabConfigs.FirstOrDefault(t => t.Key == activeTab);
-        }
-        @if (currentTab != null)
-        {
-            <GenericFormComponent TModel="SystemParameter"
-                                  Model="@systemParameter"
-                                  FieldDefinitions="@currentTab.Fields" />
-        }
+        <GenericFormComponent TModel="SystemParameter"
+                              Model="@systemParameter"
+                              FieldDefinitions="@allFields"
+                              FieldSections="@fieldSections"
+                              TabDefinitions="@tabDefinitions" />
 
         @* ===== 底部審計資訊 ===== *@
         @if (systemParameter.Id > 0)
@@ -112,84 +94,63 @@
     private string errorMessage = string.Empty;
     private SystemParameter systemParameter = new();
     private bool isResetConfirmVisible = false;
-    private string activeTab = "tax";
 
-    // ===== Tab 面板定義 =====
+    // ===== 表單欄位與 Tab 定義 =====
 
-    private sealed class TabConfig
+    private readonly List<FormFieldDefinition> allFields = new()
     {
-        public string Key { get; init; } = "";
-        public string Label { get; init; } = "";
-        public string Icon { get; init; } = "";
-        public List<FormFieldDefinition> Fields { get; init; } = new();
-    }
+        new FormFieldDefinition
+        {
+            PropertyName = "TaxRate",
+            Label = "稅率 (%)",
+            FieldType = FormFieldType.Number,
+            IsRequired = true,
+            Min = 0,
+            Max = 100,
+            Step = 0.01m,
+            DecimalPlaces = 2,
+            Placeholder = "請輸入稅率"
+        },
+        new FormFieldDefinition
+        {
+            PropertyName = "Remarks",
+            Label = "備註",
+            FieldType = FormFieldType.TextArea,
+            Placeholder = "請輸入備註",
+            Rows = 3,
+            MaxLength = 500
+        }
+        // 未來：加入 purchase, sales, inventory 欄位
+        // new FormFieldDefinition { PropertyName = "EnablePurchaseOrderApproval", Label = "採購單審核", FieldType = FormFieldType.Checkbox },
+        // new FormFieldDefinition { PropertyName = "EnablePurchaseReceivingApproval", Label = "進貨單審核", FieldType = FormFieldType.Checkbox },
+        // new FormFieldDefinition { PropertyName = "EnablePurchaseReturnApproval", Label = "進貨退回審核", FieldType = FormFieldType.Checkbox },
+        // new FormFieldDefinition { PropertyName = "EnableQuotationApproval", Label = "報價單審核", FieldType = FormFieldType.Checkbox },
+        // new FormFieldDefinition { PropertyName = "EnableSalesOrderApproval", Label = "銷貨單審核", FieldType = FormFieldType.Checkbox },
+        // new FormFieldDefinition { PropertyName = "EnableSalesReturnApproval", Label = "銷貨退回審核", FieldType = FormFieldType.Checkbox },
+        // new FormFieldDefinition { PropertyName = "EnableInventoryTransferApproval", Label = "庫存調撥審核", FieldType = FormFieldType.Checkbox }
+    };
 
-    private readonly List<TabConfig> tabConfigs = new()
+    private readonly Dictionary<string, string> fieldSections = new()
     {
-        new TabConfig
-        {
-            Key = "tax",
-            Label = "稅務設定",
-            Icon = "bi bi-cash-stack",
-            Fields = new()
-            {
-                new FormFieldDefinition
-                {
-                    PropertyName = "TaxRate",
-                    Label = "稅率 (%)",
-                    FieldType = FormFieldType.Number,
-                    IsRequired = true,
-                    Min = 0,
-                    Max = 100,
-                    Step = 0.01m,
-                    DecimalPlaces = 2,
-                    Placeholder = "請輸入稅率"
-                },
-                new FormFieldDefinition
-                {
-                    PropertyName = "Remarks",
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    Rows = 3,
-                    MaxLength = 500
-                }
-            }
-        },
-        /* new TabConfig
-        {
-            Key = "purchase",
-            Label = "採購流程審核",
-            Icon = "bi bi-cart-check",
-            Fields = new()
-            {
-                new FormFieldDefinition { PropertyName = "EnablePurchaseOrderApproval", Label = "採購單審核", FieldType = FormFieldType.Checkbox },
-                new FormFieldDefinition { PropertyName = "EnablePurchaseReceivingApproval", Label = "進貨單審核", FieldType = FormFieldType.Checkbox },
-                new FormFieldDefinition { PropertyName = "EnablePurchaseReturnApproval", Label = "進貨退回審核", FieldType = FormFieldType.Checkbox }
-            }
-        },
-        new TabConfig
-        {
-            Key = "sales",
-            Label = "銷售流程審核",
-            Icon = "bi bi-receipt",
-            Fields = new()
-            {
-                new FormFieldDefinition { PropertyName = "EnableQuotationApproval", Label = "報價單審核", FieldType = FormFieldType.Checkbox },
-                new FormFieldDefinition { PropertyName = "EnableSalesOrderApproval", Label = "銷貨單審核", FieldType = FormFieldType.Checkbox },
-                new FormFieldDefinition { PropertyName = "EnableSalesReturnApproval", Label = "銷貨退回審核", FieldType = FormFieldType.Checkbox }
-            }
-        },
-        new TabConfig
-        {
-            Key = "inventory",
-            Label = "庫存流程審核",
-            Icon = "bi bi-box-seam",
-            Fields = new()
-            {
-                new FormFieldDefinition { PropertyName = "EnableInventoryTransferApproval", Label = "庫存調撥審核", FieldType = FormFieldType.Checkbox }
-            }
-        }*/
+        { "TaxRate", "稅務設定" },
+        { "Remarks", "稅務設定" }
+        // 未來：
+        // { "EnablePurchaseOrderApproval", "採購流程審核" },
+        // { "EnablePurchaseReceivingApproval", "採購流程審核" },
+        // { "EnablePurchaseReturnApproval", "採購流程審核" },
+        // { "EnableQuotationApproval", "銷售流程審核" },
+        // { "EnableSalesOrderApproval", "銷售流程審核" },
+        // { "EnableSalesReturnApproval", "銷售流程審核" },
+        // { "EnableInventoryTransferApproval", "庫存流程審核" }
+    };
+
+    private readonly List<FormTabDefinition> tabDefinitions = new()
+    {
+        new() { Label = "稅務設定", Icon = "bi bi-cash-stack", SectionNames = new() { "稅務設定" } }
+        // 未來啟用更多區段時加入更多 Tab：
+        // new() { Label = "採購流程審核", Icon = "bi bi-cart-check", SectionNames = new() { "採購流程審核" } },
+        // new() { Label = "銷售流程審核", Icon = "bi bi-receipt", SectionNames = new() { "銷售流程審核" } },
+        // new() { Label = "庫存流程審核", Icon = "bi bi-box-seam", SectionNames = new() { "庫存流程審核" } }
     };
 
     // ===== 生命週期方法 =====
@@ -310,8 +271,6 @@
 
     private async Task HandleClose()
     {
-        activeTab = "tax";
-
         if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(false);

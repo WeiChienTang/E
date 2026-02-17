@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using ERPCore2.Components.Shared.UI.Button
 @using ERPCore2.Components.Shared.UI.Form
+@using ERPCore2.Helpers.EditModal
 @typeparam TModel
 
 <div class="generic-form-container">
@@ -21,13 +22,74 @@
             <ValidationSummary />
         }
         
-        @if (FieldSections != null && FieldSections.Any() && FieldDefinitions != null)
+        @if (TabDefinitions != null && TabDefinitions.Count > 0 && FieldSections != null && FieldDefinitions != null)
         {
-            @* 新版佈局 - 區段水平並排，欄位垂直排列，Label 與 Input 同行 *@
+            @* ===== Tab 佈局模式 - 每個 Tab 包含一或多個 Section ===== *@
+            var orderedSections = GetOrderedSections().ToList();
+
+            <div class="form-tab-container">
+                @* Tab 按鈕群組 *@
+                <div class="form-tab-btn-group">
+                    @for (var i = 0; i < TabDefinitions.Count; i++)
+                    {
+                        var index = i;
+                        var tab = TabDefinitions[i];
+                        <button type="button"
+                                class="form-tab-btn @(_activeTabIndex == index ? "active" : "")"
+                                @onclick="@(() => SetActiveTab(index))">
+                            @if (!string.IsNullOrEmpty(tab.Icon))
+                            {
+                                <i class="@tab.Icon"></i>
+                            }
+                            @tab.Label
+                        </button>
+                    }
+                </div>
+
+                @* Tab 內容區域 *@
+                <div class="tab-content form-tab-content">
+                    @for (var i = 0; i < TabDefinitions.Count; i++)
+                    {
+                        var index = i;
+                        var tab = TabDefinitions[i];
+                        var tabSections = orderedSections
+                            .Where(s => tab.SectionNames.Contains(s.Key)).ToList();
+                        var sectionColClass = GetSectionColumnClass(tabSections.Count);
+
+                        <div class="tab-pane @(_activeTabIndex == index ? "active show" : "")"
+                             style="@(_activeTabIndex == index ? "" : "display:none")">
+                            <div class="form-sections-container">
+                                @foreach (var sectionGroup in tabSections)
+                                {
+                                    <div class="form-section-column @sectionColClass">
+                                        <div class="form-section-header">
+                                            <span class="form-section-title">@(sectionGroup.Key)</span>
+                                        </div>
+                                        <div class="form-section-fields">
+                                            @foreach (var fieldKvp in sectionGroup)
+                                            {
+                                                var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                                                if (field != null)
+                                                {
+                                                    @RenderFieldMarkup(field)
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (FieldSections != null && FieldSections.Any() && FieldDefinitions != null)
+        {
+            @* ===== 水平並排佈局（現有行為，無 Tab）===== *@
             var orderedSections = GetOrderedSections().ToList();
             var sectionCount = orderedSections.Count;
             var sectionColClass = GetSectionColumnClass(sectionCount);
-            
+
             <div class="form-sections-container">
                 @foreach (var sectionGroup in orderedSections)
                 {
@@ -51,7 +113,7 @@
         }
         else
         {
-            @* 無區段時的單欄佈局 *@
+            @* ===== 無區段時的單欄佈局 ===== *@
             <div class="form-sections-container">
                 <div class="form-section-column section-col-full">
                     <div class="form-section-fields">

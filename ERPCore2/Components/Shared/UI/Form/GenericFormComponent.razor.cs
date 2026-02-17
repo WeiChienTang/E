@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using ERPCore2.Helpers;
+using ERPCore2.Helpers.EditModal;
 
 namespace ERPCore2.Components.Shared.UI.Form;
 
@@ -50,10 +51,11 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
     public string FieldContainerCssClass { get; set; } = "col-md-2";
 
     /// <summary>
-    /// 是否啟用 Tab 佈局（當有多個區段時）
+    /// Tab 頁籤定義清單 - 定義每個 Tab 包含哪些 Section
+    /// 有提供時啟用 Tab 佈局；為 null 時使用現有的水平並排 column 佈局
     /// </summary>
-    [Parameter] 
-    public bool EnableTabLayout { get; set; } = true;
+    [Parameter]
+    public List<FormTabDefinition>? TabDefinitions { get; set; }
 
     #endregion
 
@@ -63,6 +65,7 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
     
     // Tab 相關狀態
     protected int _activeTabIndex = 0;
+    private TModel? _previousModel;
 
     // AutoComplete 狀態管理器（取代原本的多個 Dictionary）
     protected readonly AutoCompleteStateManager _autoCompleteStates = new();
@@ -76,6 +79,13 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
 
     protected override void OnParametersSet()
     {
+        // Model 變更時重置 Tab 索引（例如上下筆切換）
+        if (_previousModel != null && !ReferenceEquals(_previousModel, Model))
+        {
+            _activeTabIndex = 0;
+        }
+        _previousModel = Model;
+
         InitializeAutoCompleteDisplayValues();
         ApplyDefaultValues();
         base.OnParametersSet();
