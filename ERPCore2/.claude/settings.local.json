@@ -6,7 +6,11 @@
       "Bash(rm *)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(xargs:*)",
+      "Bash(ls:*)",
+      "Bash(git mv:*)",
+      "Bash(git add:*)"
     ]
   }
 }
