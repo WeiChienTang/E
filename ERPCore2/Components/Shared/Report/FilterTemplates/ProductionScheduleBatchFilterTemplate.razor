@@ -13,73 +13,48 @@
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 客戶選擇 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <MultiSelectFilterComponent TItem="Customer"
-                                       Items="@customers"
-                                       @bind-SelectedItems="@selectedCustomers"
-                                       DisplayProperty="CompanyName"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋客戶..."
-                                       EmptyMessage="未選擇客戶（查詢全部客戶）"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="指定客戶">
+        <SearchSelectFilterComponent TItem="Customer"
+                                   Items="@customers"
+                                   @bind-SelectedItems="@selectedCustomers"
+                                   DisplayProperty="CompanyName"
+                                   ValueProperty="Id"
+                                   Placeholder="搜尋客戶..."
+                                   EmptyMessage="未選擇客戶（查詢全部客戶）" />
+    </FilterFieldRow>
 
-    @* 第二行: 日期範圍 + 快速選擇 *@
-    <div class="mb-2">
+    <FilterFieldRow Label="日期範圍">
         <DateRangeFilterComponent @bind-StartDate="startDate"
                                   @bind-EndDate="endDate"
                                   ShowQuickSelectors="true"
                                   AutoValidate="true"
                                   ShowValidationMessage="true" />
-    </div>
+    </FilterFieldRow>
 
-    @* 第三行: 生產狀態篩選 + 包含已結案 *@
-    <div class="row g-2 align-items-end">
-        <div class="col-2 d-flex align-items-end">
-            <div class="form-check mb-1">
+    <FilterFieldRow Label="生產狀態">
+        <div class="d-flex align-items-center gap-3">
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="statusPending" @bind="statusPending">
-                <label class="form-check-label small" for="statusPending">
-                    待生產
-                </label>
+                <label class="form-check-label small" for="statusPending">待生產</label>
             </div>
-        </div>
-        <div class="col-2 d-flex align-items-end">
-            <div class="form-check mb-1">
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="statusInProgress" @bind="statusInProgress">
-                <label class="form-check-label small" for="statusInProgress">
-                    生產中
-                </label>
+                <label class="form-check-label small" for="statusInProgress">生產中</label>
             </div>
-        </div>
-        <div class="col-2 d-flex align-items-end">
-            <div class="form-check mb-1">
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="statusCompleted" @bind="statusCompleted">
-                <label class="form-check-label small" for="statusCompleted">
-                    已完成
-                </label>
+                <label class="form-check-label small" for="statusCompleted">已完成</label>
             </div>
-        </div>
-        <div class="col-2 d-flex align-items-end">
-            <div class="form-check mb-1">
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="statusDiscontinued" @bind="statusDiscontinued">
-                <label class="form-check-label small" for="statusDiscontinued">
-                    已停產
-                </label>
+                <label class="form-check-label small" for="statusDiscontinued">已停產</label>
             </div>
-        </div>
-        <div class="col-4 d-flex align-items-end">
-            <div class="form-check mb-1">
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="includeClosed" @bind="includeClosed">
-                <label class="form-check-label small" for="includeClosed">
-                    包含已結案
-                </label>
+                <label class="form-check-label small" for="includeClosed">包含已結案</label>
             </div>
         </div>
-    </div>
+    </FilterFieldRow>
 </div>
 
 @code {

@@ -5,6 +5,7 @@
 @inject IVehicleTypeService VehicleTypeService
 @inject IEmployeeService EmployeeService
 @inject ICustomerService CustomerService
+@inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
 @inject INotificationService NotificationService
 @inject IVehicleListReportService VehicleListReportService
@@ -69,6 +70,14 @@
                            OnCustomerSaved="@OnCustomerSavedWrapper"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
+@* 廠商編輯 Modal *@
+<SupplierEditModalComponent @ref="supplierEditModal"
+                           IsVisible="@supplierModalManager.IsModalVisible"
+                           IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
+                           SupplierId="@supplierModalManager.SelectedEntityId"
+                           OnSupplierSaved="@OnSupplierSavedWrapper"
+                           OnCancel="@supplierModalManager.HandleModalCancelAsync" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -76,6 +85,7 @@
     [Parameter] public int? VehicleId { get; set; }
     [Parameter] public EventCallback<Vehicle> OnVehicleSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<Vehicle, IVehicleService>? editModalComponent;
@@ -89,6 +99,7 @@
     private List<VehicleType> availableVehicleTypes = new();
     private List<Employee> availableEmployees = new();
     private List<Customer> availableCustomers = new();
+    private List<Supplier> availableSuppliers = new();
     private List<Company> availableCompanies = new();
 
     // Modal Manager 集合
@@ -105,6 +116,10 @@
     // 客戶編輯 Modal
     private CustomerEditModalComponent? customerEditModal;
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
+
+    // 廠商編輯 Modal
+    private SupplierEditModalComponent? supplierEditModal;
+    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
 
     // 資料載入狀態標記
     private bool isDataLoaded = false;
@@ -136,12 +151,14 @@
                 .AddManager<VehicleType>(nameof(Vehicle.VehicleTypeId), "車型")
                 .AddManager<Employee>(nameof(Vehicle.EmployeeId), "員工")
                 .AddManager<Customer>(nameof(Vehicle.CustomerId), "客戶")
+                .AddManager<Supplier>(nameof(Vehicle.SupplierId), "廠商")
                 .Build();
 
             // 取得個別 Manager 供組件使用
             vehicleTypeModalManager = modalManagers.Get<VehicleType>(nameof(Vehicle.VehicleTypeId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(Vehicle.EmployeeId));
             customerModalManager = modalManagers.Get<Customer>(nameof(Vehicle.CustomerId));
+            supplierModalManager = modalManagers.Get<Supplier>(nameof(Vehicle.SupplierId));
         }
         catch (Exception)
         {
@@ -160,6 +177,7 @@
                 .AddField(nameof(Vehicle.VehicleTypeId), "Name", availableVehicleTypes)
                 .AddField(nameof(Vehicle.EmployeeId), "Name", availableEmployees)
                 .AddField(nameof(Vehicle.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(Vehicle.SupplierId), "CompanyName", availableSuppliers)
                 .AddField(nameof(Vehicle.CompanyId), "CompanyName", availableCompanies)
                 .Build();
 
@@ -206,6 +224,9 @@
                     OwnershipType = VehicleOwnershipType.Company,
                     Status = EntityStatus.Active
                 };
+
+                // 套用預填值（例如從客戶/廠商/員工編輯畫面開啟時帶入的 FK）
+                PrefilledValueHelper.ApplyPrefilledValues(newVehicle, PrefilledValues);
 
                 return newVehicle;
             }
@@ -310,7 +331,8 @@
                     FieldType = FormFieldType.Number,
                     Placeholder = "請輸入出廠年份",
                     IsRequired = false,
-                    HelpText = "車輛的出廠年份"
+                    HelpText = "車輛的出廠年份",
+                    UseThousandsSeparator = false
                 },
                 new()
                 {
@@ -470,6 +492,17 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(Vehicle.SupplierId),
+                    Label = "所屬廠商",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇所屬廠商",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "車輛所屬的廠商",
+                    ActionButtons = await GetSupplierActionButtonsAsync()
+                },
+                new()
+                {
                     PropertyName = nameof(Vehicle.CompanyId),
                     Label = "所屬公司",
                     FieldType = FormFieldType.AutoComplete,
@@ -510,6 +543,7 @@
                 .AddToSection(FormSectionNames.OtherInfo,
                     v => v.EmployeeId,
                     v => v.CustomerId,
+                    v => v.SupplierId,
                     v => v.CompanyId,
                     v => v.Remarks)
                 .Build();
@@ -535,6 +569,7 @@
             availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
 
             availableCustomers = await CustomerService.GetAllAsync();
+            availableSuppliers = await SupplierService.GetAllAsync();
             availableCompanies = await CompanyService.GetAllAsync();
 
             // 重新建立 AutoComplete 配置
@@ -542,6 +577,7 @@
                 .AddField(nameof(Vehicle.VehicleTypeId), "Name", availableVehicleTypes)
                 .AddField(nameof(Vehicle.EmployeeId), "Name", availableEmployees)
                 .AddField(nameof(Vehicle.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(Vehicle.SupplierId), "CompanyName", availableSuppliers)
                 .AddField(nameof(Vehicle.CompanyId), "CompanyName", availableCompanies)
                 .Build();
         }
@@ -551,6 +587,7 @@
             availableVehicleTypes = new List<VehicleType>();
             availableEmployees = new List<Employee>();
             availableCustomers = new List<Customer>();
+            availableSuppliers = new List<Supplier>();
             availableCompanies = new List<Company>();
         }
     }
@@ -564,7 +601,8 @@
         {
             { nameof(Vehicle.VehicleTypeId), vehicleTypeModalManager },
             { nameof(Vehicle.EmployeeId), employeeModalManager },
-            { nameof(Vehicle.CustomerId), customerModalManager }
+            { nameof(Vehicle.CustomerId), customerModalManager },
+            { nameof(Vehicle.SupplierId), supplierModalManager }
         };
     }
 
@@ -595,6 +633,15 @@
         );
     }
 
+    private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            supplierModalManager,
+            nameof(Vehicle.SupplierId)
+        );
+    }
+
     /// <summary>
     /// 包裝車型儲存事件
     /// </summary>
@@ -620,6 +667,14 @@
     }
 
     /// <summary>
+    /// 包裝廠商儲存事件
+    /// </summary>
+    private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
+    {
+        await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
+    }
+
+    /// <summary>
     /// 處理欄位值變更事件
     /// </summary>
     private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
@@ -640,6 +695,11 @@
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+            else if (fieldChange.PropertyName == nameof(Vehicle.SupplierId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    supplierModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
         }
         catch (Exception)

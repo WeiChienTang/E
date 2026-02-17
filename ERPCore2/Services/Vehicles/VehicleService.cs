@@ -33,6 +33,7 @@ namespace ERPCore2.Services
                     .Include(v => v.VehicleType)
                     .Include(v => v.Employee)
                     .Include(v => v.Customer)
+                    .Include(v => v.Supplier)
                     .Include(v => v.Company)
                     .AsQueryable()
                     .OrderBy(v => v.LicensePlate)
@@ -54,6 +55,7 @@ namespace ERPCore2.Services
                     .Include(v => v.VehicleType)
                     .Include(v => v.Employee)
                     .Include(v => v.Customer)
+                    .Include(v => v.Supplier)
                     .Include(v => v.Company)
                     .Include(v => v.VehicleMaintenances)
                     .FirstOrDefaultAsync(v => v.Id == id);
@@ -79,6 +81,7 @@ namespace ERPCore2.Services
                     .Include(v => v.VehicleType)
                     .Include(v => v.Employee)
                     .Include(v => v.Customer)
+                    .Include(v => v.Supplier)
                     .Include(v => v.Company)
                     .Where(v => ((v.Code != null && v.Code.ToLower().Contains(lowerSearchTerm)) ||
                          v.LicensePlate.ToLower().Contains(lowerSearchTerm) ||
@@ -330,6 +333,24 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCustomerAsync), GetType(), _logger, new { CustomerId = customerId });
+                throw;
+            }
+        }
+
+        public async Task<List<Vehicle>> GetBySupplierAsync(int supplierId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Vehicles
+                    .Include(v => v.VehicleType)
+                    .Where(v => v.SupplierId == supplierId)
+                    .OrderBy(v => v.LicensePlate)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierAsync), GetType(), _logger, new { SupplierId = supplierId });
                 throw;
             }
         }

@@ -1,0 +1,29 @@
+@*
+    篩選欄位行組件
+    統一所有篩選模板的「標題 + 內容」同行佈局
+    未來修改佈局樣式只需改此組件
+*@
+
+<div class="filter-field-row @CssClass">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="filter-field-label">@Label</label>
+    }
+    <div class="filter-field-content">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    /// <summary>標題文字</summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>內容區域</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>額外 CSS 類別</summary>
+    [Parameter]
+    public string? CssClass { get; set; }
+}

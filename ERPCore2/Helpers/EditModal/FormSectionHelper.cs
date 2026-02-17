@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Microsoft.AspNetCore.Components;
 
 namespace ERPCore2.Helpers.EditModal
 {
@@ -18,6 +19,12 @@ namespace ERPCore2.Helpers.EditModal
 
         /// <summary>此 Tab 包含的 Section 名稱清單</summary>
         public List<string> SectionNames { get; set; } = new();
+
+        /// <summary>
+        /// 自訂內容 RenderFragment（非 null 時，此 Tab 渲染自訂內容而非表單欄位區段）
+        /// 當設定此屬性時，SectionNames 可以為空列表
+        /// </summary>
+        public RenderFragment? CustomContent { get; set; }
     }
 
     /// <summary>
@@ -135,6 +142,25 @@ namespace ERPCore2.Helpers.EditModal
                 Label = tabLabel,
                 Icon = icon,
                 SectionNames = sectionNames.ToList()
+            });
+            return this;
+        }
+
+        /// <summary>
+        /// 建立一個自訂內容的 Tab 頁籤（不包含表單欄位，而是渲染自訂 RenderFragment）
+        /// </summary>
+        /// <param name="tabLabel">Tab 標籤文字</param>
+        /// <param name="icon">Tab 圖示 CSS class（例如 "bi bi-truck"），可為 null</param>
+        /// <param name="customContent">自訂內容 RenderFragment</param>
+        /// <returns>當前實例，支援鏈式呼叫</returns>
+        public FormSectionHelper<TEntity> GroupIntoCustomTab(string tabLabel, string? icon, RenderFragment customContent)
+        {
+            _tabDefinitions.Add(new FormTabDefinition
+            {
+                Label = tabLabel,
+                Icon = icon,
+                SectionNames = new List<string>(),
+                CustomContent = customContent
             });
             return this;
         }

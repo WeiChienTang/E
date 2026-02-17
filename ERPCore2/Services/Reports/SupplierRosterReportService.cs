@@ -218,6 +218,12 @@ namespace ERPCore2.Services.Reports
         {
             var results = await _supplierService.GetAllAsync();
 
+            // 指定廠商篩選
+            if (criteria.SupplierIds.Any())
+            {
+                results = results.Where(s => criteria.SupplierIds.Contains(s.Id)).ToList();
+            }
+
             // 僅啟用廠商
             if (criteria.ActiveOnly)
             {

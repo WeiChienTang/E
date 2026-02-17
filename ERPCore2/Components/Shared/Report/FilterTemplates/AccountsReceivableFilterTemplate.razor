@@ -12,67 +12,49 @@
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 客戶選擇 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <label class="form-label mb-1">
-                <i class="bi bi-people me-1"></i>客戶
-                <small class="text-muted fw-normal">（留空=全部）</small>
-            </label>
-            <MultiSelectFilterComponent TItem="Customer"
-                                       Items="@customers"
-                                       @bind-SelectedItems="@selectedCustomers"
-                                       DisplayProperty="CompanyName"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋客戶..."
-                                       EmptyMessage="未選擇客戶"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="指定客戶">
+        <SearchSelectFilterComponent TItem="Customer"
+                                   Items="@customers"
+                                   @bind-SelectedItems="@selectedCustomers"
+                                   DisplayProperty="CompanyName"
+                                   ValueProperty="Id"
+                                   Placeholder="搜尋客戶..."
+                                   EmptyMessage="未選擇客戶" />
+    </FilterFieldRow>
 
-    @* 第二行: 日期範圍 + 快速選擇 *@
-    <div class="row g-2 mb-2 align-items-end">
-        <div class="col-md-3">
-            <label class="form-label mb-1">
-                <i class="bi bi-calendar me-1"></i>起始日期
-            </label>
-            <input type="date" class="form-control" @bind="startDate" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label mb-1">結束日期</label>
-            <input type="date" class="form-control" @bind="endDate" />
-        </div>
-        <div class="col-md-6">
-            <div class="btn-group btn-group-sm w-100" role="group">
-                <button type="button" class="btn btn-outline-secondary" @onclick="SetToday">今日</button>
-                <button type="button" class="btn btn-outline-secondary" @onclick="SetThisWeek">本週</button>
-                <button type="button" class="btn btn-outline-secondary" @onclick="SetThisMonth">本月</button>
-                <button type="button" class="btn btn-outline-secondary" @onclick="SetLastMonth">上月</button>
-                <button type="button" class="btn btn-outline-secondary" @onclick="SetThisYear">今年</button>
-                <button type="button" class="btn btn-outline-danger" @onclick="ClearDates">清空</button>
+    <FilterFieldRow Label="日期範圍">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <input type="date" class="form-control" @bind="startDate" />
             </div>
-        </div>
-    </div>
-
-    @* 第三行: 帳款狀態篩選 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <label class="form-label mb-1">
-                <i class="bi bi-filter me-1"></i>帳款狀態
-            </label>
-            <div class="d-flex gap-3">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="includeSettled" @bind="includeSettled">
-                    <label class="form-check-label" for="includeSettled">包含已結清帳款</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="onlyOverdue" @bind="onlyOverdue">
-                    <label class="form-check-label" for="onlyOverdue">僅顯示逾期帳款</label>
+            <div class="col-md-3">
+                <input type="date" class="form-control" @bind="endDate" />
+            </div>
+            <div class="col-md-6">
+                <div class="btn-group btn-group-sm w-100" role="group">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="SetToday">今日</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="SetThisWeek">本週</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="SetThisMonth">本月</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="SetLastMonth">上月</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="SetThisYear">今年</button>
+                    <button type="button" class="btn btn-outline-danger" @onclick="ClearDates">清空</button>
                 </div>
             </div>
         </div>
-    </div>
+    </FilterFieldRow>
+
+    <FilterFieldRow Label="帳款狀態">
+        <div class="d-flex flex-wrap gap-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="includeSettled" @bind="includeSettled">
+                <label class="form-check-label" for="includeSettled">包含已結清帳款</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="onlyOverdue" @bind="onlyOverdue">
+                <label class="form-check-label" for="onlyOverdue">僅顯示逾期帳款</label>
+            </div>
+        </div>
+    </FilterFieldRow>
 </div>
 
 @code {

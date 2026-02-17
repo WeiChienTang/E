@@ -245,6 +245,12 @@ namespace ERPCore2.Services.Reports
         {
             var results = await _customerService.GetAllAsync();
 
+            // 篩選指定客戶
+            if (criteria.CustomerIds.Any())
+            {
+                results = results.Where(c => criteria.CustomerIds.Contains(c.Id)).ToList();
+            }
+
             // 僅啟用客戶
             if (criteria.ActiveOnly)
             {

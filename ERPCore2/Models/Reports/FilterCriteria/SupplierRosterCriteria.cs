@@ -9,6 +9,11 @@ namespace ERPCore2.Models.Reports.FilterCriteria;
 public class SupplierRosterCriteria : IReportFilterCriteria
 {
     /// <summary>
+    /// 指定廠商 ID 清單（空表示所有廠商）
+    /// </summary>
+    public List<int> SupplierIds { get; set; } = new();
+
+    /// <summary>
     /// 關鍵字搜尋（廠商編號、公司名稱、聯絡人、統編）
     /// </summary>
     public string? Keyword { get; set; }
@@ -33,6 +38,7 @@ public class SupplierRosterCriteria : IReportFilterCriteria
     {
         return new Dictionary<string, object?>
         {
+            ["supplierIds"] = SupplierIds.Any() ? SupplierIds : null,
             ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword,
             ["activeOnly"] = ActiveOnly
         };
@@ -44,6 +50,9 @@ public class SupplierRosterCriteria : IReportFilterCriteria
     public string GetSummary()
     {
         var summary = new List<string>();
+
+        if (SupplierIds.Any())
+            summary.Add($"廠商：{SupplierIds.Count} 家");
 
         if (!string.IsNullOrEmpty(Keyword))
             summary.Add($"關鍵字：{Keyword}");

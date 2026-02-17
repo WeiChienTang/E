@@ -13,65 +13,44 @@
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 客戶選擇 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <MultiSelectFilterComponent TItem="Customer"
-                                       Items="@customers"
-                                       @bind-SelectedItems="@selectedCustomers"
-                                       DisplayProperty="CompanyName"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋客戶..."
-                                       EmptyMessage="未選擇客戶（查詢全部客戶）"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="指定客戶">
+        <SearchSelectFilterComponent TItem="Customer"
+                                   Items="@customers"
+                                   @bind-SelectedItems="@selectedCustomers"
+                                   DisplayProperty="CompanyName"
+                                   ValueProperty="Id"
+                                   Placeholder="搜尋客戶..."
+                                   EmptyMessage="未選擇客戶（查詢全部客戶）" />
+    </FilterFieldRow>
 
-    @* 第二行: 日期範圍 + 快速選擇 *@
-    <div class="mb-2">
+    <FilterFieldRow Label="日期範圍">
         <DateRangeFilterComponent @bind-StartDate="startDate"
                                   @bind-EndDate="endDate"
                                   ShowQuickSelectors="true"
                                   AutoValidate="true"
                                   ShowValidationMessage="true" />
-    </div>
+    </FilterFieldRow>
 
-    @* 第三行: 交易類型 + 排除已取消 *@
-    <div class="row g-2 align-items-end">
-        <div class="col-2 d-flex align-items-end">
-            <div class="form-check mb-1">
+    <FilterFieldRow Label="交易類型">
+        <div class="d-flex align-items-center gap-3">
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="includeDeliveries" @bind="includeDeliveries">
-                <label class="form-check-label small" for="includeDeliveries">
-                    出貨單
-                </label>
+                <label class="form-check-label small" for="includeDeliveries">出貨單</label>
             </div>
-        </div>
-        <div class="col-2 d-flex align-items-end">
-            <div class="form-check mb-1">
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="includeReturns" @bind="includeReturns">
-                <label class="form-check-label small" for="includeReturns">
-                    退貨單
-                </label>
+                <label class="form-check-label small" for="includeReturns">退貨單</label>
             </div>
-        </div>
-        <div class="col-2 d-flex align-items-end">
-            <div class="form-check mb-1">
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="includePayments" @bind="includePayments">
-                <label class="form-check-label small" for="includePayments">
-                    收款
-                </label>
+                <label class="form-check-label small" for="includePayments">收款</label>
             </div>
-        </div>
-        <div class="col-4 d-flex align-items-end">
-            <div class="form-check mb-1">
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="excludeCancelled" @bind="excludeCancelled">
-                <label class="form-check-label small" for="excludeCancelled">
-                    排除已取消
-                </label>
+                <label class="form-check-label small" for="excludeCancelled">排除已取消</label>
             </div>
         </div>
-    </div>
+    </FilterFieldRow>
 </div>
 
 @code {

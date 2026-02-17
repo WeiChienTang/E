@@ -1,5 +1,7 @@
 @* 可重用的員工編輯組件 - 可在任何頁面中嵌入 *@
 @using System.Security.Claims
+@using ERPCore2.Helpers
+@using ERPCore2.Helpers.EditModal
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject IEmployeePositionService EmployeePositionService
@@ -8,8 +10,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject INavigationPermissionService NavigationPermissionService
 @inject ActionButtonHelper ActionButtonHelper
-@using ERPCore2.Helpers
-@using ERPCore2.Helpers.EditModal
+@inject IVehicleService VehicleService
 
 <GenericEditModalComponent TEntity="Employee"
                           TService="IEmployeeService"
@@ -67,6 +68,18 @@
                        OnRoleSaved="@OnRoleSavedWrapper"
                        OnCancel="@roleModalManager.HandleModalCancelAsync" />
 
+@* 車輛編輯 Modal - 條件式渲染避免循環元件實例化 *@
+@if (isVehicleModalVisible)
+{
+    <VehicleEditModalComponent @ref="vehicleEditModal"
+                              IsVisible="@isVehicleModalVisible"
+                              IsVisibleChanged="@HandleVehicleModalVisibilityChanged"
+                              VehicleId="@editingVehicleId"
+                              PrefilledValues="@GetVehiclePrefilledValues()"
+                              OnVehicleSaved="@OnVehicleSavedWrapper"
+                              OnCancel="@HandleVehicleModalCancel" />
+}
+
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
@@ -105,6 +118,12 @@
     // 資料載入狀態標記
     private bool isDataLoaded = false;
     
+    // 車輛 Tab 相關
+    private List<Vehicle> employeeVehicles = new();
+    private VehicleEditModalComponent? vehicleEditModal;
+    private bool isVehicleModalVisible = false;
+    private int? editingVehicleId = null;
+    
     // 注意：搜尋關鍵字追蹤已整合到 GenericEditModalComponent 中，不再需要手動追蹤
     // private string lastDepartmentSearchTerm = string.Empty;  // 已移除
     // private string lastPositionSearchTerm = string.Empty;    // 已移除
@@ -117,9 +136,16 @@
     {
         try
         {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
+            // 載入該員工的配給車輛
+            if (loadedEntityId > 0)
+            {
+                employeeVehicles = await VehicleService.GetByEmployeeAsync(loadedEntityId);
+            }
+            else
+            {
+                employeeVehicles = new();
+            }
             StateHasChanged();
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -444,7 +470,7 @@
                 .AddToSection(FormSectionNames.AdditionalData,
                     e => e.Remarks)
                 .GroupIntoTab("員工資料", "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData)
-                .GroupIntoTab("配給裝備", "bi-tools", FormSectionNames.EquipmentAssignment)
+                .GroupIntoCustomTab("配給車輛", "bi-truck", CreateVehicleTabContent())
                 .BuildAll();
 
             formSections = layout.FieldSections;
@@ -513,6 +539,9 @@
                 };
                 return employee;
             }
+
+            // 載入該員工的配給車輛
+            employeeVehicles = await VehicleService.GetByEmployeeAsync(EmployeeId.Value);
             
             return employee;
         }
@@ -798,5 +827,130 @@
             .GetCustomAttribute<DisplayAttribute>();
         
         return displayAttribute?.Name ?? status.ToString();
+    }
+
+    // ===== 車輛 Tab 相關方法 =====
+
+    /// <summary>
+    /// 取得車輛預填值（新增時自動帶入 EmployeeId）
+    /// </summary>
+    private Dictionary<string, object?>? GetVehiclePrefilledValues()
+    {
+        if (!editingVehicleId.HasValue && EmployeeId.HasValue)
+        {
+            return new Dictionary<string, object?>
+            {
+                { nameof(Vehicle.EmployeeId), EmployeeId.Value }
+            };
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 建立車輛 Tab 的自訂內容 RenderFragment
+    /// </summary>
+    private RenderFragment CreateVehicleTabContent() => __builder =>
+    {
+        <VehicleTable Vehicles="@employeeVehicles"
+                     OnAddVehicle="@HandleAddVehicle"
+                     OnEditVehicle="@HandleEditVehicle"
+                     OnUnlinkVehicle="@HandleUnlinkVehicle" />
+    };
+
+    /// <summary>
+    /// 新增配給車輛 - 開啟 VehicleEditModal（新增模式，自動帶入 EmployeeId）
+    /// </summary>
+    private void HandleAddVehicle()
+    {
+        editingVehicleId = null;
+        isVehicleModalVisible = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 編輯車輛 - 開啟 VehicleEditModal（編輯模式）
+    /// </summary>
+    private void HandleEditVehicle(Vehicle vehicle)
+    {
+        editingVehicleId = vehicle.Id;
+        isVehicleModalVisible = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 解除車輛配給 - 將車輛的 EmployeeId 設為 null（不刪除車輛）
+    /// </summary>
+    private async Task HandleUnlinkVehicle(Vehicle vehicle)
+    {
+        try
+        {
+            vehicle.EmployeeId = null;
+            await VehicleService.UpdateAsync(vehicle);
+            
+            // 重新載入車輛列表
+            if (EmployeeId.HasValue)
+            {
+                employeeVehicles = await VehicleService.GetByEmployeeAsync(EmployeeId.Value);
+            }
+            StateHasChanged();
+            await NotificationService.ShowSuccessAsync($"已解除車輛「{vehicle.LicensePlate}」的配給");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"解除配給時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 車輛儲存後的回調 - 重新載入車輛列表
+    /// </summary>
+    private async Task OnVehicleSavedWrapper(Vehicle savedVehicle)
+    {
+        try
+        {
+            // 確保新車輛的 EmployeeId 已設定
+            if (EmployeeId.HasValue && savedVehicle.EmployeeId != EmployeeId.Value)
+            {
+                savedVehicle.EmployeeId = EmployeeId.Value;
+                await VehicleService.UpdateAsync(savedVehicle);
+            }
+            
+            // 重新載入車輛列表
+            if (EmployeeId.HasValue)
+            {
+                employeeVehicles = await VehicleService.GetByEmployeeAsync(EmployeeId.Value);
+            }
+            
+            isVehicleModalVisible = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"車輛儲存後更新列表時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 車輛 Modal 可見狀態變更
+    /// </summary>
+    private async Task HandleVehicleModalVisibilityChanged(bool isVisible)
+    {
+        isVehicleModalVisible = isVisible;
+        if (!isVisible && EmployeeId.HasValue)
+        {
+            // Modal 關閉時重新載入車輛列表
+            employeeVehicles = await VehicleService.GetByEmployeeAsync(EmployeeId.Value);
+        }
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 車輛 Modal 取消
+    /// </summary>
+    private async Task HandleVehicleModalCancel()
+    {
+        isVehicleModalVisible = false;
+        StateHasChanged();
+        await Task.CompletedTask;
     }
 }

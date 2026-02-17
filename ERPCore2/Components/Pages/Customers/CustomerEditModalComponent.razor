@@ -6,6 +6,7 @@
 @inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
 @inject ICustomerRosterReportService CustomerRosterReportService
+@inject IVehicleService VehicleService
 @inject ActionButtonHelper ActionButtonHelper
 
 <GenericEditModalComponent TEntity="Customer" 
@@ -22,6 +23,7 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
@@ -59,6 +61,24 @@
                                 OnPaymentMethodSaved="@OnPaymentMethodSavedWrapper"
                                 OnCancel="@paymentMethodModalManager.HandleModalCancelAsync" />
 
+@* 車輛編輯 Modal - 條件式渲染避免循環元件實例化 *@
+@if (isVehicleModalVisible)
+{
+    <VehicleEditModalComponent @ref="vehicleEditModal"
+                              IsVisible="@isVehicleModalVisible"
+                              IsVisibleChanged="@HandleVehicleModalVisibilityChanged"
+                              VehicleId="@editingVehicleId"
+                              PrefilledValues="@GetVehiclePrefilledValues()"
+                              OnVehicleSaved="@OnVehicleSavedWrapper"
+                              OnCancel="@HandleVehicleModalCancel" />
+}
+
+@* 車輛選擇 Modal *@
+<VehicleSelectModal IsVisible="@isVehicleSelectModalVisible"
+                    IsVisibleChanged="@HandleVehicleSelectModalVisibilityChanged"
+                    ExcludeVehicleIds="@GetCurrentVehicleIds()"
+                    OnVehicleSelected="@HandleVehicleSelected" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -71,6 +91,7 @@
     private GenericEditModalComponent<Customer, ICustomerService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -93,6 +114,13 @@
     // 資料載入狀態標記
     private bool isDataLoaded = false;
 
+    // 車輛 Tab 相關
+    private List<Vehicle> customerVehicles = new();
+    private VehicleEditModalComponent? vehicleEditModal;
+    private bool isVehicleModalVisible = false;
+    private int? editingVehicleId = null;
+    private bool isVehicleSelectModalVisible = false;
+
     // ===== 必要方法 =====
     
     /// <summary>
@@ -103,9 +131,16 @@
     {
         try
         {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
+            // 載入該客戶的配給車輛
+            if (loadedEntityId > 0)
+            {
+                customerVehicles = await VehicleService.GetByCustomerAsync(loadedEntityId);
+            }
+            else
+            {
+                customerVehicles = new();
+            }
             StateHasChanged();
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -199,6 +234,9 @@
 
             // 編輯模式
             var customer = await CustomerService.GetByIdAsync(CustomerId.Value);
+
+            // 載入該客戶的配給車輛
+            customerVehicles = await VehicleService.GetByCustomerAsync(CustomerId.Value);
 
             return customer;
         }
@@ -434,7 +472,7 @@
             FormFieldConfigurationHelper.CreateRemarksField<Customer>()
         };
 
-        formSections = FormSectionHelper<Customer>.Create()
+        var layout = FormSectionHelper<Customer>.Create()
             .AddToSection(FormSectionNames.BasicInfo,
                 c => c.Code,
                 c => c.CompanyName,
@@ -461,7 +499,12 @@
             .AddToSection(FormSectionNames.OtherInfo,
                 c => c.EmployeeId,
                 c => c.Remarks)
-            .Build();
+            .GroupIntoTab("客戶資料", "bi-building", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo)
+            .GroupIntoCustomTab("配給車輛", "bi-truck", CreateVehicleTabContent())
+            .BuildAll();
+        
+        formSections = layout.FieldSections;
+        tabDefinitions = layout.TabDefinitions;
         }
         catch (Exception)
         {
@@ -668,4 +711,169 @@
         }
     }
 
+    // ===== 車輛 Tab 相關方法 =====
+
+    /// <summary>
+    /// 取得車輛預填值（新增時自動帶入 CustomerId）
+    /// </summary>
+    private Dictionary<string, object?>? GetVehiclePrefilledValues()
+    {
+        if (!editingVehicleId.HasValue && CustomerId.HasValue)
+        {
+            return new Dictionary<string, object?>
+            {
+                { nameof(Vehicle.CustomerId), CustomerId.Value }
+            };
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 建立車輛 Tab 的自訂內容 RenderFragment
+    /// </summary>
+    private RenderFragment CreateVehicleTabContent() => __builder =>
+    {
+        <VehicleTable Vehicles="@customerVehicles"
+                     OnAddVehicle="@HandleAddVehicle"
+                     OnSelectVehicle="@HandleOpenVehicleSelectModal"
+                     OnEditVehicle="@HandleEditVehicle"
+                     OnUnlinkVehicle="@HandleUnlinkVehicle" />
+    };
+
+    /// <summary>
+    /// 新增配給車輛
+    /// </summary>
+    private void HandleAddVehicle()
+    {
+        editingVehicleId = null;
+        isVehicleModalVisible = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 編輯車輛
+    /// </summary>
+    private void HandleEditVehicle(Vehicle vehicle)
+    {
+        editingVehicleId = vehicle.Id;
+        isVehicleModalVisible = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 解除車輛配給 - 將車輛的 CustomerId 設為 null
+    /// </summary>
+    private async Task HandleUnlinkVehicle(Vehicle vehicle)
+    {
+        try
+        {
+            vehicle.CustomerId = null;
+            await VehicleService.UpdateAsync(vehicle);
+            
+            if (CustomerId.HasValue)
+            {
+                customerVehicles = await VehicleService.GetByCustomerAsync(CustomerId.Value);
+            }
+            StateHasChanged();
+            await NotificationService.ShowSuccessAsync($"已解除車輛「{vehicle.LicensePlate}」的配給");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"解除配給時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 車輛儲存後的回調
+    /// </summary>
+    private async Task OnVehicleSavedWrapper(Vehicle savedVehicle)
+    {
+        try
+        {
+            if (CustomerId.HasValue && savedVehicle.CustomerId != CustomerId.Value)
+            {
+                savedVehicle.CustomerId = CustomerId.Value;
+                await VehicleService.UpdateAsync(savedVehicle);
+            }
+            
+            if (CustomerId.HasValue)
+            {
+                customerVehicles = await VehicleService.GetByCustomerAsync(CustomerId.Value);
+            }
+            
+            isVehicleModalVisible = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"車輛儲存後更新列表時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleVehicleModalVisibilityChanged(bool isVisible)
+    {
+        isVehicleModalVisible = isVisible;
+        if (!isVisible && CustomerId.HasValue)
+        {
+            customerVehicles = await VehicleService.GetByCustomerAsync(CustomerId.Value);
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleVehicleModalCancel()
+    {
+        isVehicleModalVisible = false;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    // ===== 車輛選擇 Modal 相關 =====
+
+    /// <summary>
+    /// 開啟車輛選擇 Modal
+    /// </summary>
+    private void HandleOpenVehicleSelectModal()
+    {
+        isVehicleSelectModalVisible = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 車輛選擇 Modal 顯示狀態變更
+    /// </summary>
+    private void HandleVehicleSelectModalVisibilityChanged(bool isVisible)
+    {
+        isVehicleSelectModalVisible = isVisible;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 取得目前已配給車輛的 ID 清單（用於排除已在列表中的車輛）
+    /// </summary>
+    private List<int> GetCurrentVehicleIds()
+    {
+        return customerVehicles.Select(v => v.Id).ToList();
+    }
+
+    /// <summary>
+    /// 處理從選擇 Modal 選取的車輛 - 將車輛配給至當前客戶
+    /// </summary>
+    private async Task HandleVehicleSelected(Vehicle vehicle)
+    {
+        try
+        {
+            if (!CustomerId.HasValue) return;
+
+            vehicle.CustomerId = CustomerId.Value;
+            await VehicleService.UpdateAsync(vehicle);
+
+            customerVehicles = await VehicleService.GetByCustomerAsync(CustomerId.Value);
+            StateHasChanged();
+            await NotificationService.ShowSuccessAsync($"已將車輛「{vehicle.LicensePlate}」配給至此客戶");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"配給車輛時發生錯誤：{ex.Message}");
+        }
+    }
 }

@@ -7,7 +7,7 @@
 
 ## 概述
 
-表單欄位是 EditModal 的核心，透過 `FormFieldDefinition` 定義欄位配置，由 `GenericFormComponent<TModel>` 自動渲染對應的 UI 子組件。支援 Tab 頁籤佈局、區段分組、以及多種欄位類型。
+表單欄位是 EditModal 的核心，透過 `FormFieldDefinition` 定義欄位配置，由 `GenericFormComponent<TModel>` 自動渲染對應的 UI 子組件。支援 Tab 頁籤佈局、區段分組、自訂內容 Tab、以及多種欄位類型。
 
 ---
 
@@ -70,28 +70,24 @@ Helpers/EditModal/
 | `Min` | decimal? | 最小值 |
 | `Max` | decimal? | 最大值 |
 | `Step` | decimal? | 步進值 |
-| `DecimalPlaces` | int | 小數位數 |
+| `DecimalPlaces` | int | 小數位數（預設 0 表示整數） |
+| `UseThousandsSeparator` | bool | 是否使用千分位（預設 `true`），唯讀模式下顯示千分位格式 |
 
 ### TextArea 屬性
 
 | 屬性 | 類型 | 說明 |
 |------|------|------|
 | `Rows` | int? | 行數 |
-| `MaxBytes` | int? | 最大位元組數（含字數統計時） |
-
-### Select 欄位屬性
-
-| 屬性 | 類型 | 說明 |
-|------|------|------|
-| `Options` | `List<SelectOption>?` | 下拉選項 |
-| `EnumType` | Type? | Enum 類型（自動產生選項） |
+| `MaxBytes` | int? | 最大位元組數（UTF-8，用於中文字處理） |
+| `ShowCharacterCount` | bool | 是否顯示字數統計 |
 
 ### AutoComplete 欄位屬性
 
 | 屬性 | 類型 | 說明 |
 |------|------|------|
 | `SearchFunction` | `Func<string, Task<List<SelectOption>>>?` | 搜尋函數 |
-| `MinSearchLength` | int | 最少搜尋字元數 |
+| `MinSearchLength` | int | 最少搜尋字元數（預設 1，設為 0 可在空白時顯示全部選項） |
+| `AutoCompleteDelayMs` | int | 搜尋延遲毫秒（預設 300） |
 
 ### ActionButton 屬性
 
@@ -103,7 +99,22 @@ Helpers/EditModal/
 
 | 屬性 | 類型 | 說明 |
 |------|------|------|
-| `LabelHelpItems` | `List<LabelHelpItem>?` | Label 旁的問號說明 |
+| `LabelHelpItems` | `List<LabelHelpItem>?` | Label 旁的問號說明（Popover） |
+
+### CSS 樣式屬性
+
+| 屬性 | 類型 | 說明 |
+|------|------|------|
+| `CssClass` | string? | 自訂 CSS 類別 |
+| `ContainerCssClass` | string? | 容器 CSS 類別（如 `"col-4"` 控制欄位寬度） |
+
+### 其他屬性
+
+| 屬性 | 類型 | 說明 |
+|------|------|------|
+| `AutoCompleteAttribute` | string? | HTML autocomplete 屬性（`"off"`、`"new-password"` 等） |
+| `GroupName` | string? | 分組名稱 |
+| `ValidationRules` | `List<ValidationRule>?` | 驗證規則 |
 
 ---
 
@@ -115,15 +126,20 @@ Helpers/EditModal/
 | `Email` | FormTextField | Email 輸入 |
 | `Password` | FormTextField | 密碼輸入 |
 | `MobilePhone` | FormMobilePhoneField | 台灣手機號碼（自動格式化 0912-345-678） |
-| `Number` | FormNumberField | 數字輸入（支援千分位、Min/Max） |
+| `Number` | FormNumberField | 數字輸入（支援千分位、Min/Max、小數位數） |
 | `Date` | FormDateField | 日期選擇器 |
 | `DateTime` | FormDateField | 日期時間選擇器 |
+| `Time` | FormDateField | 時間選擇器 |
 | `TextArea` | FormTextAreaField | 多行文字 |
 | `TextAreaWithCharacterCount` | CharacterCountTextAreaComponent | 帶字數/位元組統計 |
 | `Select` | FormSelectField | 下拉選單 |
+| `MultiSelect` | FormSelectField | 多選下拉 |
 | `Checkbox` | FormCheckboxField | 核取方塊 |
 | `Radio` | FormRadioField | 單選按鈕群組 |
 | `AutoComplete` | FormAutoCompleteField | 自動完成搜尋（含下拉、鍵盤導航） |
+| `File` | - | 檔案上傳 |
+| `Hidden` | - | 隱藏欄位 |
+| `Custom` | - | 自定義欄位 |
 
 ---
 
@@ -161,6 +177,11 @@ new FormFieldDefinition
 }
 ```
 
+數字欄位行為：
+- **唯讀模式**：顯示千分位格式（如 `1,234,567`）
+- **可編輯 + UseThousandsSeparator=true**：Focus 時顯示原始數字，Blur 時顯示千分位
+- **可編輯 + UseThousandsSeparator=false**：標準 HTML number input
+
 ### 日期欄位
 
 ```csharp
@@ -170,19 +191,6 @@ new FormFieldDefinition
     Label = "出生日期",
     FieldType = FormFieldType.Date,
     Placeholder = "請選擇日期"
-}
-```
-
-### 下拉選單（Enum）
-
-```csharp
-new FormFieldDefinition
-{
-    PropertyName = nameof(Employee.Gender),
-    Label = "性別",
-    FieldType = FormFieldType.Select,
-    EnumType = typeof(GenderType),
-    IsRequired = true
 }
 ```
 
@@ -216,6 +224,12 @@ new FormFieldDefinition
 }
 ```
 
+AutoComplete 特性：
+- 鍵盤導航（ArrowUp/Down、Enter、Tab、Escape）
+- 延遲搜尋（預設 300ms）
+- 失焦時智慧比對
+- 搭配 `AutoCompleteConfigBuilder` 使用
+
 ### 核取方塊
 
 ```csharp
@@ -242,6 +256,54 @@ new FormFieldDefinition
 }
 ```
 
+### 手機號碼欄位
+
+```csharp
+new FormFieldDefinition
+{
+    PropertyName = nameof(Customer.MobilePhone),
+    Label = "行動電話",
+    FieldType = FormFieldType.MobilePhone,
+    Placeholder = "0912-345-678",
+    HelpText = "聯絡人行動電話（10碼，以09開頭）"
+}
+```
+
+### 自訂寬度欄位
+
+```csharp
+new FormFieldDefinition
+{
+    PropertyName = nameof(Customer.Website),
+    Label = "公司網址",
+    FieldType = FormFieldType.Text,
+    ContainerCssClass = "col-4",  // 佔 4/12 欄寬
+    MaxLength = 50
+}
+```
+
+### 複製按鈕（ActionButton）
+
+```csharp
+new FormFieldDefinition
+{
+    PropertyName = nameof(Customer.InvoiceTitle),
+    Label = "發票抬頭",
+    FieldType = FormFieldType.Text,
+    ActionButtons = new List<FieldActionButton>
+    {
+        new FieldActionButton
+        {
+            Text = "複製",
+            Variant = "OutlinePrimary",
+            Size = "Small",
+            Title = "將公司名稱複製到發票抬頭",
+            OnClick = async () => await CopyCompanyNameToInvoiceTitle()
+        }
+    }
+}
+```
+
 ---
 
 ## Tab 佈局設計
@@ -253,9 +315,11 @@ Tab（頁籤）
 ├── Section A（區段，水平並排）
 │   ├── Field 1
 │   └── Field 2
-└── Section B
-    ├── Field 3
-    └── Field 4
+├── Section B
+│   ├── Field 3
+│   └── Field 4
+└── Custom Tab（自訂內容）
+    └── RenderFragment（如子表格 VehicleTable）
 ```
 
 ### 使用 FormSectionHelper
@@ -291,6 +355,42 @@ formSections = layout.FieldSections;
 tabDefinitions = layout.TabDefinitions;
 ```
 
+### 自訂內容 Tab（GroupIntoCustomTab）
+
+用於在 Tab 中嵌入非表單欄位的自訂內容（如子表格）：
+
+```csharp
+var layout = FormSectionHelper<Customer>.Create()
+    .AddToSection(FormSectionNames.BasicInfo, c => c.Code, c => c.CompanyName)
+    .AddToSection(FormSectionNames.ContactPersonInfo, c => c.ContactPerson, c => c.MobilePhone)
+    .GroupIntoTab("客戶資料", "bi-building",
+        FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo)
+    // 自訂內容 Tab - 嵌入子元件（如 VehicleTable）
+    .GroupIntoCustomTab("配給車輛", "bi-truck", CreateVehicleTabContent())
+    .BuildAll();
+
+// RenderFragment 建立方法
+private RenderFragment CreateVehicleTabContent() => __builder =>
+{
+    <VehicleTable Vehicles="@customerVehicles"
+                 OnAddVehicle="@HandleAddVehicle"
+                 OnEditVehicle="@HandleEditVehicle"
+                 OnUnlinkVehicle="@HandleUnlinkVehicle" />
+};
+```
+
+### 條件式區段
+
+```csharp
+var layout = FormSectionHelper<Employee>.Create()
+    .AddToSection(FormSectionNames.BasicInfo, e => e.Code, e => e.Name)
+    .AddIf(hasPermission, FormSectionNames.AccountInfo,
+        e => e.Account, e => e.Password, e => e.RoleId)
+    .AddCustomFields("篩選區", "FilterProductId", "FilterCategory")
+    .AddCustomFieldsIf(showAdvanced, "進階篩選", "FilterDateRange")
+    .BuildAll();
+```
+
 ### FormTabDefinition 屬性
 
 | 屬性 | 類型 | 說明 |
@@ -298,6 +398,7 @@ tabDefinitions = layout.TabDefinitions;
 | `Label` | string | Tab 標籤文字 |
 | `Icon` | string? | Tab 圖示 CSS class（如 `"bi-person-fill"`） |
 | `SectionNames` | `List<string>` | 此 Tab 包含的 Section 名稱 |
+| `CustomContent` | `RenderFragment?` | 自訂內容（非 null 時渲染自訂內容而非表單欄位） |
 
 ### Tab 行為
 
@@ -314,14 +415,37 @@ tabDefinitions = layout.TabDefinitions;
 | `ContactInfo` | 聯絡資訊 |
 | `ContactPersonInfo` | 聯絡人資訊 |
 | `AmountInfo` | 金額資訊 |
+| `AmountInfoAutoCalculated` | 金額資訊(系統自動計算) |
 | `PaymentInfo` | 付款資訊 |
 | `EmploymentInfo` | 任職資訊 |
 | `AccountInfo` | 帳號資訊 |
 | `SalesInfo` | 業務資訊 |
 | `TradingTerms` | 交易條件 |
+| `CompanyData` | 公司資料 |
+| `OrganizationStructure` | 組織架構 |
+| `UnitSettings` | 單位設定 |
+| `CategoryAndSpecification` | 分類與規格 |
+| `FinanceAndRemarks` | 財務與備註 |
 | `AdditionalData` | 額外資料 |
+| `AdditionalInfo` | 額外資訊 |
 | `OtherInfo` | 其他資訊 |
 | `EquipmentAssignment` | 配給裝備 |
+
+---
+
+## FormSectionHelper API 一覽
+
+| 方法 | 說明 |
+|------|------|
+| `Create()` | 建立新的 Helper 實例 |
+| `AddToSection(name, params selectors)` | 將屬性加入指定區段（Lambda Expression） |
+| `AddCustomFields(name, params fieldNames)` | 將自訂欄位名稱加入指定區段 |
+| `AddIf(condition, name, params selectors)` | 條件式加入屬性 |
+| `AddCustomFieldsIf(condition, name, params fields)` | 條件式加入自訂欄位 |
+| `GroupIntoTab(label, icon, params sectionNames)` | 將 Section 歸組到 Tab |
+| `GroupIntoCustomTab(label, icon, renderFragment)` | 建立自訂內容 Tab |
+| `Build()` | 回傳 `Dictionary<string, string>`（無 Tab 時使用） |
+| `BuildAll()` | 回傳 `FormLayoutResult`（有 Tab 時使用） |
 
 ---
 
@@ -356,52 +480,6 @@ GenericFormComponent.razor.cs
   │ NotifyFieldChanged() 觸發 OnFieldChanged
   ▼
 使用端接收變更事件
-```
-
----
-
-## 子組件相依關係
-
-```
-GenericFormComponent.razor
-    │
-    ├── GenericFormComponent.razor.cs （code-behind）
-    │       │
-    │       ├── AutoCompleteStateManager （管理 AutoComplete 狀態）
-    │       │       └── AutoCompleteFieldState.cs
-    │       │
-    │       └── FormConstants.cs （常數引用）
-    │
-    ├── FormTextField.razor
-    │       └── FormConstants.cs
-    │
-    ├── FormNumberField.razor
-    │       ├── FormConstants.cs
-    │       └── NumberFormatHelper （Helpers/NumericHelpers/）
-    │
-    ├── FormSelectField.razor
-    │       └── FormConstants.cs
-    │
-    ├── FormDateField.razor
-    │       └── FormConstants.cs
-    │
-    ├── FormMobilePhoneField.razor
-    │       └── FormConstants.cs
-    │
-    ├── FormCheckboxField.razor
-    │       └── FormConstants.cs
-    │
-    ├── FormRadioField.razor
-    │       └── FormConstants.cs
-    │
-    ├── FormTextAreaField.razor
-    │       └── FormConstants.cs
-    │
-    ├── FormAutoCompleteField.razor
-    │       ├── FormConstants.cs
-    │       └── AutoCompleteFieldState.cs
-    │
-    └── CharacterCountTextAreaComponent.razor
 ```
 
 ---

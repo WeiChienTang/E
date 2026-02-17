@@ -239,6 +239,12 @@ namespace ERPCore2.Services.Reports
                                               e.EmploymentStatus == EmployeeStatus.Probation).ToList();
             }
 
+            // 篩選指定員工
+            if (criteria.EmployeeIds.Any())
+            {
+                results = results.Where(e => criteria.EmployeeIds.Contains(e.Id)).ToList();
+            }
+
             // 篩選部門
             if (criteria.DepartmentIds.Any())
             {
@@ -246,10 +252,60 @@ namespace ERPCore2.Services.Reports
                     criteria.DepartmentIds.Contains(e.DepartmentId.Value)).ToList();
             }
 
+            // 篩選職位
+            if (criteria.PositionIds.Any())
+            {
+                results = results.Where(e => e.EmployeePositionId.HasValue &&
+                    criteria.PositionIds.Contains(e.EmployeePositionId.Value)).ToList();
+            }
+
             // 篩選在職狀態
             if (criteria.EmploymentStatuses.Any())
             {
                 results = results.Where(e => criteria.EmploymentStatuses.Contains(e.EmploymentStatus)).ToList();
+            }
+
+            // 篩選權限組
+            if (criteria.RoleIds.Any())
+            {
+                results = results.Where(e => e.RoleId.HasValue &&
+                    criteria.RoleIds.Contains(e.RoleId.Value)).ToList();
+            }
+
+            // 篩選到職日期
+            if (criteria.HireDateStart.HasValue)
+            {
+                results = results.Where(e => e.HireDate.HasValue &&
+                    e.HireDate.Value.Date >= criteria.HireDateStart.Value.Date).ToList();
+            }
+            if (criteria.HireDateEnd.HasValue)
+            {
+                results = results.Where(e => e.HireDate.HasValue &&
+                    e.HireDate.Value.Date <= criteria.HireDateEnd.Value.Date).ToList();
+            }
+
+            // 篩選離職日期
+            if (criteria.ResignationDateStart.HasValue)
+            {
+                results = results.Where(e => e.ResignationDate.HasValue &&
+                    e.ResignationDate.Value.Date >= criteria.ResignationDateStart.Value.Date).ToList();
+            }
+            if (criteria.ResignationDateEnd.HasValue)
+            {
+                results = results.Where(e => e.ResignationDate.HasValue &&
+                    e.ResignationDate.Value.Date <= criteria.ResignationDateEnd.Value.Date).ToList();
+            }
+
+            // 篩選生日
+            if (criteria.BirthDateStart.HasValue)
+            {
+                results = results.Where(e => e.BirthDate.HasValue &&
+                    e.BirthDate.Value.Date >= criteria.BirthDateStart.Value.Date).ToList();
+            }
+            if (criteria.BirthDateEnd.HasValue)
+            {
+                results = results.Where(e => e.BirthDate.HasValue &&
+                    e.BirthDate.Value.Date <= criteria.BirthDateEnd.Value.Date).ToList();
             }
 
             // 關鍵字搜尋

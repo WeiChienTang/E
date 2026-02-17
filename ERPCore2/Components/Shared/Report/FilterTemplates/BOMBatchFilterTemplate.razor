@@ -13,37 +13,26 @@
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 成品選擇（從現有物料清單中取得成品） *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <MultiSelectFilterComponent TItem="ProductDisplayItem"
-                                       Items="@availableProducts"
-                                       @bind-SelectedItems="@selectedProducts"
-                                       DisplayProperty="DisplayName"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋成品品號或品名..."
-                                       EmptyMessage="未選擇成品（查詢全部）"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="指定成品">
+        <SearchSelectFilterComponent TItem="ProductDisplayItem"
+                                   Items="@availableProducts"
+                                   @bind-SelectedItems="@selectedProducts"
+                                   DisplayProperty="DisplayName"
+                                   ValueProperty="Id"
+                                   Placeholder="搜尋成品品號或品名..."
+                                   EmptyMessage="未選擇成品（查詢全部）" />
+    </FilterFieldRow>
 
-    @* 第二行: 關鍵字搜尋 + 僅啟用 *@
-    <div class="row g-2 align-items-end">
-        <div class="col-8">
-            <TextSearchFilterComponent @bind-Value="keyword"
-                                       Label="關鍵字"
-                                       Placeholder="搜尋配方編號、成品品號、成品品名..." />
-        </div>
-        <div class="col-4 d-flex align-items-end">
-            <div class="form-check mb-1">
+    <FilterFieldRow Label="關鍵字">
+        <div class="d-flex align-items-center gap-2">
+            <input type="text" class="form-control" placeholder="搜尋配方編號、成品品號、成品品名..."
+                   @bind="keyword" />
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="bomActiveOnly" @bind="activeOnly">
-                <label class="form-check-label small" for="bomActiveOnly">
-                    僅啟用
-                </label>
+                <label class="form-check-label small" for="bomActiveOnly">僅啟用</label>
             </div>
         </div>
-    </div>
+    </FilterFieldRow>
 </div>
 
 @code {

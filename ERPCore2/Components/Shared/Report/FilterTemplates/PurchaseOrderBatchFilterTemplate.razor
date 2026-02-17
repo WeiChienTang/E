@@ -13,38 +13,29 @@
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 廠商選擇 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <MultiSelectFilterComponent TItem="Supplier"
-                                       Items="@suppliers"
-                                       @bind-SelectedItems="@selectedSuppliers"
-                                       DisplayProperty="CompanyName"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋廠商..."
-                                       EmptyMessage="未選擇廠商"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="指定廠商">
+        <SearchSelectFilterComponent TItem="Supplier"
+                                   Items="@suppliers"
+                                   @bind-SelectedItems="@selectedSuppliers"
+                                   DisplayProperty="CompanyName"
+                                   ValueProperty="Id"
+                                   Placeholder="搜尋廠商..."
+                                   EmptyMessage="未選擇廠商" />
+    </FilterFieldRow>
 
-    @* 第二行: 日期範圍 + 快速選擇 *@
-    <div class="mb-2">
+    <FilterFieldRow Label="採購日期">
         <DateRangeFilterComponent @bind-StartDate="startDate"
                                   @bind-EndDate="endDate"
                                   ShowQuickSelectors="true"
                                   AutoValidate="true"
                                   ShowValidationMessage="true" />
-    </div>
+    </FilterFieldRow>
 
-    @* 第三行: 單號 *@
-    <div class="row g-2 align-items-end">
-        <div class="col-12">
-            <TextSearchFilterComponent @bind-Value="documentNumberKeyword"
-                                       Label="單號"
-                                       Placeholder="模糊搜尋..." />
-        </div>
-    </div>
+    <FilterFieldRow Label="單號">
+        <TextSearchFilterComponent @bind-Value="documentNumberKeyword"
+                                   Label="單號"
+                                   Placeholder="模糊搜尋..." />
+    </FilterFieldRow>
 </div>
 
 @code {

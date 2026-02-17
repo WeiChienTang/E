@@ -1,0 +1,40 @@
+/* ===== 篩選欄位行：標題與內容同行 ===== */
+
+.filter-field-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* 標題樣式 - 與 GenericFormComponent 的 form-field-label 一致 */
+.filter-field-label {
+    flex: 0 0 auto;
+    min-width: 80px;
+    max-width: 120px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0d6efd;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-top: 0.35rem;
+    line-height: 1.5;
+}
+
+/* 內容區域佔滿剩餘寬度 */
+.filter-field-content {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* ===== 響應式 ===== */
+
+@media (max-width: 576px) {
+    .filter-field-label {
+        min-width: 65px;
+        max-width: 90px;
+        font-size: 0.85rem;
+    }
+}

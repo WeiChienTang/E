@@ -35,13 +35,15 @@ namespace ERPCore2.Data.Entities.Commons      // ❌
 | 屬性 | 類型 | 說明 |
 |------|------|------|
 | Id | int | 主鍵，自動遞增 |
-| Status | EntityStatus | 狀態（Active/Inactive） |
-| IsDeleted | bool | 軟刪除標記 |
-| CreatedAt | DateTime | 建立時間 |
+| Code | string? | 編號（MaxLength 50，選填） |
+| Status | EntityStatus | 狀態（Active/Inactive），預設 Active |
+| CreatedAt | DateTime | 建立時間，預設 DateTime.Now |
 | UpdatedAt | DateTime? | 最後更新時間 |
-| CreatedBy | string? | 建立者 |
-| UpdatedBy | string? | 最後修改者 |
-| Remarks | string? | 備註 |
+| CreatedBy | string? | 建立者（MaxLength 50） |
+| UpdatedBy | string? | 最後修改者（MaxLength 50） |
+| Remarks | string? | 備註（MaxLength 500） |
+
+> **注意**：`Code` 已由 BaseEntity 提供，各實體可直接使用。如需設定為必填，在實體上加 `[Required]` 覆蓋即可。
 
 ---
 
@@ -57,11 +59,8 @@ namespace ERPCore2.Data.Entities
 {
     public class YourEntity : BaseEntity
     {
-        // 基本屬性
-        [Required(ErrorMessage = "編號為必填")]
-        [MaxLength(20, ErrorMessage = "編號不可超過20個字元")]
-        [Display(Name = "編號")]
-        public string Code { get; set; } = string.Empty;
+        // Code 已由 BaseEntity 提供，如需必填則加上 [Required]
+        // 如需限制長度則覆蓋 [MaxLength]
 
         [Required(ErrorMessage = "名稱為必填")]
         [MaxLength(50, ErrorMessage = "名稱不可超過50個字元")]
@@ -113,6 +112,8 @@ public OptionalEntity? OptionalEntity { get; set; }
 | Sales/ | 銷售相關 | Quotation, SalesOrder, SalesDelivery, SalesReturn |
 | FinancialManagement/ | 財務相關 | SetoffDocument |
 | Warehouses/ | 倉庫相關 | Warehouse, WarehouseLocation |
+| Suppliers/ | 廠商相關 | Supplier |
+| Vehicles/ | 車輛相關 | Vehicle, VehicleType, VehicleMaintenance |
 | Systems/ | 系統相關 | SystemParameter, ErrorLog, Permission |
 
 ---
@@ -167,14 +168,14 @@ Update-Database -Context AppDbContext
 
 > **注意**：不需要新增 Seeder，除非設計者明確聲明需要。Seeder 主要用於初始化系統必要資料（如權限、角色等）。
 
-如需建立 Seeder，請參考 [Readme_SeedDataManager.md](../Readme_SeedDataManager.md)。
+如需建立 Seeder，請參考 [README_SeedData管理.md](../專案架構/README_SeedData管理.md)。
 
 ---
 
 ## 開發檢查清單
 
 - [ ] 實體繼承 `BaseEntity`
-- [ ] 不重複定義 `Id`、`Status`、`CreatedAt` 等基底屬性
+- [ ] 不重複定義 `Id`、`Code`、`Status`、`CreatedAt` 等基底屬性
 - [ ] 使用 `[Required]`、`[MaxLength]` 等 Data Annotation
 - [ ] 外鍵屬性命名為 `{RelatedEntity}Id`
 - [ ] 導航屬性使用正確的可空性（必填 `= null!`，選填 `?`）

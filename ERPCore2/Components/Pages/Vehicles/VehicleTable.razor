@@ -1,0 +1,150 @@
+@* 可重用的車輛列表面板 - 用於在各主檔 EditModal 的 Tab 頁籤中顯示配給車輛 *@
+@using ERPCore2.Helpers
+@using ERPCore2.Data.Entities
+
+<div class="vehicle-table-panel">
+    @* 工具列 *@
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        @if (!IsReadOnly)
+        {
+            <div class="d-flex gap-2">
+                <GenericButtonComponent Text="新增配給車輛"
+                                      IconClass="bi bi-plus-lg"
+                                      Variant="ButtonVariant.DarkBlue"
+                                      Size="ButtonSize.Small"
+                                      OnClick="@HandleAddVehicle"
+                                      Title="新增一筆配給車輛" />
+                <GenericButtonComponent Text="選擇車輛"
+                                      IconClass="bi bi-search"
+                                      Variant="ButtonVariant.OutlineDarkBlue"
+                                      Size="ButtonSize.Small"
+                                      OnClick="@HandleSelectVehicle"
+                                      Title="從現有車輛中選擇配給" />
+            </div>
+        }
+    </div>
+
+    @* 車輛列表表格 *@
+    <InteractiveTableComponent TItem="Vehicle"
+                              Items="@(Vehicles ?? new List<Vehicle>())"
+                              ColumnDefinitions="@GetColumnDefinitions()"
+                              ShowHeader="true"
+                              ShowRowNumbers="true"
+                              IsStriped="true"
+                              IsHoverable="true"
+                              IsBordered="true"
+                              IsReadOnly="true"
+                              ShowBuiltInActions="@(!IsReadOnly)"
+                              ShowBuiltInDeleteButton="false"
+                              EnableAutoEmptyRow="false"
+                              EmptyMessage="目前沒有配給車輛"
+                              CustomActionsTemplate="@GetActionsTemplate()"
+                              ActionsColumnWidth="100px" />
+</div>
+
+@code {
+    /// <summary>車輛清單</summary>
+    [Parameter] public List<Vehicle>? Vehicles { get; set; }
+
+    /// <summary>是否唯讀模式（隱藏所有操作按鈕）</summary>
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+
+    /// <summary>點擊「新增配給車輛」按鈕的回調</summary>
+    [Parameter] public EventCallback OnAddVehicle { get; set; }
+
+    /// <summary>點擊「選擇車輛」按鈕的回調（開啟選擇 Modal）</summary>
+    [Parameter] public EventCallback OnSelectVehicle { get; set; }
+
+    /// <summary>點擊編輯按鈕的回調（開啟 VehicleEditModal）</summary>
+    [Parameter] public EventCallback<Vehicle> OnEditVehicle { get; set; }
+
+    /// <summary>點擊解除配給按鈕的回調（清除車輛的 FK，非刪除車輛）</summary>
+    [Parameter] public EventCallback<Vehicle> OnUnlinkVehicle { get; set; }
+
+    /// <summary>
+    /// 定義車輛列表的欄位（全部為 Display 唯讀）
+    /// </summary>
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = "車牌號碼",
+                PropertyName = nameof(Vehicle.LicensePlate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "車輛名稱",
+                PropertyName = nameof(Vehicle.VehicleName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "150px"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "車型",
+                PropertyName = nameof(Vehicle.VehicleTypeId),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                DisplayFormatter = (item) =>
+                {
+                    if (item is Vehicle vehicle && vehicle.VehicleType != null)
+                        return vehicle.VehicleType.Name;
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "品牌",
+                PropertyName = nameof(Vehicle.Brand),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                NullDisplayText = "-"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "型號",
+                PropertyName = nameof(Vehicle.Model),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                NullDisplayText = "-"
+            }
+        };
+    }
+
+    /// <summary>
+    /// 操作欄位模板（編輯 + 解除配給）
+    /// </summary>
+    private RenderFragment<Vehicle>? GetActionsTemplate()
+    {
+        if (IsReadOnly) return null;
+
+        return vehicle => __builder =>
+        {
+            <div class="d-flex gap-1">
+                <GenericButtonComponent IconClass="bi bi-pencil-square"
+                                      Variant="ButtonVariant.DarkBlue"
+                                      Size="ButtonSize.Small"
+                                      OnClick="@(() => OnEditVehicle.InvokeAsync(vehicle))"
+                                      Title="編輯車輛" />
+                <GenericButtonComponent IconClass="bi bi-link-45deg"
+                                      Variant="ButtonVariant.OutlineYellow"
+                                      Size="ButtonSize.Small"
+                                      OnClick="@(() => OnUnlinkVehicle.InvokeAsync(vehicle))"
+                                      Title="解除配給（不會刪除車輛）" />
+            </div>
+        };
+    }
+
+    private async Task HandleAddVehicle()
+    {
+        await OnAddVehicle.InvokeAsync();
+    }
+
+    private async Task HandleSelectVehicle()
+    {
+        await OnSelectVehicle.InvokeAsync();
+    }
+}

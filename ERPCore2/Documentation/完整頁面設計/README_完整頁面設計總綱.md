@@ -69,8 +69,8 @@ ERPCore2 採用**五層架構**實現完整的 CRUD 頁面功能。每個業務�
 | 1 | [README_Data資料層設計.md](README_Data資料層設計.md) | Entity、BaseEntity、AppDbContext、Migration | 新增實體、定義資料結構 |
 | 2 | [README_Service服務層設計.md](README_Service服務層設計.md) | GenericManagementService、ServiceResult、DI 註冊 | 新增服務、實作業務邏輯 |
 | 3 | [README_Index頁面設計.md](README_Index頁面設計.md) | GenericIndexPageComponent、FieldConfiguration、篩選 | 建立列表頁面 |
-| 4 | [README_EditModal設計.md](README_EditModal設計.md) | GenericEditModalComponent、Lazy Loading、Modal 管理器 | 建立編輯表單 |
-| 5 | [README_FormField表單欄位設計.md](README_FormField表單欄位設計.md) | FormFieldDefinition、GenericFormComponent、Tab 佈局 | 設計表單欄位與佈局 |
+| 4 | [README_EditModal設計.md](README_EditModal設計.md) | GenericEditModalComponent、Lazy Loading、Modal 管理器、列印整合、自訂 Tab | 建立編輯表單 |
+| 5 | [README_FormField表單欄位設計.md](README_FormField表單欄位設計.md) | FormFieldDefinition、GenericFormComponent、Tab 佈局、自訂內容 Tab | 設計表單欄位與佈局 |
 
 ### 相關文件（其他位置）
 
@@ -101,6 +101,9 @@ ERPCore2 採用**五層架構**實現完整的 CRUD 頁面功能。每個業務�
 // Data/Entities/{Category}/YourEntity.cs
 public class YourEntity : BaseEntity
 {
+    // Code 已由 BaseEntity 提供（string?, MaxLength 50）
+    // 如需必填則加 [Required]
+
     [Required] [MaxLength(50)]
     public string Name { get; set; } = string.Empty;
 
@@ -158,7 +161,10 @@ public class YourEntityFieldConfiguration : BaseFieldConfiguration<YourEntity>
 
 ```razor
 <GenericEditModalComponent TEntity="YourEntity" TService="IYourEntityService"
-    FormFields="@GetFormFields()" FormSections="@formSections" ... />
+    @bind-Id="@YourEntityId"
+    FormFields="@GetFormFields()" FormSections="@formSections"
+    TabDefinitions="@tabDefinitions"
+    OnEntityLoaded="@HandleEntityLoaded" ... />
 ```
 
 > 詳見 [README_EditModal設計.md](README_EditModal設計.md) 與 [README_FormField表單欄位設計.md](README_FormField表單欄位設計.md)
@@ -289,9 +295,12 @@ Helpers/
 
 ## 注意事項
 
-1. **BaseEntity 屬性不要重複定義** - `Id`、`Status`、`CreatedAt` 等已由基底類別提供
+1. **BaseEntity 屬性不要重複定義** - `Id`、`Code`、`Status`、`CreatedAt` 等已由基底類別提供
 2. **Lazy Loading 模式** - EditModal 資料只在 `IsVisible = true` 時才載入
 3. **使用 `IDbContextFactory`** - Blazor Server 必須使用 Factory 模式建立 DbContext
 4. **非同步操作** - 所有資料存取使用 `async/await`
 5. **安全回傳值** - `catch` 區塊回傳空列表、null 或 `ServiceResult.Failure()`
 6. **Tab 佈局** - 使用 `FormSectionHelper.GroupIntoTab().BuildAll()` 啟用 Tab 模式
+7. **自訂 Tab** - 使用 `GroupIntoCustomTab()` 嵌入子表格等非表單內容
+8. **上下筆導航** - 使用 `@bind-Id` 和 `OnEntityLoaded` 確保資料同步
+9. **巢狀 Modal** - 使用 `@if` 條件式渲染避免循環實例化

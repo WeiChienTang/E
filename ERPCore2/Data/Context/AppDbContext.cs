@@ -128,7 +128,16 @@ namespace ERPCore2.Data.Context
                         // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
-                  
+
+                  // 車輛相關
+                  modelBuilder.Entity<Vehicle>(entity =>
+                  {
+                        entity.HasOne(v => v.Supplier)
+                              .WithMany(s => s.Vehicles)
+                              .HasForeignKey(v => v.SupplierId)
+                              .OnDelete(DeleteBehavior.SetNull);
+                  });
+
                   // 員工相關
                   modelBuilder.Entity<Employee>(entity =>
                   {

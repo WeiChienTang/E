@@ -10,7 +10,8 @@
       "Bash(xargs:*)",
       "Bash(ls:*)",
       "Bash(git mv:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(dotnet ef database update:*)"
     ]
   }
 }

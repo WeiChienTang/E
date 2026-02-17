@@ -1,55 +1,132 @@
 @*
     員工名冊表篩選模板
     實作 IFilterTemplateComponent 介面，提供員工名冊表的篩選 UI
-    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
+    設計原則：使用 FilterFieldRow 統一佈局
 *@
 
 @using ERPCore2.Models
 @using ERPCore2.Models.Reports.FilterCriteria
 @using ERPCore2.Models.Reports.FilterTemplates
+@using ERPCore2.Data.Entities
 @implements IFilterTemplateComponent
+@inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
+@inject IEmployeePositionService EmployeePositionService
+@inject IRoleService RoleService
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 部門選擇 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <MultiSelectFilterComponent TItem="Department"
-                                       Items="@departments"
-                                       @bind-SelectedItems="@selectedDepartments"
-                                       DisplayProperty="Name"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋部門..."
-                                       EmptyMessage="未選擇部門（查詢全部部門）"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="指定員工">
+        <SearchSelectFilterComponent TItem="DisplayItem"
+                                     Items="@availableEmployees"
+                                     @bind-SelectedItems="@selectedEmployees"
+                                     DisplayProperty="DisplayName"
+                                     ValueProperty="Id"
+                                     Placeholder="搜尋員工編號或姓名..."
+                                     EmptyMessage="未選擇員工（查詢全部）" />
+    </FilterFieldRow>
 
-    @* 第二行: 關鍵字搜尋 + 僅在職 *@
-    <div class="row g-2 align-items-end">
-        <div class="col-8">
-            <TextSearchFilterComponent @bind-Value="keyword"
-                                       Label="關鍵字"
-                                       Placeholder="搜尋員工編號、姓名..." />
-        </div>
-        <div class="col-4 d-flex align-items-end">
-            <div class="form-check mb-1">
-                <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
-                <label class="form-check-label small" for="activeOnly">
-                    僅在職
-                </label>
+    <FilterFieldRow Label="部門">
+        <SearchSelectFilterComponent TItem="DisplayItem"
+                                     Items="@availableDepartments"
+                                     @bind-SelectedItems="@selectedDepartments"
+                                     DisplayProperty="DisplayName"
+                                     ValueProperty="Id"
+                                     Placeholder="搜尋部門..."
+                                     EmptyMessage="未選擇部門（查詢全部）" />
+    </FilterFieldRow>
+
+    <FilterFieldRow Label="職位">
+        <SearchSelectFilterComponent TItem="DisplayItem"
+                                     Items="@availablePositions"
+                                     @bind-SelectedItems="@selectedPositions"
+                                     DisplayProperty="DisplayName"
+                                     ValueProperty="Id"
+                                     Placeholder="搜尋職位..."
+                                     EmptyMessage="未選擇職位（查詢全部）" />
+    </FilterFieldRow>
+
+    <FilterFieldRow Label="在職狀態">
+        <SearchSelectFilterComponent TItem="DisplayItem"
+                                     Items="@availableStatuses"
+                                     @bind-SelectedItems="@selectedStatuses"
+                                     DisplayProperty="DisplayName"
+                                     ValueProperty="Id"
+                                     Placeholder="搜尋狀態..."
+                                     EmptyMessage="未選擇狀態（查詢全部）" />
+    </FilterFieldRow>
+
+    <FilterFieldRow Label="權限組">
+        <SearchSelectFilterComponent TItem="DisplayItem"
+                                     Items="@availableRoles"
+                                     @bind-SelectedItems="@selectedRoles"
+                                     DisplayProperty="DisplayName"
+                                     ValueProperty="Id"
+                                     Placeholder="搜尋權限組..."
+                                     EmptyMessage="未選擇權限組（查詢全部）" />
+    </FilterFieldRow>
+
+    <FilterFieldRow Label="到職日期">
+        <DateRangeFilterComponent @bind-StartDate="hireDateStart"
+                                   @bind-EndDate="hireDateEnd"
+                                   StartDateLabel="起始"
+                                   EndDateLabel="結束"
+                                   ShowQuickSelectors="true"
+                                   AutoValidate="true"
+                                   ShowValidationMessage="true" />
+    </FilterFieldRow>
+
+    <FilterFieldRow Label="離職日期">
+        <DateRangeFilterComponent @bind-StartDate="resignationDateStart"
+                                   @bind-EndDate="resignationDateEnd"
+                                   StartDateLabel="起始"
+                                   EndDateLabel="結束"
+                                   ShowQuickSelectors="true"
+                                   AutoValidate="true"
+                                   ShowValidationMessage="true" />
+    </FilterFieldRow>
+
+    <FilterFieldRow Label="生日">
+        <DateRangeFilterComponent @bind-StartDate="birthDateStart"
+                                   @bind-EndDate="birthDateEnd"
+                                   StartDateLabel="起始"
+                                   EndDateLabel="結束"
+                                   ShowQuickSelectors="true"
+                                   AutoValidate="true"
+                                   ShowValidationMessage="true" />
+    </FilterFieldRow>
+
+    <FilterFieldRow Label="關鍵字">
+        <div class="d-flex align-items-center gap-2">
+            <input type="text" class="form-control" placeholder="搜尋員工編號、姓名..."
+                   @bind="keyword" />
+            <div class="form-check text-nowrap">
+                <input class="form-check-input" type="checkbox" id="empActiveOnly" @bind="activeOnly">
+                <label class="form-check-label small" for="empActiveOnly">僅在職</label>
             </div>
         </div>
-    </div>
+    </FilterFieldRow>
 </div>
 
 @code {
     // ===== 內部狀態 =====
 
-    private List<Department> departments = new();
-    private List<Department> selectedDepartments = new();
+    private List<DisplayItem> availableEmployees = new();
+    private List<DisplayItem> selectedEmployees = new();
+    private List<DisplayItem> availableDepartments = new();
+    private List<DisplayItem> selectedDepartments = new();
+    private List<DisplayItem> availablePositions = new();
+    private List<DisplayItem> selectedPositions = new();
+    private List<DisplayItem> availableStatuses = new();
+    private List<DisplayItem> selectedStatuses = new();
+    private List<DisplayItem> availableRoles = new();
+    private List<DisplayItem> selectedRoles = new();
+    private DateTime? hireDateStart;
+    private DateTime? hireDateEnd;
+    private DateTime? resignationDateStart;
+    private DateTime? resignationDateEnd;
+    private DateTime? birthDateStart;
+    private DateTime? birthDateEnd;
     private string? keyword = null;
     private bool activeOnly = true;
 
@@ -64,13 +141,71 @@
     {
         try
         {
-            departments = await DepartmentService.GetAllAsync();
+            var employeesTask = EmployeeService.GetAllAsync();
+            var departmentsTask = DepartmentService.GetAllAsync();
+            var positionsTask = EmployeePositionService.GetAllAsync();
+            var rolesTask = RoleService.GetAllAsync();
+            await Task.WhenAll(employeesTask, departmentsTask, positionsTask, rolesTask);
+
+            var allEmployees = await employeesTask;
+            availableEmployees = allEmployees
+                .Where(e => !e.IsSuperAdmin)
+                .Select(e => new DisplayItem
+                {
+                    Id = e.Id,
+                    DisplayName = !string.IsNullOrEmpty(e.Name)
+                        ? $"{e.Code} - {e.Name}"
+                        : e.Code ?? $"員工{e.Id}"
+                })
+                .OrderBy(e => e.DisplayName)
+                .ToList();
+
+            var allDepartments = await departmentsTask;
+            availableDepartments = allDepartments
+                .Where(d => d.Status == EntityStatus.Active)
+                .Select(d => new DisplayItem
+                {
+                    Id = d.Id,
+                    DisplayName = !string.IsNullOrEmpty(d.Name) ? d.Name : d.Code ?? $"部門{d.Id}"
+                })
+                .OrderBy(d => d.DisplayName)
+                .ToList();
+
+            var allPositions = await positionsTask;
+            availablePositions = allPositions
+                .Where(p => p.Status == EntityStatus.Active)
+                .Select(p => new DisplayItem
+                {
+                    Id = p.Id,
+                    DisplayName = !string.IsNullOrEmpty(p.Name) ? p.Name : p.Code ?? $"職位{p.Id}"
+                })
+                .OrderBy(p => p.DisplayName)
+                .ToList();
+
+            var allRoles = await rolesTask;
+            availableRoles = allRoles
+                .Where(r => r.Status == EntityStatus.Active)
+                .Select(r => new DisplayItem
+                {
+                    Id = r.Id,
+                    DisplayName = !string.IsNullOrEmpty(r.Name) ? r.Name : r.Code ?? $"權限組{r.Id}"
+                })
+                .OrderBy(r => r.DisplayName)
+                .ToList();
+
+            availableStatuses = new List<DisplayItem>
+            {
+                new() { Id = (int)EmployeeStatus.Probation, DisplayName = "試用期" },
+                new() { Id = (int)EmployeeStatus.Active, DisplayName = "在職" },
+                new() { Id = (int)EmployeeStatus.LeaveOfAbsence, DisplayName = "留職停薪" },
+                new() { Id = (int)EmployeeStatus.Resigned, DisplayName = "已離職" },
+                new() { Id = (int)EmployeeStatus.Inactive, DisplayName = "停用" }
+            };
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
-            await NotificationService.ShowErrorAsync("載入部門資料失敗");
-            departments = new List<Department>();
+            await NotificationService.ShowErrorAsync("載入篩選資料失敗");
         }
     }
 
@@ -80,7 +215,17 @@
     {
         return new EmployeeRosterCriteria
         {
+            EmployeeIds = selectedEmployees.Select(e => e.Id).ToList(),
             DepartmentIds = selectedDepartments.Select(d => d.Id).ToList(),
+            PositionIds = selectedPositions.Select(p => p.Id).ToList(),
+            EmploymentStatuses = selectedStatuses.Select(s => (EmployeeStatus)s.Id).ToList(),
+            RoleIds = selectedRoles.Select(r => r.Id).ToList(),
+            HireDateStart = hireDateStart,
+            HireDateEnd = hireDateEnd,
+            ResignationDateStart = resignationDateStart,
+            ResignationDateEnd = resignationDateEnd,
+            BirthDateStart = birthDateStart,
+            BirthDateEnd = birthDateEnd,
             Keyword = keyword,
             ActiveOnly = activeOnly
         };
@@ -88,9 +233,27 @@
 
     public void Reset()
     {
+        selectedEmployees = new();
         selectedDepartments = new();
+        selectedPositions = new();
+        selectedStatuses = new();
+        selectedRoles = new();
+        hireDateStart = null;
+        hireDateEnd = null;
+        resignationDateStart = null;
+        resignationDateEnd = null;
+        birthDateStart = null;
+        birthDateEnd = null;
         keyword = null;
         activeOnly = true;
         StateHasChanged();
+    }
+
+    // ===== 內部模型 =====
+
+    private class DisplayItem
+    {
+        public int Id { get; set; }
+        public string DisplayName { get; set; } = "";
     }
 }

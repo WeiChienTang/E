@@ -13,9 +13,26 @@
            tabindex="-1"
            value="@FormattedDisplayValue" />
 }
+else if (Field.UseThousandsSeparator)
+{
+    @* 可編輯模式 + 千分位：使用 text input 搭配格式化顯示 *@
+    <input type="text"
+           inputmode="decimal"
+           class="@InputCssClass"
+           id="@_fieldId"
+           name="@($"{Field.PropertyName}_{Guid.NewGuid().ToString("N").Substring(0, 8)}")"
+           placeholder="@Field.Placeholder"
+           disabled="@Field.IsDisabled"
+           autocomplete="@FormConstants.AutoCompleteAttributes.Off"
+           required="@Field.IsRequired"
+           value="@(_isFormattedFocused ? FormattedInputValue : FormattedDisplayValue)"
+           @onchange="HandleFormattedChange"
+           @onfocus="HandleFormattedFocus"
+           @onblur="HandleFormattedBlur" />
+}
 else
 {
-    @* 可編輯模式 *@
+    @* 一般可編輯模式 *@
     <input type="number"
            class="@InputCssClass"
            id="@_fieldId"
@@ -50,6 +67,7 @@ else
 
     private string _fieldId = string.Empty;
     private bool _isInitialized = false;
+    private bool _isFormattedFocused = false;
 
     private string InputCssClass => HasActionButtons 
         ? $"{CssClass} {FormConstants.CssClasses.HasActionButtons}" 
@@ -133,6 +151,53 @@ else
         catch
         {
             // 靜默處理 JS 互操作錯誤
+        }
+    }
+
+    /// <summary>
+    /// 千分位格式化輸入 - 取得焦點時切換為原始數值
+    /// </summary>
+    private void HandleFormattedFocus()
+    {
+        _isFormattedFocused = true;
+    }
+
+    /// <summary>
+    /// 千分位格式化輸入 - 失去焦點時顯示千分位格式
+    /// </summary>
+    private void HandleFormattedBlur()
+    {
+        _isFormattedFocused = false;
+    }
+
+    /// <summary>
+    /// 千分位格式化輸入 - 處理值變更（需去除千分位分隔符後解析）
+    /// </summary>
+    private async Task HandleFormattedChange(ChangeEventArgs e)
+    {
+        var stringValue = e.Value?.ToString();
+
+        if (string.IsNullOrWhiteSpace(stringValue))
+        {
+            await ValueChanged.InvokeAsync(null);
+            return;
+        }
+
+        // 去除千分位分隔符後解析
+        var cleanValue = stringValue.Replace(",", "");
+        if (decimal.TryParse(cleanValue, out decimal numericValue))
+        {
+            // 範圍驗證
+            if (Field.Min.HasValue && numericValue < Field.Min.Value)
+                numericValue = Field.Min.Value;
+            if (Field.Max.HasValue && numericValue > Field.Max.Value)
+                numericValue = Field.Max.Value;
+
+            await ValueChanged.InvokeAsync(numericValue);
+        }
+        else
+        {
+            await ValueChanged.InvokeAsync(null);
         }
     }
 }

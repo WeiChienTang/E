@@ -15,6 +15,7 @@ namespace ERPCore2.Services
         Task<List<Vehicle>> GetByVehicleTypeAsync(int vehicleTypeId);
         Task<List<Vehicle>> GetByOwnershipTypeAsync(VehicleOwnershipType ownershipType);
         Task<List<Vehicle>> GetByCustomerAsync(int customerId);
+        Task<List<Vehicle>> GetBySupplierAsync(int supplierId);
         Task<List<Vehicle>> GetByEmployeeAsync(int employeeId);
     }
 }

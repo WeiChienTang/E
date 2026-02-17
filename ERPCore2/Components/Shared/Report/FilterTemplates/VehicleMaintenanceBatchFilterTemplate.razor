@@ -13,38 +13,28 @@
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 車輛選擇 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <MultiSelectFilterComponent TItem="Vehicle"
-                                       Items="@vehicles"
-                                       @bind-SelectedItems="@selectedVehicles"
-                                       DisplayProperty="LicensePlate"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋車輛..."
-                                       EmptyMessage="未選擇車輛（查詢全部車輛）"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="指定車輛">
+        <SearchSelectFilterComponent TItem="Vehicle"
+                                   Items="@vehicles"
+                                   @bind-SelectedItems="@selectedVehicles"
+                                   DisplayProperty="LicensePlate"
+                                   ValueProperty="Id"
+                                   Placeholder="搜尋車輛..."
+                                   EmptyMessage="未選擇車輛（查詢全部車輛）" />
+    </FilterFieldRow>
 
-    @* 第二行: 日期範圍 *@
-    <div class="mb-2">
+    <FilterFieldRow Label="日期範圍">
         <DateRangeFilterComponent @bind-StartDate="startDate"
                                   @bind-EndDate="endDate"
                                   ShowQuickSelectors="true"
                                   AutoValidate="true"
                                   ShowValidationMessage="true" />
-    </div>
+    </FilterFieldRow>
 
-    @* 第三行: 關鍵字搜尋 *@
-    <div class="row g-2">
-        <div class="col-12">
-            <TextSearchFilterComponent @bind-Value="keyword"
-                                       Label="關鍵字"
-                                       Placeholder="搜尋車牌號碼、維修廠、保養描述..." />
-        </div>
-    </div>
+    <FilterFieldRow Label="關鍵字">
+        <input type="text" class="form-control" placeholder="搜尋車牌號碼、維修廠、保養描述..."
+               @bind="keyword" />
+    </FilterFieldRow>
 </div>
 
 @code {

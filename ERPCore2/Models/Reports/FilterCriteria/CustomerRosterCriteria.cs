@@ -9,6 +9,11 @@ namespace ERPCore2.Models.Reports.FilterCriteria;
 public class CustomerRosterCriteria : IReportFilterCriteria
 {
     /// <summary>
+    /// 指定客戶 ID 清單（空表示所有客戶）
+    /// </summary>
+    public List<int> CustomerIds { get; set; } = new();
+
+    /// <summary>
     /// 指定業務負責人 ID 清單（空表示所有）
     /// </summary>
     public List<int> EmployeeIds { get; set; } = new();
@@ -38,6 +43,7 @@ public class CustomerRosterCriteria : IReportFilterCriteria
     {
         return new Dictionary<string, object?>
         {
+            ["customerIds"] = CustomerIds.Any() ? CustomerIds : null,
             ["employeeIds"] = EmployeeIds.Any() ? EmployeeIds : null,
             ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword,
             ["activeOnly"] = ActiveOnly
@@ -50,6 +56,9 @@ public class CustomerRosterCriteria : IReportFilterCriteria
     public string GetSummary()
     {
         var summary = new List<string>();
+
+        if (CustomerIds.Any())
+            summary.Add($"客戶：{CustomerIds.Count} 家");
 
         if (EmployeeIds.Any())
             summary.Add($"業務負責人：{EmployeeIds.Count} 位");

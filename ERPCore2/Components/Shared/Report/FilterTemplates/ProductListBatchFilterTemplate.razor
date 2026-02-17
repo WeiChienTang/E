@@ -13,50 +13,36 @@
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 商品分類選擇 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <MultiSelectFilterComponent TItem="ProductCategory"
-                                       Items="@categories"
-                                       @bind-SelectedItems="@selectedCategories"
-                                       DisplayProperty="Name"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋商品分類..."
-                                       EmptyMessage="未選擇分類（列印全部分類）"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="商品分類">
+        <SearchSelectFilterComponent TItem="ProductCategory"
+                                   Items="@categories"
+                                   @bind-SelectedItems="@selectedCategories"
+                                   DisplayProperty="Name"
+                                   ValueProperty="Id"
+                                   Placeholder="搜尋商品分類..."
+                                   EmptyMessage="未選擇分類（列印全部分類）" />
+    </FilterFieldRow>
 
-    @* 第二行: 採購類型 + 僅啟用 *@
-    <div class="row g-2 mb-2">
-        <div class="col-8">
-            <label class="form-label mb-1 small text-muted">採購類型</label>
+    <FilterFieldRow Label="採購類型">
+        <div class="d-flex align-items-center gap-2">
             <select class="form-select form-select-sm" @bind="selectedProcurementType">
                 <option value="">全部</option>
                 <option value="Purchased">外購</option>
                 <option value="Manufactured">自製</option>
                 <option value="Outsourced">委外</option>
             </select>
-        </div>
-        <div class="col-4 d-flex align-items-end">
-            <div class="form-check mb-1">
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
-                <label class="form-check-label small" for="activeOnly">
-                    僅啟用
-                </label>
+                <label class="form-check-label small" for="activeOnly">僅啟用</label>
             </div>
         </div>
-    </div>
+    </FilterFieldRow>
 
-    @* 第三行: 關鍵字搜尋 *@
-    <div class="row g-2 align-items-end">
-        <div class="col-12">
-            <TextSearchFilterComponent @bind-Value="keyword"
-                                       Label="關鍵字"
-                                       Placeholder="搜尋品號、品名、條碼、規格..." />
-        </div>
-    </div>
+    <FilterFieldRow Label="關鍵字">
+        <TextSearchFilterComponent @bind-Value="keyword"
+                                   Label=""
+                                   Placeholder="搜尋品號、品名、條碼、規格..." />
+    </FilterFieldRow>
 </div>
 
 @code {

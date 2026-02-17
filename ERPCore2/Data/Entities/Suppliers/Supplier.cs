@@ -84,5 +84,10 @@ namespace ERPCore2.Data.Entities
         /// 供應商品列表（商品-供應商綁定）
         /// </summary>
         public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
+
+        /// <summary>
+        /// 所屬車輛列表
+        /// </summary>
+        public ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
     }
 }

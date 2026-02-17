@@ -58,26 +58,34 @@
 
                         <div class="tab-pane @(_activeTabIndex == index ? "active show" : "")"
                              style="@(_activeTabIndex == index ? "" : "display:none")">
-                            <div class="form-sections-container">
-                                @foreach (var sectionGroup in tabSections)
-                                {
-                                    <div class="form-section-column @sectionColClass">
-                                        <div class="form-section-header">
-                                            <span class="form-section-title">@(sectionGroup.Key)</span>
-                                        </div>
-                                        <div class="form-section-fields">
-                                            @foreach (var fieldKvp in sectionGroup)
-                                            {
-                                                var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
-                                                if (field != null)
+                            @if (tab.CustomContent != null)
+                            {
+                                @* 自訂內容 Tab：渲染 CustomContent RenderFragment *@
+                                @tab.CustomContent
+                            }
+                            else
+                            {
+                                <div class="form-sections-container">
+                                    @foreach (var sectionGroup in tabSections)
+                                    {
+                                        <div class="form-section-column @sectionColClass">
+                                            <div class="form-section-header">
+                                                <span class="form-section-title">@(sectionGroup.Key)</span>
+                                            </div>
+                                            <div class="form-section-fields">
+                                                @foreach (var fieldKvp in sectionGroup)
                                                 {
-                                                    @RenderFieldMarkup(field)
+                                                    var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                                                    if (field != null)
+                                                    {
+                                                        @RenderFieldMarkup(field)
+                                                    }
                                                 }
-                                            }
+                                            </div>
                                         </div>
-                                    </div>
-                                }
-                            </div>
+                                    }
+                                </div>
+                            }
                         </div>
                     }
                 </div>

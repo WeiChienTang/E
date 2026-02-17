@@ -13,37 +13,26 @@
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 車型選擇 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <MultiSelectFilterComponent TItem="VehicleType"
-                                       Items="@vehicleTypes"
-                                       @bind-SelectedItems="@selectedVehicleTypes"
-                                       DisplayProperty="Name"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋車型..."
-                                       EmptyMessage="未選擇車型（查詢全部車型）"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="指定車型">
+        <SearchSelectFilterComponent TItem="VehicleType"
+                                   Items="@vehicleTypes"
+                                   @bind-SelectedItems="@selectedVehicleTypes"
+                                   DisplayProperty="Name"
+                                   ValueProperty="Id"
+                                   Placeholder="搜尋車型..."
+                                   EmptyMessage="未選擇車型（查詢全部車型）" />
+    </FilterFieldRow>
 
-    @* 第二行: 關鍵字搜尋 + 僅啟用 *@
-    <div class="row g-2 align-items-end">
-        <div class="col-8">
-            <TextSearchFilterComponent @bind-Value="keyword"
-                                       Label="關鍵字"
-                                       Placeholder="搜尋車牌號碼、車輛名稱、廠牌..." />
-        </div>
-        <div class="col-4 d-flex align-items-end">
-            <div class="form-check mb-1">
+    <FilterFieldRow Label="關鍵字">
+        <div class="d-flex align-items-center gap-2">
+            <input type="text" class="form-control" placeholder="搜尋車牌號碼、車輛名稱、廠牌..."
+                   @bind="keyword" />
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
-                <label class="form-check-label small" for="activeOnly">
-                    僅啟用
-                </label>
+                <label class="form-check-label small" for="activeOnly">僅啟用</label>
             </div>
         </div>
-    </div>
+    </FilterFieldRow>
 </div>
 
 @code {

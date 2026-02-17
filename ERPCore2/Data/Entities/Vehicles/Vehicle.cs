@@ -108,6 +108,12 @@ namespace ERPCore2.Data.Entities
 
         public Customer? Customer { get; set; }
 
+        [Display(Name = "所屬廠商")]
+        [ForeignKey(nameof(Supplier))]
+        public int? SupplierId { get; set; }
+
+        public Supplier? Supplier { get; set; }
+
         [Display(Name = "所屬公司")]
         [ForeignKey(nameof(Company))]
         public int? CompanyId { get; set; }

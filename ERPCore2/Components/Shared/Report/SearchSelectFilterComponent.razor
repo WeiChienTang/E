@@ -1,0 +1,259 @@
+@*
+    搜尋式多選篩選組件
+    提供搜尋輸入 → 下拉選擇 → 標籤顯示的選擇介面
+    取代 MultiSelectFilterComponent 的雙欄模式
+*@
+
+@typeparam TItem
+@using System.Reflection
+
+<div class="position-relative">
+    @* 搜尋欄位 *@
+    <input type="text"
+           class="form-control"
+           placeholder="@Placeholder"
+           value="@searchTerm"
+           @oninput="HandleInput"
+           @onfocus="HandleFocus"
+           @onblur="HandleBlur"
+           @onkeydown="HandleKeyDown" />
+
+    @* 下拉結果 *@
+    @if (showDropdown && FilteredAvailableItems.Any())
+    {
+        <div class="dropdown-menu show w-100 shadow-sm"
+             style="max-height: 200px; overflow-y: auto; position: absolute; z-index: 1050;">
+            @{ var items = FilteredAvailableItems; }
+            @for (int i = 0; i < items.Count; i++)
+            {
+                var index = i;
+                var item = items[i];
+                var isHighlighted = highlightedIndex == index;
+                <button type="button"
+                        class="dropdown-item @(isHighlighted ? "active" : "")"
+                        @onmousedown="@(() => SelectItem(item))"
+                        @onmousemove="@(() => highlightedIndex = index)">
+                    @GetDisplayValue(item)
+                </button>
+            }
+        </div>
+    }
+    else if (showDropdown && !string.IsNullOrWhiteSpace(searchTerm) && !FilteredAvailableItems.Any())
+    {
+        <div class="dropdown-menu show w-100 shadow-sm" style="position: absolute; z-index: 1050;">
+            <span class="dropdown-item-text text-muted small">找不到符合的項目</span>
+        </div>
+    }
+</div>
+
+@* 已選標籤區 *@
+@if (SelectedItems.Any())
+{
+    <div class="mt-1 d-flex flex-wrap gap-1">
+        @foreach (var item in SelectedItems)
+        {
+            var displayText = GetDisplayValue(item);
+            <span class="badge bg-primary d-inline-flex align-items-center gap-1" style="font-size: 0.85em; cursor: default;">
+                @displayText
+                <span role="button"
+                      class="ms-1"
+                      style="cursor: pointer; font-size: 1.1em; line-height: 1;"
+                      @onclick="@(() => RemoveItem(item))">×</span>
+            </span>
+        }
+    </div>
+}
+else
+{
+    <div class="mt-1">
+        <small class="text-muted">@EmptyMessage</small>
+    </div>
+}
+
+@code {
+    // ===== 參數定義 =====
+
+    /// <summary>可選擇的項目清單</summary>
+    [Parameter, EditorRequired]
+    public List<TItem> Items { get; set; } = new();
+
+    /// <summary>已選擇的項目清單（雙向綁定）</summary>
+    [Parameter]
+    public List<TItem> SelectedItems { get; set; } = new();
+
+    /// <summary>已選擇項目變更事件</summary>
+    [Parameter]
+    public EventCallback<List<TItem>> SelectedItemsChanged { get; set; }
+
+    /// <summary>顯示文字的屬性名稱</summary>
+    [Parameter, EditorRequired]
+    public string DisplayProperty { get; set; } = string.Empty;
+
+    /// <summary>值的屬性名稱（用於比較和去重）</summary>
+    [Parameter]
+    public string ValueProperty { get; set; } = "Id";
+
+    /// <summary>搜尋框提示文字</summary>
+    [Parameter]
+    public string Placeholder { get; set; } = "請輸入關鍵字搜尋...";
+
+    /// <summary>未選擇時的提示訊息</summary>
+    [Parameter]
+    public string EmptyMessage { get; set; } = "尚未選擇項目";
+
+    /// <summary>下拉最多顯示筆數</summary>
+    [Parameter]
+    public int MaxDropdownItems { get; set; } = 50;
+
+    // ===== 內部狀態 =====
+    private string searchTerm = string.Empty;
+    private bool showDropdown = false;
+    private int highlightedIndex = -1;
+
+    // ===== 計算屬性 =====
+
+    /// <summary>篩選後的可選項目（排除已選、符合搜尋）</summary>
+    private List<TItem> FilteredAvailableItems
+    {
+        get
+        {
+            if (Items == null) return new List<TItem>();
+
+            var available = Items.Where(item =>
+                !SelectedItems.Any(selected => AreItemsEqual(item, selected)));
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                available = available.Where(item =>
+                    GetDisplayValue(item).Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return available.Take(MaxDropdownItems).ToList();
+        }
+    }
+
+    // ===== 事件處理 =====
+
+    private void HandleInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? "";
+        showDropdown = !string.IsNullOrWhiteSpace(searchTerm);
+        highlightedIndex = -1;
+    }
+
+    private void HandleFocus()
+    {
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            showDropdown = true;
+        }
+    }
+
+    private async Task HandleBlur()
+    {
+        // 延遲關閉下拉，讓 onmousedown 有機會觸發
+        await Task.Delay(200);
+        showDropdown = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs args)
+    {
+        var items = FilteredAvailableItems;
+
+        switch (args.Key)
+        {
+            case "ArrowDown":
+                if (!showDropdown && !string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    showDropdown = true;
+                }
+                else if (items.Any())
+                {
+                    highlightedIndex = (highlightedIndex + 1) % items.Count;
+                }
+                break;
+
+            case "ArrowUp":
+                if (items.Any() && showDropdown)
+                {
+                    highlightedIndex = highlightedIndex <= 0 ? items.Count - 1 : highlightedIndex - 1;
+                }
+                break;
+
+            case "Enter":
+                if (showDropdown && highlightedIndex >= 0 && highlightedIndex < items.Count)
+                {
+                    await SelectItem(items[highlightedIndex]);
+                }
+                break;
+
+            case "Escape":
+                showDropdown = false;
+                break;
+        }
+    }
+
+    private async Task SelectItem(TItem item)
+    {
+        if (item == null || SelectedItems.Any(s => AreItemsEqual(s, item)))
+            return;
+
+        SelectedItems.Add(item);
+        await SelectedItemsChanged.InvokeAsync(SelectedItems);
+        searchTerm = string.Empty;
+        showDropdown = false;
+        highlightedIndex = -1;
+        StateHasChanged();
+    }
+
+    private async Task RemoveItem(TItem item)
+    {
+        if (item == null) return;
+
+        var itemToRemove = SelectedItems.FirstOrDefault(s => AreItemsEqual(s, item));
+        if (itemToRemove != null)
+        {
+            SelectedItems.Remove(itemToRemove);
+            await SelectedItemsChanged.InvokeAsync(SelectedItems);
+            StateHasChanged();
+        }
+    }
+
+    // ===== 輔助方法 =====
+
+    private string GetDisplayValue(TItem item)
+    {
+        if (item == null) return string.Empty;
+        try
+        {
+            var property = typeof(TItem).GetProperty(DisplayProperty);
+            return property?.GetValue(item)?.ToString() ?? item.ToString() ?? string.Empty;
+        }
+        catch
+        {
+            return item.ToString() ?? string.Empty;
+        }
+    }
+
+    private object? GetItemValue(TItem item)
+    {
+        if (item == null) return null;
+        try
+        {
+            var property = typeof(TItem).GetProperty(ValueProperty);
+            return property?.GetValue(item) ?? item;
+        }
+        catch
+        {
+            return item;
+        }
+    }
+
+    private bool AreItemsEqual(TItem item1, TItem item2)
+    {
+        if (item1 == null && item2 == null) return true;
+        if (item1 == null || item2 == null) return false;
+        return Equals(GetItemValue(item1), GetItemValue(item2));
+    }
+}

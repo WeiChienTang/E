@@ -13,52 +13,36 @@
 @inject INotificationService NotificationService
 
 <div>
-    @* 第一行: 倉庫選擇 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <MultiSelectFilterComponent TItem="Warehouse"
-                                       Items="@warehouses"
-                                       @bind-SelectedItems="@selectedWarehouses"
-                                       DisplayProperty="Name"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋倉庫..."
-                                       EmptyMessage="未選擇倉庫（查詢全部倉庫）"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="指定倉庫">
+        <SearchSelectFilterComponent TItem="Warehouse"
+                                   Items="@warehouses"
+                                   @bind-SelectedItems="@selectedWarehouses"
+                                   DisplayProperty="Name"
+                                   ValueProperty="Id"
+                                   Placeholder="搜尋倉庫..."
+                                   EmptyMessage="未選擇倉庫（查詢全部倉庫）" />
+    </FilterFieldRow>
 
-    @* 第二行: 商品分類選擇 *@
-    <div class="row g-2 mb-2">
-        <div class="col-12">
-            <MultiSelectFilterComponent TItem="ProductCategory"
-                                       Items="@categories"
-                                       @bind-SelectedItems="@selectedCategories"
-                                       DisplayProperty="Name"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋商品分類..."
-                                       EmptyMessage="未選擇分類（查詢全部分類）"
-                                       ListHeight="120px"
-                                       ShowCard="false" />
-        </div>
-    </div>
+    <FilterFieldRow Label="商品分類">
+        <SearchSelectFilterComponent TItem="ProductCategory"
+                                   Items="@categories"
+                                   @bind-SelectedItems="@selectedCategories"
+                                   DisplayProperty="Name"
+                                   ValueProperty="Id"
+                                   Placeholder="搜尋商品分類..."
+                                   EmptyMessage="未選擇分類（查詢全部分類）" />
+    </FilterFieldRow>
 
-    @* 第三行: 關鍵字搜尋 + 包含零庫存 *@
-    <div class="row g-2 align-items-end">
-        <div class="col-8">
-            <TextSearchFilterComponent @bind-Value="keyword"
-                                       Label="關鍵字"
-                                       Placeholder="搜尋品號、品名..." />
-        </div>
-        <div class="col-4 d-flex align-items-end">
-            <div class="form-check mb-1">
+    <FilterFieldRow Label="關鍵字">
+        <div class="d-flex align-items-center gap-2">
+            <input type="text" class="form-control" placeholder="搜尋品號、品名..."
+                   @bind="keyword" />
+            <div class="form-check text-nowrap">
                 <input class="form-check-input" type="checkbox" id="includeZeroStock" @bind="includeZeroStock">
-                <label class="form-check-label small" for="includeZeroStock">
-                    包含零庫存
-                </label>
+                <label class="form-check-label small" for="includeZeroStock">包含零庫存</label>
             </div>
         </div>
-    </div>
+    </FilterFieldRow>
 </div>
 
 @code {
