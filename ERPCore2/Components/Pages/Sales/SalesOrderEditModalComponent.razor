@@ -3,8 +3,6 @@
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
-@inject ISalesReturnDetailService SalesReturnDetailService
-@inject IInventoryStockService InventoryStockService
 @inject ICustomerService CustomerService
 @inject ICompanyService CompanyService
 @inject IProductService ProductService
@@ -13,13 +11,8 @@
 @inject IWarehouseService WarehouseService
 @inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
-@inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@inject ISalesReturnService SalesReturnService
-@inject ISetoffDocumentService SetoffDocumentService
-@inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject IQuotationService QuotationService
 @inject IQuotationDetailService QuotationDetailService
 @inject ISalesOrderReportService SalesOrderReportService
@@ -38,7 +31,7 @@
                           ModalTitle="@(SalesOrderId.HasValue ? "編輯訂單" : "新增訂單")"
                           Size="GenericEditModalComponent<SalesOrder, ISalesOrderService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
@@ -46,7 +39,7 @@
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSalesOrderData"
-                          SaveHandler="@SaveSalesOrderWrapper"
+                          SaveHandler="@SaveSalesOrderWithDetails"
                           SaveSuccessMessage="@(SalesOrderId.HasValue ? "訂單更新成功" : "訂單新增成功")"
                           SaveFailureMessage="訂單儲存失敗"
                           RequiredPermission="SalesOrder.Read"
@@ -159,7 +152,6 @@
     // 訂單明細
     private List<SalesOrderDetail> salesOrderDetails = new();
     
-    // 方案 D 改良版：資料版本計數器
     private int _detailsDataVersion = 0;
     
     // 明細管理組件引用
@@ -240,7 +232,6 @@
             employeeModalManager = modalManagers.Get<Employee>(nameof(SalesOrder.EmployeeId));
             productModalManager = modalManagers.Get<Product>("FilterProductId");
             
-            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
@@ -280,8 +271,7 @@
             {
                 await OnSalesOrderSaved.InvokeAsync(editModalComponent.Entity);
             }
-            // 不需要手動關閉 Modal，GenericEditModalComponent 會處理
-        }
+            }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"處理成功事件時發生錯誤：{ex.Message}");
@@ -296,7 +286,6 @@
             {
                 await OnCancel.InvokeAsync();
             }
-            // 不要直接調用 CloseModal，讓 GenericEditModalComponent 處理
         }
         catch (Exception ex)
         {
@@ -693,17 +682,8 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-
-    /// <summary>
-    /// 生成訂單號
-    /// </summary>
-    
     // ===== AutoComplete 配置方法 =====
-    
+
     /// <summary>
     /// 配置 Modal 管理器
     /// </summary>
@@ -1044,25 +1024,10 @@
 
     // ===== 銷貨明細管理方法 =====
     
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 方案 A + D 重構：明細已由 DataLoader 載入，Table 自動偵測參數變化
-    /// 只需處理 UI 刷新
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
+    private Task HandleEntityLoaded(int loadedEntityId)
     {
-        try
-        {
-            // 方案 A + D：
-            // - 明細已由 DataLoader (LoadSalesOrderData) 載入完成
-            // - Table 組件會自動偵測 ExistingDetails 參數變化並重新載入
-            // - 只需觸發 StateHasChanged() 讓 Table 收到新的參數
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理實體載入事件時發生錯誤：{ex.Message}");
-        }
+        StateHasChanged();
+        return Task.CompletedTask;
     }
     
     /// <summary>
@@ -1083,11 +1048,7 @@
                 salesOrderDetails = new List<SalesOrderDetail>();
             }
             
-            // 方案 D 改良版：遞增版本號
             _detailsDataVersion++;
-            
-            //  關鍵修正：載入明細後重新檢查鎖定狀態
-            // 參考 PurchaseOrderEditModalComponent 的實作
             await LoadDetailRelatedDataAsync();
             
             // 檢查庫存不足狀態
@@ -1381,70 +1342,6 @@
     };
 
     /// <summary>
-    /// 從訂單轉銷售退貨單
-    /// </summary>
-    private async Task HandleCreateReturnFromOrder()
-    {
-        try
-        {
-            // 1. 驗證訂單資料
-            if (!SalesOrderId.HasValue || editModalComponent?.Entity == null)
-            {
-                await NotificationService.ShowWarningAsync("無法轉銷售退貨單：訂單資料不存在");
-                return;
-            }
-            
-            // 2. 驗證客戶資料
-            if (editModalComponent.Entity.CustomerId <= 0)
-            {
-                await NotificationService.ShowWarningAsync("訂單缺少客戶資訊，無法轉銷售退貨單");
-                return;
-            }
-            
-            // 3. 檢查是否有明細資料
-            if (!salesOrderDetails.Any())
-            {
-                await NotificationService.ShowWarningAsync("訂單沒有明細資料，無法轉銷售退貨單");
-                return;
-            }
-            
-            // 4. 檢查是否有可退貨的明細
-            // 注意：SalesOrderDetail 目前沒有 ReturnedQuantity 欄位
-            // 暫時允許所有有明細的訂單都可以轉退貨單
-            // 未來如果需要更精確的驗證，需要在 SalesOrderDetail 加入 ReturnedQuantity 欄位
-            // var hasReturnableDetails = salesOrderDetails.Any(detail => 
-            //     detail.ReturnedQuantity < detail.OrderQuantity
-            // );
-            // 
-            // if (!hasReturnableDetails)
-            // {
-            //     await NotificationService.ShowWarningAsync("訂單所有明細皆已完成退貨，無需再轉銷售退貨單");
-            //     return;
-            // }
-            
-            // 5. 呼叫銷售退貨單組件的公開方法
-            if (salesReturnEditModal != null)
-            {
-                // 注意：退貨應該從出貨單產生，此處暫時保留但需要重構
-                await salesReturnEditModal.ShowAddModalWithPrefilledDelivery(
-                    editModalComponent.Entity.CustomerId,
-                    SalesOrderId.Value  // TODO: 應該改為 SalesDeliveryId
-                );
-            }
-            else
-            {
-                await NotificationService.ShowWarningAsync("銷售退貨單組件未初始化，請重新整理頁面");
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReturnFromOrder), GetType(), 
-                additionalData: $"轉銷售退貨單失敗 - OrderId: {SalesOrderId}");
-            await NotificationService.ShowErrorAsync("轉銷售退貨單時發生錯誤");
-        }
-    }
-
-    /// <summary>
     /// 從訂單轉銷貨出貨單 - 簡化版本，所有業務驗證交給銷貨出貨單 Modal 處理
     /// </summary>
     private async Task HandleCreateDeliveryFromOrder()
@@ -1535,13 +1432,7 @@
                 notificationMessage: null,
                 stateHasChanged: StateHasChanged,
                 invokeAsync: InvokeAsync,
-                additionalActions: async () =>
-                {
-                    //  重新載入出貨數量資訊
-                    // 注意：SalesOrderTable 目前沒有 LoadDeliveredQuantitiesAsync 方法
-                    // 未來如需重新載入出貨數量，需要在 SalesOrderTable 中實作此方法
-                    await Task.CompletedTask;
-                }
+                additionalActions: null
             );
             
             await NotificationService.ShowSuccessAsync($"銷貨出貨單 {savedDelivery.Code} 已更新，訂單明細已刷新");
@@ -1555,10 +1446,6 @@
 
     /// <summary>
     /// 處理銷售退貨單儲存後的事件
-    /// </summary>
-    /// <summary>
-    /// 處理銷售退貨單儲存後的事件
-    /// 使用 ChildDocumentRefreshHelper 統一處理刷新邏輯
     /// </summary>
     private async Task HandleSalesReturnSaved(SalesReturn savedReturn)
     {
@@ -1797,15 +1684,7 @@
     }
 
     /// <summary>
-    /// 包裝方法 - 提供給 GenericEditModalComponent 使用的儲存處理器
-    /// </summary>
-    private async Task<bool> SaveSalesOrderWrapper(SalesOrder salesOrder)
-    {
-        return await SaveSalesOrderWithDetails(salesOrder);
-    }
-
-    /// <summary>
-    /// 自訂儲存邏輯 - 同時儲存主檔和明細
+    /// 儲存邏輯 - 同時儲存主檔和明細
     /// </summary>
     private async Task<bool> SaveSalesOrderWithDetails(SalesOrder salesOrder)
     {
@@ -1841,16 +1720,7 @@
                 }
             }
 
-            // ✓ 不需要重新計算稅額！
-            // HandleDetailsChanged 已經根據每個明細的實際稅率正確計算了 TotalAmount、DiscountAmount、SalesTaxAmount、TotalAmountWithTax
-            // 這裡只需要確保總金額正確即可(通常已經正確,這行也可省略)
-            // salesOrder.TotalAmount、SalesTaxAmount、TotalAmountWithTax 都已由 HandleDetailsChanged 設定
-
             var isEditMode = SalesOrderId.HasValue;
-            
-            // 2. 💡 訂單不影響庫存，無需驗證倉庫庫存
-            // 倉庫選擇和庫存驗證應在「銷貨出貨單」階段進行
-            
             List<SalesOrderDetail> originalDetails = new();
             
             // 在編輯模式下，先取得原始明細資料
@@ -1879,11 +1749,7 @@
             // 儲存明細
             await SaveSalesOrderDetails(result.Data.Id, isEditMode, isEditMode ? originalDetails : new List<SalesOrderDetail>());
             
-            // 🔑 儲存 BOM 組成明細
             await SaveSalesOrderCompositionDetails(result.Data.Id);
-            
-            // 💡 訂單不影響庫存，無需扣減庫存
-            // 庫存扣減應發生在「銷貨出貨單」階段，而非「訂單」階段
 
             return true;
         }
@@ -1908,7 +1774,6 @@
         {
             // 只處理有效的明細（已選擇商品的）
             var validDetails = salesOrderDetails.Where(d => d.ProductId > 0).ToList();
-            
 
             // 設定主檔ID和時間戳記
             foreach (var detail in validDetails)
@@ -2037,11 +1902,7 @@
     }
 
     /// <summary>
-    /// 儲存訂單組合明細（BOM）
-    /// </summary>
-    /// <summary>
-    /// 儲存訂單組合明細（BOM）
-    /// 處理臨時索引（負數）映射到實際儲存後的明細ID
+    /// 儲存訂單組合明細（BOM）- 處理臨時索引（負數）映射到實際儲存後的明細ID
     /// </summary>
     private async Task SaveSalesOrderCompositionDetails(int salesOrderId)
     {
@@ -2147,48 +2008,6 @@
         }
     }
 
-    /// <summary>
-    /// 使用FIFO方式扣減庫存
-    /// </summary>
-    private async Task ReduceInventoryWithFIFOAsync(int salesOrderId)
-    {
-        try
-        {
-            // 只處理有效的明細（已選擇商品和倉庫的）
-            var validDetails = salesOrderDetails
-                .Where(d => d.ProductId > 0 && d.OrderQuantity > 0 && d.WarehouseId.HasValue)
-                .ToList();
-
-            foreach (var detail in validDetails)
-            {
-                if (!detail.WarehouseId.HasValue) continue;
-
-                var result = await InventoryStockService.ReduceStockWithFIFOAsync(
-                    detail.ProductId,
-                    detail.WarehouseId.Value,
-                    (int)Math.Ceiling(detail.OrderQuantity),
-                    InventoryTransactionTypeEnum.Sale,
-                    $"SO-{salesOrderId}",
-                    null, // WarehouseLocationId - SalesOrderDetail沒有此欄位，傳入null
-                    $"訂單出貨 - SO-{salesOrderId}",
-                    detail.Id > 0 ? detail.Id : null // 傳遞明細ID用於追蹤
-                );
-
-                if (!result.IsSuccess)
-                {
-                    await NotificationService.ShowWarningAsync($"商品 {detail.Product?.Name} 庫存扣減失敗：{result.ErrorMessage}");
-                    // 不中斷流程，只記錄警告
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ReduceInventoryWithFIFOAsync), GetType(), 
-                additionalData: $"FIFO庫存扣減失敗 - OrderId: {salesOrderId}");
-            await NotificationService.ShowWarningAsync("庫存扣減時發生錯誤，請檢查庫存記錄");
-        }
-    }
-    
     // ===== 從報價單轉單相關方法 =====
     
     /// <summary>

@@ -351,9 +351,6 @@
     // 自訂操作按鈕區域（顯示在頂部按鈕列的最左側）
     [Parameter] public RenderFragment? CustomActionButtons { get; set; }
     
-    // 自訂按鈕區域（顯示在 Modal Header 中）
-    [Parameter] public RenderFragment? CustomButtons { get; set; }
-    
     // 表單設定
     [Parameter] public bool UseGenericForm { get; set; } = true;
     [Parameter] public List<FormFieldDefinition> FormFields { get; set; } = new();
@@ -478,11 +475,9 @@
     [Parameter] public bool ShowApprovalSection { get; set; } = false;
     [Parameter] public string ApprovalPermission { get; set; } = string.Empty;
     [Parameter] public Func<Task<bool>>? OnApprove { get; set; }
-    [Parameter] public Func<Task<bool>>? OnReject { get; set; }
-    
+
     // 駁回確認 Modal 相關參數
     [Parameter] public Func<string, Task<bool>>? OnRejectWithReason { get; set; }
-    // 移除 GetApprovalStatus，改用 GetStatusMessage
     
     // ===== 內部狀態 =====
     
@@ -672,11 +667,8 @@
         }
     }
     
-    // ===== ESC 鍵處理 =====
-    
-    // ESC 鍵監聽、處理和清理方法已移除，由 BaseModalComponent 自動處理
 
-    
+
     // ===== 資料載入方法 =====
     
     private async Task LoadAllData()
@@ -1139,23 +1131,13 @@
             IsRejecting = true;
             StateHasChanged();
             
-            bool success;
-            
-            // 優先使用帶駁回原因的委派
-            if (OnRejectWithReason != null)
-            {
-                success = await OnRejectWithReason(rejectReason);
-            }
-            // 向下相容：使用原有的 OnReject 委派
-            else if (OnReject != null)
-            {
-                success = await OnReject();
-            }
-            else
+            if (OnRejectWithReason == null)
             {
                 await ShowErrorMessage("未設定駁回處理程序");
                 return;
             }
+
+            bool success = await OnRejectWithReason(rejectReason);
             
             if (success)
             {
@@ -1191,18 +1173,8 @@
         return Task.CompletedTask;
     }
     
-    /// <summary>
-    /// 處理駁回（舊方法，保留以向下相容，但現在會開啟確認 Modal）
-    /// </summary>
-    private async Task HandleReject()
-    {
-        // 新版本：開啟駁回確認 Modal
-        OpenRejectConfirmModal();
-        await Task.CompletedTask;
-    }
-    
 
-    
+
     private async Task CloseModal()
     {
         await CleanupTabNavigationAsync();
@@ -1235,29 +1207,6 @@
         }
         
         return false;
-    }
-    
-    /// <summary>
-    /// 處理已審核實體的完成按鈕點擊事件
-    /// </summary>
-    private async Task HandleApprovedEntityComplete()
-    {
-        try
-        {
-            // 觸發 OnSaveSuccess 事件以通知父組件刷新資料
-            if (OnSaveSuccess.HasDelegate)
-            {
-                await OnSaveSuccess.InvokeAsync();
-            }
-            
-            // 關閉 Modal
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorMessage($"完成操作時發生錯誤：{ex.Message}");
-            LogError("HandleApprovedEntityComplete", ex);
-        }
     }
     
     private string GetModalTitle()
@@ -1788,7 +1737,7 @@
         var searchTerm = _lastSearchTerms.GetValueOrDefault(field.PropertyName, string.Empty);
         
         // 先檢查實體欄位的實際值，如果為空則確保 searchTerm 也為空
-        var currentValue = GetEntityPropertyValue(Entity, field.PropertyName);
+        var currentValue = GetPropertyValue(Entity, field.PropertyName);
         var currentId = currentValue as int?;
         
         // 如果實體值為空或 0，強制清空 searchTerm（避免殘留舊關鍵字）
@@ -2055,7 +2004,7 @@
                     var modalManager = ModalManagers[field.PropertyName];
                     
                     // 取得當前實體對應屬性的值
-                    var currentValue = GetEntityPropertyValue(Entity, field.PropertyName);
+                    var currentValue = GetPropertyValue(Entity, field.PropertyName);
                     var intValue = currentValue as int?;
                     
                     // 使用反射調用 UpdateFieldActionButtons 方法
@@ -2071,22 +2020,6 @@
         catch (Exception ex)
         {
             _ = Task.Run(() => LogError("UpdateAllActionButtons", ex));
-        }
-    }
-    
-    /// <summary>
-    /// 取得實體屬性值的輔助方法
-    /// </summary>
-    private object? GetEntityPropertyValue(object obj, string propertyName)
-    {
-        try
-        {
-            var property = obj.GetType().GetProperty(propertyName);
-            return property?.GetValue(obj);
-        }
-        catch
-        {
-            return null;
         }
     }
     
@@ -2470,7 +2403,4 @@
     
     #endregion
     
-    // ===== 清理資源 =====
-    
-    // Dispose 方法已移除，資源清理由 BaseModalComponent 自動處理
 }
