@@ -47,7 +47,7 @@
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           GetStatusMessage="@GetStatusMessage"
-                          FormHeaderContent="@WarningMessage"
+                          FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
@@ -702,21 +702,7 @@
     /// </summary>
     private List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule> GetCustomModules()
     {
-        // 確保只在需要時才返回模組，並且檢查所有必要的條件
-        if (editModalComponent == null)
-        {
-            return new List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule>();
-        }
-
-        return new List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule>
-        {
-            new GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule
-            {
-                Order = 1,
-                IsVisible = true,
-                Content = CreateProductManagerContent()
-            }
-        };
+        return CustomModuleHelper.CreateSingle(editModalComponent, CreateProductManagerContent());
     }
 
     /// <summary>
@@ -812,15 +798,9 @@
     /// </summary>
     private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
     {
-        // 🔑 關鍵：當有不可刪除的明細時，不顯示 ActionButtons（與 PurchaseOrder 一致）
-        if (hasUndeletableDetails)
-        {
-            return new List<FieldActionButton>();
-        }
-        
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            customerModalManager, 
+            editModalComponent,
+            customerModalManager,
             nameof(SalesOrder.CustomerId)
         );
     }
@@ -830,15 +810,9 @@
     /// </summary>
     private async Task<List<FieldActionButton>> GetCompanyActionButtonsAsync()
     {
-        // 🔑 關鍵：當有不可刪除的明細時，不顯示 ActionButtons（與 PurchaseOrder 一致）
-        if (hasUndeletableDetails)
-        {
-            return new List<FieldActionButton>();
-        }
-        
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            companyModalManager, 
+            editModalComponent,
+            companyModalManager,
             nameof(SalesOrder.CompanyId)
         );
     }
@@ -848,15 +822,9 @@
     /// </summary>
     private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
     {
-        // 🔑 關鍵：當有不可刪除的明細時，不顯示 ActionButtons（與 PurchaseOrder 一致）
-        if (hasUndeletableDetails)
-        {
-            return new List<FieldActionButton>();
-        }
-        
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            employeeModalManager, 
+            editModalComponent,
+            employeeModalManager,
             nameof(SalesOrder.EmployeeId)
         );
     }
@@ -1200,14 +1168,33 @@
     /// </summary>
     private async void UpdateFieldsReadOnlyState()
     {
-        // 🔑 關鍵：直接重新初始化表單欄位（與 PurchaseOrder 一致）
-        // InitializeFormFieldsAsync 會呼叫 GetCustomerActionButtonsAsync 等方法
-        // 這些方法內部已經檢查 hasUndeletableDetails，會自動決定是否加入 ActionButtons
-        await InvokeAsync(async () =>
-        {
-            await InitializeFormFieldsAsync();
-            StateHasChanged();
-        });
+        // 使用 FormFieldLockHelper 一次處理所有欄位（含 ActionButtons）
+        FormFieldLockHelper.LockMultipleFields(
+            formFields,
+            new[]
+            {
+                nameof(SalesOrder.Code),
+                nameof(SalesOrder.CustomerId),
+                nameof(SalesOrder.QuotationId),
+                nameof(SalesOrder.CompanyId),
+                nameof(SalesOrder.EmployeeId),
+                nameof(SalesOrder.OrderDate),
+                nameof(SalesOrder.TaxCalculationMethod),
+                nameof(SalesOrder.ExpectedDeliveryDate),
+                nameof(SalesOrder.PaymentTerms),
+                nameof(SalesOrder.DeliveryTerms),
+                nameof(BaseEntity.Remarks)
+            },
+            isLocked: hasUndeletableDetails,
+            actionButtonsMap: new Dictionary<string, Func<Task<List<FieldActionButton>>>>
+            {
+                { nameof(SalesOrder.CustomerId), GetCustomerActionButtonsAsync },
+                { nameof(SalesOrder.CompanyId), GetCompanyActionButtonsAsync },
+                { nameof(SalesOrder.EmployeeId), GetEmployeeActionButtonsAsync }
+            }
+        );
+
+        await InvokeAsync(() => StateHasChanged());
     }
 
     /// <summary>
@@ -1247,15 +1234,15 @@
     /// 取得警告訊息（顯示在表單欄位上方）- 作為屬性以確保正確的渲染時機
     /// 當有不可刪除的明細時，顯示鎖定警告訊息
     /// </summary>
-    private RenderFragment? WarningMessage => __builder =>
+    private RenderFragment? GetWarningMessage() => __builder =>
     {
         // 只在資料準備就緒後才顯示訊息
         if (!isDetailDataReady)
             return;
-        
+
         // 明細已轉單的警告訊息
         <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
-                                  Message="因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。" />
+                                  Message="@EditModalMessages.UndeletableDetailsWarning" />
     };
 
     /// <summary>

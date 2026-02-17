@@ -48,8 +48,8 @@
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomModules="@GetCustomModules()"
-                          CustomActionButtons="@CustomActionButtons"
-                          FormHeaderContent="@WarningMessage"
+                          CustomActionButtons="@GetCustomActionButtons()"
+                          FormHeaderContent="@GetWarningMessage()"
                           ShowPrintButton="true"
                           ReportService="@QuotationReportService"
                           ReportId="@ReportIds.Quotation"
@@ -864,21 +864,7 @@
     /// </summary>
     private List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule> GetCustomModules()
     {
-        try
-        {
-            return new List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule>
-            {
-                new()
-                {
-                    Title = "",
-                    Content = CreateQuotationDetailManagerContent()
-                }
-            };
-        }
-        catch
-        {
-            return new List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule>();
-        }
+        return CustomModuleHelper.CreateSingle(editModalComponent, CreateQuotationDetailManagerContent());
     }
 
     /// <summary>
@@ -1160,54 +1146,29 @@
             hasUndeletableDetails
         );
 
-        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
-        var fieldsToLock = new[]
-        {
-            nameof(Quotation.Code),
-            nameof(Quotation.QuotationDate),
-            nameof(Quotation.PaymentTerms),
-            nameof(Quotation.DeliveryTerms),
-            nameof(Quotation.ProjectName),
-            nameof(BaseEntity.Remarks)
-        };
-        
-        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
-        FormFieldLockHelper.LockMultipleFieldsSimple(
-            formFields, 
-            fieldsToLock, 
-            isLocked: shouldLock
+        // 使用 FormFieldLockHelper 一次處理所有欄位（含 ActionButtons）
+        FormFieldLockHelper.LockMultipleFields(
+            formFields,
+            new[]
+            {
+                nameof(Quotation.Code),
+                nameof(Quotation.QuotationDate),
+                nameof(Quotation.PaymentTerms),
+                nameof(Quotation.DeliveryTerms),
+                nameof(Quotation.ProjectName),
+                nameof(BaseEntity.Remarks),
+                nameof(Quotation.CustomerId),
+                nameof(Quotation.CompanyId),
+                nameof(Quotation.EmployeeId)
+            },
+            isLocked: shouldLock,
+            actionButtonsMap: new Dictionary<string, Func<Task<List<FieldActionButton>>>>
+            {
+                { nameof(Quotation.CustomerId), GetCustomerActionButtonsAsync },
+                { nameof(Quotation.CompanyId), GetCompanyActionButtonsAsync },
+                { nameof(Quotation.EmployeeId), GetEmployeeActionButtonsAsync }
+            }
         );
-        
-        // 特殊處理有 ActionButtons 的欄位
-        var fieldsWithActionButtons = new Dictionary<string, Func<Task<List<FieldActionButton>>>>
-        {
-            { nameof(Quotation.CustomerId), GetCustomerActionButtonsAsync },
-            { nameof(Quotation.CompanyId), GetCompanyActionButtonsAsync },
-            { nameof(Quotation.EmployeeId), GetEmployeeActionButtonsAsync }
-        };
-
-        foreach (var kvp in fieldsWithActionButtons)
-        {
-            if (shouldLock)
-            {
-                // 鎖定：移除 ActionButtons
-                FormFieldLockHelper.LockField(
-                    formFields,
-                    kvp.Key,
-                    isLocked: true
-                );
-            }
-            else
-            {
-                // 解鎖：恢復 ActionButtons
-                FormFieldLockHelper.LockField(
-                    formFields,
-                    kvp.Key,
-                    isLocked: false,
-                    actionButtonsGetter: kvp.Value
-                );
-            }
-        }
         
         // 強制更新 UI
         await InvokeAsync(() => StateHasChanged());
@@ -1290,59 +1251,56 @@
     /// 取得警告訊息（顯示在表單欄位上方）- 作為屬性以確保正確的渲染時機
     /// 當報價單已審核通過或有明細已轉單時，顯示鎖定警告訊息
     /// </summary>
-    private RenderFragment? WarningMessage => __builder =>
+    private RenderFragment? GetWarningMessage() => __builder =>
     {
         // 只在資料準備就緒後才顯示訊息
         if (!isDetailDataReady)
             return;
-        
+
         // 審核通過的警告訊息
         <GenericLockedFieldMessage IsVisible="@(isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)"
                                   Message="報價單已審核通過，主檔欄位已鎖定。" />
-        
+
         // 明細已轉單的警告訊息
         <GenericLockedFieldMessage IsVisible="@(hasUndeletableDetails && !(isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true))"
-                                  Message="因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。"/>
+                                  Message="@EditModalMessages.UndeletableDetailsWarning"/>
     };
     
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）- 作為屬性以確保正確的渲染時機
     /// </summary>
-    private RenderFragment? CustomActionButtons
+    private RenderFragment? GetCustomActionButtons()
     {
-        get
+        // 修改邏輯：轉銷貨按鈕永遠顯示（只要報價單已儲存）
+        // 明細是否可轉由 SalesOrderTable 組件處理（根據審核狀態和已轉數量）
+        bool shouldShowButton = false;
+
+        try
         {
-            // 修改邏輯：轉銷貨按鈕永遠顯示（只要報價單已儲存）
-            // 明細是否可轉由 SalesOrderTable 組件處理（根據審核狀態和已轉數量）
-            bool shouldShowButton = false;
-            
-            try
+            if (editModalComponent?.Entity != null &&
+                QuotationId.HasValue &&
+                QuotationId.Value > 0)
             {
-                if (editModalComponent?.Entity != null && 
-                    QuotationId.HasValue && 
-                    QuotationId.Value > 0)
-                {
-                    shouldShowButton = true;
-                }
+                shouldShowButton = true;
             }
-            catch
-            {
-                shouldShowButton = false;
-            }
-            
-            return __builder =>
-            {
-                @* 轉銷貨訂單按鈕 - 報價單已儲存即可顯示 *@
-                @if (shouldShowButton)
-                {
-                    <GenericButtonComponent Text="轉訂單" 
-                                          Variant="ButtonVariant.Green" 
-                                          Size="ButtonSize.Small"
-                                          CssClass="me-2"
-                                          OnClick="HandleCreateSalesOrderFromQuotation" />
-                }
-            };
         }
+        catch
+        {
+            shouldShowButton = false;
+        }
+
+        return __builder =>
+        {
+            @* 轉銷貨訂單按鈕 - 報價單已儲存即可顯示 *@
+            @if (shouldShowButton)
+            {
+                <GenericButtonComponent Text="轉訂單"
+                                      Variant="ButtonVariant.Green"
+                                      Size="ButtonSize.Small"
+                                      CssClass="me-2"
+                                      OnClick="HandleCreateSalesOrderFromQuotation" />
+            }
+        };
     }
 
     /// <summary>

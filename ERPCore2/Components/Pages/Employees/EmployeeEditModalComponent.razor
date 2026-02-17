@@ -136,7 +136,7 @@
     {
         try
         {
-            // 載入該員工的配給車輛
+            // 載入該員工的車輛資訊
             if (loadedEntityId > 0)
             {
                 employeeVehicles = await VehicleService.GetByEmployeeAsync(loadedEntityId);
@@ -470,7 +470,7 @@
                 .AddToSection(FormSectionNames.AdditionalData,
                     e => e.Remarks)
                 .GroupIntoTab("員工資料", "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData)
-                .GroupIntoCustomTab("配給車輛", "bi-truck", CreateVehicleTabContent())
+                .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())
                 .BuildAll();
 
             formSections = layout.FieldSections;
@@ -541,7 +541,7 @@
                 return employee;
             }
 
-            // 載入該員工的配給車輛
+            // 載入該員工的車輛資訊
             employeeVehicles = await VehicleService.GetByEmployeeAsync(EmployeeId.Value);
             
             return employee;
@@ -859,7 +859,7 @@
     };
 
     /// <summary>
-    /// 新增配給車輛 - 開啟 VehicleEditModal（新增模式，自動帶入 EmployeeId）
+    /// 新增車輛資訊 - 開啟 VehicleEditModal（新增模式，自動帶入 EmployeeId）
     /// </summary>
     private void HandleAddVehicle()
     {

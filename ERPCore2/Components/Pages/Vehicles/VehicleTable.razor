@@ -1,4 +1,4 @@
-@* 可重用的車輛列表面板 - 用於在各主檔 EditModal 的 Tab 頁籤中顯示配給車輛 *@
+@* 可重用的車輛列表面板 - 用於在各主檔 EditModal 的 Tab 頁籤中顯示車輛資訊 *@
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
 
@@ -12,7 +12,7 @@
                                       Variant="ButtonVariant.DarkBlue"
                                       Size="ButtonSize.Small"
                                       OnClick="@HandleAddVehicle"
-                                      Title="新增一筆配給車輛" />
+                                      Title="新增一筆車輛資訊" />
                 <GenericButtonComponent Text="選擇車"
                                       Variant="ButtonVariant.DarkBlue"
                                       Size="ButtonSize.Small"
@@ -35,7 +35,7 @@
                               ShowBuiltInActions="@(!IsReadOnly)"
                               ShowBuiltInDeleteButton="false"
                               EnableAutoEmptyRow="false"
-                              EmptyMessage="目前沒有配給車輛"
+                              EmptyMessage="目前沒有車輛資訊"
                               CustomActionsTemplate="@GetActionsTemplate()"
                               ActionsColumnWidth="100px" />
 </div>
@@ -47,7 +47,7 @@
     /// <summary>是否唯讀模式（隱藏所有操作按鈕）</summary>
     [Parameter] public bool IsReadOnly { get; set; } = false;
 
-    /// <summary>點擊「新增配給車輛」按鈕的回調</summary>
+    /// <summary>點擊「新增車輛資訊」按鈕的回調</summary>
     [Parameter] public EventCallback OnAddVehicle { get; set; }
 
     /// <summary>點擊「選擇車輛」按鈕的回調（開啟選擇 Modal）</summary>

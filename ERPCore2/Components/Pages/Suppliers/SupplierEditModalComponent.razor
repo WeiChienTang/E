@@ -107,7 +107,7 @@
             _pendingVehicleLinks.Clear();
             _pendingVehicleUnlinks.Clear();
 
-            // 載入該廠商的配給車輛
+            // 載入該廠商的車輛資訊
             if (loadedEntityId > 0)
             {
                 supplierVehicles = await VehicleService.GetBySupplierAsync(loadedEntityId);
@@ -390,7 +390,7 @@
                 .AddToSection(FormSectionNames.OtherInfo,
                     s => s.Remarks)
                 .GroupIntoTab("廠商資料", "bi-shop", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo)
-                .GroupIntoCustomTab("配給車輛", "bi-truck", CreateVehicleTabContent())
+                .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())
                 .BuildAll();
             
             formSections = layout.FieldSections;
@@ -441,7 +441,7 @@
                 return null;
             }
 
-            // 載入該廠商的配給車輛
+            // 載入該廠商的車輛資訊
             supplierVehicles = await VehicleService.GetBySupplierAsync(SupplierId.Value);
             
             return supplier;
@@ -727,7 +727,7 @@
     };
 
     /// <summary>
-    /// 新增配給車輛
+    /// 新增車輛資訊
     /// </summary>
     private void HandleAddVehicle()
     {
@@ -823,7 +823,7 @@
     }
 
     /// <summary>
-    /// 取得目前已配給車輛的 ID 清單（用於排除已在列表中的車輛）
+    /// 取得目前已車輛資訊的 ID 清單（用於排除已在列表中的車輛）
     /// </summary>
     private List<int> GetCurrentVehicleIds()
     {

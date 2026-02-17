@@ -1,3 +1,4 @@
+using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 
 namespace ERPCore2.Helpers.EditModal;
@@ -406,6 +407,87 @@ public static class TaxCalculationHelper
             return 0m;
 
         return Math.Round((taxAmount / totalAmount) * 100, decimals);
+    }
+
+    #endregion
+
+    #region 依稅別計算方法（從明細列表）
+
+    /// <summary>
+    /// 根據稅別（TaxCalculationMethod）從明細列表計算總金額與稅額
+    /// 支援三種稅別：外加稅、內含稅、免稅
+    ///
+    /// 此方法統一了各 EditModal 中重複的 switch(taxMethod) 區塊，
+    /// 適用於採購單、進貨單、銷貨單、出貨單等所有具有明細稅率的單據。
+    /// </summary>
+    /// <typeparam name="TDetail">明細型別</typeparam>
+    /// <param name="details">明細列表</param>
+    /// <param name="taxMethod">稅別計算方式</param>
+    /// <param name="defaultTaxRate">預設稅率（當明細無獨立稅率時使用）</param>
+    /// <param name="getSubtotal">取得明細小計金額的委派</param>
+    /// <param name="getTaxRate">取得明細獨立稅率的委派（回傳 null 表示使用預設稅率）</param>
+    /// <returns>(TotalAmount 未稅金額, TaxAmount 稅額)</returns>
+    /// <remarks>
+    /// 使用範例：
+    /// <code>
+    /// var (total, tax) = TaxCalculationHelper.CalculateFromDetails(
+    ///     purchaseOrderDetails,
+    ///     editModalComponent.Entity.TaxCalculationMethod,
+    ///     currentTaxRate,
+    ///     d => d.SubtotalAmount,
+    ///     d => d.TaxRate);
+    /// editModalComponent.Entity.TotalAmount = total;
+    /// editModalComponent.Entity.PurchaseTaxAmount = tax;
+    /// </code>
+    /// </remarks>
+    public static (decimal TotalAmount, decimal TaxAmount) CalculateFromDetails<TDetail>(
+        IEnumerable<TDetail> details,
+        TaxCalculationMethod taxMethod,
+        decimal defaultTaxRate,
+        Func<TDetail, decimal> getSubtotal,
+        Func<TDetail, decimal?> getTaxRate)
+    {
+        var detailList = details as IList<TDetail> ?? details.ToList();
+
+        switch (taxMethod)
+        {
+            case TaxCalculationMethod.TaxExclusive:
+            default:
+            {
+                // 外加稅：金額 = 明細小計合計，稅額 = 各明細分別算稅後加總（四捨五入到整數）
+                var totalAmount = Math.Round(
+                    detailList.Sum(d => getSubtotal(d)), 0, MidpointRounding.AwayFromZero);
+                var taxAmount = detailList.Sum(d =>
+                {
+                    var rate = getTaxRate(d) ?? defaultTaxRate;
+                    return Math.Round(getSubtotal(d) * (rate / 100m), 0, MidpointRounding.AwayFromZero);
+                });
+                return (totalAmount, taxAmount);
+            }
+
+            case TaxCalculationMethod.TaxInclusive:
+            {
+                // 內含稅：總額 = 明細小計，稅額 = 各明細反推稅額後加總，金額 = 總額 - 稅額
+                var totalWithTax = detailList.Sum(d => getSubtotal(d));
+                var taxAmount = detailList.Sum(d =>
+                {
+                    var rate = getTaxRate(d) ?? defaultTaxRate;
+                    return Math.Round(
+                        getSubtotal(d) / (1 + rate / 100m) * (rate / 100m),
+                        0, MidpointRounding.AwayFromZero);
+                });
+                var totalAmount = Math.Round(totalWithTax - taxAmount, 0, MidpointRounding.AwayFromZero);
+                return (totalAmount, taxAmount);
+            }
+
+            case TaxCalculationMethod.NoTax:
+            {
+                // 免稅：金額 = 明細小計合計，稅額 = 0
+                var totalAmount = Math.Round(
+                    detailList.Sum(d => getSubtotal(d)), 0, MidpointRounding.AwayFromZero);
+                return (totalAmount, 0m);
+            }
+        }
     }
 
     #endregion

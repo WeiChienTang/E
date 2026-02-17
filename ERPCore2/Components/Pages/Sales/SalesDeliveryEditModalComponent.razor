@@ -51,7 +51,7 @@
                           GetStatusMessage="@GetSalesDeliveryStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
-                          CustomActionButtons="@CustomActionButtons"
+                          CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           PrintButtonText="列印"
                           ReportService="@SalesDeliveryReportService"
@@ -327,7 +327,7 @@
     private RenderFragment? GetWarningMessage() => __builder =>
     {
         <GenericLockedFieldMessage IsVisible="@(isDetailDataReady && hasUndeletableDetails)"
-                                  Message="部分明細已有退貨記錄，主檔的客戶和訂單欄位已被鎖定，無法修改。" />
+                                  Message="@EditModalMessages.UndeletableDetailsWarning" />
     };
 
     /// <summary>
@@ -871,38 +871,20 @@
     /// </summary>
     private void UpdateFieldsReadOnlyState()
     {
-        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
-        var fieldsToLock = new[]
-        {
-            nameof(SalesDelivery.SalesOrderId)
-        };
-        
-        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
-        FormFieldLockHelper.LockMultipleFieldsSimple(
+        // 使用 FormFieldLockHelper 一次處理所有欄位（含 ActionButtons）
+        FormFieldLockHelper.LockMultipleFields(
             formFields,
-            fieldsToLock,
-            isLocked: hasUndeletableDetails
+            new[]
+            {
+                nameof(SalesDelivery.SalesOrderId),
+                nameof(SalesDelivery.CustomerId)
+            },
+            isLocked: hasUndeletableDetails,
+            actionButtonsMap: new Dictionary<string, Func<Task<List<FieldActionButton>>>>
+            {
+                { nameof(SalesDelivery.CustomerId), GetCustomerActionButtonsAsync }
+            }
         );
-        
-        // 特殊處理客戶欄位（需要 ActionButtons）
-        if (hasUndeletableDetails)
-        {
-            FormFieldLockHelper.LockField(
-                formFields,
-                nameof(SalesDelivery.CustomerId),
-                isLocked: true,
-                actionButtonsGetter: null  // 鎖定時移除 ActionButtons
-            );
-        }
-        else
-        {
-            FormFieldLockHelper.LockField(
-                formFields,
-                nameof(SalesDelivery.CustomerId),
-                isLocked: false,
-                actionButtonsGetter: GetCustomerActionButtonsAsync  // 解鎖時恢復 ActionButtons
-            );
-        }
     }
 
     private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
@@ -1267,15 +1249,7 @@
     /// </summary>
     private List<GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.CustomModule> GetCustomModules()
     {
-        return new List<GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.CustomModule>
-        {
-            new GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.CustomModule
-            {
-                Title = "",
-                Order = 1,
-                Content = CreateDeliveryDetailManagerContent()
-            }
-        };
+        return CustomModuleHelper.CreateSingle(editModalComponent, CreateDeliveryDetailManagerContent());
     }
 
     /// <summary>
@@ -1357,26 +1331,23 @@
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）- 作為屬性以確保正確的渲染時機
     /// </summary>
-    private RenderFragment? CustomActionButtons
+    private RenderFragment? GetCustomActionButtons()
     {
-        get
+        return __builder =>
         {
-            return __builder =>
+            @* 轉退貨按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
+            @if (canCreateReturn)
             {
-                @* 轉退貨按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
-                @if (canCreateReturn)
-                {
-                    <GenericButtonComponent Text="轉退貨" 
-                                          Variant="ButtonVariant.Red" 
-                                          Size="ButtonSize.Small"
-                                          OnClick="HandleCreateReturnFromDelivery" />
-                    <GenericButtonComponent Text="轉沖款" 
-                                          Variant="ButtonVariant.Green" 
-                                          Size="ButtonSize.Small"
-                                          OnClick="HandleCreateSetoffFromDelivery" />
-                }
-            };
-        }
+                <GenericButtonComponent Text="轉退貨"
+                                      Variant="ButtonVariant.Red"
+                                      Size="ButtonSize.Small"
+                                      OnClick="HandleCreateReturnFromDelivery" />
+                <GenericButtonComponent Text="轉沖款"
+                                      Variant="ButtonVariant.Green"
+                                      Size="ButtonSize.Small"
+                                      OnClick="HandleCreateSetoffFromDelivery" />
+            }
+        };
     }
     
     /// <summary>

@@ -139,7 +139,7 @@
             _pendingVehicleLinks.Clear();
             _pendingVehicleUnlinks.Clear();
 
-            // 載入該客戶的配給車輛
+            // 載入該客戶的車輛資訊
             if (loadedEntityId > 0)
             {
                 customerVehicles = await VehicleService.GetByCustomerAsync(loadedEntityId);
@@ -256,7 +256,7 @@
             // 編輯模式
             var customer = await CustomerService.GetByIdAsync(CustomerId.Value);
 
-            // 載入該客戶的配給車輛
+            // 載入該客戶的車輛資訊
             customerVehicles = await VehicleService.GetByCustomerAsync(CustomerId.Value);
 
             return customer;
@@ -521,7 +521,7 @@
                 c => c.EmployeeId,
                 c => c.Remarks)
             .GroupIntoTab("客戶資料", "bi-building", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo)
-            .GroupIntoCustomTab("配給車輛", "bi-truck", CreateVehicleTabContent())
+            .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())
             .BuildAll();
         
         formSections = layout.FieldSections;
@@ -762,7 +762,7 @@
     };
 
     /// <summary>
-    /// 新增配給車輛
+    /// 新增車輛資訊
     /// </summary>
     private void HandleAddVehicle()
     {
@@ -858,7 +858,7 @@
     }
 
     /// <summary>
-    /// 取得目前已配給車輛的 ID 清單（用於排除已在列表中的車輛）
+    /// 取得目前已車輛資訊的 ID 清單（用於排除已在列表中的車輛）
     /// </summary>
     private List<int> GetCurrentVehicleIds()
     {

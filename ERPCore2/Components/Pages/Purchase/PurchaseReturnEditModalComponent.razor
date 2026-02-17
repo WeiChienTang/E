@@ -641,43 +641,24 @@
     /// </summary>
     private void UpdateFieldsReadOnlyState()
     {
-        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
-        var fieldsToLock = new[]
-        {
-            nameof(PurchaseReturn.Code),
-            "FilterProductId",
-            nameof(PurchaseReturn.PurchaseReceivingId),
-            nameof(PurchaseReturn.ReturnDate),
-            nameof(BaseEntity.Remarks)
-        };
-        
-        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
-        FormFieldLockHelper.LockMultipleFieldsSimple(
-            formFields, 
-            fieldsToLock, 
-            isLocked: hasUndeletableDetails
+        // 使用 FormFieldLockHelper 一次處理所有欄位（含 ActionButtons）
+        FormFieldLockHelper.LockMultipleFields(
+            formFields,
+            new[]
+            {
+                nameof(PurchaseReturn.Code),
+                "FilterProductId",
+                nameof(PurchaseReturn.PurchaseReceivingId),
+                nameof(PurchaseReturn.ReturnDate),
+                nameof(BaseEntity.Remarks),
+                nameof(PurchaseReturn.SupplierId)
+            },
+            isLocked: hasUndeletableDetails,
+            actionButtonsMap: new Dictionary<string, Func<Task<List<FieldActionButton>>>>
+            {
+                { nameof(PurchaseReturn.SupplierId), GetSupplierActionButtonsAsync }
+            }
         );
-        
-        // 特殊處理廠商欄位（需要 ActionButtons）
-        if (hasUndeletableDetails)
-        {
-            // 鎖定：移除 ActionButtons
-            FormFieldLockHelper.LockField(
-                formFields,
-                nameof(PurchaseReturn.SupplierId),
-                isLocked: true
-            );
-        }
-        else
-        {
-            // 解鎖：恢復 ActionButtons
-            FormFieldLockHelper.LockField(
-                formFields,
-                nameof(PurchaseReturn.SupplierId),
-                isLocked: false,
-                actionButtonsGetter: GetSupplierActionButtonsAsync
-            );
-        }
     }
 
     /// <summary>
@@ -717,7 +698,7 @@
     private RenderFragment? GetWarningMessage() => __builder =>
     {
         <GenericLockedFieldMessage IsVisible="@(isDetailDataReady && hasUndeletableDetails)"
-                                  Message="因部分明細有沖款記錄，為保護資料完整性主檔欄位已設唯讀。"/>
+                                  Message="@EditModalMessages.UndeletableDetailsWarning"/>
     };
 
     /// <summary>
@@ -1161,34 +1142,7 @@
     /// </summary>
     private List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule> GetCustomModules()
     {
-        try
-        {
-
-            if (editModalComponent == null)
-            {
-
-                return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>();
-            }
-
-            var content = CreateReturnDetailManagerContent();
-
-            return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>
-            {
-                new GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule
-                {
-                    Title = "",
-                    Order = 1,
-                    CssClass = "mt-4",
-                    IsVisible = true,
-                    Content = content
-                }
-            };
-        }
-        catch
-        {
-            // 如果創建模組時發生錯誤，返回空列表
-            return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>();
-        }
+        return CustomModuleHelper.CreateSingle(editModalComponent, CreateReturnDetailManagerContent(), cssClass: "mt-4");
     }
 
     /// <summary>

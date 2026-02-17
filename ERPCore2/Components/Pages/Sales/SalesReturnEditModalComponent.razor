@@ -1031,42 +1031,23 @@
     /// </summary>
     private void UpdateFieldsReadOnlyState()
     {
-        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
-        var fieldsToLock = new[]
-        {
-            nameof(SalesReturn.ReturnDate),
-            nameof(SalesReturn.ReturnReasonId),
-            "FilterProductId",
-            nameof(BaseEntity.Remarks)
-        };
-        
-        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
-        FormFieldLockHelper.LockMultipleFieldsSimple(
-            formFields, 
-            fieldsToLock, 
-            isLocked: hasUndeletableDetails
+        // 使用 FormFieldLockHelper 一次處理所有欄位（含 ActionButtons）
+        FormFieldLockHelper.LockMultipleFields(
+            formFields,
+            new[]
+            {
+                nameof(SalesReturn.ReturnDate),
+                nameof(SalesReturn.ReturnReasonId),
+                "FilterProductId",
+                nameof(BaseEntity.Remarks),
+                nameof(SalesReturn.CustomerId)
+            },
+            isLocked: hasUndeletableDetails,
+            actionButtonsMap: new Dictionary<string, Func<Task<List<FieldActionButton>>>>
+            {
+                { nameof(SalesReturn.CustomerId), GetCustomerActionButtonsAsync }
+            }
         );
-        
-        // 特殊處理客戶欄位（需要 ActionButtons）
-        if (hasUndeletableDetails)
-        {
-            // 鎖定：移除 ActionButtons
-            FormFieldLockHelper.LockField(
-                formFields,
-                nameof(SalesReturn.CustomerId),
-                isLocked: true
-            );
-        }
-        else
-        {
-            // 解鎖：恢復 ActionButtons
-            FormFieldLockHelper.LockField(
-                formFields,
-                nameof(SalesReturn.CustomerId),
-                isLocked: false,
-                actionButtonsGetter: GetCustomerActionButtonsAsync
-            );
-        }
     }
 
     /// <summary>
@@ -1106,7 +1087,7 @@
     private RenderFragment? GetWarningMessage() => __builder =>
     {
             <GenericLockedFieldMessage IsVisible="@(isDetailDataReady && hasUndeletableDetails)"
-                    Message="因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。"/>
+                    Message="@EditModalMessages.UndeletableDetailsWarning"/>
     };
 
     /// <summary>
@@ -1344,22 +1325,7 @@
     /// </summary>
     private List<GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule> GetCustomModules()
     {
-        try
-        {
-            return new List<GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule>
-            {
-                new()
-                {
-                    Title = "",
-                    Content = CreateReturnDetailManagerContent(),
-                    Order = 1
-                }
-            };
-        }
-        catch
-        {
-            return new List<GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule>();
-        }
+        return CustomModuleHelper.CreateSingle(editModalComponent, CreateReturnDetailManagerContent());
     }
 
     /// <summary>

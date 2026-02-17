@@ -447,7 +447,7 @@
     private RenderFragment? GetWarningMessage() => __builder =>
     {
         <GenericLockedFieldMessage IsVisible="@(isDetailDataReady && hasUndeletableDetails)"
-                                  Message="因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。"/>
+                                  Message="@EditModalMessages.UndeletableDetailsWarning"/>
     };
 
     /// <summary>
@@ -1097,56 +1097,17 @@
             // 更新主檔的總金額和稅額
             if (editModalComponent?.Entity != null)
             {
-                var taxMethod = editModalComponent.Entity.TaxCalculationMethod;
-                
-                switch (taxMethod)
-                {
-                    case TaxCalculationMethod.TaxExclusive:
-                        // 外加稅：金額 = 明細小計，稅額 = 金額 × 稅率%（四捨五入到整數）
-                        editModalComponent.Entity.TotalAmount = Math.Round(purchaseReceivingDetails.Sum(d => d.SubtotalAmount), 0, MidpointRounding.AwayFromZero);
-                        editModalComponent.Entity.PurchaseReceivingTaxAmount = purchaseReceivingDetails.Sum(d => 
-                        {
-                            var detailTaxRate = d.TaxRate ?? currentTaxRate;
-                            var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
-                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
-                        });
-                        break;
-                        
-                    case TaxCalculationMethod.TaxInclusive:
-                        // 內含稅：總額 = 明細小計，金額 = 總額 / (1 + 稅率%)（四捨五入到整數），稅額 = 總額 - 金額
-                        var totalWithTax = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
-                        var totalTax = purchaseReceivingDetails.Sum(d =>
-                        {
-                            var detailTaxRate = d.TaxRate ?? currentTaxRate;
-                            // 反推稅額 = 含稅總額 / (1 + 稅率%) × 稅率%（四捨五入到整數）
-                            var detailTaxAmount = d.SubtotalAmount / (1 + detailTaxRate / 100m) * (detailTaxRate / 100m);
-                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
-                        });
-                        editModalComponent.Entity.TotalAmount = Math.Round(totalWithTax - totalTax, 0, MidpointRounding.AwayFromZero);
-                        editModalComponent.Entity.PurchaseReceivingTaxAmount = totalTax;
-                        break;
-                        
-                    case TaxCalculationMethod.NoTax:
-                        // 免稅：金額 = 明細小計（四捨五入到整數），稅額 = 0
-                        editModalComponent.Entity.TotalAmount = Math.Round(purchaseReceivingDetails.Sum(d => d.SubtotalAmount), 0, MidpointRounding.AwayFromZero);
-                        editModalComponent.Entity.PurchaseReceivingTaxAmount = 0;
-                        break;
-                        
-                    default:
-                        // 預設使用外加稅（四捨五入到整數）
-                        editModalComponent.Entity.TotalAmount = Math.Round(purchaseReceivingDetails.Sum(d => d.SubtotalAmount), 0, MidpointRounding.AwayFromZero);
-                        editModalComponent.Entity.PurchaseReceivingTaxAmount = purchaseReceivingDetails.Sum(d => 
-                        {
-                            var detailTaxRate = d.TaxRate ?? currentTaxRate;
-                            var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
-                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
-                        });
-                        break;
-                }
-                
-                // 3. 含稅總金額會自動計算（PurchaseReceivingTotalAmountIncludingTax 是計算屬性）
-                //    = TotalAmount + PurchaseReceivingTaxAmount
-                
+                var (total, tax) = TaxCalculationHelper.CalculateFromDetails(
+                    purchaseReceivingDetails,
+                    editModalComponent.Entity.TaxCalculationMethod,
+                    currentTaxRate,
+                    d => d.SubtotalAmount,
+                    d => d.TaxRate);
+                editModalComponent.Entity.TotalAmount = total;
+                editModalComponent.Entity.PurchaseReceivingTaxAmount = tax;
+
+                // 含稅總金額會自動計算（PurchaseReceivingTotalAmountIncludingTax 是計算屬性）
+
                 StateHasChanged();
             }
         }
@@ -1221,41 +1182,21 @@
     /// </summary>
     private void UpdateFieldsReadOnlyState()
     {
-        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
-        var fieldsToLock = new[]
-        {
-            nameof(PurchaseReceiving.ReceiptDate),
-            nameof(BaseEntity.Remarks)
-        };
-        
-        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
-        FormFieldLockHelper.LockMultipleFieldsSimple(
-            formFields, 
-            fieldsToLock, 
-            isLocked: hasUndeletableDetails
+        // 統一鎖定/解鎖所有受影響欄位（含 ActionButtons 處理）
+        FormFieldLockHelper.LockMultipleFields(
+            formFields,
+            new[]
+            {
+                nameof(PurchaseReceiving.ReceiptDate),
+                nameof(BaseEntity.Remarks),
+                nameof(PurchaseReceiving.SupplierId)
+            },
+            isLocked: hasUndeletableDetails,
+            actionButtonsMap: new Dictionary<string, Func<Task<List<FieldActionButton>>>>
+            {
+                { nameof(PurchaseReceiving.SupplierId), GetSupplierActionButtonsAsync }
+            }
         );
-        
-        // 特殊處理廠商欄位（需要 ActionButtons）
-        if (hasUndeletableDetails)
-        {
-            // 鎖定：移除 ActionButtons
-            FormFieldLockHelper.LockField(
-                formFields,
-                nameof(PurchaseReceiving.SupplierId),
-                isLocked: true
-            );
-        }
-        else
-        {
-            // 解鎖：恢復 ActionButtons
-            FormFieldLockHelper.LockField(
-                formFields,
-                nameof(PurchaseReceiving.SupplierId),
-                isLocked: false,
-                actionButtonsGetter: GetSupplierActionButtonsAsync
-            );
-        }
-        
     }
 
     /// <summary>
@@ -1584,30 +1525,7 @@
     /// </summary>
     private List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule> GetCustomModules()
     {
-        try
-        {
-            if (editModalComponent == null)
-            {
-                return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>();
-            }
-
-            return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>
-            {
-                new GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule
-                {
-                    Title = "",
-                    Order = 1,
-                    CssClass = "",  // 移除 mt-4，讓警告訊息緊貼上方
-                    IsVisible = true,
-                    Content = CreateReceivingDetailManagerContent()
-                }
-            };
-        }
-        catch
-        {
-            // 如果創建模組時發生錯誤，返回空列表
-            return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>();
-        }
+        return CustomModuleHelper.CreateSingle(editModalComponent, CreateReceivingDetailManagerContent());
     }
 
     /// <summary>
