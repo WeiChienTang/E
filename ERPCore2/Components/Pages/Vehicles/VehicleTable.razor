@@ -8,15 +8,13 @@
         @if (!IsReadOnly)
         {
             <div class="d-flex gap-2">
-                <GenericButtonComponent Text="新增配給車輛"
-                                      IconClass="bi bi-plus-lg"
+                <GenericButtonComponent Text="新增車"
                                       Variant="ButtonVariant.DarkBlue"
                                       Size="ButtonSize.Small"
                                       OnClick="@HandleAddVehicle"
                                       Title="新增一筆配給車輛" />
-                <GenericButtonComponent Text="選擇車輛"
-                                      IconClass="bi bi-search"
-                                      Variant="ButtonVariant.OutlineDarkBlue"
+                <GenericButtonComponent Text="選擇車"
+                                      Variant="ButtonVariant.DarkBlue"
                                       Size="ButtonSize.Small"
                                       OnClick="@HandleSelectVehicle"
                                       Title="從現有車輛中選擇配給" />

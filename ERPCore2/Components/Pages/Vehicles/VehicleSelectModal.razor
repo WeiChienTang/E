@@ -1,117 +1,71 @@
-@* 車輛選擇 Modal - 用於從現有車輛中選擇配給 *@
+@*
+    車輛選擇 Modal 組件
+    用於從現有車輛中選擇配給（點擊列即可選取）
+*@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
+@using ERPCore2.Helpers
 @inject IVehicleService VehicleService
 @inject INotificationService NotificationService
 
-@if (IsVisible)
-{
-    <div class="modal-backdrop show" style="z-index: 1060;" @onclick="HandleClose"></div>
-    <div class="modal show d-block" tabindex="-1" style="z-index: 1061;">
-        <div class="modal-dialog modal-lg modal-dialog-centered" @onclick:stopPropagation="true">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-search me-2"></i>選擇配給車輛
-                    </h5>
-                    <button type="button" class="btn-close" @onclick="HandleClose"></button>
-                </div>
-                <div class="modal-body">
-                    @* 搜尋列 *@
-                    <div class="mb-3">
-                        <input type="text" class="form-control"
-                               placeholder="搜尋車牌號碼、車輛名稱、廠牌..."
-                               @bind-value="searchText"
-                               @bind-value:event="oninput" />
-                    </div>
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="選擇配給車輛"
+                   Icon="bi-search"
+                   Size="BaseModalComponent.ModalSize.Desktop"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   UseWhiteCloseButton="true"
+                   IsLoading="@isLoading"
+                   LoadingMessage="正在載入車輛資訊..."
+                   BodyCssClass="p-4"
+                   OnClose="@HandleClose">
+    
+    <BodyContent>
+        @* 搜尋列 *@
+        <SearchInputComponent Value="@searchText"
+                             ValueChanged="@HandleSearchChanged"
+                             Placeholder="搜尋車牌號碼、車輛名稱、廠牌、車型..."
+                             CssClass="mb-3" />
 
-                    @* 車輛列表 *@
-                    @if (isLoading)
-                    {
-                        <div class="text-center py-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">載入中...</span>
-                            </div>
-                        </div>
-                    }
-                    else if (!FilteredVehicles.Any())
-                    {
-                        <div class="text-center text-muted py-4">
-                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                            @if (string.IsNullOrEmpty(searchText))
-                            {
-                                <span>目前沒有可配給的車輛</span>
-                            }
-                            else
-                            {
-                                <span>找不到符合「@searchText」的車輛</span>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                            <table class="table table-hover table-sm align-middle mb-0">
-                                <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
-                                    <tr>
-                                        <th style="width: 120px;">車牌號碼</th>
-                                        <th style="width: 150px;">車輛名稱</th>
-                                        <th style="width: 100px;">車型</th>
-                                        <th style="width: 100px;">廠牌</th>
-                                        <th>目前配給</th>
-                                        <th style="width: 70px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var vehicle in FilteredVehicles)
-                                    {
-                                        <tr>
-                                            <td>@vehicle.LicensePlate</td>
-                                            <td>@vehicle.VehicleName</td>
-                                            <td>@(vehicle.VehicleType?.Name ?? "-")</td>
-                                            <td>@(vehicle.Brand ?? "-")</td>
-                                            <td>
-                                                @{
-                                                    var ownerDisplay = GetCurrentOwnerDisplay(vehicle);
-                                                }
-                                                @if (string.IsNullOrEmpty(ownerDisplay))
-                                                {
-                                                    <span class="text-muted">未配給</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-warning">
-                                                        <i class="bi bi-exclamation-triangle me-1"></i>@ownerDisplay
-                                                    </span>
-                                                }
-                                            </td>
-                                            <td>
-                                                <GenericButtonComponent Text="選擇"
-                                                                      Variant="ButtonVariant.OutlineDarkBlue"
-                                                                      Size="ButtonSize.Small"
-                                                                      OnClick="@(() => SelectVehicle(vehicle))" />
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="text-muted small mt-2">
-                            共 @FilteredVehicles.Count() 筆車輛
-                        </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <GenericButtonComponent Text="關閉"
-                                          Variant="ButtonVariant.Gray"
-                                          OnClick="@HandleClose" />
+        @* 車輛列表 *@
+        @if (!filteredVehicles.Any() && !isLoading)
+        {
+            <GenericLockedFieldMessage IsVisible="true"
+                                       Message="@GetEmptyMessage()"
+                                       Type="GenericLockedFieldMessage.MessageType.Secondary"
+                                       IconClass="bi bi-inbox" />
+        }
+        else
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <InteractiveTableComponent TItem="Vehicle"
+                                             Items="@filteredVehicles"
+                                             ColumnDefinitions="@GetColumnDefinitions()"
+                                             ShowHeader="true"
+                                             ShowActions="false"
+                                             ShowRowNumbers="true"
+                                             IsStriped="true"
+                                             IsHoverable="true"
+                                             IsBordered="true"
+                                             IsReadOnly="true"
+                                             EnableRowClick="true"
+                                             OnRowClick="@HandleRowClick"
+                                             EmptyMessage="目前沒有可配給的車輛"
+                                             CssClass="mb-0" />
                 </div>
             </div>
-        </div>
-    </div>
-}
+            <div class="text-muted small mt-2">
+                共 @filteredVehicles.Count 筆車輛，點擊列即可選取
+            </div>
+        }
+    </BodyContent>
+    
+</BaseModalComponent>
 
 @code {
+    // ===== 參數定義 =====
+
     /// <summary>是否顯示 Modal</summary>
     [Parameter] public bool IsVisible { get; set; }
 
@@ -124,70 +78,181 @@
     /// <summary>選擇車輛後的回調</summary>
     [Parameter] public EventCallback<Vehicle> OnVehicleSelected { get; set; }
 
+    // ===== 私有欄位 =====
     private List<Vehicle> allVehicles = new();
-    private string searchText = string.Empty;
+    private List<Vehicle> filteredVehicles = new();
+    private string _searchText = string.Empty;
     private bool isLoading = false;
-    private bool isDataLoaded = false;
+    private bool _lastIsVisible = false;
 
-    private IEnumerable<Vehicle> FilteredVehicles => allVehicles
-        .Where(v => !ExcludeVehicleIds.Contains(v.Id))
-        .Where(v => string.IsNullOrWhiteSpace(searchText) ||
-                    v.LicensePlate.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                    v.VehicleName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                    (v.Brand != null && v.Brand.Contains(searchText, StringComparison.OrdinalIgnoreCase)) ||
-                    (v.VehicleType?.Name != null && v.VehicleType.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)));
-
-    protected override async Task OnParametersSetAsync()
+    /// <summary>搜尋文字（變更時自動過濾）</summary>
+    private string searchText
     {
-        if (IsVisible && !isDataLoaded)
+        get => _searchText;
+        set
         {
-            await LoadVehiclesAsync();
-            isDataLoaded = true;
-        }
-        else if (!IsVisible)
-        {
-            isDataLoaded = false;
-            searchText = string.Empty;
+            _searchText = value;
+            ApplyFilter();
         }
     }
 
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // 偵測開啟：每次 IsVisible 從 false→true 都重新載入，確保資料最新
+        if (IsVisible && !_lastIsVisible)
+        {
+            _lastIsVisible = true;
+            await LoadVehiclesAsync();
+        }
+        else if (!IsVisible && _lastIsVisible)
+        {
+            _lastIsVisible = false;
+            allVehicles.Clear();
+            filteredVehicles.Clear();
+            _searchText = string.Empty;
+        }
+    }
+
+    // ===== 資料載入方法 =====
+
+    /// <summary>載入車輛資料</summary>
     private async Task LoadVehiclesAsync()
     {
         try
         {
             isLoading = true;
+            StateHasChanged();
+
             allVehicles = (await VehicleService.GetAllAsync())
                 .Where(v => v.Status == EntityStatus.Active)
                 .ToList();
+
+            ApplyFilter();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync("載入車輛列表時發生錯誤");
+            await NotificationService.ShowErrorAsync($"載入車輛列表失敗：{ex.Message}");
             allVehicles = new();
+            filteredVehicles = new();
         }
         finally
         {
             isLoading = false;
+            StateHasChanged();
         }
     }
 
-    private string GetCurrentOwnerDisplay(Vehicle vehicle)
+    // ===== 搜尋過濾方法（參考 SearchableSelectHelper 模式）=====
+
+    /// <summary>套用搜尋過濾</summary>
+    private void ApplyFilter()
     {
-        if (vehicle.CustomerId.HasValue)
-            return $"客戶：{vehicle.Customer?.CompanyName ?? "未知"}";
-        if (vehicle.SupplierId.HasValue)
-            return $"廠商：{vehicle.Supplier?.CompanyName ?? "未知"}";
-        return string.Empty;
+        var query = allVehicles.Where(v => !ExcludeVehicleIds.Contains(v.Id));
+
+        if (!string.IsNullOrWhiteSpace(_searchText))
+        {
+            query = query.Where(v =>
+                (v.LicensePlate?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (v.VehicleName?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (v.Brand?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (v.VehicleType?.Name?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        filteredVehicles = query.ToList();
     }
 
-    private async Task SelectVehicle(Vehicle vehicle)
+    /// <summary>搜尋文字變更處理（由 SearchInputComponent 觸發）</summary>
+    private void HandleSearchChanged(string value)
+    {
+        searchText = value;
+    }
+
+    /// <summary>取得空列表訊息</summary>
+    private string GetEmptyMessage()
+    {
+        return string.IsNullOrWhiteSpace(searchText)
+            ? "目前沒有可配給的車輛"
+            : $"找不到符合「{searchText}」的車輛";
+    }
+
+    // ===== 表格欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "車牌號碼",
+                PropertyName = nameof(Vehicle.LicensePlate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px"
+            },
+            new()
+            {
+                Title = "車輛名稱",
+                PropertyName = nameof(Vehicle.VehicleName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "150px"
+            },
+            new()
+            {
+                Title = "車型",
+                PropertyName = nameof(Vehicle.VehicleTypeId),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                DisplayFormatter = item =>
+                {
+                    if (item is Vehicle v && v.VehicleType != null)
+                        return v.VehicleType.Name;
+                    return "-";
+                }
+            },
+            new()
+            {
+                Title = "廠牌",
+                PropertyName = nameof(Vehicle.Brand),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                NullDisplayText = "-"
+            },
+            new()
+            {
+                Title = "目前配給",
+                PropertyName = nameof(Vehicle.CustomerId),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "150px",
+                DisplayFormatter = item =>
+                {
+                    if (item is Vehicle v)
+                    {
+                        if (v.CustomerId.HasValue)
+                            return $"<span class=\"text-warning\"><i class=\"bi bi-exclamation-triangle me-1\"></i>客戶：{v.Customer?.CompanyName ?? "未知"}</span>";
+                        if (v.SupplierId.HasValue)
+                            return $"<span class=\"text-warning\"><i class=\"bi bi-exclamation-triangle me-1\"></i>廠商：{v.Supplier?.CompanyName ?? "未知"}</span>";
+                    }
+                    return "<span class=\"text-muted\">未配給</span>";
+                }
+            }
+        };
+    }
+
+    // ===== 事件處理方法 =====
+
+    /// <summary>處理列點擊（選擇車輛）</summary>
+    private async Task HandleRowClick(Vehicle vehicle)
     {
         await OnVehicleSelected.InvokeAsync(vehicle);
-        await HandleClose();
+        await IsVisibleChanged.InvokeAsync(false);
     }
 
-    private async Task HandleClose()
+    /// <summary>處理關閉 Modal</summary>
+    private void HandleClose()
     {
-        await IsVisibleChanged.InvokeAsync(false);
+        allVehicles.Clear();
+        filteredVehicles.Clear();
+        _searchText = string.Empty;
     }
 }

@@ -121,6 +121,10 @@
     private int? editingVehicleId = null;
     private bool isVehicleSelectModalVisible = false;
 
+    // 車輛配給緩衝（參考 PurchaseOrderTable 模式，等主檔儲存時才寫入 DB）
+    private List<Vehicle> _pendingVehicleLinks = new();
+    private List<Vehicle> _pendingVehicleUnlinks = new();
+
     // ===== 必要方法 =====
     
     /// <summary>
@@ -131,6 +135,10 @@
     {
         try
         {
+            // 清除待處理的車輛變更（切換記錄或新增時）
+            _pendingVehicleLinks.Clear();
+            _pendingVehicleUnlinks.Clear();
+
             // 載入該客戶的配給車輛
             if (loadedEntityId > 0)
             {
@@ -200,6 +208,15 @@
     {
         if (editModalComponent?.Entity != null)
         {
+            // 儲存待處理的車輛配給變更（參考 PurchaseOrderTable 模式）
+            await SavePendingVehicleChangesAsync(editModalComponent.Entity.Id);
+
+            // 儲存後重新載入車輛列表（確保與 DB 同步）
+            if (editModalComponent.Entity.Id > 0)
+            {
+                customerVehicles = await VehicleService.GetByCustomerAsync(editModalComponent.Entity.Id);
+            }
+
             await OnCustomerSaved.InvokeAsync(editModalComponent.Entity);
         }
         // CloseModal 已由 GenericEditModalComponent 統一控制
@@ -222,7 +239,11 @@
         {
             if (!CustomerId.HasValue)
             {
-                // 新增模式
+                // 新增模式 - 清除前一筆的車輛資料與暫存
+                customerVehicles = new List<Vehicle>();
+                _pendingVehicleLinks.Clear();
+                _pendingVehicleUnlinks.Clear();
+
                 var newCustomer = new Customer
                 {
                     Code = await EntityCodeGenerationHelper.GenerateForEntity<Customer, ICustomerService>(CustomerService, "CUST"),
@@ -761,62 +782,51 @@
     }
 
     /// <summary>
-    /// 解除車輛配給 - 將車輛的 CustomerId 設為 null
+    /// 解除車輛配給 - 緩衝處理，等主檔儲存時才寫入 DB
     /// </summary>
-    private async Task HandleUnlinkVehicle(Vehicle vehicle)
+    private void HandleUnlinkVehicle(Vehicle vehicle)
     {
-        try
+        // 從本地列表移除
+        customerVehicles.RemoveAll(v => v.Id == vehicle.Id);
+
+        // 如果之前選擇過配給，從待配給清單中移除
+        _pendingVehicleLinks.RemoveAll(v => v.Id == vehicle.Id);
+
+        // 加入待解除配給清單
+        if (!_pendingVehicleUnlinks.Any(v => v.Id == vehicle.Id))
         {
-            vehicle.CustomerId = null;
-            await VehicleService.UpdateAsync(vehicle);
-            
-            if (CustomerId.HasValue)
-            {
-                customerVehicles = await VehicleService.GetByCustomerAsync(CustomerId.Value);
-            }
-            StateHasChanged();
-            await NotificationService.ShowSuccessAsync($"已解除車輛「{vehicle.LicensePlate}」的配給");
+            _pendingVehicleUnlinks.Add(vehicle);
         }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"解除配給時發生錯誤：{ex.Message}");
-        }
+
+        StateHasChanged();
     }
 
     /// <summary>
-    /// 車輛儲存後的回調
+    /// 車輛儲存後的回調 - 更新本地列表（不重新查詢 DB）
     /// </summary>
-    private async Task OnVehicleSavedWrapper(Vehicle savedVehicle)
+    private void OnVehicleSavedWrapper(Vehicle savedVehicle)
     {
-        try
+        // VehicleEditModal 已儲存車輛實體到 DB（含 PrefilledValues 中的 FK）
+        // 更新本地列表以反映變更
+        var existingIndex = customerVehicles.FindIndex(v => v.Id == savedVehicle.Id);
+        if (existingIndex >= 0)
         {
-            if (CustomerId.HasValue && savedVehicle.CustomerId != CustomerId.Value)
-            {
-                savedVehicle.CustomerId = CustomerId.Value;
-                await VehicleService.UpdateAsync(savedVehicle);
-            }
-            
-            if (CustomerId.HasValue)
-            {
-                customerVehicles = await VehicleService.GetByCustomerAsync(CustomerId.Value);
-            }
-            
-            isVehicleModalVisible = false;
-            StateHasChanged();
+            // 編輯模式：更新本地列表中的車輛
+            customerVehicles[existingIndex] = savedVehicle;
         }
-        catch (Exception ex)
+        else
         {
-            await NotificationService.ShowErrorAsync($"車輛儲存後更新列表時發生錯誤：{ex.Message}");
+            // 新增模式：加入本地列表
+            customerVehicles.Add(savedVehicle);
         }
+
+        isVehicleModalVisible = false;
+        StateHasChanged();
     }
 
-    private async Task HandleVehicleModalVisibilityChanged(bool isVisible)
+    private void HandleVehicleModalVisibilityChanged(bool isVisible)
     {
         isVehicleModalVisible = isVisible;
-        if (!isVisible && CustomerId.HasValue)
-        {
-            customerVehicles = await VehicleService.GetByCustomerAsync(CustomerId.Value);
-        }
         StateHasChanged();
     }
 
@@ -856,24 +866,48 @@
     }
 
     /// <summary>
-    /// 處理從選擇 Modal 選取的車輛 - 將車輛配給至當前客戶
+    /// 處理從選擇 Modal 選取的車輛 - 緩衝處理，等主檔儲存時才寫入 DB
     /// </summary>
-    private async Task HandleVehicleSelected(Vehicle vehicle)
+    private void HandleVehicleSelected(Vehicle vehicle)
     {
-        try
+        // 加入本地列表（供 UI 顯示）
+        if (!customerVehicles.Any(v => v.Id == vehicle.Id))
         {
-            if (!CustomerId.HasValue) return;
+            customerVehicles.Add(vehicle);
+        }
 
-            vehicle.CustomerId = CustomerId.Value;
+        // 如果之前解除過配給，從待解除清單中移除
+        _pendingVehicleUnlinks.RemoveAll(v => v.Id == vehicle.Id);
+
+        // 加入待配給清單
+        if (!_pendingVehicleLinks.Any(v => v.Id == vehicle.Id))
+        {
+            _pendingVehicleLinks.Add(vehicle);
+        }
+
+        StateHasChanged();
+    }
+
+    // ===== 車輛配給儲存方法（參考 PurchaseOrderTable 模式） =====
+
+    /// <summary>
+    /// 儲存待處理的車輛配給變更
+    /// </summary>
+    private async Task SavePendingVehicleChangesAsync(int customerId)
+    {
+        foreach (var vehicle in _pendingVehicleLinks)
+        {
+            vehicle.CustomerId = customerId;
             await VehicleService.UpdateAsync(vehicle);
+        }
 
-            customerVehicles = await VehicleService.GetByCustomerAsync(CustomerId.Value);
-            StateHasChanged();
-            await NotificationService.ShowSuccessAsync($"已將車輛「{vehicle.LicensePlate}」配給至此客戶");
-        }
-        catch (Exception ex)
+        foreach (var vehicle in _pendingVehicleUnlinks)
         {
-            await NotificationService.ShowErrorAsync($"配給車輛時發生錯誤：{ex.Message}");
+            vehicle.CustomerId = null;
+            await VehicleService.UpdateAsync(vehicle);
         }
+
+        _pendingVehicleLinks.Clear();
+        _pendingVehicleUnlinks.Clear();
     }
 }

@@ -16,7 +16,6 @@
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
-@inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 
@@ -111,7 +110,6 @@
     private List<Supplier> availableSuppliers = new();
     private List<Company> availableCompanies = new();
     private List<Product> availableProducts = new();
-    private List<Product> filteredProductsBySupplier = new(); // 根據廠商過濾的商品
     
     // 採購訂單明細
     private List<PurchaseOrderDetail> purchaseOrderDetails = new();
@@ -130,12 +128,7 @@
     private bool showPurchaseReceivingModal = false;
     private int? selectedPurchaseReceivingId = null;
     
-    // 下拉選單選項（向下相容）
-    private List<Supplier> suppliers = new();
-    private List<Company> companies = new();
-    private List<SelectOption> supplierOptions = new();
-    private List<SelectOption> companyOptions = new();
-    private List<SelectOption> statusOptions = new();
+    // 下拉選單選項
     private List<SelectOption> taxCalculationMethodOptions = new();
     
     // 系統參數 - 稅率快取（避免重複查詢資料庫）
@@ -160,13 +153,6 @@
     private bool showTemplateSettingModal = false; // 是否顯示訊息範本設定 Modal
     private int? currentTemplateId = null; // 當前範本 ID（用於設定 Modal）
 
-    // ===== 建構函數 =====
-    public PurchaseOrderEditModalComponent()
-    {
-        // 移除原有的建構函數初始化
-        // 現在使用 ModalManagerInitHelper 在 OnInitializedAsync 中統一初始化
-    }
-    
     // 資料載入狀態標記
     private bool isDataLoaded = false;
 
@@ -188,8 +174,6 @@
                 .AddManager<Supplier>(nameof(PurchaseOrder.SupplierId), "廠商")
                 .Build();
             supplierModalManager = modalManagers.Get<Supplier>(nameof(PurchaseOrder.SupplierId));
-            
-            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
@@ -227,8 +211,6 @@
             {
                 await OnPurchaseOrderSaved.InvokeAsync(editModalComponent.Entity);
             }
-
-            // CloseModal 已由 GenericEditModalComponent 統一控制
         }
         catch (Exception ex)
         {
@@ -245,28 +227,11 @@
             {
                 await OnCancel.InvokeAsync();
             }
-            // 不要直接調用 CloseModal，讓 GenericEditModalComponent 處理
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), 
                 additionalData: "採購單編輯Modal取消處理失敗");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        try
-        {
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CloseModal), GetType(), 
-                additionalData: "採購單編輯Modal關閉失敗");
         }
     }
 
@@ -375,27 +340,9 @@
     {
         try
         {
-            // 載入廠商選項
-            suppliers = await SupplierService.GetAllAsync();
-            availableSuppliers = suppliers; // 用於 AutoComplete
-            supplierOptions = suppliers.Where(s => s.Status == EntityStatus.Active)
-                .Select(s => new SelectOption
-                {
-                    Text = s.CompanyName,
-                    Value = s.Id.ToString()
-                }).ToList();
-
-            // 載入公司選項
-            companies = await CompanyService.GetAllAsync();
-            availableCompanies = companies; // 用於 AutoComplete
-            companyOptions = companies.Where(c => c.Status == EntityStatus.Active)
-                .Select(c => new SelectOption
-                {
-                    Text = c.CompanyName,
-                    Value = c.Id.ToString()
-                }).ToList();
-
-            // 載入商品資料
+            // 載入廠商、公司、商品資料（用於 AutoComplete）
+            availableSuppliers = await SupplierService.GetAllAsync();
+            availableCompanies = await CompanyService.GetAllAsync();
             availableProducts = await ProductService.GetAllAsync();
             
             //  一次性載入系統稅率（避免每次計算都查詢資料庫）
@@ -407,13 +354,6 @@
                 .AddField(nameof(PurchaseOrder.CompanyId), "CompanyName", availableCompanies)
                 .Build();
 
-            // 初始化狀態選項
-            statusOptions = new List<SelectOption>
-            {
-                new SelectOption { Text = "啟用", Value = "Active" },
-                new SelectOption { Text = "停用", Value = "Inactive" }
-            };
-            
             // 初始化稅率算法選項
             taxCalculationMethodOptions = new List<SelectOption>
             {
@@ -428,9 +368,6 @@
                 additionalData: "採購單編輯Modal載入額外資料失敗");
             
             // 設定安全的預設值
-            supplierOptions = new List<SelectOption>();
-            companyOptions = new List<SelectOption>();
-            statusOptions = new List<SelectOption>();
             taxCalculationMethodOptions = new List<SelectOption>();
             availableProducts = new List<Product>();
         }
@@ -596,11 +533,6 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-    
     // ===== AutoComplete 配置方法 =====
     
     /// <summary>
@@ -864,22 +796,13 @@
     
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 方案 A + D 重構：明細已由 DataLoader 載入，Table 自動偵測參數變化
-    /// 只需處理 UI 刷新和業務狀態設定
     /// </summary>
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
         try
         {
-            //  關鍵修復：導航到已存在的記錄時，允許轉單
-            // 這些狀態設定仍然需要，因為是業務邏輯
             canCreateReceiving = true;
             canCopyMessage = true;
-            
-            // 方案 A + D：
-            // - 明細已由 DataLoader (LoadPurchaseOrderData) 載入完成
-            // - Table 組件會自動偵測 ExistingDetails 參數變化並重新載入
-            // - 只需觸發 StateHasChanged() 讓 Table 收到新的參數
             StateHasChanged();
         }
         catch (Exception ex)
@@ -899,12 +822,7 @@
         try
         {
             hasUndeletableDetails = hasUndeletable;
-            
-            // 更新欄位的唯讀狀態
             UpdateFieldsReadOnlyState();
-            
-            // ❌ 移除 StateHasChanged() - 避免重複渲染
-            // StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -1002,11 +920,6 @@
                         break;
                 }
                 
-                // 3. 含稅總金額會自動計算（PurchaseTotalAmountIncludingTax 是計算屬性）
-                //    = TotalAmount + PurchaseTaxAmount
-                
-                // ❌ 移除 StateHasChanged() - 讓呼叫者統一處理渲染
-                // StateHasChanged();
             }
         }
         catch (Exception ex)
@@ -1023,13 +936,7 @@
     {
         try
         {
-            // 如果明細管理組件存在，執行驗證
-            if (purchaseOrderDetailManager != null)
-            {
-                @* return await purchaseOrderDetailManager.ValidateAsync(); *@
-            }
-            
-            // 如果組件不存在，檢查是否有有效的明細（至少選擇了商品）
+            // 檢查是否有有效的明細（至少選擇了商品）
             var validDetails = purchaseOrderDetails.Where(d => d.ProductId > 0).ToList();
             
             if (!validDetails.Any())
@@ -1084,56 +991,8 @@
                 return false;
             }
 
-            //  修改：審核通過後仍允許儲存（用於更新「完成進貨」等執行狀態）
-            // 不使用 ApprovalConfigHelper.CanSaveWhenApproved 的限制
-            // 因為明細中的「完成進貨」欄位需要在審核後仍可修改
-            
-            // 更新總金額和稅額（使用與 HandleDetailsChanged 相同的邏輯）
-            var taxMethod = purchaseOrder.TaxCalculationMethod;
-            
-            switch (taxMethod)
-            {
-                case TaxCalculationMethod.TaxExclusive:
-                    // 外加稅（四捨五入到整數）
-                    purchaseOrder.TotalAmount = Math.Round(purchaseOrderDetails.Sum(d => d.SubtotalAmount), 0, MidpointRounding.AwayFromZero);
-                    purchaseOrder.PurchaseTaxAmount = purchaseOrderDetails.Sum(d => 
-                    {
-                        var detailTaxRate = d.TaxRate ?? currentTaxRate;
-                        var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
-                        return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
-                    });
-                    break;
-                    
-                case TaxCalculationMethod.TaxInclusive:
-                    // 內含稅（四捨五入到整數）
-                    var totalWithTax = purchaseOrderDetails.Sum(d => d.SubtotalAmount);
-                    var totalTax = purchaseOrderDetails.Sum(d =>
-                    {
-                        var detailTaxRate = d.TaxRate ?? currentTaxRate;
-                        var detailTaxAmount = d.SubtotalAmount / (1 + detailTaxRate / 100m) * (detailTaxRate / 100m);
-                        return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
-                    });
-                    purchaseOrder.TotalAmount = Math.Round(totalWithTax - totalTax, 0, MidpointRounding.AwayFromZero);
-                    purchaseOrder.PurchaseTaxAmount = totalTax;
-                    break;
-                    
-                case TaxCalculationMethod.NoTax:
-                    // 免稅（四捨五入到整數）
-                    purchaseOrder.TotalAmount = Math.Round(purchaseOrderDetails.Sum(d => d.SubtotalAmount), 0, MidpointRounding.AwayFromZero);
-                    purchaseOrder.PurchaseTaxAmount = 0;
-                    break;
-                    
-                default:
-                    // 預設使用外加稅（四捨五入到整數）
-                    purchaseOrder.TotalAmount = Math.Round(purchaseOrderDetails.Sum(d => d.SubtotalAmount), 0, MidpointRounding.AwayFromZero);
-                    purchaseOrder.PurchaseTaxAmount = purchaseOrderDetails.Sum(d => 
-                    {
-                        var detailTaxRate = d.TaxRate ?? currentTaxRate;
-                        var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
-                        return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
-                    });
-                    break;
-            }
+            // 不需要重新計算稅額：HandleDetailsChanged 已根據每筆明細的實際稅率
+            // 正確計算了 TotalAmount、PurchaseTaxAmount、PurchaseTotalAmountIncludingTax
 
             // 儲存主檔
             ServiceResult<PurchaseOrder> result;
@@ -1365,72 +1224,6 @@
     }
     
     /// <summary>
-    /// 處理採購單審核駁回（舊版本，保留向下相容）
-    /// </summary>
-    private async Task<bool> HandlePurchaseOrderReject()
-    {
-        try
-        {
-            if (!PurchaseOrderId.HasValue)
-            {
-                await NotificationService.ShowErrorAsync("無法審核：採購單ID不存在");
-                return false;
-            }
-            
-            // 使用 JavaScript prompt 來取得駁回原因
-            var rejectReason = await JSRuntime.InvokeAsync<string>("prompt", "請輸入駁回原因：", "");
-            
-            if (string.IsNullOrWhiteSpace(rejectReason))
-            {
-                await NotificationService.ShowWarningAsync("駁回原因不能為空");
-                return false;
-            }
-            
-            // 確認對話框
-            var confirmed = await NotificationService.ShowConfirmAsync(
-                $"確定要駁回此採購單嗎？\n駁回原因：{rejectReason}\n\n駁回後採購單將退回修改。", 
-                "審核確認");
-            
-            if (!confirmed)
-                return false;
-            
-            // 取得當前使用者ID
-            var currentUserId = await GetCurrentUserIdAsync();
-            if (!currentUserId.HasValue)
-            {
-                await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
-                return false;
-            }
-            
-            // 呼叫服務進行駁回
-            var result = await PurchaseOrderService.RejectOrderAsync(PurchaseOrderId.Value, currentUserId.Value, rejectReason);
-            
-            if (result.IsSuccess)
-            {
-                await NotificationService.ShowSuccessAsync("採購單已駁回");
-                // 重新載入資料以更新界面
-                if (editModalComponent != null)
-                {
-                    await editModalComponent.RefreshEntityAsync();
-                }
-                return true;
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "駁回失敗");
-                return false;
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseOrderReject), GetType(), 
-                additionalData: $"採購單審核駁回失敗 - OrderId: {PurchaseOrderId}");
-            await NotificationService.ShowErrorAsync($"審核駁回時發生錯誤：{ex.Message}");
-            return false;
-        }
-    }
-    
-    /// <summary>
     /// 取得警告訊息（顯示在表單欄位上方）- 作為屬性以確保正確的渲染時機
     /// 當採購單已審核通過或明細有進貨記錄時，顯示鎖定警告訊息
     /// </summary>
@@ -1554,17 +1347,7 @@
                 notificationMessage: null, // 稍後手動顯示通知
                 stateHasChanged: StateHasChanged,
                 invokeAsync: InvokeAsync,
-                additionalActions: () =>
-                {
-                    // 關鍵修復：呼叫 Table 組件的公開刷新方法
-                    // 因為父 Modal 沒有關閉，Table 組件不會自動重新載入
-                    // 需要主動呼叫刷新方法來更新 UI 顯示
-                    @* if (purchaseOrderDetailManager != null)
-                    {
-                        await purchaseOrderDetailManager.RefreshDetailsAsync();
-                    } *@
-                    return Task.CompletedTask;
-                }
+                additionalActions: () => Task.CompletedTask
             );
             
             // 顯示成功訊息
@@ -1655,21 +1438,12 @@
             prefilledProductId = productId;
             prefilledUnitPrice = suggestedUnitPrice;
             
-            // 開啟 Modal（會自動觸發 LoadPurchaseOrderData，並在其中設定供應商）
+            // 開啟 Modal（會自動觸發 LoadPurchaseOrderData，並在其中設定供應商和明細）
             if (IsVisibleChanged.HasDelegate)
             {
                 await IsVisibleChanged.InvokeAsync(true);
             }
-            
-            // 等待 Modal 完全渲染（供應商和明細已在 LoadPurchaseOrderData 中設定）
-            await Task.Delay(100);
-            
-            // 檢查結果
-            if (editModalComponent?.Entity != null && purchaseOrderDetails.Any())
-            {
-                var product = purchaseOrderDetails.First().Product;
-            }
-            
+
             // 清除預填資訊（避免影響下次開啟）
             prefilledSupplierId = null;
             prefilledProductId = null;

@@ -506,8 +506,9 @@
         {
             if (!EmployeeId.HasValue) 
             {
-                // 新增模式：建立新的員工實體並生成編號
-                
+                // 新增模式 - 清除前一筆的車輛資料
+                employeeVehicles = new List<Vehicle>();
+
                 // 找出預設的權限組 (Employee-非系統使用者)
                 var defaultRole = availableRoles.FirstOrDefault(r => 
                     r.Name.Contains("Employee") && r.Name.Contains("非系統使用者"));
