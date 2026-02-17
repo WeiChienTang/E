@@ -124,16 +124,18 @@
         return vehicle => __builder =>
         {
             <div class="d-flex gap-1">
-                <GenericButtonComponent IconClass="bi bi-pencil-square"
+                <GenericButtonComponent IconClass="bi bi-pencil-square text-white"
                                       Variant="ButtonVariant.DarkBlue"
-                                      Size="ButtonSize.Small"
+                                      Size="ButtonSize.Large"
                                       OnClick="@(() => OnEditVehicle.InvokeAsync(vehicle))"
-                                      Title="編輯車輛" />
+                                      Title="編輯車輛"
+                                      CssClass="btn-square" />
                 <GenericButtonComponent IconClass="bi bi-link-45deg"
-                                      Variant="ButtonVariant.OutlineYellow"
-                                      Size="ButtonSize.Small"
+                                      Variant="ButtonVariant.Yellow"
+                                      Size="ButtonSize.Large"
                                       OnClick="@(() => OnUnlinkVehicle.InvokeAsync(vehicle))"
-                                      Title="解除配給（不會刪除車輛）" />
+                                      Title="解除配給（不會刪除車輛）"
+                                      CssClass="btn-square" />
             </div>
         };
     }

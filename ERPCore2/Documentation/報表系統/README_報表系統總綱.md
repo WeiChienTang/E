@@ -1,7 +1,7 @@
 # 報表系統設計總綱
 
 ## 更新日期
-2026-02-10
+2026-02-17
 
 ---
 
@@ -128,7 +128,11 @@ Components/
 │   ├── ReportPreviewModalComponent.razor   # 報表預覽 Modal
 │   ├── GenericReportFilterModalComponent.razor
 │   ├── FilterTemplateInitializer.cs
-│   └── FilterTemplates/
+│   ├── FilterFieldRow.razor               # 篩選欄位行（統一佈局）
+│   ├── SearchSelectFilterComponent.razor  # 搜尋式多選
+│   ├── DateRangeFilterComponent.razor     # 日期範圍
+│   ├── TextSearchFilterComponent.razor    # 文字搜尋
+│   └── FilterTemplates/                   # 24 個篩選模板
 │       └── [Entity]BatchFilterTemplate.razor
 └── Pages/
     ├── Reports/
@@ -179,12 +183,21 @@ Components/
 | SalesDeliveryReportService | SO004 | ✅ 完成 |
 | SalesReturnReportService | SO005 | ✅ 完成 |
 
-### 篩選模板
+### 篩選模板（共 24 個，全部使用 FilterFieldRow + SearchSelectFilterComponent 統一佈局）
 
-| 報表 ID | 模板 | 狀態 |
-|---------|------|------|
-| AR001 | AccountsReceivableFilterTemplate | ✅ 完成 |
-| PO001 | PurchaseOrderBatchFilterTemplate | ✅ 完成 |
+| 分類 | 數量 | 狀態 |
+|------|------|------|
+| 人資（HR） | 1 | ✅ 完成 |
+| 客戶（AR） | 6 | ✅ 完成 |
+| 廠商（AP） | 3 | ✅ 完成 |
+| 銷售（SO） | 4 | ✅ 完成 |
+| 採購（PO） | 3 | ✅ 完成 |
+| 庫存（IV） | 2 | ✅ 完成 |
+| 生產（PD） | 2 | ✅ 完成 |
+| 產品（PD） | 1 | ✅ 完成 |
+| 車輛（VH） | 2 | ✅ 完成 |
+
+> 詳細清單請見 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)
 
 ### Index 列印（使用 GenericReportFilterModalComponent）
 
@@ -242,6 +255,8 @@ Components/
 
 1. 建立篩選條件 DTO（實作 `IReportFilterCriteria`）
 2. 建立篩選模板組件（實作 `IFilterTemplateComponent`）
+   - 使用 `FilterFieldRow` 包裝每個欄位
+   - 多選欄位使用 `SearchSelectFilterComponent`
 3. 在 FilterTemplateInitializer 註冊模板類型
 4. 在 FilterTemplateRegistry 註冊配置
 5. 在 ReportRegistry 註冊報表定義
