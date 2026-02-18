@@ -48,6 +48,7 @@
                           OnEntitySaved="@OnSalesDeliverySaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          OnTaxMethodChanged="@(() => HandleDeliveryDetailsChanged(salesDeliveryDetails))"
                           GetStatusMessage="@GetSalesDeliveryStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
@@ -888,14 +889,6 @@
                 return; // ✅ 重要：處理完就返回，避免繼續執行
             }
             
-            // 稅別變更時，重新計算金額和稅額
-            if (fieldChange.PropertyName == nameof(SalesDelivery.TaxCalculationMethod))
-            {
-                // 觸發明細重新計算
-                await HandleDeliveryDetailsChanged(salesDeliveryDetails);
-                StateHasChanged();
-                return;
-            }
             
             // 商品篩選變更時
             if (fieldChange.PropertyName == "FilterProductId")

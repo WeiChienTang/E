@@ -54,6 +54,7 @@
                           OnEntitySaved="@OnSalesReturnSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          OnTaxMethodChanged="@(() => HandleReturnDetailsChanged(salesReturnDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
@@ -1043,12 +1044,6 @@
                     StateHasChanged();
                     break;
                 
-                case nameof(SalesReturn.TaxCalculationMethod):
-                    // 當稅別變更時，重新計算金額和稅額
-                    await HandleReturnDetailsChanged(salesReturnDetails);
-                    //  稅別變更時，觸發 Table 組件重新渲染（影響小計顯示）
-                    StateHasChanged();
-                    break;
             }
         }
         catch (Exception ex)

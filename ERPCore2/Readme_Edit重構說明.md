@@ -260,9 +260,20 @@ public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 
 ---
 
-### P3：OnFieldValueChanged 中的 TaxCalculationMethod 分支 → 移入 GenericEditModalComponent
+### P3：OnFieldValueChanged 中的 TaxCalculationMethod 分支 → 移入 GenericEditModalComponent ✅
 
-**方案**：在 GenericEditModalComponent 新增 `[Parameter] public Func<Task>? OnTaxMethodChanged` 參數，自動偵測 TaxCalculationMethod 變更並呼叫。
+**問題**：7 個進銷存 Edit 的 `OnFieldValueChanged` 方法中，都有一段重複的 TaxCalculationMethod 變更處理（每個 5-10 行，共 ~50 行）。
+
+**解法**：在 `GenericEditModalComponent` 新增 `[Parameter] public Func<Task>? OnTaxMethodChanged` 參數，在 `HandleFieldChanged` 中自動偵測 `TaxCalculationMethod` 欄位變更並呼叫回呼。各 Edit 只需綁定一行參數即可。
+
+**已套用**（7 個 Edit）：
+- `PurchaseOrderEditModalComponent` — `HandleDetailsChanged(purchaseOrderDetails)`
+- `PurchaseReceivingEditModalComponent` — `HandleReceivingDetailsChanged(purchaseReceivingDetails)`
+- `PurchaseReturnEditModalComponent` — `HandleReturnDetailsChanged(purchaseReturnDetails)`
+- `QuotationEditModalComponent` — `HandleQuotationDetailsChanged(quotationDetails)`
+- `SalesOrderEditModalComponent` — `HandleDetailsChanged(salesOrderDetails)`
+- `SalesDeliveryEditModalComponent` — `HandleDeliveryDetailsChanged(salesDeliveryDetails)`
+- `SalesReturnEditModalComponent` — `HandleReturnDetailsChanged(salesReturnDetails)`
 
 ---
 
@@ -350,12 +361,12 @@ public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 |---|---|---|---|
 | P6 | DetailSectionWrapper 組件（五態判斷封裝） | 10 個 | ~400 行 |
 | P18 | OnXxxSavedWrapper 消除（RelatedEntityModalManager.OnSavedAsync） | 14 個 | ~160 行 |
+| P3 | OnTaxMethodChanged 參數（稅別變更自動處理） | 7 個 | ~50 行 |
 
 ### 未來（需較大改動 GenericEditModalComponent）
 
 | 項目 | 說明 |
 |---|---|
-| P3 | OnTaxMethodChanged 參數 |
 | P8 | DocumentConversionValidator |
 
 ---

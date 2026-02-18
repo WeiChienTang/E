@@ -47,6 +47,7 @@
                           OnEntitySaved="@OnPurchaseReturnSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          OnTaxMethodChanged="@(() => HandleReturnDetailsChanged(purchaseReturnDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
@@ -1040,13 +1041,6 @@
                 }
                 
                 StateHasChanged();
-            }
-            
-            // 當稅別變更時，重新計算總金額和稅額
-            if (fieldChange.PropertyName == nameof(PurchaseReturn.TaxCalculationMethod))
-            {
-                // 觸發明細變更事件，重新計算稅額
-                await HandleReturnDetailsChanged(purchaseReturnDetails);
             }
             
             // 當商品篩選變更時，更新篩選狀態並觸發重新渲染

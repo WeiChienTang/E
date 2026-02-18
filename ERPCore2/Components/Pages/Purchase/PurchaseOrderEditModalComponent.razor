@@ -46,6 +46,7 @@
                           OnEntitySaved="@OnPurchaseOrderSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          OnTaxMethodChanged="@(() => HandleDetailsChanged(purchaseOrderDetails))"
                           CustomValidator="@ValidatePurchaseOrderDetailsAsync"
                           CustomModules="@GetCustomModules()"
                           ShowPrintButton = "true"
@@ -703,19 +704,6 @@
                 
                 // 廠商變更時，觸發商品管理器重新渲染
                 StateHasChanged();
-            }
-            // 處理稅率算法變更
-            else if (fieldChange.PropertyName == nameof(PurchaseOrder.TaxCalculationMethod))
-            {
-                // 稅率算法變更時，重新計算主檔金額
-                if (editModalComponent?.Entity != null)
-                {
-                    // 手動觸發明細變更事件，讓金額重新計算
-                    await HandleDetailsChanged(purchaseOrderDetails);
-                    
-                    // 觸發 Table 組件重新渲染（因為稅率算法影響小計顯示）
-                    StateHasChanged();
-                }
             }
         }
         catch (Exception)

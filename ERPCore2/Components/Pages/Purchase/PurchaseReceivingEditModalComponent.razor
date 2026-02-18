@@ -53,6 +53,7 @@
                           OnEntitySaved="@OnPurchaseReceivingSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          OnTaxMethodChanged="@(() => HandleReceivingDetailsChanged(purchaseReceivingDetails))"
                           GetStatusMessage="@GetPurchaseReceivingStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
@@ -1245,18 +1246,6 @@
                 
                 // 不設置 needsRerender，避免過度渲染
                 // PurchaseReceivingTable 會根據參數變更自行處理
-            }
-            // 處理稅率算法變更
-            else if (fieldChange.PropertyName == nameof(PurchaseReceiving.TaxCalculationMethod))
-            {
-                // 稅率算法變更時，重新計算主檔金額
-                if (editModalComponent?.Entity != null)
-                {
-                    // 手動觸發明細變更事件，讓金額重新計算
-                    await HandleReceivingDetailsChanged(purchaseReceivingDetails);
-                    
-                    needsRerender = true;
-                }
             }
             
             //  只在真正需要時才呼叫一次 StateHasChanged

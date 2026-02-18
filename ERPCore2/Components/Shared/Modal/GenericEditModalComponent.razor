@@ -402,7 +402,13 @@
     [Parameter] public EventCallback OnPrint { get; set; }
     [Parameter] public EventCallback OnPreview { get; set; }
     [Parameter] public Func<(string PropertyName, object? Value), Task>? OnFieldChanged { get; set; }
-    
+
+    /// <summary>
+    /// 稅別變更時的回呼，用於重新計算明細金額。
+    /// GenericEditModalComponent 會在 TaxCalculationMethod 欄位變更時自動呼叫此回呼。
+    /// </summary>
+    [Parameter] public Func<Task>? OnTaxMethodChanged { get; set; }
+
     // ===== 內建列印功能參數 =====
     
     /// <summary>
@@ -1690,6 +1696,13 @@
             StateHasChanged(); // 觸發 UI 更新
         }
         
+        // 稅別變更自動處理
+        if (fieldChange.PropertyName == "TaxCalculationMethod" && OnTaxMethodChanged != null)
+        {
+            await OnTaxMethodChanged();
+            StateHasChanged();
+        }
+
         if (OnFieldChanged != null)
         {
             await OnFieldChanged(fieldChange);

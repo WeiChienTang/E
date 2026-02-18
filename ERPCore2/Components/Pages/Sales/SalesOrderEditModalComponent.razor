@@ -46,6 +46,7 @@
                           OnEntitySaved="@OnSalesOrderSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          OnTaxMethodChanged="@(() => HandleDetailsChanged(salesOrderDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
@@ -860,13 +861,6 @@
                     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                         employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
                 }
-            }
-            // 處理稅別變更
-            else if (fieldChange.PropertyName == nameof(SalesOrder.TaxCalculationMethod))
-            {
-                // 稅別變更時，重新計算金額和稅額
-                await HandleDetailsChanged(salesOrderDetails);
-                StateHasChanged();
             }
             // 處理商品篩選變更
             else if (fieldChange.PropertyName == "FilterProductId")

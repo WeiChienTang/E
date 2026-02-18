@@ -47,6 +47,7 @@
                           OnEntitySaved="@OnQuotationSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          OnTaxMethodChanged="@(() => HandleQuotationDetailsChanged(quotationDetails))"
                           CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           FormHeaderContent="@GetWarningMessage()"
@@ -1094,16 +1095,6 @@
                     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                         employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
                 }
-            }
-            // 處理稅別變更 - 觸發明細重新計算
-            else if (fieldChange.PropertyName == nameof(Quotation.TaxCalculationMethod))
-            {
-                // 當稅別改變時，重新計算主檔金額欄位
-                if (quotationDetails?.Any() == true)
-                {
-                    await HandleQuotationDetailsChanged(quotationDetails);
-                }
-                StateHasChanged();
             }
         }
         catch (Exception)
