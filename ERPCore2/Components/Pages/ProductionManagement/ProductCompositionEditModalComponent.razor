@@ -425,64 +425,23 @@ ShowPrintButton="true"
     /// </summary>
     private RenderFragment CreateDetailManagerContent() => __builder =>
     {
-        try
-        {
-            @if (editModalComponent?.Entity != null)
-            {
-                @if (!isDetailDataReady)
-                {
-                    <div class="d-flex justify-content-center align-items-center py-4">
-                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                        <span class="text-muted">載入明細資料中...</span>
-                    </div>
-                }
-                else if (availableComponentProducts != null && availableComponentProducts.Any() && availableUnits != null && availableUnits.Any())
-                {
-                    // 檢查是否已選擇商品
-                    @if (editModalComponent.Entity.ParentProductId > 0)
-                    {
-                        <ProductCompositionTable @ref="detailManager"
-                                                                 @key="@editModalComponent.Entity.Id"
-                                                                 Items="@compositionDetails"
-                                                                 AvailableProducts="@availableComponentProducts"
-                                                                 AvailableUnits="@availableUnits"
-                                                                 ParentEntityId="@(CompositionId ?? 0)"
-                                                                 ParentProductId="@(editModalComponent.Entity.ParentProductId)"
-                                                                 IsReadOnly="false"
-                                                                 ItemsChanged="@HandleDetailsChanged"
-                                                                 EmptyMessage="尚未新增材料" />
-                    }
-                    else
-                    {
-                        <div class="alert alert-info text-center" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>
-                            請先選擇商品後再進行材料清單管理
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="alert alert-warning text-center" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        無可用的商品或單位資料，請聯繫系統管理員
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="text-center py-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">載入中...</span>
-                    </div>
-                </div>
-            }
-        }
-        catch
-        {
-            <div class="alert alert-warning" role="alert">
-                載入明細管理器時發生錯誤，請重新整理頁面。
-            </div>
-        }
+        <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
+                              IsDetailDataReady="@isDetailDataReady"
+                              IsDataAvailable="@(availableComponentProducts != null && availableComponentProducts.Any() && availableUnits != null && availableUnits.Any())"
+                              DataUnavailableMessage="無可用的商品或單位資料，請聯繫系統管理員"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.ParentProductId > 0)"
+                              PreconditionMessage="請先選擇商品後再進行材料清單管理">
+            <ProductCompositionTable @ref="detailManager"
+                                                     @key="@editModalComponent.Entity.Id"
+                                                     Items="@compositionDetails"
+                                                     AvailableProducts="@availableComponentProducts"
+                                                     AvailableUnits="@availableUnits"
+                                                     ParentEntityId="@(CompositionId ?? 0)"
+                                                     ParentProductId="@(editModalComponent.Entity.ParentProductId)"
+                                                     IsReadOnly="false"
+                                                     ItemsChanged="@HandleDetailsChanged"
+                                                     EmptyMessage="尚未新增材料" />
+        </DetailSectionWrapper>
     };
     
     // ===== 明細變更處理 =====

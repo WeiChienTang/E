@@ -1,0 +1,91 @@
+@* DetailSectionWrapper.razor - 三態判斷包裝組件 *@
+@* 統一處理 Detail 區塊的：Entity 載入中 → 資料載入中 → 資料不足警告 → 前置條件 → 正常顯示 的五態邏輯 *@
+
+@if (!IsEntityReady)
+{
+    @switch (EntityLoadingVariant)
+    {
+        case LoadingVariant.Spinner:
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">載入中...</span>
+                </div>
+                @if (!string.IsNullOrEmpty(EntityLoadingMessage))
+                {
+                    <p class="text-muted mt-2">@EntityLoadingMessage</p>
+                }
+            </div>
+            break;
+        case LoadingVariant.Text:
+            <div class="text-center py-3">
+                <span class="text-muted">@(EntityLoadingMessage ?? "請稍候...")</span>
+            </div>
+            break;
+        case LoadingVariant.Silent:
+            break;
+    }
+}
+else if (!IsDetailDataReady)
+{
+    <div class="d-flex justify-content-center align-items-center py-4">
+        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+        <span class="text-muted">@(DetailLoadingMessage ?? "載入明細資料中...")</span>
+    </div>
+}
+else if (!IsDataAvailable)
+{
+    <div class="alert alert-warning text-center" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        @DataUnavailableMessage
+    </div>
+}
+else if (!IsPreconditionMet)
+{
+    <div class="alert alert-info text-center" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        @PreconditionMessage
+    </div>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    /// <summary>Entity 已載入（editModalComponent?.Entity != null）</summary>
+    [Parameter] public bool IsEntityReady { get; set; } = true;
+
+    /// <summary>非同步明細資料已準備好（isDetailDataReady flag）。預設 true 表示不需要此狀態。</summary>
+    [Parameter] public bool IsDetailDataReady { get; set; } = true;
+
+    /// <summary>參考資料可用（availableProducts.Any() 等）。預設 true 表示不需要此狀態。</summary>
+    [Parameter] public bool IsDataAvailable { get; set; } = true;
+
+    /// <summary>前置條件滿足（SupplierId > 0 等）。預設 true 表示不需要此狀態。</summary>
+    [Parameter] public bool IsPreconditionMet { get; set; } = true;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // ===== Entity 載入樣式 =====
+    [Parameter] public LoadingVariant EntityLoadingVariant { get; set; } = LoadingVariant.Spinner;
+    [Parameter] public string? EntityLoadingMessage { get; set; }
+
+    // ===== 明細資料載入 =====
+    [Parameter] public string? DetailLoadingMessage { get; set; }
+
+    // ===== 資料不可用訊息 =====
+    [Parameter] public string DataUnavailableMessage { get; set; } = "無可用資料，請聯繫系統管理員";
+
+    // ===== 前置條件訊息 =====
+    [Parameter] public string PreconditionMessage { get; set; } = "請先完成必要設定後再繼續";
+
+    public enum LoadingVariant
+    {
+        /// <summary>完整 spinner（預設，多數檔案使用）</summary>
+        Spinner,
+        /// <summary>文字提示（SalesDelivery、PurchaseReceiving 使用）</summary>
+        Text,
+        /// <summary>靜默不渲染（StockTaking、MaterialIssue、Quotation 使用）</summary>
+        Silent
+    }
+}

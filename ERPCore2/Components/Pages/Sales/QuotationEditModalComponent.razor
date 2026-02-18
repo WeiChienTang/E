@@ -851,64 +851,36 @@
     /// </summary>
     private RenderFragment CreateQuotationDetailManagerContent() => __builder =>
     {
-        try
-        {
-            @if (editModalComponent?.Entity != null)
-            {
-                // 檢查是否有可用的商品資料
-                @if (availableProducts != null && availableProducts.Any())
-                {
-                    // 檢查是否已選擇客戶
-                    @if (editModalComponent.Entity.CustomerId > 0)
-                    {
-                        <QuotationTable @ref="quotationDetailManager"
-                                                TMainEntity="Quotation"
-                                                TDetailEntity="QuotationDetail"
-                                                MainEntity="@editModalComponent.Entity"
-                                                ExistingDetails="@quotationDetails"
-                                                DataVersion="@_detailsDataVersion"
-                                                IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
-                                                OnDetailsChanged="@HandleQuotationDetailsChanged"
-                                                OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
-                                                Products="@availableProducts"
-                                                Units="@availableUnits"
-                                                SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"
-                                                TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                                                MainEntityIdPropertyName="@nameof(QuotationDetail.QuotationId)"
-                                                QuantityPropertyName="@nameof(QuotationDetail.Quantity)"
-                                                UnitPricePropertyName="@nameof(QuotationDetail.UnitPrice)"
-                                                DiscountPercentagePropertyName="@nameof(QuotationDetail.DiscountPercentage)"
-                                                RemarksPropertyName="@nameof(BaseEntity.Remarks)"
-                                                UnitIdPropertyName="@nameof(QuotationDetail.UnitId)"
-                                                IsReadOnly="false"
-                                                OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                                                Title="報價明細"
-                                                EmptyMessage="尚未新增報價商品" />
-                    }
-                    else
-                    {
-                        <div class="alert alert-info text-center" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>
-                            請先選擇客戶後再進行報價明細管理
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="alert alert-warning text-center" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        無可用的商品資料，請聯繫系統管理員
-                    </div>
-                }
-            }
-        }
-        catch
-        {
-            <div class="alert alert-danger" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                載入報價明細管理器時發生錯誤
-            </div>
-        }
+        <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
+                              EntityLoadingVariant="DetailSectionWrapper.LoadingVariant.Silent"
+                              IsDataAvailable="@(availableProducts != null && availableProducts.Any())"
+                              DataUnavailableMessage="無可用的商品資料，請聯繫系統管理員"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.CustomerId > 0)"
+                              PreconditionMessage="請先選擇客戶後再進行報價明細管理">
+            <QuotationTable @ref="quotationDetailManager"
+                                    TMainEntity="Quotation"
+                                    TDetailEntity="QuotationDetail"
+                                    MainEntity="@editModalComponent.Entity"
+                                    ExistingDetails="@quotationDetails"
+                                    DataVersion="@_detailsDataVersion"
+                                    IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
+                                    OnDetailsChanged="@HandleQuotationDetailsChanged"
+                                    OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
+                                    Products="@availableProducts"
+                                    Units="@availableUnits"
+                                    SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"
+                                    TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
+                                    MainEntityIdPropertyName="@nameof(QuotationDetail.QuotationId)"
+                                    QuantityPropertyName="@nameof(QuotationDetail.Quantity)"
+                                    UnitPricePropertyName="@nameof(QuotationDetail.UnitPrice)"
+                                    DiscountPercentagePropertyName="@nameof(QuotationDetail.DiscountPercentage)"
+                                    RemarksPropertyName="@nameof(BaseEntity.Remarks)"
+                                    UnitIdPropertyName="@nameof(QuotationDetail.UnitId)"
+                                    IsReadOnly="false"
+                                    OnOpenRelatedDocument="@HandleOpenRelatedDocument"
+                                    Title="報價明細"
+                                    EmptyMessage="尚未新增報價商品" />
+        </DetailSectionWrapper>
     };
 
     /// <summary>

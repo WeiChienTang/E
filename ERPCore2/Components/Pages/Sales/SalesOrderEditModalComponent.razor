@@ -679,85 +679,43 @@
     /// </summary>
     private RenderFragment CreateProductManagerContent() => __builder =>
     {
-        try
-        {
-            @if (editModalComponent?.Entity != null)
-            {
-                @if (!isDetailDataReady)
-                {
-                    <div class="d-flex justify-content-center align-items-center py-4">
-                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                        <span class="text-muted">載入明細資料中...</span>
-                    </div>
-                }
-                // 檢查是否有可用的商品和單位資料
-                else if (products != null && products.Any() && units != null && units.Any())
-                {
-                    // 檢查是否已選擇客戶
-                    @if (editModalComponent.Entity.CustomerId > 0)
-                    {
-                        <SalesOrderTable @ref="salesOrderDetailManager"
-                                                          TMainEntity="SalesOrder" 
-                                                          TDetailEntity="SalesOrderDetail"
-                                                          MainEntity="@editModalComponent.Entity"
-                                                          ExistingDetails="@salesOrderDetails"
-                                                          DataVersion="@_detailsDataVersion"
-                                                          IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
-                                                          Products="@products"
-                                                          Warehouses="@warehouses"
-                                                          SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"
-                                                          SelectedCustomerName="@GetSelectedCustomerName()"
-                                                          SelectedQuotationId="@(editModalComponent?.Entity?.QuotationId ?? 0)"
-                                                          SelectedQuotationCode="@GetSelectedQuotationCode()"
-                                                          FilterProductId="@filterProductId"
-                                                          FilterProductName="@GetFilterProductName()"
-                                                          TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                                                          IsReadOnly="false"
-                                                          MainEntityIdPropertyName="SalesOrderId"
-                                                          QuantityPropertyName="OrderQuantity"
-                                                          UnitPricePropertyName="UnitPrice"
-                                                          DiscountPercentagePropertyName="DiscountPercentage"
-                                                          UnitIdPropertyName="UnitId"
-                                                          WarehouseIdPropertyName="WarehouseId"
-                                                          RemarksPropertyName="Remarks"
-                                                          SourceQuotationId="@PrefilledQuotationId"
-                                                          OnDetailsChanged="@HandleDetailsChanged"
-                                                          OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
-                                                          OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                                                          ItemDisplayName="銷售商品"
-                                                          EmptyMessage="尚未新增銷售商品" />
-                    }
-                    else
-                    {
-                        <div class="alert alert-info text-center" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>
-                            請先選擇客戶後再進行銷售明細管理
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="alert alert-warning text-center" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        無可用的商品或單位資料，請聯繫系統管理員
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="text-center py-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">載入中...</span>
-                    </div>
-                </div>
-            }
-        }
-        catch
-        {
-            <div class="alert alert-warning" role="alert">
-                載入明細管理器時發生錯誤，請重新整理頁面。
-            </div>
-        }
+        <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
+                              IsDetailDataReady="@isDetailDataReady"
+                              IsDataAvailable="@(products != null && products.Any() && units != null && units.Any())"
+                              DataUnavailableMessage="無可用的商品或單位資料，請聯繫系統管理員"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.CustomerId > 0)"
+                              PreconditionMessage="請先選擇客戶後再進行銷售明細管理">
+            <SalesOrderTable @ref="salesOrderDetailManager"
+                             TMainEntity="SalesOrder"
+                             TDetailEntity="SalesOrderDetail"
+                             MainEntity="@editModalComponent.Entity"
+                             ExistingDetails="@salesOrderDetails"
+                             DataVersion="@_detailsDataVersion"
+                             IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
+                             Products="@products"
+                             Warehouses="@warehouses"
+                             SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"
+                             SelectedCustomerName="@GetSelectedCustomerName()"
+                             SelectedQuotationId="@(editModalComponent?.Entity?.QuotationId ?? 0)"
+                             SelectedQuotationCode="@GetSelectedQuotationCode()"
+                             FilterProductId="@filterProductId"
+                             FilterProductName="@GetFilterProductName()"
+                             TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
+                             IsReadOnly="false"
+                             MainEntityIdPropertyName="SalesOrderId"
+                             QuantityPropertyName="OrderQuantity"
+                             UnitPricePropertyName="UnitPrice"
+                             DiscountPercentagePropertyName="DiscountPercentage"
+                             UnitIdPropertyName="UnitId"
+                             WarehouseIdPropertyName="WarehouseId"
+                             RemarksPropertyName="Remarks"
+                             SourceQuotationId="@PrefilledQuotationId"
+                             OnDetailsChanged="@HandleDetailsChanged"
+                             OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
+                             OnOpenRelatedDocument="@HandleOpenRelatedDocument"
+                             ItemDisplayName="銷售商品"
+                             EmptyMessage="尚未新增銷售商品" />
+        </DetailSectionWrapper>
     };
     
     // ===== ActionButton 產生方法 =====

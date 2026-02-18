@@ -1126,75 +1126,43 @@
     /// </summary>
     private RenderFragment CreateDeliveryDetailManagerContent() => __builder =>
     {
-        try
-        {
-            @if (editModalComponent?.Entity != null)
-            {
-                // 只有選擇客戶後才顯示明細管理器
-                @if (editModalComponent.Entity.CustomerId > 0)
-                {
-                    try
-                    {
-                        <SalesDeliveryTable @ref="salesDeliveryDetailManager"
-                                           TMainEntity="SalesDelivery"
-                                           TDetailEntity="SalesDeliveryDetail"
-                                           MainEntity="@editModalComponent.Entity"
-                                           ExistingDetails="@salesDeliveryDetails"
-                                           DataVersion="@_detailsDataVersion"
-                                           IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
-                                           OnDetailsChanged="@HandleDeliveryDetailsChanged"
-                                           OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
-                                           OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
-                                           ReturnedQuantities="@returnedQuantities"
-                                           Products="@availableProducts"
-                                           Warehouses="@warehouses"
-                                           WarehouseLocations="@warehouseLocations"
-                                           SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"
-                                           SelectedSalesOrderId="@(editModalComponent?.Entity?.SalesOrderId ?? 0)"
-                                           FilterProductId="@FilterProductId"
-                                           SelectedCustomerName="@GetSelectedCustomerName()"
-                                           SelectedSalesOrderCode="@GetSelectedSalesOrderCode()"
-                                           FilterProductName="@GetFilterProductName()"
-                                           TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                                           MainEntityIdPropertyName="@nameof(SalesDeliveryDetail.SalesDeliveryId)"
-                                           QuantityPropertyName="@nameof(SalesDeliveryDetail.DeliveryQuantity)"
-                                           UnitPricePropertyName="@nameof(SalesDeliveryDetail.UnitPrice)"
-                                           RemarksPropertyName="@nameof(SalesDeliveryDetail.Remarks)"
-                                           WarehouseIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseId)"
-                                           WarehouseLocationIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseLocationId)"
-                                           ShowWarehouse="true"
-                                           ShowWarehouseLocation="false"
-                                           OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                                           IsReadOnly="false" />
-                    }
-                    catch
-                    {
-                        <div class="alert alert-warning" role="alert">
-                            載入明細管理器時發生錯誤，請重新整理頁面。
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="alert alert-info text-center" role="alert">
-                        <i class="fas fa-info-circle me-2"></i>
-                        請先選擇客戶後再進行出貨明細管理
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="text-center py-3">
-                    <span class="text-muted">請先選擇客戶後再管理出貨明細</span>
-                </div>
-            }
-        }
-        catch
-        {
-            <div class="alert alert-warning" role="alert">
-                載入明細管理器時發生錯誤，請重新整理頁面。
-            </div>
-        }
+        <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
+                              EntityLoadingVariant="DetailSectionWrapper.LoadingVariant.Text"
+                              EntityLoadingMessage="請先選擇客戶後再管理出貨明細"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.CustomerId > 0)"
+                              PreconditionMessage="請先選擇客戶後再進行出貨明細管理">
+            <SalesDeliveryTable @ref="salesDeliveryDetailManager"
+                                TMainEntity="SalesDelivery"
+                                TDetailEntity="SalesDeliveryDetail"
+                                MainEntity="@editModalComponent.Entity"
+                                ExistingDetails="@salesDeliveryDetails"
+                                DataVersion="@_detailsDataVersion"
+                                IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
+                                OnDetailsChanged="@HandleDeliveryDetailsChanged"
+                                OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
+                                OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
+                                ReturnedQuantities="@returnedQuantities"
+                                Products="@availableProducts"
+                                Warehouses="@warehouses"
+                                WarehouseLocations="@warehouseLocations"
+                                SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"
+                                SelectedSalesOrderId="@(editModalComponent?.Entity?.SalesOrderId ?? 0)"
+                                FilterProductId="@FilterProductId"
+                                SelectedCustomerName="@GetSelectedCustomerName()"
+                                SelectedSalesOrderCode="@GetSelectedSalesOrderCode()"
+                                FilterProductName="@GetFilterProductName()"
+                                TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
+                                MainEntityIdPropertyName="@nameof(SalesDeliveryDetail.SalesDeliveryId)"
+                                QuantityPropertyName="@nameof(SalesDeliveryDetail.DeliveryQuantity)"
+                                UnitPricePropertyName="@nameof(SalesDeliveryDetail.UnitPrice)"
+                                RemarksPropertyName="@nameof(SalesDeliveryDetail.Remarks)"
+                                WarehouseIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseId)"
+                                WarehouseLocationIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseLocationId)"
+                                ShowWarehouse="true"
+                                ShowWarehouseLocation="false"
+                                OnOpenRelatedDocument="@HandleOpenRelatedDocument"
+                                IsReadOnly="false" />
+        </DetailSectionWrapper>
     };
     
     /// <summary>

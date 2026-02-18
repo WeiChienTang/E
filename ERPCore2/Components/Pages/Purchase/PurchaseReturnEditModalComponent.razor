@@ -1110,84 +1110,27 @@
     /// </summary>
     private RenderFragment CreateReturnDetailManagerContent() => __builder =>
     {
-        try
-        {
-
-            @if (editModalComponent?.Entity != null)
-            {
-                @if (!isDetailDataReady)
-                {
-                    <div class="d-flex justify-content-center align-items-center py-4">
-                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                        <span class="text-muted">載入明細資料中...</span>
-                    </div>
-                }
-                else if (editModalComponent.Entity.SupplierId > 0)
-                {
-                    try
-                    {
-
-                        <PurchaseReturnTable @ref="purchaseReturnDetailManager"
-                            SupplierId="@editModalComponent.Entity.SupplierId"
-                            FilterPurchaseReceivingId="@filterPurchaseReceivingId"
-                            FilterProductId="@filterProductId"
-                            SelectedSupplierName="@GetSelectedSupplierName()"
-                            SelectedPurchaseReceivingCode="@GetSelectedPurchaseReceivingCode()"
-                            FilterProductName="@GetFilterProductName()"
-                            TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
-                            IsEditMode="@(PurchaseReturnId.HasValue)"
-                            ExistingReturnDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
-                            DataVersion="@_detailsDataVersion"
-                            IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
-                            OnReturnDetailsChanged="@HandleReturnDetailsChanged"
-                            OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
-                            OnOpenRelatedDocument="@HandleOpenRelatedDocument" />
-                    }
-                    catch (Exception ex)
-                    {
-                        <div class="alert alert-danger" role="alert">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>載入退貨明細管理器時發生錯誤</strong>
-                            <br/>錯誤類型：@ex.GetType().Name
-                            <br/>錯誤訊息：@ex.Message
-                            <br/>請檢查資料完整性或聯繫系統管理員
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="alert alert-info text-center" role="alert">
-                        <i class="fas fa-info-circle me-2"></i>
-                        請先選擇廠商後再進行退貨明細管理
-                    </div>
-                }
-            }
-            else
-            {
-                var componentStatus = editModalComponent == null ? "null" : "not null";
-                var entityStatus = editModalComponent?.Entity == null ? "null" : "not null";
-                <div class="text-center py-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">載入中...</span>
-                    </div>
-                    <p class="text-muted mt-2">正在載入退貨明細管理器...</p>
-                </div>
-            }
-        }
-        catch (Exception ex)
-        {
-            <div class="alert alert-danger" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>載入退貨明細管理器時發生嚴重錯誤</strong>
-                <br/>錯誤類型：@ex.GetType().Name
-                <br/>錯誤訊息：@ex.Message
-                <br/>請重新整理頁面，如問題持續請聯繫系統管理員
-                <details class="mt-2">
-                    <summary>技術詳情</summary>
-                    <pre class="mt-1 small">@ex.StackTrace</pre>
-                </details>
-            </div>
-        }
+        <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
+                              EntityLoadingMessage="正在載入退貨明細管理器..."
+                              IsDetailDataReady="@isDetailDataReady"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.SupplierId > 0)"
+                              PreconditionMessage="請先選擇廠商後再進行退貨明細管理">
+            <PurchaseReturnTable @ref="purchaseReturnDetailManager"
+                                 SupplierId="@editModalComponent.Entity.SupplierId"
+                                 FilterPurchaseReceivingId="@filterPurchaseReceivingId"
+                                 FilterProductId="@filterProductId"
+                                 SelectedSupplierName="@GetSelectedSupplierName()"
+                                 SelectedPurchaseReceivingCode="@GetSelectedPurchaseReceivingCode()"
+                                 FilterProductName="@GetFilterProductName()"
+                                 TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
+                                 IsEditMode="@(PurchaseReturnId.HasValue)"
+                                 ExistingReturnDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
+                                 DataVersion="@_detailsDataVersion"
+                                 IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
+                                 OnReturnDetailsChanged="@HandleReturnDetailsChanged"
+                                 OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
+                                 OnOpenRelatedDocument="@HandleOpenRelatedDocument" />
+        </DetailSectionWrapper>
     };
 
     /// <summary>

@@ -266,14 +266,41 @@ public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 
 ---
 
-### P6：RenderFragment 三態模式（明細管理器區塊）→ DetailSectionBuilder
+### P6：RenderFragment 三態模式 → DetailSectionWrapper 組件 ✅
 
-**問題**：每個有明細管理器的 Edit 都有相同的三態判斷：
-1. Entity == null → 載入中 spinner
-2. SupplierId <= 0 → 提示先選擇廠商
-3. 正常 → 渲染 Table 組件
+**問題**：每個有明細管理器的 Edit 都有相同的三態/五態判斷模式。
 
-**注意**：涉及 RenderFragment 和 Blazor 渲染，可能需以 `.razor` 組件實現。
+**解法**：建立 `Components/Shared/UI/Section/DetailSectionWrapper.razor` Blazor 組件，封裝五態邏輯：
+1. `!IsEntityReady` → Spinner / Text / Silent（LoadingVariant 枚舉）
+2. `!IsDetailDataReady` → 小 spinner + 文字
+3. `!IsDataAvailable` → alert-warning
+4. `!IsPreconditionMet` → alert-info
+5. 正常 → `@ChildContent`
+
+**已轉換 10 個檔案、11 個方法**：
+
+| 檔案 | 方法 | 特殊處理 |
+|---|---|---|
+| QuotationEdit | CreateQuotationDetailManagerContent | Silent + 商品檢查 + CustomerId |
+| ProductCompositionEdit | CreateDetailManagerContent | isDetailDataReady + 雙資料檢查 |
+| SalesOrderEdit | CreateProductManagerContent | isDetailDataReady + 雙資料檢查 |
+| SalesReturnEdit | CreateReturnDetailManagerContent | isDetailDataReady + 商品&倉庫檢查 |
+| SalesDeliveryEdit | CreateDeliveryDetailManagerContent | Text variant |
+| PurchaseReturnEdit | CreateReturnDetailManagerContent | isDetailDataReady + SupplierId |
+| PurchaseReceivingEdit | CreateReceivingDetailManagerContent | Text variant + isDetailDataReady |
+| InventoryStockEdit | CreateStockDetailContent | isDetailDataReady + 倉庫檢查 |
+| SetoffDocumentEdit | CreateSetoffProductDetailManagerContent | Silent + 動態訊息 |
+| InventoryTransactionEdit | CreateDetailTableContent | currentTransaction 非 Entity |
+
+**跳過不轉換**：
+- StockTakingEdit — 僅 20 行，含業務邏輯（readOnly 狀態計算）
+- MaterialIssueEdit — 僅 10 行，極簡單
+- SetoffDocument 的 Payment/Prepayment — 僅 24 行，靜默模式不適合 wrapper
+- PurchaseOrderEdit — 使用 `display:none` CSS 隱藏優化
+- Customer/Employee/SupplierEdit — 車輛 Tab 無狀態檢查
+- TextMessageTemplateEdit、ProductionScheduleEdit、WarehouseEdit — 不同內容/佈局
+
+**預估節省 ~400 行**
 
 ---
 
@@ -317,12 +344,17 @@ public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 | P14 | EditDataLoaderHelper 新增模式樣板 | 16 個 | ~500 行 |
 | P15 | ShowAddModal/ShowEditModal 委派 Generic | 15 個 | ~210 行 |
 
+### 已完成（第四階段）
+
+| 項目 | 說明 | 已套用 Edit 數 | 節省行數 |
+|---|---|---|---|
+| P6 | DetailSectionWrapper 組件（五態判斷封裝） | 10 個 | ~400 行 |
+
 ### 未來（需較大改動 GenericEditModalComponent）
 
 | 項目 | 說明 |
 |---|---|
 | P3 | OnTaxMethodChanged 參數 |
-| P6 | DetailSectionBuilder 組件 |
 | P8 | DocumentConversionValidator |
 
 ---

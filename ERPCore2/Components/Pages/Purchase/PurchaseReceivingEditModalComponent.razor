@@ -1493,83 +1493,43 @@
     /// </summary>
     private RenderFragment CreateReceivingDetailManagerContent() => __builder =>
     {
-        try
-        {
-            @if (editModalComponent?.Entity != null)
-            {
-                // 關鍵改變：等待明細資料完全準備好（包括退貨數量等）後才渲染
-                @if (!isDetailDataReady)
-                {
-                    <div class="d-flex justify-content-center align-items-center py-4">
-                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                        <span class="text-muted">載入明細資料中...</span>
-                    </div>
-                }
-                // 使用多採購單模式
-                else if (editModalComponent.Entity.SupplierId > 0)
-                {
-                    // 多採購單模式
-                    try
-                    {
-                        <PurchaseReceivingTable @ref="purchaseReceivingDetailManager"
-                                                               TMainEntity="PurchaseReceiving" 
-                                                               TDetailEntity="PurchaseReceivingDetail"
-                                                               SelectedSupplierId="@editModalComponent.Entity.SupplierId"
-                                                               SelectedPurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
-                                                               FilterProductId="@filterProductId"
-                                                               SelectedSupplierName="@GetSelectedSupplierName()"
-                                                               SelectedPurchaseOrderCode="@GetSelectedPurchaseOrderCode()"
-                                                               FilterProductName="@GetFilterProductName()"
-                                                               TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
-                                                               MainEntity="@editModalComponent.Entity"
-                                                               ExistingDetails="@purchaseReceivingDetails"
-                                                               DataVersion="@_detailsDataVersion"
-                                                               IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
-                                                               OnDetailsChanged="@HandleReceivingDetailsChanged"
-                                                               OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
-                                                               OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
-                                                               OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                                                               MainEntityIdPropertyName="PurchaseReceivingId"
-                                                               QuantityPropertyName="ReceivedQuantity"
-                                                               UnitPricePropertyName="UnitPrice"
-                                                               RemarksPropertyName="Remarks"
-                                                               PurchaseOrderDetailIdPropertyName="PurchaseOrderDetailId"
-                                                               ShowWarehouse="true"
-                                                               ShowWarehouseLocation="true"
-                                                               WarehouseIdPropertyName="WarehouseId"
-                                                               WarehouseLocationIdPropertyName="WarehouseLocationId"
-                                                               Warehouses="@warehouses"
-                                                               WarehouseLocations="@warehouseLocations"
-                                                               IsReadOnly="false" />
-                    }
-                    catch
-                    {
-                        <div class="alert alert-warning" role="alert">
-                            載入明細管理器時發生錯誤，請重新整理頁面。
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="alert alert-info text-center" role="alert">
-                        <i class="fas fa-info-circle me-2"></i>
-                        請先選擇廠商後再進行採購明細管理
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="text-center py-3">
-                    <span class="text-muted">請先選擇廠商後再管理進貨明細</span>
-                </div>
-            }
-        }
-        catch
-        {
-            <div class="alert alert-warning" role="alert">
-                載入明細管理器時發生錯誤，請重新整理頁面。
-            </div>
-        }
+        <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
+                              EntityLoadingVariant="DetailSectionWrapper.LoadingVariant.Text"
+                              EntityLoadingMessage="請先選擇廠商後再管理進貨明細"
+                              IsDetailDataReady="@isDetailDataReady"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.SupplierId > 0)"
+                              PreconditionMessage="請先選擇廠商後再進行採購明細管理">
+            <PurchaseReceivingTable @ref="purchaseReceivingDetailManager"
+                                    TMainEntity="PurchaseReceiving"
+                                    TDetailEntity="PurchaseReceivingDetail"
+                                    SelectedSupplierId="@editModalComponent.Entity.SupplierId"
+                                    SelectedPurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
+                                    FilterProductId="@filterProductId"
+                                    SelectedSupplierName="@GetSelectedSupplierName()"
+                                    SelectedPurchaseOrderCode="@GetSelectedPurchaseOrderCode()"
+                                    FilterProductName="@GetFilterProductName()"
+                                    TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
+                                    MainEntity="@editModalComponent.Entity"
+                                    ExistingDetails="@purchaseReceivingDetails"
+                                    DataVersion="@_detailsDataVersion"
+                                    IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
+                                    OnDetailsChanged="@HandleReceivingDetailsChanged"
+                                    OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
+                                    OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
+                                    OnOpenRelatedDocument="@HandleOpenRelatedDocument"
+                                    MainEntityIdPropertyName="PurchaseReceivingId"
+                                    QuantityPropertyName="ReceivedQuantity"
+                                    UnitPricePropertyName="UnitPrice"
+                                    RemarksPropertyName="Remarks"
+                                    PurchaseOrderDetailIdPropertyName="PurchaseOrderDetailId"
+                                    ShowWarehouse="true"
+                                    ShowWarehouseLocation="true"
+                                    WarehouseIdPropertyName="WarehouseId"
+                                    WarehouseLocationIdPropertyName="WarehouseLocationId"
+                                    Warehouses="@warehouses"
+                                    WarehouseLocations="@warehouseLocations"
+                                    IsReadOnly="false" />
+        </DetailSectionWrapper>
     };
     
     // ===== 輔助方法：取得選項名稱 =====

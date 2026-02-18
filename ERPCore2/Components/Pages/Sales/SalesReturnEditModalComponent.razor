@@ -1216,72 +1216,29 @@
     /// </summary>
     private RenderFragment CreateReturnDetailManagerContent() => __builder =>
     {
-        try
-        {
-            @if (editModalComponent?.Entity != null)
-            {
-                @if (!isDetailDataReady)
-                {
-                    <div class="d-flex justify-content-center align-items-center py-4">
-                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                        <span class="text-muted">載入明細資料中...</span>
-                    </div>
-                }
-                // 檢查是否有可用的商品和倉庫資料
-                else if (products != null && products.Any() && warehouses != null && warehouses.Any())
-                {
-                    // 檢查是否已選擇客戶
-                    @if (editModalComponent.Entity.CustomerId > 0)
-                    {
-                        <SalesReturnTable @ref="salesReturnDetailManager"
-                            Products="@products"
-                            CustomerId="@(editModalComponent?.Entity?.CustomerId)"
-                            FilterSalesDeliveryId="@FilterSalesDeliveryId"
-                            FilterProductId="@FilterProductId"
-                            SelectedCustomerName="@GetSelectedCustomerName()"
-                            SelectedSalesDeliveryCode="@GetSelectedSalesDeliveryCode()"
-                            FilterProductName="@GetFilterProductName()"
-                            ExistingReturnDetails="@salesReturnDetails"
-                            DataVersion="@_detailsDataVersion"
-                            IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
-                            TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                            OnReturnDetailsChanged="@HandleReturnDetailsChanged"
-                            OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
-                            OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                            IsEditMode="@SalesReturnId.HasValue" />
-                    }
-                    else
-                    {
-                        <div class="alert alert-info text-center" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>
-                            請先選擇客戶後再進行退貨明細管理
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="alert alert-warning text-center" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        無可用的商品或倉庫資料，請聯繫系統管理員
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="text-center py-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">載入中...</span>
-                    </div>
-                </div>
-            }
-        }
-        catch
-        {
-            <div class="alert alert-warning text-center" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                明細管理器載入失敗，請重新整理頁面。
-            </div>
-        }
+        <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
+                              IsDetailDataReady="@isDetailDataReady"
+                              IsDataAvailable="@(products != null && products.Any() && warehouses != null && warehouses.Any())"
+                              DataUnavailableMessage="無可用的商品或倉庫資料，請聯繫系統管理員"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.CustomerId > 0)"
+                              PreconditionMessage="請先選擇客戶後再進行退貨明細管理">
+            <SalesReturnTable @ref="salesReturnDetailManager"
+                              Products="@products"
+                              CustomerId="@(editModalComponent?.Entity?.CustomerId)"
+                              FilterSalesDeliveryId="@FilterSalesDeliveryId"
+                              FilterProductId="@FilterProductId"
+                              SelectedCustomerName="@GetSelectedCustomerName()"
+                              SelectedSalesDeliveryCode="@GetSelectedSalesDeliveryCode()"
+                              FilterProductName="@GetFilterProductName()"
+                              ExistingReturnDetails="@salesReturnDetails"
+                              DataVersion="@_detailsDataVersion"
+                              IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
+                              TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
+                              OnReturnDetailsChanged="@HandleReturnDetailsChanged"
+                              OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
+                              OnOpenRelatedDocument="@HandleOpenRelatedDocument"
+                              IsEditMode="@SalesReturnId.HasValue" />
+        </DetailSectionWrapper>
     };
     
     /// <summary>

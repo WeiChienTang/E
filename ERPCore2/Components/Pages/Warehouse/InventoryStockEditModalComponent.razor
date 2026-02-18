@@ -567,68 +567,26 @@
     /// </summary>
     private RenderFragment CreateStockDetailContent() => __builder =>
     {
-        try
-        {
-            @if (editModalComponent?.Entity != null)
-            {
-                @if (!isDetailDataReady)
-                {
-                    <div class="d-flex justify-content-center align-items-center py-4">
-                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                        <span class="text-muted">載入明細資料中...</span>
-                    </div>
-                }
-                else if (availableWarehouses != null && availableWarehouses.Any())
-                {
-                    // 檢查是否已選擇商品
-                    @if (editModalComponent.Entity.ProductId > 0)
-                    {
-                        <InventoryStockTable @ref="inventoryStockDetailManager"
-                                                       @key="@editModalComponent.Entity.Id"
-                                                       TMainEntity="InventoryStock"
-                                                       TDetailEntity="InventoryStockDetail"
-                                                       MainEntity="@editModalComponent.Entity"
-                                                       ExistingDetails="@inventoryStockDetails"
-                                                       SelectedInventoryStockId="@(editModalComponent.Entity.Id > 0 ? editModalComponent.Entity.Id : null)"
-                                                       Warehouses="@availableWarehouses"
-                                                       WarehouseLocations="@availableWarehouseLocations"
-                                                       OnDetailsChanged="@HandleStockDetailsChanged"
-                                                       IsReadOnly="@false"
-                                                       ShowBatchTracking="true"
-                                                       ShowAverageCost="true" />
-                    }
-                    else
-                    {
-                        <div class="alert alert-info text-center" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>
-                            請先選擇商品後再進行庫存明細管理
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="alert alert-warning text-center" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        無可用的倉庫資料，請聯繫系統管理員
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="text-center py-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">載入中...</span>
-                    </div>
-                </div>
-            }
-        }
-        catch (Exception ex)
-        {
-            <div class="alert alert-danger" role="alert">
-                <i class="bi bi-x-circle me-2"></i>
-                載入庫存明細管理功能時發生錯誤：@ex.Message
-            </div>
-        }
+        <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
+                              IsDetailDataReady="@isDetailDataReady"
+                              IsDataAvailable="@(availableWarehouses != null && availableWarehouses.Any())"
+                              DataUnavailableMessage="無可用的倉庫資料，請聯繫系統管理員"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.ProductId > 0)"
+                              PreconditionMessage="請先選擇商品後再進行庫存明細管理">
+            <InventoryStockTable @ref="inventoryStockDetailManager"
+                                 @key="@editModalComponent.Entity.Id"
+                                 TMainEntity="InventoryStock"
+                                 TDetailEntity="InventoryStockDetail"
+                                 MainEntity="@editModalComponent.Entity"
+                                 ExistingDetails="@inventoryStockDetails"
+                                 SelectedInventoryStockId="@(editModalComponent.Entity.Id > 0 ? editModalComponent.Entity.Id : null)"
+                                 Warehouses="@availableWarehouses"
+                                 WarehouseLocations="@availableWarehouseLocations"
+                                 OnDetailsChanged="@HandleStockDetailsChanged"
+                                 IsReadOnly="@false"
+                                 ShowBatchTracking="true"
+                                 ShowAverageCost="true" />
+        </DetailSectionWrapper>
     };
     
     /// <summary>

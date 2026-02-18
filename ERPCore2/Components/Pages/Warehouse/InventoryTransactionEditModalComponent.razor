@@ -83,30 +83,12 @@
     /// </summary>
     private RenderFragment CreateDetailTableContent() => __builder =>
     {
-        try
-        {
-            @if (currentTransaction != null)
-            {
-                <div class="mt-4">
-                    <InventoryTransactionTable Details="@transactionDetails" 
-                                              TransactionNumber="@currentTransaction.TransactionNumber" />
-                </div>
-            }
-            else
-            {
-                <div class="text-center py-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">載入中...</span>
-                    </div>
-                </div>
-            }
-        }
-        catch
-        {
-            <div class="alert alert-warning" role="alert">
-                載入明細表格時發生錯誤，請重新整理頁面。
+        <DetailSectionWrapper IsEntityReady="@(currentTransaction != null)">
+            <div class="mt-4">
+                <InventoryTransactionTable Details="@transactionDetails"
+                                           TransactionNumber="@currentTransaction.TransactionNumber" />
             </div>
-        }
+        </DetailSectionWrapper>
     };
     
     /// <summary>

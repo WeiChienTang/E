@@ -18,7 +18,11 @@
       "Bash(echo:*)",
       "Bash(done)",
       "Bash(node --version:*)",
-      "Read(//c/**)"
+      "Read(//c/**)",
+      "Bash(tee:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI"
     ]
   }
 }

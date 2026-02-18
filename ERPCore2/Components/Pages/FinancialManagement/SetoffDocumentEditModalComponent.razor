@@ -1485,39 +1485,24 @@
     /// </summary>
     private RenderFragment CreateSetoffProductDetailManagerContent() => __builder =>
     {
-        try
-        {
-            @if (editModalComponent?.Entity != null && editModalComponent.Entity.RelatedPartyId > 0)
-            {
-                <SetoffProductTable 
-                    @ref="setoffProductDetailManager"
-                    SetoffDocumentId="@SetoffDocumentId"
-                    SetoffType="@editModalComponent.Entity.SetoffType"
-                    RelatedPartyId="@editModalComponent.Entity.RelatedPartyId"
-                    RelatedPartyType="@editModalComponent.Entity.RelatedPartyType"
-                    RelatedPartyName="@GetRelatedPartyName()"
-                    StartDate="@filterStartDate"
-                    EndDate="@filterEndDate"
-                    ExistingDetails="@setoffProductDetails"
-                    OnDetailsChanged="@HandleProductDetailsChanged"
-                    IsReadOnly="@IsReadOnly"
-                    DataVersion="@_productDetailsDataVersion"
-                    IsParentLoading="@(editModalComponent?.IsLoading ?? false)" />
-            }
-            else
-            {
-                <div class="alert alert-info" role="alert">
-                    <i class="bi bi-info-circle me-2"></i>
-                    請先選擇@(editModalComponent?.Entity?.SetoffType == SetoffType.AccountsReceivable ? "客戶" : "廠商")以載入商品明細
-                </div>
-            }
-        }
-        catch
-        {
-            <div class="alert alert-warning" role="alert">
-                載入明細管理器時發生錯誤,請重新整理頁面。
-            </div>
-        }
+        <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
+                              EntityLoadingVariant="DetailSectionWrapper.LoadingVariant.Silent"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.RelatedPartyId > 0)"
+                              PreconditionMessage="@($"請先選擇{(editModalComponent?.Entity?.SetoffType == SetoffType.AccountsReceivable ? "客戶" : "廠商")}以載入商品明細")">
+            <SetoffProductTable @ref="setoffProductDetailManager"
+                                SetoffDocumentId="@SetoffDocumentId"
+                                SetoffType="@editModalComponent.Entity.SetoffType"
+                                RelatedPartyId="@editModalComponent.Entity.RelatedPartyId"
+                                RelatedPartyType="@editModalComponent.Entity.RelatedPartyType"
+                                RelatedPartyName="@GetRelatedPartyName()"
+                                StartDate="@filterStartDate"
+                                EndDate="@filterEndDate"
+                                ExistingDetails="@setoffProductDetails"
+                                OnDetailsChanged="@HandleProductDetailsChanged"
+                                IsReadOnly="@IsReadOnly"
+                                DataVersion="@_productDetailsDataVersion"
+                                IsParentLoading="@(editModalComponent?.IsLoading ?? false)" />
+        </DetailSectionWrapper>
     };
     
     /// <summary>
