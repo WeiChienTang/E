@@ -23,8 +23,7 @@
                           SaveFailureMessage="單位儲存失敗"
                           RequiredPermission="Unit.Read"
                           OnEntitySaved="@OnUnitSaved"
-                          OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnCancel="@OnCancel" />
 
 @code {
     // ===== 必要參數 =====
@@ -41,55 +40,10 @@
     private Dictionary<string, string> formSections = new();
 
     // ===== 必要方法 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task<Unit?> LoadUnitData()
-    {
-        try
-        {
-            if (!UnitId.HasValue)
-            {
-                // 新增模式：建立新的單位實體並生成編號
-                var newUnit = new Unit
-                {
-                    Name = string.Empty,
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Unit, IUnitService>(UnitService, "UNIT"),
-                    Status = EntityStatus.Active
-                };
-                
-                // 應用預填值
-                PrefilledValueHelper.ApplyPrefilledValues(newUnit, PrefilledValues);
-                
-                return newUnit;
-            }
-            
-            // 編輯模式 - 載入現有資料
-            return await UnitService.GetByIdAsync(UnitId.Value);
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入單位資料時發生錯誤：{ex.Message}");
-            return null;
-        }
-    }
-
+    private Task<Unit?> LoadUnitData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<Unit, IUnitService>(
+            UnitId, UnitService, NotificationService, "單位", "UNIT", PrefilledValues,
+            u => u.Name = string.Empty);
     private async Task LoadAdditionalDataAsync()
     {
         try
@@ -162,29 +116,8 @@
     {
         return formFields;
     }
+
     // ===== 公開方法 (供父組件調用) =====
-
-    /// <summary>
-    /// 開啟新增單位 Modal
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        UnitId = null;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
-    /// <summary>
-    /// 開啟編輯單位 Modal
-    /// </summary>
-    public async Task ShowEditModal(int unitId)
-    {
-        UnitId = unitId;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 }

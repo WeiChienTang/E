@@ -866,63 +866,17 @@
         try
         {
             salesReturnDetails = details;
-            
+
             if (editModalComponent?.Entity != null)
             {
-                // 根據稅別計算金額和稅額
-                switch (editModalComponent.Entity.TaxCalculationMethod)
-                {
-                    case TaxCalculationMethod.TaxExclusive:
-                        // 外加稅：金額（未稅）= ∑(數量 × 單價 × (1 - 折扣%))
-                        //        稅額 = ∑(小計 × 稅率%)
-                        editModalComponent.Entity.TotalReturnAmount = Math.Round(
-                            details.Where(d => d.ProductId > 0)
-                                   .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
-                            0, MidpointRounding.AwayFromZero);
-                        
-                        editModalComponent.Entity.ReturnTaxAmount = Math.Round(
-                            details.Where(d => d.ProductId > 0)
-                                   .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100) * (d.TaxRate ?? 0) / 100),
-                            0, MidpointRounding.AwayFromZero);
-                        break;
-                    
-                    case TaxCalculationMethod.TaxInclusive:
-                        // 內含稅：總額（含稅）= ∑(數量 × 單價 × (1 - 折扣%))
-                        //        稅額 = ∑(小計 / (1 + 稅率%) × 稅率%)
-                        //        金額（未稅）= 總額 - 稅額
-                        var totalWithTax = Math.Round(
-                            details.Where(d => d.ProductId > 0)
-                                   .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
-                            0, MidpointRounding.AwayFromZero);
-                        
-                        var taxAmount = Math.Round(
-                            details.Where(d => d.ProductId > 0)
-                                   .Sum(d => 
-                                   {
-                                       var subtotal = d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100);
-                                       var taxRate = d.TaxRate ?? 0;
-                                       return Math.Round(subtotal / (1 + taxRate / 100) * taxRate / 100, 0, MidpointRounding.AwayFromZero);
-                                   }),
-                            0, MidpointRounding.AwayFromZero);
-                        
-                        editModalComponent.Entity.ReturnTaxAmount = taxAmount;
-                        editModalComponent.Entity.TotalReturnAmount = Math.Round(totalWithTax - taxAmount, 0, MidpointRounding.AwayFromZero);
-                        break;
-                    
-                    case TaxCalculationMethod.NoTax:
-                        // 免稅：金額 = ∑(數量 × 單價 × (1 - 折扣%))
-                        //      稅額 = 0
-                        editModalComponent.Entity.TotalReturnAmount = Math.Round(
-                            details.Where(d => d.ProductId > 0)
-                                   .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
-                            0, MidpointRounding.AwayFromZero);
-                        
-                        editModalComponent.Entity.ReturnTaxAmount = 0;
-                        break;
-                }
-                
-                // ❌ 移除 StateHasChanged() - 讓呼叫者統一處理渲染
-                // StateHasChanged();
+                var (total, tax) = TaxCalculationHelper.CalculateFromDetails(
+                    details.Where(d => d.ProductId > 0),
+                    editModalComponent.Entity.TaxCalculationMethod,
+                    currentTaxRate,
+                    d => d.ReturnSubtotalAmount,
+                    d => d.TaxRate);
+                editModalComponent.Entity.TotalReturnAmount = total;
+                editModalComponent.Entity.ReturnTaxAmount = tax;
             }
         }
         catch (Exception ex)

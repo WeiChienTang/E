@@ -23,8 +23,7 @@
                           SaveFailureMessage="權限組儲存失敗"
                           RequiredPermission="Role.Read"
                           OnEntitySaved="@OnRoleSaved"
-                          OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnCancel="@OnCancel" />
 
 @code {
     // ===== 必要參數 =====
@@ -41,24 +40,6 @@
     private Dictionary<string, string> formSections = new();
 
     // ===== 生命週期 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
     // ===== 資料載入 =====
     private async Task LoadAdditionalDataAsync()
     {
@@ -73,36 +54,9 @@
             await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
         }
     }
-
-    private async Task<Role?> LoadRoleData()
-    {
-        try
-        {
-            if (!RoleId.HasValue)
-            {
-                // 新增模式 - 建立新的權限組實體並設定預設值
-                var newRole = new Role
-                {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Role, IRoleService>(RoleService, "ROLE"),
-                    Status = EntityStatus.Active
-                };
-
-                // 應用預填值
-                PrefilledValueHelper.ApplyPrefilledValues(newRole, PrefilledValues);
-
-                return newRole;
-            }
-
-            // 編輯模式 - 載入現有權限組資料
-            return await RoleService.GetByIdAsync(RoleId.Value);
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入權限組資料時發生錯誤：{ex.Message}");
-            return null;
-        }
-    }
-
+    private Task<Role?> LoadRoleData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<Role, IRoleService>(
+            RoleId, RoleService, NotificationService, "權限組", "ROLE", PrefilledValues);
     protected override void OnParametersSet()
     {
         if (IsVisible)

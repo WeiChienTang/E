@@ -1007,104 +1007,27 @@
         try
         {
             salesOrderDetails = details ?? new List<SalesOrderDetail>();
-            
-            // 更新主檔的金額、折扣、稅額和總額
+
             if (editModalComponent?.Entity != null)
             {
-                // 根據稅別計算金額和稅額
-                switch (editModalComponent.Entity.TaxCalculationMethod)
-                {
-                    case TaxCalculationMethod.TaxExclusive:
-                        // 外加稅：總額 = 金額 - 折扣 + 稅額
-                        {
-                            // 1. 金額（折扣前）= Σ(數量 × 單價)
-                            editModalComponent.Entity.TotalAmount = Math.Round(
-                                salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice), 
-                                0, MidpointRounding.AwayFromZero);
-                            
-                            // 2. 折扣金額 = Σ(數量 × 單價 × 折扣%)
-                            editModalComponent.Entity.DiscountAmount = Math.Round(
-                                salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice * (d.DiscountPercentage / 100)), 
-                                0, MidpointRounding.AwayFromZero);
-                            
-                            // 3. 稅額 = Σ(折扣後金額 × 稅率%)
-                            editModalComponent.Entity.SalesTaxAmount = Math.Round(
-                                salesOrderDetails.Sum(d => {
-                                    var amountAfterDiscount = d.OrderQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
-                                    var taxRate = d.TaxRate ?? 0;
-                                    return amountAfterDiscount * (taxRate / 100);
-                                }), 0, MidpointRounding.AwayFromZero);
-                            
-                            // 4. 總額由 TotalAmountWithTax 計算屬性自動計算 (TotalAmount + SalesTaxAmount)
-                            // 注意：這裡的 TotalAmount 是折扣前金額，需要減去折扣後再加稅
-                            editModalComponent.Entity.TotalAmount = 
-                                editModalComponent.Entity.TotalAmount - 
-                                editModalComponent.Entity.DiscountAmount;
-                        }
-                        break;
+                var (net, tax, gross, discount) = TaxCalculationHelper.CalculateFromDetailsWithDiscount(
+                    salesOrderDetails,
+                    editModalComponent.Entity.TaxCalculationMethod,
+                    currentTaxRate,
+                    d => d.SubtotalAmount,
+                    d => d.TaxRate,
+                    d => d.OrderQuantity * d.UnitPrice);
 
-                    case TaxCalculationMethod.TaxInclusive:
-                        // 內含稅：總額已含稅，反推金額、折扣、稅額
-                        {
-                            // 1. 總額（含稅）= Σ(數量 × 單價 × (1 - 折扣%))
-                            var totalWithTax = Math.Round(
-                                salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100)), 
-                                0, MidpointRounding.AwayFromZero);
-                            
-                            // 2. 稅額 = Σ(小計 / (1 + 稅率%) × 稅率%)
-                            editModalComponent.Entity.SalesTaxAmount = Math.Round(
-                                salesOrderDetails.Sum(d => {
-                                    var amountWithTax = d.OrderQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
-                                    var taxRate = d.TaxRate ?? 0;
-                                    return amountWithTax / (1 + taxRate / 100) * (taxRate / 100);
-                                }), 0, MidpointRounding.AwayFromZero);
-                            
-                            // 3. 金額（未稅）= 總額 - 稅額
-                            editModalComponent.Entity.TotalAmount = Math.Round(
-                                totalWithTax - editModalComponent.Entity.SalesTaxAmount, 
-                                0, MidpointRounding.AwayFromZero);
-                            
-                            // 4. 折扣金額 = Σ(數量 × 單價 × 折扣%)
-                            editModalComponent.Entity.DiscountAmount = Math.Round(
-                                salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice * (d.DiscountPercentage / 100)), 
-                                0, MidpointRounding.AwayFromZero);
-                            
-                            // 注意：TotalAmountWithTax 是計算屬性，會自動 = TotalAmount + SalesTaxAmount
-                        }
-                        break;
+                editModalComponent.Entity.TotalAmount = net;
+                editModalComponent.Entity.SalesTaxAmount = tax;
+                editModalComponent.Entity.DiscountAmount = discount;
 
-                    case TaxCalculationMethod.NoTax:
-                        // 免稅：總額 = 金額 - 折扣（稅額為 0）
-                        {
-                            // 1. 金額（折扣前）= Σ(數量 × 單價)
-                            editModalComponent.Entity.TotalAmount = Math.Round(
-                                salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice), 
-                                0, MidpointRounding.AwayFromZero);
-                            
-                            // 2. 折扣金額 = Σ(數量 × 單價 × 折扣%)
-                            editModalComponent.Entity.DiscountAmount = Math.Round(
-                                salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice * (d.DiscountPercentage / 100)), 
-                                0, MidpointRounding.AwayFromZero);
-                            
-                            // 3. 稅額 = 0（免稅）
-                            editModalComponent.Entity.SalesTaxAmount = 0;
-                            
-                            // 4. TotalAmount 需要減去折扣
-                            editModalComponent.Entity.TotalAmount = 
-                                editModalComponent.Entity.TotalAmount - 
-                                editModalComponent.Entity.DiscountAmount;
-                            
-                            // 注意：TotalAmountWithTax 會自動 = TotalAmount + SalesTaxAmount (= TotalAmount + 0)
-                        }
-                        break;
-                }
-                
                 StateHasChanged();
             }
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDetailsChanged), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDetailsChanged), GetType(),
                 additionalData: "處理銷貨明細變更失敗");
         }
     }

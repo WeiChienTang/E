@@ -641,31 +641,8 @@ ShowPrintButton="true"
     }
 
     // ===== 公開方法 (供父組件調用) =====
-
-    /// <summary>
-    /// 開啟新增商品物料清單 Modal
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        CompositionId = null;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
-    /// <summary>
-    /// 開啟編輯商品物料清單 Modal
-    /// </summary>
-    public async Task ShowEditModal(int compositionId)
-    {
-        CompositionId = compositionId;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-    
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
     // ===== Modal 管理器配置方法 =====
     
     /// <summary>

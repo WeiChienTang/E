@@ -23,8 +23,7 @@
                           SaveFailureMessage="商品類型儲存失敗"
                           RequiredPermission="ProductCategory.Read"
                           OnEntitySaved="@OnProductCategorySaved"
-                          OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnCancel="@OnCancel" />
 
 @code {
     // ===== 必要參數 =====
@@ -41,72 +40,10 @@
     private Dictionary<string, string> formSections = new();
 
     // ===== 必要方法 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task<ProductCategory?> LoadProductCategoryData()
-    {
-        try
-        {
-            if (!ProductCategoryId.HasValue)
-            {
-                // 新增模式：建立新的商品類型實體並生成編號
-                var newProductCategory = new ProductCategory
-                {
-                    Name = string.Empty,
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<ProductCategory, IProductCategoryService>(ProductCategoryService, "PCAT"),
-                    Status = EntityStatus.Active
-                };
-                
-                // 應用預填值
-                PrefilledValueHelper.ApplyPrefilledValues(newProductCategory, PrefilledValues);
-                
-                return newProductCategory;
-            }
-            
-            // 編輯模式
-            var productCategory = await ProductCategoryService.GetByIdAsync(ProductCategoryId.Value);
-            
-            if (productCategory == null)
-            {
-                // 如果找不到商品類型，建立新的預設商品類型
-                return new ProductCategory
-                {
-                    Status = EntityStatus.Active
-                };
-            }
-            return productCategory;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入商品類型資料時發生錯誤：{ex.Message}");
-            
-            // 設定安全的預設值，確保程式不會崩潰
-            return new ProductCategory
-            {
-                Code = "ERROR",
-                Name = "ERROR",
-                Status = EntityStatus.Active
-            };
-        }
-    }
-
+    private Task<ProductCategory?> LoadProductCategoryData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<ProductCategory, IProductCategoryService>(
+            ProductCategoryId, ProductCategoryService, NotificationService, "商品類型", "PCAT", PrefilledValues,
+            p => p.Name = string.Empty);
     private async Task LoadAdditionalDataAsync()
     {
         try

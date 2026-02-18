@@ -772,6 +772,34 @@
     }
     
     /// <summary>
+    /// 開啟新增模式 Modal（設定 Id = null 並開啟）
+    /// 供父組件透過 @ref 呼叫，取代子 Edit 中的重複 ShowAddModal 方法。
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        Id = null;
+        if (IdChanged.HasDelegate)
+            await IdChanged.InvokeAsync(null);
+        IsVisible = true;
+        if (IsVisibleChanged.HasDelegate)
+            await IsVisibleChanged.InvokeAsync(true);
+    }
+
+    /// <summary>
+    /// 開啟編輯模式 Modal（設定 Id 並開啟）
+    /// 供父組件透過 @ref 呼叫，取代子 Edit 中的重複 ShowEditModal 方法。
+    /// </summary>
+    public async Task ShowEditModal(int entityId)
+    {
+        Id = entityId;
+        if (IdChanged.HasDelegate)
+            await IdChanged.InvokeAsync(entityId);
+        IsVisible = true;
+        if (IsVisibleChanged.HasDelegate)
+            await IsVisibleChanged.InvokeAsync(true);
+    }
+
+    /// <summary>
     /// 重新載入實體資料（公共方法，解決組件參數不應在外部設置的問題）
     /// </summary>
     public async Task RefreshEntityAsync()

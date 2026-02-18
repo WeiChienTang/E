@@ -974,93 +974,29 @@
     }
 
     /// <summary>
-    /// 處理出貨明細變更 - 根據稅別自動計算金額欄位（與 Quotation 計算邏輯一致）
+    /// 處理出貨明細變更 - 根據稅別自動計算金額欄位
     /// </summary>
     private Task HandleDeliveryDetailsChanged(List<SalesDeliveryDetail> details)
     {
         salesDeliveryDetails = details;
-        
+
         if (editModalComponent?.Entity != null)
         {
-            var taxMethod = editModalComponent.Entity.TaxCalculationMethod;
-            
-            switch (taxMethod)
-            {
-                case TaxCalculationMethod.TaxExclusive:
-                    // 外加稅：TotalAmount = 金額 - 折扣，TotalAmountWithTax = TotalAmount + TaxAmount（自動計算）
-                    {
-                        // 折扣前金額
-                        var subtotalBeforeDiscount = Math.Round(
-                            details.Sum(d => d.DeliveryQuantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
-                        
-                        // 折扣
-                        editModalComponent.Entity.DiscountAmount = Math.Round(
-                            details.Sum(d => d.DeliveryQuantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
-                        
-                        // 稅額 = Σ(折扣後金額 × 稅率%)
-                        editModalComponent.Entity.TaxAmount = Math.Round(
-                            details.Sum(d => {
-                                var amountAfterDiscount = d.DeliveryQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
-                                var taxRate = d.TaxRate ?? 0;
-                                return amountAfterDiscount * (taxRate / 100);
-                            }), 0, MidpointRounding.AwayFromZero);
-                        
-                        // TotalAmount = 折扣後未稅金額 = 金額 - 折扣
-                        editModalComponent.Entity.TotalAmount = subtotalBeforeDiscount - editModalComponent.Entity.DiscountAmount;
-                        
-                        // TotalAmountWithTax 會自動計算 = TotalAmount + TaxAmount
-                    }
-                    break;
-                
-                case TaxCalculationMethod.TaxInclusive:
-                    // 內含稅：TotalAmount 為折扣後未稅金額，TotalAmountWithTax = TotalAmount + TaxAmount
-                    {
-                        // 稅額 = Σ(小計 / (1 + 稅率%) × 稅率%)
-                        editModalComponent.Entity.TaxAmount = Math.Round(
-                            details.Sum(d => {
-                                var amountWithTax = d.DeliveryQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
-                                var taxRate = d.TaxRate ?? 0;
-                                return amountWithTax / (1 + taxRate / 100) * (taxRate / 100);
-                            }), 0, MidpointRounding.AwayFromZero);
-                        
-                        // 折扣
-                        editModalComponent.Entity.DiscountAmount = Math.Round(
-                            details.Sum(d => d.DeliveryQuantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
-                        
-                        // TotalAmount = 折扣後未稅金額 = Σ(折扣後含稅金額) - 稅額
-                        var totalWithTax = Math.Round(
-                            details.Sum(d => d.DeliveryQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
-                        editModalComponent.Entity.TotalAmount = totalWithTax - editModalComponent.Entity.TaxAmount;
-                        
-                        // TotalAmountWithTax 會自動計算 = TotalAmount + TaxAmount
-                    }
-                    break;
-                
-                case TaxCalculationMethod.NoTax:
-                    // 免稅：TotalAmount = 金額 - 折扣，TaxAmount = 0
-                    {
-                        // 折扣前金額
-                        var subtotalBeforeDiscount = Math.Round(
-                            details.Sum(d => d.DeliveryQuantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
-                        
-                        // 折扣
-                        editModalComponent.Entity.DiscountAmount = Math.Round(
-                            details.Sum(d => d.DeliveryQuantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
-                        
-                        // 稅額 = 0（免稅）
-                        editModalComponent.Entity.TaxAmount = 0;
-                        
-                        // TotalAmount = 折扣後金額 = 金額 - 折扣
-                        editModalComponent.Entity.TotalAmount = subtotalBeforeDiscount - editModalComponent.Entity.DiscountAmount;
-                        
-                        // TotalAmountWithTax 會自動計算 = TotalAmount + 0
-                    }
-                    break;
-            }
-            
+            var (net, tax, gross, discount) = TaxCalculationHelper.CalculateFromDetailsWithDiscount(
+                details,
+                editModalComponent.Entity.TaxCalculationMethod,
+                currentTaxRate,
+                d => d.SubtotalAmount,
+                d => d.TaxRate,
+                d => d.DeliveryQuantity * d.UnitPrice);
+
+            editModalComponent.Entity.TotalAmount = net;
+            editModalComponent.Entity.TaxAmount = tax;
+            editModalComponent.Entity.DiscountAmount = discount;
+
             StateHasChanged();
         }
-        
+
         return Task.CompletedTask;
     }
 

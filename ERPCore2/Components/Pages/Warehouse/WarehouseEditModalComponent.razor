@@ -66,31 +66,9 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
-    private async Task<Warehouse?> LoadWarehouseData()
-    {
-        try
-        {
-            if (!WarehouseId.HasValue)
-            {
-                // 新增模式 - 自動產生倉庫編號
-                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<Warehouse, IWarehouseService>(WarehouseService, "WH");
-                return new Warehouse
-                {
-                    Code = generatedCode,
-                    Status = EntityStatus.Active
-                };
-            }
-
-            // 編輯模式
-            return await WarehouseService.GetByIdAsync(WarehouseId.Value);
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入倉庫資料時發生錯誤：{ex.Message}");
-            return null;
-        }
-    }
-
+    private Task<Warehouse?> LoadWarehouseData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<Warehouse, IWarehouseService>(
+            WarehouseId, WarehouseService, NotificationService, "倉庫", "WH", null);
     private async Task LoadAdditionalDataAsync()
     {
         try

@@ -23,8 +23,7 @@
                           SaveFailureMessage="車型儲存失敗"
                           RequiredPermission="VehicleType.Read"
                           OnEntitySaved="@OnVehicleTypeSaved"
-                          OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnCancel="@OnCancel" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -37,47 +36,10 @@
     private GenericEditModalComponent<VehicleType, IVehicleTypeService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task<VehicleType?> LoadVehicleTypeData()
-    {
-        try
-        {
-            if (!VehicleTypeId.HasValue)
-            {
-                var newVehicleType = new VehicleType
-                {
-                    Name = string.Empty,
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<VehicleType, IVehicleTypeService>(VehicleTypeService, "VT"),
-                    Status = EntityStatus.Active
-                };
-
-                PrefilledValueHelper.ApplyPrefilledValues(newVehicleType, PrefilledValues);
-
-                return newVehicleType;
-            }
-
-            return await VehicleTypeService.GetByIdAsync(VehicleTypeId.Value);
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入車型資料時發生錯誤：{ex.Message}");
-            return null;
-        }
-    }
-
+    private Task<VehicleType?> LoadVehicleTypeData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<VehicleType, IVehicleTypeService>(
+            VehicleTypeId, VehicleTypeService, NotificationService, "車型", "VT", PrefilledValues,
+            v => v.Name = string.Empty);
     private async Task LoadAdditionalDataAsync()
     {
         try

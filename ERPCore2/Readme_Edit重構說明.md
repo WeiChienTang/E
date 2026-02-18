@@ -14,6 +14,7 @@
 | ChildDocumentRefreshHelper | 子單據儲存後刷新 | 已完成 |
 | CustomModuleHelper | 自訂模組建立（null 保護 + 樣板簡化） | 已完成 |
 | DocumentConversionHelper | 轉單流程 | 已完成 |
+| EditDataLoaderHelper | DataLoader 共用載入/建立邏輯 | 已完成 |
 | EditModalMessages | 共用警告訊息常數 | 已完成 |
 | EntityCodeGenerationHelper | 單號產生 | 已完成 |
 | FormFieldLockHelper | 欄位鎖定/解鎖 | 已完成 |
@@ -32,23 +33,44 @@
 
 **解法**：在 `TaxCalculationHelper` 新增泛型方法 `CalculateFromDetails<TDetail>()`，接受明細列表、稅別、預設稅率和取值委派，回傳 `(decimal TotalAmount, decimal TaxAmount)` tuple。
 
-**已套用**：
-- `PurchaseOrderEditModalComponent` — `HandleDetailsChanged` + 新增模式初始化
-- `PurchaseReceivingEditModalComponent` — `HandleReceivingDetailsChanged`
+**已套用**（7 個 Edit）：
+- `PurchaseOrderEditModalComponent` — `HandleDetailsChanged` + 新增模式初始化（CalculateFromDetails）
+- `PurchaseReceivingEditModalComponent` — `HandleReceivingDetailsChanged`（CalculateFromDetails）
+- `PurchaseReturnEditModalComponent` — `HandleReturnDetailsChanged`（CalculateFromDetails）
+- `SalesReturnEditModalComponent` — `HandleReturnDetailsChanged`（CalculateFromDetails）
+- `QuotationEditModalComponent` — `HandleQuotationDetailsChanged`（CalculateFromDetailsWithDiscount）
+- `SalesOrderEditModalComponent` — `HandleDetailsChanged`（CalculateFromDetailsWithDiscount）
+- `SalesDeliveryEditModalComponent` — `HandleDeliveryDetailsChanged`（CalculateFromDetailsWithDiscount）
 
-**重構後寫法**：
+**新增方法**：`CalculateFromDetailsWithDiscount<TDetail>()` — 在 `CalculateFromDetails` 基礎上額外計算折扣前金額（GrossAmount）和折扣金額（DiscountAmount），適用於有折扣欄位的銷貨類單據。
+
+**重構後寫法**（無折扣）：
 ```csharp
 var (total, tax) = TaxCalculationHelper.CalculateFromDetails(
-    purchaseOrderDetails,
+    purchaseReturnDetails,
+    editModalComponent.Entity.TaxCalculationMethod,
+    currentTaxRate,
+    d => d.ReturnSubtotalAmount,
+    d => d.TaxRate);
+editModalComponent.Entity.TotalReturnAmount = total;
+editModalComponent.Entity.ReturnTaxAmount = tax;
+```
+
+**重構後寫法**（含折扣）：
+```csharp
+var (net, tax, gross, discount) = TaxCalculationHelper.CalculateFromDetailsWithDiscount(
+    salesOrderDetails,
     editModalComponent.Entity.TaxCalculationMethod,
     currentTaxRate,
     d => d.SubtotalAmount,
-    d => d.TaxRate);
-editModalComponent.Entity.TotalAmount = total;
-editModalComponent.Entity.PurchaseTaxAmount = tax;
+    d => d.TaxRate,
+    d => d.OrderQuantity * d.UnitPrice);
+editModalComponent.Entity.TotalAmount = net;
+editModalComponent.Entity.SalesTaxAmount = tax;
+editModalComponent.Entity.DiscountAmount = discount;
 ```
 
-**待推廣**：SalesOrderEdit、SalesDeliveryEdit、PurchaseReturnEdit、SalesReturnEdit 等（這些有折扣計算等額外邏輯，需評估是否擴充 Helper）。
+**實際刪除行數**：5 個 Edit × ~60-100 行 ≈ **~380 行**
 
 ---
 
@@ -172,61 +194,61 @@ private List<...CustomModule> GetCustomModules()
 
 **解法**：GenericEditModalComponent 的 `OnEntityLoaded` 未提供時已有預設行為（內部自動 `StateHasChanged()`）。簡單 Edit 移除此方法和參數綁定。
 
-**已套用**：4 個 Edit（DepartmentEdit 手動示範 + ProductCompositionEdit、SalesReturnEdit、InventoryStockEdit 批次處理）
+**已套用**：18 個 Edit（DepartmentEdit 手動示範 + 3 個初次批次 + 14 個 P14 連帶移除）
 
 **備註**：其他 Edit 的 HandleEntityLoaded 含有實際業務邏輯（載入明細、車輛、子單據等），保留不動。
 
-**實際刪除行數**：**~40 行**
+**實際刪除行數**：**~180 行**
 
 ---
 
-## 待重構項目
+### P14：LoadEntityData 新增模式樣板 → EditDataLoaderHelper ✅
 
-### P14：LoadEntityData 新增模式樣板 → DataLoaderHelper（評估中）
+**問題**：所有簡單 Edit 的 DataLoader 方法都有相同結構（30-40 行）：新增模式產生編號 + 設預設狀態 + 預填值，編輯模式 GetByIdAsync，外加 try/catch 錯誤處理。
 
-**問題**：所有 Edit 的 DataLoader 新增模式都有相同結構：
+**解法**：新增 `EditDataLoaderHelper.LoadOrCreateAsync<TEntity, TService>()`，封裝完整的 load-or-create 流程。支援 `Action<TEntity>` 額外初始化回呼。
 
+**已套用**（16 個 Edit）：
+- DepartmentEdit（手動示範）
+- BankEdit、CurrencyEdit、PaymentMethodEdit
+- SizeEdit、UnitEdit、ProductCategoryEdit
+- EmployeePositionEdit、RoleEdit
+- CompositionCategoryEdit、VehicleTypeEdit
+- WarehouseEdit、WarehouseLocationEdit
+- PaperSettingEdit、CompanyEdit、PrinterConfigurationEdit
+
+**重構後寫法**：
 ```csharp
-if (!XxxId.HasValue)
-{
-    var newEntity = new TEntity
-    {
-        Code = await EntityCodeGenerationHelper.GenerateForEntity<T, TService>(service, "PREFIX"),
-        Status = EntityStatus.Active
-    };
-    PrefilledValueHelper.ApplyPrefilledValues(newEntity, PrefilledValues);
-    return newEntity;
-}
+private Task<Bank?> LoadBankData()
+    => EditDataLoaderHelper.LoadOrCreateAsync<Bank, IBankService>(
+        BankId, BankService, NotificationService, "銀行", "BANK", PrefilledValues,
+        b => b.BankName = string.Empty);
 ```
 
-**解法**：新增 `DataLoaderHelper.CreateNewEntity<TEntity, TService>(service, prefix, prefilledValues, additionalInit?)`，封裝 Code 生成 + Status 預設 + 預填值。各 Edit 只需提供 prefix 和額外初始化 Action。
+**例外**：複雜 Edit（PurchaseOrder、SalesOrder 等）使用 DbContext 策略產生編號或有大量額外邏輯，不適用此 Helper。
 
-**備註**：各 Entity 的初始化差異較大（Employee 有 HireDate、RoleId 等），Helper 需支援 `Action<TEntity>` 額外初始化回呼。優先序較低。
+**實際刪除行數**：每個 Edit 約 30-40 行 × 16 個 ≈ **~500 行**
 
 ---
 
-### P15：ShowAddModal / ShowEditModal 樣板（影響部分 Edit）
+### P15：ShowAddModal / ShowEditModal 樣板 ✅
 
-**問題**：部分 Edit 有這組公開方法：
+**問題**：部分 Edit 有重複的 ShowAddModal + ShowEditModal 公開方法（各 ~7 行），邏輯相同：設定 Id + 開啟 Modal。
+
+**解法**：在 GenericEditModalComponent 新增 `ShowAddModal()` 和 `ShowEditModal(int entityId)` 方法，子 Edit 直接委派：
 
 ```csharp
-public async Task ShowAddModal()
-{
-    XxxId = null;
-    await IsVisibleChanged.InvokeAsync(true);
-}
-public async Task ShowEditModal(int id)
-{
-    XxxId = id;
-    await IsVisibleChanged.InvokeAsync(true);
-}
+public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 ```
 
-**備註**：不是每個 Edit 都有（取決於是否被外部元件直接呼叫）。影響範圍較小，優先序低。
+**已套用**（15 個 Edit）：DepartmentEdit（手動示範）+ 14 個批次處理
+
+**實際刪除行數**：每個 Edit 約 14 行 × 15 個 ≈ **~210 行**
 
 ---
 
-### P2：HandleDetailsChanged 整體模式 → DetailChangedHelper
+### P2：HandleDetailsChanged 整體模式 → 已由 P1 擴充涵蓋 ✅
 
 **問題**：每個 Edit 的 HandleDetailsChanged 方法結構相同：
 1. 更新本地明細列表
@@ -234,7 +256,7 @@ public async Task ShowEditModal(int id)
 3. 呼叫稅額計算（已用 TaxCalculationHelper.CalculateFromDetails 簡化）
 4. （部分）呼叫 StateHasChanged
 
-**備註**：P1 完成後，此方法已大幅縮短（從 ~50 行降至 ~15 行），進一步提取的價值降低。可視實際需要決定是否執行。
+**結果**：P1 擴充完成後，所有 7 個複雜 Edit 的 HandleDetailsChanged 已從 ~60-100 行縮減至 ~15-20 行。剩餘的樣板碼（更新 list + null 檢查 + try/catch）量不大，進一步提取的價值低。此項視為已完成。
 
 ---
 
@@ -267,7 +289,7 @@ public async Task ShowEditModal(int id)
 
 | 項目 | 對應 | 已套用 Edit 數量 |
 |---|---|---|
-| P1 | TaxCalculationHelper.CalculateFromDetails | 2 個（PurchaseOrder、PurchaseReceiving） |
+| P1 | TaxCalculationHelper.CalculateFromDetails / CalculateFromDetailsWithDiscount | 7 個（全部主要進銷存單據） |
 | P4 | FormFieldLockHelper.LockMultipleFields | 7 個（全部主要進銷存單據） |
 | P5 | CustomModuleHelper.CreateSingle | 7 個（全部主要進銷存單據） |
 | P7 | EditModalMessages 常數 | 7 個（全部主要進銷存單據） |
@@ -279,11 +301,11 @@ public async Task ShowEditModal(int id)
 |---|---|---|---|---|---|
 | PurchaseOrderEdit | ✅ | ✅ | ✅ | ✅ | ✅ |
 | PurchaseReceivingEdit | ✅ | ✅ | ✅ | ✅ | ✅ |
-| QuotationEdit | — | ✅ | ✅ | ✅ | ✅ |
-| PurchaseReturnEdit | — | ✅ | ✅ | ✅ | ✅（原已符合） |
-| SalesOrderEdit | — | ✅ | ✅ | ✅ | ✅ |
-| SalesDeliveryEdit | — | ✅ | ✅ | ✅ | ✅ |
-| SalesReturnEdit | — | ✅ | ✅ | ✅ | ✅（原已符合） |
+| QuotationEdit | ✅ | ✅ | ✅ | ✅ | ✅ |
+| PurchaseReturnEdit | ✅ | ✅ | ✅ | ✅ | ✅（原已符合） |
+| SalesOrderEdit | ✅ | ✅ | ✅ | ✅ | ✅ |
+| SalesDeliveryEdit | ✅ | ✅ | ✅ | ✅ | ✅ |
+| SalesReturnEdit | ✅ | ✅ | ✅ | ✅ | ✅（原已符合） |
 
 ### 已完成（第三階段）
 
@@ -291,14 +313,9 @@ public async Task ShowEditModal(int id)
 |---|---|---|---|
 | P11 | HandleCancel + CloseModal 冗餘消除 | 37 個 | ~850 行 |
 | P12 | OnEntitySaved EventCallback（改 Generic） | 36 個 | ~600+ 行 |
-| P13 | HandleEntityLoaded 預設行為（改 Generic） | 4 個 | ~40 行 |
-
-### 待重構（第四階段）
-
-| 項目 | 說明 | 影響 Edit 數 | 難度 |
-|---|---|---|---|
-| P14 | DataLoaderHelper 新增模式樣板 | ~40 | 中（差異大） |
-| P15 | ShowAddModal/ShowEditModal 樣板 | 部分 | 低（影響小） |
+| P13 | HandleEntityLoaded 預設行為（改 Generic） | 18 個 | ~180 行 |
+| P14 | EditDataLoaderHelper 新增模式樣板 | 16 個 | ~500 行 |
+| P15 | ShowAddModal/ShowEditModal 委派 Generic | 15 個 | ~210 行 |
 
 ### 未來（需較大改動 GenericEditModalComponent）
 
@@ -307,6 +324,278 @@ public async Task ShowEditModal(int id)
 | P3 | OnTaxMethodChanged 參數 |
 | P6 | DetailSectionBuilder 組件 |
 | P8 | DocumentConversionValidator |
+
+---
+
+## 全面模式分析報告（2026-02-18）
+
+以下是對所有 43 個 EditModalComponent 的全面模式分析，按三個複雜度層級分類，識別可提取為 Helper 的重複模式。
+
+### Edit 複雜度分類
+
+| 層級 | 特徵 | 數量 | 代表範例 |
+|---|---|---|---|
+| **簡單型** | 無 Table、無 ModalManager、UseGenericSave | 15 個 | DepartmentEdit, BankEdit, CurrencyEdit |
+| **中等型** | 有 ModalManager + ActionButton，可能有 CustomModule | 11 個 | EmployeeEdit, SupplierEdit, VehicleEdit |
+| **複雜型** | ModalManager + 嵌入 Table + SaveHandler + 稅額計算 | 17 個 | PurchaseOrderEdit, SalesOrderEdit, InventoryStockEdit |
+
+#### 簡單型（15 個）
+UnitEdit, SizeEdit, ProductCategoryEdit, BankEdit, CurrencyEdit, PaymentMethodEdit,
+RoleEdit, EmployeePositionEdit, CompositionCategoryEdit, PaperSettingEdit,
+PrinterConfigurationEdit, ReportPrintConfigurationEdit, WarehouseLocationEdit,
+VehicleTypeEdit, SalesReturnReasonEdit
+
+#### 中等型（11 個）
+CustomerEdit, EmployeeEdit, SupplierEdit, ProductEdit, VehicleEdit,
+VehicleMaintenanceEdit, CompanyEdit, WarehouseEdit, PermissionEdit,
+TextMessageTemplateEdit, InventoryTransactionEdit
+
+#### 複雜型（17 個）
+PurchaseOrderEdit, PurchaseReceivingEdit, PurchaseReturnEdit,
+QuotationEdit, SalesOrderEdit, SalesDeliveryEdit, SalesReturnEdit,
+ProductCompositionEdit, InventoryStockEdit, StockTakingEdit,
+MaterialIssueEdit, SetoffDocumentEdit, ProductionScheduleEdit,
+ProductionScheduleItemEdit, QuotationCompositionEdit
+
+---
+
+### 模式 1：CreateXxxContent RenderFragment「三態判斷」
+
+**影響範圍**：24 個 RenderFragment 方法，跨 20 個 Edit 檔案
+
+**共通結構**（每個方法約 30-65 行）：
+```
+State 1: Entity == null         → Spinner（載入中）
+State 2: 資料未就緒/條件不足    → alert-info 提示訊息（如「請先選擇廠商」）
+State 3: 正常                   → 渲染 Table 組件
+State 4: catch                  → alert-warning/danger 錯誤訊息
+```
+
+**所有實例**：
+
+| 檔案 | 方法名稱 | State 2 條件 |
+|---|---|---|
+| PurchaseOrderEdit | CreateProductManagerContent | SupplierId <= 0 → 請先選擇廠商 |
+| SalesOrderEdit | CreateProductManagerContent | CustomerId <= 0 → 請先選擇客戶 |
+| SalesDeliveryEdit | CreateDeliveryDetailManagerContent | CustomerId <= 0 → 請先選擇客戶 |
+| SalesReturnEdit | CreateReturnDetailManagerContent | CustomerId <= 0 → 請先選擇客戶 |
+| PurchaseReturnEdit | CreateReturnDetailManagerContent | SupplierId <= 0 → 請先選擇廠商 |
+| PurchaseReceivingEdit | CreateReceivingDetailManagerContent | SupplierId <= 0 → 請先選擇廠商 |
+| QuotationEdit | CreateQuotationDetailManagerContent | CustomerId <= 0 → 請先選擇客戶 |
+| InventoryStockEdit | CreateStockDetailContent | ProductId <= 0 → 請先選擇商品 |
+| StockTakingEdit | CreateDetailTableContent | （無前置條件） |
+| MaterialIssueEdit | CreateDetailManagerContent | （無前置條件） |
+| ProductCompositionEdit | CreateDetailManagerContent | ProductId <= 0 → 請先選擇商品 |
+| ProductionScheduleEdit | CreateScheduleItemsContent | ProductCompositionId <= 0 → 請先選擇成品 |
+| InventoryTransactionEdit | CreateDetailTableContent | ProductId <= 0 → 請先選擇商品 |
+| SetoffDocumentEdit | CreateSetoffProductDetailManagerContent | CustomerId/SupplierId 條件 |
+| SetoffDocumentEdit | CreateSetoffPaymentDetailManagerContent | 同上 |
+| SetoffDocumentEdit | CreateSetoffPrepaymentDetailManagerContent | 同上 |
+| WarehouseEdit | CreateWarehouseLocationTableContent | （無前置條件） |
+| CustomerEdit | CreateVehicleTabContent | （Tab 型，無前置條件） |
+| EmployeeEdit | CreateVehicleTabContent | （Tab 型，無前置條件） |
+| SupplierEdit | CreateVehicleTabContent | （Tab 型，無前置條件） |
+| TextMessageTemplateEdit | CreateHeaderTextContent / CreateDetailFormatContent / CreateFooterTextContent / CreatePreviewContent | （特殊型） |
+
+**可提取性評估**：⭐⭐⭐ 高
+
+**建議方案**：由於 RenderFragment 本身包含 Razor 語法，無法直接用純 C# Helper 封裝。但可以**將外層三態邏輯封裝成 Blazor 組件**或**提供 Builder 模式產生 RenderFragment**。
+
+**候選方案 A — DetailSectionWrapper 組件**（推薦）：
+```razor
+<DetailSectionWrapper Entity="@editModalComponent?.Entity"
+                      IsDataReady="@(availableProducts != null && availableProducts.Any())"
+                      PreconditionMet="@(editModalComponent?.Entity?.SupplierId > 0)"
+                      PreconditionMessage="請先選擇廠商後再進行採購明細管理"
+                      NoDataMessage="無可用的商品資料，請聯繫系統管理員"
+                      ErrorMessage="載入明細管理器時發生錯誤">
+    <PurchaseOrderTable ... />
+</DetailSectionWrapper>
+```
+
+**預估效果**：每個方法從 ~40-65 行 → ~10-15 行（節省 ~600-1000 行）
+
+---
+
+### 模式 2：OnFieldValueChanged — ActionButton 更新
+
+**影響範圍**：21 個 Edit 檔案，共 39 個 OnXxxSavedWrapper 方法
+
+**共通結構**：
+```csharp
+private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+{
+    try
+    {
+        if (fieldChange.PropertyName == nameof(Entity.XxxId))
+        {
+            await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                xxxModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+        }
+        // ... 其他欄位的 if 判斷
+    }
+    catch (Exception) { await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤"); }
+}
+```
+
+**變體分類**：
+
+| 類型 | 說明 | 檔案數 |
+|---|---|---|
+| **純 ActionButton** | 只有 ActionButtonHelper 呼叫 | 8 個（Employee, Supplier, Customer 等） |
+| **ActionButton + TaxMethod** | 額外處理 TaxCalculationMethod 變更 | 7 個（PurchaseOrder, SalesOrder 等） |
+| **ActionButton + 自訂邏輯** | 額外處理特殊欄位（如載入關聯選項） | 6 個（SalesReturn, SetoffDocument 等） |
+
+**可提取性評估**：⭐⭐ 中
+
+**分析**：
+- 「純 ActionButton」型可以完全自動化：GenericEditModalComponent 透過 ModalManagerCollection 自動處理 ActionButton 更新
+- 「ActionButton + TaxMethod」型：TaxMethod 變更觸發 HandleDetailsChanged 重算，可作為 Generic 內建行為
+- 「ActionButton + 自訂邏輯」型：自訂邏輯差異大，需保留各自的 OnFieldValueChanged
+
+**建議方案**：
+1. **P3（已規劃）**：GenericEditModalComponent 新增 `OnTaxMethodChanged` 參數，自動偵測 TaxCalculationMethod 變更
+2. **新增 P16**：GenericEditModalComponent 新增 `ModalManagers` 參數，自動處理 ActionButton 更新，消除「純 ActionButton」型的 OnFieldValueChanged
+
+**預估效果**：8 個「純 ActionButton」型 Edit 可完全移除 OnFieldValueChanged 方法（每個 ~15-25 行 ≈ ~160 行）
+
+---
+
+### 模式 3：OnParametersSetAsync — 資料載入守衛
+
+**影響範圍**：21 個 Edit 檔案（中等型 + 複雜型）
+
+**共通結構**（每個方法約 10-25 行）：
+```csharp
+protected override async Task OnParametersSetAsync()
+{
+    if (IsVisible && !isDataLoaded)
+    {
+        // 可能有額外重置邏輯
+        await LoadAdditionalDataAsync();
+        await InitializeFormFieldsAsync();
+        isDataLoaded = true;
+    }
+    else if (!IsVisible)
+    {
+        isDataLoaded = false;
+    }
+}
+```
+
+**變體分類**：
+
+| 類型 | 說明 | 檔案數 |
+|---|---|---|
+| **標準型** | 僅 Load + Init + flag | 13 個 |
+| **重置型** | 額外重置 details list / flags | 6 個（InventoryStock, MaterialIssue 等） |
+| **複雜型** | 額外載入子單據、條件選項更新 | 2 個（SalesReturn, ProductionSchedule） |
+
+**可提取性評估**：⭐⭐⭐ 高
+
+**分析**：核心守衛邏輯（IsVisible + isDataLoaded flag）完全一致。差異僅在額外重置動作。
+
+**建議方案 — 移入 GenericEditModalComponent**：
+- Generic 新增 `[Parameter] public Func<Task>? LoadAdditionalDataAsync` 和 `[Parameter] public Func<Task>? InitializeFormFieldsAsync`
+- Generic 內部管理 `isDataLoaded` flag，自動在 `OnParametersSetAsync` 呼叫
+- 需要額外重置的 Edit 可提供 `[Parameter] public Action? OnModalOpening` 回呼
+
+**預估效果**：21 個 Edit 可移除 OnParametersSetAsync override（每個 ~10-25 行 ≈ ~350 行）
+
+**風險**：中等。涉及 GenericEditModalComponent 生命週期修改，需注意現有 Generic 的 OnParametersSetAsync 行為。
+
+---
+
+### 模式 4：OnXxxSavedWrapper — Modal 儲存轉發
+
+**影響範圍**：17 個 Edit 檔案，共 39 個 Wrapper 方法
+
+**共通結構**（每個方法 4-5 行）：
+```csharp
+private async Task OnPaymentMethodSavedWrapper(PaymentMethod saved)
+{
+    await paymentMethodModalManager.HandleEntitySavedAsync(saved, shouldAutoSelect: true);
+}
+```
+
+**可提取性評估**：⭐⭐ 中（每個方法很短，但數量多）
+
+**分析**：每個 Wrapper 都是一行委派。但因 Razor 模板綁定需要具體方法簽名，無法用泛型完全消除。
+
+**建議方案**：可在 ModalManagerCollection 上新增通用的 `CreateSavedHandler<T>()` 方法，回傳 `Func<T, Task>`：
+```csharp
+// 重構前：每個關聯實體一個 wrapper
+private async Task OnPaymentMethodSavedWrapper(PaymentMethod saved) => ...
+private async Task OnDepartmentSavedWrapper(Department saved) => ...
+
+// 重構後：由 ModalManagerCollection 產生
+// Razor 中直接綁定 modalManagers.CreateSavedHandler<PaymentMethod>(nameof(Entity.PaymentMethodId))
+```
+
+**預估效果**：消除 39 個 Wrapper 方法（每個 ~5 行 ≈ ~195 行）
+
+---
+
+### 模式 5：LoadAdditionalDataAsync — 下拉資料載入
+
+**影響範圍**：21 個 Edit 檔案
+
+**共通操作**：
+
+| 操作 | 說明 | 出現次數 |
+|---|---|---|
+| GetAllAsync() | 載入關聯實體清單（Supplier, Product, Customer 等） | 全部 21 個 |
+| TaxCalculationHelper.LoadTaxRateAsync() | 載入稅率 | 7 個（進銷存單據） |
+| AutoCompleteConfigBuilder.Build() | 建立 AutoComplete 配置 | ~15 個 |
+| 下拉選項初始化 | TaxCalculationMethod 等 SelectOption | ~7 個 |
+
+**可提取性評估**：⭐ 低
+
+**分析**：雖然所有 Edit 都有此方法，但每個 Edit 載入的資料集完全不同（不同的 Service、不同的實體）。無法用單一 Helper 涵蓋。AutoCompleteConfigBuilder 已經是簡化後的寫法。
+
+**建議**：維持現狀。各 Edit 的 LoadAdditionalDataAsync 是業務特定的，無法進一步通用化。
+
+---
+
+### 模式 6：SaveHandler — 明細儲存
+
+**影響範圍**：12 個 Edit 使用自訂 SaveHandler，27 個使用 UseGenericSave
+
+**自訂 SaveHandler 分類**：
+
+| 類型 | 說明 | 檔案 |
+|---|---|---|
+| **明細儲存型** | 將明細 attach 到主檔後儲存 | PurchaseOrder, Quotation, SalesOrder, SalesDelivery, SalesReturn, PurchaseReturn, ProductComposition, MaterialIssue, StockTaking |
+| **關聯管理型** | 管理多對多或特殊關聯 | Supplier, Employee, Permission |
+| **特殊型** | 特殊業務邏輯 | TextMessageTemplate |
+
+**可提取性評估**：⭐ 低
+
+**分析**：「明細儲存型」的共通部分僅是 `entity.Details = detailsList` 賦值，其餘都是業務特定驗證。已有的 Service 層處理了大部分儲存邏輯。
+
+---
+
+### 優先度排序
+
+| 優先序 | 模式 | 項目編號 | 預估節省行數 | 風險 | 建議 |
+|---|---|---|---|---|---|
+| 1 | CreateXxxContent 三態判斷 | **P6** | ~600-1000 行 | 低 | 建立 DetailSectionWrapper 組件 |
+| 2 | OnParametersSetAsync 守衛 | **P17** | ~350 行 | 中 | 移入 GenericEditModalComponent |
+| 3 | OnXxxSavedWrapper 轉發 | **P18** | ~195 行 | 低 | ModalManagerCollection.CreateSavedHandler |
+| 4 | OnFieldValueChanged 純 ActionButton | **P16** | ~160 行 | 中 | Generic 自動處理 ModalManagers |
+| 5 | OnTaxMethodChanged 分支 | **P3** | ~70 行 | 低 | Generic 新增參數 |
+
+**總計預估**：~1,375-1,775 行
+
+---
+
+### 各層級 Edit 剩餘可簡化空間
+
+| 層級 | 可受益的模式 | 已完成的模式 |
+|---|---|---|
+| **簡單型** | P17（OnParametersSetAsync） | P11-P15 全部適用 ✅ |
+| **中等型** | P6, P16, P17, P18 | P11-P15 部分適用 ✅ |
+| **複雜型** | P3, P6, P16, P17, P18 | P1, P4, P5, P7, P10, P11-P15 ✅ |
 
 ---
 

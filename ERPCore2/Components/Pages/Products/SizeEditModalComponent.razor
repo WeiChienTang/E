@@ -23,8 +23,7 @@
                           SaveFailureMessage="尺寸儲存失敗"
                           RequiredPermission="Size.Read"
                           OnEntitySaved="@OnSizeSaved"
-                          OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnCancel="@OnCancel" />
 
 @code {
     // ===== 必要參數 =====
@@ -41,55 +40,10 @@
     private Dictionary<string, string> formSections = new();
 
     // ===== 必要方法 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task<Size?> LoadSizeData()
-    {
-        try
-        {
-            if (!SizeId.HasValue)
-            {
-                // 新增模式 - 返回預設值
-                var newSize = new Size
-                {
-                    Name = string.Empty,
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Size, ISizeService>(SizeService, "SIZE"),
-                    Status = EntityStatus.Active
-                };
-                
-                // 應用預填值
-                PrefilledValueHelper.ApplyPrefilledValues(newSize, PrefilledValues);
-                
-                return newSize;
-            }
-            
-            // 編輯模式 - 載入現有資料
-            return await SizeService.GetByIdAsync(SizeId.Value);
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入尺寸資料時發生錯誤：{ex.Message}");
-            return null;
-        }
-    }
-
+    private Task<Size?> LoadSizeData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<Size, ISizeService>(
+            SizeId, SizeService, NotificationService, "尺寸", "SIZE", PrefilledValues,
+            s => s.Name = string.Empty);
     private async Task LoadAdditionalDataAsync()
     {
         try

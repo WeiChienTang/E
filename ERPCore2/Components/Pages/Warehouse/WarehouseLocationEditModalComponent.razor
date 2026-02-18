@@ -28,8 +28,7 @@
                           SaveFailureMessage="倉庫內位置儲存失敗"
                           RequiredPermission="WarehouseLocation.Read"
                           OnEntitySaved="@OnWarehouseLocationSaved"
-                          OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnCancel="@OnCancel" />
 
 @* 倉庫編輯 Modal *@
 <WarehouseEditModalComponent @ref="warehouseEditModal"
@@ -62,25 +61,6 @@
     private ModalManagerCollection modalManagers = default!;
 
     // ===== 必要方法 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-    
     // 資料載入狀態標記
     private bool isDataLoaded = false;
     
@@ -120,31 +100,9 @@
             isDataLoaded = false;
         }
     }
-    private async Task<WarehouseLocation?> LoadWarehouseLocationData()
-    {
-        try
-        {
-            if (!WarehouseLocationId.HasValue)
-            {
-                // 新增模式 - 自動產生庫位編號
-                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<WarehouseLocation, IWarehouseLocationService>(WarehouseLocationService, "WL");
-                return new WarehouseLocation
-                {
-                    Code = generatedCode,
-                    Status = EntityStatus.Active
-                };
-            }
-
-            // 編輯模式
-            return await WarehouseLocationService.GetByIdAsync(WarehouseLocationId.Value);
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入倉庫內位置資料時發生錯誤：{ex.Message}");
-            return null;
-        }
-    }
-
+    private Task<WarehouseLocation?> LoadWarehouseLocationData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<WarehouseLocation, IWarehouseLocationService>(
+            WarehouseLocationId, WarehouseLocationService, NotificationService, "庫位", "WL", null);
     private async Task LoadAdditionalDataAsync()
     {
         try

@@ -22,8 +22,7 @@
                           SaveFailureMessage="付款方式儲存失敗"
                           RequiredPermission="PaymentMethod.Read"
                           OnEntitySaved="@OnPaymentMethodSaved"
-                          OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnCancel="@OnCancel" />
 
 @code {
     // ===== 參數 =====
@@ -40,72 +39,10 @@
     private Dictionary<string, string> formSections = new();
 
     // ===== 生命週期 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-    // ===== 資料載入 =====
-    private async Task<PaymentMethod?> LoadPaymentMethodData()
-    {
-        try
-        {
-            if (!PaymentMethodId.HasValue) 
-            {
-                // 新增模式：建立新的付款方式實體
-                var newPaymentMethod = new PaymentMethod
-                {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<PaymentMethod, IPaymentMethodService>(PaymentMethodService, "PAY"),
-                    Name = string.Empty,
-                    IsDefault = false,
-                    Status = EntityStatus.Active
-                };
-                
-                // 應用預填值
-                PrefilledValueHelper.ApplyPrefilledValues(newPaymentMethod, PrefilledValues);
-                
-                return newPaymentMethod;
-            }
-
-            var paymentMethod = await PaymentMethodService.GetByIdAsync(PaymentMethodId.Value);            
-            
-            if (paymentMethod == null)
-            {
-                // 如果找不到付款方式，建立新的預設付款方式
-                return new PaymentMethod
-                {
-                    Status = EntityStatus.Active
-                };
-            }
-            return paymentMethod;
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPaymentMethodData), GetType(), additionalData: $"載入付款方式資料失敗 - PaymentMethodId: {PaymentMethodId}");
-            await NotificationService.ShowErrorAsync("載入付款方式資料時發生錯誤");
-            
-            // 設定安全的預設值，確保程式不會崩潰
-            return new PaymentMethod
-            {
-                Name = "ERROR",
-                Status = EntityStatus.Active
-            };
-        }
-    }
-
+    private Task<PaymentMethod?> LoadPaymentMethodData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<PaymentMethod, IPaymentMethodService>(
+            PaymentMethodId, PaymentMethodService, NotificationService, "付款方式", "PAY", PrefilledValues,
+            p => { p.Name = string.Empty; p.IsDefault = false; });
         protected override void OnParametersSet()
     {
         if (IsVisible)
@@ -176,44 +113,6 @@
     }
 
     // ===== 公開方法 (供父組件調用) =====
-
-    /// <summary>
-    /// 開啟新增付款方式 Modal
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        try
-        {
-            PaymentMethodId = null;
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(true);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType(), additionalData: "開啟新增 Modal 失敗");
-            await NotificationService.ShowErrorAsync("開啟新增付款方式視窗時發生錯誤");
-        }
-    }
-
-    /// <summary>
-    /// 開啟編輯付款方式 Modal
-    /// </summary>
-    public async Task ShowEditModal(int paymentMethodId)
-    {
-        try
-        {
-            PaymentMethodId = paymentMethodId;
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(true);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType(), additionalData: $"開啟編輯 Modal 失敗 - PaymentMethodId: {paymentMethodId}");
-            await NotificationService.ShowErrorAsync("開啟編輯付款方式視窗時發生錯誤");
-        }
-    }
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 }

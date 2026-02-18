@@ -22,8 +22,7 @@
                           SaveFailureMessage="貨幣儲存失敗"
                           RequiredPermission="Currency.Read"
                           OnEntitySaved="@OnCurrencySaved"
-                          OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnCancel="@OnCancel" />
 
 @code {
     // ===== 參數 =====
@@ -40,25 +39,6 @@
     private Dictionary<string, string> formSections = new();
 
     // ===== 生命週期 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-    
     protected override void OnParametersSet()
     {
         if (IsVisible)
@@ -66,59 +46,10 @@
             InitializeFormFields();
         }
     }
-    // ===== 資料載入 =====
-    private async Task<Currency?> LoadCurrencyData()
-    {
-        try
-        {
-            if (!CurrencyId.HasValue) 
-            {
-                // 新增模式：建立新的貨幣實體並生成編號
-                var newCurrency = new Currency
-                {
-                    Name = string.Empty,
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Currency, ICurrencyService>(CurrencyService, "CUR"),
-                    Status = EntityStatus.Active,
-                    IsBaseCurrency = false,
-                    ExchangeRate = 1m
-                };
-                
-                // 應用預填值
-                PrefilledValueHelper.ApplyPrefilledValues(newCurrency, PrefilledValues);
-                
-                return newCurrency;
-            }
-
-            var currency = await CurrencyService.GetByIdAsync(CurrencyId.Value);            
-            
-            if (currency == null)
-            {
-                // 如果找不到貨幣，建立新的預設貨幣
-                return new Currency
-                {
-                    Status = EntityStatus.Active,
-                    IsBaseCurrency = false,
-                    ExchangeRate = 1m
-                };
-            }
-            return currency;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入貨幣資料時發生錯誤：{ex.Message}");
-            
-            // 設定安全的預設值，確保程式不會崩潰
-            return new Currency
-            {
-                Code = "ERROR",
-                Name = "ERROR",
-                Status = EntityStatus.Active,
-                IsBaseCurrency = false,
-                ExchangeRate = 1m
-            };
-        }
-    }
-
+    private Task<Currency?> LoadCurrencyData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<Currency, ICurrencyService>(
+            CurrencyId, CurrencyService, NotificationService, "貨幣", "CUR", PrefilledValues,
+            c => { c.Name = string.Empty; c.IsBaseCurrency = false; c.ExchangeRate = 1m; });
     // ===== 表單初始化 =====
     private void InitializeFormFields()
     {
@@ -201,28 +132,6 @@
     }
 
     // ===== 公開方法 (供父組件調用) =====
-
-    /// <summary>
-    /// 開啟新增貨幣 Modal
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        CurrencyId = null;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
-    /// <summary>
-    /// 開啟編輯貨幣 Modal
-    /// </summary>
-    public async Task ShowEditModal(int currencyId)
-    {
-        CurrencyId = currencyId;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 }

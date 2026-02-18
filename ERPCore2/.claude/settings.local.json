@@ -17,7 +17,8 @@
       "Bash(do sed -i 's/OnCancel=\"\"@HandleCancel\"\"/OnCancel=\"\"@OnCancel\"\"/g' \"$f\")",
       "Bash(echo:*)",
       "Bash(done)",
-      "Bash(node --version:*)"
+      "Bash(node --version:*)",
+      "Read(//c/**)"
     ]
   }
 }

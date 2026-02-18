@@ -22,8 +22,7 @@
                           SaveFailureMessage="物料清單類型儲存失敗"
                           RequiredPermission="CompositionCategory.Read"
                           OnEntitySaved="@OnCompositionCategorySaved"
-                          OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnCancel="@OnCancel" />
 
 @code {
     // ===== 參數 =====
@@ -40,70 +39,10 @@
     private Dictionary<string, string> formSections = new();
 
     // ===== 生命週期 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-    // ===== 資料載入 =====
-    private async Task<CompositionCategory?> LoadCompositionCategoryData()
-    {
-        try
-        {
-            if (!CompositionCategoryId.HasValue) 
-            {
-                // 新增模式：建立新的物料清單類型實體並生成編號
-                var newCategory = new CompositionCategory
-                {
-                    Name = string.Empty,
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<CompositionCategory, ICompositionCategoryService>(CompositionCategoryService, "CC"),
-                    Status = EntityStatus.Active
-                };
-                
-                // 應用預填值
-                PrefilledValueHelper.ApplyPrefilledValues(newCategory, PrefilledValues);
-                
-                return newCategory;
-            }
-
-            var category = await CompositionCategoryService.GetByIdAsync(CompositionCategoryId.Value);            
-            
-            if (category == null)
-            {
-                // 如果找不到物料清單類型，建立新的預設實體
-                return new CompositionCategory
-                {
-                    Status = EntityStatus.Active
-                };
-            }
-            return category;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入物料清單類型資料時發生錯誤：{ex.Message}");
-            
-            // 設定安全的預設值，確保程式不會崩潰
-            return new CompositionCategory
-            {
-                Name = "ERROR",
-                Status = EntityStatus.Active
-            };
-        }
-    }
-
+    private Task<CompositionCategory?> LoadCompositionCategoryData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<CompositionCategory, ICompositionCategoryService>(
+            CompositionCategoryId, CompositionCategoryService, NotificationService, "物料清單類型", "CC", PrefilledValues,
+            c => c.Name = string.Empty);
     protected override void OnParametersSet()
     {
         if (IsVisible)
@@ -164,28 +103,6 @@
     }
 
     // ===== 公開方法 (供父組件調用) =====
-
-    /// <summary>
-    /// 開啟新增物料清單類型 Modal
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        CompositionCategoryId = null;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
-    /// <summary>
-    /// 開啟編輯物料清單類型 Modal
-    /// </summary>
-    public async Task ShowEditModal(int categoryId)
-    {
-        CompositionCategoryId = categoryId;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 }

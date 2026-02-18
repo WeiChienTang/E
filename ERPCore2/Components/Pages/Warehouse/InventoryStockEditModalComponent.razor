@@ -655,33 +655,10 @@
             await NotificationService.ShowErrorAsync($"處理庫存明細變更時發生錯誤：{ex.Message}");
         }
     }
-    
+
     // ===== 公開方法 (供父組件調用) =====
-
-    /// <summary>
-    /// 開啟新增庫存 Modal
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        InventoryStockId = null;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
-    /// <summary>
-    /// 開啟編輯庫存 Modal
-    /// </summary>
-    public async Task ShowEditModal(int inventoryStockId)
-    {
-        InventoryStockId = inventoryStockId;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
     /// <summary>
     /// 開啟新增庫存 Modal 並預填商品
     /// 注意：倉庫資訊現在存儲在 InventoryStockDetails 中，不再屬於主檔

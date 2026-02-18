@@ -919,87 +919,24 @@
         try
         {
             quotationDetails = details;
-            
+
             if (editModalComponent?.Entity != null)
             {
-                var taxMethod = editModalComponent.Entity.TaxCalculationMethod;
-                
-                switch (taxMethod)
-                {
-                    case TaxCalculationMethod.TaxExclusive:
-                        // 外加稅：總額 = 金額 - 折扣 + 稅額
-                        {
-                            // 金額
-                            editModalComponent.Entity.SubtotalBeforeDiscount = Math.Round(
-                                details.Sum(d => d.Quantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
-                            
-                            // 折扣
-                            editModalComponent.Entity.DiscountAmount = Math.Round(
-                                details.Sum(d => d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
-                            
-                            // 稅額 = Σ(折扣後金額 × 稅率%)
-                            editModalComponent.Entity.QuotationTaxAmount = Math.Round(
-                                details.Sum(d => {
-                                    var amountAfterDiscount = d.Quantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
-                                    var taxRate = d.TaxRate ?? 0;
-                                    return amountAfterDiscount * (taxRate / 100);
-                                }), 0, MidpointRounding.AwayFromZero);
-                            
-                            // 總額 = 金額 - 折扣 + 稅額
-                            editModalComponent.Entity.TotalAmount = 
-                                editModalComponent.Entity.SubtotalBeforeDiscount - editModalComponent.Entity.DiscountAmount + editModalComponent.Entity.QuotationTaxAmount;
-                        }
-                        break;
-                    
-                    case TaxCalculationMethod.TaxInclusive:
-                        // 內含稅：總額已含稅，反推金額、折扣、稅額
-                        {
-                            // 總額（含稅）= Σ(數量 × 單價 × (1 - 折扣%))
-                            editModalComponent.Entity.TotalAmount = Math.Round(
-                                details.Sum(d => d.Quantity * d.UnitPrice * (1 - d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
-                            
-                            // 稅額 = Σ(小計 / (1 + 稅率%) × 稅率%)
-                            editModalComponent.Entity.QuotationTaxAmount = Math.Round(
-                                details.Sum(d => {
-                                    var amountWithTax = d.Quantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
-                                    var taxRate = d.TaxRate ?? 0;
-                                    return amountWithTax / (1 + taxRate / 100) * (taxRate / 100);
-                                }), 0, MidpointRounding.AwayFromZero);
-                            
-                            // 金額（未稅）
-                            editModalComponent.Entity.SubtotalBeforeDiscount = Math.Round(
-                                details.Sum(d => d.Quantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
-                            
-                            // 折扣
-                            editModalComponent.Entity.DiscountAmount = Math.Round(
-                                details.Sum(d => d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
-                        }
-                        break;
-                    
-                    case TaxCalculationMethod.NoTax:
-                        // 免稅：總額 = 金額 - 折扣（稅額為 0）
-                        {
-                            // 金額
-                            editModalComponent.Entity.SubtotalBeforeDiscount = Math.Round(
-                                details.Sum(d => d.Quantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
-                            
-                            // 折扣
-                            editModalComponent.Entity.DiscountAmount = Math.Round(
-                                details.Sum(d => d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
-                            
-                            // 稅額 = 0（免稅）
-                            editModalComponent.Entity.QuotationTaxAmount = 0;
-                            
-                            // 總額 = 金額 - 折扣
-                            editModalComponent.Entity.TotalAmount = 
-                                editModalComponent.Entity.SubtotalBeforeDiscount - editModalComponent.Entity.DiscountAmount;
-                        }
-                        break;
-                }
-                
-                // 更新主檔的 QuotationDetails 集合
+                var (net, tax, gross, discount) = TaxCalculationHelper.CalculateFromDetailsWithDiscount(
+                    details,
+                    editModalComponent.Entity.TaxCalculationMethod,
+                    0m,
+                    d => d.SubtotalAmount,
+                    d => d.TaxRate,
+                    d => d.Quantity * d.UnitPrice);
+
+                editModalComponent.Entity.SubtotalBeforeDiscount = gross;
+                editModalComponent.Entity.DiscountAmount = discount;
+                editModalComponent.Entity.QuotationTaxAmount = tax;
+                editModalComponent.Entity.TotalAmount = net + tax;
+
                 editModalComponent.Entity.QuotationDetails = details;
-                
+
                 StateHasChanged();
             }
         }

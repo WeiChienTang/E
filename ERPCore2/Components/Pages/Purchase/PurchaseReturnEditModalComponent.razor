@@ -1196,68 +1196,20 @@
     private async Task HandleReturnDetailsChanged(List<PurchaseReturnDetail> returnDetails)
     {
         try
-        { 
-            // 儲存退貨明細到內部狀態
+        {
             purchaseReturnDetails = returnDetails ?? new List<PurchaseReturnDetail>();
-            
-            // 更新主檔的總金額和稅額
+
             if (editModalComponent?.Entity != null)
             {
-                var taxMethod = editModalComponent.Entity.TaxCalculationMethod;
-                
-                // 計算明細小計（根據稅別）
-                var detailSubtotals = purchaseReturnDetails.Select(d => new
-                {
-                    Detail = d,
-                    BaseAmount = d.ReturnQuantity * d.OriginalUnitPrice,
-                    TaxRate = d.TaxRate ?? currentTaxRate
-                }).ToList();
-                
-                switch (taxMethod)
-                {
-                    case TaxCalculationMethod.TaxExclusive:
-                        // 外加稅：金額 = Σ(退回數量 × 單價)（四捨五入到整數），稅額 = 金額 × 稅率%（四捨五入到整數）
-                        editModalComponent.Entity.TotalReturnAmount = Math.Round(detailSubtotals.Sum(d => d.BaseAmount), 0, MidpointRounding.AwayFromZero);
-                        editModalComponent.Entity.ReturnTaxAmount = detailSubtotals.Sum(d =>
-                        {
-                            var detailTaxAmount = d.BaseAmount * (d.TaxRate / 100m);
-                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
-                        });
-                        break;
-                        
-                    case TaxCalculationMethod.TaxInclusive:
-                        // 內含稅：總額 = Σ(退回數量 × 單價)（四捨五入到整數），金額 = 總額 - 稅額，稅額 = 總額 / (1 + 稅率%) × 稅率%（四捨五入到整數）
-                        var totalWithTax = detailSubtotals.Sum(d => d.BaseAmount);
-                        var totalTax = detailSubtotals.Sum(d =>
-                        {
-                            // 反推稅額 = 含稅總額 / (1 + 稅率%) × 稅率%（四捨五入到整數）
-                            var detailTaxAmount = d.BaseAmount / (1 + d.TaxRate / 100m) * (d.TaxRate / 100m);
-                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
-                        });
-                        editModalComponent.Entity.TotalReturnAmount = Math.Round(totalWithTax - totalTax, 0, MidpointRounding.AwayFromZero);
-                        editModalComponent.Entity.ReturnTaxAmount = totalTax;
-                        break;
-                        
-                    case TaxCalculationMethod.NoTax:
-                        // 免稅：金額 = Σ(退回數量 × 單價)（四捨五入到整數），稅額 = 0
-                        editModalComponent.Entity.TotalReturnAmount = Math.Round(detailSubtotals.Sum(d => d.BaseAmount), 0, MidpointRounding.AwayFromZero);
-                        editModalComponent.Entity.ReturnTaxAmount = 0;
-                        break;
-                        
-                    default:
-                        // 預設使用外加稅（四捨五入到整數）
-                        editModalComponent.Entity.TotalReturnAmount = Math.Round(detailSubtotals.Sum(d => d.BaseAmount), 0, MidpointRounding.AwayFromZero);
-                        editModalComponent.Entity.ReturnTaxAmount = detailSubtotals.Sum(d =>
-                        {
-                            var detailTaxAmount = d.BaseAmount * (d.TaxRate / 100m);
-                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
-                        });
-                        break;
-                }
-                
-                // 含稅總金額會自動計算（TotalReturnAmountWithTax 是計算屬性）
-                //    = TotalReturnAmount + ReturnTaxAmount
-                
+                var (total, tax) = TaxCalculationHelper.CalculateFromDetails(
+                    purchaseReturnDetails,
+                    editModalComponent.Entity.TaxCalculationMethod,
+                    currentTaxRate,
+                    d => d.ReturnSubtotalAmount,
+                    d => d.TaxRate);
+                editModalComponent.Entity.TotalReturnAmount = total;
+                editModalComponent.Entity.ReturnTaxAmount = tax;
+
                 StateHasChanged();
             }
         }

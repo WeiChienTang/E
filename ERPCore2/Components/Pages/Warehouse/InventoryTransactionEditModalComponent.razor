@@ -391,28 +391,7 @@
         }
     }
 
-    /// <summary>
-    /// 開啟新增庫存異動記錄 Modal（通常不支援手動新增）
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        InventoryTransactionId = null;
-        currentTransaction = null;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
-    /// <summary>
-    /// 開啟檢視庫存異動記錄 Modal
-    /// </summary>
-    public async Task ShowEditModal(int inventoryTransactionId)
-    {
-        InventoryTransactionId = inventoryTransactionId;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
+    // ===== 公開方法 (供父組件調用) =====
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 }

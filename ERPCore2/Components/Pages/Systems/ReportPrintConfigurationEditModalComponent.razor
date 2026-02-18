@@ -342,31 +342,8 @@
     }
 
     // ===== 公開方法 (供父組件調用) =====
-
-    /// <summary>
-    /// 開啟新增報表列印配置 Modal
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        ReportPrintConfigurationId = null;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
-    /// <summary>
-    /// 開啟編輯報表列印配置 Modal
-    /// </summary>
-    public async Task ShowEditModal(int reportPrintConfigurationId)
-    {
-        ReportPrintConfigurationId = reportPrintConfigurationId;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
     /// <summary>
     /// 取得目前的實體資料
     /// </summary>

@@ -490,5 +490,61 @@ public static class TaxCalculationHelper
         }
     }
 
+    /// <summary>
+    /// 根據稅別計算含折扣的完整金額資訊
+    /// 適用於有折扣欄位的單據（報價單、銷貨訂單、銷貨/出貨單等）
+    ///
+    /// 此方法在 CalculateFromDetails 的基礎上，額外計算折扣前金額（GrossAmount）和折扣金額（DiscountAmount），
+    /// 避免各 Edit 重複撰寫 Σ(數量×單價) 和 Σ(數量×單價×折扣%) 的計算邏輯。
+    /// </summary>
+    /// <typeparam name="TDetail">明細型別</typeparam>
+    /// <param name="details">明細列表</param>
+    /// <param name="taxMethod">稅別計算方式</param>
+    /// <param name="defaultTaxRate">預設稅率（當明細無獨立稅率時使用）</param>
+    /// <param name="getSubtotal">取得明細折扣後小計金額的委派（例如 d => d.SubtotalAmount）</param>
+    /// <param name="getTaxRate">取得明細獨立稅率的委派（回傳 null 表示使用預設稅率）</param>
+    /// <param name="getGrossAmount">取得明細折扣前金額的委派（例如 d => d.Quantity * d.UnitPrice）</param>
+    /// <returns>
+    /// (NetAmount 折扣後未稅金額, TaxAmount 稅額, GrossAmount 折扣前金額, DiscountAmount 折扣金額)
+    /// </returns>
+    /// <remarks>
+    /// 使用範例：
+    /// <code>
+    /// var (net, tax, gross, discount) = TaxCalculationHelper.CalculateFromDetailsWithDiscount(
+    ///     quotationDetails,
+    ///     editModalComponent.Entity.TaxCalculationMethod,
+    ///     currentTaxRate,
+    ///     d => d.SubtotalAmount,
+    ///     d => d.TaxRate,
+    ///     d => d.Quantity * d.UnitPrice);
+    /// editModalComponent.Entity.SubtotalBeforeDiscount = gross;
+    /// editModalComponent.Entity.DiscountAmount = discount;
+    /// editModalComponent.Entity.QuotationTaxAmount = tax;
+    /// editModalComponent.Entity.TotalAmount = net + tax;
+    /// </code>
+    /// </remarks>
+    public static (decimal NetAmount, decimal TaxAmount, decimal GrossAmount, decimal DiscountAmount)
+        CalculateFromDetailsWithDiscount<TDetail>(
+            IEnumerable<TDetail> details,
+            TaxCalculationMethod taxMethod,
+            decimal defaultTaxRate,
+            Func<TDetail, decimal> getSubtotal,
+            Func<TDetail, decimal?> getTaxRate,
+            Func<TDetail, decimal> getGrossAmount)
+    {
+        var detailList = details as IList<TDetail> ?? details.ToList();
+
+        var (netAmount, taxAmount) = CalculateFromDetails(
+            detailList, taxMethod, defaultTaxRate, getSubtotal, getTaxRate);
+
+        var grossAmount = Math.Round(
+            detailList.Sum(d => getGrossAmount(d)), 0, MidpointRounding.AwayFromZero);
+
+        var discountAmount = Math.Round(
+            detailList.Sum(d => getGrossAmount(d) - getSubtotal(d)), 0, MidpointRounding.AwayFromZero);
+
+        return (netAmount, taxAmount, grossAmount, discountAmount);
+    }
+
     #endregion
 }

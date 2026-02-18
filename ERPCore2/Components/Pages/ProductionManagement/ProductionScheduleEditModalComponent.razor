@@ -946,29 +946,6 @@
     }
 
     // ===== 公開方法 (供父組件調用) =====
-
-    /// <summary>
-    /// 開啟新增生產排程 Modal
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        ProductionScheduleId = null;
-        scheduleItems = new();
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
-    /// <summary>
-    /// 開啟編輯生產排程 Modal
-    /// </summary>
-    public async Task ShowEditModal(int scheduleId)
-    {
-        ProductionScheduleId = scheduleId;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 }

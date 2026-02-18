@@ -76,51 +76,10 @@
         }
     }
 
-    private async Task<Department?> LoadDepartmentData()
-    {
-        try
-        {
-            if (!DepartmentId.HasValue) 
-            {
-                // 新增模式：建立新的部門實體並生成編號
-                var newDepartment = new Department
-                {
-                    Name = string.Empty,
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Department, IDepartmentService>(DepartmentService, "DEPT"),
-                    Status = EntityStatus.Active
-                };
-                
-                // 應用預填值
-                PrefilledValueHelper.ApplyPrefilledValues(newDepartment, PrefilledValues);
-                
-                return newDepartment;
-            }
-
-            var department = await DepartmentService.GetByIdAsync(DepartmentId.Value);            
-            
-            if (department == null)
-            {
-                // 如果找不到部門，建立新的預設部門
-                return new Department
-                {
-                    Status = EntityStatus.Active
-                };
-            }
-            return department;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入部門資料時發生錯誤：{ex.Message}");
-            
-            // 設定安全的預設值，確保程式不會崩潰
-            return new Department
-            {
-                Code = "ERROR",
-                Name = "ERROR",
-                Status = EntityStatus.Active
-            };
-        }
-    }
+    private Task<Department?> LoadDepartmentData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<Department, IDepartmentService>(
+            DepartmentId, DepartmentService, NotificationService, "部門", "DEPT", PrefilledValues,
+            d => d.Name = string.Empty);
 
     protected override void OnParametersSet()
     {
@@ -190,28 +149,6 @@
     }
 
     // ===== 公開方法 (供父組件調用) =====
-
-    /// <summary>
-    /// 開啟新增部門 Modal
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        DepartmentId = null;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
-    /// <summary>
-    /// 開啟編輯部門 Modal
-    /// </summary>
-    public async Task ShowEditModal(int departmentId)
-    {
-        DepartmentId = departmentId;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 }

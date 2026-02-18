@@ -22,8 +22,7 @@
                           SaveFailureMessage="銀行儲存失敗"
                           RequiredPermission="Bank.Read"
                           OnEntitySaved="@OnBankSaved"
-                          OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnCancel="@OnCancel" />
 
 @code {
     // ===== 參數 =====
@@ -40,25 +39,6 @@
     private Dictionary<string, string> formSections = new();
 
     // ===== 生命週期 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-    
     protected override void OnParametersSet()
     {
         if (IsVisible)
@@ -66,52 +46,10 @@
             InitializeFormFields();
         }
     }
-    // ===== 資料載入 =====
-    private async Task<Bank?> LoadBankData()
-    {
-        try
-        {
-            if (!BankId.HasValue) 
-            {
-                // 新增模式：建立新的銀行實體並生成編號
-                var newBank = new Bank
-                {
-                    BankName = string.Empty,
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Bank, IBankService>(BankService, "BANK"),
-                    Status = EntityStatus.Active
-                };
-                
-                // 應用預填值
-                PrefilledValueHelper.ApplyPrefilledValues(newBank, PrefilledValues);
-                
-                return newBank;
-            }
-
-            var bank = await BankService.GetByIdAsync(BankId.Value);            
-            
-            if (bank == null)
-            {
-                // 如果找不到銀行，建立新的預設銀行
-                return new Bank
-                {
-                    Status = EntityStatus.Active
-                };
-            }
-            return bank;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入銀行資料時發生錯誤：{ex.Message}");
-            
-            // 設定安全的預設值，確保程式不會崩潰
-            return new Bank
-            {
-                BankName = "ERROR",
-                Status = EntityStatus.Active
-            };
-        }
-    }
-
+    private Task<Bank?> LoadBankData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<Bank, IBankService>(
+            BankId, BankService, NotificationService, "銀行", "BANK", PrefilledValues,
+            b => b.BankName = string.Empty);
     // ===== 表單初始化 =====
     private void InitializeFormFields()
     {
@@ -215,28 +153,6 @@
     }
 
     // ===== 公開方法 (供父組件調用) =====
-
-    /// <summary>
-    /// 開啟新增銀行 Modal
-    /// </summary>
-    public async Task ShowAddModal()
-    {
-        BankId = null;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
-
-    /// <summary>
-    /// 開啟編輯銀行 Modal
-    /// </summary>
-    public async Task ShowEditModal(int bankId)
-    {
-        BankId = bankId;
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(true);
-        }
-    }
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 }
