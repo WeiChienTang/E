@@ -39,8 +39,8 @@
                           RequiredPermission="SetoffDocument.Read"
                           CustomValidator="@ValidateBeforeSave"
                           AfterSave="@SaveSetoffDocumentDetailsAsync"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnSetoffDocumentSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomModules="@GetCustomModules()"
                           OnEntityLoaded="@HandleEntityLoaded"
@@ -689,25 +689,6 @@
             throw; // 重新拋出例外，讓 GenericEditModalComponent 知道儲存失敗
         }
     }
-    
-    /// <summary>
-    /// 儲存成功後處理（通知父組件）
-    /// </summary>
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (editModalComponent?.Entity != null && OnSetoffDocumentSaved.HasDelegate)
-            {
-                await OnSetoffDocumentSaved.InvokeAsync(editModalComponent.Entity);
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"通知父組件時發生錯誤：{ex.Message}");
-        }
-    }
-    
     /// <summary>
     /// 處理商品明細變更事件，更新沖款單的各項金額欄位
     /// </summary>
@@ -838,18 +819,6 @@
         
         StateHasChanged();
     }
-
-    private async Task HandleCancel()
-    {
-        await OnCancel.InvokeAsync();
-        await CloseModal();
-    }
-
-    private async Task CloseModal()
-    {
-        await IsVisibleChanged.InvokeAsync(false);
-    }
-
     private async Task<SetoffDocument?> LoadSetoffDocumentData()
     {
         try

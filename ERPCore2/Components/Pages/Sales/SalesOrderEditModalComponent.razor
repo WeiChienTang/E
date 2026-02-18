@@ -43,8 +43,8 @@
                           SaveSuccessMessage="@(SalesOrderId.HasValue ? "訂單更新成功" : "訂單新增成功")"
                           SaveFailureMessage="訂單儲存失敗"
                           RequiredPermission="SalesOrder.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnSalesOrderSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
@@ -262,37 +262,6 @@
             await NotificationService.ShowErrorAsync($"參數設置時發生錯誤：{ex.Message}");
         }
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (OnSalesOrderSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnSalesOrderSaved.InvokeAsync(editModalComponent.Entity);
-            }
-            }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"關閉視窗時發生錯誤：{ex.Message}");
-        }
-    }
-
     private async Task<SalesOrder?> LoadSalesOrderData()
     {
         try

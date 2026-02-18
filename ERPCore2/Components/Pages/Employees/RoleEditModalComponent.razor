@@ -22,8 +22,8 @@
                           SaveSuccessMessage="@(RoleId.HasValue ? "權限組更新成功" : "權限組新增成功")"
                           SaveFailureMessage="權限組儲存失敗"
                           RequiredPermission="Role.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnRoleSaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @code {
@@ -59,51 +59,6 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
-
-    // ===== 事件處理 =====
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            // 如果父組件需要知道權限組已儲存
-            if (OnRoleSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnRoleSaved.InvokeAsync(editModalComponent.Entity);
-            }
-
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(false);
-        }
-    }
-
     // ===== 資料載入 =====
     private async Task LoadAdditionalDataAsync()
     {

@@ -392,6 +392,13 @@
     [Parameter] public EventCallback OnSaveSuccess { get; set; }
     [Parameter] public EventCallback OnSaveFailure { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+
+    /// <summary>
+    /// 儲存成功後觸發，傳回已儲存的實體。
+    /// 用於取代子 Edit 中的 HandleSaveSuccess 中轉方法。
+    /// 與 OnSaveSuccess 可共存：OnEntitySaved 傳回實體，OnSaveSuccess 不傳參數。
+    /// </summary>
+    [Parameter] public EventCallback<TEntity> OnEntitySaved { get; set; }
     [Parameter] public EventCallback OnPrint { get; set; }
     [Parameter] public EventCallback OnPreview { get; set; }
     [Parameter] public Func<(string PropertyName, object? Value), Task>? OnFieldChanged { get; set; }
@@ -866,7 +873,11 @@
                         // 保持新增模式：重置旗標並重新載入新增表單
                         _stayInAddMode = false;
                         
-                        // 觸發 OnSaveSuccess（讓父組件刷新列表）
+                        // 觸發 OnEntitySaved 和 OnSaveSuccess（讓父組件刷新列表）
+                        if (OnEntitySaved.HasDelegate && Entity != null)
+                        {
+                            await OnEntitySaved.InvokeAsync(Entity);
+                        }
                         if (OnSaveSuccess.HasDelegate)
                         {
                             await OnSaveSuccess.InvokeAsync();
@@ -905,11 +916,17 @@
                     }
                 }
                 
+                // 觸發 OnEntitySaved（傳回實體）
+                if (OnEntitySaved.HasDelegate && Entity != null)
+                {
+                    await OnEntitySaved.InvokeAsync(Entity);
+                }
+
                 if (OnSaveSuccess.HasDelegate)
                 {
                     await OnSaveSuccess.InvokeAsync();
                 }
-                
+
                 // 根據 CloseOnSave 參數決定是否關閉 Modal
                 if (CloseOnSave)
                 {

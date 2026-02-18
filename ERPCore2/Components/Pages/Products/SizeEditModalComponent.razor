@@ -22,8 +22,8 @@
                           SaveSuccessMessage="@(SizeId.HasValue ? "尺寸更新成功" : "尺寸新增成功")"
                           SaveFailureMessage="尺寸儲存失敗"
                           RequiredPermission="Size.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnSizeSaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @code {
@@ -151,53 +151,5 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (OnSizeSaved.HasDelegate)
-            {
-                // 傳遞實際儲存的實體資料
-                await OnSizeSaved.InvokeAsync(editModalComponent?.Entity ?? new Size());
-            }
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        try
-        {
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"關閉對話框時發生錯誤：{ex.Message}");
-        }
     }
 }

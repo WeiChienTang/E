@@ -22,8 +22,8 @@
                           SaveSuccessMessage="@(VehicleTypeId.HasValue ? "車型更新成功" : "車型新增成功")"
                           SaveFailureMessage="車型儲存失敗"
                           RequiredPermission="VehicleType.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnVehicleTypeSaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @code {
@@ -149,51 +149,5 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (OnVehicleTypeSaved.HasDelegate)
-            {
-                await OnVehicleTypeSaved.InvokeAsync(editModalComponent?.Entity ?? new VehicleType());
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        try
-        {
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"關閉對話框時發生錯誤：{ex.Message}");
-        }
     }
 }

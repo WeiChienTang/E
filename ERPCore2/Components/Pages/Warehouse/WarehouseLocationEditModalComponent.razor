@@ -27,8 +27,8 @@
                           SaveSuccessMessage="@(WarehouseLocationId.HasValue ? "倉庫內位置更新成功" : "倉庫內位置新增成功")"
                           SaveFailureMessage="倉庫內位置儲存失敗"
                           RequiredPermission="WarehouseLocation.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnWarehouseLocationSaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @* 倉庫編輯 Modal *@
@@ -120,55 +120,6 @@
             isDataLoaded = false;
         }
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (OnWarehouseLocationSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                // 如果有指定儲存成功回調，則執行
-                await OnWarehouseLocationSaved.InvokeAsync(editModalComponent.Entity);
-            }
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        try
-        {
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"關閉視窗時發生錯誤：{ex.Message}");
-        }
-    }
-
     private async Task<WarehouseLocation?> LoadWarehouseLocationData()
     {
         try

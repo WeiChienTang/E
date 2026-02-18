@@ -43,8 +43,8 @@
                           SaveSuccessMessage="@(PurchaseOrderId.HasValue ? "採購單更新成功" : "採購單新增成功")"
                           SaveFailureMessage="採購單儲存失敗"
                           RequiredPermission="PurchaseOrder.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnPurchaseOrderSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomValidator="@ValidatePurchaseOrderDetailsAsync"
                           CustomModules="@GetCustomModules()"
@@ -202,39 +202,6 @@
 
         await base.OnParametersSetAsync();
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (OnPurchaseOrderSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnPurchaseOrderSaved.InvokeAsync(editModalComponent.Entity);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
-                additionalData: "採購單編輯Modal儲存成功處理失敗");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), 
-                additionalData: "採購單編輯Modal取消處理失敗");
-        }
-    }
-
     private async Task<PurchaseOrder?> LoadPurchaseOrderData()
     {
         try

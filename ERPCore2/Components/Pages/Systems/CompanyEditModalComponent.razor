@@ -23,8 +23,8 @@
                           SaveSuccessMessage="@(CompanyId.HasValue ? "公司更新成功" : "公司新增成功")"
                           SaveFailureMessage="公司儲存失敗"
                           RequiredPermission="Company.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnCompanySaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           CustomActionButtons="@LogoManagementButtons" />
 
@@ -355,51 +355,6 @@
     {
         return formFields;
     }
-
-    // ===== 事件處理 =====
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            // 如果父組件需要知道公司已儲存
-            if (OnCompanySaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnCompanySaved.InvokeAsync(editModalComponent.Entity);
-            }
-
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(false);
-        }
-    }
-
     // ===== LOGO 管理相關 =====
     
     private InputFile? logoInputFile;

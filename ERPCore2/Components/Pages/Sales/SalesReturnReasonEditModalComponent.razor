@@ -22,8 +22,8 @@
                           SaveSuccessMessage="@(SalesReturnReasonId.HasValue ? "退貨原因更新成功" : "退貨原因新增成功")"
                           SaveFailureMessage="退貨原因儲存失敗"
                           RequiredPermission="SalesReturnReason.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnSalesReturnReasonSaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @code {
@@ -155,36 +155,5 @@
             .AddToSection(FormSectionNames.AdditionalData,
                 srr => srr.Remarks)
             .Build();
-    }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (OnSalesReturnReasonSaved.HasDelegate)
-            {
-                // 傳遞實際儲存的實體資料
-                await OnSalesReturnReasonSaved.InvokeAsync(editModalComponent?.Entity ?? new SalesReturnReason());
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), additionalData: "處理儲存成功事件失敗");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), additionalData: "處理取消事件失敗");
-        }
     }
 }

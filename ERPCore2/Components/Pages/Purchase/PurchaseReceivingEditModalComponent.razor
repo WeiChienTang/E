@@ -50,8 +50,8 @@
                           SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? "進貨更新成功" : "進貨新增成功")"
                           SaveFailureMessage="進貨儲存失敗"
                           RequiredPermission="PurchaseReceiving.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnPurchaseReceivingSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           GetStatusMessage="@GetPurchaseReceivingStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
@@ -240,46 +240,6 @@
             await NotificationService.ShowErrorAsync($"參數設置時發生錯誤：{ex.Message}");
         }
     }
-
-    /// <summary>
-    /// 處理儲存成功事件
-    /// </summary>
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            // 如果父組件需要知道進貨已儲存
-            if (OnPurchaseReceivingSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnPurchaseReceivingSaved.InvokeAsync(editModalComponent.Entity);
-            }
-            // 不需要手動關閉 Modal，GenericEditModalComponent 會處理
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 處理取消事件
-    /// </summary>
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-            // 不要直接調用 CloseModal，讓 GenericEditModalComponent 處理
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"關閉視窗時發生錯誤：{ex.Message}");
-        }
-    }
-
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）
     /// </summary>

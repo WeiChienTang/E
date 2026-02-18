@@ -35,8 +35,8 @@
                           SaveSuccessMessage="@(VehicleId.HasValue ? "車輛更新成功" : "車輛新增成功")"
                           SaveFailureMessage="車輛儲存失敗"
                           RequiredPermission="Vehicle.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnVehicleSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
@@ -189,26 +189,6 @@
             isDataLoaded = false;
         }
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        if (editModalComponent?.Entity != null)
-        {
-            await OnVehicleSaved.InvokeAsync(editModalComponent.Entity);
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        await OnCancel.InvokeAsync();
-        await CloseModal();
-    }
-
-    private async Task CloseModal()
-    {
-        await IsVisibleChanged.InvokeAsync(false);
-    }
-
     private async Task<Vehicle?> LoadVehicleData()
     {
         try

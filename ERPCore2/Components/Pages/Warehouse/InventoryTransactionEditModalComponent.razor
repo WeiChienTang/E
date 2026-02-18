@@ -26,7 +26,7 @@
                           DataLoader="@LoadInventoryTransactionData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           RequiredPermission="InventoryTransaction.Read"
-                          OnCancel="@HandleCancel"
+                          OnCancel="@OnCancel"
                           ShowSaveButton="false"
                           ShowPrintButton="false"
                           CancelButtonText="關閉"
@@ -130,33 +130,6 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), additionalData: "處理取消事件時發生錯誤");
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(false);
-        }
-    }
-
     // ===== 資料載入 =====
     private async Task LoadAdditionalDataAsync()
     {

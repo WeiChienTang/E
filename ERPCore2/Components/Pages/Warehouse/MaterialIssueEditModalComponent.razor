@@ -32,8 +32,8 @@
                           SaveSuccessMessage="@(MaterialIssueId.HasValue ? "領料單更新成功" : "領料單新增成功")"
                           SaveFailureMessage="領料單儲存失敗"
                           RequiredPermission="MaterialIssue.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnMaterialIssueSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomValidator="@ValidateMaterialIssueDetailsAsync"
                           CustomModules="@GetCustomModules()"
@@ -133,57 +133,6 @@
             await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
         }
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (OnMaterialIssueSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnMaterialIssueSaved.InvokeAsync(editModalComponent.Entity);
-            }
-
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
-                additionalData: "領料單編輯Modal儲存成功處理失敗");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), 
-                additionalData: "領料單編輯Modal取消處理失敗");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        try
-        {
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CloseModal), GetType(), 
-                additionalData: "關閉Modal時發生錯誤");
-        }
-    }
-
     // ===== 資料載入方法 =====
 
     private async Task<MaterialIssue?> LoadMaterialIssueData()

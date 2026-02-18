@@ -33,8 +33,8 @@
                           SaveSuccessMessage="@(ReportPrintConfigurationId.HasValue ? "報表列印配置更新成功" : "報表列印配置新增成功")"
                           SaveFailureMessage="報表列印配置儲存失敗"
                           RequiredPermission="ReportPrintConfiguration.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnReportPrintConfigurationSaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @code {
@@ -89,51 +89,6 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
-
-    // ===== 事件處理 =====
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            // 如果父組件需要知道報表列印配置已儲存
-            if (OnReportPrintConfigurationSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnReportPrintConfigurationSaved.InvokeAsync(editModalComponent.Entity);
-            }
-
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(false);
-        }
-    }
-
     // ===== 資料載入 =====
     private async Task LoadAdditionalDataAsync()
     {

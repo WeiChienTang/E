@@ -23,8 +23,8 @@
                           SaveSuccessMessage="@(PrinterConfigurationId.HasValue ? "印表機設定更新成功" : "印表機設定新增成功")"
                           SaveFailureMessage="印表機設定儲存失敗"
                           RequiredPermission="PrinterConfiguration.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnPrinterConfigurationSaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           CustomActionButtons="@CustomActionButtons" />
 
@@ -70,35 +70,6 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
-
-    // ===== 事件處理 =====
-    private async Task HandleSaveSuccess()
-    {
-        // 直接使用 editModalComponent.Entity，儲存後 GenericEditModalComponent 會更新此實體（包含新增時產生的 Id）
-        if (editModalComponent?.Entity != null)
-        {
-            await OnPrinterConfigurationSaved.InvokeAsync(editModalComponent.Entity);
-        }
-        // CloseModal 已由 GenericEditModalComponent 統一控制
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(),
-                additionalData: "處理印表機設定取消事件時發生錯誤");
-        }
-    }
-
     private async Task HandleTestPrint()
     {
         try
@@ -149,15 +120,6 @@
             await NotificationService.ShowErrorAsync("測試列印時發生錯誤，請檢查印表機配置");
         }
     }
-
-    private async Task CloseModal()
-    {
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(false);
-        }
-    }
-
     // ===== 資料載入 =====
     private async Task<PrinterConfiguration?> LoadPrinterConfigurationData()
     {

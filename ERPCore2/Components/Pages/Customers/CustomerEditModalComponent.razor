@@ -35,7 +35,7 @@
                           SaveFailureMessage="客戶儲存失敗"
                           RequiredPermission="Customer.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
@@ -221,18 +221,6 @@
         }
         // CloseModal 已由 GenericEditModalComponent 統一控制
     }
-
-    private async Task HandleCancel()
-    {
-        await OnCancel.InvokeAsync();
-        await CloseModal();
-    }
-
-    private async Task CloseModal()
-    {
-        await IsVisibleChanged.InvokeAsync(false);
-    }
-
     private async Task<Customer?> LoadCustomerData()
     {
         try

@@ -22,8 +22,8 @@
                           SaveSuccessMessage="@(WarehouseId.HasValue ? "倉庫更新成功" : "倉庫新增成功")"
                           SaveFailureMessage="倉庫儲存失敗"
                           RequiredPermission="Warehouse.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnWarehouseSaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           CustomModules="@GetCustomModules()" />
 
@@ -66,61 +66,6 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            // 儲存成功後刷新庫位 Table（新增模式轉為編輯模式時需要）
-            if (warehouseLocationTable != null && editModalComponent?.Entity != null)
-            {
-                await warehouseLocationTable.RefreshAsync();
-            }
-            
-            if (OnWarehouseSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                // 如果有指定儲存成功回調，則執行
-                await OnWarehouseSaved.InvokeAsync(editModalComponent.Entity);
-            }
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        try
-        {
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"關閉視窗時發生錯誤：{ex.Message}");
-        }
-    }
-
     private async Task<Warehouse?> LoadWarehouseData()
     {
         try

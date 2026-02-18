@@ -11,7 +11,13 @@
       "Bash(ls:*)",
       "Bash(git mv:*)",
       "Bash(git add:*)",
-      "Bash(dotnet ef database update:*)"
+      "Bash(dotnet ef database update:*)",
+      "Bash(dir:*)",
+      "Bash(while read f)",
+      "Bash(do sed -i 's/OnCancel=\"\"@HandleCancel\"\"/OnCancel=\"\"@OnCancel\"\"/g' \"$f\")",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(node --version:*)"
     ]
   }
 }

@@ -37,11 +37,10 @@
                           SaveSuccessMessage="@(CompositionId.HasValue ? "商品物料清單更新成功" : "商品物料清單新增成功")"
                           SaveFailureMessage="商品物料清單儲存失敗"
                           RequiredPermission="ProductComposition.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnCompositionSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
-                          OnEntityLoaded="@HandleEntityLoaded"
-                          ShowPrintButton="true"
+ShowPrintButton="true"
                           PrintButtonText="列印"
                           ReportService="@BOMReportService"
                           ReportId="@ReportIds.BOMReport"
@@ -99,39 +98,6 @@
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
     private ModalManagerCollection modalManagers = default!;
-
-    // ===== 生命週期 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時，重新載入對應的明細資料
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 1. 重新載入明細資料
-            await LoadCompositionDetailsAsync();
-            
-            // 🔑 關鍵：立即觸發 UI 更新，確保 Table 元件收到新的參數
-            // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
-            StateHasChanged();
-            
-            // 2. 觸發 Table 元件刷新
-            if (detailManager != null)
-            {
-                await detailManager.RefreshDetailsAsync();
-            }
-            
-            // 3. 最後再次更新 UI（確保所有變更都反映在畫面上）
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-    
     // 資料載入狀態標記
     private bool isDataLoaded = false;
     
@@ -178,51 +144,6 @@
         
         await base.OnParametersSetAsync();
     }
-
-    // ===== 事件處理 =====
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            // 如果父組件需要知道商品物料清單已儲存
-            if (OnCompositionSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnCompositionSaved.InvokeAsync(editModalComponent.Entity);
-            }
-
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(false);
-        }
-    }
-
     // ===== 資料載入 =====
     private async Task LoadAdditionalDataAsync()
     {

@@ -40,8 +40,8 @@
                           SaveSuccessMessage="@(ProductId.HasValue ? "編輯商品成功" : "新增商品成功")"
                           SaveFailureMessage="商品儲存失敗"
                           RequiredPermission="Product.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnProductSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
@@ -253,53 +253,6 @@
         
         StateHasChanged();
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (OnProductSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnProductSaved.InvokeAsync(editModalComponent.Entity);
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"儲存成功後處理失敗：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"取消操作失敗：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        try
-        {
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"關閉視窗失敗：{ex.Message}");
-        }
-    }
-
     private async Task<Product?> LoadProductData()
     {
         try

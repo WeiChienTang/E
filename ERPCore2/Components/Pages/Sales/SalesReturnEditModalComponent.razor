@@ -51,8 +51,8 @@
                           SaveSuccessMessage="@(SalesReturnId.HasValue ? "銷售退貨更新成功" : "銷售退貨新增成功")"
                           SaveFailureMessage="銷售退貨儲存失敗"
                           RequiredPermission="SalesReturn.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnSalesReturnSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
@@ -63,7 +63,7 @@
                           ReportId="@ReportIds.SalesReturn"
                           ReportPreviewTitle="銷貨退回單預覽"
                           GetReportDocumentName="@(e => $"銷貨退回單-{e.Code}")"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+/>
 
 @* 客戶編輯 Modal *@
 <CustomerEditModalComponent @ref="customerEditModal"
@@ -261,44 +261,6 @@
             await NotificationService.ShowErrorAsync("開啟銷售退貨單時發生錯誤");
         }
     }
-
-    /// <summary>
-    /// 處理儲存成功事件
-    /// </summary>
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            // 如果父組件需要知道銷售退貨已儲存
-            if (editModalComponent?.Entity != null && OnSalesReturnSaved.HasDelegate)
-            {
-                await OnSalesReturnSaved.InvokeAsync(editModalComponent.Entity);
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 處理取消事件
-    /// </summary>
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
     /// <summary>
     /// 載入銷售退貨資料
     /// </summary>
@@ -862,39 +824,6 @@
     {
         return await EntityCodeGenerationHelper.GenerateForEntity<SalesReturn, ISalesReturnService>(SalesReturnService, DbContext);
     }
-
-    // ===== 銷售退貨明細管理方法 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 方案 A + D 重構：明細已由 DataLoader 載入，Table 自動偵測參數變化
-    /// 只需處理 UI 刷新和業務狀態設定
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            //  關鍵：重置狀態標記
-            isDetailDataReady = false;
-            hasUndeletableDetails = false;
-            
-            // 方案 A + D：
-            // - 明細已由 DataLoader (LoadSalesReturnData) 載入完成
-            // - Table 組件會自動偵測 ExistingReturnDetails 參數變化並重新載入
-            // - 只需觸發 StateHasChanged() 讓 Table 收到新的參數
-            
-            isDetailDataReady = true;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
-                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
-            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
-            isDetailDataReady = true; // 即使錯誤也要允許渲染
-        }
-    }
-    
     /// <summary>
     /// 載入銷售退貨明細
     /// </summary>

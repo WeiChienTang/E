@@ -37,8 +37,8 @@
                           SaveSuccessMessage="@(StockTakingId.HasValue ? "盤點單更新成功" : "盤點單新增成功")"
                           SaveFailureMessage="盤點單儲存失敗"
                           RequiredPermission="StockTaking.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnStockTakingSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomValidator="@ValidateStockTakingDetailsAsync"
                           CustomModules="@GetCustomModules()"
@@ -213,39 +213,6 @@
             await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
         }
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (OnStockTakingSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnStockTakingSaved.InvokeAsync(editModalComponent.Entity);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(),
-                additionalData: "盤點單編輯Modal儲存成功處理失敗");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(),
-                additionalData: "盤點單編輯Modal取消處理失敗");
-        }
-    }
-
     // ===== 資料載入方法 =====
 
     private async Task<StockTaking?> LoadStockTakingData()

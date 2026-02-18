@@ -22,8 +22,8 @@
                           SaveSuccessMessage="@(ProductCategoryId.HasValue ? "商品類型更新成功" : "商品類型新增成功")"
                           SaveFailureMessage="商品類型儲存失敗"
                           RequiredPermission="ProductCategory.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnProductCategorySaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @code {
@@ -177,45 +177,5 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            // 如果父組件需要知道商品類型已儲存
-            if (OnProductCategorySaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnProductCategorySaved.InvokeAsync(editModalComponent.Entity);
-            }
-
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        await IsVisibleChanged.InvokeAsync(false);
     }
 }

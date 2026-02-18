@@ -30,11 +30,11 @@
                           SaveSuccessMessage="@(InventoryStockId.HasValue ? "庫存更新成功" : "庫存新增成功")"
                           SaveFailureMessage="庫存儲存失敗"
                           RequiredPermission="InventoryStock.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnInventoryStockSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomModules="@GetCustomModules()"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+/>
 
 @* 商品編輯 Modal *@
 <ProductEditModalComponent @ref="productEditModal"
@@ -150,99 +150,6 @@
 
         await base.OnParametersSetAsync();
     }
-
-    // ===== 事件處理 =====
-    
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時，重新載入對應的明細資料-=098 
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 1. 重新載入明細資料
-            await LoadInventoryStockDetails(loadedEntityId);
-            
-            //  關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
-            // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
-            StateHasChanged();
-            
-            // 2. 觸發 Table 元件刷新（此時 ExistingDetails 已經是新的資料）
-            if (inventoryStockDetailManager != null)
-            {
-                await inventoryStockDetailManager.RefreshDetailsAsync();
-            }
-            
-            // 3. 最後再次更新 UI（確保所有變更都反映在畫面上）
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入明細資料時發生錯誤：{ex.Message}");
-        }
-    }
-    
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            //  關鍵修正：儲存成功後刷新明細資料
-            // 這確保新增的明細會獲得正確的 ID，避免重複新增
-            if (editModalComponent?.Entity != null && editModalComponent.Entity.Id > 0)
-            {
-                // 1. 重新載入明細資料
-                await LoadInventoryStockDetails(editModalComponent.Entity.Id);
-                
-                // 2. 觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
-                StateHasChanged();
-                
-                // 3. 觸發 Table 元件刷新
-                if (inventoryStockDetailManager != null)
-                {
-                    await inventoryStockDetailManager.RefreshDetailsAsync();
-                }
-            }
-            
-            // 如果父組件需要知道庫存已儲存
-            if (OnInventoryStockSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnInventoryStockSaved.InvokeAsync(editModalComponent.Entity);
-            }
-
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(false);
-        }
-    }
-
     // ===== 自訂驗證 =====
     
     /// <summary>

@@ -32,8 +32,8 @@
                           SaveSuccessMessage="@(VehicleMaintenanceId.HasValue ? "保養紀錄更新成功" : "保養紀錄新增成功")"
                           SaveFailureMessage="保養紀錄儲存失敗"
                           RequiredPermission="VehicleMaintenance.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnVehicleMaintenanceSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
@@ -148,26 +148,6 @@
             isDataLoaded = false;
         }
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        if (editModalComponent?.Entity != null)
-        {
-            await OnVehicleMaintenanceSaved.InvokeAsync(editModalComponent.Entity);
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        await OnCancel.InvokeAsync();
-        await CloseModal();
-    }
-
-    private async Task CloseModal()
-    {
-        await IsVisibleChanged.InvokeAsync(false);
-    }
-
     private async Task<VehicleMaintenance?> LoadMaintenanceData()
     {
         try

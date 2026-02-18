@@ -25,8 +25,8 @@
                           SaveSuccessMessage="@(PermissionId.HasValue ? "權限明細更新成功" : "權限明細新增成功")"
                           SaveFailureMessage="權限明細儲存失敗"
                           RequiredPermission="Permission.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnPermissionSaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @code {
@@ -353,55 +353,6 @@
                 additionalData: new { EntityId = entity?.Id, PermissionCode = entity?.Code, SelectedAction = selectedAction });
             await NotificationService.ShowErrorAsync("儲存過程中發生未預期的錯誤，請稍後再試", "系統錯誤");
             return false;
-        }
-    }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            // 如果父組件需要知道權限明細已儲存
-            if (OnPermissionSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnPermissionSaved.InvokeAsync(editModalComponent.Entity);
-            }
-
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(),
-                additionalData: "處理儲存成功事件失敗"
-            );
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            await OnCancel.InvokeAsync();
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(),
-                additionalData: "處理取消事件失敗"
-            );
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        try
-        {
-            await IsVisibleChanged.InvokeAsync(false);
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CloseModal), GetType(),
-                additionalData: "關閉Modal失敗"
-            );
         }
     }
 }

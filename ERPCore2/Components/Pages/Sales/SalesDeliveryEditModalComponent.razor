@@ -45,8 +45,8 @@
                           SaveSuccessMessage="@(SalesDeliveryId.HasValue ? "出貨單更新成功" : "出貨單新增成功")"
                           SaveFailureMessage="出貨單儲存失敗"
                           RequiredPermission="SalesDelivery.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnSalesDeliverySaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           GetStatusMessage="@GetSalesDeliveryStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
@@ -224,73 +224,6 @@
             isDataLoaded = false;
         }
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            // 儲存成功後允許轉退貨
-            canCreateReturn = true;
-            
-            // 重新載入剛儲存的明細資料
-            if (editModalComponent?.Entity != null && editModalComponent.Entity.Id > 0)
-            {
-                await LoadSalesDeliveryDetailsInternal(editModalComponent.Entity.Id);
-                
-                // 刷新 Table 元件
-                if (salesDeliveryDetailManager != null)
-                {
-                    await salesDeliveryDetailManager.RefreshDetailsAsync();
-                }
-                
-                StateHasChanged();
-            }
-            
-            if (OnSalesDeliverySaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnSalesDeliverySaved.InvokeAsync(editModalComponent.Entity);
-            }
-            // CloseModal 已由 GenericEditModalComponent 統一控制
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
-                additionalData: "處理出貨單儲存成功事件時發生錯誤");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), 
-                additionalData: "出貨單編輯Modal取消處理失敗");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        try
-        {
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CloseModal), GetType(), 
-                additionalData: "出貨單編輯Modal關閉失敗");
-        }
-    }
-
     /// <summary>
     /// 取得出貨單狀態訊息（顯示鎖定狀態）
     /// </summary>

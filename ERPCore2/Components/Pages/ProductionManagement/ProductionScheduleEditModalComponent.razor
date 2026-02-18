@@ -41,7 +41,7 @@
                           SaveSuccessMessage="@(ProductionScheduleId.HasValue ? "生產排程更新成功" : "生產排程新增成功")"
                           SaveFailureMessage="生產排程儲存失敗"
                           RequiredPermission="ProductionSchedule.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnEntitySaved="@OnProductionScheduleSaved"
                           OnCancel="@HandleCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
@@ -425,49 +425,12 @@
             return false;
         }
     }
-    
-    private async Task HandleSaveSuccess()
+    private Task HandleCancel()
     {
-        try
-        {
-            // 如果父組件需要知道排程已儲存
-            if (OnProductionScheduleSaved.HasDelegate && editModalComponent?.Entity != null)
-            {
-                await OnProductionScheduleSaved.InvokeAsync(editModalComponent.Entity);
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task HandleCancel()
-    {
-        try
-        {
-            // 清空待刪除列表（取消時不執行刪除）
-            itemsToDelete.Clear();
-            
-            if (OnCancel.HasDelegate)
-            {
-                await OnCancel.InvokeAsync();
-            }
-
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        if (IsVisibleChanged.HasDelegate)
-        {
-            await IsVisibleChanged.InvokeAsync(false);
-        }
+        // 清空待刪除列表（取消時不執行刪除）
+        // GenericEditModalComponent 會處理 OnCancel 轉發和 CloseModal
+        itemsToDelete.Clear();
+        return Task.CompletedTask;
     }
 
     // ===== 資料載入 =====

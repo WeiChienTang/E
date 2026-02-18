@@ -2,7 +2,7 @@
 
 ## 現況分析
 
-專案中有 **42 個 EditModalComponent**，全部包裝 `GenericEditModalComponent`。經比對 `PurchaseOrderEditModalComponent`、`PurchaseReceivingEditModalComponent`、`SalesOrderEditModalComponent`、`SalesDeliveryEditModalComponent` 四個代表性檔案，發現大量重複模式。
+專案中有 **42 個 EditModalComponent**，全部包裝 `GenericEditModalComponent`。經比對多個代表性檔案（進銷存單據 + 簡單主檔），發現大量重複模式。
 
 ### 已抽出的 Helper（/Helpers/EditModal/）
 
@@ -132,7 +132,99 @@ private List<...CustomModule> GetCustomModules()
 
 ---
 
+### P11：HandleCancel + CloseModal 冗餘消除 ✅
+
+**問題**：幾乎所有 Edit 都有相同的 `HandleCancel` + `CloseModal` 方法（約 15-20 行 × 38 個）。GenericEditModalComponent 內部已處理 `OnCancel.InvokeAsync()` + `CloseModal()`，子 Edit 包裝後造成重複呼叫。
+
+**解法**：所有 Edit 改為 `OnCancel="@OnCancel"` 直接傳遞，移除 `HandleCancel` 和 `CloseModal` 方法。
+
+**已套用**：37 個 Edit（ProductionScheduleEdit 因有額外清除邏輯保留簡化版 HandleCancel）
+
+**實際刪除行數**：**~850 行**
+
+---
+
+### P12：HandleSaveSuccess → OnEntitySaved EventCallback ✅
+
+**問題**：所有 Edit 的 `HandleSaveSuccess` 核心邏輯相同（null 檢查 + InvokeAsync 轉發），唯一差異是 EventCallback 名稱。
+
+**解法**：在 GenericEditModalComponent 新增 `[Parameter] public EventCallback<TEntity> OnEntitySaved`，Generic 在 `HandleSave` 成功後自動觸發。子 Edit 直接綁定：
+
+```razor
+@* 重構前 *@
+<GenericEditModalComponent OnSaveSuccess="@HandleSaveSuccess" ... />
+
+@* 重構後 *@
+<GenericEditModalComponent OnEntitySaved="@OnDepartmentSaved" ... />
+```
+
+**已套用**：36 個 Edit（含 DepartmentEdit 手動示範 + 35 個批次處理）
+
+**例外**：CustomerEdit 因 HandleSaveSuccess 有額外業務邏輯（SavePendingVehicleChangesAsync），保留 `OnSaveSuccess` 自訂處理。
+
+**實際刪除行數**：**~600+ 行**
+
+---
+
+### P13：HandleEntityLoaded 預設行為 ✅
+
+**問題**：大部分純主檔 Edit 的 `HandleEntityLoaded` 都是空殼（僅 `StateHasChanged()` + `Task.CompletedTask`）。
+
+**解法**：GenericEditModalComponent 的 `OnEntityLoaded` 未提供時已有預設行為（內部自動 `StateHasChanged()`）。簡單 Edit 移除此方法和參數綁定。
+
+**已套用**：4 個 Edit（DepartmentEdit 手動示範 + ProductCompositionEdit、SalesReturnEdit、InventoryStockEdit 批次處理）
+
+**備註**：其他 Edit 的 HandleEntityLoaded 含有實際業務邏輯（載入明細、車輛、子單據等），保留不動。
+
+**實際刪除行數**：**~40 行**
+
+---
+
 ## 待重構項目
+
+### P14：LoadEntityData 新增模式樣板 → DataLoaderHelper（評估中）
+
+**問題**：所有 Edit 的 DataLoader 新增模式都有相同結構：
+
+```csharp
+if (!XxxId.HasValue)
+{
+    var newEntity = new TEntity
+    {
+        Code = await EntityCodeGenerationHelper.GenerateForEntity<T, TService>(service, "PREFIX"),
+        Status = EntityStatus.Active
+    };
+    PrefilledValueHelper.ApplyPrefilledValues(newEntity, PrefilledValues);
+    return newEntity;
+}
+```
+
+**解法**：新增 `DataLoaderHelper.CreateNewEntity<TEntity, TService>(service, prefix, prefilledValues, additionalInit?)`，封裝 Code 生成 + Status 預設 + 預填值。各 Edit 只需提供 prefix 和額外初始化 Action。
+
+**備註**：各 Entity 的初始化差異較大（Employee 有 HireDate、RoleId 等），Helper 需支援 `Action<TEntity>` 額外初始化回呼。優先序較低。
+
+---
+
+### P15：ShowAddModal / ShowEditModal 樣板（影響部分 Edit）
+
+**問題**：部分 Edit 有這組公開方法：
+
+```csharp
+public async Task ShowAddModal()
+{
+    XxxId = null;
+    await IsVisibleChanged.InvokeAsync(true);
+}
+public async Task ShowEditModal(int id)
+{
+    XxxId = id;
+    await IsVisibleChanged.InvokeAsync(true);
+}
+```
+
+**備註**：不是每個 Edit 都有（取決於是否被外部元件直接呼叫）。影響範圍較小，優先序低。
+
+---
 
 ### P2：HandleDetailsChanged 整體模式 → DetailChangedHelper
 
@@ -169,12 +261,6 @@ private List<...CustomModule> GetCustomModules()
 
 ---
 
-### P9：HandleSaveSuccess / HandleCancel 樣板 → 移入 GenericEditModalComponent
-
-**方案**：新增 `EventCallback<TEntity> OnEntitySaved` 參數，讓 Generic 在儲存成功後直接觸發。
-
----
-
 ## 重構進度總覽
 
 ### 已完成（第一階段 + 第二階段）
@@ -199,21 +285,35 @@ private List<...CustomModule> GetCustomModules()
 | SalesDeliveryEdit | — | ✅ | ✅ | ✅ | ✅ |
 | SalesReturnEdit | — | ✅ | ✅ | ✅ | ✅（原已符合） |
 
-### 未來（需改動 GenericEditModalComponent）
+### 已完成（第三階段）
+
+| 項目 | 說明 | 已套用 Edit 數 | 刪除行數 |
+|---|---|---|---|
+| P11 | HandleCancel + CloseModal 冗餘消除 | 37 個 | ~850 行 |
+| P12 | OnEntitySaved EventCallback（改 Generic） | 36 個 | ~600+ 行 |
+| P13 | HandleEntityLoaded 預設行為（改 Generic） | 4 個 | ~40 行 |
+
+### 待重構（第四階段）
+
+| 項目 | 說明 | 影響 Edit 數 | 難度 |
+|---|---|---|---|
+| P14 | DataLoaderHelper 新增模式樣板 | ~40 | 中（差異大） |
+| P15 | ShowAddModal/ShowEditModal 樣板 | 部分 | 低（影響小） |
+
+### 未來（需較大改動 GenericEditModalComponent）
 
 | 項目 | 說明 |
 |---|---|
 | P3 | OnTaxMethodChanged 參數 |
 | P6 | DetailSectionBuilder 組件 |
 | P8 | DocumentConversionValidator |
-| P9 | OnEntitySaved EventCallback |
 
 ---
 
 ## 實施原則
 
-1. **漸進式重構**：從 PurchaseOrder 和 PurchaseReceiving 開始，驗證後再推廣
-2. **向下相容**：新 Helper 不破壞現有 Edit 的運作，舊寫法仍可使用
+1. **漸進式重構**：先從 DepartmentEdit 等簡單 Edit 驗證，再推廣到複雜 Edit
+2. **向下相容**：新 Helper / Generic 參數不破壞現有 Edit 的運作，舊寫法仍可使用
 3. **先抽 Helper，後改 Generic**：避免一次改動過大
 4. **每次重構一個模式**：不要同時重構多個模式，方便追蹤問題
 5. **測試驗證**：每次重構後確認該 Edit 的新增、編輯、刪除、轉單、審核等功能正常

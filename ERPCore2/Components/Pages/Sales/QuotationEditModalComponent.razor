@@ -44,8 +44,8 @@
                           SaveSuccessMessage="@(QuotationId.HasValue ? "報價單更新成功" : "報價單新增成功")"
                           SaveFailureMessage="報價單儲存失敗"
                           RequiredPermission="Quotation.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
+                          OnEntitySaved="@OnQuotationSaved"
+                          OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
@@ -219,27 +219,6 @@
             _deletedDetailIds.Clear();  // 清除暫存的已刪除明細 ID
         }
     }
-
-    private async Task HandleSaveSuccess()
-    {
-        if (editModalComponent?.Entity != null)
-        {
-            await OnQuotationSaved.InvokeAsync(editModalComponent.Entity);
-        }
-        // CloseModal 已由 GenericEditModalComponent 統一控制
-    }
-
-    private async Task HandleCancel()
-    {
-        await OnCancel.InvokeAsync();
-        await CloseModal();
-    }
-
-    private async Task CloseModal()
-    {
-        await IsVisibleChanged.InvokeAsync(false);
-    }
-
     private async Task<Quotation?> LoadQuotationData()
     {
         try
