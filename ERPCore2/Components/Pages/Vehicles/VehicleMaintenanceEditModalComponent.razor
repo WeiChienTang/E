@@ -34,7 +34,6 @@
                           RequiredPermission="VehicleMaintenance.Read"
                           OnEntitySaved="@OnVehicleMaintenanceSaved"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
                           PrintButtonText="列印"
@@ -365,24 +364,4 @@
     }
 
 
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            if (fieldChange.PropertyName == nameof(VehicleMaintenance.VehicleId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    vehicleModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-            else if (fieldChange.PropertyName == nameof(VehicleMaintenance.EmployeeId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-        }
-    }
 }

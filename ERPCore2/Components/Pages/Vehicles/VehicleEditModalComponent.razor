@@ -37,7 +37,6 @@
                           RequiredPermission="Vehicle.Read"
                           OnEntitySaved="@OnVehicleSaved"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
                           PrintButtonText="列印"
@@ -623,37 +622,4 @@
     }
 
 
-    /// <summary>
-    /// 處理欄位值變更事件
-    /// </summary>
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            if (fieldChange.PropertyName == nameof(Vehicle.VehicleTypeId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    vehicleTypeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-            else if (fieldChange.PropertyName == nameof(Vehicle.EmployeeId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-            else if (fieldChange.PropertyName == nameof(Vehicle.CustomerId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-            else if (fieldChange.PropertyName == nameof(Vehicle.SupplierId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    supplierModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-        }
-    }
 }

@@ -39,7 +39,6 @@
                           RequiredPermission="ProductComposition.Read"
                           OnEntitySaved="@OnCompositionSaved"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
 ShowPrintButton="true"
                           PrintButtonText="列印"
                           ReportService="@BOMReportService"
@@ -644,37 +643,4 @@ ShowPrintButton="true"
     
     // ===== Modal 事件包裝器方法 =====
     
-    /// <summary>
-    /// 處理欄位值變更事件 - 使用統一 Helper
-    /// </summary>
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            // 處理客戶欄位變更
-            if (fieldChange.PropertyName == nameof(ProductComposition.CustomerId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    customerModalManager, 
-                    formFields, 
-                    nameof(ProductComposition.CustomerId), 
-                    fieldChange.Value
-                );
-            }
-            // 處理製單人員欄位變更
-            else if (fieldChange.PropertyName == nameof(ProductComposition.CreatedByEmployeeId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    employeeModalManager, 
-                    formFields, 
-                    nameof(ProductComposition.CreatedByEmployeeId), 
-                    fieldChange.Value
-                );
-            }
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-        }
-    }
 }

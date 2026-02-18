@@ -45,7 +45,6 @@
                           RequiredPermission="PurchaseOrder.Read"
                           OnEntitySaved="@OnPurchaseOrderSaved"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
                           OnTaxMethodChanged="@(() => HandleDetailsChanged(purchaseOrderDetails))"
                           CustomValidator="@ValidatePurchaseOrderDetailsAsync"
                           CustomModules="@GetCustomModules()"
@@ -665,52 +664,6 @@
         await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
     }
     
-    /// <summary>
-    /// 處理欄位值變更事件 - 使用統一 Helper
-    /// </summary>
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            // 使用統一 Helper 處理廠商欄位變更
-            if (fieldChange.PropertyName == nameof(PurchaseOrder.SupplierId))
-            {
-                // 檢查是否應該鎖定欄位（避免在鎖定狀態下重新加入 ActionButtons）
-                var shouldLock = ApprovalConfigHelper.ShouldLockFieldByApproval(
-                    isApprovalEnabled,
-                    editModalComponent?.Entity?.IsApproved ?? false,
-                    hasUndeletableDetails
-                );
-                
-                // 只有在非鎖定狀態下才更新 ActionButtons
-                if (!shouldLock)
-                {
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        supplierModalManager, 
-                        formFields, 
-                        nameof(PurchaseOrder.SupplierId), 
-                        fieldChange.Value
-                    );
-                }
-                else
-                {
-                    // 如果是鎖定狀態，確保移除 ActionButtons
-                    var supplierField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseOrder.SupplierId));
-                    if (supplierField != null)
-                    {
-                        supplierField.ActionButtons = new List<FieldActionButton>();
-                    }
-                }
-                
-                // 廠商變更時，觸發商品管理器重新渲染
-                StateHasChanged();
-            }
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-        }
-    }
 
     // ===== 採購明細管理方法 =====
     

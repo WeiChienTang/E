@@ -315,6 +315,31 @@ public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 
 ---
 
+### P16：OnFieldValueChanged 純 ActionButton → GenericEditModalComponent 自動處理 ✅
+
+**問題**：8 個 Edit 的 `OnFieldValueChanged` 方法僅包含 `ActionButtonHelper.UpdateFieldActionButtonsAsync` 呼叫，無其他業務邏輯（每個 16-47 行，共 ~240 行）。
+
+**解法**：在 `GenericEditModalComponent.HandleFieldChanged` 中新增自動 ActionButton 更新邏輯——當欄位值變更且 `ModalManagers` 字典包含該欄位時，自動透過反射呼叫對應 ModalManager 的 `UpdateFieldActionButtons`。以 `!targetField.IsReadOnly` 檢查取代各 Edit 的 `ApprovalConfigHelper.ShouldLockFieldByApproval` 防護。
+
+**已移除 OnFieldValueChanged 的 8 個 Edit**：
+
+| 檔案 | 欄位數 | 原有鎖定檢查 |
+|---|---|---|
+| EmployeeEdit | 2 (DepartmentId, EmployeePositionId) | 無 |
+| SupplierEdit | 1 (PaymentMethodId) | 無 |
+| CustomerEdit | 2 (EmployeeId, PaymentMethodId) | 無 |
+| VehicleEdit | 4 (VehicleTypeId, EmployeeId, CustomerId, SupplierId) | 無 |
+| VehicleMaintenanceEdit | 2 (VehicleId, EmployeeId) | 無 |
+| ProductCompositionEdit | 2 (CustomerId, CreatedByEmployeeId) | 無 |
+| PurchaseOrderEdit | 1 (SupplierId) | ApprovalConfigHelper → IsReadOnly |
+| QuotationEdit | 3 (CustomerId, CompanyId, EmployeeId) | ApprovalConfigHelper → IsReadOnly |
+
+**不在範圍**（Mixed 型，保留 OnFieldValueChanged）：SalesOrderEdit、SalesReturnEdit、SalesDeliveryEdit、PurchaseReceivingEdit、PurchaseReturnEdit、ProductEdit
+
+**預估節省 ~240 行**
+
+---
+
 ### P8：轉單前驗證 → DocumentConversionValidator
 
 **問題**：各轉單方法有相同的驗證步驟（檢查儲存狀態、Entity、SupplierId、明細數量等）。
@@ -362,6 +387,7 @@ public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 | P6 | DetailSectionWrapper 組件（五態判斷封裝） | 10 個 | ~400 行 |
 | P18 | OnXxxSavedWrapper 消除（RelatedEntityModalManager.OnSavedAsync） | 14 個 | ~160 行 |
 | P3 | OnTaxMethodChanged 參數（稅別變更自動處理） | 7 個 | ~50 行 |
+| P16 | ActionButton 自動更新（ModalManagers 自動處理） | 8 個 | ~240 行 |
 
 ### 未來（需較大改動 GenericEditModalComponent）
 
@@ -615,7 +641,7 @@ OnDepartmentSaved="@departmentModalManager.OnSavedAsync"
 | 1 | CreateXxxContent 三態判斷 | **P6** ✅ | ~400 行 | 低 | DetailSectionWrapper 組件 |
 | 2 | OnParametersSetAsync 守衛 | **P17** | ~350 行 | 中 | 移入 GenericEditModalComponent |
 | 3 | OnXxxSavedWrapper 轉發 | **P18** ✅ | ~160 行 | 低 | RelatedEntityModalManager.OnSavedAsync |
-| 4 | OnFieldValueChanged 純 ActionButton | **P16** | ~160 行 | 中 | Generic 自動處理 ModalManagers |
+| 4 | OnFieldValueChanged 純 ActionButton | **P16** ✅ | ~240 行 | 中 | Generic 自動處理 ModalManagers |
 | 5 | OnTaxMethodChanged 分支 | **P3** | ~70 行 | 低 | Generic 新增參數 |
 
 **總計預估**：~1,375-1,775 行

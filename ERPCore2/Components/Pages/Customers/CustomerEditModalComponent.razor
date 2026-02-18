@@ -36,7 +36,6 @@
                           RequiredPermission="Customer.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
                           PrintButtonText="列印"
@@ -678,31 +677,6 @@
         }
     }
     
-    /// <summary>
-    /// 處理欄位值變更事件
-    /// </summary>
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            // 使用統一 Helper 處理員工欄位變更
-            if (fieldChange.PropertyName == nameof(Customer.EmployeeId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-            // 使用統一 Helper 處理付款方式欄位變更
-            else if (fieldChange.PropertyName == nameof(Customer.PaymentMethodId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    paymentMethodModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-        }
-    }
 
     // ===== 車輛 Tab 相關方法 =====
 

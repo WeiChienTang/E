@@ -38,7 +38,6 @@
                           OnSaveSuccess="@OnSaveSuccess"
                           RequiredPermission="Employee.Read"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @* 部門編輯 Modal *@
@@ -689,37 +688,6 @@
         }
     }
 
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            // 使用統一 Helper 處理部門欄位變更
-            if (fieldChange.PropertyName == nameof(Employee.DepartmentId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    departmentModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-            
-            // 使用統一 Helper 處理職位欄位變更
-            if (fieldChange.PropertyName == nameof(Employee.EmployeePositionId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    positionModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-            
-            // 注意：RoleId 欄位不需要 ActionButtons，所以不在此處理
-            // 如果需要為 RoleId 加上操作按鈕，請在欄位定義中設定 ActionButtons 並取消以下註解
-            // if (fieldChange.PropertyName == nameof(Employee.RoleId))
-            // {
-            //     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-            //         roleModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            // }
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-        }
-    }
     
     /// <summary>
     /// 使用統一 Helper 產生部門操作按鈕

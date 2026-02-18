@@ -46,7 +46,6 @@
                           RequiredPermission="Quotation.Read"
                           OnEntitySaved="@OnQuotationSaved"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
                           OnTaxMethodChanged="@(() => HandleQuotationDetailsChanged(quotationDetails))"
                           CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
@@ -1052,56 +1051,6 @@
         );
     }
 
-    /// <summary>
-    /// 處理欄位值變更事件 - 使用統一 Helper
-    /// </summary>
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            // 檢查是否應該鎖定欄位（避免在鎖定狀態下重新加入 ActionButtons）
-            var shouldLock = ApprovalConfigHelper.ShouldLockFieldByApproval(
-                isApprovalEnabled,
-                editModalComponent?.Entity?.IsApproved ?? false,
-                hasUndeletableDetails
-            );
-            
-            // 使用統一 Helper 處理客戶欄位變更
-            if (fieldChange.PropertyName == nameof(Quotation.CustomerId))
-            {
-                // 只有在非鎖定狀態下才更新 ActionButtons
-                if (!shouldLock)
-                {
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-                }
-            }
-            // 使用統一 Helper 處理公司欄位變更
-            else if (fieldChange.PropertyName == nameof(Quotation.CompanyId))
-            {
-                // 只有在非鎖定狀態下才更新 ActionButtons
-                if (!shouldLock)
-                {
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        companyModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-                }
-            }
-            // 使用統一 Helper 處理業務員欄位變更
-            else if (fieldChange.PropertyName == nameof(Quotation.EmployeeId))
-            {
-                // 只有在非鎖定狀態下才更新 ActionButtons
-                if (!shouldLock)
-                {
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-                }
-            }
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-        }
-    }
 
     /// <summary>
     /// 取得警告訊息（顯示在表單欄位上方）- 作為屬性以確保正確的渲染時機

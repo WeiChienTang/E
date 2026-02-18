@@ -1703,6 +1703,26 @@
             StateHasChanged();
         }
 
+        // ActionButton 自動更新（透過 ModalManagers）
+        if (ModalManagers != null && ModalManagers.ContainsKey(fieldChange.PropertyName))
+        {
+            var targetField = FormFields?.FirstOrDefault(f => f.PropertyName == fieldChange.PropertyName);
+            if (targetField != null && !targetField.IsReadOnly)
+            {
+                int? newId = null;
+                if (fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int id))
+                {
+                    newId = id;
+                }
+                var modalManager = ModalManagers[fieldChange.PropertyName];
+                var updateMethod = modalManager?.GetType().GetMethod("UpdateFieldActionButtons");
+                if (updateMethod != null && modalManager != null)
+                {
+                    updateMethod.Invoke(modalManager, new object?[] { FormFields, fieldChange.PropertyName, newId });
+                }
+            }
+        }
+
         if (OnFieldChanged != null)
         {
             await OnFieldChanged(fieldChange);
