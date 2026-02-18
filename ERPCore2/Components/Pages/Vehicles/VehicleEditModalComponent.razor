@@ -51,7 +51,7 @@
                                IsVisible="@vehicleTypeModalManager.IsModalVisible"
                                IsVisibleChanged="@vehicleTypeModalManager.HandleModalVisibilityChangedAsync"
                                VehicleTypeId="@vehicleTypeModalManager.SelectedEntityId"
-                               OnVehicleTypeSaved="@OnVehicleTypeSavedWrapper"
+                               OnVehicleTypeSaved="@vehicleTypeModalManager.OnSavedAsync"
                                OnCancel="@vehicleTypeModalManager.HandleModalCancelAsync" />
 
 @* 員工編輯 Modal *@
@@ -59,7 +59,7 @@
                            IsVisible="@employeeModalManager.IsModalVisible"
                            IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
                            EmployeeId="@employeeModalManager.SelectedEntityId"
-                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
 
 @* 客戶編輯 Modal *@
@@ -67,7 +67,7 @@
                            IsVisible="@customerModalManager.IsModalVisible"
                            IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
                            CustomerId="@customerModalManager.SelectedEntityId"
-                           OnCustomerSaved="@OnCustomerSavedWrapper"
+                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
 @* 廠商編輯 Modal *@
@@ -75,7 +75,7 @@
                            IsVisible="@supplierModalManager.IsModalVisible"
                            IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
                            SupplierId="@supplierModalManager.SelectedEntityId"
-                           OnSupplierSaved="@OnSupplierSavedWrapper"
+                           OnSupplierSaved="@supplierModalManager.OnSavedAsync"
                            OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
 @code {
@@ -622,37 +622,6 @@
         );
     }
 
-    /// <summary>
-    /// 包裝車型儲存事件
-    /// </summary>
-    private async Task OnVehicleTypeSavedWrapper(VehicleType savedVehicleType)
-    {
-        await vehicleTypeModalManager.HandleEntitySavedAsync(savedVehicleType, shouldAutoSelect: true);
-    }
-
-    /// <summary>
-    /// 包裝員工儲存事件
-    /// </summary>
-    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
-    {
-        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
-    }
-
-    /// <summary>
-    /// 包裝客戶儲存事件
-    /// </summary>
-    private async Task OnCustomerSavedWrapper(Customer savedCustomer)
-    {
-        await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
-    }
-
-    /// <summary>
-    /// 包裝廠商儲存事件
-    /// </summary>
-    private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
-    {
-        await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
-    }
 
     /// <summary>
     /// 處理欄位值變更事件

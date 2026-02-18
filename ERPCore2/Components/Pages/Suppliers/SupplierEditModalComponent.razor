@@ -48,7 +48,7 @@
                                 IsVisible="@paymentMethodModalManager.IsModalVisible"
                                 IsVisibleChanged="@paymentMethodModalManager.HandleModalVisibilityChangedAsync"
                                 PaymentMethodId="@paymentMethodModalManager.SelectedEntityId"
-                                OnPaymentMethodSaved="@OnPaymentMethodSavedWrapper"
+                                OnPaymentMethodSaved="@paymentMethodModalManager.OnSavedAsync"
                                 OnCancel="@paymentMethodModalManager.HandleModalCancelAsync" />
 
 @* 車輛編輯 Modal - 條件式渲染避免循環元件實例化 *@
@@ -667,14 +667,6 @@
             paymentMethodModalManager, 
             nameof(Supplier.PaymentMethodId)
         );
-    }
-    
-    /// <summary>
-    /// 包裝付款方式儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnPaymentMethodSavedWrapper(PaymentMethod savedPaymentMethod)
-    {
-        await paymentMethodModalManager.HandleEntitySavedAsync(savedPaymentMethod, shouldAutoSelect: true);
     }
     
     /// <summary>

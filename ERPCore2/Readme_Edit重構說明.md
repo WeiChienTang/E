@@ -349,6 +349,7 @@ public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 | 項目 | 說明 | 已套用 Edit 數 | 節省行數 |
 |---|---|---|---|
 | P6 | DetailSectionWrapper 組件（五態判斷封裝） | 10 個 | ~400 行 |
+| P18 | OnXxxSavedWrapper 消除（RelatedEntityModalManager.OnSavedAsync） | 14 個 | ~160 行 |
 
 ### 未來（需較大改動 GenericEditModalComponent）
 
@@ -538,33 +539,22 @@ protected override async Task OnParametersSetAsync()
 
 ---
 
-### 模式 4：OnXxxSavedWrapper — Modal 儲存轉發
+### 模式 4：OnXxxSavedWrapper — Modal 儲存轉發 ✅ 已完成（P18）
 
-**影響範圍**：17 個 Edit 檔案，共 39 個 Wrapper 方法
+**影響範圍**：17 個 Edit 檔案，共 39 個 Wrapper 方法（32 個標準型 + 7 個非標準型）
 
-**共通結構**（每個方法 4-5 行）：
-```csharp
-private async Task OnPaymentMethodSavedWrapper(PaymentMethod saved)
-{
-    await paymentMethodModalManager.HandleEntitySavedAsync(saved, shouldAutoSelect: true);
-}
+**解法**：在 `RelatedEntityModalManager<T>` 新增 `OnSavedAsync(T saved)` 方法，Razor 直接綁定：
+```razor
+@* 重構前 *@
+OnDepartmentSaved="@OnDepartmentSavedWrapper"
+
+@* 重構後 *@
+OnDepartmentSaved="@departmentModalManager.OnSavedAsync"
 ```
 
-**可提取性評估**：⭐⭐ 中（每個方法很短，但數量多）
+**已消除 32 個標準型 Wrapper**（14 個檔案），跳過 7 個非標準型（含額外業務邏輯）。
 
-**分析**：每個 Wrapper 都是一行委派。但因 Razor 模板綁定需要具體方法簽名，無法用泛型完全消除。
-
-**建議方案**：可在 ModalManagerCollection 上新增通用的 `CreateSavedHandler<T>()` 方法，回傳 `Func<T, Task>`：
-```csharp
-// 重構前：每個關聯實體一個 wrapper
-private async Task OnPaymentMethodSavedWrapper(PaymentMethod saved) => ...
-private async Task OnDepartmentSavedWrapper(Department saved) => ...
-
-// 重構後：由 ModalManagerCollection 產生
-// Razor 中直接綁定 modalManagers.CreateSavedHandler<PaymentMethod>(nameof(Entity.PaymentMethodId))
-```
-
-**預估效果**：消除 39 個 Wrapper 方法（每個 ~5 行 ≈ ~195 行）
+**實際節省**：~160 行
 
 ---
 
@@ -611,9 +601,9 @@ private async Task OnDepartmentSavedWrapper(Department saved) => ...
 
 | 優先序 | 模式 | 項目編號 | 預估節省行數 | 風險 | 建議 |
 |---|---|---|---|---|---|
-| 1 | CreateXxxContent 三態判斷 | **P6** | ~600-1000 行 | 低 | 建立 DetailSectionWrapper 組件 |
+| 1 | CreateXxxContent 三態判斷 | **P6** ✅ | ~400 行 | 低 | DetailSectionWrapper 組件 |
 | 2 | OnParametersSetAsync 守衛 | **P17** | ~350 行 | 中 | 移入 GenericEditModalComponent |
-| 3 | OnXxxSavedWrapper 轉發 | **P18** | ~195 行 | 低 | ModalManagerCollection.CreateSavedHandler |
+| 3 | OnXxxSavedWrapper 轉發 | **P18** ✅ | ~160 行 | 低 | RelatedEntityModalManager.OnSavedAsync |
 | 4 | OnFieldValueChanged 純 ActionButton | **P16** | ~160 行 | 中 | Generic 自動處理 ModalManagers |
 | 5 | OnTaxMethodChanged 分支 | **P3** | ~70 行 | 低 | Generic 新增參數 |
 

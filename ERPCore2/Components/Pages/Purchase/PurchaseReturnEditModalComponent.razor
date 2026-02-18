@@ -64,7 +64,7 @@
                            IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
                            SupplierId="@supplierModalManager.SelectedEntityId"
                            PrefilledValues="@supplierModalManager.PrefilledValues"
-                           OnSupplierSaved="@OnSupplierSavedWrapper"
+                           OnSupplierSaved="@supplierModalManager.OnSavedAsync"
                            OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
 @* 沖款單編輯 Modal *@
@@ -897,14 +897,6 @@
     }
     
     // ===== Modal 事件包裝器方法 =====
-    
-    /// <summary>
-    /// 包裝廠商儲存事件
-    /// </summary>
-    private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
-    {
-        await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
-    }
     
     /// <summary>
     /// 處理開啟相關單據的事件

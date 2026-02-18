@@ -53,7 +53,7 @@ ShowPrintButton="true"
                            IsVisible="@customerModalManager.IsModalVisible"
                            IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
                            CustomerId="@customerModalManager.SelectedEntityId"
-                           OnCustomerSaved="@OnCustomerSavedWrapper"
+                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
 @* 員工編輯 Modal *@
@@ -61,7 +61,7 @@ ShowPrintButton="true"
                            IsVisible="@employeeModalManager.IsModalVisible"
                            IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
                            EmployeeId="@employeeModalManager.SelectedEntityId"
-                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
 
 @code {
@@ -643,22 +643,6 @@ ShowPrintButton="true"
     }
     
     // ===== Modal 事件包裝器方法 =====
-    
-    /// <summary>
-    /// 包裝客戶儲存事件
-    /// </summary>
-    private async Task OnCustomerSavedWrapper(Customer savedCustomer)
-    {
-        await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
-    }
-    
-    /// <summary>
-    /// 包裝員工儲存事件
-    /// </summary>
-    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
-    {
-        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
-    }
     
     /// <summary>
     /// 處理欄位值變更事件 - 使用統一 Helper

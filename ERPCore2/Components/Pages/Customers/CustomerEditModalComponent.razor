@@ -50,7 +50,7 @@
                            IsVisible="@employeeModalManager.IsModalVisible"
                            IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
                            EmployeeId="@employeeModalManager.SelectedEntityId"
-                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
 
 @* 付款方式編輯 Modal *@
@@ -58,7 +58,7 @@
                                 IsVisible="@paymentMethodModalManager.IsModalVisible"
                                 IsVisibleChanged="@paymentMethodModalManager.HandleModalVisibilityChangedAsync"
                                 PaymentMethodId="@paymentMethodModalManager.SelectedEntityId"
-                                OnPaymentMethodSaved="@OnPaymentMethodSavedWrapper"
+                                OnPaymentMethodSaved="@paymentMethodModalManager.OnSavedAsync"
                                 OnCancel="@paymentMethodModalManager.HandleModalCancelAsync" />
 
 @* 車輛編輯 Modal - 條件式渲染避免循環元件實例化 *@
@@ -676,22 +676,6 @@
         {
             await NotificationService.ShowErrorAsync($"複製聯絡地址時發生錯誤：{ex.Message}");
         }
-    }
-    
-    /// <summary>
-    /// 包裝員工儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
-    {
-        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
-    }
-    
-    /// <summary>
-    /// 包裝付款方式儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnPaymentMethodSavedWrapper(PaymentMethod savedPaymentMethod)
-    {
-        await paymentMethodModalManager.HandleEntitySavedAsync(savedPaymentMethod, shouldAutoSelect: true);
     }
     
     /// <summary>

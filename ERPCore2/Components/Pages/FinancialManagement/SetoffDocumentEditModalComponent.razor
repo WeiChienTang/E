@@ -55,21 +55,21 @@
                           IsVisible="@companyModalManager.IsModalVisible"
                           IsVisibleChanged="@companyModalManager.HandleModalVisibilityChangedAsync"
                           CompanyId="@companyModalManager.SelectedEntityId"
-                          OnCompanySaved="@OnCompanySavedWrapper"
+                          OnCompanySaved="@companyModalManager.OnSavedAsync"
                           OnCancel="@companyModalManager.HandleModalCancelAsync" />
 
 <CustomerEditModalComponent @ref="customerEditModal"
                            IsVisible="@customerModalManager.IsModalVisible"
                            IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
                            CustomerId="@customerModalManager.SelectedEntityId"
-                           OnCustomerSaved="@OnCustomerSavedWrapper"
+                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
 <SupplierEditModalComponent @ref="supplierEditModal"
                            IsVisible="@supplierModalManager.IsModalVisible"
                            IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
                            SupplierId="@supplierModalManager.SelectedEntityId"
-                           OnSupplierSaved="@OnSupplierSavedWrapper"
+                           OnSupplierSaved="@supplierModalManager.OnSavedAsync"
                            OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
 @code {
@@ -1370,20 +1370,6 @@
         return Task.FromResult(supplierModalManager.GenerateActionButtons(currentSupplierId));
     }
 
-    private async Task OnCompanySavedWrapper(Company company)
-    {
-        await companyModalManager.HandleEntitySavedAsync(company, shouldAutoSelect: true);
-    }
-
-    private async Task OnCustomerSavedWrapper(Customer customer)
-    {
-        await customerModalManager.HandleEntitySavedAsync(customer, shouldAutoSelect: true);
-    }
-
-    private async Task OnSupplierSavedWrapper(Supplier supplier)
-    {
-        await supplierModalManager.HandleEntitySavedAsync(supplier, shouldAutoSelect: true);
-    }
 
     // ===== 列印相關方法 =====
 

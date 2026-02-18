@@ -58,7 +58,7 @@
                                   IsVisibleChanged="@productCategoryModalManager.HandleModalVisibilityChangedAsync"
                                   ProductCategoryId="@productCategoryModalManager.SelectedEntityId"
                                   PrefilledValues="@productCategoryModalManager.PrefilledValues"
-                                  OnProductCategorySaved="@OnProductCategorySavedWrapper"
+                                  OnProductCategorySaved="@productCategoryModalManager.OnSavedAsync"
                                   OnCancel="@productCategoryModalManager.HandleModalCancelAsync" />
 
 @* 單位編輯 Modal *@
@@ -67,7 +67,7 @@
                        IsVisibleChanged="@unitModalManager.HandleModalVisibilityChangedAsync"
                        UnitId="@unitModalManager.SelectedEntityId"
                        PrefilledValues="@unitModalManager.PrefilledValues"
-                       OnUnitSaved="@OnUnitSavedWrapper"
+                       OnUnitSaved="@unitModalManager.OnSavedAsync"
                        OnCancel="@unitModalManager.HandleModalCancelAsync" />
 
 @* 尺寸編輯 Modal *@
@@ -76,7 +76,7 @@
                        IsVisibleChanged="@sizeModalManager.HandleModalVisibilityChangedAsync"
                        SizeId="@sizeModalManager.SelectedEntityId"
                        PrefilledValues="@sizeModalManager.PrefilledValues"
-                       OnSizeSaved="@OnSizeSavedWrapper"
+                       OnSizeSaved="@sizeModalManager.OnSavedAsync"
                        OnCancel="@sizeModalManager.HandleModalCancelAsync" />
 
 @* 商品物料清單編輯 Modal *@
@@ -623,30 +623,6 @@
     }
 
     // ===== Modal 事件包裝器方法 =====
-    
-    /// <summary>
-    /// 包裝商品分類儲存事件
-    /// </summary>
-    private async Task OnProductCategorySavedWrapper(ProductCategory savedCategory)
-    {
-        await productCategoryModalManager.HandleEntitySavedAsync(savedCategory, shouldAutoSelect: true);
-    }
-
-    /// <summary>
-    /// 包裝單位儲存事件
-    /// </summary>
-    private async Task OnUnitSavedWrapper(Unit savedUnit)
-    {
-        await unitModalManager.HandleEntitySavedAsync(savedUnit, shouldAutoSelect: true);
-    }
-
-    /// <summary>
-    /// 包裝尺寸儲存事件
-    /// </summary>
-    private async Task OnSizeSavedWrapper(Size savedSize)
-    {
-        await sizeModalManager.HandleEntitySavedAsync(savedSize, shouldAutoSelect: true);
-    }
     
     /// <summary>
     /// 包裝商品物料清單儲存事件

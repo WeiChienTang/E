@@ -47,7 +47,7 @@
                              IsVisibleChanged="@departmentModalManager.HandleModalVisibilityChangedAsync"
                              DepartmentId="@departmentModalManager.SelectedEntityId"
                              PrefilledValues="@departmentModalManager.PrefilledValues"
-                             OnDepartmentSaved="@OnDepartmentSavedWrapper"
+                             OnDepartmentSaved="@departmentModalManager.OnSavedAsync"
                              OnCancel="@departmentModalManager.HandleModalCancelAsync" />
 
 @* 職位編輯 Modal *@
@@ -56,7 +56,7 @@
                                    IsVisibleChanged="@positionModalManager.HandleModalVisibilityChangedAsync"
                                    EmployeePositionId="@positionModalManager.SelectedEntityId"
                                    PrefilledValues="@positionModalManager.PrefilledValues"
-                                   OnEmployeePositionSaved="@OnEmployeePositionSavedWrapper"
+                                   OnEmployeePositionSaved="@positionModalManager.OnSavedAsync"
                                    OnCancel="@positionModalManager.HandleModalCancelAsync" />
 
 @* 權限組編輯 Modal *@
@@ -65,7 +65,7 @@
                        IsVisibleChanged="@roleModalManager.HandleModalVisibilityChangedAsync"
                        RoleId="@roleModalManager.SelectedEntityId"
                        PrefilledValues="@roleModalManager.PrefilledValues"
-                       OnRoleSaved="@OnRoleSavedWrapper"
+                       OnRoleSaved="@roleModalManager.OnSavedAsync"
                        OnCancel="@roleModalManager.HandleModalCancelAsync" />
 
 @* 車輛編輯 Modal - 條件式渲染避免循環元件實例化 *@
@@ -719,30 +719,6 @@
         {
             _ = NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
         }
-    }
-    
-    /// <summary>
-    /// 包裝部門儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnDepartmentSavedWrapper(Department savedDepartment)
-    {
-        await departmentModalManager.HandleEntitySavedAsync(savedDepartment, shouldAutoSelect: true);
-    }
-    
-    /// <summary>
-    /// 包裝職位儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnEmployeePositionSavedWrapper(EmployeePosition savedPosition)
-    {
-        await positionModalManager.HandleEntitySavedAsync(savedPosition, shouldAutoSelect: true);
-    }
-    
-    /// <summary>
-    /// 包裝權限組儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnRoleSavedWrapper(Role savedRole)
-    {
-        await roleModalManager.HandleEntitySavedAsync(savedRole, shouldAutoSelect: true);
     }
     
     /// <summary>

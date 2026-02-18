@@ -67,7 +67,7 @@
                            IsVisible="@customerModalManager.IsModalVisible"
                            IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
                            CustomerId="@customerModalManager.SelectedEntityId"
-                           OnCustomerSaved="@OnCustomerSavedWrapper"
+                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
 @* 業務員編輯 Modal *@
@@ -75,7 +75,7 @@
                            IsVisible="@employeeModalManager.IsModalVisible"
                            IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
                            EmployeeId="@employeeModalManager.SelectedEntityId"
-                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
 
 @* 公司編輯 Modal *@
@@ -83,7 +83,7 @@
                           IsVisible="@companyModalManager.IsModalVisible"
                           IsVisibleChanged="@companyModalManager.HandleModalVisibilityChangedAsync"
                           CompanyId="@companyModalManager.SelectedEntityId"
-                          OnCompanySaved="@OnCompanySavedWrapper"
+                          OnCompanySaved="@companyModalManager.OnSavedAsync"
                           OnCancel="@companyModalManager.HandleModalCancelAsync" />
 
 @* 銷貨訂單編輯 Modal *@
@@ -973,29 +973,6 @@
         };
     }
 
-    /// <summary>
-    /// 包裝客戶儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnCustomerSavedWrapper(Customer savedCustomer)
-    {
-        await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
-    }
-
-    /// <summary>
-    /// 包裝公司儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnCompanySavedWrapper(Company savedCompany)
-    {
-        await companyModalManager.HandleEntitySavedAsync(savedCompany, shouldAutoSelect: true);
-    }
-
-    /// <summary>
-    /// 包裝業務員儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
-    {
-        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
-    }
 
     /// <summary>
     /// 使用統一 Helper 產生客戶操作按鈕

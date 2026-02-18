@@ -177,6 +177,12 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
     }
     
     /// <summary>
+    /// 供 Razor 直接綁定的儲存處理方法，等同 HandleEntitySavedAsync(saved, shouldAutoSelect: true)。
+    /// 用法：OnXxxSaved="@xxxModalManager.OnSavedAsync"
+    /// </summary>
+    public Task OnSavedAsync(TRelatedEntity saved) => HandleEntitySavedAsync(saved);
+
+    /// <summary>
     /// 處理實體儲存成功事件
     /// </summary>
     /// <param name="savedEntity">已儲存的實體</param>

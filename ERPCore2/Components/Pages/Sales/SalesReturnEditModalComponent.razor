@@ -70,7 +70,7 @@
                            IsVisible="@customerModalManager.IsModalVisible"
                            IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
                            CustomerId="@customerModalManager.SelectedEntityId"
-                           OnCustomerSaved="@OnCustomerSavedWrapper"
+                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
 @* 沖款單編輯 Modal *@
@@ -1260,14 +1260,6 @@
         );
     }
 
-    /// <summary>
-    /// 包裝客戶儲存事件
-    /// </summary>
-    private async Task OnCustomerSavedWrapper(Customer savedCustomer)
-    {
-        await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
-    }
-    
     /// <summary>
     /// 處理開啟相關單據的事件
     /// </summary>

@@ -72,7 +72,7 @@
                                IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
                                SupplierId="@supplierModalManager.SelectedEntityId"
                                PrefilledValues="@supplierModalManager.PrefilledValues"
-                               OnSupplierSaved="@OnSupplierSavedWrapper"
+                               OnSupplierSaved="@supplierModalManager.OnSavedAsync"
                                OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 }
 
@@ -83,7 +83,7 @@
                               IsVisible="@productModalManager.IsModalVisible"
                               IsVisibleChanged="@productModalManager.HandleModalVisibilityChangedAsync"
                               ProductId="@productModalManager.SelectedEntityId"
-                              OnProductSaved="@OnProductSavedWrapper"
+                              OnProductSaved="@productModalManager.OnSavedAsync"
                               OnCancel="@productModalManager.HandleModalCancelAsync" />
 }
 
@@ -1595,21 +1595,6 @@
         );
     }
 
-    /// <summary>
-    /// 包裝廠商儲存事件
-    /// </summary>
-    private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
-    {
-        await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
-    }
-
-    /// <summary>
-    /// 包裝商品儲存事件
-    /// </summary>
-    private async Task OnProductSavedWrapper(Product savedProduct)
-    {
-        await productModalManager.HandleEntitySavedAsync(savedProduct, shouldAutoSelect: true);
-    }
 
     /// <summary>
     /// 處理開啟相關單據的事件

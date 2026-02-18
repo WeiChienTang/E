@@ -48,7 +48,7 @@
                            IsVisible="@vehicleModalManager.IsModalVisible"
                            IsVisibleChanged="@vehicleModalManager.HandleModalVisibilityChangedAsync"
                            VehicleId="@vehicleModalManager.SelectedEntityId"
-                           OnVehicleSaved="@OnVehicleSavedWrapper"
+                           OnVehicleSaved="@vehicleModalManager.OnSavedAsync"
                            OnCancel="@vehicleModalManager.HandleModalCancelAsync" />
 
 @* 員工編輯 Modal *@
@@ -56,7 +56,7 @@
                            IsVisible="@employeeModalManager.IsModalVisible"
                            IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
                            EmployeeId="@employeeModalManager.SelectedEntityId"
-                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
 
 @code {
@@ -364,15 +364,6 @@
         );
     }
 
-    private async Task OnVehicleSavedWrapper(Vehicle savedVehicle)
-    {
-        await vehicleModalManager.HandleEntitySavedAsync(savedVehicle, shouldAutoSelect: true);
-    }
-
-    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
-    {
-        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
-    }
 
     private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
     {

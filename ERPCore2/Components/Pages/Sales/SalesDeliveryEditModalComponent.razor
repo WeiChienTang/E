@@ -66,7 +66,7 @@
                            IsVisible="@customerModalManager.IsModalVisible"
                            IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
                            CustomerId="@customerModalManager.SelectedEntityId"
-                           OnCustomerSaved="@OnCustomerSavedWrapper"
+                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
 @* 業務員編輯 Modal *@
@@ -74,7 +74,7 @@
                            IsVisible="@employeeModalManager.IsModalVisible"
                            IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
                            EmployeeId="@employeeModalManager.SelectedEntityId"
-                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
 
 @* 銷貨退貨編輯 Modal *@
@@ -836,15 +836,6 @@
             nameof(SalesDelivery.EmployeeId));
     }
 
-    private async Task OnCustomerSavedWrapper(Customer customer)
-    {
-        await customerModalManager.HandleEntitySavedAsync(customer, shouldAutoSelect: true);
-    }
-
-    private async Task OnEmployeeSavedWrapper(Employee employee)
-    {
-        await employeeModalManager.HandleEntitySavedAsync(employee, shouldAutoSelect: true);
-    }
 
     private Dictionary<string, object> GetModalManagers()
     {
