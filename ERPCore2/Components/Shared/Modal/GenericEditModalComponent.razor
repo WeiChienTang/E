@@ -181,7 +181,7 @@
         @if (UseGenericForm && FormFields.Any())
         {
             <div class="edit-form-container px-3">
-                <GenericFormComponent @key="@(Entity?.Id ?? 0)"
+                <GenericFormComponent @ref="genericFormComponent" @key="@(Entity?.Id ?? 0)"
                                     TModel="TEntity"
                                     Model="@Entity"
                                     FieldDefinitions="@GetProcessedFormFields()"
@@ -508,6 +508,9 @@
     private bool IsApproving { get; set; } = false;
     private bool IsRejecting { get; set; } = false;
     
+    // 通用表單組件參考（供跨欄位自動帶入使用）
+    private GenericFormComponent<TEntity>? genericFormComponent;
+
     // 駁回確認 Modal
     private RejectConfirmModalComponent? _rejectConfirmModal;
     private bool _isRejectConfirmModalVisible = false;
@@ -803,6 +806,16 @@
         IsVisible = true;
         if (IsVisibleChanged.HasDelegate)
             await IsVisibleChanged.InvokeAsync(true);
+    }
+
+    /// <summary>
+    /// 以程式方式設定 AutoComplete 欄位的值與顯示文字（跨欄位自動帶入）
+    /// 例如：選擇車輛後自動帶入對應客戶
+    /// </summary>
+    public async Task SetAutoCompleteFieldValueAsync(string propertyName, string value, string displayText)
+    {
+        if (genericFormComponent != null)
+            await genericFormComponent.SetAutoCompleteValueAsync(propertyName, value, displayText);
     }
 
     /// <summary>

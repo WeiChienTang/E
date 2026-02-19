@@ -1,0 +1,392 @@
+@* 可重用的廢料記錄編輯組件 *@
+@inject IWasteRecordService WasteRecordService
+@inject IWasteTypeService WasteTypeService
+@inject IVehicleService VehicleService
+@inject ICustomerService CustomerService
+@inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
+
+<GenericEditModalComponent TEntity="WasteRecord"
+                          TService="IWasteRecordService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@WasteRecordId"
+                          Service="@WasteRecordService"
+                          EntityName="廢料記錄"
+                          EntityNamePlural="廢料記錄"
+                          ModalTitle="@(WasteRecordId.HasValue ? "編輯廢料記錄" : "新增廢料記錄")"
+                          Size="GenericEditModalComponent<WasteRecord, IWasteRecordService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          ModalManagers="@modalManagers?.AsDictionary()"
+                          DataLoader="@LoadWasteRecordData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(WasteRecordId.HasValue ? "廢料記錄更新成功" : "廢料記錄新增成功")"
+                          SaveFailureMessage="廢料記錄儲存失敗"
+                          RequiredPermission="WasteRecord.Read"
+                          OnEntitySaved="@OnWasteRecordSaved"
+                          OnCancel="@OnCancel"
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          OnFieldChanged="@HandleFieldChangedAsync" />
+
+@* 廢料類型編輯 Modal *@
+<WasteTypeEditModalComponent @ref="wasteTypeEditModal"
+                             IsVisible="@wasteTypeModalManager.IsModalVisible"
+                             IsVisibleChanged="@wasteTypeModalManager.HandleModalVisibilityChangedAsync"
+                             WasteTypeId="@wasteTypeModalManager.SelectedEntityId"
+                             OnWasteTypeSaved="@wasteTypeModalManager.OnSavedAsync"
+                             OnCancel="@wasteTypeModalManager.HandleModalCancelAsync" />
+
+@* 客戶編輯 Modal *@
+<CustomerEditModalComponent @ref="customerEditModal"
+                           IsVisible="@customerModalManager.IsModalVisible"
+                           IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
+                           CustomerId="@customerModalManager.SelectedEntityId"
+                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
+                           OnCancel="@customerModalManager.HandleModalCancelAsync" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? WasteRecordId { get; set; }
+    [Parameter] public EventCallback<WasteRecord> OnWasteRecordSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<WasteRecord, IWasteRecordService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    // 選項資料
+    private List<WasteType> availableWasteTypes = new();
+    private List<Vehicle> availableVehicles = new();
+    private List<Customer> availableCustomers = new();
+
+    // Modal Manager 集合
+    private ModalManagerCollection? modalManagers;
+
+    // 廢料類型編輯 Modal
+    private WasteTypeEditModalComponent? wasteTypeEditModal;
+    private RelatedEntityModalManager<WasteType> wasteTypeModalManager = default!;
+
+    // 客戶編輯 Modal
+    private CustomerEditModalComponent? customerEditModal;
+    private RelatedEntityModalManager<Customer> customerModalManager = default!;
+
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleFieldChangedAsync((string PropertyName, object? Value) fieldChange)
+    {
+        if (editModalComponent?.Entity == null) return;
+
+        if (fieldChange.PropertyName == nameof(WasteRecord.VehicleId))
+        {
+            await HandleVehicleChangedAsync();
+        }
+        else if (fieldChange.PropertyName == nameof(WasteRecord.CustomerId))
+        {
+            await HandleCustomerChangedAsync();
+        }
+    }
+
+    // 選擇車輛 → 自動帶入所屬客戶
+    private async Task HandleVehicleChangedAsync()
+    {
+        var vehicleId = editModalComponent!.Entity.VehicleId;
+        if (vehicleId <= 0) return;
+
+        var vehicle = availableVehicles.FirstOrDefault(v => v.Id == vehicleId);
+        if (vehicle?.CustomerId == null) return;
+
+        var customer = availableCustomers.FirstOrDefault(c => c.Id == vehicle.CustomerId.Value);
+        if (customer == null) return;
+
+        await editModalComponent.SetAutoCompleteFieldValueAsync(
+            nameof(WasteRecord.CustomerId),
+            vehicle.CustomerId.Value.ToString(),
+            customer.CompanyName ?? "");
+    }
+
+    // 選擇客戶 → 若該客戶只有一台車則自動帶入，多台車不帶入（使用者自選）
+    // 注意：SetAutoCompleteFieldValueAsync 使用 SetPropertyValueInternal（不發通知）
+    //       因此不會再次觸發此 handler，無無限循環風險
+    private async Task HandleCustomerChangedAsync()
+    {
+        var customerId = editModalComponent!.Entity.CustomerId;
+        if (customerId == null || customerId <= 0) return;
+
+        var customerVehicles = availableVehicles
+            .Where(v => v.CustomerId == customerId)
+            .ToList();
+
+        if (customerVehicles.Count != 1) return;
+
+        var vehicle = customerVehicles[0];
+        await editModalComponent.SetAutoCompleteFieldValueAsync(
+            nameof(WasteRecord.VehicleId),
+            vehicle.Id.ToString(),
+            vehicle.LicensePlate);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 使用 ModalManagerInitHelper 初始化所有 Manager
+            modalManagers = ModalManagerInitHelper.CreateBuilder<WasteRecord, IWasteRecordService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<WasteType>(nameof(WasteRecord.WasteTypeId), "廢料類型")
+                .AddManager<Customer>(nameof(WasteRecord.CustomerId), "客戶")
+                .Build();
+
+            // 取得個別 Manager 供組件使用
+            wasteTypeModalManager = modalManagers.Get<WasteType>(nameof(WasteRecord.WasteTypeId));
+            customerModalManager = modalManagers.Get<Customer>(nameof(WasteRecord.CustomerId));
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化廢料記錄編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task<WasteRecord?> LoadWasteRecordData()
+    {
+        try
+        {
+            if (!WasteRecordId.HasValue)
+            {
+                var newRecord = new WasteRecord
+                {
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<WasteRecord, IWasteRecordService>(WasteRecordService, "WR"),
+                    RecordDate = DateTime.Today,
+                    Status = EntityStatus.Active
+                };
+
+                PrefilledValueHelper.ApplyPrefilledValues(newRecord, PrefilledValues);
+
+                return newRecord;
+            }
+
+            return await WasteRecordService.GetByIdAsync(WasteRecordId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入廢料記錄資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.Code),
+                    Label = "廢料單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "系統自動產生",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "廢料記錄的唯一識別單號，新增時系統自動產生"
+                },
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.RecordDate),
+                    Label = "記錄日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "廢料送達的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.VehicleId),
+                    Label = "車牌號碼",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇車輛（車牌）",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "送來廢料的車輛，選擇後自動帶入所屬客戶"
+                },
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.WasteTypeId),
+                    Label = "廢料類型",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇廢料類型",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "此次送來的廢料類型",
+                    ActionButtons = await GetWasteTypeActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.CustomerId),
+                    Label = "客戶",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇客戶",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "送料客戶，可由車輛自動帶入或手動選擇",
+                    ActionButtons = await GetCustomerActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.Quantity),
+                    Label = "數量",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入數量",
+                    IsRequired = false,
+                    HelpText = "廢料的數量（依廢料類型的計量單位）"
+                },
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.TotalWeight),
+                    Label = "總重量",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入總重量",
+                    IsRequired = false,
+                    HelpText = "廢料的總重量"
+                },
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.DisposalFee),
+                    Label = "處理費",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入處理費",
+                    IsRequired = false,
+                    HelpText = "我們向客戶/廠商收取的廢料處理服務費"
+                },
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.PurchaseFee),
+                    Label = "採購費",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入採購費",
+                    IsRequired = false,
+                    HelpText = "客戶/廠商向我們收取的廢料採購費用"
+                },
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.NetAmount),
+                    Label = "淨額",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入淨額",
+                    IsRequired = false,
+                    HelpText = "淨額 = 處理費 - 採購費"
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<WasteRecord>()
+            };
+
+            formSections = FormSectionHelper<WasteRecord>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    wr => wr.Code,
+                    wr => wr.RecordDate,
+                    wr => wr.VehicleId,
+                    wr => wr.WasteTypeId,
+                    wr => wr.CustomerId)
+                .AddToSection("廢料資訊",
+                    wr => wr.Quantity,
+                    wr => wr.TotalWeight)
+                .AddToSection("費用資訊",
+                    wr => wr.DisposalFee,
+                    wr => wr.PurchaseFee,
+                    wr => wr.NetAmount)
+                .AddToSection(FormSectionNames.AdditionalInfo,
+                    wr => wr.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化廢料記錄表單欄位時發生錯誤");
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            availableWasteTypes = await WasteTypeService.GetAllAsync();
+            availableVehicles = await VehicleService.GetAllAsync();
+            availableCustomers = await CustomerService.GetAllAsync();
+
+            // 重新建立 AutoComplete 配置
+            // 車輛顯示：車牌 + 客戶名（方便識別）
+            autoCompleteConfig = new AutoCompleteConfigBuilder<WasteRecord>()
+                .AddField(nameof(WasteRecord.VehicleId), "LicensePlate", availableVehicles)
+                .AddField(nameof(WasteRecord.WasteTypeId), "Name", availableWasteTypes)
+                .AddField(nameof(WasteRecord.CustomerId), "CompanyName", availableCustomers)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入廢料記錄編輯相關資料時發生錯誤");
+            availableWasteTypes = new List<WasteType>();
+            availableVehicles = new List<Vehicle>();
+            availableCustomers = new List<Customer>();
+        }
+    }
+
+    private async Task<List<FieldActionButton>> GetWasteTypeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            wasteTypeModalManager,
+            nameof(WasteRecord.WasteTypeId)
+        );
+    }
+
+    private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            customerModalManager,
+            nameof(WasteRecord.CustomerId)
+        );
+    }
+}

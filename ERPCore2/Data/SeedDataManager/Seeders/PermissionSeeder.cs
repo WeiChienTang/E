@@ -92,6 +92,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { Code = "InventoryTransaction.Read", Name = "檢視庫存異動", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存進出異動記錄" },
                 new Permission { Code = "MaterialIssue.Read", Name = "檢視領料單", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視領料單基本資料與明細" },
                 
+                // 廢料管理權限
+                new Permission { Code = "WasteRecord.Read", Name = "檢視廢料記錄", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視廢料記錄基本資料與相關資訊" },
+                new Permission { Code = "WasteType.Read", Name = "檢視廢料類型", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視廢料類型基本資料與相關資訊" },
+
                 // 庫存明細權限
                 new Permission { Code = "InventoryStock.Read", Name = "檢視庫存明細", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視詳細庫存明細與批號資訊" },
                 

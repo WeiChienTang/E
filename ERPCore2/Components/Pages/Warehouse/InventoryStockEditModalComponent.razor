@@ -556,10 +556,10 @@
                               IsPreconditionMet="@(editModalComponent?.Entity?.ProductId > 0)"
                               PreconditionMessage="請先選擇商品後再進行庫存明細管理">
             <InventoryStockTable @ref="inventoryStockDetailManager"
-                                 @key="@editModalComponent.Entity.Id"
+                                 @key="@editModalComponent!.Entity.Id"
                                  TMainEntity="InventoryStock"
                                  TDetailEntity="InventoryStockDetail"
-                                 MainEntity="@editModalComponent.Entity"
+                                 MainEntity="@editModalComponent!.Entity"
                                  ExistingDetails="@inventoryStockDetails"
                                  SelectedInventoryStockId="@(editModalComponent.Entity.Id > 0 ? editModalComponent.Entity.Id : null)"
                                  Warehouses="@availableWarehouses"

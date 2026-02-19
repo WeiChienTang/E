@@ -851,7 +851,7 @@
             <QuotationTable @ref="quotationDetailManager"
                                     TMainEntity="Quotation"
                                     TDetailEntity="QuotationDetail"
-                                    MainEntity="@editModalComponent.Entity"
+                                    MainEntity="@editModalComponent!.Entity"
                                     ExistingDetails="@quotationDetails"
                                     DataVersion="@_detailsDataVersion"
                                     IsParentLoading="@(editModalComponent?.IsLoading ?? false)"

@@ -1459,7 +1459,7 @@
             <PurchaseReceivingTable @ref="purchaseReceivingDetailManager"
                                     TMainEntity="PurchaseReceiving"
                                     TDetailEntity="PurchaseReceivingDetail"
-                                    SelectedSupplierId="@editModalComponent.Entity.SupplierId"
+                                    SelectedSupplierId="@editModalComponent!.Entity.SupplierId"
                                     SelectedPurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
                                     FilterProductId="@filterProductId"
                                     SelectedSupplierName="@GetSelectedSupplierName()"

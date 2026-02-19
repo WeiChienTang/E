@@ -1,0 +1,110 @@
+@* 可重用的廢料類型編輯組件 - 可在任何頁面中嵌入 *@
+@inject IWasteTypeService WasteTypeService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="WasteType"
+                          TService="IWasteTypeService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@WasteTypeId"
+                          Service="@WasteTypeService"
+                          EntityName="廢料類型"
+                          EntityNamePlural="廢料類型"
+                          ModalTitle="@(WasteTypeId.HasValue ? "編輯廢料類型" : "新增廢料類型")"
+                          Size="GenericEditModalComponent<WasteType, IWasteTypeService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadWasteTypeData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(WasteTypeId.HasValue ? "廢料類型更新成功" : "廢料類型新增成功")"
+                          SaveFailureMessage="廢料類型儲存失敗"
+                          RequiredPermission="WasteType.Read"
+                          OnEntitySaved="@OnWasteTypeSaved"
+                          OnCancel="@OnCancel" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? WasteTypeId { get; set; }
+    [Parameter] public EventCallback<WasteType> OnWasteTypeSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<WasteType, IWasteTypeService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    private Task<WasteType?> LoadWasteTypeData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<WasteType, IWasteTypeService>(
+            WasteTypeId, WasteTypeService, NotificationService, "廢料類型", "WT", PrefilledValues,
+            wt => wt.Name = string.Empty);
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(WasteType.Code),
+                Label = "廢料類型編號",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入廢料類型編號",
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "唯一識別此廢料類型的編號，最多50個字元"
+            },
+            new()
+            {
+                PropertyName = nameof(WasteType.Name),
+                Label = "廢料類型名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入廢料類型名稱",
+                IsRequired = true,
+                MaxLength = 100,
+                HelpText = "廢料類型的顯示名稱，最多100個字元"
+            },
+            new()
+            {
+                PropertyName = nameof(WasteType.Unit),
+                Label = "計量單位",
+                FieldType = FormFieldType.Text,
+                Placeholder = "例如：公斤、公噸、桶",
+                IsRequired = false,
+                MaxLength = 20,
+                HelpText = "此廢料類型的計量單位"
+            },
+            new()
+            {
+                PropertyName = nameof(WasteType.Description),
+                Label = "描述",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入廢料類型描述",
+                IsRequired = false,
+                MaxLength = 200,
+                HelpText = "廢料類型的詳細說明，最多200個字元"
+            },
+
+            FormFieldConfigurationHelper.CreateRemarksField<WasteType>()
+        };
+
+        formSections = FormSectionHelper<WasteType>.Create()
+            .AddToSection(FormSectionNames.BasicInfo,
+                wt => wt.Code,
+                wt => wt.Name,
+                wt => wt.Unit)
+            .AddToSection(FormSectionNames.AdditionalInfo,
+                wt => wt.Description,
+                wt => wt.Remarks)
+            .Build();
+    }
+}

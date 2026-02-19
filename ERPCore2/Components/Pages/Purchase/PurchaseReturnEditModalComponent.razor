@@ -1058,7 +1058,7 @@
                               IsPreconditionMet="@(editModalComponent?.Entity?.SupplierId > 0)"
                               PreconditionMessage="請先選擇廠商後再進行退貨明細管理">
             <PurchaseReturnTable @ref="purchaseReturnDetailManager"
-                                 SupplierId="@editModalComponent.Entity.SupplierId"
+                                 SupplierId="@editModalComponent!.Entity.SupplierId"
                                  FilterPurchaseReceivingId="@filterPurchaseReceivingId"
                                  FilterProductId="@filterProductId"
                                  SelectedSupplierName="@GetSelectedSupplierName()"

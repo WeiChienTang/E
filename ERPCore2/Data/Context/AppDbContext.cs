@@ -98,6 +98,8 @@ namespace ERPCore2.Data.Context
       public DbSet<VehicleType> VehicleTypes { get; set; }
       public DbSet<Vehicle> Vehicles { get; set; }
       public DbSet<VehicleMaintenance> VehicleMaintenances { get; set; }
+      public DbSet<WasteType> WasteTypes { get; set; }
+      public DbSet<WasteRecord> WasteRecords { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1305,6 +1307,35 @@ namespace ERPCore2.Data.Context
                               .OnDelete(DeleteBehavior.NoAction);
 
                         // 面板關聯（已在 Panel Entity 設定，此處可省略）
+                  });
+
+                  // 廢料管理相關
+                  modelBuilder.Entity<WasteType>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                  });
+
+                  modelBuilder.Entity<WasteRecord>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 車輛關聯
+                        entity.HasOne(wr => wr.Vehicle)
+                              .WithMany()
+                              .HasForeignKey(wr => wr.VehicleId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        // 廢料類型關聯
+                        entity.HasOne(wr => wr.WasteType)
+                              .WithMany(wt => wt.WasteRecords)
+                              .HasForeignKey(wr => wr.WasteTypeId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        // 客戶關聯（Optional）
+                        entity.HasOne(wr => wr.Customer)
+                              .WithMany()
+                              .HasForeignKey(wr => wr.CustomerId)
+                              .OnDelete(DeleteBehavior.SetNull);
                   });
             }
     }

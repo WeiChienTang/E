@@ -1,0 +1,77 @@
+@page "/waste-types"
+@inject IWasteTypeService WasteTypeService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="WasteType"
+                          TService="IWasteTypeService"
+                          Service="@WasteTypeService"
+                          EntityBasePath="/waste-types"
+                          PageTitle="廢料類型維護"
+                          PageSubtitle="管理廢料類型分類資料"
+                          EntityName="廢料類型"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadWasteTypesAsync"
+                          FilterApplier="@ApplyWasteTypeFilters"
+                          GetEntityDisplayName="@(wt => wt.Name)"
+                          RequiredPermission="WasteType.Read"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+<WasteTypeEditModalComponent IsVisible="@showEditModal"
+                             IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                             WasteTypeId="@editingWasteTypeId"
+                             OnWasteTypeSaved="@modalHandler.OnEntitySavedAsync"
+                             OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<WasteType, IWasteTypeService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingWasteTypeId = null;
+
+    private ModalHandler<WasteType, GenericIndexPageComponent<WasteType, IWasteTypeService>> modalHandler = default!;
+
+    private WasteTypeFieldConfiguration fieldConfiguration = default!;
+
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<WasteType, GenericIndexPageComponent<WasteType, IWasteTypeService>>(
+                id => editingWasteTypeId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new WasteTypeFieldConfiguration(NotificationService);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化廢料類型頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化廢料類型頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("廢料管理", "廢料類型維護", "#", NotificationService, GetType());
+
+    private Task<List<WasteType>> LoadWasteTypesAsync() =>
+        DataLoaderHelper.LoadAsync(() => WasteTypeService.GetAllAsync(), "廢料類型", NotificationService, GetType());
+
+    private IQueryable<WasteType> ApplyWasteTypeFilters(SearchFilterModel searchModel, IQueryable<WasteType> query) =>
+        fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWasteTypeFilters), GetType());
+}

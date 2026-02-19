@@ -153,15 +153,23 @@
     {
         // 判斷 Value 是否有效（不是空、null 或 "0"）
         var hasValidValue = !string.IsNullOrEmpty(Value) && Value != "0";
-        
+
         // 判斷是否從有值變成無值（真正的「清除」動作）
         var previousWasValid = !string.IsNullOrEmpty(_previousValue) && _previousValue != "0";
         var valueWasCleared = previousWasValid && !hasValidValue;
-        
+
+        // 判斷是否從一個有效值換到另一個有效值（例如：程式自動帶入跨欄位值）
+        var valueChangedToAnother = hasValidValue && previousWasValid && _previousValue != Value;
+
         if (valueWasCleared)
         {
             // 情況1：值從有效變成無效 → 清空 DisplayValue
             _state.DisplayValue = string.Empty;
+        }
+        else if (valueChangedToAnother && !string.IsNullOrEmpty(InitialDisplayValue))
+        {
+            // 情況4：值從一個有效值換成另一個有效值（程式自動帶入）→ 更新 DisplayValue
+            _state.DisplayValue = InitialDisplayValue;
         }
         else if (hasValidValue && string.IsNullOrEmpty(_state.DisplayValue))
         {
@@ -177,7 +185,7 @@
         }
         // 情況3：Value 一開始就是空的（虛擬欄位）→ 不干擾，保持 DisplayValue
         // 這允許用戶在虛擬欄位中輸入和選擇
-        
+
         // 更新追蹤的值
         _previousValue = Value;
     }

@@ -86,7 +86,7 @@
         <DetailSectionWrapper IsEntityReady="@(currentTransaction != null)">
             <div class="mt-4">
                 <InventoryTransactionTable Details="@transactionDetails"
-                                           TransactionNumber="@currentTransaction.TransactionNumber" />
+                                           TransactionNumber="@currentTransaction!.TransactionNumber" />
             </div>
         </DetailSectionWrapper>
     };

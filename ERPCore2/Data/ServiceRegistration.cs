@@ -137,6 +137,10 @@ namespace ERPCore2.Data
             services.AddScoped<IVehicleService, VehicleService>();
             services.AddScoped<IVehicleMaintenanceService, VehicleMaintenanceService>();
 
+            // 廢料管理服務
+            services.AddScoped<IWasteTypeService, WasteTypeService>();
+            services.AddScoped<IWasteRecordService, WasteRecordService>();
+
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IEmployeePositionService, EmployeePositionService>();

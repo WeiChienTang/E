@@ -1,0 +1,77 @@
+@page "/waste-records"
+@inject IWasteRecordService WasteRecordService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="WasteRecord"
+                          TService="IWasteRecordService"
+                          Service="@WasteRecordService"
+                          EntityBasePath="/waste-records"
+                          PageTitle="廢料記錄"
+                          PageSubtitle="管理廢料收料記錄"
+                          EntityName="廢料記錄"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadWasteRecordsAsync"
+                          FilterApplier="@ApplyWasteRecordFilters"
+                          GetEntityDisplayName="@(wr => wr.Code ?? $"廢料記錄#{wr.Id}")"
+                          RequiredPermission="WasteRecord.Read"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+<WasteRecordEditModalComponent IsVisible="@showEditModal"
+                               IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                               WasteRecordId="@editingWasteRecordId"
+                               OnWasteRecordSaved="@modalHandler.OnEntitySavedAsync"
+                               OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<WasteRecord, IWasteRecordService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingWasteRecordId = null;
+
+    private ModalHandler<WasteRecord, GenericIndexPageComponent<WasteRecord, IWasteRecordService>> modalHandler = default!;
+
+    private WasteRecordFieldConfiguration fieldConfiguration = default!;
+
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<WasteRecord, GenericIndexPageComponent<WasteRecord, IWasteRecordService>>(
+                id => editingWasteRecordId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new WasteRecordFieldConfiguration(NotificationService);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化廢料記錄頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化廢料記錄頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("廢料管理", "廢料記錄", "#", NotificationService, GetType());
+
+    private Task<List<WasteRecord>> LoadWasteRecordsAsync() =>
+        DataLoaderHelper.LoadAsync(() => WasteRecordService.GetAllAsync(), "廢料記錄", NotificationService, GetType());
+
+    private IQueryable<WasteRecord> ApplyWasteRecordFilters(SearchFilterModel searchModel, IQueryable<WasteRecord> query) =>
+        fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWasteRecordFilters), GetType());
+}

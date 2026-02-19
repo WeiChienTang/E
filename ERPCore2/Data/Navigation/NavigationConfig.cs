@@ -665,6 +665,46 @@ public static class NavigationConfig
                 }
             },
 
+            // ==================== 廢料管理 ====================
+            new NavigationItem
+            {
+                Name = "廢料管理",
+                Description = "廢料收料記錄與類型管理",
+                Route = "#",
+                IconClass = "bi bi-recycle",
+                Category = "廢料管理",
+                IsParent = true,
+                MenuKey = "waste_management",
+                SearchKeywords = new List<string> { "廢料", "廢棄物", "廢料管理", "waste", "scrap" },
+                Children = new List<NavigationItem>
+                {
+                    new NavigationItem
+                    {
+                        Name = "廢料記錄",
+                        Description = "管理廢料收料記錄",
+                        Route = "/waste-records",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "廢料管理",
+                        RequiredPermission = "WasteRecord.Read",
+                        SearchKeywords = new List<string> { "廢料記錄", "收料記錄", "廢料單", "waste record" },
+                        QuickActionId = "NewWasteRecord",
+                        QuickActionName = "新增廢料記錄"
+                    },
+                    new NavigationItem
+                    {
+                        Name = "廢料類型",
+                        Description = "管理廢料類型分類設定",
+                        Route = "/waste-types",
+                        IconClass = "",
+                        Category = "廢料管理",
+                        RequiredPermission = "WasteType.Read",
+                        SearchKeywords = new List<string> { "廢料類型", "廢料分類", "waste type" },
+                        QuickActionId = "NewWasteType",
+                        QuickActionName = "新增廢料類型"
+                    },
+                }
+            },
+
             // ==================== 財務管理 ====================
             new NavigationItem
             {
@@ -981,6 +1021,7 @@ public static class NavigationConfig
             "銷售管理" => "bi bi-cart-fill",
             "財務管理" => "bi bi-journal-text",
             "車輛管理" => "bi bi-truck-front-fill",
+            "廢料管理" => "bi bi-recycle",
             "系統管理" => "bi bi-gear-fill",
             "基礎功能" => "bi bi-house-door-fill",
             _ => "bi bi-link-45deg" // 預設圖示

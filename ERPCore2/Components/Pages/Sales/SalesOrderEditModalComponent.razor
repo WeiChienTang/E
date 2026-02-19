@@ -668,7 +668,7 @@
             <SalesOrderTable @ref="salesOrderDetailManager"
                              TMainEntity="SalesOrder"
                              TDetailEntity="SalesOrderDetail"
-                             MainEntity="@editModalComponent.Entity"
+                             MainEntity="@editModalComponent!.Entity"
                              ExistingDetails="@salesOrderDetails"
                              DataVersion="@_detailsDataVersion"
                              IsParentLoading="@(editModalComponent?.IsLoading ?? false)"

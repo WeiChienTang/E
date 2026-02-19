@@ -1076,7 +1076,7 @@
             <SalesDeliveryTable @ref="salesDeliveryDetailManager"
                                 TMainEntity="SalesDelivery"
                                 TDetailEntity="SalesDeliveryDetail"
-                                MainEntity="@editModalComponent.Entity"
+                                MainEntity="@editModalComponent!.Entity"
                                 ExistingDetails="@salesDeliveryDetails"
                                 DataVersion="@_detailsDataVersion"
                                 IsParentLoading="@(editModalComponent?.IsLoading ?? false)"

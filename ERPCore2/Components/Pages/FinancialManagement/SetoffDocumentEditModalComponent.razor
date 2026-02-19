@@ -1459,7 +1459,7 @@
                               PreconditionMessage="@($"請先選擇{(editModalComponent?.Entity?.SetoffType == SetoffType.AccountsReceivable ? "客戶" : "廠商")}以載入商品明細")">
             <SetoffProductTable @ref="setoffProductDetailManager"
                                 SetoffDocumentId="@SetoffDocumentId"
-                                SetoffType="@editModalComponent.Entity.SetoffType"
+                                SetoffType="@editModalComponent!.Entity.SetoffType"
                                 RelatedPartyId="@editModalComponent.Entity.RelatedPartyId"
                                 RelatedPartyType="@editModalComponent.Entity.RelatedPartyType"
                                 RelatedPartyName="@GetRelatedPartyName()"

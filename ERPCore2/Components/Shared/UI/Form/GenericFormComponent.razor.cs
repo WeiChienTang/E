@@ -143,6 +143,18 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
     }
 
     /// <summary>
+    /// 以程式方式設定 AutoComplete 欄位的值與顯示文字
+    /// 供外部組件（如 EditModal）呼叫以實現跨欄位自動帶入
+    /// </summary>
+    public async Task SetAutoCompleteValueAsync(string propertyName, string value, string displayText)
+    {
+        var state = _autoCompleteStates.GetOrCreate(propertyName);
+        state.DisplayValue = displayText;
+        SetPropertyValueInternal(Model, propertyName, value);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
     /// 套用欄位預設值
     /// </summary>
     private void ApplyDefaultValues()
