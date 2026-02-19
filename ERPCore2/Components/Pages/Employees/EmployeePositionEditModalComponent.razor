@@ -14,7 +14,7 @@
                           ModalTitle="@(EmployeePositionId.HasValue ? "編輯職位" : "新增職位")"
                           Size="GenericEditModalComponent<EmployeePosition, IEmployeePositionService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadEmployeePositionData"
                           UseGenericSave="true"
@@ -93,11 +93,6 @@
         {
             _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
         }
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
     }
 
     // ===== 公開方法 (供父組件調用) =====

@@ -14,7 +14,7 @@
                           ModalTitle="@(PaymentMethodId.HasValue ? "編輯付款方式" : "新增付款方式")"
                           Size="GenericEditModalComponent<PaymentMethod, IPaymentMethodService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadPaymentMethodData"
                           UseGenericSave="true"
@@ -105,11 +105,6 @@
                 }
             });
         }
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
     }
 
     // ===== 公開方法 (供父組件調用) =====

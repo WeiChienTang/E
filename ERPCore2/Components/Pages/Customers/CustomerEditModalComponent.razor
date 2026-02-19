@@ -21,14 +21,14 @@
                           ModalTitle="@(CustomerId.HasValue ? "編輯客戶" : "新增客戶")"
                           Size="GenericEditModalComponent<Customer, ICustomerService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadCustomerData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(CustomerId.HasValue ? "客戶更新成功" : "客戶新增成功")"
@@ -520,11 +520,6 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-    
     private async Task LoadAdditionalDataAsync()
     {
         try
@@ -547,18 +542,6 @@
             availableEmployees = new List<Employee>();
             availablePaymentMethods = new List<PaymentMethod>();
         }
-    }
-    
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(Customer.EmployeeId), employeeModalManager },
-            { nameof(Customer.PaymentMethodId), paymentMethodModalManager }
-        };
     }
     
     /// <summary>

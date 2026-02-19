@@ -14,10 +14,9 @@
                           ModalTitle="@(WarehouseId.HasValue ? "編輯倉庫" : "新增倉庫")"
                           Size="GenericEditModalComponent<Warehouse, IWarehouseService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadWarehouseData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(WarehouseId.HasValue ? "倉庫更新成功" : "倉庫新增成功")"
                           SaveFailureMessage="倉庫儲存失敗"
@@ -69,18 +68,6 @@
     private Task<Warehouse?> LoadWarehouseData()
         => EditDataLoaderHelper.LoadOrCreateAsync<Warehouse, IWarehouseService>(
             WarehouseId, WarehouseService, NotificationService, "倉庫", "WH", null);
-    private async Task LoadAdditionalDataAsync()
-    {
-        try
-        {
-            // 目前沒有需要載入的額外資料
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
-        }
-    }
 
     protected override void OnParametersSet()
     {
@@ -173,11 +160,6 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-    
     // ===== CustomModules 相關方法 =====
     
     /// <summary>

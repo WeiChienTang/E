@@ -14,10 +14,9 @@
                           ModalTitle="@(RoleId.HasValue ? "編輯權限組" : "新增權限組")"
                           Size="GenericEditModalComponent<Role, IRoleService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadRoleData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(RoleId.HasValue ? "權限組更新成功" : "權限組新增成功")"
                           SaveFailureMessage="權限組儲存失敗"
@@ -39,21 +38,7 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
 
-    // ===== 生命週期 =====
     // ===== 資料載入 =====
-    private async Task LoadAdditionalDataAsync()
-    {
-        try
-        {
-            // 權限組編輯通常不需要額外載入其他資料
-            // 如果未來需要載入權限清單等資料，可以在這裡實作
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
-        }
-    }
     private Task<Role?> LoadRoleData()
         => EditDataLoaderHelper.LoadOrCreateAsync<Role, IRoleService>(
             RoleId, RoleService, NotificationService, "權限組", "ROLE", PrefilledValues);
@@ -116,8 +101,4 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
 }

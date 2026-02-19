@@ -25,13 +25,13 @@
                           ModalTitle="@(SetoffDocumentId.HasValue ? "編輯沖款單" : "新增沖款單")"
                           Size="GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadSetoffDocumentData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(SetoffDocumentId.HasValue ? "沖款單更新成功" : "沖款單新增成功")"
@@ -1225,11 +1225,6 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-
     /// <summary>
     /// 欄位變更事件處理
     /// </summary>
@@ -1317,17 +1312,6 @@
         {
             // 忽略錯誤
         }
-    }
-
-    // ===== Modal 管理器 =====
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(SetoffDocument.CompanyId), companyModalManager },
-            { "CustomerId", customerModalManager },
-            { "SupplierId", supplierModalManager }
-        };
     }
 
     // ===== Action Buttons =====

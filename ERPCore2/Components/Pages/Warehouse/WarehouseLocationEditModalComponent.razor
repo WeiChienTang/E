@@ -16,12 +16,12 @@
                           ModalTitle="@(WarehouseLocationId.HasValue ? "編輯倉庫內位置" : "新增倉庫內位置")"
                           Size="GenericEditModalComponent<WarehouseLocation, IWarehouseLocationService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadWarehouseLocationData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(WarehouseLocationId.HasValue ? "倉庫內位置更新成功" : "倉庫內位置新增成功")"
@@ -235,22 +235,6 @@
                 additionalData: new { WarehouseLocationId }
             );
         }
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(WarehouseLocation.WarehouseId), warehouseModalManager }
-        };
     }
 
     // ===== ActionButton 產生方法 =====

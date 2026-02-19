@@ -77,6 +77,11 @@ namespace ERPCore2.Helpers.EditModal
         /// 取得已註冊的 Manager 數量
         /// </summary>
         public int Count => _managers.Count;
+
+        /// <summary>
+        /// 回傳內部 Dictionary 引用（供 GenericEditModalComponent ModalManagers 參數直接綁定）
+        /// </summary>
+        public Dictionary<string, object> AsDictionary() => _managers;
     }
 
     /// <summary>

@@ -25,13 +25,13 @@
                           ModalTitle="@(CompositionId.HasValue ? "編輯商品物料清單" : "新增商品物料清單")"
                           Size="GenericEditModalComponent<ProductComposition, IProductCompositionService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadCompositionData"
                           SaveHandler="@SaveCompositionWithDetails"
                           SaveSuccessMessage="@(CompositionId.HasValue ? "商品物料清單更新成功" : "商品物料清單新增成功")"
@@ -395,11 +395,6 @@ ShowPrintButton="true"
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-
     // ===== 自訂模組 =====
     private List<GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule> GetCustomModules()
     {
@@ -602,18 +597,6 @@ ShowPrintButton="true"
     public Task ShowAddModal() => editModalComponent!.ShowAddModal();
     public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
     // ===== Modal 管理器配置方法 =====
-    
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(ProductComposition.CustomerId), customerModalManager },
-            { nameof(ProductComposition.CreatedByEmployeeId), employeeModalManager }
-        };
-    }
     
     // ===== ActionButton 產生方法 =====
     

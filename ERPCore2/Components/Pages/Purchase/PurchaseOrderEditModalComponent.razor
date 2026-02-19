@@ -37,7 +37,7 @@
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadPurchaseOrderData"
                           SaveHandler="@SavePurchaseOrderWrapper"
                           SaveSuccessMessage="@(PurchaseOrderId.HasValue ? "採購單更新成功" : "採購單新增成功")"
@@ -321,13 +321,7 @@
                 .AddField(nameof(PurchaseOrder.CompanyId), "CompanyName", availableCompanies)
                 .Build();
 
-            // 初始化稅率算法選項
-            taxCalculationMethodOptions = new List<SelectOption>
-            {
-                new SelectOption { Text = "外加稅", Value = ((int)TaxCalculationMethod.TaxExclusive).ToString() },
-                new SelectOption { Text = "內含稅", Value = ((int)TaxCalculationMethod.TaxInclusive).ToString() },
-                new SelectOption { Text = "不含稅", Value = ((int)TaxCalculationMethod.NoTax).ToString() }
-            };
+            taxCalculationMethodOptions = TaxCalculationHelper.GetTaxMethodOptions();
         }
         catch (Exception ex)
         {
@@ -501,17 +495,6 @@
     }
 
     // ===== AutoComplete 配置方法 =====
-    
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(PurchaseOrder.SupplierId), supplierModalManager }
-        };
-    }
     
     /// <summary>
     /// 配置自訂模組
@@ -978,7 +961,7 @@
             }
             
             // 呼叫服務進行審核
-            var currentUserId = await GetCurrentUserIdAsync();
+            var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
             if (!currentUserId.HasValue)
             {
                 await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
@@ -1022,7 +1005,7 @@
             // 駁回原因已從 Modal 中獲得，不需要再次確認
             
             // 取得當前使用者ID
-            var currentUserId = await GetCurrentUserIdAsync();
+            var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
             if (!currentUserId.HasValue)
             {
                 await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
@@ -1096,34 +1079,6 @@
             </button>
         </div>
     };
-    
-    /// <summary>
-    /// 取得當前使用者ID
-    /// </summary>
-    private async Task<int?> GetCurrentUserIdAsync()
-    {
-        try
-        {
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-
-            if (!user.Identity?.IsAuthenticated ?? true)
-                return null;
-
-            // 從Claims中取得使用者ID (通常存在NameIdentifier中)
-            var employeeIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(employeeIdClaim, out int employeeId))
-                return employeeId;
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetCurrentUserIdAsync), GetType(), 
-                additionalData: "取得當前使用者ID失敗");
-            return null;
-        }
-    }
     
     // ===== 相關單據開啟處理方法 =====
     

@@ -16,7 +16,7 @@
                           ModalTitle="@(CompanyId.HasValue ? "編輯公司" : "新增公司")"
                           Size="GenericEditModalComponent<Company, ICompanyService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadCompanyData"
                           UseGenericSave="true"
@@ -288,10 +288,6 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
     // ===== LOGO 管理相關 =====
     
     private InputFile? logoInputFile;

@@ -389,6 +389,14 @@ public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 | P3 | OnTaxMethodChanged 參數（稅別變更自動處理） | 7 個 | ~50 行 |
 | P16 | ActionButton 自動更新（ModalManagers 自動處理） | 8 個 | ~240 行 |
 
+### 已完成（第五階段）
+
+| 項目 | 說明 | 已套用 Edit 數 | 節省行數 |
+|---|---|---|---|
+| P19 | GetFormFields() wrapper 移除（直接綁定 @formFields） | 34 個 | ~136 行 |
+| P20 | 空殼 LoadAdditionalDataAsync 移除（await Task.CompletedTask 佔位） | 8 個 | ~96 行 |
+| P22 | GetModalManagers() wrapper 移除（ModalManagerCollection.AsDictionary() 直接綁定） | 17 個 | ~119 行 |
+
 ### 未來（需較大改動 GenericEditModalComponent）
 
 | 項目 | 說明 |
@@ -642,9 +650,12 @@ OnDepartmentSaved="@departmentModalManager.OnSavedAsync"
 | 2 | OnParametersSetAsync 守衛 | **P17** | ~350 行 | 中 | 移入 GenericEditModalComponent |
 | 3 | OnXxxSavedWrapper 轉發 | **P18** ✅ | ~160 行 | 低 | RelatedEntityModalManager.OnSavedAsync |
 | 4 | OnFieldValueChanged 純 ActionButton | **P16** ✅ | ~240 行 | 中 | Generic 自動處理 ModalManagers |
-| 5 | OnTaxMethodChanged 分支 | **P3** | ~70 行 | 低 | Generic 新增參數 |
+| 5 | OnTaxMethodChanged 分支 | **P3** ✅ | ~70 行 | 低 | Generic 新增參數 |
+| 6 | GetFormFields() wrapper 移除 | **P19** ✅ | ~136 行 | 極低 | 直接綁定 @formFields |
+| 7 | 空殼 LoadAdditionalDataAsync 移除 | **P20** ✅ | ~96 行 | 極低 | 刪除死碼 |
+| 8 | GetModalManagers() wrapper 移除 | **P22** ✅ | ~119 行 | 極低 | AsDictionary() 直接綁定 |
 
-**總計預估**：~1,375-1,775 行
+**總計預估**：~1,375-1,775 行（新增項目後更多）
 
 ---
 

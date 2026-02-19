@@ -21,7 +21,7 @@
                           ModalTitle="檢視庫存異動記錄 (唯讀)"
                           Size="GenericEditModalComponent<InventoryTransaction, IInventoryTransactionService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadInventoryTransactionData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -329,11 +329,6 @@
             });
             formFields = new List<FormFieldDefinition>();
         }
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
     }
 
     private List<SelectOption> GetTransactionTypeOptions()

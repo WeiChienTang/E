@@ -32,13 +32,13 @@
                           ModalTitle="@(QuotationId.HasValue ? "編輯報價單" : "新增報價單")"
                           Size="GenericEditModalComponent<Quotation, IQuotationService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadQuotationData"
                           SaveHandler="@SaveQuotationWithDetails"
                           SaveSuccessMessage="@(QuotationId.HasValue ? "報價單更新成功" : "報價單新增成功")"
@@ -330,13 +330,7 @@
             // 載入單位列表（用於明細）
             availableUnits = await UnitService.GetAllAsync();
             
-            // 初始化稅別下拉選項
-            taxCalculationMethodOptions = new List<SelectOption>
-            {
-                new SelectOption { Value = ((int)TaxCalculationMethod.TaxExclusive).ToString(), Text = "外加稅" },
-                new SelectOption { Value = ((int)TaxCalculationMethod.TaxInclusive).ToString(), Text = "內含稅" },
-                new SelectOption { Value = ((int)TaxCalculationMethod.NoTax).ToString(), Text = "不含稅" }
-            };
+            taxCalculationMethodOptions = TaxCalculationHelper.GetTaxMethodOptions();
             
             // 使用 AutoCompleteConfigHelper 建立配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<Quotation>()
@@ -566,10 +560,7 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
+
 
     /// <summary>
     /// 驗證報價單明細 - 在儲存主檔之前執行
@@ -960,18 +951,6 @@
         return displayAttribute?.Name ?? enumValue.ToString();
     }
 
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(Quotation.CustomerId), customerModalManager },
-            { nameof(Quotation.CompanyId), companyModalManager },
-            { nameof(Quotation.EmployeeId), employeeModalManager }
-        };
-    }
 
 
     /// <summary>
@@ -1302,7 +1281,7 @@
             }
 
             // 取得當前使用者ID
-            var currentUserId = await GetCurrentUserIdAsync();
+            var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
             if (!currentUserId.HasValue)
             {
                 await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
@@ -1363,7 +1342,7 @@
             }
 
             // 取得當前使用者ID
-            var currentUserId = await GetCurrentUserIdAsync();
+            var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
             if (!currentUserId.HasValue)
             {
                 await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
@@ -1444,34 +1423,6 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadQuotationDetails), GetType(), 
                 additionalData: $"載入報價單明細失敗 - QuotationId: {quotationId}");
             quotationDetails = new List<QuotationDetail>();
-        }
-    }
-    
-    /// <summary>
-    /// 取得當前使用者ID
-    /// </summary>
-    private async Task<int?> GetCurrentUserIdAsync()
-    {
-        try
-        {
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-            
-            if (user?.Identity?.IsAuthenticated == true)
-            {
-                var userIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-                {
-                    return userId;
-                }
-            }
-            
-            return null;
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetCurrentUserIdAsync), GetType());
-            return null;
         }
     }
 }

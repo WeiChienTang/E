@@ -20,13 +20,13 @@
                           ModalTitle="@(VehicleMaintenanceId.HasValue ? "編輯保養紀錄" : "新增保養紀錄")"
                           Size="GenericEditModalComponent<VehicleMaintenance, IVehicleMaintenanceService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadMaintenanceData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(VehicleMaintenanceId.HasValue ? "保養紀錄更新成功" : "保養紀錄新增成功")"
@@ -309,11 +309,6 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-
     private async Task LoadAdditionalDataAsync()
     {
         try
@@ -334,15 +329,6 @@
             availableVehicles = new List<Vehicle>();
             availableEmployees = new List<Employee>();
         }
-    }
-
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(VehicleMaintenance.VehicleId), vehicleModalManager },
-            { nameof(VehicleMaintenance.EmployeeId), employeeModalManager }
-        };
     }
 
     private async Task<List<FieldActionButton>> GetVehicleActionButtonsAsync()

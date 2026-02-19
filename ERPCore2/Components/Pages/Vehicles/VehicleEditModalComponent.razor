@@ -23,13 +23,13 @@
                           ModalTitle="@(VehicleId.HasValue ? "編輯車輛" : "新增車輛")"
                           Size="GenericEditModalComponent<Vehicle, IVehicleService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadVehicleData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(VehicleId.HasValue ? "車輛更新成功" : "車輛新增成功")"
@@ -533,11 +533,6 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-
     private async Task LoadAdditionalDataAsync()
     {
         try
@@ -569,20 +564,6 @@
             availableSuppliers = new List<Supplier>();
             availableCompanies = new List<Company>();
         }
-    }
-
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(Vehicle.VehicleTypeId), vehicleTypeModalManager },
-            { nameof(Vehicle.EmployeeId), employeeModalManager },
-            { nameof(Vehicle.CustomerId), customerModalManager },
-            { nameof(Vehicle.SupplierId), supplierModalManager }
-        };
     }
 
     private async Task<List<FieldActionButton>> GetVehicleTypeActionButtonsAsync()

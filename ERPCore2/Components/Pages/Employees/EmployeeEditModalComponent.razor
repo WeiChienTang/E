@@ -24,14 +24,14 @@
                           ModalTitle="@(EmployeeId.HasValue ? "編輯員工" : "新增員工")"
                           Size="GenericEditModalComponent<Employee, IEmployeeService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadEmployeeData"
                           SaveHandler="@SaveEmployee"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -479,24 +479,6 @@
         {
             _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
         }
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-    
-    /// <summary>
-    /// 配置 Modal 管理器 - 使用整合方式
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(Employee.DepartmentId), departmentModalManager },
-            { nameof(Employee.EmployeePositionId), positionModalManager },
-            { nameof(Employee.RoleId), roleModalManager }
-        };
     }
 
     private async Task<Employee?> LoadEmployeeData()

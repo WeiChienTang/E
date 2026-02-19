@@ -1,3 +1,4 @@
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 
@@ -371,6 +372,20 @@ public static class TaxCalculationHelper
         var expectedTotal = totalAmount + taxAmount;
         return Math.Abs(totalWithTax - expectedTotal) <= tolerance;
     }
+
+    #endregion
+
+    #region 下拉選單選項
+
+    /// <summary>
+    /// 取得稅別下拉選單選項（外加稅、內含稅、不含稅）
+    /// </summary>
+    public static List<SelectOption> GetTaxMethodOptions() => new()
+    {
+        new SelectOption { Text = "外加稅", Value = ((int)TaxCalculationMethod.TaxExclusive).ToString() },
+        new SelectOption { Text = "內含稅", Value = ((int)TaxCalculationMethod.TaxInclusive).ToString() },
+        new SelectOption { Text = "不含稅", Value = ((int)TaxCalculationMethod.NoTax).ToString() }
+    };
 
     #endregion
 

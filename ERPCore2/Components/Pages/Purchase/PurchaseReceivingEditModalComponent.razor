@@ -36,13 +36,13 @@
                           ModalTitle="@(PurchaseReceivingId.HasValue ? "編輯進貨" : "新增進貨單")"
                           Size="GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadPurchaseReceivingData"
                           UseGenericSave="true"
                           CustomValidator="@ValidatePurchaseReceivingDetailsAsync"
@@ -522,13 +522,7 @@
             //  一次性載入系統稅率（避免每次計算都查詢資料庫）
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
             
-            // 初始化稅率算法選項
-            taxCalculationMethodOptions = new List<SelectOption>
-            {
-                new SelectOption { Text = "外加稅", Value = ((int)TaxCalculationMethod.TaxExclusive).ToString() },
-                new SelectOption { Text = "內含稅", Value = ((int)TaxCalculationMethod.TaxInclusive).ToString() },
-                new SelectOption { Text = "不含稅", Value = ((int)TaxCalculationMethod.NoTax).ToString() }
-            };
+            taxCalculationMethodOptions = TaxCalculationHelper.GetTaxMethodOptions();
             
             //  在所有資料載入完成後建立 AutoComplete 配置
             // 確保 suppliers、purchaseOrders 和 products 都已載入
@@ -930,21 +924,7 @@
     /// <summary>
     /// 取得表單欄位清單
     /// </summary>
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
 
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(PurchaseReceiving.SupplierId), supplierModalManager }
-        };
-    }
 
     /// <summary>
     // ===== 進貨明細管理方法 =====

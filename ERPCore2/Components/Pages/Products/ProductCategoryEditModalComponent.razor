@@ -14,10 +14,9 @@
                           ModalTitle="@(ProductCategoryId.HasValue ? "編輯商品類型" : "新增商品類型")"
                           Size="GenericEditModalComponent<ProductCategory, IProductCategoryService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadProductCategoryData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(ProductCategoryId.HasValue ? "商品類型更新成功" : "商品類型新增成功")"
                           SaveFailureMessage="商品類型儲存失敗"
@@ -44,18 +43,6 @@
         => EditDataLoaderHelper.LoadOrCreateAsync<ProductCategory, IProductCategoryService>(
             ProductCategoryId, ProductCategoryService, NotificationService, "商品類型", "PCAT", PrefilledValues,
             p => p.Name = string.Empty);
-    private async Task LoadAdditionalDataAsync()
-    {
-        try
-        {
-            // 如果需要載入其他資料（如下拉選單選項），在此處理
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
-        }
-    }
 
     protected override void OnParametersSet()
     {
@@ -109,10 +96,5 @@
             .AddToSection(FormSectionNames.AdditionalInfo,
                 pc => pc.Remarks)
             .Build();
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
     }
 }

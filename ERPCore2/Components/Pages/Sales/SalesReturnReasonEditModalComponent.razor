@@ -14,10 +14,9 @@
                           ModalTitle="@(SalesReturnReasonId.HasValue ? "編輯退貨原因" : "新增退貨原因")"
                           Size="GenericEditModalComponent<SalesReturnReason, ISalesReturnReasonService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadSalesReturnReasonData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(SalesReturnReasonId.HasValue ? "退貨原因更新成功" : "退貨原因新增成功")"
                           SaveFailureMessage="退貨原因儲存失敗"
@@ -93,23 +92,18 @@
         }
     }
 
-    private async Task LoadAdditionalDataAsync()
+
+    protected override void OnParametersSet()
     {
-        try
+        if (IsVisible)
         {
-            // 載入相關資料（如果需要）
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(), additionalData: "載入額外資料失敗");
-            await NotificationService.ShowErrorAsync("載入額外資料失敗");
+            InitializeFormFields();
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
+    private void InitializeFormFields()
     {
-        return new List<FormFieldDefinition>
+        formFields = new List<FormFieldDefinition>
         {
             new()
             {
@@ -134,20 +128,7 @@
             },
             FormFieldConfigurationHelper.CreateRemarksField<SalesReturnReason>(),
         };
-    }
 
-    protected override void OnParametersSet()
-    {
-        if (IsVisible)
-        {
-            InitializeFormFields();
-        }
-    }
-
-    private void InitializeFormFields()
-    {
-        formFields = GetFormFields();
-        
         formSections = FormSectionHelper<SalesReturnReason>.Create()
             .AddToSection(FormSectionNames.BasicInfo,
                 srr => srr.Code,

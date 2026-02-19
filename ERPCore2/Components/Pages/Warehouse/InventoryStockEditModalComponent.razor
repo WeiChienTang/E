@@ -18,12 +18,12 @@
                           ModalTitle="@(InventoryStockId.HasValue ? "編輯庫存" : "新增庫存")"
                           Size="GenericEditModalComponent<InventoryStock, IInventoryStockService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadInventoryStockData"
                           UseGenericSave="true"
                           CustomValidator="@ValidateBeforeSave"
@@ -375,22 +375,6 @@
         {
             _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
         }
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(InventoryStock.ProductId), productModalManager }
-        };
     }
 
     // ===== ActionButton 產生方法 =====

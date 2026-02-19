@@ -14,10 +14,9 @@
                           ModalTitle="@(SizeId.HasValue ? "編輯尺寸" : "新增尺寸")"
                           Size="GenericEditModalComponent<Size, ISizeService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadSizeData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(SizeId.HasValue ? "尺寸更新成功" : "尺寸新增成功")"
                           SaveFailureMessage="尺寸儲存失敗"
@@ -44,19 +43,6 @@
         => EditDataLoaderHelper.LoadOrCreateAsync<Size, ISizeService>(
             SizeId, SizeService, NotificationService, "尺寸", "SIZE", PrefilledValues,
             s => s.Name = string.Empty);
-    private async Task LoadAdditionalDataAsync()
-    {
-        try
-        {
-            // 如果需要載入額外資料（例如下拉選單選項），可在此處加載
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
-        }
-    }
-
     protected override void OnParametersSet()
     {
         if (IsVisible)
@@ -102,8 +88,4 @@
             .Build();
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
 }

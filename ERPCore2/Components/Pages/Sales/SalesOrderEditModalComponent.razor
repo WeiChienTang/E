@@ -37,7 +37,7 @@
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadSalesOrderData"
                           SaveHandler="@SaveSalesOrderWithDetails"
                           SaveSuccessMessage="@(SalesOrderId.HasValue ? "訂單更新成功" : "訂單新增成功")"
@@ -414,13 +414,7 @@
             // 一次性載入系統稅率（避免每次計算都查詢資料庫）
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
             
-            // 初始化稅別選項
-            taxCalculationMethodOptions = new List<SelectOption>
-            {
-                new SelectOption { Text = "外加稅", Value = ((int)TaxCalculationMethod.TaxExclusive).ToString() },
-                new SelectOption { Text = "內含稅", Value = ((int)TaxCalculationMethod.TaxInclusive).ToString() },
-                new SelectOption { Text = "不含稅", Value = ((int)TaxCalculationMethod.NoTax).ToString() }
-            };
+            taxCalculationMethodOptions = TaxCalculationHelper.GetTaxMethodOptions();
             
             // 建立 AutoComplete 配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<SalesOrder>()
@@ -654,19 +648,6 @@
 
     // ===== AutoComplete 配置方法 =====
 
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(SalesOrder.CustomerId), customerModalManager },
-            { nameof(SalesOrder.CompanyId), companyModalManager },
-            { nameof(SalesOrder.EmployeeId), employeeModalManager }
-        };
-    }
-    
     /// <summary>
     /// 配置自訂模組
     /// </summary>

@@ -14,7 +14,7 @@
                           ModalTitle="@(DepartmentId.HasValue ? "編輯部門" : "新增部門")"
                           Size="GenericEditModalComponent<Department, IDepartmentService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
@@ -141,11 +141,6 @@
         {
             _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
         }
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
     }
 
     // ===== 公開方法 (供父組件調用) =====

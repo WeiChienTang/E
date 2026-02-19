@@ -37,13 +37,13 @@
                           ModalTitle="@(SalesReturnId.HasValue ? "編輯銷售退貨" : "新增退貨單")"
                           Size="GenericEditModalComponent<SalesReturn, ISalesReturnService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadSalesReturnData"
                           UseGenericSave="false"
                           CustomValidator="@ValidateSalesReturnDetailsAsync"
@@ -797,25 +797,6 @@
         {
             await NotificationService.ShowErrorAsync($"更新商品篩選選項時發生錯誤：{ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// 取得表單欄位清單
-    /// </summary>
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(SalesReturn.CustomerId), customerModalManager }
-        };
     }
 
     /// <summary>

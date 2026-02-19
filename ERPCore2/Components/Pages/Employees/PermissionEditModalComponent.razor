@@ -16,10 +16,9 @@
                           ModalTitle="@(PermissionId.HasValue ? "編輯權限明細" : "新增權限明細")"
                           Size="GenericEditModalComponent<Permission, IPermissionManagementService>.ModalSize.Desktop"
                           UseGenericForm="true"                          
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadPermissionData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="false"                          
                           SaveHandler="@SavePermission"
                           SaveSuccessMessage="@(PermissionId.HasValue ? "權限明細更新成功" : "權限明細新增成功")"
@@ -127,20 +126,6 @@
         }
     }
 
-    private async Task LoadAdditionalDataAsync()
-    {
-        try
-        {
-            // 載入額外的資料，如果需要的話
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(),
-                additionalData: "載入額外資料失敗"
-            );
-        }
-    }
     protected override void OnParametersSet()
     {
         if (IsVisible)
@@ -225,11 +210,7 @@
                 additionalData: "初始化表單欄位失敗"
             );
         }
-    }    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
     }
-
     private string GetPermissionActionDisplayName(PermissionAction action)
     {
         return action switch

@@ -20,14 +20,14 @@
                           ModalTitle="@(SupplierId.HasValue ? "編輯廠商" : "新增廠商")"
                           Size="GenericEditModalComponent<Supplier, ISupplierService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadSupplierData"
                           SaveHandler="@SaveSupplier"
                           OnSaveSuccess="@OnSaveSuccess"
@@ -401,11 +401,6 @@
         }
     }
 
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
-    }
-    
     private async Task<Supplier?> LoadSupplierData()
     {
         try
@@ -645,17 +640,6 @@
         }
     }
 
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(Supplier.PaymentMethodId), paymentMethodModalManager }
-        };
-    }
-    
     /// <summary>
     /// 使用統一 Helper 產生付款方式操作按鈕
     /// </summary>

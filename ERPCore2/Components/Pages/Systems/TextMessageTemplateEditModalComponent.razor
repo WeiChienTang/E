@@ -15,7 +15,7 @@
                           ModalTitle="採購單訊息設定"
                           Size="GenericEditModalComponent<TextMessageTemplate, ITextMessageTemplateService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadTemplateData"
                           SaveHandler="@SaveTemplateWrapper"
@@ -264,11 +264,6 @@
         // 所有欄位都改用 CustomModule 處理，以便控制順序和寬度
         formSections = new Dictionary<string, string>();
         formFields = new List<FormFieldDefinition>();
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
     }
 
     // ===== 自訂模組 =====

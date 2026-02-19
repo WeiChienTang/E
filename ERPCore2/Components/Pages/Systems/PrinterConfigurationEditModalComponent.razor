@@ -16,7 +16,7 @@
                           ModalTitle="@(PrinterConfigurationId.HasValue ? "編輯印表機設定" : "新增印表機設定")"
                           Size="GenericEditModalComponent<PrinterConfiguration, IPrinterConfigurationService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadPrinterConfigurationData"
                           UseGenericSave="true"
@@ -184,11 +184,6 @@
             // 提供安全的後備值
             formFields = new List<FormFieldDefinition>();
         }
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
     }
 
     // ===== 公開方法 (供父組件調用) =====

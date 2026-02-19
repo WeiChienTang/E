@@ -37,7 +37,7 @@
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadSalesDeliveryData"
                           UseGenericSave="true"
                           CustomValidator="@ValidateSalesDeliveryDetailsAsync"
@@ -456,13 +456,7 @@
             // 載入單位資料
             availableUnits = await UnitService.GetAllAsync();
             
-            // 初始化稅別選項
-            taxCalculationMethodOptions = new List<SelectOption>
-            {
-                new SelectOption { Value = ((int)TaxCalculationMethod.TaxExclusive).ToString(), Text = "外加稅" },
-                new SelectOption { Value = ((int)TaxCalculationMethod.TaxInclusive).ToString(), Text = "內含稅" },
-                new SelectOption { Value = ((int)TaxCalculationMethod.NoTax).ToString(), Text = "不含稅" }
-            };
+            taxCalculationMethodOptions = TaxCalculationHelper.GetTaxMethodOptions();
             
             // 載入系統稅率
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
@@ -838,15 +832,6 @@
     }
 
 
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(SalesDelivery.CustomerId), customerModalManager },
-            { nameof(SalesDelivery.EmployeeId), employeeModalManager }
-        };
-    }
-    
     // ===== 欄位變更處理 =====
     private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
     {

@@ -14,7 +14,7 @@
                           ModalTitle="@(BankId.HasValue ? "編輯銀行" : "新增銀行")"
                           Size="GenericEditModalComponent<Bank, IBankService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadBankData"
                           UseGenericSave="true"
@@ -145,11 +145,6 @@
         {
             _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
         }
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
     }
 
     // ===== 公開方法 (供父組件調用) =====
