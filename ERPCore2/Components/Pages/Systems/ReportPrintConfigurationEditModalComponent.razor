@@ -28,7 +28,6 @@
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           DataLoader="@LoadReportPrintConfigurationData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(ReportPrintConfigurationId.HasValue ? "報表列印配置更新成功" : "報表列印配置新增成功")"
                           SaveFailureMessage="報表列印配置儲存失敗"
@@ -206,8 +205,6 @@
         {
             isDataLoaded = false;
         }
-
-        await base.OnParametersSetAsync();
     }
 
     // ===== 表單初始化 =====

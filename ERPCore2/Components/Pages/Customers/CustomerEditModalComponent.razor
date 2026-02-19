@@ -187,13 +187,6 @@
         if (IsVisible && !isDataLoaded)
         {
             await LoadAdditionalDataAsync();
-            
-            // 使用 AutoCompleteConfigHelper 建立配置
-            autoCompleteConfig = new AutoCompleteConfigBuilder<Customer>()
-                .AddField(nameof(Customer.EmployeeId), "Name", availableEmployees)
-                .AddField(nameof(Customer.PaymentMethodId), "Name", availablePaymentMethods)
-                .Build();
-            
             await InitializeFormFieldsAsync();
             isDataLoaded = true;
         }

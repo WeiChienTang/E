@@ -133,12 +133,6 @@
         if (IsVisible && !isDataLoaded)
         {
             await LoadAdditionalDataAsync();
-
-            autoCompleteConfig = new AutoCompleteConfigBuilder<VehicleMaintenance>()
-                .AddField(nameof(VehicleMaintenance.VehicleId), "LicensePlate", availableVehicles)
-                .AddField(nameof(VehicleMaintenance.EmployeeId), "Name", availableEmployees)
-                .Build();
-
             await InitializeFormFieldsAsync();
             isDataLoaded = true;
         }

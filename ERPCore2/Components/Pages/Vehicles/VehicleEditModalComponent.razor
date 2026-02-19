@@ -170,16 +170,6 @@
         if (IsVisible && !isDataLoaded)
         {
             await LoadAdditionalDataAsync();
-
-            // 使用 AutoCompleteConfigHelper 建立配置
-            autoCompleteConfig = new AutoCompleteConfigBuilder<Vehicle>()
-                .AddField(nameof(Vehicle.VehicleTypeId), "Name", availableVehicleTypes)
-                .AddField(nameof(Vehicle.EmployeeId), "Name", availableEmployees)
-                .AddField(nameof(Vehicle.CustomerId), "CompanyName", availableCustomers)
-                .AddField(nameof(Vehicle.SupplierId), "CompanyName", availableSuppliers)
-                .AddField(nameof(Vehicle.CompanyId), "CompanyName", availableCompanies)
-                .Build();
-
             await InitializeFormFieldsAsync();
             isDataLoaded = true;
         }

@@ -61,8 +61,6 @@
         {
             isDataLoaded = false;
         }
-
-        await base.OnParametersSetAsync();
     }
     private Task<Company?> LoadCompanyData()
         => EditDataLoaderHelper.LoadOrCreateAsync<Company, ICompanyService>(
