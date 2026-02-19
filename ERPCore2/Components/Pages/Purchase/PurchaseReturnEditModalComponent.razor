@@ -1212,42 +1212,14 @@
     
     // ===== 輔助方法：取得選項名稱 =====
     
-    /// <summary>
-    /// 取得選定廠商的名稱（用於載入確認 Modal 顯示）
-    /// </summary>
     private string? GetSelectedSupplierName()
-    {
-        if (editModalComponent?.Entity?.SupplierId > 0)
-        {
-            return suppliers.FirstOrDefault(s => s.Id == editModalComponent.Entity.SupplierId)?.CompanyName;
-        }
-        return null;
-    }
-    
-    /// <summary>
-    /// 取得選定進貨單的單號（用於載入確認 Modal 顯示）
-    /// </summary>
+        => EntityDisplayHelper.GetDisplayValue(editModalComponent?.Entity?.SupplierId, suppliers, s => s.CompanyName);
+
     private string? GetSelectedPurchaseReceivingCode()
-    {
-        if (filterPurchaseReceivingId.HasValue && filterPurchaseReceivingId.Value > 0)
-        {
-            return purchaseReceivings.FirstOrDefault(pr => pr.Id == filterPurchaseReceivingId.Value)?.Code;
-        }
-        return null;
-    }
-    
-    /// <summary>
-    /// 取得篩選商品的名稱（用於載入確認 Modal 顯示）
-    /// </summary>
+        => EntityDisplayHelper.GetDisplayValue(filterPurchaseReceivingId, purchaseReceivings, pr => pr.Code);
+
     private string? GetFilterProductName()
-    {
-        if (filterProductId.HasValue && filterProductId.Value > 0)
-        {
-            var product = products.FirstOrDefault(p => p.Id == filterProductId.Value);
-            return product != null ? $"{product.Code} {product.Name}" : null;
-        }
-        return null;
-    }
+        => EntityDisplayHelper.GetDisplayValue(filterProductId, products, p => $"{p.Code} {p.Name}");
     
     // ===== 公開方法（供外部組件調用） =====
     

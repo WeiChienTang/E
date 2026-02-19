@@ -1046,44 +1046,14 @@
                                   Message="@EditModalMessages.UndeletableDetailsWarning" />
     };
 
-    /// <summary>
-    /// 取得選擇的客戶名稱（用於載入確認訊息）
-    /// </summary>
     private string GetSelectedCustomerName()
-    {
-        if (editModalComponent?.Entity?.CustomerId > 0)
-        {
-            var customer = customers.FirstOrDefault(c => c.Id == editModalComponent.Entity.CustomerId);
-            return customer?.CompanyName ?? string.Empty;
-        }
-        return string.Empty;
-    }
+        => EntityDisplayHelper.GetDisplayValue(editModalComponent?.Entity?.CustomerId, customers, c => c.CompanyName) ?? string.Empty;
 
-    /// <summary>
-    /// 取得選擇的報價單編號（用於載入確認訊息）
-    /// </summary>
     private string GetSelectedQuotationCode()
-    {
-        if (editModalComponent?.Entity?.QuotationId > 0)
-        {
-            var quotation = quotations.FirstOrDefault(q => q.Id == editModalComponent.Entity.QuotationId);
-            return quotation?.Code ?? string.Empty;
-        }
-        return string.Empty;
-    }
+        => EntityDisplayHelper.GetDisplayValue(editModalComponent?.Entity?.QuotationId, quotations, q => q.Code) ?? string.Empty;
 
-    /// <summary>
-    /// 取得篩選的商品名稱（用於載入確認訊息）
-    /// </summary>
     private string GetFilterProductName()
-    {
-        if (filterProductId.HasValue && filterProductId.Value > 0)
-        {
-            var product = products.FirstOrDefault(p => p.Id == filterProductId.Value);
-            return product?.Name ?? string.Empty;
-        }
-        return string.Empty;
-    }
+        => EntityDisplayHelper.GetDisplayValue(filterProductId, products, p => p.Name) ?? string.Empty;
 
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）

@@ -1377,40 +1377,12 @@
     
     // ===== 輔助方法：取得選項名稱 =====
     
-    /// <summary>
-    /// 取得選定客戶的名稱（用於載入確認 Modal 顯示）
-    /// </summary>
     private string? GetSelectedCustomerName()
-    {
-        if (editModalComponent?.Entity?.CustomerId > 0)
-        {
-            return customers.FirstOrDefault(c => c.Id == editModalComponent.Entity.CustomerId)?.CompanyName;
-        }
-        return null;
-    }
-    
-    /// <summary>
-    /// 取得選定訂單的單號（用於載入確認 Modal 顯示）
-    /// </summary>
+        => EntityDisplayHelper.GetDisplayValue(editModalComponent?.Entity?.CustomerId, customers, c => c.CompanyName);
+
     private string? GetSelectedSalesOrderCode()
-    {
-        if (editModalComponent?.Entity?.SalesOrderId > 0)
-        {
-            return salesOrders.FirstOrDefault(so => so.Id == editModalComponent.Entity.SalesOrderId)?.Code;
-        }
-        return null;
-    }
-    
-    /// <summary>
-    /// 取得篩選商品的名稱（用於載入確認 Modal 顯示）
-    /// </summary>
+        => EntityDisplayHelper.GetDisplayValue(editModalComponent?.Entity?.SalesOrderId, salesOrders, so => so.Code);
+
     private string? GetFilterProductName()
-    {
-        if (filterProductId.HasValue && filterProductId.Value > 0)
-        {
-            var product = availableProducts.FirstOrDefault(p => p.Id == filterProductId.Value);
-            return product != null ? $"{product.Code} {product.Name}" : null;
-        }
-        return null;
-    }
+        => EntityDisplayHelper.GetDisplayValue(filterProductId, availableProducts, p => $"{p.Code} {p.Name}");
 }
