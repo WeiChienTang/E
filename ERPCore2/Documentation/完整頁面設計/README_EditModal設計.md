@@ -1,7 +1,7 @@
 # EditModal 設計
 
 ## 更新日期
-2026-02-17
+2026-02-19
 
 ---
 
@@ -41,22 +41,21 @@ EditModal 是每個業務實體的新增/編輯表單，使用 `GenericEditModal
                           ModalTitle="@(YourEntityId.HasValue ? "編輯實體" : "新增實體")"
                           Size="GenericEditModalComponent<YourEntity, IYourEntityService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          ModalManagers="@GetModalManagers()"
+                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadEntityData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(YourEntityId.HasValue ? "更新成功" : "新增成功")"
                           SaveFailureMessage="儲存失敗"
                           RequiredPermission="YourEntity.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
+                          OnEntitySaved="@OnYourEntitySaved"
+                          OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
                           PrintButtonText="列印"
@@ -70,7 +69,7 @@ EditModal 是每個業務實體的新增/編輯表單，使用 `GenericEditModal
                            IsVisible="@relatedModalManager.IsModalVisible"
                            IsVisibleChanged="@relatedModalManager.HandleModalVisibilityChangedAsync"
                            RelatedId="@relatedModalManager.SelectedEntityId"
-                           OnRelatedSaved="@OnRelatedSavedWrapper"
+                           OnRelatedSaved="@relatedModalManager.OnSavedAsync"
                            OnCancel="@relatedModalManager.HandleModalCancelAsync" />
 
 @* 巢狀 Modal - 條件式渲染避免循環元件實例化 *@
@@ -81,7 +80,7 @@ EditModal 是每個業務實體的新增/編輯表單，使用 `GenericEditModal
                               IsVisibleChanged="@HandleNestedModalVisibilityChanged"
                               NestedId="@editingNestedId"
                               PrefilledValues="@GetNestedPrefilledValues()"
-                              OnNestedSaved="@OnNestedSavedWrapper"
+                              OnNestedSaved="@nestedModalManager.OnSavedAsync"
                               OnCancel="@HandleNestedModalCancel" />
 }
 
@@ -117,6 +116,8 @@ EditModal 是每個業務實體的新增/編輯表單，使用 `GenericEditModal
     private List<Vehicle> entityVehicles = new();
 
     // ===== 實體載入事件（上下筆切換時觸發） =====
+    // 僅在切換時需要重載額外資料時才需要此方法及 OnEntityLoaded 參數
+    // 若無自訂 Tab 資料或其他需要重載的資料，可省略此方法
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
         try
@@ -275,6 +276,7 @@ EditModal 是每個業務實體的新增/編輯表單，使用 `GenericEditModal
     }
 
     // ===== 額外資料載入 =====
+    // 若沒有需要預先載入的下拉選項資料，可省略此方法及 OnParametersSetAsync 中的呼叫
     private async Task LoadAdditionalDataAsync()
     {
         try
@@ -292,54 +294,12 @@ EditModal 是每個業務實體的新增/編輯表單，使用 `GenericEditModal
         }
     }
 
-    // ===== 其他方法（Modal Manager、ActionButton、儲存、取消等）=====
-    private List<FormFieldDefinition> GetFormFields() => formFields;
-
-    private Dictionary<string, object> GetModalManagers() => new()
-    {
-        { nameof(YourEntity.RelatedEntityId), relatedModalManager }
-    };
-
+    // ===== ActionButton 產生（在 InitializeFormFieldsAsync 中使用）=====
     private async Task<List<FieldActionButton>> GetRelatedActionButtonsAsync()
     {
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, relatedModalManager,
             nameof(YourEntity.RelatedEntityId));
-    }
-
-    private async Task OnFieldValueChanged(
-        (string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            if (fieldChange.PropertyName == nameof(YourEntity.RelatedEntityId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    relatedModalManager, formFields,
-                    fieldChange.PropertyName, fieldChange.Value);
-            }
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-        }
-    }
-
-    private async Task HandleSaveSuccess()
-    {
-        if (editModalComponent?.Entity != null)
-            await OnYourEntitySaved.InvokeAsync(editModalComponent.Entity);
-    }
-
-    private async Task HandleCancel()
-    {
-        await OnCancel.InvokeAsync();
-        await IsVisibleChanged.InvokeAsync(false);
-    }
-
-    private async Task OnRelatedSavedWrapper(RelatedEntity saved)
-    {
-        await relatedModalManager.HandleEntitySavedAsync(saved, shouldAutoSelect: true);
     }
 }
 ```
@@ -365,10 +325,10 @@ EditModal 是每個業務實體的新增/編輯表單，使用 `GenericEditModal
 | 參數 | 類型 | 說明 |
 |------|------|------|
 | `UseGenericForm` | bool | 使用 GenericFormComponent 渲染表單 |
-| `FormFields` | `List<FormFieldDefinition>` | 表單欄位定義 |
+| `FormFields` | `List<FormFieldDefinition>` | 直接綁定 `@formFields`（不使用 wrapper 方法） |
 | `FormSections` | `Dictionary<string, string>` | 欄位區段映射 |
 | `TabDefinitions` | `List<FormTabDefinition>?` | Tab 頁籤定義 |
-| `OnFieldChanged` | EventCallback | 欄位變更事件 |
+| `OnFieldChanged` | EventCallback | 欄位變更事件（僅在有**非 ActionButton 的自訂邏輯**時才綁定） |
 
 ### AutoComplete 參數
 
@@ -385,7 +345,7 @@ EditModal 是每個業務實體的新增/編輯表單，使用 `GenericEditModal
 |------|------|------|
 | `DataLoader` | `Func<Task<TEntity?>>` | 資料載入函數 |
 | `UseGenericSave` | bool | 使用內建儲存流程 |
-| `SaveHandler` | `Func<Task<ServiceResult>>?` | 自訂儲存邏輯（覆蓋內建儲存） |
+| `SaveHandler` | `Func<TEntity, Task<bool>>?` | 自訂儲存邏輯（覆蓋內建儲存） |
 | `SaveSuccessMessage` | string | 儲存成功訊息 |
 | `SaveFailureMessage` | string | 儲存失敗訊息 |
 
@@ -404,15 +364,15 @@ EditModal 是每個業務實體的新增/編輯表單，使用 `GenericEditModal
 
 | 參數 | 類型 | 說明 |
 |------|------|------|
-| `OnSaveSuccess` | EventCallback | 儲存成功事件 |
-| `OnCancel` | EventCallback | 取消事件 |
-| `OnEntityLoaded` | `EventCallback<int>` | 實體載入完成事件（上下筆切換時觸發） |
+| `OnEntitySaved` | `EventCallback<TEntity>` | 儲存成功後觸發，直接綁定父元件的 EventCallback |
+| `OnCancel` | EventCallback | 取消事件，直接傳遞父元件的 `OnCancel` 參數 |
+| `OnEntityLoaded` | `EventCallback<int>` | 上下筆切換時觸發，僅需重載額外資料時才綁定 |
 
 ### 其他參數
 
 | 參數 | 類型 | 說明 |
 |------|------|------|
-| `ModalManagers` | `Dictionary<string, object>` | 關聯實體 Modal Manager 集合 |
+| `ModalManagers` | `Dictionary<string, object>` | 使用 `modalManagers?.AsDictionary()` 直接綁定 |
 | `PrefilledValues` | `Dictionary<string, object?>?` | 預填值（從父元件新增時自動帶入 FK） |
 
 ---
@@ -450,23 +410,34 @@ protected override async Task OnParametersSetAsync()
 
 > **注意**：不要在 `GenericEditModalComponent` 上設定 `AdditionalDataLoader` 參數，否則會導致重複載入。
 
+> **注意**：若無需預先載入下拉選項（即沒有 ModalManager 或 AutoComplete），可省略 `LoadAdditionalDataAsync()` 的呼叫及方法本身。
+
 ### 2. OnEntityLoaded - 上下筆切換事件
 
-當使用者點擊上一筆/下一筆時，`GenericEditModalComponent` 會觸發 `OnEntityLoaded` 事件，用於更新自訂 Tab 的資料。
+當使用者點擊上一筆/下一筆時，`GenericEditModalComponent` 會觸發 `OnEntityLoaded` 事件。
+
+- **需要此事件**：Edit 有自訂 Tab 需在切換時重載資料（如配給車輛、子單據）
+- **不需要此事件**：純主檔欄位的 Edit，Generic 內部已自動 `StateHasChanged()`
 
 ```csharp
-// GenericEditModalComponent 參數
+// GenericEditModalComponent 參數（有自訂 Tab 時才加）
 OnEntityLoaded="@HandleEntityLoaded"
 
 // 事件處理
 private async Task HandleEntityLoaded(int loadedEntityId)
 {
-    // 重新載入自訂 Tab 的資料（如配給車輛）
-    if (loadedEntityId > 0)
-        entityVehicles = await VehicleService.GetByOwnerAsync(loadedEntityId);
-    else
-        entityVehicles = new();
-    StateHasChanged();
+    try
+    {
+        if (loadedEntityId > 0)
+            entityVehicles = await VehicleService.GetByOwnerAsync(loadedEntityId);
+        else
+            entityVehicles = new();
+        StateHasChanged();
+    }
+    catch (Exception ex)
+    {
+        await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+    }
 }
 ```
 
@@ -481,26 +452,52 @@ private async Task HandleEntityLoaded(int loadedEntityId)
                           ... />
 ```
 
-### 4. SaveHandler - 自訂儲存邏輯
+### 4. OnEntitySaved 與 OnCancel - 直接傳遞
 
-當需要在儲存前執行額外邏輯（如自訂驗證）時使用：
+`OnEntitySaved` 和 `OnCancel` 直接將父元件的 EventCallback 傳入，不需要 wrapper 方法：
+
+```razor
+@* ✅ 正確：直接傳遞 *@
+<GenericEditModalComponent ...
+                          OnEntitySaved="@OnYourEntitySaved"
+                          OnCancel="@OnCancel" />
+
+@* ❌ 避免：不必要的 HandleSaveSuccess / HandleCancel wrapper *@
+```
 
 ```csharp
+// 父元件中的 EventCallback 參數直接對應
+[Parameter] public EventCallback<YourEntity> OnYourEntitySaved { get; set; }
+[Parameter] public EventCallback OnCancel { get; set; }
+```
+
+### 5. SaveHandler - 自訂儲存邏輯
+
+當需要在儲存前執行額外邏輯（如自訂驗證、附加明細）時使用，簽名為 `Func<TEntity, Task<bool>>`：
+
+```razor
 <GenericEditModalComponent ...
                           SaveHandler="@CustomSaveLogic" />
+```
 
-private async Task<ServiceResult> CustomSaveLogic()
+```csharp
+private async Task<bool> CustomSaveLogic(YourEntity entity)
 {
     // 自訂驗證
-    if (string.IsNullOrWhiteSpace(editModalComponent?.Entity?.Name))
-        return ServiceResult.Failure("名稱為必填");
+    if (string.IsNullOrWhiteSpace(entity.Name))
+    {
+        await NotificationService.ShowErrorAsync("名稱為必填");
+        return false;
+    }
 
-    // 呼叫服務儲存
-    return await YourEntityService.CreateOrUpdateAsync(editModalComponent.Entity);
+    // 附加明細後儲存
+    entity.Details = detailsList;
+    var result = await YourEntityService.CreateOrUpdateAsync(entity);
+    return result.IsSuccess;
 }
 ```
 
-### 5. PrefilledValues - 從父元件預填值
+### 6. PrefilledValues - 從父元件預填值
 
 從父元件開啟巢狀 Modal 時，自動帶入外鍵值：
 
@@ -521,7 +518,7 @@ private Dictionary<string, object?>? GetPrefilledValues()
 }
 ```
 
-### 6. ModalManagerInitHelper - 關聯實體管理
+### 7. ModalManagerInitHelper - 關聯實體管理
 
 ```csharp
 modalManagers = ModalManagerInitHelper
@@ -537,9 +534,12 @@ modalManagers = ModalManagerInitHelper
 
 // 取得個別 Manager
 employeeModalManager = modalManagers.Get<Employee>(nameof(MainEntity.EmployeeId));
+
+// 直接綁定到 GenericEditModalComponent（不使用 GetModalManagers() wrapper）
+// ModalManagers="@modalManagers?.AsDictionary()"
 ```
 
-### 7. AutoCompleteConfigBuilder - AutoComplete 配置
+### 8. AutoCompleteConfigBuilder - AutoComplete 配置
 
 ```csharp
 // 基本用法
@@ -562,7 +562,7 @@ autoCompleteConfig = new AutoCompleteConfigBuilder<MainEntity>()
     .Build();
 ```
 
-### 8. EntityCodeGenerationHelper - 自動產生編號
+### 9. EntityCodeGenerationHelper - 自動產生編號
 
 ```csharp
 var newEntity = new YourEntity
@@ -574,33 +574,52 @@ var newEntity = new YourEntity
 };
 ```
 
-### 9. ActionButtonHelper - 欄位操作按鈕
+### 10. ActionButtonHelper - 欄位操作按鈕
+
+ActionButton 分為兩個階段：**產生**（初始化時）和**更新**（欄位值變更時）。
+
+**產生**：在 `InitializeFormFieldsAsync` 中呼叫，設定欄位的新增/編輯按鈕：
 
 ```csharp
-// 產生按鈕（新增/編輯關聯實體）
 private async Task<List<FieldActionButton>> GetRelatedActionButtonsAsync()
 {
     return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
         editModalComponent, relatedModalManager,
         nameof(MainEntity.RelatedEntityId));
 }
+```
 
-// 欄位值變更時更新按鈕狀態
-private async Task OnFieldValueChanged(
-    (string PropertyName, object? Value) fieldChange)
+**更新**：當欄位選取值變更時，按鈕狀態需要更新（如切換為編輯按鈕）。此更新由 `GenericEditModalComponent` 自動處理——只要有傳入 `ModalManagers`，Generic 會在 `OnFieldChanged` 觸發時自動更新對應欄位的 ActionButton 狀態。
+
+> **不需要**在 `OnFieldValueChanged` 中手動呼叫 `UpdateFieldActionButtonsAsync`。
+
+**僅在有額外業務邏輯時才加 `OnFieldChanged`**：
+
+```csharp
+// 只在有「非 ActionButton」的自訂邏輯時才需要
+OnFieldChanged="@OnFieldValueChanged"
+
+private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
 {
-    if (fieldChange.PropertyName == nameof(MainEntity.RelatedEntityId))
+    try
     {
-        await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-            relatedModalManager, formFields,
-            fieldChange.PropertyName, fieldChange.Value);
+        if (fieldChange.PropertyName == nameof(YourEntity.CustomerId))
+        {
+            // 自訂邏輯：依客戶載入對應地址
+            await LoadCustomerAddressAsync(fieldChange.Value);
+        }
+        // 注意：ActionButton 更新已由 Generic 自動處理，不需要在這裡呼叫
+    }
+    catch (Exception)
+    {
+        await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
     }
 }
 ```
 
-### 10. 巢狀 Modal 條件式渲染
+### 11. 巢狀 Modal 條件式渲染
 
-避免循環元件實例化（如 Customer → Vehicle → Customer）：
+避免循環元件實例化（如 Customer → Vehicle → Customer）。`OnVehicleSaved` 使用 ModalManager 的 `.OnSavedAsync` 直接綁定，不需要 wrapper：
 
 ```razor
 @if (isVehicleModalVisible)
@@ -610,9 +629,30 @@ private async Task OnFieldValueChanged(
                               IsVisibleChanged="@HandleVehicleModalVisibilityChanged"
                               VehicleId="@editingVehicleId"
                               PrefilledValues="@GetVehiclePrefilledValues()"
-                              OnVehicleSaved="@OnVehicleSavedWrapper"
+                              OnVehicleSaved="@vehicleModalManager.OnSavedAsync"
                               OnCancel="@HandleVehicleModalCancel" />
 }
+```
+
+```csharp
+// OnCancel 為 void（不需要 async）
+private void HandleVehicleModalCancel()
+{
+    isVehicleModalVisible = false;
+    StateHasChanged();
+}
+```
+
+### 12. 關聯 Modal 儲存轉發
+
+使用 ModalManager 的 `.OnSavedAsync` 直接綁定，不需要手寫 wrapper 方法：
+
+```razor
+@* ✅ 正確：直接使用 ModalManager *@
+<RelatedEditModalComponent OnRelatedSaved="@relatedModalManager.OnSavedAsync"
+                           OnCancel="@relatedModalManager.HandleModalCancelAsync" />
+
+@* ❌ 避免：不必要的 OnRelatedSavedWrapper 方法 *@
 ```
 
 ---
@@ -636,15 +676,22 @@ FormFieldConfigurationHelper.CreateStatusField<YourEntity>()
 
 - [ ] 使用 `GenericEditModalComponent<TEntity, TService>`
 - [ ] 使用 `@bind-Id` 綁定 ID
+- [ ] `FormFields="@formFields"` 直接綁定（不使用 `GetFormFields()` wrapper）
+- [ ] `ModalManagers="@modalManagers?.AsDictionary()"` 直接綁定（不使用 `GetModalManagers()` wrapper）
+- [ ] 使用 `OnEntitySaved="@OnYourEntitySaved"` 直接綁定（不寫 `HandleSaveSuccess` wrapper）
+- [ ] 使用 `OnCancel="@OnCancel"` 直接傳遞（不寫 `HandleCancel` wrapper）
+- [ ] 關聯 Modal 使用 `OnXxxSaved="@xxxModalManager.OnSavedAsync"` 直接綁定
 - [ ] 實作 Lazy Loading（`OnParametersSetAsync` + `isDataLoaded`）
 - [ ] 不在 `OnInitializedAsync` 中載入資料
-- [ ] 不設定 `AdditionalDataLoader` 參數
+- [ ] 不設定 `AdditionalDataLoader` 參數（避免重複載入）
 - [ ] 使用 `ModalManagerInitHelper` 管理關聯實體
 - [ ] 使用 `AutoCompleteConfigBuilder` 建立 AutoComplete 配置
 - [ ] 使用 `FormSectionHelper` 定義區段（需要 Tab 時用 `.BuildAll()`）
-- [ ] 使用 `ActionButtonHelper` 產生欄位按鈕
+- [ ] 使用 `ActionButtonHelper` 產生欄位按鈕（不在 `OnFieldValueChanged` 中手動更新）
 - [ ] 使用 `EntityCodeGenerationHelper` 自動產生編號
-- [ ] 如有自訂 Tab，設定 `OnEntityLoaded` 處理上下筆切換
+- [ ] 若無需在上下筆切換時重載資料，省略 `OnEntityLoaded` 及 `HandleEntityLoaded`
+- [ ] 若無需預先載入下拉選項，省略 `LoadAdditionalDataAsync`
+- [ ] `OnFieldChanged` 僅在有非 ActionButton 的自訂邏輯時才綁定
 
 ---
 
@@ -653,3 +700,4 @@ FormFieldConfigurationHelper.CreateStatusField<YourEntity>()
 - [README_完整頁面設計總綱.md](README_完整頁面設計總綱.md) - 總綱
 - [README_FormField表單欄位設計.md](README_FormField表單欄位設計.md) - 表單欄位詳細設計
 - [README_Index頁面設計.md](README_Index頁面設計.md) - Index 頁面設計
+- [Readme_Edit重構說明.md] 
