@@ -910,8 +910,6 @@
             
             // 清空目前的商品篩選選擇
             filterProductId = null;
-            
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -1185,15 +1183,7 @@
                     
                     // 更新商品篩選的選項清單
                     await UpdateFilterProductOptions(supplierId);
-                    
-                    // 更新廠商欄位的操作按鈕
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        supplierModalManager, 
-                        formFields, 
-                        nameof(PurchaseReceiving.SupplierId), 
-                        fieldChange.Value
-                    );
-                    
+
                     needsRerender = true; // 廠商變更需要重新渲染
                 }
                 catch (TaskCanceledException)

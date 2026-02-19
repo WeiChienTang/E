@@ -450,6 +450,20 @@ public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
 | 項目 | 說明 | 修改 Edit 數 | 節省行數 |
 |---|---|---|---|
 | P17-lite | OnParametersSetAsync 雜項清理（no-op base 移除 + 雙重載入修復 + 重複 autoCompleteConfig 移除） | 17 個（A:12 / B:2 / C:3） | ~40 行 |
+| P23 | Mixed OnFieldValueChanged ActionButton 分支移除（ActionButton 已由 Generic 自動處理） | 5 個 | ~75 行 |
+
+### 已完成（第七階段）
+
+| 項目 | 說明 | 修改 Edit 數 | 節省行數 |
+|---|---|---|---|
+| P25 | `await Task.CompletedTask` 死碼移除（HandleEntityLoaded / HandleVehicleModalCancel / UpdateFilter / stub 方法） | 12 個 | ~30 行 |
+| P20-補 | CompanyEditModalComponent 空殼 LoadAdditionalDataAsync 移除（P20 遺漏） | 1 個 | ~12 行 |
+
+**P25 修改明細**：
+- **Group A（HandleEntityLoaded）**：VehicleEdit、VehicleMaintenanceEdit、TextMessageTemplateEdit、ReportPrintConfigurationEdit、SalesReturnReasonEdit、PermissionEdit、ProductEdit — 移除 try 區塊末尾的 `await Task.CompletedTask;`
+- **Group B（HandleVehicleModalCancel）**：EmployeeEdit、CustomerEdit、SupplierEdit — 移除 `await Task.CompletedTask;` 並將方法改為 `void`（無 catch 區塊，無需 async）
+- **Group C（其他方法）**：TextMessageTemplateEdit.OnFieldValueChanged、ProductCompositionEdit.HandleDetailsChanged（→改 void）、PurchaseReceivingEdit.UpdateFilterProductOptions、PurchaseReturnEdit.UpdateFilterProductOptions + UpdateFilterPurchaseReceivingOptions
+- **已棄用 stub 移除**：SalesReturnEdit.CreateInventoryTransactionsAsync（完全刪除，從未被呼叫）
 
 ### 待議 / 不推進
 
@@ -710,7 +724,8 @@ OnDepartmentSaved="@departmentModalManager.OnSavedAsync"
 | 7 | GetFormFields() wrapper 移除 | **P19** ✅ | ~136 行 | 極低 | 直接綁定 @formFields |
 | 8 | 空殼 LoadAdditionalDataAsync 移除 | **P20** ✅ | ~96 行 | 極低 | 刪除死碼 |
 | 9 | GetModalManagers() wrapper 移除 | **P22** ✅ | ~119 行 | 極低 | AsDictionary() 直接綁定 |
-| 10 | Mixed OnFieldValueChanged ActionButton 分支移除 | **P23** | ~80 行 | 低 | 詳見下方 |
+| 10 | Mixed OnFieldValueChanged ActionButton 分支移除 | **P23** ✅ | ~80 行 | 低 | 詳見下方 |
+| 11 | `await Task.CompletedTask` 死碼移除 | **P25** ✅ | ~42 行 | 極低 | 各類 stub/空方法清理 |
 
 ---
 
@@ -718,9 +733,9 @@ OnDepartmentSaved="@departmentModalManager.OnSavedAsync"
 
 | 層級 | 可受益的模式 | 已完成的模式 |
 |---|---|---|
-| **簡單型** | 幾乎無 | P11-P15, P19, P20 全部適用 ✅ |
-| **中等型** | P23（Mixed OnFieldValueChanged 修剪） | P11-P15, P16, P17-lite, P18, P22 ✅ |
-| **複雜型** | P23（Mixed OnFieldValueChanged 修剪） | P1, P3, P4, P5, P6, P7, P10, P11-P15, P16, P17-lite, P18, P22 ✅ |
+| **簡單型** | 幾乎無 | P11-P15, P19, P20, P25 全部適用 ✅ |
+| **中等型** | 幾乎無 | P11-P15, P16, P17-lite, P18, P22, P23, P25 ✅ |
+| **複雜型** | 幾乎無 | P1, P3, P4, P5, P6, P7, P10, P11-P15, P16, P17-lite, P18, P22, P23, P25 ✅ |
 
 ---
 
@@ -728,52 +743,33 @@ OnDepartmentSaved="@departmentModalManager.OnSavedAsync"
 
 ## 下一步建議
 
-### P23：Mixed OnFieldValueChanged 中的 ActionButton 分支移除
+### P23：Mixed OnFieldValueChanged 中的 ActionButton 分支移除 ✅ 已完成
 
-**背景**：P16 已讓 GenericEditModalComponent 自動處理 ModalManagers 中的 ActionButton 更新。6 個 Mixed 型 Edit 因含額外業務邏輯而保留了 `OnFieldValueChanged`，但其中的 ActionButton `if`-分支現已是冗餘代碼。
+P16 自動 ActionButton 處理後，5 個 Mixed 型 Edit 中的冗餘 ActionButtonHelper 呼叫已全部移除。
 
-**目標檔案**（6 個）：
+---
 
-| 檔案 | 可移除的 ActionButton if-分支 | 保留的業務邏輯 |
+### P25：`await Task.CompletedTask` 死碼移除 ✅ 已完成
+
+掃描全部 EditModalComponent，移除所有出現在方法 try 區塊末尾或獨自充當方法主體的 `await Task.CompletedTask;`：
+
+| 類型 | 修改 | 詳情 |
 |---|---|---|
-| SalesOrderEdit | CustomerId → ActionButtonHelper | FilterProductId 篩選更新 |
-| SalesReturnEdit | CustomerId → ActionButtonHelper | FilterProductId + SalesDeliveryId 篩選 |
-| SalesDeliveryEdit | CustomerId → ActionButtonHelper | HandleCustomerChanged 地址載入 |
-| PurchaseReceivingEdit | SupplierId → ActionButtonHelper | 廠商篩選 + 採購單選項更新 |
-| PurchaseReturnEdit | SupplierId → ActionButtonHelper | 廠商篩選 + 商品篩選 |
-| ProductEdit | （無 ActionButton 分支） | 生產單位換算欄位更新（保留完整） |
+| `HandleEntityLoaded` try 末尾 | 7 個 Edit | VehicleEdit、VehicleMaintenanceEdit、TextMessageTemplateEdit、ReportPrintConfigurationEdit、SalesReturnReasonEdit、PermissionEdit、ProductEdit |
+| `HandleVehicleModalCancel`（→ void） | 3 個 Edit | EmployeeEdit、CustomerEdit、SupplierEdit |
+| `OnFieldValueChanged` try 末尾 | 1 個 Edit | TextMessageTemplateEdit |
+| `HandleDetailsChanged`（→ void） | 1 個 Edit | ProductCompositionEdit |
+| `UpdateFilterXxx` try 末尾 | 2 個 Edit | PurchaseReceivingEdit、PurchaseReturnEdit（×2） |
+| 棄用 stub 方法刪除 | 1 個 Edit | SalesReturnEdit.CreateInventoryTransactionsAsync（從未被呼叫） |
+| P20 遺漏 LoadAdditionalDataAsync | 1 個 Edit | CompanyEdit |
 
-**操作**：在每個 Edit 的 `OnFieldValueChanged` 中，移除形如下列的 ActionButton 呼叫段落（Generic 已自動處理）：
-```csharp
-// 移除前
-if (fieldChange.PropertyName == nameof(SalesOrder.CustomerId))
-{
-    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-        customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-}
-// 移除後：此 if 區塊完全刪除
-```
-
-**預估節省**：每個 ~10-20 行，5 個 Edit × ~15 行 ≈ **~75 行**
-
-**風險**：低。P16 已驗證 Generic 自動處理邏輯正確。
+**建置結果**：0 errors, 0 warnings
 
 ---
 
 ### P24（可選）：InitializeFormFieldsAsync 同步化
 
-**背景**：部分 Edit 的 `InitializeFormFieldsAsync` 是 `async` 方法但不含任何 `await`（或原本有 `await Task.CompletedTask` 已被 P20 移除），方法簽章帶有誤導性的 `async` 修飾詞。
-
-**操作**：
-1. 改名為 `InitializeFormFields()`（移除 Async 後綴）
-2. 移除 `async`，回傳型別由 `Task` → `void`
-3. 更新 `OnParametersSetAsync` 中的呼叫（`await InitializeFormFieldsAsync()` → `InitializeFormFields()`）
-
-**適用 Edit**：已移除所有 async 操作的 Edit（如 SalesReturnReasonEdit、SalesReturnReason、各簡單型 Edit 中未使用 `await` 者）
-
-**預估節省**：程式碼量幾乎不變，主要是正確性和一致性改善。
-
-**風險**：極低。純 C# 重構，不影響行為。
+**背景**：剩餘 20 個 `async Task InitializeFormFieldsAsync` 方法均有真實 await（ActionButton helpers 或 Service 呼叫），已不存在可簡單轉換的案例。已轉為 `void InitializeFormFields()` 的 20 個簡單型 Edit 原本就是同步的。P24 已自然完成，不需額外操作。
 
 ---
 

@@ -837,44 +837,17 @@
     {
         try
         {
-            // 客戶變更時，自動載入地址並更新 ActionButtons
+            // 客戶變更時，自動載入地址
             if (fieldChange.PropertyName == nameof(SalesDelivery.CustomerId))
             {
                 if (fieldChange.Value != null)
                 {
                     await HandleCustomerChanged((int)fieldChange.Value);
                 }
-                
-                // 更新客戶欄位的操作按鈕
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    customerModalManager, 
-                    formFields, 
-                    nameof(SalesDelivery.CustomerId), 
-                    fieldChange.Value
-                );
-                
-                // ✅ 只在客戶變更時才觸發重新渲染
                 StateHasChanged();
-                return; // ✅ 重要：處理完就返回，避免繼續執行
+                return;
             }
-            
-            // 業務員變更時，更新 ActionButtons
-            if (fieldChange.PropertyName == nameof(SalesDelivery.EmployeeId))
-            {
-                // 更新業務員欄位的操作按鈕
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    employeeModalManager, 
-                    formFields, 
-                    nameof(SalesDelivery.EmployeeId), 
-                    fieldChange.Value
-                );
-                
-                // ✅ 只在業務員變更時才觸發重新渲染
-                StateHasChanged();
-                return; // ✅ 重要：處理完就返回，避免繼續執行
-            }
-            
-            
+
             // 商品篩選變更時
             if (fieldChange.PropertyName == "FilterProductId")
             {

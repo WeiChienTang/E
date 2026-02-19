@@ -752,11 +752,10 @@
         StateHasChanged();
     }
 
-    private async Task HandleVehicleModalCancel()
+    private void HandleVehicleModalCancel()
     {
         isVehicleModalVisible = false;
         StateHasChanged();
-        await Task.CompletedTask;
     }
 
     // ===== 車輛選擇 Modal 相關 =====

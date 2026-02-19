@@ -795,8 +795,6 @@
             
             // 清空目前的商品篩選選擇
             filterProductId = null;
-            
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -841,8 +839,6 @@
             {
                 filterPurchaseReceivingId = null;
             }
-            
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -999,17 +995,6 @@
                 // 更新商品和進貨單篩選選項
                 await UpdateFilterProductOptions(supplierId);
                 await UpdateFilterPurchaseReceivingOptions(supplierId);
-                
-                //  關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
-                if (!hasUndeletableDetails)
-                {
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        supplierModalManager, 
-                        formFields, 
-                        nameof(PurchaseReturn.SupplierId), 
-                        fieldChange.Value
-                    );
-                }
                 
                 StateHasChanged();
             }

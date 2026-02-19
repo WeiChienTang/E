@@ -808,38 +808,10 @@
     {
         try
         {
-            // 使用統一 Helper 處理客戶欄位變更
+            // 客戶變更時，觸發商品管理器重新渲染
             if (fieldChange.PropertyName == nameof(SalesOrder.CustomerId))
             {
-                //  關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
-                if (!hasUndeletableDetails)
-                {
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-                }
-                
-                // 客戶變更時，觸發商品管理器重新渲染
                 StateHasChanged();
-            }
-            // 處理公司欄位變更
-            else if (fieldChange.PropertyName == nameof(SalesOrder.CompanyId))
-            {
-                //  關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
-                if (!hasUndeletableDetails)
-                {
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        companyModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-                }
-            }
-            // 處理業務員欄位變更
-            else if (fieldChange.PropertyName == nameof(SalesOrder.EmployeeId))
-            {
-                //  關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
-                if (!hasUndeletableDetails)
-                {
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-                }
             }
             // 處理商品篩選變更
             else if (fieldChange.PropertyName == "FilterProductId")

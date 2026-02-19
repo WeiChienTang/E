@@ -963,18 +963,8 @@
             switch (fieldChange.PropertyName)
             {
                 case nameof(SalesReturn.CustomerId):
-                    if (int.TryParse(fieldChange.Value?.ToString(), out var customerId))
-                    {
-                        // 只有在沒有不可刪除明細時才更新 ActionButtons
-                        if (!hasUndeletableDetails)
-                        {
-                            await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                                customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-                        }
-                        
-                        // 客戶變更時，觸發退貨明細管理器重新渲染
-                        StateHasChanged();
-                    }
+                    // 客戶變更時，觸發退貨明細管理器重新渲染
+                    StateHasChanged();
                     break;
 
                 case "FilterProductId":
@@ -1371,16 +1361,6 @@
 
     private string? GetFilterProductName()
         => EntityDisplayHelper.GetDisplayValue(filterProductId, products, p => $"{p.Code} {p.Name}");
-
-    /// <summary>
-    /// 建立庫存交易記錄 - 新增模式（已棄用，改用 UpdateInventoryByDifferenceAsync）
-    /// </summary>
-    private async Task CreateInventoryTransactionsAsync(List<SalesReturnDetail> details, string returnNumber)
-    {
-        //  新版本統一使用 UpdateInventoryByDifferenceAsync 處理新增和編輯
-        // 這個方法保留只是為了向下相容，實際不再使用
-        await Task.CompletedTask;
-    }
 
     /// <summary>
     /// 使用差異比較更新庫存（統一處理新增和編輯）

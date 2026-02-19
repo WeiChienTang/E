@@ -221,7 +221,6 @@
             // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
             // ActionButtons 更新已由 GenericEditModalComponent 的 LoadAllData 統一處理
             StateHasChanged();
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {

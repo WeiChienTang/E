@@ -437,11 +437,10 @@ ShowPrintButton="true"
     };
     
     // ===== 明細變更處理 =====
-    private async Task HandleDetailsChanged(List<ProductCompositionDetail> details)
+    private void HandleDetailsChanged(List<ProductCompositionDetail> details)
     {
         compositionDetails = details;
         StateHasChanged();
-        await Task.CompletedTask;
     }
     
     // ===== 自訂儲存邏輯 =====

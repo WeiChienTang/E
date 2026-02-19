@@ -98,7 +98,6 @@
         try
         {
             StateHasChanged();
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -214,7 +213,6 @@
         {
             // 可以在這裡處理欄位變更的邏輯
             StateHasChanged();
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {

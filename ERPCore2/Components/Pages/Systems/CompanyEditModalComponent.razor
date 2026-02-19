@@ -53,7 +53,6 @@
     {
         if (IsVisible && !isDataLoaded)
         {
-            await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
             isDataLoaded = true;
         }
@@ -66,18 +65,6 @@
         => EditDataLoaderHelper.LoadOrCreateAsync<Company, ICompanyService>(
             CompanyId, CompanyService, NotificationService, "公司", "COMP", PrefilledValues,
             c => c.CompanyName = string.Empty);
-    private async Task LoadAdditionalDataAsync()
-    {
-        try
-        {
-            // 如果需要載入其他相關資料，可以在這裡實作
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入公司資料時發生錯誤：{ex.Message}");
-        }
-    }
 
     // ===== 表單初始化 =====
     private async Task InitializeFormFieldsAsync()

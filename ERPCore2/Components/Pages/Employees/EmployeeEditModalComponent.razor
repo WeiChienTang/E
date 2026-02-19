@@ -873,10 +873,9 @@
     /// <summary>
     /// 車輛 Modal 取消
     /// </summary>
-    private async Task HandleVehicleModalCancel()
+    private void HandleVehicleModalCancel()
     {
         isVehicleModalVisible = false;
         StateHasChanged();
-        await Task.CompletedTask;
     }
 }
