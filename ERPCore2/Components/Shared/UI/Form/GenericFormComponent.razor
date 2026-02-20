@@ -68,9 +68,14 @@
                                 <div class="form-sections-container">
                                     @foreach (var sectionGroup in tabSections)
                                     {
+                                        var isFilterSectionTab = IsFilterSection(sectionGroup.Key);
                                         <div class="form-section-column @sectionColClass">
-                                            <div class="form-section-header">
-                                                <span class="form-section-title">@(sectionGroup.Key)</span>
+                                            <div class="form-section-header @(isFilterSectionTab ? "form-section-header-filter" : "")">
+                                                @if (isFilterSectionTab)
+                                                {
+                                                    <i class="bi bi-funnel-fill form-section-filter-icon"></i>
+                                                }
+                                                <span class="form-section-title @(isFilterSectionTab ? "form-section-title-filter" : "")">@(sectionGroup.Key)</span>
                                             </div>
                                             <div class="form-section-fields">
                                                 @foreach (var fieldKvp in sectionGroup)
@@ -101,9 +106,14 @@
             <div class="form-sections-container">
                 @foreach (var sectionGroup in orderedSections)
                 {
+                    var isFilterSectionHorizontal = IsFilterSection(sectionGroup.Key);
                     <div class="form-section-column @sectionColClass">
-                        <div class="form-section-header">
-                            <span class="form-section-title">@(sectionGroup.Key)</span>
+                        <div class="form-section-header @(isFilterSectionHorizontal ? "form-section-header-filter" : "")">
+                            @if (isFilterSectionHorizontal)
+                            {
+                                <i class="bi bi-funnel-fill form-section-filter-icon"></i>
+                            }
+                            <span class="form-section-title @(isFilterSectionHorizontal ? "form-section-title-filter" : "")">@(sectionGroup.Key)</span>
                         </div>
                         <div class="form-section-fields">
                             @foreach (var fieldKvp in sectionGroup)
@@ -141,6 +151,12 @@
 
 @code
 {
+    /// <summary>
+    /// 判斷是否為篩選條件區段（用於套用不同視覺樣式）
+    /// </summary>
+    private static bool IsFilterSection(string sectionName) =>
+        sectionName == ERPCore2.Helpers.EditModal.FormSectionNames.FilterConditions;
+
     /// <summary>
     /// 根據區段數量取得對應的 CSS 類別
     /// </summary>

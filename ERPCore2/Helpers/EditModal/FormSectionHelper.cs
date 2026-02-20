@@ -216,6 +216,9 @@ namespace ERPCore2.Helpers.EditModal
         /// <summary>基本資訊</summary>
         public const string BasicInfo = "基本資訊";
 
+        /// <summary>篩選條件（虛擬欄位，不儲存至資料庫，僅用於篩選下方明細 Table）</summary>
+        public const string FilterConditions = "篩選條件";
+
         /// <summary>聯絡資訊</summary>
         public const string ContactInfo = "聯絡資訊";
 

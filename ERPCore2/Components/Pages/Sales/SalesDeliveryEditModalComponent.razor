@@ -513,13 +513,14 @@
                 },
                 new FormFieldDefinition()
                 {
-                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位
+                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位，不儲存至資料庫
                     Label = "商品",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請選擇要篩選的商品（可選）",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇商品後，點擊載入只會載入該商品的訂單明細"
+                    HelpText = "選擇商品後，點擊載入只會載入該商品的訂單明細。此欄位不會儲存。",
+                    IsFilterOnly = true
                 },
                 new FormFieldDefinition()
                 {
@@ -606,12 +607,11 @@
             formSections = FormSectionHelper<SalesDelivery>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     sd => sd.Code,
-                    sd => sd.CustomerId)
-                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
-                .AddToSection(FormSectionNames.BasicInfo,
+                    sd => sd.CustomerId,
                     sd => sd.SalesOrderId,
                     sd => sd.EmployeeId,
-                    sd => sd.DeliveryDate)                
+                    sd => sd.DeliveryDate)
+                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     sd => sd.TaxCalculationMethod,
                     sd => sd.TotalAmount,

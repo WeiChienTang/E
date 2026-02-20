@@ -49,6 +49,31 @@
     color: #0d6efd;
 }
 
+/* ===== 篩選條件區段 - 特殊視覺樣式 ===== */
+
+/* 篩選區段標題列 - 琥珀色底線與淡背景 */
+.form-section-header-filter {
+    background-color: rgba(255, 193, 7, 0.08);
+    border-bottom-color: #ffc107;
+    border-radius: 4px 4px 0 0;
+    padding: 0.25rem 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* 篩選區段標題文字 - 琥珀色 */
+.form-section-title-filter {
+    color: #b45309;
+}
+
+/* 篩選區段圖示 */
+.form-section-filter-icon {
+    font-size: 0.75rem;
+    color: #b45309;
+    flex-shrink: 0;
+}
+
 /* 區段欄位容器 */
 .form-section-fields {
     display: flex;

@@ -1720,7 +1720,11 @@
         if (ModalManagers != null && ModalManagers.ContainsKey(fieldChange.PropertyName))
         {
             var targetField = FormFields?.FirstOrDefault(f => f.PropertyName == fieldChange.PropertyName);
-            if (targetField != null && !targetField.IsReadOnly)
+            // IsFilterOnly 欄位（如 FilterProductId）是虛擬欄位，實體中不存在對應屬性。
+            // 若對這類欄位呼叫 UpdateFieldActionButtons，會因取得 entity 值為 null，
+            // 而將 ActionButtons 設為「編輯」按鈕，再被 ProcessActionButtonsForAutoComplete 清空，
+            // 導致 hasActionButtons 從 true 變 false，FormAutoCompleteField 被重建並失去顯示值。
+            if (targetField != null && !targetField.IsReadOnly && !targetField.IsFilterOnly)
             {
                 int? newId = null;
                 if (fieldChange.Value != null && int.TryParse(fieldChange.Value.ToString(), out int id))

@@ -797,14 +797,15 @@
                 },
                 new()
                 {
-                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位
+                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位，不儲存至資料庫
                     Label = "商品",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇商品",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇特定商品進行篩選,或留空顯示所有商品（僅外購類型）",
-                    ActionButtons = await GetProductActionButtonsAsync()
+                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品（僅外購類型）。此欄位不會儲存。",
+                    ActionButtons = await GetProductActionButtonsAsync(),
+                    IsFilterOnly = true
                 },
                 new()
                 {
@@ -866,12 +867,10 @@
             formSections = FormSectionHelper<PurchaseReceiving>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.Code,
-                    pr => pr.SupplierId)
-                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")  // 用字串指定虛擬欄位
-                .AddToSection(FormSectionNames.BasicInfo,
-                    pr => pr.PurchaseOrderId)
-                .AddToSection(FormSectionNames.BasicInfo,
+                    pr => pr.SupplierId,
+                    pr => pr.PurchaseOrderId,
                     pr => pr.ReceiptDate)
+                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     pr => pr.TaxCalculationMethod,
                     pr => pr.TotalAmount,
@@ -1197,12 +1196,11 @@
             {
                 needsRerender = true;
             }
-            // 當商品篩選變更時，更新篩選狀態
-            //  修正：不需要觸發重新渲染，PurchaseReceivingTable 會自行處理參數變更
+            // 當商品篩選變更時，更新篩選狀態並觸發重新渲染
             else if (fieldChange.PropertyName == "FilterProductId")
             {
-                if (fieldChange.Value != null && 
-                    int.TryParse(fieldChange.Value.ToString(), out int productId) && 
+                if (fieldChange.Value != null &&
+                    int.TryParse(fieldChange.Value.ToString(), out int productId) &&
                     productId > 0)
                 {
                     filterProductId = productId;
@@ -1211,9 +1209,8 @@
                 {
                     filterProductId = null;
                 }
-                
-                // 不設置 needsRerender，避免過度渲染
-                // PurchaseReceivingTable 會根據參數變更自行處理
+
+                needsRerender = true; // 需要重新渲染以讓 PurchaseReceivingTable 收到新的 FilterProductId
             }
             
             //  只在真正需要時才呼叫一次 StateHasChanged

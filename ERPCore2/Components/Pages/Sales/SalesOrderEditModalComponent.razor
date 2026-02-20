@@ -469,13 +469,14 @@
                 },
                 new()
                 {
-                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位
+                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位，不儲存至資料庫
                     Label = "商品",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇商品",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品"
+                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品。此欄位不會儲存。",
+                    IsFilterOnly = true
                 },
                 new FormFieldDefinition()
                 {
@@ -613,14 +614,13 @@
             formSections = FormSectionHelper<SalesOrder>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     so => so.Code,
-                    so => so.CustomerId)
-                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")  // 用字串指定虛擬欄位
-                .AddToSection(FormSectionNames.BasicInfo,
+                    so => so.CustomerId,
                     so => so.QuotationId,
                     so => so.CompanyId,
                     so => so.EmployeeId,
                     so => so.OrderDate,
                     so => so.ExpectedDeliveryDate)
+                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     so => so.TaxCalculationMethod,
                     so => so.TotalAmount,      // 金額（折扣前）

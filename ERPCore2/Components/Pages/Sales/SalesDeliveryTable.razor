@@ -176,6 +176,7 @@ else
     // 方案 D 改良版：資料版本追蹤
     private int _previousDataVersion = 0;
     private bool _isLoadingDetails = false;
+    private int? _previousFilterProductId = null;
     
     // 稅率快取變數
     private decimal currentTaxRate = 5.0m;
@@ -286,8 +287,9 @@ else
         // 只有在成功載入後才設定 _previousDataVersion
         _previousDataVersion = DataVersion;
         
-        // 初始化時記錄當前客戶ID，避免 OnParametersSetAsync 誤判為變更
+        // 初始化時記錄當前客戶ID與商品篩選，避免 OnParametersSetAsync 誤判為變更
         _previousSelectedCustomerId = SelectedCustomerId;
+        _previousFilterProductId = FilterProductId;
         
         // 載入系統預設稅率
         try
@@ -321,7 +323,8 @@ else
             // 同時更新所有追蹤變數
             _previousDataVersion = DataVersion;
             _previousSelectedCustomerId = SelectedCustomerId;
-            
+            _previousFilterProductId = FilterProductId;
+
             _isLoadingDetails = true;
             try
             {
@@ -335,19 +338,23 @@ else
             }
             return;
         }
-        
+
         base.OnParametersSet();
-        
+
         // 客戶變更時重新載入
         bool customerChanged = _previousSelectedCustomerId != SelectedCustomerId;
-        
+
+        // 商品篩選變更時
+        bool productFilterChanged = _previousFilterProductId != FilterProductId;
+
         if (customerChanged)
         {
             _previousSelectedCustomerId = SelectedCustomerId;
+            _previousFilterProductId = FilterProductId;
             await LoadAvailableProductsAsync();
-            
+
             DeliveryItems.Clear();
-            
+
             if (ExistingDetails?.Any() != true)
             {
                 _dataLoadCompleted = true;
@@ -357,6 +364,13 @@ else
             {
                 await LoadExistingDetailsAsync();
             }
+        }
+        else if (productFilterChanged)
+        {
+            _previousFilterProductId = FilterProductId;
+
+            // 觸發重新渲染以套用新的商品篩選條件
+            StateHasChanged();
         }
     }
     

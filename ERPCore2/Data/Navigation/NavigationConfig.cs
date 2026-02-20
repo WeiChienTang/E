@@ -19,7 +19,7 @@ public static class NavigationConfig
             // ==================== 首頁 ====================
             new NavigationItem
             {
-                Name = "首頁",
+                Name = "首　　頁",
                 Description = "系統首頁和總覽",
                 Route = "/",
                 IconClass = "bi-house-door-fill",
@@ -30,7 +30,7 @@ public static class NavigationConfig
             // ==================== 人力資源管理 ====================
             new NavigationItem
             {
-                Name = "人力管理",
+                Name = "人力資源",
                 Description = "員工相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-person-badge-fill",
@@ -131,7 +131,7 @@ public static class NavigationConfig
             // ==================== 廠商管理 ====================
             new NavigationItem
             {
-                Name = "廠商管理",
+                Name = "廠　　商",
                 Description = "廠商相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-building-gear",
@@ -175,7 +175,7 @@ public static class NavigationConfig
             // ==================== 客戶管理 ====================
             new NavigationItem
             {
-                Name = "客戶管理",
+                Name = "客　　戶",
                 Description = "客戶相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-people-fill",
@@ -219,7 +219,7 @@ public static class NavigationConfig
             // ==================== 商品管理 ====================
             new NavigationItem
             {
-                Name = "商品管理",
+                Name = "商　　品",
                 Description = "商品相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-box-seam-fill",
@@ -335,7 +335,7 @@ public static class NavigationConfig
             // ==================== 庫存管理 ====================
             new NavigationItem
             {
-                Name = "庫存管理",
+                Name = "庫　　存",
                 Description = "庫存相關功能管理",
                 Route = "#",
                 IconClass = "bi-boxes nav-menu-bi",
@@ -438,7 +438,7 @@ public static class NavigationConfig
             // ==================== 採購管理 ====================
             new NavigationItem
             {
-                Name = "採購管理",
+                Name = "採　　購",
                 Description = "採購相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-truck",
@@ -507,7 +507,7 @@ public static class NavigationConfig
             // ==================== 銷貨管理 ====================
             new NavigationItem
             {
-                Name = "銷貨管理",
+                Name = "銷　　貨",
                 Description = "銷貨相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-cart-fill",
@@ -600,7 +600,7 @@ public static class NavigationConfig
             // ==================== 車輛管理 ====================
             new NavigationItem
             {
-                Name = "車輛管理",
+                Name = "車　　輛",
                 Description = "車輛相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-truck-front-fill",
@@ -668,7 +668,7 @@ public static class NavigationConfig
             // ==================== 廢料管理 ====================
             new NavigationItem
             {
-                Name = "廢料管理",
+                Name = "廢　　料",
                 Description = "廢料收料記錄與類型管理",
                 Route = "#",
                 IconClass = "bi bi-recycle",
@@ -708,7 +708,7 @@ public static class NavigationConfig
             // ==================== 財務管理 ====================
             new NavigationItem
             {
-                Name = "財務管理",
+                Name = "財　　務",
                 Description = "財務相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-journal-text",
@@ -802,7 +802,7 @@ public static class NavigationConfig
             // ==================== 系統管理 ====================
             new NavigationItem
             {
-                Name = "系統管理",
+                Name = "系　　統",
                 Description = "系統管理和管理功能",
                 Route = "#",
                 IconClass = "bi bi-gear-fill",

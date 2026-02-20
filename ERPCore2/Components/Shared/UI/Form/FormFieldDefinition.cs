@@ -170,6 +170,12 @@ public class FormFieldDefinition
     /// 常用值: "off"(關閉), "on"(開啟), "new-password"(新密碼), "current-password"(目前密碼) 等
     /// </summary>
     public string? AutoCompleteAttribute { get; set; }
+
+    /// <summary>
+    /// 是否為純篩選欄位（不會儲存至資料庫，僅用於篩選下方明細 Table 的內容）
+    /// 設為 true 時，欄位會放入「篩選條件」區段並以不同視覺樣式顯示
+    /// </summary>
+    public bool IsFilterOnly { get; set; } = false;
 }
 
 /// <summary>

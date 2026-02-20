@@ -574,11 +574,14 @@ else
             return;
         }
         
-        // 如果只是進貨單或商品篩選變更，只需要更新篩選狀態
+        // 如果只是進貨單或商品篩選變更，只需要更新篩選狀態並重新渲染
         if (purchaseReceivingChanged || productFilterChanged)
         {
             _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
             _previousFilterProductId = EffectiveFilterProductId;
+
+            // 觸發重新渲染以套用新的篩選條件
+            StateHasChanged();
             return;
         }
     }

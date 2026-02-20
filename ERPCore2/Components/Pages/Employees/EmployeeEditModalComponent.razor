@@ -78,6 +78,12 @@
                               OnCancel="@HandleVehicleModalCancel" />
 }
 
+@* 車輛選擇 Modal *@
+<VehicleSelectModal IsVisible="@isVehicleSelectModalVisible"
+                    IsVisibleChanged="@HandleVehicleSelectModalVisibilityChanged"
+                    ExcludeVehicleIds="@GetCurrentVehicleIds()"
+                    OnVehicleSelected="@HandleVehicleSelected" />
+
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
@@ -121,6 +127,11 @@
     private VehicleEditModalComponent? vehicleEditModal;
     private bool isVehicleModalVisible = false;
     private int? editingVehicleId = null;
+    private bool isVehicleSelectModalVisible = false;
+
+    // 車輛配給緩衝（等主檔儲存時才寫入 DB）
+    private List<Vehicle> _pendingVehicleLinks = new();
+    private List<Vehicle> _pendingVehicleUnlinks = new();
     
     // 注意：搜尋關鍵字追蹤已整合到 GenericEditModalComponent 中，不再需要手動追蹤
     // private string lastDepartmentSearchTerm = string.Empty;  // 已移除
@@ -134,6 +145,10 @@
     {
         try
         {
+            // 清除待處理的車輛變更（切換記錄或新增時）
+            _pendingVehicleLinks.Clear();
+            _pendingVehicleUnlinks.Clear();
+
             // 載入該員工的車輛資訊
             if (loadedEntityId > 0)
             {
@@ -486,8 +501,10 @@
         {
             if (!EmployeeId.HasValue) 
             {
-                // 新增模式 - 清除前一筆的車輛資料
+                // 新增模式 - 清除前一筆的車輛資料與暫存
                 employeeVehicles = new List<Vehicle>();
+                _pendingVehicleLinks.Clear();
+                _pendingVehicleUnlinks.Clear();
 
                 // 找出預設的權限組 (Employee-非系統使用者)
                 var defaultRole = availableRoles.FirstOrDefault(r => 
@@ -644,6 +661,12 @@
                 result = await EmployeeService.CreateAsync(entity);
             }
 
+            // 儲存待處理的車輛配給變更
+            if (result.IsSuccess)
+            {
+                await SavePendingVehicleChangesAsync(entity.Id);
+            }
+
             // 讓 GenericEditModalComponent 處理通用的成功/失敗訊息
             return result.IsSuccess;
         }
@@ -660,6 +683,11 @@
         {
             if (editModalComponent?.Entity != null)
             {
+                // 儲存後重新載入車輛列表（確保與 DB 同步）
+                if (editModalComponent.Entity.Id > 0)
+                {
+                    employeeVehicles = await VehicleService.GetByEmployeeAsync(editModalComponent.Entity.Id);
+                }
                 await OnEmployeeSaved.InvokeAsync(editModalComponent.Entity);
             }
         }
@@ -779,6 +807,7 @@
     {
         <VehicleTable Vehicles="@employeeVehicles"
                      OnAddVehicle="@HandleAddVehicle"
+                     OnSelectVehicle="@HandleOpenVehicleSelectModal"
                      OnEditVehicle="@HandleEditVehicle"
                      OnUnlinkVehicle="@HandleUnlinkVehicle" />
     };
@@ -804,69 +833,54 @@
     }
 
     /// <summary>
-    /// 解除車輛配給 - 將車輛的 EmployeeId 設為 null（不刪除車輛）
+    /// 解除車輛配給 - 緩衝處理，等主檔儲存時才寫入 DB
     /// </summary>
-    private async Task HandleUnlinkVehicle(Vehicle vehicle)
+    private void HandleUnlinkVehicle(Vehicle vehicle)
     {
-        try
+        // 從本地列表移除
+        employeeVehicles.RemoveAll(v => v.Id == vehicle.Id);
+
+        // 如果之前選擇過配給，從待配給清單中移除
+        _pendingVehicleLinks.RemoveAll(v => v.Id == vehicle.Id);
+
+        // 加入待解除配給清單
+        if (!_pendingVehicleUnlinks.Any(v => v.Id == vehicle.Id))
         {
-            vehicle.EmployeeId = null;
-            await VehicleService.UpdateAsync(vehicle);
-            
-            // 重新載入車輛列表
-            if (EmployeeId.HasValue)
-            {
-                employeeVehicles = await VehicleService.GetByEmployeeAsync(EmployeeId.Value);
-            }
-            StateHasChanged();
-            await NotificationService.ShowSuccessAsync($"已解除車輛「{vehicle.LicensePlate}」的配給");
+            _pendingVehicleUnlinks.Add(vehicle);
         }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"解除配給時發生錯誤：{ex.Message}");
-        }
+
+        StateHasChanged();
     }
 
     /// <summary>
-    /// 車輛儲存後的回調 - 重新載入車輛列表
+    /// 車輛儲存後的回調 - 更新本地列表（不重新查詢 DB）
     /// </summary>
-    private async Task OnVehicleSavedWrapper(Vehicle savedVehicle)
+    private void OnVehicleSavedWrapper(Vehicle savedVehicle)
     {
-        try
+        // VehicleEditModal 已儲存車輛實體到 DB（含 PrefilledValues 中的 FK）
+        // 更新本地列表以反映變更
+        var existingIndex = employeeVehicles.FindIndex(v => v.Id == savedVehicle.Id);
+        if (existingIndex >= 0)
         {
-            // 確保新車輛的 EmployeeId 已設定
-            if (EmployeeId.HasValue && savedVehicle.EmployeeId != EmployeeId.Value)
-            {
-                savedVehicle.EmployeeId = EmployeeId.Value;
-                await VehicleService.UpdateAsync(savedVehicle);
-            }
-            
-            // 重新載入車輛列表
-            if (EmployeeId.HasValue)
-            {
-                employeeVehicles = await VehicleService.GetByEmployeeAsync(EmployeeId.Value);
-            }
-            
-            isVehicleModalVisible = false;
-            StateHasChanged();
+            // 編輯模式：更新本地列表中的車輛
+            employeeVehicles[existingIndex] = savedVehicle;
         }
-        catch (Exception ex)
+        else
         {
-            await NotificationService.ShowErrorAsync($"車輛儲存後更新列表時發生錯誤：{ex.Message}");
+            // 新增模式：加入本地列表
+            employeeVehicles.Add(savedVehicle);
         }
+
+        isVehicleModalVisible = false;
+        StateHasChanged();
     }
 
     /// <summary>
     /// 車輛 Modal 可見狀態變更
     /// </summary>
-    private async Task HandleVehicleModalVisibilityChanged(bool isVisible)
+    private void HandleVehicleModalVisibilityChanged(bool isVisible)
     {
         isVehicleModalVisible = isVisible;
-        if (!isVisible && EmployeeId.HasValue)
-        {
-            // Modal 關閉時重新載入車輛列表
-            employeeVehicles = await VehicleService.GetByEmployeeAsync(EmployeeId.Value);
-        }
         StateHasChanged();
     }
 
@@ -877,5 +891,79 @@
     {
         isVehicleModalVisible = false;
         StateHasChanged();
+    }
+
+    // ===== 車輛選擇 Modal 相關 =====
+
+    /// <summary>
+    /// 開啟車輛選擇 Modal
+    /// </summary>
+    private void HandleOpenVehicleSelectModal()
+    {
+        isVehicleSelectModalVisible = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 車輛選擇 Modal 顯示狀態變更
+    /// </summary>
+    private void HandleVehicleSelectModalVisibilityChanged(bool isVisible)
+    {
+        isVehicleSelectModalVisible = isVisible;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 取得目前已配給車輛的 ID 清單（用於排除已在列表中的車輛）
+    /// </summary>
+    private List<int> GetCurrentVehicleIds()
+    {
+        return employeeVehicles.Select(v => v.Id).ToList();
+    }
+
+    /// <summary>
+    /// 處理從選擇 Modal 選取的車輛 - 緩衝處理，等主檔儲存時才寫入 DB
+    /// </summary>
+    private void HandleVehicleSelected(Vehicle vehicle)
+    {
+        // 加入本地列表（供 UI 顯示）
+        if (!employeeVehicles.Any(v => v.Id == vehicle.Id))
+        {
+            employeeVehicles.Add(vehicle);
+        }
+
+        // 如果之前解除過配給，從待解除清單中移除
+        _pendingVehicleUnlinks.RemoveAll(v => v.Id == vehicle.Id);
+
+        // 加入待配給清單
+        if (!_pendingVehicleLinks.Any(v => v.Id == vehicle.Id))
+        {
+            _pendingVehicleLinks.Add(vehicle);
+        }
+
+        StateHasChanged();
+    }
+
+    // ===== 車輛配給儲存方法 =====
+
+    /// <summary>
+    /// 儲存待處理的車輛配給變更
+    /// </summary>
+    private async Task SavePendingVehicleChangesAsync(int employeeId)
+    {
+        foreach (var vehicle in _pendingVehicleLinks)
+        {
+            vehicle.EmployeeId = employeeId;
+            await VehicleService.UpdateAsync(vehicle);
+        }
+
+        foreach (var vehicle in _pendingVehicleUnlinks)
+        {
+            vehicle.EmployeeId = null;
+            await VehicleService.UpdateAsync(vehicle);
+        }
+
+        _pendingVehicleLinks.Clear();
+        _pendingVehicleUnlinks.Clear();
     }
 }
