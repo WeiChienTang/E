@@ -54,6 +54,7 @@
                           OnEntitySaved="@OnSalesReturnSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          OnEntityLoaded="@HandleEntityLoaded"
                           OnTaxMethodChanged="@(() => HandleReturnDetailsChanged(salesReturnDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
@@ -309,7 +310,6 @@
                 
                 if (PrefilledSalesDeliveryId.HasValue && PrefilledSalesDeliveryId.Value > 0)
                 {
-                    newSalesReturn.SalesDeliveryId = PrefilledSalesDeliveryId.Value;
                     // 設定篩選條件，讓明細管理器只顯示這張出貨單的可退貨商品
                     FilterSalesDeliveryId = PrefilledSalesDeliveryId.Value;
                 }
@@ -502,7 +502,7 @@
             // 配置 AutoComplete - 使用 available* 集合確保顯示完整資料
             autoCompleteConfig = new AutoCompleteConfigBuilder<SalesReturn>()
                 .AddField(nameof(SalesReturn.CustomerId), "CompanyName", availableCustomers)
-                .AddField(nameof(SalesReturn.SalesDeliveryId), "Code", availableSalesDeliveries)
+                .AddField("FilterSalesDeliveryId", "Code", availableSalesDeliveries)
                 .AddField("FilterProductId", "Name", availableProducts)
                 .Build();
         }
@@ -547,7 +547,7 @@
             }
 
             // 更新表單中銷售單選項
-            var salesDeliveryField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.SalesDeliveryId));
+            var salesDeliveryField = formFields.FirstOrDefault(f => f.PropertyName == "FilterSalesDeliveryId");
             if (salesDeliveryField != null)
             {
                 salesDeliveryField.Options = filteredsalesDeliveries.Select(so => new SelectOption
@@ -630,19 +630,20 @@
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "輸入商品代碼或名稱進行篩選，或留空顯示所有商品。此欄位不會儲存。",
-                    IsReadOnly = hasUndeletableDetails,
+                    IsReadOnly = true, // 預設停用，等待客戶選取後由 UpdateFilterFieldsState 更新
                     IsFilterOnly = true
                 },
                 new()
                 {
-                    PropertyName = nameof(SalesReturn.SalesDeliveryId),
+                    PropertyName = "FilterSalesDeliveryId", // 篩選用的虛擬欄位，不儲存至資料庫
                     Label = "銷貨單",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請選擇銷貨單號",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "可選擇特定銷貨單進行篩選，或留空使用多銷貨單模式",
-                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                    HelpText = "可選擇特定銷貨單進行篩選，或留空使用多銷貨單模式。此欄位不會儲存。",
+                    IsReadOnly = true, // 預設停用，等待客戶選取後由 UpdateFilterFieldsState 更新
+                    IsFilterOnly = true
                 },
                 new()
                 {
@@ -721,10 +722,9 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     sr => sr.Code,
                     sr => sr.CustomerId,
-                    sr => sr.SalesDeliveryId,
                     sr => sr.ReturnReasonId,
                     sr => sr.ReturnDate)
-                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId")  // 虛擬篩選欄位，不存DB
+                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId", "FilterSalesDeliveryId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     sr => sr.TotalReturnAmount,
                     sr => sr.DiscountAmount,
@@ -892,6 +892,13 @@
     /// <summary>
     /// 根據 hasUndeletableDetails 狀態更新欄位的唯讀狀態
     /// </summary>
+    private Task HandleEntityLoaded(int loadedEntityId)
+    {
+        UpdateFilterFieldsState();
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
     private void UpdateFieldsReadOnlyState()
     {
         // 使用 FormFieldLockHelper 一次處理所有欄位（含 ActionButtons）
@@ -901,7 +908,6 @@
             {
                 nameof(SalesReturn.ReturnDate),
                 nameof(SalesReturn.ReturnReasonId),
-                "FilterProductId",
                 nameof(BaseEntity.Remarks),
                 nameof(SalesReturn.CustomerId)
             },
@@ -911,6 +917,17 @@
                 { nameof(SalesReturn.CustomerId), GetCustomerActionButtonsAsync }
             }
         );
+
+        UpdateFilterFieldsState();
+    }
+
+    private void UpdateFilterFieldsState()
+    {
+        bool noCustomer = !(editModalComponent?.Entity?.CustomerId > 0);
+        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+        if (productFilter != null) productFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
+        var deliveryFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterSalesDeliveryId");
+        if (deliveryFilter != null) deliveryFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
     }
 
     /// <summary>
@@ -963,7 +980,15 @@
             switch (fieldChange.PropertyName)
             {
                 case nameof(SalesReturn.CustomerId):
-                    // 客戶變更時，觸發退貨明細管理器重新渲染
+                    // 客戶變更時，清除銷貨單篩選並更新篩選欄位停用狀態
+                    FilterSalesDeliveryId = null;
+                    {
+                        bool noCustomer = !(int.TryParse(fieldChange.Value?.ToString(), out int cId) && cId > 0);
+                        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+                        if (productFilter != null) productFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
+                        var deliveryFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterSalesDeliveryId");
+                        if (deliveryFilter != null) deliveryFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
+                    }
                     StateHasChanged();
                     break;
 
@@ -990,8 +1015,8 @@
                     StateHasChanged();
                     break;
 
-                case nameof(SalesReturn.SalesDeliveryId):
-                    //  修正：同步更新 FilterSalesDeliveryId 以正確過濾明細表格
+                case "FilterSalesDeliveryId":
+                    //  同步更新 FilterSalesDeliveryId 以正確過濾明細表格
                     // AutoComplete 清除時可能傳回 null、空字串、"0" 或數字 0
                     {
                         var valueStr = fieldChange.Value?.ToString();

@@ -468,12 +468,6 @@ namespace ERPCore2.Data.Context
                   modelBuilder.Entity<PurchaseReceiving>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                        
-                        // 關聯設定
-                        entity.HasOne(pr => pr.PurchaseOrder)
-                        .WithMany(po => po.PurchaseReceivings)
-                        .HasForeignKey(pr => pr.PurchaseOrderId)
-                        .OnDelete(DeleteBehavior.Restrict);
                   });
 
                   modelBuilder.Entity<PurchaseReceivingDetail>(entity =>
@@ -514,11 +508,6 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(pr => pr.Supplier)
                         .WithMany()
                         .HasForeignKey(pr => pr.SupplierId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                        entity.HasOne(pr => pr.PurchaseReceiving)
-                        .WithMany()
-                        .HasForeignKey(pr => pr.PurchaseReceivingId)
                         .OnDelete(DeleteBehavior.Restrict);
                   });
 
@@ -562,11 +551,6 @@ namespace ERPCore2.Data.Context
                   {
                         entity.HasKey(so => so.Id);
 
-                        entity.HasOne(so => so.Quotation)
-                        .WithMany(q => q.SalesOrders)
-                        .HasForeignKey(so => so.QuotationId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
                         entity.HasOne(so => so.Customer)
                         .WithMany()
                         .HasForeignKey(so => so.CustomerId)
@@ -609,11 +593,6 @@ namespace ERPCore2.Data.Context
                         .WithMany()
                         .HasForeignKey(sr => sr.CustomerId)
                         .OnDelete(DeleteBehavior.Restrict);
-
-                        entity.HasOne(sr => sr.SalesDelivery)
-                        .WithMany(sd => sd.SalesReturns)
-                        .HasForeignKey(sr => sr.SalesDeliveryId)
-                        .OnDelete(DeleteBehavior.SetNull);
 
                         entity.HasOne(sr => sr.Employee)
                         .WithMany()

@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
+using ERPCore2.Helpers.EditModal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -13,20 +14,27 @@ namespace ERPCore2.Services
     /// </summary>
     public class CustomerService : GenericManagementService<Customer>, ICustomerService
     {
+        private readonly ISupplierService _supplierService;
+
         /// <summary>
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public CustomerService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
+            ISupplierService supplierService,
             ILogger<GenericManagementService<Customer>> logger) : base(contextFactory, logger)
         {
+            _supplierService = supplierService;
         }
 
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public CustomerService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public CustomerService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ISupplierService supplierService) : base(contextFactory)
         {
+            _supplierService = supplierService;
         }
 
         #region 覆寫基底方法
@@ -246,6 +254,62 @@ namespace ERPCore2.Services
                     ExcludeId = excludeId 
                 });
                 return false; // 安全預設值
+            }
+        }
+
+        #endregion
+
+        #region 跨實體業務操作
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<Supplier>> CopyToSupplierAsync(int customerId)
+        {
+            try
+            {
+                var customer = await GetByIdAsync(customerId);
+                if (customer == null)
+                    return ServiceResult<Supplier>.Failure($"找不到 ID 為 {customerId} 的客戶");
+
+                if (string.IsNullOrWhiteSpace(customer.CompanyName))
+                    return ServiceResult<Supplier>.Failure("客戶公司名稱不可為空白，無法複製至廠商");
+
+                // 驗證廠商公司名稱不重複
+                var nameExists = await _supplierService.IsCompanyNameExistsAsync(customer.CompanyName);
+                if (nameExists)
+                    return ServiceResult<Supplier>.Failure($"廠商清單中已存在「{customer.CompanyName}」，無法重複建立");
+
+                // 自動產生廠商編號
+                var supplierCode = await EntityCodeGenerationHelper.GenerateForEntity<Supplier, ISupplierService>(_supplierService, "S");
+
+                var newSupplier = new Supplier
+                {
+                    Code                 = supplierCode,
+                    CompanyName          = customer.CompanyName,
+                    ContactPerson        = customer.ContactPerson,
+                    TaxNumber            = customer.TaxNumber,
+                    ResponsiblePerson    = customer.ResponsiblePerson,
+                    SupplierContactPhone = customer.CompanyContactPhone,
+                    ContactPhone         = customer.ContactPhone,
+                    MobilePhone          = customer.MobilePhone,
+                    Email                = customer.Email,
+                    Fax                  = customer.Fax,
+                    ContactAddress       = customer.ContactAddress,
+                    SupplierAddress      = customer.ShippingAddress,
+                    Website              = customer.Website,
+                    JobTitle             = customer.JobTitle,
+                    PaymentMethodId      = customer.PaymentMethodId,
+                    PaymentTerms         = customer.PaymentTerms,
+                    Remarks              = customer.Remarks,
+                    Status               = EntityStatus.Active
+                };
+
+                return await _supplierService.CreateAsync(newSupplier);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CopyToSupplierAsync), GetType(), _logger,
+                    additionalData: $"複製客戶至廠商失敗 - CustomerId: {customerId}");
+                return ServiceResult<Supplier>.Failure($"複製至廠商時發生錯誤：{ex.Message}");
             }
         }
 

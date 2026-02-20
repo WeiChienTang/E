@@ -41,7 +41,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Include(sr => sr.SalesReturnDetails)
@@ -69,7 +68,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Include(sr => sr.SalesReturnDetails)
@@ -102,7 +100,6 @@ namespace ERPCore2.Services
 
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Where(sr => ((sr.Code != null && sr.Code.ToLower().Contains(lowerSearchTerm)) ||
@@ -264,7 +261,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Where(sr => sr.CustomerId == customerId)
@@ -289,12 +285,22 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+
+                var returnIds = await context.SalesReturnDetails
+                    .Where(d => d.SalesDeliveryDetailId.HasValue &&
+                                context.SalesDeliveryDetails
+                                    .Where(sdd => sdd.SalesDeliveryId == salesDeliveryId)
+                                    .Select(sdd => sdd.Id)
+                                    .Contains(d.SalesDeliveryDetailId.Value))
+                    .Select(d => d.SalesReturnId)
+                    .Distinct()
+                    .ToListAsync();
+
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
-                    .Where(sr => sr.SalesDeliveryId == salesDeliveryId)
+                    .Where(sr => returnIds.Contains(sr.Id))
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.Code)
                     .ToListAsync();
@@ -320,7 +326,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Where(sr => sr.ReturnDate >= startDate && sr.ReturnDate <= endDate)
@@ -455,7 +460,6 @@ namespace ERPCore2.Services
                 // 基本查詢 - 載入所有需要的關聯資料
                 var query = context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Include(sr => sr.SalesReturnDetails.AsQueryable())

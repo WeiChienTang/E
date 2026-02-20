@@ -258,6 +258,85 @@ namespace ERPCore2.Services
 
         #endregion
 
+        #region 跨實體業務操作
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<Customer>> CopyToCustomerAsync(int supplierId)
+        {
+            try
+            {
+                var supplier = await GetByIdAsync(supplierId);
+                if (supplier == null)
+                    return ServiceResult<Customer>.Failure($"找不到 ID 為 {supplierId} 的廠商");
+
+                if (string.IsNullOrWhiteSpace(supplier.CompanyName))
+                    return ServiceResult<Customer>.Failure("廠商公司名稱不可為空白，無法複製至客戶");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 驗證客戶公司名稱不重複
+                var nameExists = await context.Customers
+                    .AnyAsync(c => c.CompanyName == supplier.CompanyName);
+                if (nameExists)
+                    return ServiceResult<Customer>.Failure($"客戶清單中已存在「{supplier.CompanyName}」，無法重複建立");
+
+                // 產生唯一客戶編號（CUST 前置，與 CustomerService 相同格式）
+                var existingCodes = await context.Customers
+                    .Where(c => c.Code != null && c.Code.StartsWith("CUST"))
+                    .Select(c => c.Code!)
+                    .ToListAsync();
+
+                int maxNum = 0;
+                foreach (var code in existingCodes)
+                {
+                    if (int.TryParse(code.Substring(4), out int num) && num > maxNum)
+                        maxNum = num;
+                }
+
+                string customerCode;
+                do
+                {
+                    maxNum++;
+                    customerCode = $"CUST{maxNum:D3}";
+                } while (await context.Customers.AnyAsync(c => c.Code == customerCode));
+
+                var newCustomer = new Customer
+                {
+                    Code                 = customerCode,
+                    CompanyName          = supplier.CompanyName,
+                    ContactPerson        = supplier.ContactPerson,
+                    TaxNumber            = supplier.TaxNumber,
+                    ResponsiblePerson    = supplier.ResponsiblePerson,
+                    CompanyContactPhone  = supplier.SupplierContactPhone,
+                    ContactPhone         = supplier.ContactPhone,
+                    MobilePhone          = supplier.MobilePhone,
+                    Email                = supplier.Email,
+                    Fax                  = supplier.Fax,
+                    ContactAddress       = supplier.ContactAddress,
+                    ShippingAddress      = supplier.SupplierAddress,
+                    Website              = supplier.Website,
+                    JobTitle             = supplier.JobTitle,
+                    PaymentMethodId      = supplier.PaymentMethodId,
+                    PaymentTerms         = supplier.PaymentTerms,
+                    Remarks              = supplier.Remarks,
+                    Status               = EntityStatus.Active
+                };
+
+                context.Customers.Add(newCustomer);
+                await context.SaveChangesAsync();
+
+                return ServiceResult<Customer>.Success(newCustomer);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CopyToCustomerAsync), GetType(), _logger,
+                    additionalData: $"複製廠商至客戶失敗 - SupplierId: {supplierId}");
+                return ServiceResult<Customer>.Failure($"複製至客戶時發生錯誤：{ex.Message}");
+            }
+        }
+
+        #endregion
+
         #region 輔助方法
 
         public void InitializeNewSupplier(Supplier supplier)

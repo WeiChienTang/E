@@ -11,7 +11,6 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(OrderDate))]
-    [Index(nameof(QuotationId), nameof(OrderDate))]
     [Index(nameof(CompanyId), nameof(OrderDate))]
     [CodeGenerationStrategy(
         CodeGenerationStrategy.TimestampWithSequence,
@@ -57,10 +56,6 @@ namespace ERPCore2.Data.Entities
         public string? DeliveryTerms { get; set; }
 
         // Foreign Keys
-        [Display(Name = "報價單")]
-        [ForeignKey(nameof(Quotation))]
-        public int? QuotationId { get; set; }  // 可選，支援多訂單模式
-
         [Required(ErrorMessage = "公司為必填")]
         [Display(Name = "公司")]
         [ForeignKey(nameof(Company))]
@@ -76,7 +71,6 @@ namespace ERPCore2.Data.Entities
         public int? EmployeeId { get; set; }
 
         // Navigation Properties
-        public Quotation? Quotation { get; set; }  // 報價單導覽屬性
         public Company Company { get; set; } = null!;
         public Customer Customer { get; set; } = null!;
         public Employee? Employee { get; set; }

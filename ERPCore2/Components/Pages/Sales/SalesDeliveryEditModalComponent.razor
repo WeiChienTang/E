@@ -134,6 +134,7 @@
     // 商品篩選欄位（用於載入時過濾）
     private int? filterProductId = null;
     private int? FilterProductId => filterProductId;
+    private int? filterSalesOrderId = null;
     
     // 退貨數量快取字典（Key: DetailId, Value: 已退貨數量）
     private Dictionary<int, decimal> returnedQuantities = new();
@@ -341,7 +342,8 @@
                 // 這樣可以確保 SalesDeliveryTable 組件已經渲染完成
                 if (PrefilledSalesOrderId.HasValue)
                 {
-                    newDelivery.SalesOrderId = PrefilledSalesOrderId.Value;
+                    // 初始化篩選狀態（SalesOrderId 已從實體移除，改用虛擬篩選欄位）
+                    filterSalesOrderId = PrefilledSalesOrderId.Value;
                     // 載入訂單基本資料（客戶、業務員等）
                     var salesOrder = await SalesOrderService.GetWithDetailsAsync(PrefilledSalesOrderId.Value);
                     if (salesOrder != null)
@@ -466,7 +468,7 @@
                 .AddField(nameof(SalesDelivery.CustomerId), "CompanyName", availableCustomers)
                 .AddField(nameof(SalesDelivery.EmployeeId), "Name", availableEmployees)
                 .AddField(nameof(SalesDelivery.WarehouseId), "Name", availableWarehouses)
-                .AddField(nameof(SalesDelivery.SalesOrderId), "Code", availableSalesOrders)
+                .AddField("FilterSalesOrderId", "Code", availableSalesOrders)
                 .AddField("FilterProductId", "Name", availableProducts)
                 .Build();
         }
@@ -520,17 +522,20 @@
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇商品後，點擊載入只會載入該商品的訂單明細。此欄位不會儲存。",
+                    IsReadOnly = true, // 預設停用，等待客戶選取後由 UpdateFilterFieldsState 更新
                     IsFilterOnly = true
                 },
                 new FormFieldDefinition()
                 {
-                    PropertyName = nameof(SalesDelivery.SalesOrderId),
+                    PropertyName = "FilterSalesOrderId", // 篩選用的虛擬欄位，不儲存至資料庫
                     Label = "訂單",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請選擇訂單單號",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇關聯的訂單單號（可選）"
+                    HelpText = "選擇特定訂單進行篩選，或留空顯示所有訂單明細。此欄位不會儲存。",
+                    IsReadOnly = true, // 預設停用，等待客戶選取後由 UpdateFilterFieldsState 更新
+                    IsFilterOnly = true
                 },
                 new()
                 {
@@ -608,10 +613,9 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     sd => sd.Code,
                     sd => sd.CustomerId,
-                    sd => sd.SalesOrderId,
                     sd => sd.EmployeeId,
                     sd => sd.DeliveryDate)
-                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId")  // 虛擬篩選欄位，不存DB
+                .AddCustomFields(FormSectionNames.FilterConditions, "FilterSalesOrderId", "FilterProductId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     sd => sd.TaxCalculationMethod,
                     sd => sd.TotalAmount,
@@ -648,7 +652,7 @@
             var salesOrder = await SalesOrderService.GetWithDetailsAsync(salesOrderId);
             if (salesOrder == null) return;
 
-            delivery.SalesOrderId = salesOrderId;
+            filterSalesOrderId = salesOrderId;
             delivery.CustomerId = salesOrder.CustomerId;
             delivery.EmployeeId = salesOrder.EmployeeId;
 
@@ -692,15 +696,12 @@
     {
         try
         {
-            // 方案 A + D：
-            // - 明細已由 DataLoader (LoadSalesDeliveryData) 載入完成
-            // - Table 組件會自動偵測 ExistingDetails 參數變化並重新載入
-            // - 只需觸發 StateHasChanged() 讓 Table 收到新的參數
+            UpdateFilterFieldsState();
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(),
                 additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
             await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
         }
@@ -804,7 +805,6 @@
             formFields,
             new[]
             {
-                nameof(SalesDelivery.SalesOrderId),
                 nameof(SalesDelivery.CustomerId)
             },
             isLocked: hasUndeletableDetails,
@@ -813,6 +813,17 @@
                 { nameof(SalesDelivery.CustomerId), GetCustomerActionButtonsAsync }
             }
         );
+
+        UpdateFilterFieldsState();
+    }
+
+    private void UpdateFilterFieldsState()
+    {
+        bool noCustomer = !(editModalComponent?.Entity?.CustomerId > 0);
+        var salesOrderFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterSalesOrderId");
+        if (salesOrderFilter != null) salesOrderFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
+        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+        if (productFilter != null) productFilter.IsReadOnly = noCustomer;
     }
 
     private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
@@ -837,9 +848,15 @@
     {
         try
         {
-            // 客戶變更時，自動載入地址
+            // 客戶變更時，清除訂單篩選並更新篩選欄位停用狀態
             if (fieldChange.PropertyName == nameof(SalesDelivery.CustomerId))
             {
+                filterSalesOrderId = null;
+                bool noCustomer = !(int.TryParse(fieldChange.Value?.ToString(), out int cId) && cId > 0);
+                var salesOrderFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterSalesOrderId");
+                if (salesOrderFilter != null) salesOrderFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
+                var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+                if (productFilter != null) productFilter.IsReadOnly = noCustomer;
                 if (fieldChange.Value != null)
                 {
                     await HandleCustomerChanged((int)fieldChange.Value);
@@ -848,30 +865,35 @@
                 return;
             }
 
+            // 訂單篩選變更時
+            if (fieldChange.PropertyName == "FilterSalesOrderId")
+            {
+                var valueStr = fieldChange.Value?.ToString();
+                if (string.IsNullOrWhiteSpace(valueStr) || valueStr == "0")
+                    filterSalesOrderId = null;
+                else if (int.TryParse(valueStr, out var parsedId) && parsedId > 0)
+                    filterSalesOrderId = parsedId;
+                else
+                    filterSalesOrderId = null;
+                StateHasChanged();
+                return;
+            }
+
             // 商品篩選變更時
             if (fieldChange.PropertyName == "FilterProductId")
             {
-                // 修正：處理清除值的情況
-                // AutoComplete 清除時可能傳回 null、空字串、"0" 或數字 0
                 var valueStr = fieldChange.Value?.ToString();
                 if (string.IsNullOrWhiteSpace(valueStr) || valueStr == "0")
-                {
                     filterProductId = null;
-                }
                 else if (int.TryParse(valueStr, out var parsedProductId) && parsedProductId > 0)
-                {
                     filterProductId = parsedProductId;
-                }
                 else
-                {
-                    // 無法解析的值也視為清除
                     filterProductId = null;
-                }
                 // ✅ 欄位依賴變化：篩選條件改變需要立即更新明細表格
                 StateHasChanged();
                 return;
             }
-            
+
             // ✅ 其他欄位變更不需要 StateHasChanged
         }
         catch (Exception ex)
@@ -1088,7 +1110,7 @@
                                 Warehouses="@warehouses"
                                 WarehouseLocations="@warehouseLocations"
                                 SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"
-                                SelectedSalesOrderId="@(editModalComponent?.Entity?.SalesOrderId ?? 0)"
+                                SelectedSalesOrderId="@(filterSalesOrderId ?? 0)"
                                 FilterProductId="@FilterProductId"
                                 SelectedCustomerName="@GetSelectedCustomerName()"
                                 SelectedSalesOrderCode="@GetSelectedSalesOrderCode()"
@@ -1354,7 +1376,7 @@
         => EntityDisplayHelper.GetDisplayValue(editModalComponent?.Entity?.CustomerId, customers, c => c.CompanyName);
 
     private string? GetSelectedSalesOrderCode()
-        => EntityDisplayHelper.GetDisplayValue(editModalComponent?.Entity?.SalesOrderId, salesOrders, so => so.Code);
+        => EntityDisplayHelper.GetDisplayValue(filterSalesOrderId, salesOrders, so => so.Code);
 
     private string? GetFilterProductName()
         => EntityDisplayHelper.GetDisplayValue(filterProductId, availableProducts, p => $"{p.Code} {p.Name}");

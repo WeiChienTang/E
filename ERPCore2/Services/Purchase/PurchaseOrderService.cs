@@ -77,9 +77,6 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Include(po => po.ApprovedByUser)
-                    // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
-                    .Include(po => po.PurchaseReceivings)
-                        .ThenInclude(pr => pr.PurchaseReceivingDetails)
                     .FirstOrDefaultAsync(po => po.Id == id);
             }
             catch (Exception ex)

@@ -13,7 +13,6 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(DeliveryDate))]
-    [Index(nameof(SalesOrderId), nameof(DeliveryDate))]
     [CodeGenerationStrategy(
         CodeGenerationStrategy.TimestampWithSequence,
         Prefix = "SD",
@@ -90,10 +89,6 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Customer))]
         public int CustomerId { get; set; }
 
-        [Display(Name = "來源銷售訂單")]
-        [ForeignKey(nameof(SalesOrder))]
-        public int? SalesOrderId { get; set; }
-
         [Display(Name = "業務人員")]
         [ForeignKey(nameof(Employee))]
         public int? EmployeeId { get; set; }
@@ -104,11 +99,9 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public Customer Customer { get; set; } = null!;
-        public SalesOrder? SalesOrder { get; set; }
         public Employee? Employee { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public Warehouse? Warehouse { get; set; }
         public ICollection<SalesDeliveryDetail> DeliveryDetails { get; set; } = new List<SalesDeliveryDetail>();
-        public ICollection<SalesReturn> SalesReturns { get; set; } = new List<SalesReturn>();
     }
 }

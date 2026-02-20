@@ -98,8 +98,6 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivings
-                    .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
@@ -139,8 +137,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 return await context.PurchaseReceivings
-                    .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
@@ -191,14 +187,11 @@ namespace ERPCore2.Services
                     return await GetAllAsync();
 
                 return await context.PurchaseReceivings
-                    .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
                     .Where(pr => (pr.Code != null && pr.Code.Contains(searchTerm)) ||
-                         (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)) ||
-                         (pr.PurchaseOrder != null && pr.PurchaseOrder.Code != null && pr.PurchaseOrder.Code.Contains(searchTerm)))
+                         (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)))
                     .OrderByDescending(pr => pr.ReceiptDate)
                     .ThenBy(pr => pr.Code)
                     .ToListAsync();
@@ -255,27 +248,6 @@ namespace ERPCore2.Services
                 
                 if (exists)
                     return ServiceResult.Failure("進貨單號已存在");
-
-                // 檢查採購訂單（僅當有指定採購單時）
-                if (entity.PurchaseOrderId.HasValue)
-                {
-                    var purchaseOrder = await context.PurchaseOrders
-                        .FirstOrDefaultAsync(po => po.Id == entity.PurchaseOrderId);
-                    
-                    if (purchaseOrder == null)
-                        return ServiceResult.Failure("指定的採購訂單不存在");
-                    
-                    // 檢查是否啟用採購單審核
-                    var isApprovalEnabled = false;
-                    if (_systemParameterService != null)
-                    {
-                        isApprovalEnabled = await _systemParameterService.IsPurchaseOrderApprovalEnabledAsync();
-                    }
-                    
-                    // 只有在啟用審核時才檢查核准狀態
-                    if (isApprovalEnabled && !purchaseOrder.IsApproved)
-                        return ServiceResult.Failure("只有已核准的採購訂單才能進行進貨作業");
-                }
 
                 // 檢查供應商
                 var supplier = await context.Suppliers
@@ -778,8 +750,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 return await context.PurchaseReceivings
-                    .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
@@ -817,16 +787,20 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                
+
+                var receivingIds = await context.PurchaseReceivingDetails
+                    .Where(d => d.PurchaseOrderDetail != null && d.PurchaseOrderDetail.PurchaseOrderId == purchaseOrderId)
+                    .Select(d => d.PurchaseReceivingId)
+                    .Distinct()
+                    .ToListAsync();
+
                 return await context.PurchaseReceivings
-                    .Include(pr => pr.PurchaseOrder)
-                        .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Warehouse)
-                    .Where(pr => pr.PurchaseOrderId == purchaseOrderId)
+                    .Where(pr => receivingIds.Contains(pr.Id))
                     .OrderByDescending(pr => pr.ReceiptDate)
                     .ThenBy(pr => pr.Code)
                     .ToListAsync();

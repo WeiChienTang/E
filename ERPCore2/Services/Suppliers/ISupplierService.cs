@@ -75,6 +75,18 @@ namespace ERPCore2.Services
         int GetBasicCompletedFieldsCount(Supplier supplier);
         
         #endregion
+
+        #region 跨實體業務操作
+
+        /// <summary>
+        /// 將廠商資料複製為新客戶
+        /// 自動產生客戶編號，對應可共用欄位，並驗證客戶公司名稱不重複
+        /// </summary>
+        /// <param name="supplierId">來源廠商 ID</param>
+        /// <returns>成功時回傳建立的客戶；失敗時回傳 ServiceResult 錯誤訊息</returns>
+        Task<ServiceResult<Customer>> CopyToCustomerAsync(int supplierId);
+
+        #endregion
     }
 }
 

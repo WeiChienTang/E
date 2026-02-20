@@ -216,10 +216,13 @@ public static class FormFieldLockHelper
             "ExpectedDeliveryDate", // 預定出貨日期
             "PaymentTerms",         // 付款條件
             "DeliveryTerms",        // 交貨條件
-            "FilterProductId",      // 篩選商品
-            "SalesOrderId",         // 銷售單
-            "PurchaseOrderId",      // 採購單
-            "ReturnReasonId"        // 退貨原因
+            "FilterProductId",          // 篩選商品
+            "FilterSalesOrderId",       // 篩選銷售單
+            "FilterPurchaseOrderId",    // 篩選採購單
+            "FilterPurchaseReceivingId",// 篩選進貨單
+            "FilterSalesDeliveryId",    // 篩選銷貨單
+            "FilterQuotationId",        // 篩選報價單
+            "ReturnReasonId"            // 退貨原因
         };
 
         foreach (var fieldName in standardFields)

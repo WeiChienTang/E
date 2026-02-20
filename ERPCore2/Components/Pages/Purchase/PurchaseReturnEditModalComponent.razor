@@ -126,15 +126,12 @@
     {
         try
         {
-            // 方案 A + D：
-            // - 明細已由 DataLoader (LoadPurchaseReturnData) 載入完成
-            // - Table 組件會自動偵測 ExistingReturnDetails 參數變化並重新載入
-            // - 只需觸發 StateHasChanged() 讓 Table 收到新的參數
+            UpdateFilterFieldsState();
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(),
                 additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
             await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
         }
@@ -241,8 +238,7 @@
                         Code = number,
                         ReturnDate = DateTime.Today,
                         Status = EntityStatus.Active,
-                        SupplierId = PrefilledSupplierId ?? 0,
-                        PurchaseReceivingId = PrefilledPurchaseReceivingId // 直接設定實體屬性
+                        SupplierId = PrefilledSupplierId ?? 0
                     };
                     
                     //  如果是從進貨單轉單，繼承進貨單的稅率算法
@@ -423,7 +419,7 @@
                     "Name",  // 主要顯示欄位
                     products,
                     new[] { "Code", "Name" })  // 可搜尋的欄位
-                .AddField(nameof(PurchaseReturn.PurchaseReceivingId), "Code", purchaseReceivings)
+                .AddField("FilterPurchaseReceivingId", "Code", purchaseReceivings)
                 .Build();
         }
         catch (Exception)
@@ -471,19 +467,20 @@
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇特定商品進行篩選，或留空顯示所有商品。此欄位不會儲存。",
-                    IsReadOnly = hasUndeletableDetails,
+                    IsReadOnly = true, // 預設停用，等待廠商選取後由 UpdateFilterFieldsState 更新
                     IsFilterOnly = true
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseReturn.PurchaseReceivingId), // 使用實體屬性
+                    PropertyName = "FilterPurchaseReceivingId", // 篩選用的虛擬欄位，不儲存至資料庫
                     Label = "進貨單",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇進貨單",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇特定進貨單進行篩選，或留空顯示所有進貨單",
-                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                    HelpText = "選擇特定進貨單進行篩選，或留空顯示所有進貨單。此欄位不會儲存。",
+                    IsReadOnly = true, // 預設停用，等待廠商選取後由 UpdateFilterFieldsState 更新
+                    IsFilterOnly = true
                 },
                 new()
                 {
@@ -532,9 +529,8 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.Code,
                     pr => pr.SupplierId,
-                    pr => pr.PurchaseReceivingId,
                     pr => pr.ReturnDate)
-                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId")  // 虛擬篩選欄位，不存DB
+                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId", "FilterPurchaseReceivingId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     pr => pr.TotalReturnAmount,
                     pr => pr.ReturnTaxAmount,
@@ -591,8 +587,6 @@
             new[]
             {
                 nameof(PurchaseReturn.Code),
-                "FilterProductId",
-                nameof(PurchaseReturn.PurchaseReceivingId),
                 nameof(PurchaseReturn.ReturnDate),
                 nameof(BaseEntity.Remarks),
                 nameof(PurchaseReturn.SupplierId)
@@ -603,6 +597,17 @@
                 { nameof(PurchaseReturn.SupplierId), GetSupplierActionButtonsAsync }
             }
         );
+
+        UpdateFilterFieldsState();
+    }
+
+    private void UpdateFilterFieldsState()
+    {
+        bool noSupplier = !(editModalComponent?.Entity?.SupplierId > 0);
+        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+        if (productFilter != null) productFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
+        var receivingFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterPurchaseReceivingId");
+        if (receivingFilter != null) receivingFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
     }
 
     /// <summary>
@@ -829,9 +834,9 @@
             }
             
             // 更新 AutoComplete 的資料集合
-            if (autoCompleteConfig.Collections.ContainsKey(nameof(PurchaseReturn.PurchaseReceivingId)))
+            if (autoCompleteConfig.Collections.ContainsKey("FilterPurchaseReceivingId"))
             {
-                autoCompleteConfig.Collections[nameof(PurchaseReturn.PurchaseReceivingId)] = filteredReceivings;
+                autoCompleteConfig.Collections["FilterPurchaseReceivingId"] = filteredReceivings;
             }
             
             // 只在沒有預填值時才清空選擇
@@ -992,10 +997,20 @@
                     supplierId = parsedSupplierId;
                 }
                 
+                // 廠商變更時清除進貨單篩選
+                filterPurchaseReceivingId = null;
+
                 // 更新商品和進貨單篩選選項
                 await UpdateFilterProductOptions(supplierId);
                 await UpdateFilterPurchaseReceivingOptions(supplierId);
-                
+
+                // 廠商變更時更新篩選欄位停用狀態
+                bool noSupplier = !supplierId.HasValue;
+                var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+                if (productFilter != null) productFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
+                var receivingFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterPurchaseReceivingId");
+                if (receivingFilter != null) receivingFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
+
                 StateHasChanged();
             }
             
@@ -1016,7 +1031,7 @@
             }
             
             // 當進貨單篩選變更時，更新篩選狀態並觸發重新渲染
-            if (fieldChange.PropertyName == nameof(PurchaseReturn.PurchaseReceivingId))
+            if (fieldChange.PropertyName == "FilterPurchaseReceivingId")
             {
                 if (fieldChange.Value != null && 
                     int.TryParse(fieldChange.Value.ToString(), out int receivingId) && 

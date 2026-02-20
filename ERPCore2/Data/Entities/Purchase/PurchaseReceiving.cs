@@ -10,7 +10,7 @@ namespace ERPCore2.Data.Entities
     /// 採購進貨單主檔實體 - 記錄採購進貨作業
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
-    [Index(nameof(PurchaseOrderId), nameof(ReceiptDate))]
+    [Index(nameof(SupplierId), nameof(ReceiptDate))]
     [CodeGenerationStrategy(
         CodeGenerationStrategy.TimestampWithSequence,
         Prefix = "PR",
@@ -44,18 +44,13 @@ namespace ERPCore2.Data.Entities
         public string? BatchNumber { get; set; }
 
         // Foreign Keys
-        [Display(Name = "採購訂單")]
-        [ForeignKey(nameof(PurchaseOrder))]
-        public int? PurchaseOrderId { get; set; }  // 改為可選，支援多採購單模式
-
         [Required(ErrorMessage = "供應商為必填")]
         [Display(Name = "供應商")]
         [ForeignKey(nameof(Supplier))]
-        public int SupplierId { get; set; }  // 新增供應商直接關聯
+        public int SupplierId { get; set; }
 
         // Navigation Properties
-        public PurchaseOrder? PurchaseOrder { get; set; }  // 改為可選
-        public Supplier Supplier { get; set; } = null!;  // 新增供應商導覽屬性
+        public Supplier Supplier { get; set; } = null!;
         public ICollection<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; } = new List<PurchaseReceivingDetail>();
     }
 }

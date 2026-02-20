@@ -27,7 +27,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseReceiving)
                     .AsQueryable()
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.Code)
@@ -50,7 +49,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseReceiving)
                     .FirstOrDefaultAsync(pr => pr.Id == id);
             }
             catch (Exception ex)
@@ -72,7 +70,6 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturns
                     .AsNoTracking()  // 🔑 不追蹤實體，確保每次都載入最新資料
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseReceiving)
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.Product)
                             .ThenInclude(p => p.Unit)
@@ -114,7 +111,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseReceiving)
                     .Where(pr => pr.SupplierId == supplierId)
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.Code)
@@ -138,7 +134,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseReceiving)
                     .Where(pr => pr.ReturnDate >= startDate && pr.ReturnDate <= endDate)
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.Code)
@@ -161,10 +156,20 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+
+                var returnIds = await context.PurchaseReturnDetails
+                    .Where(d => d.PurchaseReceivingDetailId.HasValue &&
+                                context.PurchaseReceivingDetails
+                                    .Where(prd => prd.PurchaseReceivingId == purchaseReceivingId)
+                                    .Select(prd => prd.Id)
+                                    .Contains(d.PurchaseReceivingDetailId.Value))
+                    .Select(d => d.PurchaseReturnId)
+                    .Distinct()
+                    .ToListAsync();
+
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => pr.PurchaseReceivingId == purchaseReceivingId)
+                    .Where(pr => returnIds.Contains(pr.Id))
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.Code)
                     .ToListAsync();
@@ -195,7 +200,6 @@ namespace ERPCore2.Services
                 // 建立基礎查詢（包含必要的關聯資料）
                 IQueryable<PurchaseReturn> query = context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseReceiving)
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.Product)
                     .AsQueryable();
@@ -300,10 +304,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Include(pr => pr.PurchaseReceiving)
                     .Where(pr => (pr.Code != null && pr.Code.Contains(searchTerm)) ||
-                         (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)) ||
-                         (pr.PurchaseReceiving != null && pr.PurchaseReceiving.Code != null && pr.PurchaseReceiving.Code.Contains(searchTerm)))
+                         (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)))
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.Code)
                     .ToListAsync();
@@ -506,7 +508,6 @@ namespace ERPCore2.Services
                     {
                         Code = await GenerateReturnNumberAsync(context),
                         SupplierId = purchaseReceiving.SupplierId,
-                        PurchaseReceivingId = purchaseReceivingId,
                         ReturnDate = DateTime.Today,
                         Status = EntityStatus.Active,
                         PurchaseReturnDetails = details

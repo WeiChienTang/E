@@ -263,7 +263,7 @@ else
     private Dictionary<int, List<SalesOrderCompositionDetail>> compositionDetailsCache = new();
     private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
     private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細（已有出貨記錄）
-    
+
     // ===== 計算屬性 =====
     
     /// <summary>

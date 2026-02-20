@@ -42,7 +42,8 @@
                           ReportService="@CustomerRosterReportService"
                           ReportId="@ReportIds.CustomerRoster"
                           ReportPreviewTitle="客戶資料預覽"
-                          GetReportDocumentName="@(e => $"客戶-{e.Code}")" />
+                          GetReportDocumentName="@(e => $"客戶-{e.Code}")"
+                          CustomActionButtons="@GetCustomActionButtons()" />
 
 @* 員工編輯 Modal *@
 <EmployeeEditModalComponent @ref="employeeEditModal"
@@ -77,6 +78,21 @@
                     IsVisibleChanged="@HandleVehicleSelectModalVisibilityChanged"
                     ExcludeVehicleIds="@GetCurrentVehicleIds()"
                     OnVehicleSelected="@HandleVehicleSelected" />
+
+@* 複製至廠商確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showCopyToSupplierModal"
+                              IsVisibleChanged="@((bool v) => showCopyToSupplierModal = v)"
+                              Title="複製至廠商"
+                              Icon="bi-building-add"
+                              Message="確定要將此客戶的資料複製為新廠商嗎？"
+                              Conditions="@copyToSupplierConditions"
+                              SummaryMessage="複製後將在廠商清單中建立一筆新資料"
+                              ConfirmButtonText="確認複製"
+                              CancelButtonText="取消"
+                              ConfirmButtonVariant="ButtonVariant.Green"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                              OnConfirm="@HandleConfirmCopyToSupplier"
+                              OnCancel="@(() => showCopyToSupplierModal = false)" />
 
 @code {
     // ===== 必要參數 =====
@@ -123,6 +139,10 @@
     // 車輛配給緩衝（參考 PurchaseOrderTable 模式，等主檔儲存時才寫入 DB）
     private List<Vehicle> _pendingVehicleLinks = new();
     private List<Vehicle> _pendingVehicleUnlinks = new();
+
+    // 複製至廠商
+    private bool showCopyToSupplierModal = false;
+    private List<string> copyToSupplierConditions = new();
 
     // ===== 必要方法 =====
     
@@ -429,6 +449,9 @@
                 HelpText = "開立發票時使用的抬頭名稱",
                 ActionButtons = await GetInvoiceTitleActionButtonsAsync()
             },
+
+            /*new()
+            // 此功能暫不開放，等設計完善後再開放
             new()
             {
                 PropertyName = nameof(Customer.CreditLimit),
@@ -438,6 +461,7 @@
                 IsRequired = false,
                 HelpText = "客戶的信用額度上限"
             },
+            // 此功能暫不開放，等設計完善後再開放
             new()
             {
                 PropertyName = nameof(Customer.CurrentBalance),
@@ -447,7 +471,7 @@
                 IsRequired = false,
                 IsReadOnly = true,
                 HelpText = "客戶目前的應收帳款餘額（系統自動計算）"
-            },
+            },*/
             new()
             {
                 PropertyName = nameof(Customer.EmployeeId),
@@ -807,6 +831,99 @@
         }
 
         StateHasChanged();
+    }
+
+    // ===== 複製至廠商方法 =====
+
+    /// <summary>
+    /// 產生自訂操作按鈕（僅在編輯模式顯示）
+    /// </summary>
+    private RenderFragment? GetCustomActionButtons() => __builder =>
+    {
+        if (editModalComponent?.Entity != null && CustomerId.HasValue)
+        {
+            <GenericButtonComponent Text="複製至廠商"
+                                    Variant="ButtonVariant.Green"
+                                    OnClick="HandleCopyToSupplierClick"
+                                    Title="將此客戶資料複製為新廠商" />
+        }
+    };
+
+    /// <summary>
+    /// 點擊「複製至廠商」按鈕：前置驗證並開啟確認 Modal
+    /// </summary>
+    private async Task HandleCopyToSupplierClick()
+    {
+        try
+        {
+            var entity = editModalComponent?.Entity;
+            if (entity == null)
+            {
+                await NotificationService.ShowErrorAsync("無法取得客戶資料");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(entity.CompanyName))
+            {
+                await NotificationService.ShowErrorAsync("客戶公司名稱不可為空白，無法複製至廠商");
+                return;
+            }
+
+            // 動態產生將被複製的欄位清單（UI 層顯示用；實際驗證交由服務層處理）
+            copyToSupplierConditions = new List<string>();
+            copyToSupplierConditions.Add($"公司名稱：{entity.CompanyName}");
+            if (!string.IsNullOrWhiteSpace(entity.ContactPerson))      copyToSupplierConditions.Add($"聯絡人：{entity.ContactPerson}");
+            if (!string.IsNullOrWhiteSpace(entity.TaxNumber))           copyToSupplierConditions.Add($"統一編號：{entity.TaxNumber}");
+            if (!string.IsNullOrWhiteSpace(entity.ResponsiblePerson))   copyToSupplierConditions.Add($"負責人：{entity.ResponsiblePerson}");
+            if (!string.IsNullOrWhiteSpace(entity.CompanyContactPhone)) copyToSupplierConditions.Add($"公司聯絡電話：{entity.CompanyContactPhone}");
+            if (!string.IsNullOrWhiteSpace(entity.ContactPhone))        copyToSupplierConditions.Add($"聯絡電話：{entity.ContactPhone}");
+            if (!string.IsNullOrWhiteSpace(entity.MobilePhone))         copyToSupplierConditions.Add($"行動電話：{entity.MobilePhone}");
+            if (!string.IsNullOrWhiteSpace(entity.Email))               copyToSupplierConditions.Add($"信箱：{entity.Email}");
+            if (!string.IsNullOrWhiteSpace(entity.Fax))                 copyToSupplierConditions.Add($"傳真：{entity.Fax}");
+            if (!string.IsNullOrWhiteSpace(entity.ContactAddress))      copyToSupplierConditions.Add($"聯絡地址：{entity.ContactAddress}");
+            if (!string.IsNullOrWhiteSpace(entity.ShippingAddress))     copyToSupplierConditions.Add($"公司地址：{entity.ShippingAddress}");
+            if (!string.IsNullOrWhiteSpace(entity.Website))             copyToSupplierConditions.Add($"公司網址：{entity.Website}");
+            if (!string.IsNullOrWhiteSpace(entity.JobTitle))            copyToSupplierConditions.Add($"職稱：{entity.JobTitle}");
+            if (!string.IsNullOrWhiteSpace(entity.PaymentTerms))        copyToSupplierConditions.Add($"付款條件：{entity.PaymentTerms}");
+            if (entity.PaymentMethodId.HasValue)                        copyToSupplierConditions.Add("付款方式（依對應帳款方式）");
+
+            showCopyToSupplierModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"操作時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 確認複製：委托服務層執行驗證、編號產生及資料庫寫入
+    /// </summary>
+    private async Task HandleConfirmCopyToSupplier()
+    {
+        try
+        {
+            if (!CustomerId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得客戶 ID");
+                return;
+            }
+
+            var result = await CustomerService.CopyToSupplierAsync(CustomerId.Value);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync($"已成功將「{editModalComponent?.Entity?.CompanyName}」複製為廠商（編號：{result.Data?.Code}）");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"複製至廠商失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"複製至廠商時發生錯誤：{ex.Message}");
+        }
     }
 
     // ===== 車輛配給儲存方法（參考 PurchaseOrderTable 模式） =====

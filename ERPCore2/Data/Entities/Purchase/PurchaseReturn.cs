@@ -45,13 +45,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Supplier))]
         public int SupplierId { get; set; }
 
-        [Display(Name = "原始採購進貨單")]
-        [ForeignKey(nameof(PurchaseReceiving))]
-        public int? PurchaseReceivingId { get; set; }
-
         // Navigation Properties
         public Supplier Supplier { get; set; } = null!;
-        public PurchaseReceiving? PurchaseReceiving { get; set; }
         public ICollection<PurchaseReturnDetail> PurchaseReturnDetails { get; set; } = new List<PurchaseReturnDetail>();
     }
 }

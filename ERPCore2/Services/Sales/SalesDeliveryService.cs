@@ -39,7 +39,6 @@ namespace ERPCore2.Services
                 return await context.SalesDeliveries
                     .Include(sd => sd.Customer)
                     .Include(sd => sd.Employee)
-                    .Include(sd => sd.SalesOrder)
                     .Include(sd => sd.Warehouse)
                     .OrderByDescending(sd => sd.DeliveryDate)
                     .ThenBy(sd => sd.Code)
@@ -63,7 +62,6 @@ namespace ERPCore2.Services
                 return await context.SalesDeliveries
                     .Include(sd => sd.Customer)
                     .Include(sd => sd.Employee)
-                    .Include(sd => sd.SalesOrder)
                     .Include(sd => sd.Warehouse)
                     .Include(sd => sd.DeliveryDetails)
                         .ThenInclude(sdd => sdd.Product)
@@ -91,7 +89,6 @@ namespace ERPCore2.Services
                 return await context.SalesDeliveries
                     .Include(sd => sd.Customer)
                     .Include(sd => sd.Employee)
-                    .Include(sd => sd.SalesOrder)
                     .Where(sd =>
                         (sd.Code != null && sd.Code.Contains(searchTerm)) ||
                         (sd.Customer.CompanyName != null && sd.Customer.CompanyName.Contains(searchTerm)) ||
@@ -188,7 +185,6 @@ namespace ERPCore2.Services
                 return await context.SalesDeliveries
                     .Include(sd => sd.Customer)
                     .Include(sd => sd.Employee)
-                    .Include(sd => sd.SalesOrder)
                     .Where(sd => sd.CustomerId == customerId)
                     .OrderByDescending(sd => sd.DeliveryDate)
                     .ToListAsync();
@@ -208,11 +204,17 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+
+                var deliveryIds = await context.SalesDeliveryDetails
+                    .Where(d => d.SalesOrderDetail != null && d.SalesOrderDetail.SalesOrderId == salesOrderId)
+                    .Select(d => d.SalesDeliveryId)
+                    .Distinct()
+                    .ToListAsync();
+
                 return await context.SalesDeliveries
                     .Include(sd => sd.Customer)
                     .Include(sd => sd.Employee)
-                    .Include(sd => sd.SalesOrder)
-                    .Where(sd => sd.SalesOrderId == salesOrderId)
+                    .Where(sd => deliveryIds.Contains(sd.Id))
                     .OrderByDescending(sd => sd.DeliveryDate)
                     .ToListAsync();
             }

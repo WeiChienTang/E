@@ -90,6 +90,5 @@ namespace ERPCore2.Data.Entities
         public Employee? Employee { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public ICollection<QuotationDetail> QuotationDetails { get; set; } = new List<QuotationDetail>();
-        public ICollection<SalesOrder> SalesOrders { get; set; } = new List<SalesOrder>();
     }
 }

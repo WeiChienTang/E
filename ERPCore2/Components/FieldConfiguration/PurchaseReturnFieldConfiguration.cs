@@ -87,13 +87,13 @@ namespace ERPCore2.FieldConfiguration
                         "PurchaseReceivingNumber",
                         new FieldDefinition<PurchaseReturn>
                         {
-                            PropertyName = "PurchaseReceiving.ReceiptNumber",
+                            PropertyName = "PurchaseReceivingNumber",
                             DisplayName = "原進貨單號",
                             TableOrder = 4,
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入原進貨單號搜尋",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, "PurchaseReceivingNumber", pr => pr.PurchaseReceiving != null ? pr.PurchaseReceiving.Code : "", allowNull: true)
+                                model, query, "PurchaseReceivingNumber", pr => string.Empty, allowNull: true)
                         }
                     },
                     {

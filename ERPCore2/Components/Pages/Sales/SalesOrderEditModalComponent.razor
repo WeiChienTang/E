@@ -172,6 +172,7 @@
     
     // 商品篩選
     private int? filterProductId = null;
+    private int? filterQuotationId = null;
     
     // ===== 相關單據 Modal =====
     private SalesReturnEditModalComponent? salesReturnEditModal;
@@ -419,7 +420,7 @@
                 .AddField(nameof(SalesOrder.CustomerId), "CompanyName", customers)
                 .AddField(nameof(SalesOrder.CompanyId), "CompanyName", companies)
                 .AddField(nameof(SalesOrder.EmployeeId), "Name", employees)
-                .AddField(nameof(SalesOrder.QuotationId), "Code", quotations)
+                .AddField("FilterQuotationId", "Code", quotations)
                 .AddField("FilterProductId", "Name", products)
                 .Build();
         }
@@ -476,18 +477,20 @@
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇特定商品進行篩選，或留空顯示所有商品。此欄位不會儲存。",
+                    IsReadOnly = true, // 預設停用，等待客戶選取後由 UpdateFilterFieldsState 更新
                     IsFilterOnly = true
                 },
                 new FormFieldDefinition()
                 {
-                    PropertyName = nameof(SalesOrder.QuotationId),
+                    PropertyName = "FilterQuotationId", // 篩選用的虛擬欄位，不儲存至資料庫
                     Label = "報價單",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇報價單",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "此訂單所參考的報價單單號（若有）",
-                    IsReadOnly = hasUndeletableDetails,
+                    HelpText = "選擇特定報價單進行篩選，或留空顯示所有報價單。此欄位不會儲存。",
+                    IsReadOnly = true, // 預設停用，等待客戶選取後由 UpdateFilterFieldsState 更新
+                    IsFilterOnly = true
                 },
                 new()
                 {
@@ -615,12 +618,11 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     so => so.Code,
                     so => so.CustomerId,
-                    so => so.QuotationId,
                     so => so.CompanyId,
                     so => so.EmployeeId,
                     so => so.OrderDate,
                     so => so.ExpectedDeliveryDate)
-                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId")  // 虛擬篩選欄位，不存DB
+                .AddCustomFields(FormSectionNames.FilterConditions, "FilterQuotationId", "FilterProductId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     so => so.TaxCalculationMethod,
                     so => so.TotalAmount,      // 金額（折扣前）
@@ -676,7 +678,7 @@
                              Warehouses="@warehouses"
                              SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"
                              SelectedCustomerName="@GetSelectedCustomerName()"
-                             SelectedQuotationId="@(editModalComponent?.Entity?.QuotationId ?? 0)"
+                             SelectedQuotationId="@(filterQuotationId ?? 0)"
                              SelectedQuotationCode="@GetSelectedQuotationCode()"
                              FilterProductId="@filterProductId"
                              FilterProductName="@GetFilterProductName()"
@@ -808,9 +810,27 @@
     {
         try
         {
-            // 客戶變更時，觸發商品管理器重新渲染
+            // 客戶變更時，清除報價單篩選並更新篩選欄位停用狀態
             if (fieldChange.PropertyName == nameof(SalesOrder.CustomerId))
             {
+                filterQuotationId = null;
+                bool noCustomer = !(int.TryParse(fieldChange.Value?.ToString(), out int cId) && cId > 0);
+                var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+                if (productFilter != null) productFilter.IsReadOnly = noCustomer;
+                var quotationFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterQuotationId");
+                if (quotationFilter != null) quotationFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
+                StateHasChanged();
+            }
+            // 處理報價單篩選變更
+            else if (fieldChange.PropertyName == "FilterQuotationId")
+            {
+                var valueStr = fieldChange.Value?.ToString();
+                if (string.IsNullOrWhiteSpace(valueStr) || valueStr == "0")
+                    filterQuotationId = null;
+                else if (int.TryParse(valueStr, out var parsedId) && parsedId > 0)
+                    filterQuotationId = parsedId;
+                else
+                    filterQuotationId = null;
                 StateHasChanged();
             }
             // 處理商品篩選變更
@@ -818,7 +838,7 @@
             {
                 // 更新商品篩選狀態 - 處理 int 或 string 類型
                 int? parsedProductId = null;
-                
+
                 if (fieldChange.Value is int intValue && intValue > 0)
                 {
                     parsedProductId = intValue;
@@ -827,7 +847,7 @@
                 {
                     parsedProductId = parsedInt;
                 }
-                
+
                 filterProductId = parsedProductId;
                 StateHasChanged();
             }
@@ -842,6 +862,7 @@
     
     private Task HandleEntityLoaded(int loadedEntityId)
     {
+        UpdateFilterFieldsState();
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -946,7 +967,6 @@
             {
                 nameof(SalesOrder.Code),
                 nameof(SalesOrder.CustomerId),
-                nameof(SalesOrder.QuotationId),
                 nameof(SalesOrder.CompanyId),
                 nameof(SalesOrder.EmployeeId),
                 nameof(SalesOrder.OrderDate),
@@ -965,7 +985,17 @@
             }
         );
 
+        UpdateFilterFieldsState();
         await InvokeAsync(() => StateHasChanged());
+    }
+
+    private void UpdateFilterFieldsState()
+    {
+        bool noCustomer = !(editModalComponent?.Entity?.CustomerId > 0);
+        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+        if (productFilter != null) productFilter.IsReadOnly = noCustomer;
+        var quotationFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterQuotationId");
+        if (quotationFilter != null) quotationFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
     }
 
     /// <summary>
@@ -1020,7 +1050,7 @@
         => EntityDisplayHelper.GetDisplayValue(editModalComponent?.Entity?.CustomerId, customers, c => c.CompanyName) ?? string.Empty;
 
     private string GetSelectedQuotationCode()
-        => EntityDisplayHelper.GetDisplayValue(editModalComponent?.Entity?.QuotationId, quotations, q => q.Code) ?? string.Empty;
+        => EntityDisplayHelper.GetDisplayValue(filterQuotationId, quotations, q => q.Code) ?? string.Empty;
 
     private string GetFilterProductName()
         => EntityDisplayHelper.GetDisplayValue(filterProductId, products, p => p.Name) ?? string.Empty;
@@ -1833,8 +1863,8 @@
                 return;
             }
             
-            // 設定報價單ID（重要：這樣報價單欄位才會正確顯示）
-            salesOrder.QuotationId = quotationId;
+            // 設定報價單篩選ID（虛擬欄位，不儲存至資料庫）
+            filterQuotationId = quotationId;
             
             // 設定客戶ID
             salesOrder.CustomerId = quotation.CustomerId;
