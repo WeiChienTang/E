@@ -170,6 +170,77 @@ namespace ERPCore2.Services
 
         #endregion
 
+        #region 覆寫基底類別方法
+
+        /// <summary>
+        /// 覆寫刪除前檢查：確認庫存為零，並清除 InventoryTransactionDetails 的外鍵關聯
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(InventoryStockDetail entity)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 重新從資料庫取得最新數量（避免傳入的 entity 未反映最新狀態）
+                var detail = await context.InventoryStockDetails
+                    .FirstOrDefaultAsync(d => d.Id == entity.Id);
+
+                if (detail == null)
+                {
+                    return ServiceResult.Failure("找不到要刪除的庫存明細記錄");
+                }
+
+                // 只要任何庫存數量不為零就不允許刪除
+                if (detail.CurrentStock != 0 || detail.ReservedStock != 0 ||
+                    detail.InTransitStock != 0 || detail.InProductionStock != 0)
+                {
+                    return ServiceResult.Failure(
+                        $"無法刪除此庫存明細，目前庫存：{detail.CurrentStock}，" +
+                        $"預留庫存：{detail.ReservedStock}，" +
+                        $"在途庫存：{detail.InTransitStock}，" +
+                        $"生產中庫存：{detail.InProductionStock}");
+                }
+
+                // 清除 InventoryTransactionDetails 對此明細的外鍵關聯
+                var relatedTransactionDetails = await context.InventoryTransactionDetails
+                    .Where(d => d.InventoryStockDetailId == entity.Id)
+                    .ToListAsync();
+
+                foreach (var txDetail in relatedTransactionDetails)
+                {
+                    txDetail.InventoryStockDetailId = null;
+                }
+
+                // 清除 InventoryReservations 對此明細的外鍵關聯
+                var relatedReservations = await context.InventoryReservations
+                    .Where(r => r.InventoryStockDetailId == entity.Id)
+                    .ToListAsync();
+
+                foreach (var reservation in relatedReservations)
+                {
+                    reservation.UpdatedAt = DateTime.UtcNow;
+                    reservation.InventoryStockDetailId = null;
+                }
+
+                if (relatedTransactionDetails.Any() || relatedReservations.Any())
+                {
+                    await context.SaveChangesAsync();
+                }
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new {
+                    EntityId = entity.Id,
+                    InventoryStockId = entity.InventoryStockId
+                });
+                return ServiceResult.Failure("檢查刪除條件時發生錯誤");
+            }
+        }
+
+        #endregion
+
         #region 查詢方法
 
         public async Task<List<InventoryStockDetail>> GetByInventoryStockIdAsync(int inventoryStockId)

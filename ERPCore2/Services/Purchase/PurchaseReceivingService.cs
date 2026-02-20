@@ -1002,6 +1002,7 @@ namespace ERPCore2.Services
                     // 🔑 簡化設計：查詢該單據的所有異動明細，透過 TransactionNumber + SourceDocumentId 精確匹配
                     var allTransactionDetails = await context.InventoryTransactionDetails
                         .Include(d => d.InventoryTransaction)
+                        .Include(d => d.InventoryStockDetail)
                         .Where(d => d.InventoryTransaction.TransactionNumber == currentReceiving.Code &&
                                     d.InventoryTransaction.SourceDocumentId == currentReceiving.Id &&
                                     d.InventoryTransaction.SourceDocumentType == InventorySourceDocumentTypes.PurchaseReceiving)
@@ -1027,10 +1028,11 @@ namespace ERPCore2.Services
                     
                     foreach (var detail in existingDetails)
                     {
-                        var key = $"{detail.ProductId}_{detail.InventoryTransaction.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        var detailWarehouseId = detail.InventoryStockDetail?.WarehouseId ?? detail.InventoryTransaction.WarehouseId;
+                        var key = $"{detail.ProductId}_{detailWarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!processedInventory.ContainsKey(key))
                         {
-                            processedInventory[key] = (detail.ProductId, detail.InventoryTransaction.WarehouseId, detail.WarehouseLocationId, 0m, detail.UnitCost);
+                            processedInventory[key] = (detail.ProductId, detailWarehouseId, detail.WarehouseLocationId, 0m, detail.UnitCost);
                         }
                         // 累加所有交易的淨值（Quantity已經包含正負號）
                         var oldQty = processedInventory[key].NetProcessedQuantity;

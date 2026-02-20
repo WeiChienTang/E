@@ -44,7 +44,10 @@ namespace ERPCore2.Models.Enums
         MaterialIssue = 11,
         
         [Description("領料退回")]
-        MaterialReturn = 13
+        MaterialReturn = 13,
+
+        [Description("廢料收料")]
+        WasteReceiving = 14
     }
 
     /// <summary>

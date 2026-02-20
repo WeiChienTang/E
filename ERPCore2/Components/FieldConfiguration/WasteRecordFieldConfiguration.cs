@@ -93,14 +93,34 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
+                        nameof(WasteRecord.WarehouseId),
+                        new FieldDefinition<WasteRecord>
+                        {
+                            PropertyName = "Warehouse.Name",
+                            FilterPropertyName = nameof(WasteRecord.WarehouseId),
+                            DisplayName = "入庫倉庫",
+                            FilterPlaceholder = "輸入倉庫搜尋",
+                            TableOrder = 6,
+                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
+                                model, query, nameof(WasteRecord.WarehouseId), wr => wr.WarehouseId)
+                        }
+                    },
+                    {
                         nameof(WasteRecord.TotalWeight),
                         new FieldDefinition<WasteRecord>
                         {
                             PropertyName = nameof(WasteRecord.TotalWeight),
-                            DisplayName = "總重量(kg)",
-                            TableOrder = 6,
+                            DisplayName = "總重量",
+                            TableOrder = 7,
                             ColumnType = ColumnDataType.Number,
-                            ShowInFilter = false
+                            ShowInFilter = false,
+                            CustomTemplate = value => builder =>
+                            {
+                                if (value is WasteRecord wr)
+                                {
+                                    builder.AddContent(0, NumberFormatHelper.FormatSmart(wr.TotalWeight));
+                                }
+                            }
                         }
                     },
                     {
@@ -109,9 +129,16 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = nameof(WasteRecord.DisposalFee),
                             DisplayName = "處理費",
-                            TableOrder = 7,
+                            TableOrder = 8,
                             ColumnType = ColumnDataType.Currency,
-                            ShowInFilter = false
+                            ShowInFilter = false,
+                            CustomTemplate = value => builder =>
+                            {
+                                if (value is WasteRecord wr)
+                                {
+                                    builder.AddContent(0, wr.DisposalFee.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(wr.DisposalFee)}" : "");
+                                }
+                            }
                         }
                     },
                     {
@@ -120,9 +147,16 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = nameof(WasteRecord.PurchaseFee),
                             DisplayName = "採購費",
-                            TableOrder = 8,
+                            TableOrder = 9,
                             ColumnType = ColumnDataType.Currency,
-                            ShowInFilter = false
+                            ShowInFilter = false,
+                            CustomTemplate = value => builder =>
+                            {
+                                if (value is WasteRecord wr)
+                                {
+                                    builder.AddContent(0, wr.PurchaseFee.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(wr.PurchaseFee)}" : "");
+                                }
+                            }
                         }
                     },
                     {
@@ -131,9 +165,16 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = nameof(WasteRecord.NetAmount),
                             DisplayName = "淨額",
-                            TableOrder = 9,
+                            TableOrder = 10,
                             ColumnType = ColumnDataType.Currency,
-                            ShowInFilter = false
+                            ShowInFilter = false,
+                            CustomTemplate = value => builder =>
+                            {
+                                if (value is WasteRecord wr)
+                                {
+                                    builder.AddContent(0, wr.NetAmount.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(wr.NetAmount)}" : "");
+                                }
+                            }
                         }
                     }
                 };

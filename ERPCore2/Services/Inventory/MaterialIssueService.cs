@@ -447,6 +447,7 @@ namespace ERPCore2.Services
                     // 2. 🔑 簡化設計：查詢該單據的所有異動明細，透過 OperationType 過濾
                     var allTransactionDetails = await context.InventoryTransactionDetails
                         .Include(d => d.InventoryTransaction)
+                        .Include(d => d.InventoryStockDetail)
                         .Where(d => d.InventoryTransaction.TransactionNumber == currentMaterialIssue.Code)
                         .OrderBy(d => d.OperationTime)
                         .ThenBy(d => d.Id)
@@ -470,10 +471,11 @@ namespace ERPCore2.Services
 
                     foreach (var detail in existingDetails)
                     {
-                        var key = $"{detail.ProductId}_{detail.InventoryTransaction.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        var detailWarehouseId = detail.InventoryStockDetail?.WarehouseId ?? detail.InventoryTransaction.WarehouseId;
+                        var key = $"{detail.ProductId}_{detailWarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!processedInventory.ContainsKey(key))
                         {
-                            processedInventory[key] = (detail.ProductId, detail.InventoryTransaction.WarehouseId, detail.WarehouseLocationId, 0m, detail.UnitCost.GetValueOrDefault());
+                            processedInventory[key] = (detail.ProductId, detailWarehouseId, detail.WarehouseLocationId, 0m, detail.UnitCost.GetValueOrDefault());
                         }
                         // 累加所有交易的淨值（Quantity 已經包含正負號）
                         // MaterialIssue 是負數，MaterialReturn 是正數

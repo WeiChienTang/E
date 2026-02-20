@@ -70,5 +70,16 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Customer))]
         public int? CustomerId { get; set; }
         public Customer? Customer { get; set; }
+
+        [Required(ErrorMessage = "入庫倉庫為必填")]
+        [Display(Name = "入庫倉庫")]
+        [ForeignKey(nameof(Warehouse))]
+        public int WarehouseId { get; set; }
+        public Warehouse Warehouse { get; set; } = null!;
+
+        [Display(Name = "入庫庫位")]
+        [ForeignKey(nameof(WarehouseLocation))]
+        public int? WarehouseLocationId { get; set; }
+        public WarehouseLocation? WarehouseLocation { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 @* 可重用的廢料類型編輯組件 - 可在任何頁面中嵌入 *@
 @inject IWasteTypeService WasteTypeService
+@inject IProductService ProductService
 @inject INotificationService NotificationService
 
 <GenericEditModalComponent TEntity="WasteType"
@@ -16,6 +17,10 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           DataLoader="@LoadWasteTypeData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(WasteTypeId.HasValue ? "廢料類型更新成功" : "廢料類型新增成功")"
@@ -36,18 +41,46 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
 
+    private AutoCompleteConfig? autoCompleteConfig;
+    private List<Product> availableProducts = new();
+
+    private bool isDataLoaded = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            availableProducts = await ProductService.GetAllAsync();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<WasteType>()
+                .AddField(nameof(WasteType.ProductId), "Name", availableProducts)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入廢料類型編輯相關資料時發生錯誤");
+            availableProducts = new List<Product>();
+        }
+    }
+
     private Task<WasteType?> LoadWasteTypeData()
         => EditDataLoaderHelper.LoadOrCreateAsync<WasteType, IWasteTypeService>(
             WasteTypeId, WasteTypeService, NotificationService, "廢料類型", "WT", PrefilledValues,
             wt => wt.Name = string.Empty);
-
-    protected override void OnParametersSet()
-    {
-        if (IsVisible)
-        {
-            InitializeFormFields();
-        }
-    }
 
     private void InitializeFormFields()
     {
@@ -73,7 +106,8 @@
                 MaxLength = 100,
                 HelpText = "廢料類型的顯示名稱，最多100個字元"
             },
-            new()
+            // 單位有Unit主表，這裡不需要使用單位欄位
+            /* new()
             {
                 PropertyName = nameof(WasteType.Unit),
                 Label = "計量單位",
@@ -82,6 +116,16 @@
                 IsRequired = false,
                 MaxLength = 20,
                 HelpText = "此廢料類型的計量單位"
+            },*/
+            new()
+            {
+                PropertyName = nameof(WasteType.ProductId),
+                Label = "關聯商品",
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "請輸入或選擇關聯商品（可選）",
+                IsRequired = false,
+                MinSearchLength = 0,
+                HelpText = "選填。選擇後，儲存廢料記錄時會自動將廢料數量入庫至此商品"
             },
             new()
             {
@@ -101,7 +145,8 @@
             .AddToSection(FormSectionNames.BasicInfo,
                 wt => wt.Code,
                 wt => wt.Name,
-                wt => wt.Unit)
+                wt => wt.Unit,
+                wt => wt.ProductId)
             .AddToSection(FormSectionNames.AdditionalInfo,
                 wt => wt.Description,
                 wt => wt.Remarks)

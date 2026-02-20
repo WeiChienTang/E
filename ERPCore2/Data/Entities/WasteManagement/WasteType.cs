@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data.Entities
@@ -21,6 +22,15 @@ namespace ERPCore2.Data.Entities
         [MaxLength(20, ErrorMessage = "單位不可超過20個字元")]
         [Display(Name = "計量單位")]
         public string? Unit { get; set; }
+
+        // ===== 外鍵關聯 =====
+
+        /// <summary>關聯的商品（用於入庫追蹤，可選）</summary>
+        [Display(Name = "關聯商品")]
+        [ForeignKey(nameof(Product))]
+        public int? ProductId { get; set; }
+
+        public Product? Product { get; set; }
 
         // Navigation Properties
         public ICollection<WasteRecord> WasteRecords { get; set; } = new List<WasteRecord>();

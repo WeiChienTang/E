@@ -69,6 +69,11 @@ namespace ERPCore2.Models.Enums
         /// 報廢
         /// </summary>
         public const string Scrap = "Scrap";
+
+        /// <summary>
+        /// 廢料收料
+        /// </summary>
+        public const string WasteRecord = "WasteRecord";
         
         /// <summary>
         /// 取得來源類型的顯示名稱
@@ -90,6 +95,7 @@ namespace ERPCore2.Models.Enums
                 ProductionConsumption => "生產投料",
                 ProductionCompletion => "生產完工",
                 Scrap => "報廢",
+                WasteRecord => "廢料收料",
                 _ => sourceType ?? "未知"
             };
         }

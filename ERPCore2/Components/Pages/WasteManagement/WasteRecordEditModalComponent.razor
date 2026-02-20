@@ -3,6 +3,8 @@
 @inject IWasteTypeService WasteTypeService
 @inject IVehicleService VehicleService
 @inject ICustomerService CustomerService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 
@@ -30,7 +32,7 @@
                           SaveSuccessMessage="@(WasteRecordId.HasValue ? "廢料記錄更新成功" : "廢料記錄新增成功")"
                           SaveFailureMessage="廢料記錄儲存失敗"
                           RequiredPermission="WasteRecord.Read"
-                          OnEntitySaved="@OnWasteRecordSaved"
+                          OnEntitySaved="@HandleWasteRecordSavedAsync"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           OnFieldChanged="@HandleFieldChangedAsync" />
@@ -72,6 +74,9 @@
     private List<WasteType> availableWasteTypes = new();
     private List<Vehicle> availableVehicles = new();
     private List<Customer> availableCustomers = new();
+    private List<Warehouse> availableWarehouses = new();
+    private List<WarehouseLocation> availableWarehouseLocations = new();
+    private List<WarehouseLocation> filteredWarehouseLocations = new();
 
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
@@ -87,10 +92,20 @@
     // 資料載入狀態標記
     private bool isDataLoaded = false;
 
+    // 追蹤是否為新增（儲存後判斷要呼叫 Confirm 還是 UpdateByDifference）
+    private bool _isNewRecord = false;
+
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
         try
         {
+            // 編輯模式載入後，依載入記錄的 WarehouseId 篩選庫位
+            var warehouseId = editModalComponent?.Entity?.WarehouseId ?? 0;
+            filteredWarehouseLocations = warehouseId > 0
+                ? availableWarehouseLocations.Where(wl => wl.WarehouseId == warehouseId).ToList()
+                : new List<WarehouseLocation>();
+            RebuildAutoCompleteConfig();
+            await InitializeFormFieldsAsync();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -104,13 +119,11 @@
         if (editModalComponent?.Entity == null) return;
 
         if (fieldChange.PropertyName == nameof(WasteRecord.VehicleId))
-        {
             await HandleVehicleChangedAsync();
-        }
         else if (fieldChange.PropertyName == nameof(WasteRecord.CustomerId))
-        {
             await HandleCustomerChangedAsync();
-        }
+        else if (fieldChange.PropertyName == nameof(WasteRecord.WarehouseId))
+            await HandleWarehouseChangedAsync();
     }
 
     // 選擇車輛 → 自動帶入所屬客戶
@@ -132,8 +145,6 @@
     }
 
     // 選擇客戶 → 若該客戶只有一台車則自動帶入，多台車不帶入（使用者自選）
-    // 注意：SetAutoCompleteFieldValueAsync 使用 SetPropertyValueInternal（不發通知）
-    //       因此不會再次觸發此 handler，無無限循環風險
     private async Task HandleCustomerChangedAsync()
     {
         var customerId = editModalComponent!.Entity.CustomerId;
@@ -152,11 +163,29 @@
             vehicle.LicensePlate);
     }
 
+    // 選擇倉庫 → 篩選庫位下拉、清空已選庫位、更新欄位狀態
+    private async Task HandleWarehouseChangedAsync()
+    {
+        var warehouseId = editModalComponent!.Entity.WarehouseId;
+
+        filteredWarehouseLocations = warehouseId > 0
+            ? availableWarehouseLocations.Where(wl => wl.WarehouseId == warehouseId).ToList()
+            : new List<WarehouseLocation>();
+
+        // 清空已選庫位（傳入空字串讓 ConvertValue 正確轉為 null，避免設成 0 違反 FK 約束）
+        await editModalComponent.SetAutoCompleteFieldValueAsync(
+            nameof(WasteRecord.WarehouseLocationId), "", "");
+
+        // 重建 AutoComplete（更新庫位清單）與表單欄位（更新 IsReadOnly 狀態）
+        RebuildAutoCompleteConfig();
+        await InitializeFormFieldsAsync();
+        StateHasChanged();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 使用 ModalManagerInitHelper 初始化所有 Manager
             modalManagers = ModalManagerInitHelper.CreateBuilder<WasteRecord, IWasteRecordService>(
                     () => editModalComponent,
                     NotificationService,
@@ -167,7 +196,6 @@
                 .AddManager<Customer>(nameof(WasteRecord.CustomerId), "客戶")
                 .Build();
 
-            // 取得個別 Manager 供組件使用
             wasteTypeModalManager = modalManagers.Get<WasteType>(nameof(WasteRecord.WasteTypeId));
             customerModalManager = modalManagers.Get<Customer>(nameof(WasteRecord.CustomerId));
         }
@@ -181,6 +209,9 @@
     {
         if (IsVisible && !isDataLoaded)
         {
+            // 在資料載入前記錄是否為新增
+            _isNewRecord = !WasteRecordId.HasValue;
+
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
             isDataLoaded = true;
@@ -222,6 +253,9 @@
     {
         try
         {
+            var currentWarehouseId = editModalComponent?.Entity?.WarehouseId ?? 0;
+            var locationIsReadOnly = currentWarehouseId <= 0;
+
             formFields = new List<FormFieldDefinition>
             {
                 new()
@@ -276,20 +310,41 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(WasteRecord.WarehouseId),
+                    Label = "入庫倉庫",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇倉庫",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "廢料處理後入庫的倉庫，選擇後可進一步指定庫位"
+                },
+                new()
+                {
+                    PropertyName = nameof(WasteRecord.WarehouseLocationId),
+                    Label = "入庫庫位",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = locationIsReadOnly ? "請先選擇倉庫" : "請輸入或選擇庫位",
+                    IsRequired = false,
+                    IsReadOnly = locationIsReadOnly,
+                    MinSearchLength = 0,
+                    HelpText = "倉庫內的具體庫位（選填，需先選擇倉庫）"
+                },
+                /*new()
+                {
                     PropertyName = nameof(WasteRecord.Quantity),
                     Label = "數量",
                     FieldType = FormFieldType.Number,
                     Placeholder = "請輸入數量",
                     IsRequired = false,
                     HelpText = "廢料的數量（依廢料類型的計量單位）"
-                },
+                },*/
                 new()
                 {
                     PropertyName = nameof(WasteRecord.TotalWeight),
                     Label = "總重量",
                     FieldType = FormFieldType.Number,
                     Placeholder = "請輸入總重量",
-                    IsRequired = false,
+                    IsRequired = true,
                     HelpText = "廢料的總重量"
                 },
                 new()
@@ -310,7 +365,7 @@
                     IsRequired = false,
                     HelpText = "客戶/廠商向我們收取的廢料採購費用"
                 },
-                new()
+                /*new()
                 {
                     PropertyName = nameof(WasteRecord.NetAmount),
                     Label = "淨額",
@@ -318,7 +373,7 @@
                     Placeholder = "請輸入淨額",
                     IsRequired = false,
                     HelpText = "淨額 = 處理費 - 採購費"
-                },
+                },*/
 
                 FormFieldConfigurationHelper.CreateRemarksField<WasteRecord>()
             };
@@ -328,11 +383,12 @@
                     wr => wr.Code,
                     wr => wr.RecordDate,
                     wr => wr.VehicleId,
+                    wr => wr.CustomerId,
                     wr => wr.WasteTypeId,
-                    wr => wr.CustomerId)
-                .AddToSection("廢料資訊",
                     wr => wr.Quantity,
-                    wr => wr.TotalWeight)
+                    wr => wr.TotalWeight,
+                    wr => wr.WarehouseId,
+                    wr => wr.WarehouseLocationId)
                 .AddToSection("費用資訊",
                     wr => wr.DisposalFee,
                     wr => wr.PurchaseFee,
@@ -354,14 +410,16 @@
             availableWasteTypes = await WasteTypeService.GetAllAsync();
             availableVehicles = await VehicleService.GetAllAsync();
             availableCustomers = await CustomerService.GetAllAsync();
+            availableWarehouses = await WarehouseService.GetAllAsync();
+            availableWarehouseLocations = await WarehouseLocationService.GetAllAsync();
 
-            // 重新建立 AutoComplete 配置
-            // 車輛顯示：車牌 + 客戶名（方便識別）
-            autoCompleteConfig = new AutoCompleteConfigBuilder<WasteRecord>()
-                .AddField(nameof(WasteRecord.VehicleId), "LicensePlate", availableVehicles)
-                .AddField(nameof(WasteRecord.WasteTypeId), "Name", availableWasteTypes)
-                .AddField(nameof(WasteRecord.CustomerId), "CompanyName", availableCustomers)
-                .Build();
+            // 初始化時依目前選取的倉庫篩選庫位（編輯模式）
+            var currentWarehouseId = editModalComponent?.Entity?.WarehouseId ?? 0;
+            filteredWarehouseLocations = currentWarehouseId > 0
+                ? availableWarehouseLocations.Where(wl => wl.WarehouseId == currentWarehouseId).ToList()
+                : new List<WarehouseLocation>();
+
+            RebuildAutoCompleteConfig();
         }
         catch (Exception)
         {
@@ -369,7 +427,46 @@
             availableWasteTypes = new List<WasteType>();
             availableVehicles = new List<Vehicle>();
             availableCustomers = new List<Customer>();
+            availableWarehouses = new List<Warehouse>();
+            availableWarehouseLocations = new List<WarehouseLocation>();
+            filteredWarehouseLocations = new List<WarehouseLocation>();
         }
+    }
+
+    private void RebuildAutoCompleteConfig()
+    {
+        autoCompleteConfig = new AutoCompleteConfigBuilder<WasteRecord>()
+            .AddField(nameof(WasteRecord.VehicleId), "LicensePlate", availableVehicles)
+            .AddField(nameof(WasteRecord.WasteTypeId), "Name", availableWasteTypes)
+            .AddField(nameof(WasteRecord.CustomerId), "CompanyName", availableCustomers)
+            .AddField(nameof(WasteRecord.WarehouseId), "Name", availableWarehouses)
+            .AddField(nameof(WasteRecord.WarehouseLocationId), "Name", filteredWarehouseLocations)
+            .Build();
+    }
+
+    // 儲存成功後：呼叫入庫方法，再轉給父組件
+    private async Task HandleWasteRecordSavedAsync(WasteRecord savedRecord)
+    {
+        try
+        {
+            ServiceResult inventoryResult;
+            if (_isNewRecord)
+                inventoryResult = await WasteRecordService.ConfirmWasteReceiptAsync(savedRecord.Id);
+            else
+                inventoryResult = await WasteRecordService.ReverseAndRepostWasteInventoryAsync(savedRecord.Id);
+
+            // 首次儲存後記錄已存在，後續在同一 Modal Session 內再儲存時應執行 ReverseAndRepost
+            _isNewRecord = false;
+
+            if (!inventoryResult.IsSuccess)
+                await NotificationService.ShowWarningAsync($"記錄已儲存，但庫存更新失敗：{inventoryResult.ErrorMessage}");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowWarningAsync($"記錄已儲存，但庫存更新時發生錯誤：{ex.Message}");
+        }
+
+        await OnWasteRecordSaved.InvokeAsync(savedRecord);
     }
 
     private async Task<List<FieldActionButton>> GetWasteTypeActionButtonsAsync()

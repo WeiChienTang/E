@@ -313,6 +313,33 @@ namespace ERPCore2.Services
                         var isStillPresent = newDetails.Any(d => d.Id == existingDetail.Id && existingDetail.Id > 0);
                         if (!isStillPresent)
                         {
+                            // 有庫存的明細不允許刪除
+                            if (existingDetail.CurrentStock != 0 || existingDetail.ReservedStock != 0 ||
+                                existingDetail.InTransitStock != 0 || existingDetail.InProductionStock != 0)
+                            {
+                                return ServiceResult<InventoryStock>.Failure(
+                                    $"無法移除庫存明細（倉庫ID：{existingDetail.WarehouseId}），" +
+                                    $"目前庫存：{existingDetail.CurrentStock}，預留：{existingDetail.ReservedStock}");
+                            }
+
+                            // 先清除 InventoryTransactionDetails 的外鍵關聯，再刪除明細
+                            var relatedTxDetails = await context.InventoryTransactionDetails
+                                .Where(d => d.InventoryStockDetailId == existingDetail.Id)
+                                .ToListAsync();
+                            foreach (var txDetail in relatedTxDetails)
+                            {
+                                txDetail.InventoryStockDetailId = null;
+                            }
+
+                            // 清除 InventoryReservations 的外鍵關聯
+                            var relatedReservations = await context.InventoryReservations
+                                .Where(r => r.InventoryStockDetailId == existingDetail.Id)
+                                .ToListAsync();
+                            foreach (var reservation in relatedReservations)
+                            {
+                                reservation.InventoryStockDetailId = null;
+                            }
+
                             context.InventoryStockDetails.Remove(existingDetail);
                         }
                     }
@@ -1120,6 +1147,10 @@ namespace ERPCore2.Services
                     var stockBefore = stockDetail.CurrentStock;
                     stockDetail.CurrentStock -= quantity;
                     stockDetail.LastTransactionDate = DateTime.Now;
+
+                    // 庫存歸零時清除平均成本，避免舊庫位保留已無意義的成本資料
+                    if (stockDetail.CurrentStock <= 0)
+                        stockDetail.AverageCost = null;
 
                     // 4. 建立/更新異動主檔
                     var inventoryTransaction = await GetOrCreateTransactionAsync(
@@ -2039,43 +2070,49 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                
-                // 檢查是否還有庫存數量
-                if (entity.TotalCurrentStock > 0 || entity.TotalReservedStock > 0)
+
+                // 重新載入含明細的實體，以確保庫存量計算正確
+                var stockWithDetails = await context.InventoryStocks
+                    .Include(s => s.InventoryStockDetails)
+                    .FirstOrDefaultAsync(s => s.Id == entity.Id);
+
+                if (stockWithDetails == null)
                 {
-                    return ServiceResult.Failure($"無法刪除此庫存記錄，目前庫存：{entity.TotalCurrentStock}，預留庫存：{entity.TotalReservedStock}");
+                    return ServiceResult.Failure("找不到要刪除的庫存記錄");
                 }
 
-                // 檢查是否有相關的異動記錄明細（透過 InventoryTransactionDetail）
+                // 檢查是否還有庫存數量（任何明細有庫存即不可刪除）
+                if (stockWithDetails.TotalCurrentStock > 0 || stockWithDetails.TotalReservedStock > 0)
+                {
+                    return ServiceResult.Failure($"無法刪除此庫存記錄，目前庫存：{NumberFormatHelper.FormatSmart(stockWithDetails.TotalCurrentStock)}，預留庫存：{NumberFormatHelper.FormatSmart(stockWithDetails.TotalReservedStock)}");
+                }
+
+                // 取得此主檔下所有明細的 ID
+                var stockDetailIds = stockWithDetails.InventoryStockDetails.Select(d => d.Id).ToList();
+
+                // 清除 InventoryTransactionDetails 對 InventoryStockId 與 InventoryStockDetailId 的外鍵關聯
                 var relatedTransactionDetails = await context.InventoryTransactionDetails
-                    .Where(d => d.InventoryStockId == entity.Id)
+                    .Where(d => d.InventoryStockId == entity.Id ||
+                                (d.InventoryStockDetailId != null && stockDetailIds.Contains(d.InventoryStockDetailId.Value)))
                     .ToListAsync();
 
-                if (relatedTransactionDetails.Any())
+                foreach (var detail in relatedTransactionDetails)
                 {
-                    // 移除相關的異動記錄明細的外鍵關聯
-                    foreach (var detail in relatedTransactionDetails)
-                    {
-                        detail.InventoryStockId = null; // 移除外鍵關聯
-                    }
+                    detail.InventoryStockId = null;
+                    detail.InventoryStockDetailId = null;
                 }
 
-                // 檢查是否有相關的預留記錄
+                // 清除 InventoryReservations 對此主檔的外鍵關聯
                 var relatedReservations = await context.InventoryReservations
                     .Where(r => r.InventoryStockId == entity.Id)
                     .ToListAsync();
 
-                if (relatedReservations.Any())
+                foreach (var reservation in relatedReservations)
                 {
-                    // 移除相關的預留記錄的外鍵關聯，或直接刪除
-                    foreach (var reservation in relatedReservations)
-                    {
-                        reservation.UpdatedAt = DateTime.UtcNow;
-                        reservation.InventoryStockId = null; // 移除外鍵關聯
-                    }
+                    reservation.UpdatedAt = DateTime.UtcNow;
+                    reservation.InventoryStockId = null;
                 }
 
-                // 儲存級聯刪除的變更
                 if (relatedTransactionDetails.Any() || relatedReservations.Any())
                 {
                     await context.SaveChangesAsync();
@@ -2085,7 +2122,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new {
                     EntityId = entity.Id,
                     ProductId = entity.ProductId
                 });
