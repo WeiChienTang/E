@@ -647,8 +647,8 @@
             {
                 if (supplierId.HasValue && supplierId.Value > 0)
                 {
-                    // 有選擇廠商：啟用欄位並載入該廠商的未完成採購單
-                    purchaseOrderField.IsReadOnly = false;
+                    // 有選擇廠商：啟用欄位（若主檔未鎖定）並載入該廠商的未完成採購單
+                    purchaseOrderField.IsReadOnly = hasUndeletableDetails;
                     purchaseOrderField.Placeholder = "請輸入或選擇採購單";
                     
                     // 檢查快取：如果廠商ID相同，直接使用快取資料
@@ -1117,6 +1117,7 @@
             new[]
             {
                 nameof(PurchaseReceiving.ReceiptDate),
+                nameof(PurchaseReceiving.TaxCalculationMethod),
                 nameof(BaseEntity.Remarks),
                 nameof(PurchaseReceiving.SupplierId)
             },
@@ -1136,7 +1137,7 @@
         var purchaseOrderFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterPurchaseOrderId");
         if (purchaseOrderFilter != null) purchaseOrderFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
         var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-        if (productFilter != null) productFilter.IsReadOnly = noSupplier;
+        if (productFilter != null) productFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
     }
 
     /// <summary>
@@ -1189,7 +1190,7 @@
                     var purchaseOrderFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterPurchaseOrderId");
                     if (purchaseOrderFilter != null) purchaseOrderFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
                     var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-                    if (productFilter != null) productFilter.IsReadOnly = noSupplier;
+                    if (productFilter != null) productFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
 
                     needsRerender = true; // 廠商變更需要重新渲染
                 }

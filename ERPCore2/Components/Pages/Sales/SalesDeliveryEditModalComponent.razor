@@ -241,7 +241,7 @@
             if (hasUndeletableDetails)
             {
                 return (
-                    "部分明細已有退貨記錄，客戶和訂單欄位已鎖定",
+                    "明細有退貨或沖款記錄，主檔欄位已鎖定",
                     GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.BadgeVariant.Warning,
                     "fas fa-lock"
                 );
@@ -511,7 +511,8 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
-                    ActionButtons = await GetCustomerActionButtonsAsync()
+                    ActionButtons = await GetCustomerActionButtonsAsync(),
+                    IsReadOnly = hasUndeletableDetails
                 },
                 new FormFieldDefinition()
                 {
@@ -554,7 +555,8 @@
                     Label = "出貨日期",
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
-                    HelpText = "出貨日期"
+                    HelpText = "出貨日期",
+                    IsReadOnly = hasUndeletableDetails
                 },
                 new()
                 {
@@ -563,7 +565,8 @@
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = taxCalculationMethodOptions,
-                    HelpText = "選擇該出貨單的計稅方式（外加稅/內含稅/不含稅）"
+                    HelpText = "選擇該出貨單的計稅方式（外加稅/內含稅/不含稅）",
+                    IsReadOnly = hasUndeletableDetails
                 },
                 new FormFieldDefinition()
                 {
@@ -605,7 +608,7 @@
                     HelpText = "系統根據明細自動計算（金額 - 折扣 + 稅額）",
                     CssClass = "text-success fw-bold"
                 },
-                    FormFieldConfigurationHelper.CreateRemarksField<SalesDelivery>()
+                    FormFieldConfigurationHelper.CreateRemarksField<SalesDelivery>(readOnly: hasUndeletableDetails)
             };
 
 
@@ -626,13 +629,6 @@
                     sd => sd.DeliveryAddress,
                     sd => sd.Remarks)
                 .Build();
-            
-            // 重置 FilterProductId 欄位狀態
-            var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-            if (filterProductField != null)
-            {
-                filterProductField.IsReadOnly = false;
-            }
             
             // 重置篩選狀態
             filterProductId = null;
@@ -755,9 +751,10 @@
                 }
             }
 
-            // 檢查是否有不可刪除的明細（已有退貨記錄）
-            bool hasUndeletable = salesDeliveryDetails.Any(detail => 
-                DetailLockHelper.HasReturnRecord(detail, returnedQuantities));
+            // 檢查是否有不可刪除的明細（已有退貨或沖款記錄）
+            bool hasUndeletable = salesDeliveryDetails.Any(detail =>
+                DetailLockHelper.HasReturnRecord(detail, returnedQuantities) ||
+                detail.TotalReceivedAmount > 0);
 
             if (hasUndeletableDetails != hasUndeletable)
             {
@@ -805,7 +802,10 @@
             formFields,
             new[]
             {
-                nameof(SalesDelivery.CustomerId)
+                nameof(SalesDelivery.CustomerId),
+                nameof(SalesDelivery.DeliveryDate),
+                nameof(SalesDelivery.TaxCalculationMethod),
+                nameof(BaseEntity.Remarks)
             },
             isLocked: hasUndeletableDetails,
             actionButtonsMap: new Dictionary<string, Func<Task<List<FieldActionButton>>>>
@@ -823,7 +823,7 @@
         var salesOrderFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterSalesOrderId");
         if (salesOrderFilter != null) salesOrderFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
         var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-        if (productFilter != null) productFilter.IsReadOnly = noCustomer;
+        if (productFilter != null) productFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
     }
 
     private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
@@ -856,7 +856,7 @@
                 var salesOrderFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterSalesOrderId");
                 if (salesOrderFilter != null) salesOrderFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
                 var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-                if (productFilter != null) productFilter.IsReadOnly = noCustomer;
+                if (productFilter != null) productFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
                 if (fieldChange.Value != null)
                 {
                     await HandleCustomerChanged((int)fieldChange.Value);

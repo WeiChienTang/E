@@ -816,7 +816,7 @@
                 filterQuotationId = null;
                 bool noCustomer = !(int.TryParse(fieldChange.Value?.ToString(), out int cId) && cId > 0);
                 var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-                if (productFilter != null) productFilter.IsReadOnly = noCustomer;
+                if (productFilter != null) productFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
                 var quotationFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterQuotationId");
                 if (quotationFilter != null) quotationFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
                 StateHasChanged();
@@ -993,7 +993,7 @@
     {
         bool noCustomer = !(editModalComponent?.Entity?.CustomerId > 0);
         var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-        if (productFilter != null) productFilter.IsReadOnly = noCustomer;
+        if (productFilter != null) productFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
         var quotationFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterQuotationId");
         if (quotationFilter != null) quotationFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
     }
