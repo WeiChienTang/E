@@ -397,7 +397,8 @@ else
                 }
 
                 var id = (int?)entityType.GetProperty("Id")?.GetValue(entity) ?? 0;
-                var name = entityType.GetProperty("Name")?.GetValue(entity) as string;
+                var name = entityType.GetProperty("Name")?.GetValue(entity) as string
+                        ?? entityType.GetProperty("CompanyName")?.GetValue(entity) as string;
                 var code = entityType.GetProperty("Code")?.GetValue(entity) as string;
 
                 var displayName = field.DisplayFormat switch

@@ -21,9 +21,34 @@ public class VehicleListCriteria : IReportFilterCriteria
     public List<int> VehicleTypeIds { get; set; } = new();
 
     /// <summary>
-    /// 歸屬類型篩選（null 表示全部）
+    /// 負責人/駕駛人 ID 清單（空表示所有）
     /// </summary>
-    public VehicleOwnershipType? OwnershipType { get; set; }
+    [FilterFK(typeof(IEmployeeService),
+        Group = FilterGroup.Basic,
+        Label = "負責人/駕駛人",
+        Placeholder = "搜尋負責人或駕駛人...",
+        EmptyMessage = "未選擇負責人（查詢全部）",
+        DisplayFormat = FilterDisplayFormat.CodeDashName,
+        Order = 2)]
+    public List<int> EmployeeIds { get; set; } = new();
+
+    /// <summary>
+    /// 歸屬類型篩選（空表示全部）
+    /// </summary>
+    [FilterEnum(typeof(VehicleOwnershipType),
+        Group = FilterGroup.Basic,
+        Label = "歸屬類型",
+        Order = 3)]
+    public List<VehicleOwnershipType> OwnershipTypes { get; set; } = new();
+
+    /// <summary>
+    /// 燃料類型篩選（空表示全部）
+    /// </summary>
+    [FilterEnum(typeof(FuelType),
+        Group = FilterGroup.Basic,
+        Label = "燃料類型",
+        Order = 4)]
+    public List<FuelType> FuelTypes { get; set; } = new();
 
     /// <summary>
     /// 關鍵字搜尋（車牌號碼、車輛名稱、廠牌）
@@ -53,7 +78,9 @@ public class VehicleListCriteria : IReportFilterCriteria
         return new Dictionary<string, object?>
         {
             ["vehicleTypeIds"] = VehicleTypeIds.Any() ? VehicleTypeIds : null,
-            ["ownershipType"] = OwnershipType,
+            ["employeeIds"] = EmployeeIds.Any() ? EmployeeIds : null,
+            ["ownershipTypes"] = OwnershipTypes.Any() ? OwnershipTypes : null,
+            ["fuelTypes"] = FuelTypes.Any() ? FuelTypes : null,
             ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword,
             ["activeOnly"] = ActiveOnly
         };
@@ -69,8 +96,22 @@ public class VehicleListCriteria : IReportFilterCriteria
         if (VehicleTypeIds.Any())
             summary.Add($"車型：{VehicleTypeIds.Count} 個");
 
-        if (OwnershipType.HasValue)
-            summary.Add($"歸屬：{(OwnershipType == VehicleOwnershipType.Company ? "公司" : "客戶")}");
+        if (EmployeeIds.Any())
+            summary.Add($"負責人：{EmployeeIds.Count} 人");
+
+        if (OwnershipTypes.Any())
+        {
+            var typeNames = OwnershipTypes.Select(t => t switch
+            {
+                VehicleOwnershipType.Company => "公司",
+                VehicleOwnershipType.Customer => "客戶",
+                _ => t.ToString()
+            });
+            summary.Add($"歸屬：{string.Join("、", typeNames)}");
+        }
+
+        if (FuelTypes.Any())
+            summary.Add($"燃料：{FuelTypes.Count} 種");
 
         if (!string.IsNullOrEmpty(Keyword))
             summary.Add($"關鍵字：{Keyword}");

@@ -22,6 +22,17 @@ public class PurchaseOrderBatchPrintCriteria : IReportFilterCriteria
     public List<int> SupplierIds { get; set; } = new();
 
     /// <summary>
+    /// 目標倉庫 ID 清單（空表示所有倉庫）
+    /// </summary>
+    [FilterFK(typeof(IWarehouseService),
+        Group = FilterGroup.Basic,
+        Label = "目標倉庫",
+        Placeholder = "搜尋倉庫...",
+        EmptyMessage = "未選擇倉庫（查詢全部）",
+        Order = 2)]
+    public List<int> WarehouseIds { get; set; } = new();
+
+    /// <summary>
     /// 起始日期
     /// </summary>
     [FilterDateRange(Group = FilterGroup.Date, Label = "採購日期", Order = 1)]
@@ -46,6 +57,7 @@ public class PurchaseOrderBatchPrintCriteria : IReportFilterCriteria
     /// <summary>
     /// 是否包含已取消的單據
     /// </summary>
+    [FilterToggle(Group = FilterGroup.Quick, Label = "顯示選項", CheckboxLabel = "包含已取消", DefaultValue = false, Order = 2)]
     public bool IncludeCancelled { get; set; } = false;
 
     /// <summary>
@@ -87,6 +99,7 @@ public class PurchaseOrderBatchPrintCriteria : IReportFilterCriteria
         return new Dictionary<string, object?>
         {
             ["supplierIds"] = SupplierIds.Any() ? SupplierIds : null,
+            ["warehouseIds"] = WarehouseIds.Any() ? WarehouseIds : null,
             ["startDate"] = StartDate,
             ["endDate"] = EndDate,
             ["statuses"] = Statuses.Any() ? Statuses : null,
@@ -131,19 +144,16 @@ public class PurchaseOrderBatchPrintCriteria : IReportFilterCriteria
         }
 
         if (SupplierIds.Any())
-        {
             summary.Add($"廠商：{SupplierIds.Count} 家");
-        }
+
+        if (WarehouseIds.Any())
+            summary.Add($"倉庫：{WarehouseIds.Count} 個");
 
         if (Statuses.Any())
-        {
             summary.Add($"狀態：{string.Join(", ", Statuses)}");
-        }
 
         if (!string.IsNullOrEmpty(DocumentNumberKeyword))
-        {
             summary.Add($"單號含：{DocumentNumberKeyword}");
-        }
 
         return string.Join(" | ", summary);
     }

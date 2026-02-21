@@ -35,6 +35,17 @@ public class CustomerRosterCriteria : IReportFilterCriteria
     public List<int> EmployeeIds { get; set; } = new();
 
     /// <summary>
+    /// 付款方式 ID 清單（空表示所有付款方式）
+    /// </summary>
+    [FilterFK(typeof(IPaymentMethodService),
+        Group = FilterGroup.Basic,
+        Label = "付款方式",
+        Placeholder = "搜尋付款方式...",
+        EmptyMessage = "未選擇付款方式（查詢全部）",
+        Order = 3)]
+    public List<int> PaymentMethodIds { get; set; } = new();
+
+    /// <summary>
     /// 關鍵字搜尋（客戶編號、公司名稱、聯絡人、統編）
     /// </summary>
     [FilterKeyword(Group = FilterGroup.Quick, Label = "關鍵字", Placeholder = "搜尋客戶編號、公司名稱、聯絡人、統編...", Order = 1)]
@@ -63,6 +74,7 @@ public class CustomerRosterCriteria : IReportFilterCriteria
         {
             ["customerIds"] = CustomerIds.Any() ? CustomerIds : null,
             ["employeeIds"] = EmployeeIds.Any() ? EmployeeIds : null,
+            ["paymentMethodIds"] = PaymentMethodIds.Any() ? PaymentMethodIds : null,
             ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword,
             ["activeOnly"] = ActiveOnly
         };
@@ -80,6 +92,9 @@ public class CustomerRosterCriteria : IReportFilterCriteria
 
         if (EmployeeIds.Any())
             summary.Add($"業務負責人：{EmployeeIds.Count} 位");
+
+        if (PaymentMethodIds.Any())
+            summary.Add($"付款方式：{PaymentMethodIds.Count} 種");
 
         if (!string.IsNullOrEmpty(Keyword))
             summary.Add($"關鍵字：{Keyword}");

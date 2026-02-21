@@ -23,7 +23,23 @@ public class VehicleMaintenanceCriteria : IReportFilterCriteria
     /// <summary>
     /// 保養類型篩選（空表示所有類型）
     /// </summary>
+    [FilterEnum(typeof(MaintenanceType),
+        Group = FilterGroup.Basic,
+        Label = "保養類型",
+        Order = 2)]
     public List<MaintenanceType> MaintenanceTypes { get; set; } = new();
+
+    /// <summary>
+    /// 經手人 ID 清單（空表示所有員工）
+    /// </summary>
+    [FilterFK(typeof(IEmployeeService),
+        Group = FilterGroup.Basic,
+        Label = "經手人",
+        Placeholder = "搜尋經手人...",
+        EmptyMessage = "未選擇經手人（查詢全部）",
+        DisplayFormat = FilterDisplayFormat.CodeDashName,
+        Order = 3)]
+    public List<int> EmployeeIds { get; set; } = new();
 
     /// <summary>
     /// 起始日期
@@ -39,7 +55,7 @@ public class VehicleMaintenanceCriteria : IReportFilterCriteria
     /// <summary>
     /// 關鍵字搜尋（車牌號碼、維修廠、保養描述）
     /// </summary>
-    [FilterKeyword(Group = FilterGroup.Basic, Label = "關鍵字", Placeholder = "搜尋車牌號碼、維修廠、保養描述...", Order = 2)]
+    [FilterKeyword(Group = FilterGroup.Quick, Label = "關鍵字", Placeholder = "搜尋車牌號碼、維修廠、保養描述...", Order = 1)]
     public string? Keyword { get; set; }
 
     /// <summary>
@@ -65,6 +81,7 @@ public class VehicleMaintenanceCriteria : IReportFilterCriteria
         {
             ["vehicleIds"] = VehicleIds.Any() ? VehicleIds : null,
             ["maintenanceTypes"] = MaintenanceTypes.Any() ? MaintenanceTypes : null,
+            ["employeeIds"] = EmployeeIds.Any() ? EmployeeIds : null,
             ["startDate"] = StartDate,
             ["endDate"] = EndDate,
             ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword
@@ -83,6 +100,9 @@ public class VehicleMaintenanceCriteria : IReportFilterCriteria
 
         if (MaintenanceTypes.Any())
             summary.Add($"保養類型：{MaintenanceTypes.Count} 種");
+
+        if (EmployeeIds.Any())
+            summary.Add($"經手人：{EmployeeIds.Count} 人");
 
         if (StartDate.HasValue)
             summary.Add($"起始：{StartDate:yyyy/MM/dd}");

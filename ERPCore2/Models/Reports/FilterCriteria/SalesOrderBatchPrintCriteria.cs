@@ -22,6 +22,18 @@ public class SalesOrderBatchPrintCriteria : IReportFilterCriteria
     public List<int> CustomerIds { get; set; } = new();
 
     /// <summary>
+    /// 業務人員 ID 清單（空表示所有業務）
+    /// </summary>
+    [FilterFK(typeof(IEmployeeService),
+        Group = FilterGroup.Basic,
+        Label = "業務人員",
+        Placeholder = "搜尋業務人員...",
+        EmptyMessage = "未選擇業務（查詢全部）",
+        DisplayFormat = FilterDisplayFormat.CodeDashName,
+        Order = 2)]
+    public List<int> EmployeeIds { get; set; } = new();
+
+    /// <summary>
     /// 起始日期（訂單日期）
     /// </summary>
     [FilterDateRange(Group = FilterGroup.Date, Label = "訂單日期", Order = 1)]
@@ -46,6 +58,7 @@ public class SalesOrderBatchPrintCriteria : IReportFilterCriteria
     /// <summary>
     /// 是否包含已取消的單據
     /// </summary>
+    [FilterToggle(Group = FilterGroup.Quick, Label = "顯示選項", CheckboxLabel = "包含已取消", DefaultValue = false, Order = 2)]
     public bool IncludeCancelled { get; set; } = false;
 
     /// <summary>
@@ -87,6 +100,7 @@ public class SalesOrderBatchPrintCriteria : IReportFilterCriteria
         return new Dictionary<string, object?>
         {
             ["customerIds"] = CustomerIds.Any() ? CustomerIds : null,
+            ["employeeIds"] = EmployeeIds.Any() ? EmployeeIds : null,
             ["startDate"] = StartDate,
             ["endDate"] = EndDate,
             ["statuses"] = Statuses.Any() ? Statuses : null,
@@ -131,19 +145,16 @@ public class SalesOrderBatchPrintCriteria : IReportFilterCriteria
         }
 
         if (CustomerIds.Any())
-        {
             summary.Add($"客戶：{CustomerIds.Count} 家");
-        }
+
+        if (EmployeeIds.Any())
+            summary.Add($"業務：{EmployeeIds.Count} 人");
 
         if (Statuses.Any())
-        {
             summary.Add($"狀態：{string.Join(", ", Statuses)}");
-        }
 
         if (!string.IsNullOrEmpty(DocumentNumberKeyword))
-        {
             summary.Add($"單號含：{DocumentNumberKeyword}");
-        }
 
         return string.Join(" | ", summary);
     }

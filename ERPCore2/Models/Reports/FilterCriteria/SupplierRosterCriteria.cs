@@ -23,6 +23,17 @@ public class SupplierRosterCriteria : IReportFilterCriteria
     public List<int> SupplierIds { get; set; } = new();
 
     /// <summary>
+    /// 付款方式 ID 清單（空表示所有付款方式）
+    /// </summary>
+    [FilterFK(typeof(IPaymentMethodService),
+        Group = FilterGroup.Basic,
+        Label = "付款方式",
+        Placeholder = "搜尋付款方式...",
+        EmptyMessage = "未選擇付款方式（查詢全部）",
+        Order = 2)]
+    public List<int> PaymentMethodIds { get; set; } = new();
+
+    /// <summary>
     /// 關鍵字搜尋（廠商編號、公司名稱、聯絡人、統編）
     /// </summary>
     [FilterKeyword(Group = FilterGroup.Quick, Label = "關鍵字", Placeholder = "搜尋廠商編號、廠商名稱、聯絡人、統編...", Order = 1)]
@@ -50,6 +61,7 @@ public class SupplierRosterCriteria : IReportFilterCriteria
         return new Dictionary<string, object?>
         {
             ["supplierIds"] = SupplierIds.Any() ? SupplierIds : null,
+            ["paymentMethodIds"] = PaymentMethodIds.Any() ? PaymentMethodIds : null,
             ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword,
             ["activeOnly"] = ActiveOnly
         };
@@ -64,6 +76,9 @@ public class SupplierRosterCriteria : IReportFilterCriteria
 
         if (SupplierIds.Any())
             summary.Add($"廠商：{SupplierIds.Count} 家");
+
+        if (PaymentMethodIds.Any())
+            summary.Add($"付款方式：{PaymentMethodIds.Count} 種");
 
         if (!string.IsNullOrEmpty(Keyword))
             summary.Add($"關鍵字：{Keyword}");

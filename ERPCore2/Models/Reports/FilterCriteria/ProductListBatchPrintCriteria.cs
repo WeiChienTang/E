@@ -23,9 +23,13 @@ public class ProductListBatchPrintCriteria : IReportFilterCriteria
     public List<int> CategoryIds { get; set; } = new();
 
     /// <summary>
-    /// 採購類型篩選（null 表示全部）
+    /// 採購類型篩選（空表示全部）
     /// </summary>
-    public ProcurementType? ProcurementType { get; set; }
+    [FilterEnum(typeof(ProcurementType),
+        Group = FilterGroup.Basic,
+        Label = "採購類型",
+        Order = 2)]
+    public List<ProcurementType> ProcurementTypes { get; set; } = new();
 
     /// <summary>
     /// 關鍵字搜尋（品號、品名、條碼、規格）
@@ -36,7 +40,7 @@ public class ProductListBatchPrintCriteria : IReportFilterCriteria
     /// <summary>
     /// 是否僅顯示啟用商品
     /// </summary>
-    [FilterToggle(Group = FilterGroup.Basic, Label = "顯示條件", CheckboxLabel = "僅啟用", DefaultValue = true, Order = 2)]
+    [FilterToggle(Group = FilterGroup.Quick, Label = "顯示條件", CheckboxLabel = "僅啟用", DefaultValue = true, Order = 2)]
     public bool ActiveOnly { get; set; } = true;
 
     /// <summary>
@@ -55,7 +59,7 @@ public class ProductListBatchPrintCriteria : IReportFilterCriteria
         return new Dictionary<string, object?>
         {
             ["categoryIds"] = CategoryIds.Any() ? CategoryIds : null,
-            ["procurementType"] = ProcurementType,
+            ["procurementTypes"] = ProcurementTypes.Any() ? ProcurementTypes : null,
             ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword,
             ["activeOnly"] = ActiveOnly
         };
@@ -69,31 +73,25 @@ public class ProductListBatchPrintCriteria : IReportFilterCriteria
         var summary = new List<string>();
 
         if (CategoryIds.Any())
-        {
             summary.Add($"分類：{CategoryIds.Count} 個");
-        }
 
-        if (ProcurementType.HasValue)
+        if (ProcurementTypes.Any())
         {
-            var typeName = ProcurementType.Value switch
+            var typeNames = ProcurementTypes.Select(t => t switch
             {
-                Enums.ProcurementType.Purchased => "外購",
-                Enums.ProcurementType.Manufactured => "自製",
-                Enums.ProcurementType.Outsourced => "委外",
-                _ => ProcurementType.Value.ToString()
-            };
-            summary.Add($"採購類型：{typeName}");
+                ProcurementType.Purchased => "外購",
+                ProcurementType.Manufactured => "自製",
+                ProcurementType.Outsourced => "委外",
+                _ => t.ToString()
+            });
+            summary.Add($"採購類型：{string.Join("、", typeNames)}");
         }
 
         if (!string.IsNullOrEmpty(Keyword))
-        {
             summary.Add($"關鍵字：{Keyword}");
-        }
 
         if (ActiveOnly)
-        {
             summary.Add("僅啟用");
-        }
 
         return summary.Any() ? string.Join(" | ", summary) : "全部商品";
     }

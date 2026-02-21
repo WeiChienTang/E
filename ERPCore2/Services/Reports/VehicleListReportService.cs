@@ -240,9 +240,9 @@ namespace ERPCore2.Services.Reports
             }
 
             // 篩選歸屬類型
-            if (criteria.OwnershipType.HasValue)
+            if (criteria.OwnershipTypes.Any())
             {
-                results = results.Where(v => v.OwnershipType == criteria.OwnershipType.Value).ToList();
+                results = results.Where(v => criteria.OwnershipTypes.Contains(v.OwnershipType)).ToList();
             }
 
             // 關鍵字搜尋

@@ -216,8 +216,8 @@ namespace ERPCore2.Services.Reports
                     criteria.CategoryIds.Contains(p.ProductCategoryId.Value)).ToList();
             }
 
-            if (criteria.ProcurementType.HasValue)
-                results = results.Where(p => p.ProcurementType == criteria.ProcurementType.Value).ToList();
+            if (criteria.ProcurementTypes.Any())
+                results = results.Where(p => criteria.ProcurementTypes.Contains(p.ProcurementType)).ToList();
 
             if (!string.IsNullOrEmpty(criteria.Keyword))
             {
@@ -316,7 +316,7 @@ namespace ERPCore2.Services.Reports
                     ("生產單位", product.ProductionUnit?.Name ?? ""));
 
                 // 生產換算比率（有生產單位且比率不為 1 時顯示）
-                if (product.ProductionUnit != null && product.ProductionUnitConversionRate != 1)
+                if (product.ProductionUnit != null && product.ProductionUnitConversionRate != null && product.ProductionUnitConversionRate != 1)
                 {
                     doc.AddKeyValueRow(
                         ("換算比率", product.ProductionUnitConversionRate.Value.ToString("G")),

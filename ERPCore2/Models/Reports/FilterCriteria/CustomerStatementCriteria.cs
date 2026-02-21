@@ -17,9 +17,21 @@ public class CustomerStatementCriteria : IReportFilterCriteria
         Group = FilterGroup.Basic,
         Label = "指定客戶",
         Placeholder = "搜尋客戶...",
-        EmptyMessage = "未選擇客戶（查詢全部）",
+        EmptyMessage = "未選擇客戶（查詢全部客戶）",
         Order = 1)]
     public List<int> CustomerIds { get; set; } = new();
+
+    /// <summary>
+    /// 業務負責人 ID 清單（空表示所有業務）
+    /// </summary>
+    [FilterFK(typeof(IEmployeeService),
+        Group = FilterGroup.Basic,
+        Label = "業務負責人",
+        Placeholder = "搜尋業務負責人...",
+        EmptyMessage = "未選擇業務負責人（查詢全部）",
+        DisplayFormat = FilterDisplayFormat.CodeDashName,
+        Order = 2)]
+    public List<int> EmployeeIds { get; set; } = new();
 
     /// <summary>
     /// 起始日期
@@ -35,24 +47,25 @@ public class CustomerStatementCriteria : IReportFilterCriteria
     /// <summary>
     /// 是否包含出貨單
     /// </summary>
-    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "出貨單", DefaultValue = true, Order = 2)]
+    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "出貨單", DefaultValue = true, Order = 3)]
     public bool IncludeDeliveries { get; set; } = true;
 
     /// <summary>
     /// 是否包含退貨單
     /// </summary>
-    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "退貨單", DefaultValue = true, Order = 3)]
+    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "退貨單", DefaultValue = true, Order = 4)]
     public bool IncludeReturns { get; set; } = true;
 
     /// <summary>
-    /// 是否包含收款（沖款單）
+    /// 是否包含收款沖款單
     /// </summary>
+    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "收款單", DefaultValue = true, Order = 5)]
     public bool IncludePayments { get; set; } = true;
 
     /// <summary>
     /// 是否排除已取消
     /// </summary>
-    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "排除已取消", DefaultValue = true, Order = 4)]
+    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "排除已取消", DefaultValue = true, Order = 6)]
     public bool ExcludeCancelled { get; set; } = true;
 
     /// <summary>
@@ -74,9 +87,9 @@ public class CustomerStatementCriteria : IReportFilterCriteria
             return false;
         }
 
-        if (!IncludeDeliveries && !IncludeReturns && !IncludePayments)
+        if (!IncludeDeliveries && !IncludeReturns)
         {
-            errorMessage = "至少須選擇一種交易類型";
+            errorMessage = "至少須選擇一種交易類型（出貨或退貨）";
             return false;
         }
 
@@ -89,6 +102,7 @@ public class CustomerStatementCriteria : IReportFilterCriteria
         return new Dictionary<string, object?>
         {
             ["customerIds"] = CustomerIds.Any() ? CustomerIds : null,
+            ["employeeIds"] = EmployeeIds.Any() ? EmployeeIds : null,
             ["startDate"] = StartDate,
             ["endDate"] = EndDate,
             ["includeDeliveries"] = IncludeDeliveries,
@@ -113,6 +127,9 @@ public class CustomerStatementCriteria : IReportFilterCriteria
 
         if (CustomerIds.Any())
             summary.Add($"客戶：{CustomerIds.Count} 個");
+
+        if (EmployeeIds.Any())
+            summary.Add($"業務：{EmployeeIds.Count} 人");
 
         var types = new List<string>();
         if (IncludeDeliveries) types.Add("出貨");

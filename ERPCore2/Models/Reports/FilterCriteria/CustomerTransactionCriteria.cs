@@ -22,6 +22,18 @@ public class CustomerTransactionCriteria : IReportFilterCriteria
     public List<int> CustomerIds { get; set; } = new();
 
     /// <summary>
+    /// 業務人員 ID 清單（空表示所有業務）
+    /// </summary>
+    [FilterFK(typeof(IEmployeeService),
+        Group = FilterGroup.Basic,
+        Label = "業務人員",
+        Placeholder = "搜尋業務人員...",
+        EmptyMessage = "未選擇業務（查詢全部）",
+        DisplayFormat = FilterDisplayFormat.CodeDashName,
+        Order = 2)]
+    public List<int> EmployeeIds { get; set; } = new();
+
+    /// <summary>
     /// 起始日期
     /// </summary>
     [FilterDateRange(Group = FilterGroup.Date, Label = "日期範圍", Order = 1)]
@@ -35,19 +47,19 @@ public class CustomerTransactionCriteria : IReportFilterCriteria
     /// <summary>
     /// 是否包含出貨單
     /// </summary>
-    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "出貨單", DefaultValue = true, Order = 2)]
+    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "出貨單", DefaultValue = true, Order = 3)]
     public bool IncludeDeliveries { get; set; } = true;
 
     /// <summary>
     /// 是否包含退貨單
     /// </summary>
-    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "退貨單", DefaultValue = true, Order = 3)]
+    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "退貨單", DefaultValue = true, Order = 4)]
     public bool IncludeReturns { get; set; } = true;
 
     /// <summary>
     /// 是否排除已取消
     /// </summary>
-    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "排除已取消", DefaultValue = true, Order = 4)]
+    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "排除已取消", DefaultValue = true, Order = 5)]
     public bool ExcludeCancelled { get; set; } = true;
 
     /// <summary>
@@ -84,6 +96,7 @@ public class CustomerTransactionCriteria : IReportFilterCriteria
         return new Dictionary<string, object?>
         {
             ["customerIds"] = CustomerIds.Any() ? CustomerIds : null,
+            ["employeeIds"] = EmployeeIds.Any() ? EmployeeIds : null,
             ["startDate"] = StartDate,
             ["endDate"] = EndDate,
             ["includeDeliveries"] = IncludeDeliveries,
@@ -107,6 +120,9 @@ public class CustomerTransactionCriteria : IReportFilterCriteria
 
         if (CustomerIds.Any())
             summary.Add($"客戶：{CustomerIds.Count} 個");
+
+        if (EmployeeIds.Any())
+            summary.Add($"業務：{EmployeeIds.Count} 人");
 
         var types = new List<string>();
         if (IncludeDeliveries) types.Add("出貨");

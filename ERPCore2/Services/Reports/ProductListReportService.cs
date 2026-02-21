@@ -246,9 +246,9 @@ namespace ERPCore2.Services.Reports
             }
 
             // 篩選採購類型
-            if (criteria.ProcurementType.HasValue)
+            if (criteria.ProcurementTypes.Any())
             {
-                results = results.Where(p => p.ProcurementType == criteria.ProcurementType.Value).ToList();
+                results = results.Where(p => criteria.ProcurementTypes.Contains(p.ProcurementType)).ToList();
             }
 
             // 關鍵字搜尋

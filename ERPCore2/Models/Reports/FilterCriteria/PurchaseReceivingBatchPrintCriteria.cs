@@ -46,6 +46,7 @@ public class PurchaseReceivingBatchPrintCriteria : IReportFilterCriteria
     /// <summary>
     /// 是否包含已取消的單據
     /// </summary>
+    [FilterToggle(Group = FilterGroup.Quick, Label = "顯示選項", CheckboxLabel = "包含已取消", DefaultValue = false, Order = 2)]
     public bool IncludeCancelled { get; set; } = false;
 
     /// <summary>

@@ -22,6 +22,29 @@ public class CustomerSalesAnalysisCriteria : IReportFilterCriteria
     public List<int> CustomerIds { get; set; } = new();
 
     /// <summary>
+    /// 業務負責人 ID 清單（空表示所有業務）
+    /// </summary>
+    [FilterFK(typeof(IEmployeeService),
+        Group = FilterGroup.Basic,
+        Label = "業務負責人",
+        Placeholder = "搜尋業務負責人...",
+        EmptyMessage = "未選擇業務負責人（查詢全部）",
+        DisplayFormat = FilterDisplayFormat.CodeDashName,
+        Order = 2)]
+    public List<int> EmployeeIds { get; set; } = new();
+
+    /// <summary>
+    /// 商品分類 ID 清單（空表示所有分類）
+    /// </summary>
+    [FilterFK(typeof(IProductCategoryService),
+        Group = FilterGroup.Basic,
+        Label = "商品分類",
+        Placeholder = "搜尋商品分類...",
+        EmptyMessage = "未選擇分類（查詢全部）",
+        Order = 3)]
+    public List<int> CategoryIds { get; set; } = new();
+
+    /// <summary>
     /// 起始日期
     /// </summary>
     [FilterDateRange(Group = FilterGroup.Date, Label = "日期範圍", Order = 1)]
@@ -35,7 +58,7 @@ public class CustomerSalesAnalysisCriteria : IReportFilterCriteria
     /// <summary>
     /// 是否排除已取消的訂單
     /// </summary>
-    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "排除已取消", DefaultValue = true, Order = 2)]
+    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "排除已取消", DefaultValue = true, Order = 4)]
     public bool ExcludeCancelled { get; set; } = true;
 
     /// <summary>
@@ -66,6 +89,8 @@ public class CustomerSalesAnalysisCriteria : IReportFilterCriteria
         return new Dictionary<string, object?>
         {
             ["customerIds"] = CustomerIds.Any() ? CustomerIds : null,
+            ["employeeIds"] = EmployeeIds.Any() ? EmployeeIds : null,
+            ["categoryIds"] = CategoryIds.Any() ? CategoryIds : null,
             ["startDate"] = StartDate,
             ["endDate"] = EndDate,
             ["excludeCancelled"] = ExcludeCancelled
@@ -87,6 +112,12 @@ public class CustomerSalesAnalysisCriteria : IReportFilterCriteria
 
         if (CustomerIds.Any())
             summary.Add($"客戶：{CustomerIds.Count} 個");
+
+        if (EmployeeIds.Any())
+            summary.Add($"業務：{EmployeeIds.Count} 人");
+
+        if (CategoryIds.Any())
+            summary.Add($"分類：{CategoryIds.Count} 個");
 
         if (ExcludeCancelled)
             summary.Add("排除已取消");
