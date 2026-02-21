@@ -2,13 +2,14 @@
 .picker-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0.6rem 0.75rem;
+    padding: 0.4rem 0.5rem;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
     cursor: pointer;
     transition: all 0.2s ease;
     background-color: #ffffff;
+    min-height: 2.4rem;
+    overflow: hidden;
 }
 
 .picker-item:hover {
@@ -35,36 +36,33 @@
     border-color: #22c55e;
 }
 
-/* Checkbox 圖示 */
-.picker-checkbox {
-    font-size: 1.1rem;
-    flex-shrink: 0;
-}
-
 /* 小工具圖示 */
 .picker-icon {
-    font-size: 1.2rem;
+    font-size: 1rem;
     color: #1F2937;
     flex-shrink: 0;
 }
 
 /* 名稱 */
 .picker-name {
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #1F2937;
-    line-height: 1.3;
-}
-
-/* 描述 */
-.picker-desc {
-    font-size: 0.72rem;
-    color: #9ca3af;
-    line-height: 1.3;
-    margin-top: 1px;
-}
-
-.picker-info {
-    min-width: 0;
+    line-height: 1.2;
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+/* 選中 Tab：藍色粗體 */
+.tab-active {
+    color: #0d6efd !important;
+    font-weight: 700 !important;
+}
+
+/* 未選中 Tab：黑色 */
+.tab-inactive {
+    color: #212529 !important;
+    font-weight: 400 !important;
 }

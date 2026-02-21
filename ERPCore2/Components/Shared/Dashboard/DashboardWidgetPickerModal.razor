@@ -58,9 +58,9 @@
                 @if (FilteredQuickActionWidgets.Any())
                 {
                     <div class="mb-3">
-                        <h6 class="fw-bold text-warning border-bottom pb-2 mb-2">
-                            <i class="bi bi-lightning-fill me-1"></i>快速功能
-                            <span class="badge bg-warning text-dark ms-1">@FilteredQuickActionWidgets.Count</span>
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">
+                            <i class="bi bi-wrench-adjustable me-1"></i>快速功能
+                            <span class="badge bg-primary ms-1">@FilteredQuickActionWidgets.Count</span>
                         </h6>
                         @RenderWidgetGrid(FilteredQuickActionWidgets)
                     </div>
@@ -72,10 +72,10 @@
             @* 一般模式：Tab 切換 *@
             <ul class="nav nav-tabs mb-3">
                 <li class="nav-item">
-                    <button class="nav-link @(activeTab == "shortcut" ? "active" : "")"
+                    <button class="nav-link @(activeTab == "shortcut" ? "active tab-active" : "tab-inactive")"
                             type="button"
                             @onclick='@(() => activeTab = "shortcut")'>
-                        <i class="bi bi-link-45deg me-1"></i>頁面連結
+                        <i class="bi bi-window me-1"></i>頁面連結
                         @if (AvailableShortcutWidgets.Any())
                         {
                             <span class="badge bg-secondary ms-1">@AvailableShortcutWidgets.Count</span>
@@ -83,10 +83,10 @@
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link @(activeTab == "quickaction" ? "active" : "")"
+                    <button class="nav-link @(activeTab == "quickaction" ? "active tab-active" : "tab-inactive")"
                             type="button"
                             @onclick='@(() => activeTab = "quickaction")'>
-                        <i class="bi bi-lightning-fill me-1"></i>快速功能
+                        <i class="bi bi-wrench-adjustable me-1"></i>快速功能
                         @if (AvailableQuickActionWidgets.Any())
                         {
                             <span class="badge bg-secondary ms-1">@AvailableQuickActionWidgets.Count</span>
@@ -113,10 +113,7 @@
                     .OrderBy(g => g.Key))
                 {
                     <div class="mb-3">
-                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-2">
-                            <i class="bi bi-folder2 me-1"></i>
-                            @group.Key
-                        </h6>
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">@group.Key</h6>
                         <div class="row g-2">
                             @foreach (var widget in group.OrderBy(w => w.Name))
                             {
@@ -124,40 +121,19 @@
                                 var isExisting = ExistingWidgetKeys.Contains(itemKey);
                                 var isSelected = selectedItemKeys.Contains(itemKey);
                                 var capturedItemKey = itemKey;
+                                var iconClass = widget.ItemType == NavigationItemType.QuickAction
+                                    ? "bi bi-wrench-adjustable"
+                                    : widget.IconClass?.Contains("printer") == true
+                                        ? "bi bi-printer-fill"
+                                        : "bi bi-window";
 
-                                <div class="col-lg-4 col-md-6">
+                                <div class="col-lg-2 col-md-4 col-6">
                                     <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"
                                          @onclick="@(() => ToggleWidget(capturedItemKey, isExisting))">
-                                        <div class="d-flex align-items-center">
-                                            <div class="picker-checkbox me-2">
-                                                @if (isExisting)
-                                                {
-                                                    <i class="bi bi-check-square-fill text-success"></i>
-                                                }
-                                                else if (isSelected)
-                                                {
-                                                    <i class="bi bi-check-square-fill text-success"></i>
-                                                }
-                                                else
-                                                {
-                                                    <i class="bi bi-square text-muted"></i>
-                                                }
-                                            </div>
-                                            <div class="picker-icon me-2">
-                                                <i class="@widget.IconClass"></i>
-                                            </div>
-                                            <div class="picker-info">
-                                                <div class="picker-name">@widget.Name</div>
-                                                @if (!string.IsNullOrEmpty(widget.Description))
-                                                {
-                                                    <div class="picker-desc">@widget.Description</div>
-                                                }
-                                            </div>
+                                        <div class="picker-icon me-2">
+                                            <i class="@iconClass"></i>
                                         </div>
-                                        @if (isExisting)
-                                        {
-                                            <span class="badge bg-success ms-auto">已加入</span>
-                                        }
+                                        <div class="picker-name">@widget.Name</div>
                                     </div>
                                 </div>
                             }
@@ -180,41 +156,19 @@
                 var isExisting = ExistingWidgetKeys.Contains(itemKey);
                 var isSelected = selectedItemKeys.Contains(itemKey);
                 var capturedItemKey = itemKey;
+                var iconClass = widget.ItemType == NavigationItemType.QuickAction
+                    ? "bi bi-wrench-adjustable"
+                    : widget.IconClass?.Contains("printer") == true
+                        ? "bi bi-printer-fill"
+                        : "bi bi-window";
 
-                <div class="col-lg-4 col-md-6">
+                <div class="col-lg-2 col-md-4 col-6">
                     <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"
                          @onclick="@(() => ToggleWidget(capturedItemKey, isExisting))">
-                        <div class="d-flex align-items-center">
-                            <div class="picker-checkbox me-2">
-                                @if (isExisting)
-                                {
-                                    <i class="bi bi-check-square-fill text-success"></i>
-                                }
-                                else if (isSelected)
-                                {
-                                    <i class="bi bi-check-square-fill text-success"></i>
-                                }
-                                else
-                                {
-                                    <i class="bi bi-square text-muted"></i>
-                                }
-                            </div>
-                            <div class="picker-icon me-2">
-                                <i class="@widget.IconClass"></i>
-                            </div>
-                            <div class="picker-info">
-                                <div class="picker-name">@widget.Name</div>
-                                @if (!string.IsNullOrEmpty(widget.Description))
-                                {
-                                    <div class="picker-desc">@widget.Description</div>
-                                }
-                                <div class="picker-category text-muted small">@widget.Category</div>
-                            </div>
+                        <div class="picker-icon me-2">
+                            <i class="@iconClass"></i>
                         </div>
-                        @if (isExisting)
-                        {
-                            <span class="badge bg-success ms-auto">已加入</span>
-                        }
+                        <div class="picker-name">@widget.Name</div>
                     </div>
                 </div>
             }
