@@ -258,6 +258,8 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierRosterReportService, SupplierRosterReportService>();
             // 廠商詳細資料報表服務（AP005）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierDetailReportService, SupplierDetailReportService>();
+            // 廢料記錄報表服務（WL001）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IWasteRecordReportService, WasteRecordReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
         }

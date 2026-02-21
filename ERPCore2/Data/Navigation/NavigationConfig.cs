@@ -702,6 +702,22 @@ public static class NavigationConfig
                         QuickActionId = "NewWasteType",
                         QuickActionName = "新增廢料類型"
                     },
+
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
+                    NavigationActionHelper.CreateActionItem(
+                        name: "廢料報表集",
+                        description: "查看和列印所有廢料相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenWasteReportIndex",
+                        category: "廢料管理",
+                        requiredPermission: "WasteRecord.Read",
+                        searchKeywords: new List<string> { "廢料報表", "廢料報表集", "waste report", "廢料記錄表" }
+                    ),
                 }
             },
 

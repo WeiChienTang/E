@@ -1,5 +1,9 @@
 @* 可重用的廢料記錄編輯組件 *@
+@using ERPCore2.Models.Reports
+@using ERPCore2.Services.Reports
+@using ERPCore2.Services.Reports.Interfaces
 @inject IWasteRecordService WasteRecordService
+@inject IWasteRecordReportService WasteRecordReportService
 @inject IWasteTypeService WasteTypeService
 @inject IVehicleService VehicleService
 @inject ICustomerService CustomerService
@@ -31,6 +35,12 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(WasteRecordId.HasValue ? "廢料記錄更新成功" : "廢料記錄新增成功")"
                           SaveFailureMessage="廢料記錄儲存失敗"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@WasteRecordReportService"
+                          ReportId="@ReportIds.WasteRecord"
+                          ReportPreviewTitle="廢料記錄預覽"
+                          GetReportDocumentName="@(e => $"廢料記錄-{e.Code}")"
                           RequiredPermission="WasteRecord.Read"
                           OnEntitySaved="@HandleWasteRecordSavedAsync"
                           OnCancel="@OnCancel"

@@ -369,6 +369,20 @@ public static class ReportRegistry
                 IsEnabled = true
             },
 
+            // ==================== 廢料報表 ====================
+            new ReportDefinition
+            {
+                Id = ReportIds.WasteRecord,
+                Name = "廢料記錄表",
+                Description = "列印廢料記錄清單，依廢料類型分組，含車牌號碼、客戶、入庫倉庫、重量及費用明細",
+                IconClass = "bi bi-recycle",
+                Category = ReportCategory.Waste,
+                RequiredPermission = "WasteRecord.Read",
+                ActionId = "OpenWasteRecordReport",
+                SortOrder = 1,
+                IsEnabled = true
+            },
+
             // ==================== 財務報表 ====================
             new ReportDefinition
             {
@@ -478,6 +492,14 @@ public static class ReportRegistry
     public static List<ReportDefinition> GetVehicleReports()
     {
         return GetReportsByCategory(ReportCategory.Vehicle);
+    }
+
+    /// <summary>
+    /// 取得廢料相關報表
+    /// </summary>
+    public static List<ReportDefinition> GetWasteReports()
+    {
+        return GetReportsByCategory(ReportCategory.Waste);
     }
 
     /// <summary>

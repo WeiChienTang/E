@@ -534,6 +534,28 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // ==================== 廢料報表 ====================
+
+        // WL001 - 廢料記錄表（依廢料類型分組，含費用統計）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.WasteRecord,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(WasteRecordCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IWasteRecordReportService),
+            PreviewTitle = "廢料記錄表預覽",
+            FilterTitle = "廢料記錄表篩選條件",
+            IconClass = "bi-recycle",
+            GetDocumentName = criteria =>
+            {
+                var c = (WasteRecordCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"廢料記錄表-{dateRange}";
+            }
+        });
+
         // ==================== 財務報表 ====================
 
         // 應收沖款單（報表集進入時顯示篩選，EditModal 直接單筆列印）

@@ -119,27 +119,4 @@ public class SimpleQueryCounterInterceptor : DbCommandInterceptor
         }
     }
 
-    /// <summary>
-    /// 顯示統計摘要
-    /// </summary>
-    public static void ShowSummary()
-    {
-        lock (_lock)
-        {
-            Console.WriteLine(new string('=', 60));
-            Console.WriteLine("Database Query Statistics");
-            Console.WriteLine($"Total Queries Executed: {_queryCount}");
-            
-            if (_tableAccessCount.Any())
-            {
-                Console.WriteLine("Table Access Count:");
-                foreach (var table in _tableAccessCount.OrderByDescending(kvp => kvp.Value))
-                {
-                    var icon = table.Value > 5 ? "⚠" : "✓";
-                    Console.WriteLine($"  {icon} {table.Key}: {table.Value} times");
-                }
-            }
-            Console.WriteLine(new string('=', 60));
-        }
-    }
 }

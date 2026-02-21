@@ -2,6 +2,9 @@
 @using System.Security.Claims
 @using ERPCore2.Helpers
 @using ERPCore2.Helpers.EditModal
+@using ERPCore2.Models.Reports
+@using ERPCore2.Services.Reports
+@using ERPCore2.Services.Reports.Interfaces
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject IEmployeePositionService EmployeePositionService
@@ -11,6 +14,7 @@
 @inject INavigationPermissionService NavigationPermissionService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IVehicleService VehicleService
+@inject IEmployeeDetailReportService EmployeeDetailReportService
 
 <GenericEditModalComponent TEntity="Employee"
                           TService="IEmployeeService"
@@ -37,7 +41,13 @@
                           OnSaveSuccess="@OnSaveSuccess"
                           RequiredPermission="Employee.Read"
                           OnCancel="@OnCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@EmployeeDetailReportService"
+                          ReportId="@ReportIds.EmployeeDetail"
+                          ReportPreviewTitle="員工資料預覽"
+                          GetReportDocumentName="@(e => $"員工-{e.Code}-{e.Name}")" />
 
 @* 部門編輯 Modal *@
 <DepartmentEditModalComponent @ref="departmentEditModal"
