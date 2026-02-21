@@ -1,4 +1,6 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Models.Reports.FilterAttributes;
+using ERPCore2.Services;
 
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
@@ -10,6 +12,12 @@ public class VehicleMaintenanceCriteria : IReportFilterCriteria
     /// <summary>
     /// 指定車輛 ID 清單（空表示所有車輛）
     /// </summary>
+    [FilterFK(typeof(IVehicleService),
+        Group = FilterGroup.Basic,
+        Label = "指定車輛",
+        Placeholder = "搜尋車輛...",
+        EmptyMessage = "未選擇車輛（查詢全部車輛）",
+        Order = 1)]
     public List<int> VehicleIds { get; set; } = new();
 
     /// <summary>
@@ -20,6 +28,7 @@ public class VehicleMaintenanceCriteria : IReportFilterCriteria
     /// <summary>
     /// 起始日期
     /// </summary>
+    [FilterDateRange(Group = FilterGroup.Date, Label = "日期範圍", Order = 1)]
     public DateTime? StartDate { get; set; }
 
     /// <summary>
@@ -30,6 +39,7 @@ public class VehicleMaintenanceCriteria : IReportFilterCriteria
     /// <summary>
     /// 關鍵字搜尋（車牌號碼、維修廠、保養描述）
     /// </summary>
+    [FilterKeyword(Group = FilterGroup.Basic, Label = "關鍵字", Placeholder = "搜尋車牌號碼、維修廠、保養描述...", Order = 2)]
     public string? Keyword { get; set; }
 
     /// <summary>

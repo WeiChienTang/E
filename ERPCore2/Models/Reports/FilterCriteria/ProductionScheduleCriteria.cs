@@ -1,6 +1,8 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
+using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
+using ERPCore2.Services;
 
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
@@ -12,6 +14,7 @@ public class ProductionScheduleCriteria : IReportFilterCriteria
     /// <summary>
     /// 排程日期起始
     /// </summary>
+    [FilterDateRange(Group = FilterGroup.Date, Label = "日期範圍", Order = 1)]
     public DateTime? StartDate { get; set; }
 
     /// <summary>
@@ -27,16 +30,24 @@ public class ProductionScheduleCriteria : IReportFilterCriteria
     /// <summary>
     /// 指定客戶 ID 清單（空表示所有客戶）
     /// </summary>
+    [FilterFK(typeof(ICustomerService),
+        Group = FilterGroup.Basic,
+        Label = "指定客戶",
+        Placeholder = "搜尋客戶...",
+        EmptyMessage = "未選擇客戶（查詢全部客戶）",
+        Order = 1)]
     public List<int> CustomerIds { get; set; } = new();
 
     /// <summary>
     /// 生產狀態篩選（空表示所有狀態）
     /// </summary>
+    [FilterEnum(typeof(ProductionItemStatus), Group = FilterGroup.Quick, Label = "生產狀態", Order = 1)]
     public List<ProductionItemStatus> StatusFilters { get; set; } = new();
 
     /// <summary>
     /// 是否包含已結案項目
     /// </summary>
+    [FilterToggle(Group = FilterGroup.Quick, Label = "生產狀態", CheckboxLabel = "包含已結案", DefaultValue = false, Order = 2)]
     public bool IncludeClosed { get; set; } = false;
 
     /// <summary>

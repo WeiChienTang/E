@@ -12,25 +12,25 @@ public static class FilterTemplateRegistry
     private static readonly ConcurrentDictionary<string, ReportFilterConfig> _configs = new();
     private static readonly object _initLock = new();
     private static volatile bool _isInitialized = false;
-    
+
     /// <summary>
     /// 初始化註冊表（直接在此定義所有模板配置）
     /// </summary>
     public static void Initialize()
     {
         if (_isInitialized) return;
-        
+
         lock (_initLock)
         {
             if (_isInitialized) return;
-        
+
         // ==================== 客戶報表 ====================
 
         // 客戶對帳單（含期初餘額、出貨/退貨/收款明細、期末餘額）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.CustomerStatement,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerStatementBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(CustomerStatementCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerStatementReportService),
             PreviewTitle = "客戶對帳單預覽",
@@ -50,7 +50,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.AccountsReceivable,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.AccountsReceivableFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(AccountsReceivableCriteria),
             ReportServiceType = null,  // TODO: 待實作 IAccountsReceivableReportService
             PreviewTitle = "應收帳款報表預覽",
@@ -70,7 +70,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.CustomerSalesAnalysis,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerSalesAnalysisBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(CustomerSalesAnalysisCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerSalesAnalysisReportService),
             PreviewTitle = "客戶銷售分析預覽",
@@ -90,7 +90,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.CustomerTransaction,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerTransactionBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(CustomerTransactionCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerTransactionReportService),
             PreviewTitle = "客戶交易明細預覽",
@@ -110,7 +110,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.CustomerRoster,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerRosterBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(CustomerRosterCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerRosterReportService),
             PreviewTitle = "客戶名冊表預覽",
@@ -126,7 +126,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.CustomerDetail,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerRosterBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(CustomerRosterCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerDetailReportService),
             PreviewTitle = "客戶詳細資料預覽",
@@ -144,7 +144,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.SupplierStatement,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SupplierStatementBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(SupplierStatementCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISupplierStatementReportService),
             PreviewTitle = "廠商對帳單預覽",
@@ -164,7 +164,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.SupplierRoster,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SupplierRosterBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(SupplierRosterCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISupplierRosterReportService),
             PreviewTitle = "廠商名冊表預覽",
@@ -180,7 +180,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.SupplierDetail,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SupplierRosterBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(SupplierRosterCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISupplierDetailReportService),
             PreviewTitle = "廠商詳細資料預覽",
@@ -198,146 +198,146 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.PurchaseOrder,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.PurchaseOrderBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(PurchaseOrderBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IPurchaseOrderReportService),
             PreviewTitle = "採購單列印預覽",
             FilterTitle = "採購單列印篩選條件",
             IconClass = "bi-cart-plus",
-            GetDocumentName = criteria => 
+            GetDocumentName = criteria =>
             {
                 var c = (PurchaseOrderBatchPrintCriteria)criteria;
-                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
-                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"採購單-{dateRange}";
             }
         });
-        
+
         // 進貨單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.PurchaseReceiving,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.PurchaseReceivingBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(PurchaseReceivingBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IPurchaseReceivingReportService),
             PreviewTitle = "進貨單列印預覽",
             FilterTitle = "進貨單列印篩選條件",
             IconClass = "bi-box-arrow-in-down",
-            GetDocumentName = criteria => 
+            GetDocumentName = criteria =>
             {
                 var c = (PurchaseReceivingBatchPrintCriteria)criteria;
-                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
-                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"進貨單-{dateRange}";
             }
         });
-        
+
         // 進貨退出單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.PurchaseReturn,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.PurchaseReturnBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(PurchaseReturnBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IPurchaseReturnReportService),
             PreviewTitle = "進貨退出單列印預覽",
             FilterTitle = "進貨退出單列印篩選條件",
             IconClass = "bi-box-arrow-up",
-            GetDocumentName = criteria => 
+            GetDocumentName = criteria =>
             {
                 var c = (PurchaseReturnBatchPrintCriteria)criteria;
-                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
-                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"進貨退出單-{dateRange}";
             }
         });
-        
+
         // ==================== 銷售報表 ====================
-        
+
         // 報價單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.Quotation,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.QuotationBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(QuotationBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IQuotationReportService),
             PreviewTitle = "報價單列印預覽",
             FilterTitle = "報價單列印篩選條件",
             IconClass = "bi-file-earmark-text",
-            GetDocumentName = criteria => 
+            GetDocumentName = criteria =>
             {
                 var c = (QuotationBatchPrintCriteria)criteria;
-                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
-                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"報價單-{dateRange}";
             }
         });
-        
+
         // 訂單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.SalesOrder,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SalesOrderBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(SalesOrderBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISalesOrderReportService),
             PreviewTitle = "訂單列印預覽",
             FilterTitle = "訂單列印篩選條件",
             IconClass = "bi-file-earmark-text",
-            GetDocumentName = criteria => 
+            GetDocumentName = criteria =>
             {
                 var c = (SalesOrderBatchPrintCriteria)criteria;
-                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
-                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"訂單-{dateRange}";
             }
         });
-        
+
         // 銷貨單（出貨單）（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.SalesDelivery,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SalesDeliveryBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(SalesDeliveryBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISalesDeliveryReportService),
             PreviewTitle = "銷貨單列印預覽",
             FilterTitle = "銷貨單列印篩選條件",
             IconClass = "bi-file-earmark-text",
-            GetDocumentName = criteria => 
+            GetDocumentName = criteria =>
             {
                 var c = (SalesDeliveryBatchPrintCriteria)criteria;
-                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
-                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"銷貨單-{dateRange}";
             }
         });
-        
+
         // 銷貨退回單（報表集進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.SalesReturn,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SalesReturnBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(SalesReturnBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISalesReturnReportService),
             PreviewTitle = "銷貨退回單列印預覽",
             FilterTitle = "銷貨退回單列印篩選條件",
             IconClass = "bi-file-earmark-text",
-            GetDocumentName = criteria => 
+            GetDocumentName = criteria =>
             {
                 var c = (SalesReturnBatchPrintCriteria)criteria;
-                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
-                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"銷貨退回單-{dateRange}";
             }
         });
-        
+
         // ==================== 商品報表 ====================
-        
+
         // 商品條碼標籤
         RegisterConfig(new ReportFilterConfig
         {
@@ -348,7 +348,7 @@ public static class FilterTemplateRegistry
             PreviewTitle = "商品條碼標籤預覽",
             FilterTitle = "商品條碼列印篩選條件",
             IconClass = "bi-upc-scan",
-            GetDocumentName = criteria => 
+            GetDocumentName = criteria =>
             {
                 var c = (ProductBarcodeBatchPrintCriteria)criteria;
                 var count = c.ProductIds.Count;
@@ -356,14 +356,14 @@ public static class FilterTemplateRegistry
                 return $"商品條碼-{count}品項-{total}張-{DateTime.Now:yyyyMMddHHmm}";
             }
         });
-        
+
         // ==================== 商品報表（清單式）====================
 
         // PD001 - 商品清單表（報表集進入時顯示篩選，清單式報表）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.ProductList,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ProductListBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(ProductListBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductListReportService),
             PreviewTitle = "商品清單表預覽",
@@ -379,7 +379,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.ProductDetail,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ProductListBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(ProductListBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductDetailReportService),
             PreviewTitle = "商品詳細資料預覽",
@@ -392,7 +392,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.BOMReport,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.BOMBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(BOMReportCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IBOMReportService),
             PreviewTitle = "物料清單報表預覽",
@@ -408,7 +408,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.ProductionSchedule,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ProductionScheduleBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(ProductionScheduleCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductionScheduleReportService),
             PreviewTitle = "生產排程表預覽",
@@ -430,7 +430,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.InventoryStatus,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.InventoryStatusBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(InventoryStatusCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IInventoryStatusReportService),
             PreviewTitle = "庫存現況表預覽",
@@ -446,7 +446,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.InventoryCount,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.StockTakingDifferenceBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(StockTakingDifferenceCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IStockTakingDifferenceReportService),
             PreviewTitle = "庫存盤點差異表預覽",
@@ -468,7 +468,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.VehicleList,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.VehicleListBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(VehicleListCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IVehicleListReportService),
             PreviewTitle = "車輛管理表預覽",
@@ -484,7 +484,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.VehicleMaintenance,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.VehicleMaintenanceBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(VehicleMaintenanceCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IVehicleMaintenanceReportService),
             PreviewTitle = "車輛保養表預覽",
@@ -506,7 +506,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.EmployeeRoster,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.EmployeeRosterBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(EmployeeRosterCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IEmployeeRosterReportService),
             PreviewTitle = "員工名冊表預覽",
@@ -522,7 +522,7 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.EmployeeDetail,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.EmployeeRosterBatchFilterTemplate",
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(EmployeeRosterCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IEmployeeDetailReportService),
             PreviewTitle = "員工詳細資料預覽",
@@ -540,15 +540,15 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.AccountsReceivableSetoff,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.AccountsReceivableSetoffBatchFilterTemplate",
-            CriteriaType = typeof(SetoffDocumentBatchPrintCriteria),
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(AccountsReceivableSetoffCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISetoffDocumentReportService),
             PreviewTitle = "應收沖款單列印預覽",
             FilterTitle = "應收沖款單列印篩選條件",
             IconClass = "bi-receipt-cutoff",
             GetDocumentName = criteria =>
             {
-                var c = (SetoffDocumentBatchPrintCriteria)criteria;
+                var c = (AccountsReceivableSetoffCriteria)criteria;
                 var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
                     ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
@@ -560,15 +560,15 @@ public static class FilterTemplateRegistry
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.AccountsPayableSetoff,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.AccountsPayableSetoffBatchFilterTemplate",
-            CriteriaType = typeof(SetoffDocumentBatchPrintCriteria),
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(AccountsPayableSetoffCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISetoffDocumentReportService),
             PreviewTitle = "應付沖款單列印預覽",
             FilterTitle = "應付沖款單列印篩選條件",
             IconClass = "bi-receipt-cutoff",
             GetDocumentName = criteria =>
             {
-                var c = (SetoffDocumentBatchPrintCriteria)criteria;
+                var c = (AccountsPayableSetoffCriteria)criteria;
                 var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
                     ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
@@ -579,7 +579,7 @@ public static class FilterTemplateRegistry
             _isInitialized = true;
         }
     }
-    
+
     /// <summary>
     /// 確保已初始化（延遲初始化）
     /// </summary>
@@ -590,7 +590,7 @@ public static class FilterTemplateRegistry
             Initialize();
         }
     }
-    
+
     /// <summary>
     /// 註冊篩選配置
     /// </summary>
@@ -598,7 +598,7 @@ public static class FilterTemplateRegistry
     {
         _configs.TryAdd(config.ReportId, config);
     }
-    
+
     /// <summary>
     /// 根據報表 ID 取得篩選配置
     /// </summary>
@@ -608,7 +608,7 @@ public static class FilterTemplateRegistry
     {
         return _configs.GetValueOrDefault(reportId);
     }
-    
+
     /// <summary>
     /// 檢查報表是否有篩選配置
     /// </summary>
@@ -616,7 +616,7 @@ public static class FilterTemplateRegistry
     {
         return _configs.ContainsKey(reportId);
     }
-    
+
     /// <summary>
     /// 取得所有已註冊的配置
     /// </summary>

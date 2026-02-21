@@ -1,4 +1,6 @@
+using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
+using ERPCore2.Services;
 
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
@@ -11,38 +13,46 @@ public class SalesOrderBatchPrintCriteria : IReportFilterCriteria
     /// <summary>
     /// 客戶 ID 清單（空表示所有客戶）
     /// </summary>
+    [FilterFK(typeof(ICustomerService),
+        Group = FilterGroup.Basic,
+        Label = "指定客戶",
+        Placeholder = "搜尋客戶...",
+        EmptyMessage = "未選擇客戶",
+        Order = 1)]
     public List<int> CustomerIds { get; set; } = new();
-    
+
     /// <summary>
     /// 起始日期（訂單日期）
     /// </summary>
+    [FilterDateRange(Group = FilterGroup.Date, Label = "訂單日期", Order = 1)]
     public DateTime? StartDate { get; set; }
-    
+
     /// <summary>
     /// 結束日期（訂單日期）
     /// </summary>
     public DateTime? EndDate { get; set; }
-    
+
     /// <summary>
     /// 單據狀態清單（空表示所有狀態）
     /// </summary>
     public List<string> Statuses { get; set; } = new();
-    
+
     /// <summary>
     /// 單據編號關鍵字（模糊搜尋）
     /// </summary>
+    [FilterKeyword(Group = FilterGroup.Quick, Label = "單號", Placeholder = "模糊搜尋...", Order = 1)]
     public string? DocumentNumberKeyword { get; set; }
-    
+
     /// <summary>
     /// 是否包含已取消的單據
     /// </summary>
     public bool IncludeCancelled { get; set; } = false;
-    
+
     /// <summary>
     /// 排序欄位
     /// </summary>
     public string SortBy { get; set; } = "OrderDate";
-    
+
     /// <summary>
     /// 排序方向（true = 降序）
     /// </summary>
@@ -56,7 +66,7 @@ public class SalesOrderBatchPrintCriteria : IReportFilterCriteria
             errorMessage = "起始日期不能大於結束日期";
             return false;
         }
-        
+
         // 日期範圍不能過大（超過1年）
         if (StartDate.HasValue && EndDate.HasValue)
         {
@@ -67,7 +77,7 @@ public class SalesOrderBatchPrintCriteria : IReportFilterCriteria
                 return false;
             }
         }
-        
+
         errorMessage = null;
         return true;
     }
@@ -86,7 +96,7 @@ public class SalesOrderBatchPrintCriteria : IReportFilterCriteria
             ["sortDescending"] = SortDescending
         };
     }
-    
+
     /// <summary>
     /// 轉換為 BatchPrintCriteria（用於呼叫現有的報表服務）
     /// </summary>
@@ -106,7 +116,7 @@ public class SalesOrderBatchPrintCriteria : IReportFilterCriteria
             ReportType = "SalesOrder"
         };
     }
-    
+
     /// <summary>
     /// 取得篩選條件摘要
     /// </summary>

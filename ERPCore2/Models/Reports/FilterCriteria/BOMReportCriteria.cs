@@ -1,5 +1,7 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
+using ERPCore2.Services;
 
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
@@ -11,16 +13,25 @@ public class BOMReportCriteria : IReportFilterCriteria
     /// <summary>
     /// 成品（父商品）ID 清單（空表示所有成品）
     /// </summary>
+    [FilterFK(typeof(IProductCompositionService),
+        Group = FilterGroup.Basic,
+        Label = "指定成品",
+        Placeholder = "搜尋成品品號或品名...",
+        EmptyMessage = "未選擇成品（查詢全部）",
+        DisplayFormat = FilterDisplayFormat.CodeDashName,
+        Order = 1)]
     public List<int> ParentProductIds { get; set; } = new();
 
     /// <summary>
     /// 關鍵字搜尋（配方編號、成品品號、成品品名）
     /// </summary>
+    [FilterKeyword(Group = FilterGroup.Quick, Label = "關鍵字", Placeholder = "搜尋配方編號、成品品號、成品品名...", Order = 1)]
     public string? Keyword { get; set; }
 
     /// <summary>
     /// 是否僅顯示啟用（預設 true）
     /// </summary>
+    [FilterToggle(Group = FilterGroup.Quick, Label = "顯示條件", CheckboxLabel = "僅啟用", DefaultValue = true, Order = 2)]
     public bool ActiveOnly { get; set; } = true;
 
     /// <summary>

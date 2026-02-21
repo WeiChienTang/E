@@ -1,5 +1,7 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
+using ERPCore2.Services;
 
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
@@ -11,16 +13,25 @@ public class SupplierRosterCriteria : IReportFilterCriteria
     /// <summary>
     /// 指定廠商 ID 清單（空表示所有廠商）
     /// </summary>
+    [FilterFK(typeof(ISupplierService),
+        Group = FilterGroup.Basic,
+        Label = "指定廠商",
+        Placeholder = "搜尋廠商編號、名稱...",
+        EmptyMessage = "未選擇廠商（查詢全部）",
+        DisplayFormat = FilterDisplayFormat.CodeDashName,
+        Order = 1)]
     public List<int> SupplierIds { get; set; } = new();
 
     /// <summary>
     /// 關鍵字搜尋（廠商編號、公司名稱、聯絡人、統編）
     /// </summary>
+    [FilterKeyword(Group = FilterGroup.Quick, Label = "關鍵字", Placeholder = "搜尋廠商編號、廠商名稱、聯絡人、統編...", Order = 1)]
     public string? Keyword { get; set; }
 
     /// <summary>
     /// 是否僅顯示啟用廠商（預設 true）
     /// </summary>
+    [FilterToggle(Group = FilterGroup.Quick, Label = "顯示條件", CheckboxLabel = "僅啟用", DefaultValue = true, Order = 2)]
     public bool ActiveOnly { get; set; } = true;
 
     /// <summary>

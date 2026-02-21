@@ -1,5 +1,7 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
+using ERPCore2.Services;
 
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
@@ -11,11 +13,18 @@ public class CustomerSalesAnalysisCriteria : IReportFilterCriteria
     /// <summary>
     /// 指定客戶 ID 清單（空表示所有客戶）
     /// </summary>
+    [FilterFK(typeof(ICustomerService),
+        Group = FilterGroup.Basic,
+        Label = "指定客戶",
+        Placeholder = "搜尋客戶...",
+        EmptyMessage = "未選擇客戶（分析全部客戶）",
+        Order = 1)]
     public List<int> CustomerIds { get; set; } = new();
 
     /// <summary>
     /// 起始日期
     /// </summary>
+    [FilterDateRange(Group = FilterGroup.Date, Label = "日期範圍", Order = 1)]
     public DateTime? StartDate { get; set; }
 
     /// <summary>
@@ -26,6 +35,7 @@ public class CustomerSalesAnalysisCriteria : IReportFilterCriteria
     /// <summary>
     /// 是否排除已取消的訂單
     /// </summary>
+    [FilterToggle(Group = FilterGroup.Basic, Label = "選項", CheckboxLabel = "排除已取消", DefaultValue = true, Order = 2)]
     public bool ExcludeCancelled { get; set; } = true;
 
     /// <summary>

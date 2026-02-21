@@ -1,4 +1,6 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Models.Reports.FilterAttributes;
+using ERPCore2.Services;
 
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
@@ -10,6 +12,12 @@ public class VehicleListCriteria : IReportFilterCriteria
     /// <summary>
     /// 指定車型 ID 清單（空表示所有車型）
     /// </summary>
+    [FilterFK(typeof(IVehicleTypeService),
+        Group = FilterGroup.Basic,
+        Label = "指定車型",
+        Placeholder = "搜尋車型...",
+        EmptyMessage = "未選擇車型（查詢全部車型）",
+        Order = 1)]
     public List<int> VehicleTypeIds { get; set; } = new();
 
     /// <summary>
@@ -20,11 +28,13 @@ public class VehicleListCriteria : IReportFilterCriteria
     /// <summary>
     /// 關鍵字搜尋（車牌號碼、車輛名稱、廠牌）
     /// </summary>
+    [FilterKeyword(Group = FilterGroup.Quick, Label = "關鍵字", Placeholder = "搜尋車牌號碼、車輛名稱、廠牌...", Order = 1)]
     public string? Keyword { get; set; }
 
     /// <summary>
     /// 是否僅顯示啟用車輛（預設 true）
     /// </summary>
+    [FilterToggle(Group = FilterGroup.Quick, Label = "顯示條件", CheckboxLabel = "僅啟用", DefaultValue = true, Order = 2)]
     public bool ActiveOnly { get; set; } = true;
 
     /// <summary>

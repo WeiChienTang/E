@@ -1,19 +1,19 @@
 # 報表篩選架構設計說明
 
 ## 更新日期
-2026-02-17
+2026-02-21
 
 ---
 
 ## 📋 設計概述
 
-報表篩選架構採用**模板註冊模式**，提供統一的篩選 UI 管理機制：
+報表篩選架構採用 **Attribute 驅動的動態模板模式**，所有報表共用單一 `DynamicFilterTemplate.razor`，篩選 UI 由 Criteria 類別屬性上的 `Filter*Attribute` 自動產生：
 
-- **模板註冊表**：集中管理報表 ID 與篩選模板的對應關係
-- **動態載入**：根據 ReportId 自動載入對應的篩選模板組件
-- **介面統一**：所有篩選模板實作 `IFilterTemplateComponent` 介面
-- **佈局統一**：所有篩選模板使用 `FilterSectionGroup` + `FilterSectionColumn` 分欄佈局，欄位使用 `FilterFieldRow` 包裝
-- **可擴展**：新增報表只需建立模板組件並註冊即可
+- **Criteria 驅動**：在 Criteria 屬性上標記 `Filter*Attribute`，即可宣告篩選欄位的類型、標籤、資料來源
+- **單一模板**：`DynamicFilterTemplate.razor` 透過反射讀取 Criteria，自動產生 3 欄佈局（基本篩選／日期範圍／快速條件）
+- **零 UI 程式碼**：新增報表篩選不需撰寫 `.razor` 模板，只需修改 Criteria 類別
+- **介面統一**：`DynamicFilterTemplate` 實作 `IFilterTemplateComponent` 介面
+- **可擴展**：新增報表只需建立 Criteria（加 Attribute）並在 Registry 登記即可
 
 ---
 
@@ -25,18 +25,18 @@
 │   GenericReportFilterModalComponent                              │
 │   - 接收 ReportId 參數                                           │
 │   - 從 FilterTemplateRegistry 取得配置                          │
-│   - 使用 DynamicComponent 動態載入篩選模板                      │
-│   - 處理確認/取消事件                                            │
-│   - 呼叫報表服務並開啟預覽                                       │
+│   - 使用 DynamicComponent 動態載入 DynamicFilterTemplate        │
+│   - 傳入 CriteriaType 參數                                       │
+│   - 處理確認/取消事件，呼叫報表服務並開啟預覽                    │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│                Layer 2: 篩選模板組件                             │
-│   IFilterTemplateComponent                                       │
-│   - 例如: PurchaseOrderBatchFilterTemplate                       │
-│   - 提供篩選 UI（使用原子篩選組件）                              │
-│   - 實作 GetCriteria() 返回篩選條件 DTO                         │
-│   - 實作 Reset() 重置為預設值                                   │
+│                Layer 2: 通用動態篩選模板（唯一）                 │
+│   DynamicFilterTemplate.razor                                    │
+│   - 透過反射讀取 CriteriaType 上的 Filter*Attribute             │
+│   - 自動分組：基本篩選 / 日期範圍 / 快速條件                    │
+│   - 實作 GetCriteria() / Reset()                                │
+│   - 用 IServiceProvider 動態載入 FK 資料                        │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -58,35 +58,34 @@
 ```
 Models/Reports/
 ├── ReportIds.cs                             # 報表 ID 常數（唯一來源）
-├── FilterCriteria/                          # 篩選條件 DTO
-│   ├── IReportFilterCriteria.cs            # 基礎介面
-│   ├── AccountsReceivableCriteria.cs       # 應收帳款篩選條件
-│   └── PurchaseOrderBatchPrintCriteria.cs  # 採購單批次篩選條件
-│
+├── FilterAttributes/
+│   └── FilterFieldAttributes.cs            # Filter*Attribute 定義
+│       ├── FilterGroup (enum)              # Basic=1, Date=2, Quick=3
+│       ├── FilterDisplayFormat (enum)      # NameOnly, CodeDashName, CodeOnly
+│       ├── FilterDisplayItem (class)       # Id + DisplayName（DynamicFilterTemplate 內部使用）
+│       ├── FilterFKAttribute               # List<int> FK 多選
+│       ├── FilterEnumAttribute             # List<TEnum> Enum 多選
+│       ├── FilterDateRangeAttribute        # DateTime? 日期範圍（標在 Start 屬性）
+│       ├── FilterKeywordAttribute          # string? 關鍵字搜尋
+│       └── FilterToggleAttribute          # bool Checkbox 切換
+├── FilterCriteria/                          # 篩選條件 DTO（實作 IReportFilterCriteria）
+│   ├── IReportFilterCriteria.cs
+│   └── [Entity]Criteria.cs                 # 屬性上標記 Filter*Attribute
 └── FilterTemplates/                         # 模板配置
-    ├── ReportFilterConfig.cs               # 篩選配置模型 + IFilterTemplateComponent
+    ├── ReportFilterConfig.cs               # 篩選配置模型
     └── FilterTemplateRegistry.cs           # 模板註冊表（集中管理所有配置）
 
 Components/Shared/Report/
 ├── GenericReportFilterModalComponent.razor  # 通用篩選 Modal
 ├── FilterTemplateInitializer.cs             # 模板初始化器
 ├── FilterSectionGroup.razor                 # 分欄容器（自動 1-3 欄水平排列）
-├── FilterSectionGroup.razor.css             # 分欄容器樣式
 ├── FilterSectionColumn.razor                # 區段欄（標題 + 欄位直向堆疊）
-├── FilterSectionColumn.razor.css            # 區段欄樣式（標題色、欄寬）
 ├── FilterFieldRow.razor                     # 篩選欄位行（標題 + 內容同行佈局）
-├── FilterFieldRow.razor.css                 # FilterFieldRow 樣式（藍色標題、固定寬度）
 ├── SearchSelectFilterComponent.razor        # 搜尋式多選（搜尋 → 下拉 → badge 標籤）
 ├── DateRangeFilterComponent.razor           # 日期範圍（含快速選擇按鈕）
 ├── TextSearchFilterComponent.razor          # 文字搜尋
-│
-└── FilterTemplates/                         # 篩選模板組件（24 個）
-    ├── EmployeeRosterBatchFilterTemplate.razor
-    ├── CustomerRosterBatchFilterTemplate.razor
-    ├── SupplierRosterBatchFilterTemplate.razor
-    ├── CustomerStatementBatchFilterTemplate.razor
-    ├── ... 其他 20 個篩選模板
-    └── PurchaseOrderBatchFilterTemplate.razor
+└── FilterTemplates/
+    └── DynamicFilterTemplate.razor          # 通用動態篩選模板（所有報表共用）
 ```
 
 ---
@@ -100,7 +99,7 @@ public interface IReportFilterCriteria
 {
     /// <summary>驗證篩選條件是否有效</summary>
     bool Validate(out string? errorMessage);
-    
+
     /// <summary>轉換為查詢參數字典</summary>
     Dictionary<string, object?> ToQueryParameters();
 }
@@ -113,7 +112,7 @@ public interface IFilterTemplateComponent
 {
     /// <summary>取得目前的篩選條件</summary>
     IReportFilterCriteria GetCriteria();
-    
+
     /// <summary>重置篩選條件為預設值</summary>
     void Reset();
 }
@@ -125,14 +124,14 @@ public interface IFilterTemplateComponent
 public class ReportFilterConfig
 {
     public string ReportId { get; set; }                   // 報表 ID
-    public string FilterTemplateTypeName { get; set; }     // 模板組件完整類別名稱
+    public string FilterTemplateTypeName { get; set; }     // 永遠指向 DynamicFilterTemplate
     public Type CriteriaType { get; set; }                 // 篩選條件 DTO 類型
     public Type? ReportServiceType { get; set; }           // 報表服務類型
     public string PreviewTitle { get; set; }               // 預覽標題
     public string FilterTitle { get; set; }                // 篩選 Modal 標題
     public string IconClass { get; set; }                  // 圖示類別
     public Func<IReportFilterCriteria, string>? GetDocumentName { get; set; }
-    
+
     // 延遲解析模板類型
     public Type GetFilterTemplateType() { ... }
 }
@@ -140,185 +139,145 @@ public class ReportFilterConfig
 
 ---
 
-## 📖 新增報表篩選步驟
+## 🏷️ Filter*Attribute 說明
 
-### 1. 建立篩選條件 DTO
+### FilterFKAttribute（FK 多選下拉）
+
+標記在 `List<int>` 屬性上，`DynamicFilterTemplate` 會用 `IServiceProvider` 解析指定 Service，呼叫 `GetAllAsync()` 載入選項。
 
 ```csharp
-// Models/Reports/FilterCriteria/CustomerStatementCriteria.cs
-public class CustomerStatementCriteria : IReportFilterCriteria
+[FilterFK(typeof(ICustomerService),
+    Group = FilterGroup.Basic,
+    Label = "客戶",
+    Placeholder = "搜尋客戶...",
+    EmptyMessage = "未選擇客戶（查詢全部）",
+    DisplayFormat = FilterDisplayFormat.CodeDashName,  // Code - Name 格式
+    ExcludeProperty = "IsDisabled",                    // 排除 IsDisabled==true 的項目（可選）
+    Order = 1)]
+public List<int> CustomerIds { get; set; } = new();
+```
+
+| 參數 | 說明 | 預設值 |
+|------|------|--------|
+| `ServiceType` | 用於載入選項的 Service 介面型別（必填） | — |
+| `Group` | 顯示在哪個欄位群組 | `FilterGroup.Basic` |
+| `Label` | FilterFieldRow 標籤文字 | `""` |
+| `Placeholder` | 搜尋框提示文字 | `"搜尋..."` |
+| `EmptyMessage` | 未選擇時的提示訊息 | `"未選擇（查詢全部）"` |
+| `DisplayFormat` | 顯示名稱格式（NameOnly / CodeDashName / CodeOnly） | `NameOnly` |
+| `ExcludeProperty` | Entity 上的 bool 屬性名稱，為 true 時排除該筆資料 | `null` |
+| `Order` | 群組內排列順序 | `0` |
+
+### FilterEnumAttribute（Enum 多選下拉）
+
+標記在 `List<TEnum>` 屬性上，自動讀取 `[Display(Name)]` 產生選項。
+
+```csharp
+[FilterEnum(typeof(OrderStatus),
+    Group = FilterGroup.Basic,
+    Label = "訂單狀態",
+    Order = 2)]
+public List<OrderStatus> Statuses { get; set; } = new();
+```
+
+### FilterDateRangeAttribute（日期範圍）
+
+**只標記在 Start 屬性**，End 屬性由命名規則自動推導（`XxxStart` → `XxxEnd`）。
+
+```csharp
+[FilterDateRange(Group = FilterGroup.Date, Label = "訂單日期", Order = 1)]
+public DateTime? OrderDateStart { get; set; }
+public DateTime? OrderDateEnd { get; set; }   // 不加 Attribute，自動配對
+```
+
+若 End 屬性命名不符規則，可手動指定：
+
+```csharp
+[FilterDateRange(Label = "日期", EndPropertyName = "DateTo")]
+public DateTime? DateFrom { get; set; }
+public DateTime? DateTo { get; set; }
+```
+
+### FilterKeywordAttribute（關鍵字搜尋）
+
+標記在 `string?` 屬性上。
+
+```csharp
+[FilterKeyword(Group = FilterGroup.Quick, Label = "關鍵字", Placeholder = "搜尋單號、備注...", Order = 1)]
+public string? Keyword { get; set; }
+```
+
+### FilterToggleAttribute（Checkbox 切換）
+
+標記在 `bool` 屬性上。
+
+```csharp
+[FilterToggle(Group = FilterGroup.Quick, Label = "顯示條件", CheckboxLabel = "僅顯示啟用", DefaultValue = true, Order = 2)]
+public bool ActiveOnly { get; set; } = true;
+```
+
+---
+
+## 📖 新增報表篩選步驟
+
+### 1. 建立篩選條件 Criteria 並加上 Attribute
+
+```csharp
+// Models/Reports/FilterCriteria/SomeReportCriteria.cs
+using ERPCore2.Models.Reports.FilterAttributes;
+using ERPCore2.Services;
+
+public class SomeReportCriteria : IReportFilterCriteria
 {
-    public int CustomerId { get; set; }
+    [FilterFK(typeof(ICustomerService),
+        Group = FilterGroup.Basic,
+        Label = "客戶",
+        Placeholder = "搜尋客戶...",
+        EmptyMessage = "未選擇客戶（查詢全部）",
+        Order = 1)]
+    public List<int> CustomerIds { get; set; } = new();
+
+    [FilterDateRange(Group = FilterGroup.Date, Label = "日期範圍", Order = 1)]
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
-    
-    public bool Validate(out string? errorMessage)
-    {
-        if (CustomerId <= 0)
-        {
-            errorMessage = "請選擇客戶";
-            return false;
-        }
-        errorMessage = null;
-        return true;
-    }
-    
-    public Dictionary<string, object?> ToQueryParameters()
-    {
-        return new Dictionary<string, object?>
-        {
-            ["customerId"] = CustomerId,
-            ["startDate"] = StartDate,
-            ["endDate"] = EndDate
-        };
-    }
+
+    [FilterToggle(Group = FilterGroup.Quick, Label = "顯示條件", CheckboxLabel = "排除已取消", DefaultValue = true, Order = 1)]
+    public bool ExcludeCancelled { get; set; } = true;
+
+    /// <summary>紙張設定（不加 Attribute，不顯示在 UI）</summary>
+    public PaperSetting? PaperSetting { get; set; }
+
+    public bool Validate(out string? errorMessage) { ... }
+    public Dictionary<string, object?> ToQueryParameters() { ... }
 }
 ```
 
-### 2. 建立篩選模板組件
-
-所有篩選欄位使用 `FilterSectionGroup` + `FilterSectionColumn` 分欄，欄位以 `FilterFieldRow` 包裝：
-
-```razor
-@* Components/Shared/Report/FilterTemplates/CustomerStatementFilterTemplate.razor *@
-@using ERPCore2.Models.Reports.FilterTemplates
-@implements IFilterTemplateComponent
-@inject ICustomerService CustomerService
-
-<FilterSectionGroup>
-
-    @* ===== 欄 1：主要篩選 ===== *@
-    <FilterSectionColumn Title="基本篩選" Icon="bi bi-people">
-        <FilterFieldRow Label="指定客戶">
-            <SearchSelectFilterComponent TItem="Customer"
-                                       Items="@customers"
-                                       @bind-SelectedItems="@selectedCustomers"
-                                       DisplayProperty="CompanyName"
-                                       ValueProperty="Id"
-                                       Placeholder="搜尋客戶..."
-                                       EmptyMessage="未選擇客戶（查詢全部客戶）" />
-        </FilterFieldRow>
-    </FilterSectionColumn>
-
-    @* ===== 欄 2：日期範圍 ===== *@
-    <FilterSectionColumn Title="日期範圍" Icon="bi bi-calendar-range">
-        <FilterFieldRow Label="日期範圍">
-            <DateRangeFilterComponent @bind-StartDate="startDate"
-                                      @bind-EndDate="endDate"
-                                      ShowQuickSelectors="true"
-                                      AutoValidate="true"
-                                      ShowValidationMessage="true" />
-        </FilterFieldRow>
-    </FilterSectionColumn>
-
-    @* ===== 欄 3：快速條件 ===== *@
-    <FilterSectionColumn Title="快速條件" Icon="bi bi-search">
-        <FilterFieldRow Label="關鍵字">
-            <input type="text" class="form-control" placeholder="搜尋..."
-                   @bind="keyword" />
-        </FilterFieldRow>
-
-        <FilterFieldRow Label="顯示條件">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
-                <label class="form-check-label" for="activeOnly">僅啟用</label>
-            </div>
-        </FilterFieldRow>
-    </FilterSectionColumn>
-
-</FilterSectionGroup>
-
-@code {
-    private List<Customer> customers = new();
-    private List<Customer> selectedCustomers = new();
-    private DateTime? startDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-    private DateTime? endDate = DateTime.Today;
-    private string? keyword;
-    private bool activeOnly = true;
-
-    protected override async Task OnInitializedAsync()
-    {
-        customers = await CustomerService.GetAllAsync();
-    }
-
-    public IReportFilterCriteria GetCriteria()
-    {
-        return new CustomerStatementCriteria
-        {
-            CustomerIds = selectedCustomers.Select(c => c.Id).ToList(),
-            StartDate = startDate,
-            EndDate = endDate
-        };
-    }
-
-    public void Reset()
-    {
-        selectedCustomers = new();
-        startDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-        endDate = DateTime.Today;
-        keyword = null;
-        activeOnly = true;
-        StateHasChanged();
-    }
-}
-```
-
-#### 篩選模板 UI 規範
-
-| 規範 | 說明 |
-|------|------|
-| **分欄佈局** | 最外層使用 `<FilterSectionGroup>`，欄位依功能類型分入不同 `<FilterSectionColumn>` |
-| **欄數原則** | 3 欄：SearchSelect + 日期 + 關鍵字各一欄；2 欄：SearchSelect + 日期；1 欄：欄位較少時 |
-| **欄位包裝** | 每個欄位用 `<FilterFieldRow Label="...">` 包裝 |
-| **多選欄位** | 使用 `SearchSelectFilterComponent`（搜尋 → 下拉 → badge 標籤） |
-| **日期範圍** | 使用 `DateRangeFilterComponent`，必須設定 `ShowQuickSelectors="true"` |
-| **關鍵字與 Checkbox** | 分別放入獨立的 `FilterFieldRow`，不再合併同行 |
-| **Checkbox label** | 使用 `form-check-label`（不加 `small` class） |
-
-### 3. 在 FilterTemplateRegistry 註冊篩選配置
+### 2. 在 FilterTemplateRegistry 登記配置
 
 ```csharp
 // Models/Reports/FilterTemplates/FilterTemplateRegistry.cs
-public static void Initialize()
+RegisterConfig(new ReportFilterConfig
 {
-    // ... 現有配置 ...
-    
-    // 新增配置
-    RegisterConfig(new ReportFilterConfig
-    {
-        ReportId = ReportIds.CustomerStatement,
-        FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerStatementFilterTemplate",
-        CriteriaType = typeof(CustomerStatementCriteria),
-        ReportServiceType = typeof(ICustomerStatementReportService),
-        PreviewTitle = "客戶對帳單預覽",
-        FilterTitle = "客戶對帳單篩選條件",
-        IconClass = "bi-file-earmark-ruled",
-        GetDocumentName = criteria =>
-        {
-            var c = (CustomerStatementCriteria)criteria;
-            return $"客戶對帳單-{DateTime.Now:yyyyMMdd}";
-        }
-    });
-}
+    ReportId = ReportIds.SomeReport,
+    FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+    CriteriaType = typeof(SomeReportCriteria),
+    ReportServiceType = typeof(ISomeReportService),
+    PreviewTitle = "某報表預覽",
+    FilterTitle = "某報表篩選條件",
+    IconClass = "bi-file-earmark-text",
+    GetDocumentName = criteria => $"某報表-{DateTime.Now:yyyyMMddHHmm}"
+});
 ```
 
-> **重要**：`FilterTemplateTypeName` 必須是完整的類別名稱（含命名空間），系統會在執行時期延遲解析。
-
-### 4. 在 ReportRegistry 新增報表定義
+### 3. 在 ReportRegistry 確認報表已啟用
 
 ```csharp
-// Data/Reports/ReportRegistry.cs
 new ReportDefinition
 {
-    Id = "AR002",
-    Name = "客戶對帳單",
-    Description = "列印客戶交易對帳明細",
-    IconClass = "bi bi-file-earmark-ruled",
-    Category = ReportCategory.Customer,
-    RequiredPermission = "Customer.Read",
-    ActionId = "PrintCustomerStatement",
-    SortOrder = 2,
-    IsEnabled = true
+    Id = "XX001",
+    Name = "某報表",
+    IsEnabled = true,
+    ...
 }
 ```
 
@@ -331,42 +290,42 @@ new ReportDefinition
    ↓ MainLayout.OnInitializedAsync()
    ↓ FilterTemplateInitializer.EnsureInitialized()
    ↓ 註冊所有模板類型到 FilterTemplateRegistry
-   
+
 2. 使用者從報表中心選擇報表或按 Alt+R 搜尋
    ↓ GenericReportIndexPage 或 GenericSearchModalComponent
    ↓ 觸發 OnReportSelected / OnItemSelected(ActionId)
-   
+
 3. MainLayout.HandleReportSelected(actionId)
    ↓ 從 ActionId 查找對應的 ReportId
    ↓ 檢查 FilterTemplateRegistry.HasConfig(reportId)
-   
+
 4. 如果有篩選配置：
    ↓ currentFilterReportId = reportId
    ↓ 開啟 GenericReportFilterModalComponent
-   
+
 5. GenericReportFilterModalComponent 根據 ReportId 載入配置
    ↓ FilterTemplateRegistry.GetConfig(reportId)
-   ↓ DynamicComponent 動態渲染對應的篩選模板組件
-   
-6. 使用者填寫篩選條件，按下「預覽列印」
+   ↓ DynamicComponent 渲染 DynamicFilterTemplate，傳入 CriteriaType
+
+6. DynamicFilterTemplate 初始化
+   ↓ 反射掃描 CriteriaType 屬性上的 Filter*Attribute
+   ↓ 並行呼叫所有 FK Service.GetAllAsync() 載入選項
+   ↓ 建立 3 欄 UI（基本篩選 / 日期範圍 / 快速條件）
+
+7. 使用者填寫篩選條件，按下「預覽列印」
    ↓ 從 DynamicComponent 取得 IFilterTemplateComponent
    ↓ 呼叫 GetCriteria() → Validate()
-   
-7. 轉換篩選條件並呼叫報表服務
+
+8. 轉換篩選條件並呼叫報表服務
    ↓ criteria.ToBatchPrintCriteria()
    ↓ ReportService.RenderBatchToImagesAsync(batchCriteria)
    ↓ 使用 BatchReportHelper 產生批次預覽圖片（含紙張設定）
-   
-8. 設定預覽資料，開啟 ReportPreviewModalComponent
+
+9. 設定預覽資料，開啟 ReportPreviewModalComponent
    ↓ previewImages = result.PreviewImages
    ↓ formattedDocument = result.MergedDocument
    ↓ 根據 ReportId 載入預設印表機和紙張配置
-   
-9. 使用者變更紙張設定（可選）
-   ↓ OnPaperSettingChanged 事件觸發
-   ↓ 更新 batchCriteria.PaperSetting
-   ↓ 重新呼叫 RenderBatchToImagesAsync 產生新預覽
-   
+
 10. 使用者確認後按「列印」
     ↓ 列印成功，關閉所有 Modal
 ```
@@ -401,13 +360,13 @@ new ReportDefinition
 | `Icon` | `string?` | Bootstrap Icons CSS 類別（選填），例如 `"bi bi-people"` |
 | `ChildContent` | `RenderFragment` | 放入 `FilterFieldRow` 欄位 |
 
-**建議的區段分類：**
+**DynamicFilterTemplate 自動使用的區段分類：**
 
-| 區段名稱 | 建議圖示 | 適用欄位類型 |
-|---|---|---|
-| 基本篩選 | `bi bi-people` / `bi bi-box-seam` | SearchSelect（客戶、廠商、員工、商品 …） |
-| 日期範圍 | `bi bi-calendar-range` | DateRangeFilterComponent |
-| 快速條件 | `bi bi-search` | 關鍵字 input、Checkbox、簡單 select |
+| 區段名稱 | FilterGroup | Icon | 適用欄位類型 |
+|---|---|---|---|
+| 基本篩選 | `Basic` | `bi bi-funnel` | FilterFK、FilterEnum |
+| 日期範圍 | `Date` | `bi bi-calendar-range` | FilterDateRange |
+| 快速條件 | `Quick` | `bi bi-search` | FilterKeyword、FilterToggle |
 
 ### FilterFieldRow（欄位行）
 
@@ -418,11 +377,6 @@ new ReportDefinition
 | `Label` | `string?` | 標題文字（藍色、固定寬度 80-120px） |
 | `ChildContent` | `RenderFragment` | 內容區域（佔滿剩餘寬度） |
 | `CssClass` | `string?` | 額外 CSS 類別 |
-
-樣式特性（定義在 `FilterFieldRow.razor.css`）：
-- 標題：`color: #0d6efd`、`font-weight: 600`、`font-size: 1rem`
-- 佈局：`display: flex`、`align-items: flex-start`、`gap: 0.5rem`
-- 間距：`margin-bottom: 0.5rem`
 
 ### SearchSelectFilterComponent（搜尋式多選）
 
@@ -447,83 +401,67 @@ new ReportDefinition
 | `AutoValidate` | `bool` | 自動驗證日期範圍 |
 | `ShowValidationMessage` | `bool` | 顯示驗證訊息 |
 
-### TextSearchFilterComponent（文字搜尋）
-
-| 參數 | 類型 | 說明 |
-|------|------|------|
-| `Value` | `string?` | 搜尋文字（雙向綁定） |
-| `Label` | `string` | 標籤文字 |
-| `Placeholder` | `string` | 輸入框提示文字 |
-
 ---
 
-## ✅ 已實作的篩選模板
+## ✅ 已實作的篩選配置
 
-共 24 個篩選模板，全部使用 `FilterFieldRow` + `SearchSelectFilterComponent` 統一佈局。
+共 26 個篩選配置，全部使用 `DynamicFilterTemplate` 自動產生 UI。
 
-| 分類 | 報表 ID | 模板組件 | 篩選欄位 |
-|------|---------|----------|----------|
-| 人資 | HR001 | EmployeeRosterBatchFilterTemplate | 員工、部門、職位、狀態、權限組、到職/離職/生日日期、關鍵字 |
-| 客戶 | AR001 | AccountsReceivableFilterTemplate | 客戶、日期範圍、帳款狀態 |
-| 客戶 | AR002 | CustomerStatementBatchFilterTemplate | 客戶、日期範圍、交易類型 |
-| 客戶 | AR003 | AccountsReceivableSetoffBatchFilterTemplate | 客戶、日期範圍、單號 |
-| 客戶 | AR004 | CustomerTransactionBatchFilterTemplate | 客戶、日期範圍、選項 |
-| 客戶 | AR005 | CustomerRosterBatchFilterTemplate | 客戶、業務負責人、關鍵字 |
-| 客戶 | AR006 | CustomerSalesAnalysisBatchFilterTemplate | 客戶、日期範圍、選項 |
-| 廠商 | AP002 | SupplierStatementBatchFilterTemplate | 廠商、日期範圍、選項 |
-| 廠商 | AP003 | AccountsPayableSetoffBatchFilterTemplate | 廠商、日期範圍、單號 |
-| 廠商 | AP004 | SupplierRosterBatchFilterTemplate | 廠商、關鍵字 |
-| 銷售 | SO001 | QuotationBatchFilterTemplate | 客戶、日期範圍、單號 |
-| 銷售 | SO002 | SalesOrderBatchFilterTemplate | 客戶、日期範圍、單號 |
-| 銷售 | SO004 | SalesDeliveryBatchFilterTemplate | 客戶、日期範圍、單號 |
-| 銷售 | SO005 | SalesReturnBatchFilterTemplate | 客戶、日期範圍、單號 |
-| 採購 | PO001 | PurchaseOrderBatchFilterTemplate | 廠商、日期範圍、單號 |
-| 採購 | PO002 | PurchaseReceivingBatchFilterTemplate | 廠商、日期範圍、單號 |
-| 採購 | PO003 | PurchaseReturnBatchFilterTemplate | 廠商、日期範圍、單號 |
-| 庫存 | IV002 | InventoryStatusBatchFilterTemplate | 倉庫、商品分類、關鍵字 |
-| 庫存 | IV003 | StockTakingDifferenceBatchFilterTemplate | 倉庫、日期範圍、關鍵字 |
-| 生產 | PD001 | ProductionScheduleBatchFilterTemplate | 客戶、日期範圍、生產狀態 |
-| 生產 | PD002 | BOMBatchFilterTemplate | 成品、關鍵字 |
-| 產品 | PD004 | ProductListBatchFilterTemplate | 商品分類、採購類型、關鍵字 |
-| 車輛 | VH001 | VehicleListBatchFilterTemplate | 車型、關鍵字 |
-| 車輛 | VH002 | VehicleMaintenanceBatchFilterTemplate | 車輛、日期範圍、關鍵字 |
-
-> **設計原則**：每個單據類型只有一個報表 ID，入口點決定行為：
-> - **EditModal**：直接單筆列印（不經過 HandleReportSelected）
-> - **報表中心 / Alt+R**：經由 HandleReportSelected 檢查是否有篩選配置
+| 分類 | 報表 ID | Criteria 類別 | 篩選欄位摘要 |
+|------|---------|---------------|------------|
+| 人資 | HR001 | EmployeeRosterCriteria | 員工、部門、職位、在職狀態、權限組、到職/離職/生日日期、關鍵字、僅在職 |
+| 人資 | HR002 | EmployeeRosterCriteria | 同 HR001 |
+| 客戶 | AR001 | AccountsReceivableCriteria | 客戶、日期範圍、帳款狀態 |
+| 客戶 | AR002 | CustomerStatementCriteria | 客戶、日期範圍、交易類型 |
+| 客戶 | AR003 | SetoffDocumentBatchPrintCriteria | 客戶、日期範圍、單號 |
+| 客戶 | AR004 | CustomerTransactionCriteria | 客戶、日期範圍、選項 |
+| 客戶 | AR005 | CustomerRosterCriteria | 客戶、業務負責人、關鍵字 |
+| 客戶 | AR006 | CustomerSalesAnalysisCriteria | 客戶、日期範圍、選項 |
+| 廠商 | AP002 | SupplierStatementCriteria | 廠商、日期範圍、選項 |
+| 廠商 | AP003 | SetoffDocumentBatchPrintCriteria | 廠商、日期範圍、單號 |
+| 廠商 | AP004 | SupplierRosterCriteria | 廠商、關鍵字 |
+| 銷售 | SO001 | QuotationBatchPrintCriteria | 客戶、日期範圍、單號 |
+| 銷售 | SO002 | SalesOrderBatchPrintCriteria | 客戶、日期範圍、單號 |
+| 銷售 | SO004 | SalesDeliveryBatchPrintCriteria | 客戶、日期範圍、單號 |
+| 銷售 | SO005 | SalesReturnBatchPrintCriteria | 客戶、日期範圍、單號 |
+| 採購 | PO001 | PurchaseOrderBatchPrintCriteria | 廠商、日期範圍、單號 |
+| 採購 | PO002 | PurchaseReceivingBatchPrintCriteria | 廠商、日期範圍、單號 |
+| 採購 | PO003 | PurchaseReturnBatchPrintCriteria | 廠商、日期範圍、單號 |
+| 庫存 | IV002 | InventoryStatusCriteria | 倉庫、商品分類、關鍵字 |
+| 庫存 | IV003 | StockTakingDifferenceCriteria | 倉庫、日期範圍、關鍵字 |
+| 生產 | PD001 | ProductionScheduleCriteria | 客戶、日期範圍、生產狀態 |
+| 生產 | PD002 | BOMReportCriteria | 成品、關鍵字 |
+| 產品 | PD004 | ProductListBatchPrintCriteria | 商品分類、採購類型、關鍵字 |
+| 產品 | PD005 | ProductBarcodeBatchPrintCriteria | 商品分類、關鍵字 |
+| 車輛 | VH001 | VehicleListCriteria | 車型、關鍵字 |
+| 車輛 | VH002 | VehicleMaintenanceCriteria | 車輛、日期範圍、關鍵字 |
 
 ---
 
 ## 📝 新增報表篩選 Checklist
 
 1. ☐ 在 `ReportIds.cs` 新增報表 ID 常數
-2. ☐ 建立篩選條件 DTO（`Models/Reports/FilterCriteria/`）
-   - 實作 `IReportFilterCriteria` 介面
-   - 實作 `ToBatchPrintCriteria()` 方法
-3. ☐ 建立篩選模板組件（`Components/Shared/Report/FilterTemplates/`）
-   - 建立 `.razor` 檔案（實作 `IFilterTemplateComponent`）
-   - **最外層使用 `FilterSectionGroup`，依功能類型分入 `FilterSectionColumn`**
-   - **所有欄位使用 `FilterFieldRow` 包裝**
-   - **多選欄位使用 `SearchSelectFilterComponent`**
-   - **日期欄位設定 `ShowQuickSelectors="true"`**
-4. ☐ 在 `FilterTemplateRegistry.cs` 的 `Initialize()` 中註冊配置
-   - 設定 `FilterTemplateTypeName` 為完整類別名稱
-5. ☐ 在 `ReportRegistry.cs` 中確認報表 `IsEnabled = true`
-6. ☐ 報表服務實作 `RenderBatchToImagesAsync`（使用 `BatchReportHelper`）
+2. ☐ 建立篩選條件 Criteria（`Models/Reports/FilterCriteria/`）
+   - 實作 `IReportFilterCriteria` 介面（`Validate()` + `ToQueryParameters()`）
+   - 在每個篩選屬性上加對應的 `Filter*Attribute`
+   - `PaperSetting?` 不加 Attribute
+3. ☐ 在 `FilterTemplateRegistry.cs` 的 `Initialize()` 中新增配置
+   - `FilterTemplateTypeName` = `"ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate"`
+4. ☐ 在 `ReportRegistry.cs` 中確認報表 `IsEnabled = true`
+5. ☐ 報表服務實作 `RenderBatchToImagesAsync`（使用 `BatchReportHelper`）
 
 ---
 
 ## ⚠️ 注意事項
 
-1. **模板組件必須實作 `IFilterTemplateComponent`**：否則 Modal 無法取得篩選條件
-2. **最外層使用 `FilterSectionGroup`，欄位依功能類型分入 `FilterSectionColumn`**：確保分欄佈局一致，未來修改欄位排版只需改這兩個組件
-3. **所有篩選欄位必須用 `FilterFieldRow` 包裝**：確保標題與內容同行佈局
-4. **多選欄位使用 `SearchSelectFilterComponent`**：不要使用舊的 `MultiSelectFilterComponent`
+1. **Criteria 屬性上加 Attribute 即可**：不需要建立 FilterTemplate.razor，`DynamicFilterTemplate` 自動讀取並產生 UI
+2. **FilterDateRange 只標在 Start 屬性**：End 屬性由命名規則自動推導（`HireDateStart` → `HireDateEnd`）；若命名不符可用 `EndPropertyName = "..."` 手動指定
+3. **PaperSetting 不加 Attribute**：不需要篩選 UI 的屬性不加任何 Attribute，系統自動略過
+4. **FilterFK 需要 ServiceType**：`typeof(ICustomerService)` 等，系統用 `IServiceProvider` 在執行期解析並呼叫 `GetAllAsync()`
 5. **FilterTemplateInitializer 在 MainLayout 啟動時呼叫**：確保在使用前完成初始化
-6. **驗證邏輯放在 Criteria 的 Validate() 方法**：不要在模板組件中處理
+6. **驗證邏輯放在 Criteria 的 Validate() 方法**：不要在其他地方處理
 7. **篩選條件須實作 `ToBatchPrintCriteria()`**：用於轉換為報表服務可用的批次篩選條件
-8. **報表服務使用 `BatchReportHelper`**：避免重複實作批次預覽邏輯，只需專注於資料查詢
-9. **紙張變更會觸發重新渲染**：GenericReportFilterModalComponent 處理 OnPaperSettingChanged 事件，更新 BatchPrintCriteria.PaperSetting 並重新產生預覽
+8. **報表服務使用 `BatchReportHelper`**：避免重複實作批次預覽邏輯
 
 ---
 

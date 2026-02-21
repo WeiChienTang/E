@@ -8,6 +8,7 @@
 @using ERPCore2.Models.Reports.FilterTemplates
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Data.Entities
+@using ERPCore2.Components.Shared.Report.FilterTemplates
 @inject INotificationService NotificationService
 @inject IServiceProvider ServiceProvider
 
@@ -179,10 +180,16 @@
     
     private Dictionary<string, object> GetTemplateParameters()
     {
-        return new Dictionary<string, object>
+        var parameters = new Dictionary<string, object>();
+
+        // DynamicFilterTemplate 需要知道要產生哪個 Criteria 的 UI
+        if (filterConfig != null &&
+            filterConfig.GetFilterTemplateType() == typeof(DynamicFilterTemplate))
         {
-            // 模板可能需要的參數可以在這裡傳遞
-        };
+            parameters["CriteriaType"] = filterConfig.CriteriaType;
+        }
+
+        return parameters;
     }
     
     // ===== 事件處理方法 =====

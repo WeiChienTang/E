@@ -1,0 +1,542 @@
+@*
+    動態篩選模板
+    根據 Criteria 類別上的 Filter*Attribute 自動產生篩選 UI
+    不需要為每個報表手動撰寫 FilterTemplate.razor
+
+    使用方式：
+    1. 在 Criteria 屬性上加 [FilterFK], [FilterEnum], [FilterDateRange], [FilterKeyword], [FilterToggle]
+    2. 在 FilterTemplateRegistry 指定此元件為 FilterTemplateTypeName
+    3. GenericReportFilterModalComponent 會傳入 CriteriaType 參數
+*@
+
+@using System.Collections
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@using ERPCore2.Models.Reports.FilterAttributes
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject IServiceProvider ServiceProvider
+@inject INotificationService NotificationService
+
+@if (CriteriaType == null)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        DynamicFilterTemplate：未指定 CriteriaType
+    </div>
+}
+else if (_isLoading)
+{
+    <div class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+        載入篩選選項中...
+    </div>
+}
+else
+{
+    <FilterSectionGroup>
+
+        @* ===== 欄 1：基本篩選 ===== *@
+        @if (_basicFields.Any())
+        {
+            <FilterSectionColumn Title="基本篩選" Icon="bi bi-funnel">
+                @foreach (var field in _basicFields)
+                {
+                    @if (field is FKFieldDef fkField)
+                    {
+                        var fn = fkField.PropertyName;
+                        <FilterFieldRow Label="@fkField.Label">
+                            <SearchSelectFilterComponent TItem="FilterDisplayItem"
+                                                         Items="@_availableItems.GetValueOrDefault(fn, _emptyList)"
+                                                         SelectedItems="@_selectedItems.GetValueOrDefault(fn, _emptyList)"
+                                                         SelectedItemsChanged="@(items => _selectedItems[fn] = items)"
+                                                         DisplayProperty="DisplayName"
+                                                         ValueProperty="Id"
+                                                         Placeholder="@fkField.Placeholder"
+                                                         EmptyMessage="@fkField.EmptyMessage" />
+                        </FilterFieldRow>
+                    }
+                    else if (field is EnumFieldDef enumField)
+                    {
+                        var fn = enumField.PropertyName;
+                        <FilterFieldRow Label="@enumField.Label">
+                            <SearchSelectFilterComponent TItem="FilterDisplayItem"
+                                                         Items="@_enumItems.GetValueOrDefault(fn, _emptyList)"
+                                                         SelectedItems="@_selectedEnumItems.GetValueOrDefault(fn, _emptyList)"
+                                                         SelectedItemsChanged="@(items => _selectedEnumItems[fn] = items)"
+                                                         DisplayProperty="DisplayName"
+                                                         ValueProperty="Id"
+                                                         Placeholder="搜尋..."
+                                                         EmptyMessage="未選擇（查詢全部）" />
+                        </FilterFieldRow>
+                    }
+                }
+            </FilterSectionColumn>
+        }
+
+        @* ===== 欄 2：日期範圍 ===== *@
+        @if (_dateFields.Any())
+        {
+            <FilterSectionColumn Title="日期範圍" Icon="bi bi-calendar-range">
+                @foreach (var field in _dateFields)
+                {
+                    var sk = field.PropertyName;
+                    var ek = field.EndPropertyName;
+                    <FilterFieldRow Label="@field.Label">
+                        <DateRangeFilterComponent StartDate="@_dateValues.GetValueOrDefault(sk)"
+                                                   StartDateChanged="@((DateTime? v) => _dateValues[sk] = v)"
+                                                   EndDate="@_dateValues.GetValueOrDefault(ek)"
+                                                   EndDateChanged="@((DateTime? v) => _dateValues[ek] = v)"
+                                                   StartDateLabel="起始"
+                                                   EndDateLabel="結束"
+                                                   ShowQuickSelectors="true"
+                                                   AutoValidate="true"
+                                                   ShowValidationMessage="true" />
+                    </FilterFieldRow>
+                }
+            </FilterSectionColumn>
+        }
+
+        @* ===== 欄 3：快速條件 ===== *@
+        @if (_quickFields.Any())
+        {
+            <FilterSectionColumn Title="快速條件" Icon="bi bi-search">
+                @foreach (var field in _quickFields)
+                {
+                    @if (field is KeywordFieldDef keywordField)
+                    {
+                        var fn = keywordField.PropertyName;
+                        <FilterFieldRow Label="@keywordField.Label">
+                            <input type="text"
+                                   class="form-control"
+                                   placeholder="@keywordField.Placeholder"
+                                   value="@_textValues.GetValueOrDefault(fn)"
+                                   @oninput="@((ChangeEventArgs e) => _textValues[fn] = e.Value?.ToString())" />
+                        </FilterFieldRow>
+                    }
+                    else if (field is ToggleFieldDef toggleField)
+                    {
+                        var fn = toggleField.PropertyName;
+                        var toggleId = $"dft-toggle-{fn}";
+                        <FilterFieldRow Label="@toggleField.Label">
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="@toggleId"
+                                       checked="@_boolValues.GetValueOrDefault(fn, toggleField.DefaultValue)"
+                                       @onchange="@((ChangeEventArgs e) => _boolValues[fn] = (bool)(e.Value ?? false))" />
+                                <label class="form-check-label" for="@toggleId">
+                                    @toggleField.CheckboxLabel
+                                </label>
+                            </div>
+                        </FilterFieldRow>
+                    }
+                }
+            </FilterSectionColumn>
+        }
+
+    </FilterSectionGroup>
+}
+
+@code {
+    // ===== 參數 =====
+
+    /// <summary>實作 IReportFilterCriteria 的 Criteria 型別，由 GenericReportFilterModalComponent 傳入</summary>
+    [Parameter]
+    public Type CriteriaType { get; set; } = null!;
+
+    // ===== 內部狀態字典（以屬性名稱為 Key）=====
+
+    private Dictionary<string, List<FilterDisplayItem>> _availableItems = new();
+    private Dictionary<string, List<FilterDisplayItem>> _selectedItems = new();
+    private Dictionary<string, List<FilterDisplayItem>> _enumItems = new();
+    private Dictionary<string, List<FilterDisplayItem>> _selectedEnumItems = new();
+    private Dictionary<string, DateTime?> _dateValues = new();
+    private Dictionary<string, string?> _textValues = new();
+    private Dictionary<string, bool> _boolValues = new();
+
+    private static readonly List<FilterDisplayItem> _emptyList = new();
+
+    // ===== 欄位定義（從 Attribute 反射取得）=====
+
+    private List<FilterFieldDef> _basicFields = new();
+    private List<DateRangeFieldDef> _dateFields = new();
+    private List<FilterFieldDef> _quickFields = new();
+
+    private List<FKFieldDef> _fkFieldDefs = new();
+    private List<EnumFieldDef> _enumFieldDefs = new();
+    private List<DateRangeFieldDef> _dateRangeFieldDefs = new();
+    private List<KeywordFieldDef> _keywordFieldDefs = new();
+    private List<ToggleFieldDef> _toggleFieldDefs = new();
+
+    private bool _isLoading = true;
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (CriteriaType == null) return;
+
+        DiscoverFields();
+        InitializeState();
+        await LoadAllDataAsync();
+
+        _isLoading = false;
+    }
+
+    // ===== 欄位發現（反射）=====
+
+    private void DiscoverFields()
+    {
+        foreach (var prop in CriteriaType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            // FK 多選
+            var fkAttr = prop.GetCustomAttribute<FilterFKAttribute>();
+            if (fkAttr != null)
+            {
+                var def = new FKFieldDef
+                {
+                    PropertyName = prop.Name,
+                    Label = fkAttr.Label,
+                    Group = fkAttr.Group,
+                    Order = fkAttr.Order,
+                    ServiceType = fkAttr.ServiceType,
+                    Placeholder = fkAttr.Placeholder,
+                    EmptyMessage = fkAttr.EmptyMessage,
+                    DisplayFormat = fkAttr.DisplayFormat,
+                    ExcludeProperty = fkAttr.ExcludeProperty
+                };
+                _fkFieldDefs.Add(def);
+                AddToGroup(def);
+                continue;
+            }
+
+            // Enum 多選
+            var enumAttr = prop.GetCustomAttribute<FilterEnumAttribute>();
+            if (enumAttr != null)
+            {
+                var def = new EnumFieldDef
+                {
+                    PropertyName = prop.Name,
+                    Label = enumAttr.Label,
+                    Group = enumAttr.Group,
+                    Order = enumAttr.Order,
+                    EnumType = enumAttr.EnumType
+                };
+                _enumFieldDefs.Add(def);
+                AddToGroup(def);
+                continue;
+            }
+
+            // 日期範圍（標在 Start 屬性）
+            var dateAttr = prop.GetCustomAttribute<FilterDateRangeAttribute>();
+            if (dateAttr != null)
+            {
+                // 自動推導 End 屬性名稱：XxxStart → XxxEnd
+                var endPropName = dateAttr.EndPropertyName;
+                if (string.IsNullOrEmpty(endPropName))
+                {
+                    endPropName = prop.Name.EndsWith("Start")
+                        ? prop.Name[..^5] + "End"
+                        : prop.Name + "End";
+                }
+
+                var def = new DateRangeFieldDef
+                {
+                    PropertyName = prop.Name,
+                    Label = dateAttr.Label,
+                    Group = dateAttr.Group,
+                    Order = dateAttr.Order,
+                    EndPropertyName = endPropName
+                };
+                _dateRangeFieldDefs.Add(def);
+                _dateFields.Add(def);
+                continue;
+            }
+
+            // 關鍵字
+            var kwAttr = prop.GetCustomAttribute<FilterKeywordAttribute>();
+            if (kwAttr != null)
+            {
+                var def = new KeywordFieldDef
+                {
+                    PropertyName = prop.Name,
+                    Label = kwAttr.Label,
+                    Group = kwAttr.Group,
+                    Order = kwAttr.Order,
+                    Placeholder = kwAttr.Placeholder
+                };
+                _keywordFieldDefs.Add(def);
+                AddToGroup(def);
+                continue;
+            }
+
+            // Toggle
+            var toggleAttr = prop.GetCustomAttribute<FilterToggleAttribute>();
+            if (toggleAttr != null)
+            {
+                var def = new ToggleFieldDef
+                {
+                    PropertyName = prop.Name,
+                    Label = toggleAttr.Label,
+                    Group = toggleAttr.Group,
+                    Order = toggleAttr.Order,
+                    CheckboxLabel = toggleAttr.CheckboxLabel,
+                    DefaultValue = toggleAttr.DefaultValue
+                };
+                _toggleFieldDefs.Add(def);
+                AddToGroup(def);
+            }
+        }
+
+        // 各群組依 Order 排序
+        _basicFields = _basicFields.OrderBy(f => f.Order).ThenBy(f => f.Label).ToList();
+        _dateFields = _dateFields.OrderBy(f => f.Order).ThenBy(f => f.Label).ToList();
+        _quickFields = _quickFields.OrderBy(f => f.Order).ThenBy(f => f.Label).ToList();
+    }
+
+    private void AddToGroup(FilterFieldDef def)
+    {
+        switch (def.Group)
+        {
+            case FilterGroup.Basic: _basicFields.Add(def); break;
+            case FilterGroup.Date:  /* DateRange 直接加 _dateFields */ break;
+            case FilterGroup.Quick: _quickFields.Add(def); break;
+        }
+    }
+
+    // ===== 初始化狀態字典 =====
+
+    private void InitializeState()
+    {
+        foreach (var f in _fkFieldDefs)
+        {
+            _availableItems[f.PropertyName] = new();
+            _selectedItems[f.PropertyName] = new();
+        }
+
+        foreach (var f in _enumFieldDefs)
+        {
+            _enumItems[f.PropertyName] = new();
+            _selectedEnumItems[f.PropertyName] = new();
+        }
+
+        foreach (var f in _dateRangeFieldDefs)
+        {
+            _dateValues[f.PropertyName] = null;
+            _dateValues[f.EndPropertyName] = null;
+        }
+
+        foreach (var f in _keywordFieldDefs)
+            _textValues[f.PropertyName] = null;
+
+        foreach (var f in _toggleFieldDefs)
+            _boolValues[f.PropertyName] = f.DefaultValue;
+    }
+
+    // ===== 資料載入 =====
+
+    private async Task LoadAllDataAsync()
+    {
+        // 載入 Enum 選項（同步）
+        foreach (var f in _enumFieldDefs)
+            LoadEnumData(f);
+
+        // 並行載入所有 FK 資料
+        var tasks = _fkFieldDefs.Select(f => LoadFKDataAsync(f));
+        await Task.WhenAll(tasks);
+    }
+
+    private void LoadEnumData(EnumFieldDef field)
+    {
+        var items = new List<FilterDisplayItem>();
+
+        foreach (var value in Enum.GetValues(field.EnumType))
+        {
+            var memberName = value.ToString()!;
+            var member = field.EnumType.GetMember(memberName).FirstOrDefault();
+            var displayAttr = member?.GetCustomAttribute<DisplayAttribute>();
+            var displayName = displayAttr?.Name ?? memberName;
+
+            items.Add(new FilterDisplayItem
+            {
+                Id = (int)value,
+                DisplayName = displayName
+            });
+        }
+
+        _enumItems[field.PropertyName] = items;
+    }
+
+    private async Task LoadFKDataAsync(FKFieldDef field)
+    {
+        try
+        {
+            dynamic service = ServiceProvider.GetRequiredService(field.ServiceType);
+            var result = await service.GetAllAsync();
+            var entities = result as IEnumerable;
+
+            if (entities == null)
+            {
+                _availableItems[field.PropertyName] = new();
+                return;
+            }
+
+            var items = new List<FilterDisplayItem>();
+
+            foreach (var entity in entities)
+            {
+                var entityType = entity.GetType();
+
+                // ExcludeProperty 過濾
+                if (!string.IsNullOrEmpty(field.ExcludeProperty))
+                {
+                    var excludeVal = entityType.GetProperty(field.ExcludeProperty)?.GetValue(entity);
+                    if (excludeVal is bool b && b) continue;
+                }
+
+                var id = (int?)entityType.GetProperty("Id")?.GetValue(entity) ?? 0;
+                var name = entityType.GetProperty("Name")?.GetValue(entity) as string;
+                var code = entityType.GetProperty("Code")?.GetValue(entity) as string;
+
+                var displayName = field.DisplayFormat switch
+                {
+                    FilterDisplayFormat.CodeDashName when !string.IsNullOrEmpty(name) => $"{code} - {name}",
+                    FilterDisplayFormat.CodeDashName => code ?? $"#{id}",
+                    FilterDisplayFormat.CodeOnly => code ?? $"#{id}",
+                    _ => name ?? code ?? $"#{id}"
+                };
+
+                items.Add(new FilterDisplayItem { Id = id, DisplayName = displayName });
+            }
+
+            _availableItems[field.PropertyName] = items.OrderBy(i => i.DisplayName).ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadFKDataAsync), GetType());
+            await NotificationService.ShowErrorAsync($"載入「{field.Label}」資料失敗");
+            _availableItems[field.PropertyName] = new();
+        }
+    }
+
+    // ===== IFilterTemplateComponent 實作 =====
+
+    public IReportFilterCriteria GetCriteria()
+    {
+        var criteria = (IReportFilterCriteria)Activator.CreateInstance(CriteriaType)!;
+
+        // FK fields → List<int>
+        foreach (var f in _fkFieldDefs)
+        {
+            var prop = CriteriaType.GetProperty(f.PropertyName);
+            if (prop == null) continue;
+            var ids = _selectedItems.GetValueOrDefault(f.PropertyName, _emptyList)
+                                    .Select(i => i.Id)
+                                    .ToList();
+            prop.SetValue(criteria, ids);
+        }
+
+        // Enum fields → List<TEnum>
+        foreach (var f in _enumFieldDefs)
+        {
+            var prop = CriteriaType.GetProperty(f.PropertyName);
+            if (prop == null) continue;
+
+            var listType = typeof(List<>).MakeGenericType(f.EnumType);
+            var list = (IList)Activator.CreateInstance(listType)!;
+
+            foreach (var item in _selectedEnumItems.GetValueOrDefault(f.PropertyName, _emptyList))
+                list.Add(Enum.ToObject(f.EnumType, item.Id));
+
+            prop.SetValue(criteria, list);
+        }
+
+        // DateRange fields → DateTime?
+        foreach (var f in _dateRangeFieldDefs)
+        {
+            CriteriaType.GetProperty(f.PropertyName)?.SetValue(criteria, _dateValues.GetValueOrDefault(f.PropertyName));
+            CriteriaType.GetProperty(f.EndPropertyName)?.SetValue(criteria, _dateValues.GetValueOrDefault(f.EndPropertyName));
+        }
+
+        // Keyword fields → string?
+        foreach (var f in _keywordFieldDefs)
+        {
+            var value = _textValues.GetValueOrDefault(f.PropertyName);
+            CriteriaType.GetProperty(f.PropertyName)?.SetValue(
+                criteria,
+                string.IsNullOrWhiteSpace(value) ? null : value);
+        }
+
+        // Toggle fields → bool
+        foreach (var f in _toggleFieldDefs)
+        {
+            CriteriaType.GetProperty(f.PropertyName)?.SetValue(
+                criteria,
+                _boolValues.GetValueOrDefault(f.PropertyName, f.DefaultValue));
+        }
+
+        return criteria;
+    }
+
+    public void Reset()
+    {
+        foreach (var key in _selectedItems.Keys.ToList())
+            _selectedItems[key] = new();
+
+        foreach (var key in _selectedEnumItems.Keys.ToList())
+            _selectedEnumItems[key] = new();
+
+        foreach (var key in _dateValues.Keys.ToList())
+            _dateValues[key] = null;
+
+        foreach (var key in _textValues.Keys.ToList())
+            _textValues[key] = null;
+
+        foreach (var f in _toggleFieldDefs)
+            _boolValues[f.PropertyName] = f.DefaultValue;
+
+        StateHasChanged();
+    }
+
+    // ===== 內部欄位定義類別 =====
+
+    private class FilterFieldDef
+    {
+        public string PropertyName { get; set; } = "";
+        public string Label { get; set; } = "";
+        public FilterGroup Group { get; set; }
+        public int Order { get; set; }
+    }
+
+    private class FKFieldDef : FilterFieldDef
+    {
+        public Type ServiceType { get; set; } = null!;
+        public string Placeholder { get; set; } = "搜尋...";
+        public string EmptyMessage { get; set; } = "未選擇（查詢全部）";
+        public FilterDisplayFormat DisplayFormat { get; set; }
+        public string? ExcludeProperty { get; set; }
+    }
+
+    private class EnumFieldDef : FilterFieldDef
+    {
+        public Type EnumType { get; set; } = null!;
+    }
+
+    private class DateRangeFieldDef : FilterFieldDef
+    {
+        public string EndPropertyName { get; set; } = "";
+    }
+
+    private class KeywordFieldDef : FilterFieldDef
+    {
+        public string Placeholder { get; set; } = "搜尋...";
+    }
+
+    private class ToggleFieldDef : FilterFieldDef
+    {
+        public string CheckboxLabel { get; set; } = "";
+        public bool DefaultValue { get; set; }
+    }
+}

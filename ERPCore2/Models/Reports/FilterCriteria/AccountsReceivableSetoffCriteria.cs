@@ -1,3 +1,4 @@
+using ERPCore2.Models.Enums;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
 using ERPCore2.Services;
@@ -5,53 +6,42 @@ using ERPCore2.Services;
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
 /// <summary>
-/// 銷貨單（出貨單）批次列印篩選條件
-/// 包裝 BatchPrintCriteria 並實作 IReportFilterCriteria 介面
+/// 應收沖款單篩選條件（客戶沖款單，對應 FN003）
 /// </summary>
-public class SalesDeliveryBatchPrintCriteria : IReportFilterCriteria
+public class AccountsReceivableSetoffCriteria : IReportFilterCriteria
 {
     /// <summary>
-    /// 客戶 ID 清單（空表示所有客戶）
+    /// 客戶 ID 清單（空表示全部）
     /// </summary>
     [FilterFK(typeof(ICustomerService),
         Group = FilterGroup.Basic,
         Label = "指定客戶",
         Placeholder = "搜尋客戶...",
-        EmptyMessage = "未選擇客戶",
+        EmptyMessage = "未選擇客戶（查詢全部）",
         Order = 1)]
-    public List<int> CustomerIds { get; set; } = new();
+    public List<int> RelatedPartyIds { get; set; } = new();
 
     /// <summary>
-    /// 起始日期（出貨日期）
+    /// 起始日期
     /// </summary>
-    [FilterDateRange(Group = FilterGroup.Date, Label = "出貨日期", Order = 1)]
+    [FilterDateRange(Group = FilterGroup.Date, Label = "日期範圍", Order = 1)]
     public DateTime? StartDate { get; set; }
 
     /// <summary>
-    /// 結束日期（出貨日期）
+    /// 結束日期
     /// </summary>
     public DateTime? EndDate { get; set; }
 
     /// <summary>
-    /// 單據狀態清單（空表示所有狀態）
-    /// </summary>
-    public List<string> Statuses { get; set; } = new();
-
-    /// <summary>
     /// 單據編號關鍵字（模糊搜尋）
     /// </summary>
-    [FilterKeyword(Group = FilterGroup.Quick, Label = "單號", Placeholder = "模糊搜尋...", Order = 1)]
+    [FilterKeyword(Group = FilterGroup.Basic, Label = "單號", Placeholder = "模糊搜尋...", Order = 2)]
     public string? DocumentNumberKeyword { get; set; }
-
-    /// <summary>
-    /// 是否包含已取消的單據
-    /// </summary>
-    public bool IncludeCancelled { get; set; } = false;
 
     /// <summary>
     /// 排序欄位
     /// </summary>
-    public string SortBy { get; set; } = "DeliveryDate";
+    public string SortBy { get; set; } = "SetoffDate";
 
     /// <summary>
     /// 排序方向（true = 降序）
@@ -60,14 +50,12 @@ public class SalesDeliveryBatchPrintCriteria : IReportFilterCriteria
 
     public bool Validate(out string? errorMessage)
     {
-        // 日期範圍驗證
         if (StartDate.HasValue && EndDate.HasValue && StartDate > EndDate)
         {
             errorMessage = "起始日期不能大於結束日期";
             return false;
         }
 
-        // 日期範圍不能過大（超過1年）
         if (StartDate.HasValue && EndDate.HasValue)
         {
             var daysDiff = (EndDate.Value - StartDate.Value).TotalDays;
@@ -86,19 +74,18 @@ public class SalesDeliveryBatchPrintCriteria : IReportFilterCriteria
     {
         return new Dictionary<string, object?>
         {
-            ["customerIds"] = CustomerIds.Any() ? CustomerIds : null,
+            ["setoffType"] = SetoffType.AccountsReceivable,
+            ["relatedPartyIds"] = RelatedPartyIds.Any() ? RelatedPartyIds : null,
             ["startDate"] = StartDate,
             ["endDate"] = EndDate,
-            ["statuses"] = Statuses.Any() ? Statuses : null,
             ["documentNumberKeyword"] = string.IsNullOrWhiteSpace(DocumentNumberKeyword) ? null : DocumentNumberKeyword,
-            ["includeCancelled"] = IncludeCancelled,
             ["sortBy"] = SortBy,
             ["sortDescending"] = SortDescending
         };
     }
 
     /// <summary>
-    /// 轉換為 BatchPrintCriteria（用於呼叫現有的報表服務）
+    /// 轉換為 BatchPrintCriteria（用於呼叫報表服務）
     /// </summary>
     public BatchPrintCriteria ToBatchPrintCriteria()
     {
@@ -106,14 +93,11 @@ public class SalesDeliveryBatchPrintCriteria : IReportFilterCriteria
         {
             StartDate = StartDate,
             EndDate = EndDate,
-            RelatedEntityIds = CustomerIds,
-            Statuses = Statuses,
+            RelatedEntityIds = RelatedPartyIds,
             DocumentNumberKeyword = DocumentNumberKeyword,
-            IncludeCancelled = IncludeCancelled,
-            MaxResults = null,
             SortBy = SortBy,
             SortDirection = SortDescending ? SortDirection.Descending : SortDirection.Ascending,
-            ReportType = "SalesDelivery"
+            ReportType = ReportIds.AccountsReceivableSetoff
         };
     }
 
@@ -124,20 +108,17 @@ public class SalesDeliveryBatchPrintCriteria : IReportFilterCriteria
     {
         var summary = new List<string>();
 
+        summary.Add("應收沖款單");
+
         if (StartDate.HasValue || EndDate.HasValue)
         {
             var dateRange = $"{StartDate?.ToString("yyyy/MM/dd") ?? "不限"} ~ {EndDate?.ToString("yyyy/MM/dd") ?? "不限"}";
             summary.Add($"日期：{dateRange}");
         }
 
-        if (CustomerIds.Any())
+        if (RelatedPartyIds.Any())
         {
-            summary.Add($"客戶：{CustomerIds.Count} 家");
-        }
-
-        if (Statuses.Any())
-        {
-            summary.Add($"狀態：{string.Join(", ", Statuses)}");
+            summary.Add($"客戶：{RelatedPartyIds.Count} 家");
         }
 
         if (!string.IsNullOrEmpty(DocumentNumberKeyword))

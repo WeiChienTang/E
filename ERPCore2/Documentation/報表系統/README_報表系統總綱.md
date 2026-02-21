@@ -1,7 +1,7 @@
 # 報表系統設計總綱
 
 ## 更新日期
-2026-02-17
+2026-02-21
 
 ---
 
@@ -98,9 +98,11 @@ Models/Reports/
 ├── FormattedDocument.cs                    # 格式化報表文件模型
 ├── TableDefinition.cs                      # 表格定義
 ├── ReportDefinition.cs                     # 報表定義模型
-├── FilterCriteria/                         # 篩選條件 DTO
+├── FilterAttributes/
+│   └── FilterFieldAttributes.cs           # Filter*Attribute 定義（FilterFK, FilterEnum, FilterDateRange, FilterKeyword, FilterToggle）
+├── FilterCriteria/                         # 篩選條件 DTO（屬性上標記 Filter*Attribute）
 │   ├── IReportFilterCriteria.cs
-│   └── PurchaseOrderBatchPrintCriteria.cs
+│   └── [Entity]Criteria.cs
 └── FilterTemplates/                        # 模板配置
     ├── ReportFilterConfig.cs               # 篩選配置模型
     └── FilterTemplateRegistry.cs           # 模板註冊表（集中管理所有配置）
@@ -132,8 +134,8 @@ Components/
 │   ├── SearchSelectFilterComponent.razor  # 搜尋式多選
 │   ├── DateRangeFilterComponent.razor     # 日期範圍
 │   ├── TextSearchFilterComponent.razor    # 文字搜尋
-│   └── FilterTemplates/                   # 24 個篩選模板
-│       └── [Entity]BatchFilterTemplate.razor
+│   └── FilterTemplates/
+│       └── DynamicFilterTemplate.razor    # 通用動態篩選模板（所有報表共用）
 └── Pages/
     ├── Reports/
     │   └── GenericReportIndexPage.razor    # 報表中心
@@ -183,18 +185,20 @@ Components/
 | SalesDeliveryReportService | SO004 | ✅ 完成 |
 | SalesReturnReportService | SO005 | ✅ 完成 |
 
-### 篩選模板（共 24 個，全部使用 FilterFieldRow + SearchSelectFilterComponent 統一佈局）
+### 篩選模板（全部使用 DynamicFilterTemplate 統一產生 UI）
+
+所有篩選功能由單一 `DynamicFilterTemplate.razor` 處理，透過讀取 Criteria 類別上的 `Filter*Attribute` 自動產生篩選 UI，不再需要為每個報表撰寫獨立的 FilterTemplate.razor。
 
 | 分類 | 數量 | 狀態 |
 |------|------|------|
-| 人資（HR） | 1 | ✅ 完成 |
+| 人資（HR） | 2 | ✅ 完成 |
 | 客戶（AR） | 6 | ✅ 完成 |
 | 廠商（AP） | 3 | ✅ 完成 |
 | 銷售（SO） | 4 | ✅ 完成 |
 | 採購（PO） | 3 | ✅ 完成 |
 | 庫存（IV） | 2 | ✅ 完成 |
 | 生產（PD） | 2 | ✅ 完成 |
-| 產品（PD） | 1 | ✅ 完成 |
+| 產品（PD） | 2 | ✅ 完成 |
 | 車輛（VH） | 2 | ✅ 完成 |
 
 > 詳細清單請見 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)
@@ -254,12 +258,25 @@ Components/
 ### 情境 C：新增全新報表（含篩選）
 
 1. 建立篩選條件 DTO（實作 `IReportFilterCriteria`）
-2. 建立篩選模板組件（實作 `IFilterTemplateComponent`）
-   - 使用 `FilterFieldRow` 包裝每個欄位
-   - 多選欄位使用 `SearchSelectFilterComponent`
-3. 在 FilterTemplateInitializer 註冊模板類型
-4. 在 FilterTemplateRegistry 註冊配置
-5. 在 ReportRegistry 註冊報表定義
+   - 在屬性上加 `Filter*Attribute` 宣告篩選欄位：
+     - `[FilterFK(typeof(IXxxService), Label="...", Order=N)]` — FK 多選下拉
+     - `[FilterEnum(typeof(XxxEnum), Label="...", Order=N)]` — Enum 多選下拉
+     - `[FilterDateRange(Label="...", Order=N)]` — 日期範圍（標在 Start 屬性）
+     - `[FilterKeyword(Label="...", Order=N)]` — 關鍵字文字搜尋
+     - `[FilterToggle(Label="...", CheckboxLabel="...", DefaultValue=true, Order=N)]` — Checkbox 切換
+2. 在 `FilterTemplateRegistry` 的 `Initialize()` 中新增配置，指定 `DynamicFilterTemplate`
+3. 在 `ReportRegistry` 確認報表 `IsEnabled = true`
+
+```csharp
+// FilterTemplateRegistry.cs 範例
+RegisterConfig(new ReportFilterConfig
+{
+    ReportId = ReportIds.SomerePort,
+    FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+    CriteriaType = typeof(SomeReportCriteria),
+    ...
+});
+```
 
 📖 詳見 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)
 
@@ -281,7 +298,7 @@ Components/
 1. **Windows 專屬**：`FormattedPrintService` 使用 `System.Drawing.Printing`，僅支援 Windows
 2. **Excel 匯出跨平台**：`ExcelExportService` 使用 ClosedXML，支援所有平台
 3. **單一報表 ID 原則**：每個單據類型只有一個報表 ID，入口點決定流程
-4. **篩選模板初始化**：`FilterTemplateInitializer.EnsureInitialized()` 在 MainLayout 啟動時自動呼叫
+4. **DynamicFilterTemplate 共用**：所有報表共用單一 `DynamicFilterTemplate.razor`，篩選 UI 由 Criteria 屬性上的 `Filter*Attribute` 驅動，新增篩選欄位只需修改 Criteria 類別
 
 ---
 
