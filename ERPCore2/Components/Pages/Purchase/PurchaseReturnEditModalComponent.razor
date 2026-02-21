@@ -9,7 +9,6 @@
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IProductService ProductService
 @inject INotificationService NotificationService
-@inject ActionButtonHelper ActionButtonHelper
 @inject ISystemParameterService SystemParameterService
 @inject ISetoffDocumentService SetoffDocumentService
 @inject IPurchaseReturnReportService PurchaseReturnReportService
@@ -36,7 +35,6 @@
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
-                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadPurchaseReturnData"
                           UseGenericSave="false"
                           CustomValidator="@ValidatePurchaseReturnDetailsAsync"
@@ -58,15 +56,6 @@
                           ReportPreviewTitle="進貨退出單預覽"
                           GetReportDocumentName="@(e => $"進貨退出單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded" />
-
-@* 廠商編輯 Modal *@
-<SupplierEditModalComponent @ref="supplierEditModal"
-                           IsVisible="@supplierModalManager.IsModalVisible"
-                           IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
-                           SupplierId="@supplierModalManager.SelectedEntityId"
-                           PrefilledValues="@supplierModalManager.PrefilledValues"
-                           OnSupplierSaved="@supplierModalManager.OnSavedAsync"
-                           OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
 @* 沖款單編輯 Modal *@
 <SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
@@ -137,11 +126,6 @@
         }
     }
     
-    // Modal 管理器
-    private SupplierEditModalComponent? supplierEditModal;
-    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
-    private ModalManagerCollection modalManagers = default!;
-    
     // ===== 相關單據 Modal =====
     private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
     private bool showSetoffDocumentModal = false;
@@ -159,29 +143,6 @@
     private bool isDataLoaded = false;  // 資料載入狀態標記
 
     // ===== 生命週期 =====
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            // 使用 ModalManagerInitHelper 初始化 Modal 管理器
-            modalManagers = ModalManagerInitHelper.CreateBuilder<PurchaseReturn, IPurchaseReturnService>(
-                    () => editModalComponent,
-                    NotificationService,
-                    StateHasChanged,
-                    LoadAdditionalDataAsync,
-                    InitializeFormFieldsAsync)
-                .AddManager<Supplier>(nameof(PurchaseReturn.SupplierId), "廠商")
-                .Build();
-            supplierModalManager = modalManagers.Get<Supplier>(nameof(PurchaseReturn.SupplierId));
-            
-            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"初始化進貨退出編輯組件時發生錯誤：{ex.Message}");
-        }
-    }
-
     protected override async Task OnParametersSetAsync()
     {
         try
@@ -455,7 +416,6 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
-                    ActionButtons = await GetSupplierActionButtonsAsync(),
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
@@ -581,7 +541,7 @@
     /// </summary>
     private void UpdateFieldsReadOnlyState()
     {
-        // 使用 FormFieldLockHelper 一次處理所有欄位（含 ActionButtons）
+        // 使用 FormFieldLockHelper 一次處理所有欄位
         FormFieldLockHelper.LockMultipleFields(
             formFields,
             new[]
@@ -591,11 +551,7 @@
                 nameof(BaseEntity.Remarks),
                 nameof(PurchaseReturn.SupplierId)
             },
-            isLocked: hasUndeletableDetails,
-            actionButtonsMap: new Dictionary<string, Func<Task<List<FieldActionButton>>>>
-            {
-                { nameof(PurchaseReturn.SupplierId), GetSupplierActionButtonsAsync }
-            }
+            isLocked: hasUndeletableDetails
         );
 
         UpdateFilterFieldsState();
@@ -851,24 +807,6 @@
         }
     }
 
-    // ===== Modal 管理器配置方法 =====
-    
-    // ===== ActionButton 產生方法 =====
-    
-    /// <summary>
-    /// 產生廠商操作按鈕 - 使用統一 Helper
-    /// </summary>
-    private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
-    {
-        var buttons = await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            supplierModalManager, 
-            nameof(PurchaseReturn.SupplierId)
-        );
-        
-        return buttons;
-    }
-    
     // ===== Modal 事件包裝器方法 =====
     
     /// <summary>

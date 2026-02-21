@@ -9,7 +9,6 @@
 @inject ICustomerService CustomerService
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
-@inject ActionButtonHelper ActionButtonHelper
 @inject ISetoffDocumentReportService SetoffDocumentReportService
 @using ERPCore2.Models.Reports
 
@@ -31,7 +30,6 @@
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
-                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadSetoffDocumentData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(SetoffDocumentId.HasValue ? "沖款單更新成功" : "沖款單新增成功")"
@@ -51,26 +49,6 @@
                           GetReportDocumentName="@(e => GetDocumentName(e))">
 </GenericEditModalComponent>
 
-<CompanyEditModalComponent @ref="companyEditModal"
-                          IsVisible="@companyModalManager.IsModalVisible"
-                          IsVisibleChanged="@companyModalManager.HandleModalVisibilityChangedAsync"
-                          CompanyId="@companyModalManager.SelectedEntityId"
-                          OnCompanySaved="@companyModalManager.OnSavedAsync"
-                          OnCancel="@companyModalManager.HandleModalCancelAsync" />
-
-<CustomerEditModalComponent @ref="customerEditModal"
-                           IsVisible="@customerModalManager.IsModalVisible"
-                           IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
-                           CustomerId="@customerModalManager.SelectedEntityId"
-                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
-                           OnCancel="@customerModalManager.HandleModalCancelAsync" />
-
-<SupplierEditModalComponent @ref="supplierEditModal"
-                           IsVisible="@supplierModalManager.IsModalVisible"
-                           IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
-                           SupplierId="@supplierModalManager.SelectedEntityId"
-                           OnSupplierSaved="@supplierModalManager.OnSavedAsync"
-                           OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
 @code {
     // ===== 必要參數 =====
@@ -105,20 +83,6 @@
     private int? filterPurchaseReturnId = null;
     private int? filterSalesDeliveryId = null;
     private int? filterSalesReturnId = null;
-    
-    // 公司編輯 Modal 相關變數 - 使用泛型管理器
-    private CompanyEditModalComponent? companyEditModal;
-    private RelatedEntityModalManager<Company> companyModalManager = default!;
-    
-    // 客戶編輯 Modal 相關變數 - 使用泛型管理器
-    private CustomerEditModalComponent? customerEditModal;
-    private RelatedEntityModalManager<Customer> customerModalManager = default!;
-    
-    // 廠商編輯 Modal 相關變數 - 使用泛型管理器
-    private SupplierEditModalComponent? supplierEditModal;
-    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
-    
-    private ModalManagerCollection modalManagers = default!;
     
     // 選項清單
     private List<Company> companies = new();
@@ -222,34 +186,6 @@
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
-    
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            // 使用 ModalManagerInitHelper 初始化 Modal 管理器
-            // 注意: CustomerId 和 SupplierId 是虛擬屬性,它們的 setter 會自動處理 RelatedPartyId 和 RelatedPartyType
-            modalManagers = ModalManagerInitHelper.CreateBuilder<SetoffDocument, ISetoffDocumentService>(
-                    () => editModalComponent,
-                    NotificationService,
-                    StateHasChanged,
-                    LoadAdditionalDataAsync,
-                    InitializeFormFieldsAsync)
-                .AddManager<Company>(nameof(SetoffDocument.CompanyId), "公司")
-                .AddManager<Customer>("CustomerId", "客戶")  // 虛擬屬性,使用字串
-                .AddManager<Supplier>("SupplierId", "廠商")  // 虛擬屬性,使用字串
-                .Build();
-            companyModalManager = modalManagers.Get<Company>(nameof(SetoffDocument.CompanyId));
-            customerModalManager = modalManagers.Get<Customer>("CustomerId");
-            supplierModalManager = modalManagers.Get<Supplier>("SupplierId");
-            
-            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("初始化沖款單編輯組件時發生錯誤");
-        }
-    }
     
     protected override async Task OnParametersSetAsync()
     {
@@ -1047,8 +983,7 @@
                     Placeholder = "請輸入或選擇客戶",
                     MinSearchLength = 0,
                     IsRequired = true,
-                    HelpText = "選擇應收帳款的客戶",
-                    ActionButtons = await GetCustomerActionButtonsAsync()
+                    HelpText = "選擇應收帳款的客戶"
                 });
             }
             else if (currentSetoffType == SetoffType.AccountsPayable)
@@ -1062,8 +997,7 @@
                     Placeholder = "請輸入或選擇廠商",
                     MinSearchLength = 0,
                     IsRequired = true,
-                    HelpText = "選擇應付帳款的廠商",
-                    ActionButtons = await GetSupplierActionButtonsAsync()
+                    HelpText = "選擇應付帳款的廠商"
                 });
             }
 
@@ -1086,8 +1020,7 @@
                     Placeholder = companies.Count == 1 ? companies.First().CompanyName : "請輸入或選擇公司",
                     MinSearchLength = 0, // 允許空白搜尋以顯示所有選項（當只有一筆時會自動顯示）
                     IsRequired = true,
-                    HelpText = "選擇沖款單所屬的公司",
-                    ActionButtons = await GetCompanyActionButtonsAsync()
+                    HelpText = "選擇沖款單所屬的公司"
                 },
                 new()
                 {
@@ -1226,17 +1159,10 @@
     /// <summary>
     /// 欄位變更事件處理
     /// </summary>
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    private Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
     {
         try
-        {            
-            // 使用統一 Helper 處理公司欄位變更
-            if (fieldChange.PropertyName == nameof(SetoffDocument.CompanyId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    companyModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-            
+        {
             // 處理客戶欄位變更
             if (fieldChange.PropertyName == "CustomerId" && editModalComponent?.Entity != null)
             {
@@ -1251,13 +1177,10 @@
                     {
                         editModalComponent.Entity.RelatedPartyName = customer.CompanyName ?? "";
                     }
-                    
-                    // 更新 ActionButtons
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+
                 }
             }
-            
+
             // 處理廠商欄位變更
             if (fieldChange.PropertyName == "SupplierId" && editModalComponent?.Entity != null)
             {
@@ -1272,13 +1195,10 @@
                     {
                         editModalComponent.Entity.RelatedPartyName = supplier.CompanyName;
                     }
-                    
-                    // 更新 ActionButtons
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        supplierModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+
                 }
             }
-            
+
             // 處理日期篩選變更
             if (fieldChange.PropertyName == "FilterStartDate")
             {
@@ -1310,48 +1230,9 @@
         {
             // 忽略錯誤
         }
-    }
 
-    // ===== Action Buttons =====
-    private async Task<List<FieldActionButton>> GetCompanyActionButtonsAsync()
-    {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent,
-            companyModalManager,
-            nameof(SetoffDocument.CompanyId)
-        );
+        return Task.CompletedTask;
     }
-
-    private Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
-    {
-        // 取得目前的 RelatedPartyId (當 SetoffType 是應收帳款時)
-        int? currentCustomerId = null;
-        if (editModalComponent?.Entity?.SetoffType == SetoffType.AccountsReceivable && 
-            editModalComponent.Entity.RelatedPartyType == "Customer")
-        {
-            currentCustomerId = editModalComponent.Entity.RelatedPartyId > 0 
-                ? editModalComponent.Entity.RelatedPartyId 
-                : null;
-        }
-        
-        return Task.FromResult(customerModalManager.GenerateActionButtons(currentCustomerId));
-    }
-
-    private Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
-    {
-        // 取得目前的 RelatedPartyId (當 SetoffType 是應付帳款時)
-        int? currentSupplierId = null;
-        if (editModalComponent?.Entity?.SetoffType == SetoffType.AccountsPayable && 
-            editModalComponent.Entity.RelatedPartyType == "Supplier")
-        {
-            currentSupplierId = editModalComponent.Entity.RelatedPartyId > 0 
-                ? editModalComponent.Entity.RelatedPartyId 
-                : null;
-        }
-        
-        return Task.FromResult(supplierModalManager.GenerateActionButtons(currentSupplierId));
-    }
-
 
     // ===== 列印相關方法 =====
 

@@ -186,10 +186,11 @@
         
         <div class="form-field-row @(isCheckbox ? "form-field-row-checkbox" : "")">
             @* 所有欄位類型統一由此處渲染 Label *@
-            @if (!string.IsNullOrEmpty(field.Label))
+            @{ var labelText = field.LabelFactory?.Invoke() ?? field.Label; }
+            @if (!string.IsNullOrEmpty(labelText))
             {
                 <label class="form-field-label" for="@field.PropertyName" title="@field.HelpText">
-                    @field.Label
+                    @labelText
                     @if (field.IsRequired)
                     {
                         <span class="text-danger">*</span>

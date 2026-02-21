@@ -13,7 +13,6 @@
 @inject IEmployeeService EmployeeService
 @inject IProductService ProductService
 @inject ISystemParameterService SystemParameterService
-@inject ActionButtonHelper ActionButtonHelper
 @inject ISetoffDocumentService SetoffDocumentService
 @inject ISalesReturnReportService SalesReturnReportService
 @inject NavigationManager NavigationManager
@@ -43,7 +42,6 @@
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
-                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadSalesReturnData"
                           UseGenericSave="false"
                           CustomValidator="@ValidateSalesReturnDetailsAsync"
@@ -66,14 +64,6 @@
                           ReportPreviewTitle="銷貨退回單預覽"
                           GetReportDocumentName="@(e => $"銷貨退回單-{e.Code}")"
 />
-
-@* 客戶編輯 Modal *@
-<CustomerEditModalComponent @ref="customerEditModal"
-                           IsVisible="@customerModalManager.IsModalVisible"
-                           IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
-                           CustomerId="@customerModalManager.SelectedEntityId"
-                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
-                           OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
 @* 沖款單編輯 Modal *@
 <SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
@@ -145,13 +135,6 @@
     private bool hasUndeletableDetails = false;
     private bool isDetailDataReady = false;
     
-    // ===== Modal Manager 集合 =====
-    private ModalManagerCollection? modalManagers;
-    
-    // ===== Modal 管理器 =====
-    private CustomerEditModalComponent? customerEditModal;
-    private RelatedEntityModalManager<Customer> customerModalManager = default!;
-    
     // ===== 相關單據 Modal =====
     private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
     private bool showSetoffDocumentModal = false;
@@ -161,31 +144,6 @@
     private bool isDataLoaded = false;
 
     // ===== 必要方法 =====
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            // 使用 ModalManagerInitHelper 初始化所有 Manager
-            modalManagers = ModalManagerInitHelper.CreateBuilder<SalesReturn, ISalesReturnService>(
-                    () => editModalComponent,
-                    NotificationService,
-                    StateHasChanged,
-                    LoadAdditionalDataAsync,
-                    InitializeFormFieldsAsync)
-                .AddManager<Customer>(nameof(SalesReturn.CustomerId), "客戶")
-                .Build();
-            
-            // 取得個別 Manager 供組件使用
-            customerModalManager = modalManagers.Get<Customer>(nameof(SalesReturn.CustomerId));
-            
-            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("初始化組件時發生錯誤");
-        }
-    }
-    
     protected override async Task OnParametersSetAsync()
     {
         try
@@ -618,7 +576,6 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行篩選，或直接選擇",
-                    ActionButtons = await GetCustomerActionButtonsAsync(), //  根據 hasUndeletableDetails 決定是否顯示
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
@@ -901,7 +858,6 @@
 
     private void UpdateFieldsReadOnlyState()
     {
-        // 使用 FormFieldLockHelper 一次處理所有欄位（含 ActionButtons）
         FormFieldLockHelper.LockMultipleFields(
             formFields,
             new[]
@@ -911,11 +867,7 @@
                 nameof(BaseEntity.Remarks),
                 nameof(SalesReturn.CustomerId)
             },
-            isLocked: hasUndeletableDetails,
-            actionButtonsMap: new Dictionary<string, Func<Task<List<FieldActionButton>>>>
-            {
-                { nameof(SalesReturn.CustomerId), GetCustomerActionButtonsAsync }
-            }
+            isLocked: hasUndeletableDetails
         );
 
         UpdateFilterFieldsState();
@@ -1230,25 +1182,6 @@
         </DetailSectionWrapper>
     };
     
-    /// <summary>
-    /// 產生客戶操作按鈕 - 使用統一 Helper
-    ///  關鍵：當有不可刪除的明細時，不顯示 ActionButtons
-    /// </summary>
-    private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
-    {
-        //  關鍵：當有不可刪除的明細時，不顯示 ActionButtons
-        if (hasUndeletableDetails)
-        {
-            return new List<FieldActionButton>();
-        }
-        
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            customerModalManager, 
-            nameof(SalesReturn.CustomerId)
-        );
-    }
-
     /// <summary>
     /// 處理開啟相關單據的事件
     /// </summary>

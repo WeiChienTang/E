@@ -366,8 +366,7 @@ namespace ERPCore2.Services.Reports
             if (detail.CompositionDetails == null || !detail.CompositionDetails.Any())
                 return false;
             
-            return detail.CompositionDetails.Any(cd => 
-                cd.ComponentProduct?.ShowBomOnPrint == true);
+            return detail.CompositionDetails.Any();
         }
 
         /// <summary>
@@ -375,9 +374,7 @@ namespace ERPCore2.Services.Reports
         /// </summary>
         private static string GetBomText(QuotationDetail detail)
         {
-            var compositions = detail.CompositionDetails?
-                .Where(cd => cd.ComponentProduct?.ShowBomOnPrint == true)
-                .ToList() ?? new List<QuotationCompositionDetail>();
+            var compositions = detail.CompositionDetails?.ToList() ?? new List<QuotationCompositionDetail>();
             
             if (!compositions.Any()) return "";
             

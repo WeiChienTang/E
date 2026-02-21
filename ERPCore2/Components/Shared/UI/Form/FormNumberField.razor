@@ -27,6 +27,7 @@ else if (Field.UseThousandsSeparator)
            required="@Field.IsRequired"
            value="@(_isFormattedFocused ? FormattedInputValue : FormattedDisplayValue)"
            @onchange="HandleFormattedChange"
+           @oninput="HandleInputEvent"
            @onfocus="HandleFormattedFocus"
            @onblur="HandleFormattedBlur" />
 }
@@ -46,6 +47,7 @@ else
            step="@Field.Step"
            value="@FormattedInputValue"
            @onchange="HandleChange"
+           @oninput="HandleInputEvent"
            @onfocus="InitRangeLimit" />
 }
 
@@ -129,6 +131,24 @@ else
         else
         {
             await ValueChanged.InvokeAsync(null);
+        }
+    }
+
+    /// <summary>
+    /// oninput 即時更新 - 僅在 BindOnInput = true 時生效，不做範圍驗證以免干擾輸入過程
+    /// </summary>
+    private async Task HandleInputEvent(ChangeEventArgs e)
+    {
+        if (!Field.BindOnInput) return;
+
+        var stringValue = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(stringValue)) return;
+
+        // 去除千分位分隔符（適用於千分位模式）
+        var cleanValue = stringValue.Replace(",", "");
+        if (decimal.TryParse(cleanValue, out decimal numericValue))
+        {
+            await ValueChanged.InvokeAsync(numericValue);
         }
     }
 

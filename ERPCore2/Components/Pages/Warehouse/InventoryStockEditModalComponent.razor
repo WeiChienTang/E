@@ -4,7 +4,6 @@
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
-@inject ActionButtonHelper ActionButtonHelper
 
 <GenericEditModalComponent TEntity="InventoryStock" 
                           TService="IInventoryStockService"
@@ -23,7 +22,6 @@
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
-                          ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadInventoryStockData"
                           UseGenericSave="true"
                           CustomValidator="@ValidateBeforeSave"
@@ -32,33 +30,9 @@
                           RequiredPermission="InventoryStock.Read"
                           OnEntitySaved="@OnInventoryStockSaved"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
                           CustomModules="@GetCustomModules()"
 />
 
-@* 商品編輯 Modal *@
-<ProductEditModalComponent @ref="productEditModal"
-                          IsVisible="@productModalManager.IsModalVisible"
-                          IsVisibleChanged="@productModalManager.HandleModalVisibilityChangedAsync"
-                          ProductId="@productModalManager.SelectedEntityId"
-                          OnProductSaved="@OnProductSavedWrapper"
-                          OnCancel="@productModalManager.HandleModalCancelAsync" />
-
-@* 倉庫編輯 Modal *@
-<WarehouseEditModalComponent @ref="warehouseEditModal"
-                            IsVisible="@warehouseModalManager.IsModalVisible"
-                            IsVisibleChanged="@warehouseModalManager.HandleModalVisibilityChangedAsync"
-                            WarehouseId="@warehouseModalManager.SelectedEntityId"
-                            OnWarehouseSaved="@OnWarehouseSavedWrapper"
-                            OnCancel="@warehouseModalManager.HandleModalCancelAsync" />
-
-@* 倉庫位置編輯 Modal *@
-<WarehouseLocationEditModalComponent @ref="warehouseLocationEditModal"
-                                    IsVisible="@warehouseLocationModalManager.IsModalVisible"
-                                    IsVisibleChanged="@warehouseLocationModalManager.HandleModalVisibilityChangedAsync"
-                                    WarehouseLocationId="@warehouseLocationModalManager.SelectedEntityId"
-                                    OnWarehouseLocationSaved="@OnWarehouseLocationSavedWrapper"
-                                    OnCancel="@warehouseLocationModalManager.HandleModalCancelAsync" />
 @code {
     // ===== 參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -83,55 +57,11 @@
     private List<InventoryStockDetail> inventoryStockDetails = new();
     private InventoryStockTable<InventoryStock, InventoryStockDetail>? inventoryStockDetailManager;
 
-    // Modal 管理器
-    private ProductEditModalComponent? productEditModal;
-    private WarehouseEditModalComponent? warehouseEditModal;
-    private WarehouseLocationEditModalComponent? warehouseLocationEditModal;
-    private RelatedEntityModalManager<Product> productModalManager = default!;
-    private RelatedEntityModalManager<Warehouse> warehouseModalManager = default!;
-    private RelatedEntityModalManager<WarehouseLocation> warehouseLocationModalManager = default!;
-    private ModalManagerCollection modalManagers = default!;
-    
     // 資料載入狀態標記
     private bool isDataLoaded = false;
     private bool isDetailDataReady = false;
 
     // ===== 生命週期 =====
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            // 使用 ModalManagerInitHelper 初始化 Modal 管理器
-            // 注意: InventoryStock 主檔只有 ProductId, 倉庫和庫位在明細中
-            modalManagers = ModalManagerInitHelper.CreateBuilder<InventoryStock, IInventoryStockService>(
-                    () => editModalComponent,
-                    NotificationService,
-                    StateHasChanged,
-                    LoadAdditionalDataAsync,
-                    InitializeFormFieldsAsync)
-                .AddManager<Product>(nameof(InventoryStock.ProductId), "商品")
-                .Build();
-            productModalManager = modalManagers.Get<Product>(nameof(InventoryStock.ProductId));
-            
-            // 倉庫和庫位管理器仍需保留以供未來擴展使用
-            warehouseModalManager = new RelatedEntityManagerBuilder<Warehouse>(NotificationService, "倉庫")
-                .WithReloadCallback(LoadAdditionalDataAsync)
-                .WithStateChangedCallback(StateHasChanged)
-                .Build();
-            
-            warehouseLocationModalManager = new RelatedEntityManagerBuilder<WarehouseLocation>(NotificationService, "倉庫位置")
-                .WithReloadCallback(LoadAdditionalDataAsync)
-                .WithStateChangedCallback(StateHasChanged)
-                .Build();
-                
-            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("初始化庫存編輯組件時發生錯誤");
-        }
-    }
-
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible && !isDataLoaded)
@@ -329,7 +259,7 @@
     }
 
     // ===== 表單初始化 =====
-    private async Task InitializeFormFieldsAsync()
+    private Task InitializeFormFieldsAsync()
     {
         try
         {
@@ -345,7 +275,6 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入商品名稱進行搜尋，或直接選擇",
-                    ActionButtons = await GetProductActionButtonsAsync()
                 },
                 
                 new FormFieldDefinition()
@@ -368,157 +297,18 @@
                 .AddToSection(FormSectionNames.AdditionalData,
                     ist => ist.Remarks)
                 .Build();
+
+        return Task.CompletedTask;
         }
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+            return Task.CompletedTask;
         }
-    }
-
-    // ===== ActionButton 產生方法 =====
-    
-    /// <summary>
-    /// 產生商品操作按鈕 - 使用統一 Helper
-    /// </summary>
-    private async Task<List<FieldActionButton>> GetProductActionButtonsAsync()
-    {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            productModalManager, 
-            nameof(InventoryStock.ProductId)
-        );
     }
 
     // 注意：倉庫和庫位相關方法已移除，因為 InventoryStock 已改為主檔結構
     // 倉庫/庫位資訊現在存儲在 InventoryStockDetails 中
-
-    // ===== 輔助方法 =====
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            // 使用統一 Helper 處理商品欄位變更
-            if (fieldChange.PropertyName == nameof(InventoryStock.ProductId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    productModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-            // 注意：倉庫和庫位欄位變更處理已移除（因為主檔結構不再包含這些欄位）
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理欄位變更時發生錯誤：{ex.Message}");
-        }
-    }
-
-    // OnWarehouseChanged 和 GetWarehouseLocationOptions 方法已移除
-    // 因為 InventoryStock 已改為主檔結構，不再直接包含倉庫和庫位資訊
-
-    // ===== Modal 事件包裝器方法 =====
-    
-    /// <summary>
-    /// 包裝商品儲存事件
-    /// </summary>
-    private async Task OnProductSavedWrapper()
-    {
-        try
-        {
-            // 重新載入資料
-            if (productModalManager.ReloadDataCallback != null)
-            {
-                await productModalManager.ReloadDataCallback();
-            }
-            
-            // 執行自訂後處理邏輯
-            if (productModalManager.CustomPostProcessCallback != null)
-            {
-                var dummyProduct = new Product();
-                await productModalManager.CustomPostProcessCallback(dummyProduct);
-            }
-            
-            // 關閉 Modal
-            await productModalManager.CloseModalAsync();
-            
-            // 顯示成功訊息
-            await NotificationService.ShowSuccessAsync("商品已成功儲存，選項已更新");
-            
-            // 觸發狀態變更
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理商品儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 包裝倉庫儲存事件
-    /// </summary>
-    private async Task OnWarehouseSavedWrapper()
-    {
-        try
-        {
-            // 重新載入資料
-            if (warehouseModalManager.ReloadDataCallback != null)
-            {
-                await warehouseModalManager.ReloadDataCallback();
-            }
-            
-            // 執行自訂後處理邏輯
-            if (warehouseModalManager.CustomPostProcessCallback != null)
-            {
-                var dummyWarehouse = new Warehouse();
-                await warehouseModalManager.CustomPostProcessCallback(dummyWarehouse);
-            }
-            
-            // 關閉 Modal
-            await warehouseModalManager.CloseModalAsync();
-            
-            // 顯示成功訊息
-            await NotificationService.ShowSuccessAsync("倉庫已成功儲存，選項已更新");
-            
-            // 觸發狀態變更
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理倉庫儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 包裝倉庫位置儲存事件
-    /// </summary>
-    private async Task OnWarehouseLocationSavedWrapper(WarehouseLocation savedWarehouseLocation)
-    {
-        try
-        {
-            // 重新載入資料
-            if (warehouseLocationModalManager.ReloadDataCallback != null)
-            {
-                await warehouseLocationModalManager.ReloadDataCallback();
-            }
-            
-            // 執行自訂後處理邏輯
-            if (warehouseLocationModalManager.CustomPostProcessCallback != null)
-            {
-                await warehouseLocationModalManager.CustomPostProcessCallback(savedWarehouseLocation);
-            }
-            
-            // 關閉 Modal
-            await warehouseLocationModalManager.CloseModalAsync();
-            
-            // 顯示成功訊息
-            await NotificationService.ShowSuccessAsync("倉庫位置已成功儲存，選項已更新");
-            
-            // 觸發狀態變更
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理倉庫位置儲存成功事件時發生錯誤：{ex.Message}");
-        }
-    }
 
     // ===== 自訂模組 =====
     

@@ -1761,20 +1761,27 @@
             {
                 PropertyName = field.PropertyName,
                 Label = field.Label,
+                LabelFactory = field.LabelFactory,
                 FieldType = field.FieldType,
                 Placeholder = field.Placeholder,
                 HelpText = field.HelpText,
                 IsRequired = field.IsRequired,
                 IsReadOnly = field.IsReadOnly,
                 IsDisabled = field.IsDisabled,
+                IsVisible = field.IsVisible,
                 CssClass = field.CssClass,
                 ContainerCssClass = field.ContainerCssClass,
                 Min = field.Min,
                 Max = field.Max,
                 Step = field.Step,
+                DecimalPlaces = field.DecimalPlaces,
+                UseThousandsSeparator = field.UseThousandsSeparator,
+                BindOnInput = field.BindOnInput,
                 MinLength = field.MinLength,
                 MaxLength = field.MaxLength,
+                MaxBytes = field.MaxBytes,
                 Rows = field.Rows,
+                ShowCharacterCount = field.ShowCharacterCount,
                 Options = field.Options,
                 AutoCompleteDelayMs = field.AutoCompleteDelayMs,
                 MinSearchLength = field.MinSearchLength,
@@ -1783,7 +1790,9 @@
                 Order = field.Order,
                 GroupName = field.GroupName,
                 ActionButtons = field.ActionButtons,
-                LabelHelpItems = field.LabelHelpItems
+                LabelHelpItems = field.LabelHelpItems,
+                AutoCompleteAttribute = field.AutoCompleteAttribute,
+                IsFilterOnly = field.IsFilterOnly,
             };
             
             // 如果是 AutoComplete 欄位，包裝搜尋函式以支援智能預填

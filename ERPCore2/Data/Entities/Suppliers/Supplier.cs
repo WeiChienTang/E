@@ -78,8 +78,6 @@ namespace ERPCore2.Data.Entities
         // 地址資訊請使用 IAddressService 取得
         
         // Navigation Properties
-        public ICollection<Product> Products { get; set; } = new List<Product>();
-        
         /// <summary>
         /// 供應商品列表（商品-供應商綁定）
         /// </summary>

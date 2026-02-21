@@ -188,37 +188,6 @@ namespace ERPCore2.FieldConfiguration
                                 }
                             })
                         }
-                    },
-                    {
-                        nameof(Product.ShowBomOnPrint),
-                        new FieldDefinition<Product>
-                        {
-                            PropertyName = nameof(Product.ShowBomOnPrint),
-                            DisplayName = "列印顯示BOM",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 9,
-                            Options = new List<SelectOption>
-                            {
-                                new SelectOption { Text = "顯示", Value = "true" },
-                                new SelectOption { Text = "不顯示", Value = "false" }
-                            },
-                            FilterFunction = (model, query) => FilterHelper.ApplyBoolFilter(
-                                model, query, nameof(Product.ShowBomOnPrint), p => p.ShowBomOnPrint),
-                            CustomTemplate = new RenderFragment<object>(data => builder =>
-                            {
-                                if (data is Product product)
-                                {
-                                    var (displayName, badgeClass) = product.ShowBomOnPrint
-                                        ? ("顯示", "bg-success")
-                                        : ("不顯示", "bg-secondary");
-                                    
-                                    builder.OpenElement(0, "span");
-                                    builder.AddAttribute(1, "class", $"badge {badgeClass}");
-                                    builder.AddContent(2, displayName);
-                                    builder.CloseElement();
-                                }
-                            })
-                        }
                     }
 
                 };

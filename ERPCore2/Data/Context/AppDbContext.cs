@@ -188,20 +188,11 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(e => e.UnitId)
                         .OnDelete(DeleteBehavior.Restrict);
                         
-                        entity.HasOne(e => e.PurchaseUnit)
-                        .WithMany()
-                        .HasForeignKey(e => e.PurchaseUnitId)
-                        .OnDelete(DeleteBehavior.NoAction);
-                        
                         entity.HasOne(e => e.ProductionUnit)
                         .WithMany()
                         .HasForeignKey(e => e.ProductionUnitId)
                         .OnDelete(DeleteBehavior.NoAction);
                         
-                        entity.HasOne(e => e.Supplier)
-                        .WithMany(s => s.Products)
-                        .HasForeignKey(e => e.SupplierId)
-                        .OnDelete(DeleteBehavior.SetNull);
                   });
                   
                   // 商品-供應商關聯表

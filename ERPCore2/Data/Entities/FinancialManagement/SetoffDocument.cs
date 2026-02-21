@@ -159,6 +159,11 @@ namespace ERPCore2.Data.Entities
                     RelatedPartyId = value.Value;
                     RelatedPartyType = "Customer";
                 }
+                else
+                {
+                    RelatedPartyId = 0;
+                    RelatedPartyType = string.Empty;
+                }
             }
         }
 
@@ -175,6 +180,11 @@ namespace ERPCore2.Data.Entities
                 {
                     RelatedPartyId = value.Value;
                     RelatedPartyType = "Supplier";
+                }
+                else
+                {
+                    RelatedPartyId = 0;
+                    RelatedPartyType = string.Empty;
                 }
             }
         }

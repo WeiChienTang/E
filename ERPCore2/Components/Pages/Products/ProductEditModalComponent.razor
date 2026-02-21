@@ -52,7 +52,7 @@
                           GetReportDocumentName="@(e => $"商品-{e.Code}")"
                           CustomActionButtons="@CustomActionButtons" />
 
-@* 商品分類編輯 Modal *@
+@* 商品類型編輯 Modal *@
 <ProductCategoryEditModalComponent @ref="productCategoryEditModal"
                                   IsVisible="@productCategoryModalManager.IsModalVisible"
                                   IsVisibleChanged="@productCategoryModalManager.HandleModalVisibilityChangedAsync"
@@ -211,16 +211,14 @@
     
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// ActionButtons 已由 GenericEditModalComponent.UpdateAllActionButtons() 統一更新
+    /// 重建表單欄位以確保 IsVisible / Label 等依賴 Entity 狀態的屬性正確更新
     /// </summary>
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
         try
         {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
-            // ActionButtons 更新已由 GenericEditModalComponent 的 LoadAllData 統一處理
-            StateHasChanged();
+            _hasCheckedEntityLoad = true;
+            await RefreshFormFieldsAfterEntityLoadAsync();
         }
         catch (Exception ex)
         {
@@ -249,8 +247,9 @@
     {
         // 重新初始化表單欄位
         await InitializeFormFieldsAsync();
-        
-        StateHasChanged();
+
+        // 根據實體狀態正確設定換算欄位的顯示狀態（導航時實體已載入）
+        await UpdateProductionUnitConversionFieldAsync();
     }
     private async Task<Product?> LoadProductData()
     {
@@ -283,7 +282,7 @@
     {
         try
         {
-            // 載入商品分類
+            // 載入商品類型
             var productCategories = await ProductService.GetProductCategoriesAsync();
             availableProductCategories = productCategories;
             productCategoryOptions = productCategories.Select(pc => new SelectOption
@@ -347,16 +346,6 @@
                 MaxLength = 50,
                 HelpText = "商品的唯一識別碼"
             },
-            new()
-            {
-                PropertyName = nameof(Product.Name),
-                Label = "商品名稱",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入商品名稱",
-                IsRequired = true,
-                MaxLength = 100,
-                HelpText = "商品的完整名稱"
-            },
             new FormFieldDefinition()
             {
                 PropertyName = nameof(Product.Barcode),
@@ -368,24 +357,26 @@
                 HelpText = "商品的條碼編號",
                 ActionButtons = await GetBarcodeActionButtonsAsync()
             },
-            new FormFieldDefinition()
+            new()
             {
-                PropertyName = nameof(Product.ShowBomOnPrint),
-                Label = "報價明細",
-                FieldType = FormFieldType.Checkbox,
-                Placeholder = "請輸入是否在報價單列印時顯示該商品在BOM表裡的組成",
+                PropertyName = nameof(Product.Name),
+                Label = "商品名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入商品名稱",
                 IsRequired = true,
-                HelpText = "指示是否在報價單列印時顯示該商品在物料清單中的組成給客戶參考",
+                MaxLength = 100,
+                HelpText = "商品的完整名稱"
             },
+
             new()
             {
                 PropertyName = nameof(Product.ProductCategoryId),
-                Label = "商品分類",
+                Label = "類型",
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇商品分類",
+                Placeholder = "請輸入或選擇商品類型",
                 IsRequired = true,
                 MinSearchLength = 0,
-                HelpText = "輸入分類名稱進行搜尋，或直接選擇",
+                HelpText = "輸入類型名稱進行搜尋，或直接選擇",
                 ActionButtons = await GetProductCategoryActionButtonsAsync()
             },
             new()
@@ -402,12 +393,12 @@
             new()
             {
                 PropertyName = nameof(Product.UnitId),
-                Label = "採購單位",
+                Label = "基本單位",
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇採購計量單位",
+                Placeholder = "請輸入或選擇基本計量單位",
                 IsRequired = true,
                 MinSearchLength = 0,
-                HelpText = "商品的採購計量單位（庫存單位）",
+                HelpText = "商品的基本計量單位（庫存單位）",
                 ActionButtons = await GetUnitActionButtonsAsync()
             },
             new()
@@ -425,11 +416,14 @@
             {
                 PropertyName = nameof(Product.ProductionUnitConversionRate),
                 Label = GetProductionUnitConversionLabel(),
+                LabelFactory = () => GetProductionUnitConversionLabel(),
                 FieldType = FormFieldType.Number,
                 Placeholder = "請輸入換算係數",
                 IsRequired = false,
-                IsVisible = ShouldShowProductionUnitConversion(),
+                IsVisible = true,
                 HelpText = "1 商品單位 = N 製程單位（例如：1 包 = 30 公斤，則輸入 30）",
+                UseThousandsSeparator = false,
+                BindOnInput = true,
             },
             new FormFieldDefinition()
             {
@@ -442,9 +436,30 @@
                 Min = 0,
                 Max = 100
             },
+            // 暫時不讓使用者輸入，因為成本計算還尚未完善
+            /*new FormFieldDefinition()
+            {
+                PropertyName = nameof(Product.StandardCost),
+                Label = "成本",
+                FieldType = FormFieldType.Number,
+                Placeholder = "請輸入成本",
+                IsRequired = false,
+                HelpText = "商品的成本（財務/成本核算用）",
+                Min = 0
+            },*/
             new FormFieldDefinition()
             {
-                PropertyName = nameof(Product.ProcurementType),  
+                PropertyName = nameof(Product.ListPrice),
+                Label = "建議售價",
+                FieldType = FormFieldType.Number,
+                Placeholder = "請輸入建議售價",
+                IsRequired = false,
+                HelpText = "商品的建議零售售價（參考用）",
+                Min = 0
+            },
+            new FormFieldDefinition()
+            {
+                PropertyName = nameof(Product.ProcurementType),
                 Label = "採購類型",
                 FieldType = FormFieldType.Select,
                 IsRequired = true,
@@ -475,19 +490,19 @@
         formSections = FormSectionHelper<Product>.Create()
             .AddToSection(FormSectionNames.BasicInfo,
                 p => p.Code,
-                p => p.Name,
                 p => p.Barcode,
+                p => p.Name,
                 p => p.TaxRate,
-                p => p.ProcurementType,
-                p => p.ShowBomOnPrint)            
+                p => p.StandardCost,
+                p => p.ListPrice,
+                p => p.ProcurementType)
             .AddToSection(FormSectionNames.CategoryAndSpecification,
-                p => p.ProductCategoryId,
-                p => p.SizeId,
-                p => p.Specification)            
-            .AddToSection(FormSectionNames.UnitSettings,
                 p => p.UnitId,
                 p => p.ProductionUnitId,
-                p => p.ProductionUnitConversionRate)
+                p => p.ProductionUnitConversionRate,
+                p => p.ProductCategoryId,
+                p => p.SizeId,
+                p => p.Specification)
             .AddToSection(FormSectionNames.AdditionalInfo,                
                 p => p.Remarks)
             .Build();
@@ -499,7 +514,7 @@
     // ===== ActionButton 產生方法 =====
     
     /// <summary>
-    /// 產生商品分類操作按鈕 - 使用統一 Helper
+    /// 產生商品類型操作按鈕 - 使用統一 Helper
     /// </summary>
     private async Task<List<FieldActionButton>> GetProductCategoryActionButtonsAsync()
     {
@@ -519,18 +534,6 @@
             editModalComponent, 
             unitModalManager, 
             nameof(Product.UnitId)
-        );
-    }
-
-    /// <summary>
-    /// 產生採購單位操作按鈕 - 使用統一 Helper
-    /// </summary>
-    private async Task<List<FieldActionButton>> GetPurchaseUnitActionButtonsAsync()
-    {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            unitModalManager, 
-            nameof(Product.PurchaseUnitId)
         );
     }
 
@@ -643,7 +646,7 @@
                 await RefreshFormFieldsAfterEntityLoadAsync();
             }
             
-            // 使用統一 Helper 處理商品分類欄位變更
+            // 使用統一 Helper 處理商品類型欄位變更
             if (fieldChange.PropertyName == nameof(Product.ProductCategoryId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
@@ -672,6 +675,17 @@
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     sizeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+            // 換算率數值變更時即時更新欄位標籤
+            else if (fieldChange.PropertyName == nameof(Product.ProductionUnitConversionRate))
+            {
+                var conversionField = formFields.FirstOrDefault(f =>
+                    f.PropertyName == nameof(Product.ProductionUnitConversionRate));
+                if (conversionField != null)
+                {
+                    conversionField.Label = GetProductionUnitConversionLabel();
+                }
+                StateHasChanged();
             }
         }
         catch (Exception)
@@ -877,7 +891,7 @@
     private string GetProductionUnitConversionLabel()
     {
         var entity = editModalComponent?.Entity;
-        if (entity == null) return "製程單位換算率";
+        if (entity == null) return "單位換算率";
         
         var baseUnitName = GetUnitName(entity.UnitId);
         var productionUnitName = GetUnitName(entity.ProductionUnitId);
@@ -889,7 +903,7 @@
             : "?";
         
         if (string.IsNullOrEmpty(baseUnitName))
-            return "製程單位換算率";
+            return "單位換算率";
             
         if (string.IsNullOrEmpty(productionUnitName))
             return $"1 {baseUnitName} = {conversionRateDisplay}";
@@ -916,7 +930,6 @@
             
         if (conversionField != null)
         {
-            conversionField.IsVisible = ShouldShowProductionUnitConversion();
             conversionField.Label = GetProductionUnitConversionLabel();
             
             // 如果製程單位與基本單位相同，自動將換算率設為 1

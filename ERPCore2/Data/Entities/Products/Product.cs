@@ -10,7 +10,7 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     public class Product : BaseEntity
-    {        
+    {
         [Required(ErrorMessage = "商品名稱為必填")]
         [MaxLength(100, ErrorMessage = "商品名稱不可超過100個字元")]
         [Display(Name = "商品名稱")]
@@ -25,15 +25,11 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "基本單位")]
         [ForeignKey(nameof(Unit))]
         public int UnitId { get; set; }
-        
-        [Display(Name = "採購單位")]
-        [ForeignKey(nameof(PurchaseUnit))]
-        public int? PurchaseUnitId { get; set; }
-        
+
         [Display(Name = "製程單位")]
         [ForeignKey(nameof(ProductionUnit))]
         public int? ProductionUnitId { get; set; }
-        
+
         /// <summary>
         /// 製程單位換算率：1 基本單位（商品單位）= N 製程單位
         /// 例如：基本單位為「包」、製程單位為「公斤」，1 包 = 30 公斤，則此值為 30
@@ -42,21 +38,11 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,6)")]
         [Range(0.000001, double.MaxValue, ErrorMessage = "換算率必須大於 0")]
         public decimal? ProductionUnitConversionRate { get; set; }
-        
-        /// <summary>
-        /// 採購單位換算率：1 基本單位（商品單位）= N 採購單位
-        /// 例如：基本單位為「個」、採購單位為「箱」，1 箱 = 12 個，則此值為 0.0833（或反向思考：12 個 = 1 箱）
-        /// 注意：此欄位目前預留，視需求啟用
-        /// </summary>
-        [Display(Name = "採購單位換算率")]
-        [Column(TypeName = "decimal(18,6)")]
-        [Range(0.000001, double.MaxValue, ErrorMessage = "換算率必須大於 0")]
-        public decimal? PurchaseUnitConversionRate { get; set; }
-        
+
         [Display(Name = "尺寸")]
         [ForeignKey(nameof(Size))]
         public int? SizeId { get; set; }
-        
+
         [Display(Name = "商品分類")]
         [ForeignKey(nameof(ProductCategory))]
         public int? ProductCategoryId { get; set; }
@@ -64,55 +50,46 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "規格說明")]
         [MaxLength(100, ErrorMessage = "規格說明不可超過100個字元")]
         public string? Specification { get; set; }
-        
+
         [Display(Name = "稅率")]
         [Column(TypeName = "decimal(5,2)")]
         [Range(0, 100, ErrorMessage = "稅率必須介於0到100之間")]
         public decimal? TaxRate { get; set; }
-        
-        /// <summary>
-        /// 供應商 ID(直接關聯,不使用中間表)
-        /// </summary>
-        [Display(Name = "供應商")]
-        [ForeignKey(nameof(Supplier))]
-        public int? SupplierId { get; set; }
-        
+
+        [Display(Name = "標準成本")]
+        [Column(TypeName = "decimal(18,6)")]
+        [Range(0, double.MaxValue, ErrorMessage = "標準成本必須大於或等於 0")]
+        public decimal? StandardCost { get; set; }
+
+        [Display(Name = "建議售價")]
+        [Column(TypeName = "decimal(18,6)")]
+        [Range(0, double.MaxValue, ErrorMessage = "建議售價必須大於或等於 0")]
+        public decimal? ListPrice { get; set; }
+
         /// <summary>
         /// 採購/製造類型 - 決定商品的取得方式
         /// </summary>
         [Display(Name = "採購類型")]
         public ProcurementType ProcurementType { get; set; } = ProcurementType.Purchased;
-        
-        /// <summary>
-        /// 當此商品作為 BOM 組件時，是否在報價單/單據列印中顯示
-        /// true = 當此商品是別人的 BOM 組件時，會在列印時顯示
-        /// false = 不顯示（預設）
-        /// 範例：廁所的 BOM 包含「磚頭」和「馬桶」，
-        ///       若只想讓客戶看到馬桶，則馬桶設為 true、磚頭設為 false
-        /// </summary>
-        [Display(Name = "BOM列印顯示")]
-        public bool ShowBomOnPrint { get; set; } = false;
-        
+
         // Navigation Properties
         public Unit? Unit { get; set; }
-        public Unit? PurchaseUnit { get; set; }
         public Unit? ProductionUnit { get; set; }
         public Size? Size { get; set; }
         public ProductCategory? ProductCategory { get; set; }
-        public Supplier? Supplier { get; set; }
         public ICollection<InventoryStock> InventoryStocks { get; set; } = new List<InventoryStock>();
-        
+
         // Product Composition (BOM) Navigation Properties
         /// <summary>
         /// 此商品作為成品的所有 BOM 配方
         /// </summary>
         public ICollection<ProductComposition> ProductCompositions { get; set; } = new List<ProductComposition>();
-        
+
         /// <summary>
         /// 此商品作為組件被使用在哪些 BOM 中
         /// </summary>
         public ICollection<ProductCompositionDetail> ComponentInCompositions { get; set; } = new List<ProductCompositionDetail>();
-        
+
         /// <summary>
         /// 供應商關聯列表（商品-供應商綁定）
         /// </summary>

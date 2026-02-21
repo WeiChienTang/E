@@ -176,6 +176,18 @@ public class FormFieldDefinition
     /// 設為 true 時，欄位會放入「篩選條件」區段並以不同視覺樣式顯示
     /// </summary>
     public bool IsFilterOnly { get; set; } = false;
+
+    /// <summary>
+    /// 數字欄位是否在每次鍵入時即時更新值（預設 false，使用 onchange 在失焦時更新）
+    /// 設為 true 時加入 oninput 事件，適合需要即時反映輸入值的場景（如動態標籤）
+    /// </summary>
+    public bool BindOnInput { get; set; } = false;
+
+    /// <summary>
+    /// 動態標籤產生器（若設定，每次渲染時呼叫以取得最新標籤文字，優先於 Label）
+    /// 適合需要即時反映輸入狀態的動態標籤，例如顯示換算結果
+    /// </summary>
+    public Func<string>? LabelFactory { get; set; }
 }
 
 /// <summary>

@@ -74,7 +74,6 @@ namespace ERPCore2.Services
                     .Include(p => p.Unit)
                     .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
-                    .Include(p => p.Supplier)
                     .FirstOrDefaultAsync(p => p.Id == id);
             }
             catch (Exception ex)
@@ -296,8 +295,7 @@ namespace ERPCore2.Services
                     .Include(p => p.Unit)
                     .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
-                    .Include(p => p.Supplier)
-                    .Where(p => p.SupplierId == supplierId && p.Status == EntityStatus.Active)
+                    .Where(p => p.ProductSuppliers.Any(ps => ps.SupplierId == supplierId) && p.Status == EntityStatus.Active)
                     .OrderBy(p => p.Name)
                     .ToListAsync();
                 
@@ -454,7 +452,6 @@ namespace ERPCore2.Services
                 
                 // 檢查實體是否存在，並載入相關資料
                 var existingEntity = await context.Products
-                    .Include(p => p.Supplier)
                     .FirstOrDefaultAsync(x => x.Id == entity.Id);
                     
                 if (existingEntity == null)
