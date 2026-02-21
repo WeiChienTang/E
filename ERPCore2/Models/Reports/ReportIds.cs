@@ -23,6 +23,9 @@ public static class ReportIds
     /// <summary>客戶名冊表</summary>
     public const string CustomerRoster = "AR005";
 
+    /// <summary>客戶詳細資料報表</summary>
+    public const string CustomerDetail = "AR006";
+
     // ==================== 廠商報表 (AP) ====================
 
     /// <summary>應付帳款報表</summary>
@@ -36,7 +39,10 @@ public static class ReportIds
 
     /// <summary>廠商名冊表</summary>
     public const string SupplierRoster = "AP004";
-    
+
+    /// <summary>廠商詳細資料報表</summary>
+    public const string SupplierDetail = "AP005";
+
     // ==================== 採購報表 (PO) ====================
     
     /// <summary>採購單</summary>
@@ -67,7 +73,7 @@ public static class ReportIds
     
     // ==================== 商品報表 (PD) ====================
     
-    /// <summary>商品資料表</summary>
+    /// <summary>商品清單表</summary>
     public const string ProductList = "PD001";
 
     /// <summary>物料清單報表</summary>
@@ -78,6 +84,9 @@ public static class ReportIds
 
     /// <summary>生產排程表</summary>
     public const string ProductionSchedule = "PD004";
+
+    /// <summary>商品詳細資料報表</summary>
+    public const string ProductDetail = "PD005";
 
     // ==================== 庫存報表 (IV) ====================
     
@@ -102,6 +111,9 @@ public static class ReportIds
 
     /// <summary>員工名冊表</summary>
     public const string EmployeeRoster = "HR001";
+
+    /// <summary>員工詳細資料報表</summary>
+    public const string EmployeeDetail = "HR002";
 
     // ==================== 財務報表 (FN) ====================
 

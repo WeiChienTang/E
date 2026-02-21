@@ -122,6 +122,22 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // AR006 - 客戶詳細資料報表（每位客戶各佔一區塊，顯示完整聯絡與付款資訊）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.CustomerDetail,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerRosterBatchFilterTemplate",
+            CriteriaType = typeof(CustomerRosterCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerDetailReportService),
+            PreviewTitle = "客戶詳細資料預覽",
+            FilterTitle = "客戶詳細資料篩選條件",
+            IconClass = "bi-person-vcard-fill",
+            GetDocumentName = criteria =>
+            {
+                return $"客戶詳細資料-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
         // ==================== 廠商報表 ====================
 
         // 廠商對帳單（含期初餘額、進貨/退貨/付款明細、期末餘額）
@@ -157,6 +173,22 @@ public static class FilterTemplateRegistry
             GetDocumentName = criteria =>
             {
                 return $"廠商名冊表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
+        // AP005 - 廠商詳細資料報表（每位廠商各佔一區塊，顯示完整聯絡與付款資訊）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.SupplierDetail,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SupplierRosterBatchFilterTemplate",
+            CriteriaType = typeof(SupplierRosterCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISupplierDetailReportService),
+            PreviewTitle = "廠商詳細資料預覽",
+            FilterTitle = "廠商詳細資料篩選條件",
+            IconClass = "bi-building-fill",
+            GetDocumentName = criteria =>
+            {
+                return $"廠商詳細資料-{DateTime.Now:yyyyMMddHHmm}";
             }
         });
 
@@ -327,20 +359,33 @@ public static class FilterTemplateRegistry
         
         // ==================== 商品報表（清單式）====================
 
-        // 商品資料表（報表集進入時顯示篩選，清單式報表）
+        // PD001 - 商品清單表（報表集進入時顯示篩選，清單式報表）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.ProductList,
             FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ProductListBatchFilterTemplate",
             CriteriaType = typeof(ProductListBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductListReportService),
-            PreviewTitle = "商品資料表預覽",
-            FilterTitle = "商品資料表篩選條件",
+            PreviewTitle = "商品清單表預覽",
+            FilterTitle = "商品清單表篩選條件",
             IconClass = "bi-box-seam",
             GetDocumentName = criteria =>
             {
-                return $"商品資料表-{DateTime.Now:yyyyMMddHHmm}";
+                return $"商品清單表-{DateTime.Now:yyyyMMddHHmm}";
             }
+        });
+
+        // PD005 - 商品詳細資料（詳細式報表，每項商品各佔一區塊）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.ProductDetail,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ProductListBatchFilterTemplate",
+            CriteriaType = typeof(ProductListBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductDetailReportService),
+            PreviewTitle = "商品詳細資料預覽",
+            FilterTitle = "商品詳細資料篩選條件",
+            IconClass = "bi-box-fill",
+            GetDocumentName = criteria => $"商品詳細資料-{DateTime.Now:yyyyMMddHHmm}"
         });
 
         // PD002 - 物料清單報表（依配方分組顯示組件明細）
@@ -470,6 +515,22 @@ public static class FilterTemplateRegistry
             GetDocumentName = criteria =>
             {
                 return $"員工名冊表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
+        // 員工詳細資料報表（每位員工各佔一區塊，顯示完整聯絡與任職資訊）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.EmployeeDetail,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.EmployeeRosterBatchFilterTemplate",
+            CriteriaType = typeof(EmployeeRosterCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IEmployeeDetailReportService),
+            PreviewTitle = "員工詳細資料預覽",
+            FilterTitle = "員工詳細資料篩選條件",
+            IconClass = "bi-person-vcard-fill",
+            GetDocumentName = criteria =>
+            {
+                return $"員工詳細資料-{DateTime.Now:yyyyMMddHHmm}";
             }
         });
 

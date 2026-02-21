@@ -13,6 +13,7 @@
 @inject IProductCompositionService ProductCompositionService
 @inject INotificationService NotificationService
 @inject IProductListReportService ProductListReportService
+@inject IProductDetailReportService ProductDetailReportService
 @inject ActionButtonHelper ActionButtonHelper
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
 
@@ -46,9 +47,9 @@
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
                           PrintButtonText="列印"
-                          ReportService="@ProductListReportService"
-                          ReportId="@ReportIds.ProductList"
-                          ReportPreviewTitle="商品資料預覽"
+                          ReportService="@ProductDetailReportService"
+                          ReportId="@ReportIds.ProductDetail"
+                          ReportPreviewTitle="商品詳細資料預覽"
                           GetReportDocumentName="@(e => $"商品-{e.Code}")"
                           CustomActionButtons="@CustomActionButtons" />
 

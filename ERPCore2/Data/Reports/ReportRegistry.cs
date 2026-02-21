@@ -65,6 +65,18 @@ public static class ReportRegistry
                 SortOrder = 5,
                 IsEnabled = true
             },
+            new ReportDefinition
+            {
+                Id = ReportIds.CustomerDetail,
+                Name = "客戶詳細資料",
+                Description = "列印客戶完整詳細資料，含聯絡資訊、付款條件、業務負責人等，每位客戶各佔一區塊",
+                IconClass = "bi bi-person-vcard-fill",
+                Category = ReportCategory.Customer,
+                RequiredPermission = "Customer.Read",
+                ActionId = "OpenCustomerDetailReport",
+                SortOrder = 6,
+                IsEnabled = true
+            },
 
             // ==================== 廠商報表 ====================
             new ReportDefinition
@@ -101,6 +113,18 @@ public static class ReportRegistry
                 RequiredPermission = "Supplier.Read",
                 ActionId = "OpenSupplierRosterReport",
                 SortOrder = 4,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.SupplierDetail,
+                Name = "廠商詳細資料",
+                Description = "列印廠商完整詳細資料，含聯絡資訊、付款條件、地址等，每位廠商各佔一區塊",
+                IconClass = "bi bi-building-fill",
+                Category = ReportCategory.Supplier,
+                RequiredPermission = "Supplier.Read",
+                ActionId = "OpenSupplierDetailReport",
+                SortOrder = 5,
                 IsEnabled = true
             },
 
@@ -196,7 +220,7 @@ public static class ReportRegistry
             new ReportDefinition
             {
                 Id = ReportIds.ProductList,
-                Name = "商品資料表",
+                Name = "商品清單表",
                 Description = "列印商品基本資料清單（含品號、品名、規格、條碼、分類、單位）",
                 IconClass = "bi bi-box-seam",
                 Category = ReportCategory.Product,
@@ -207,13 +231,13 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = ReportIds.BOMReport,
-                Name = "物料清單報表",
-                Description = "列印商品BOM物料清單，依配方分組顯示組件品號、品名、數量、單位、成本",
-                IconClass = "bi bi-diagram-3",
+                Id = ReportIds.ProductDetail,
+                Name = "商品詳細資料",
+                Description = "列印商品完整詳細資料，含規格、條碼、分類、單位、採購類型、成本定價等，每項商品各佔一區塊",
+                IconClass = "bi bi-box-fill",
                 Category = ReportCategory.Product,
-                RequiredPermission = "ProductComposition.Read",
-                ActionId = "OpenBOMReport",
+                RequiredPermission = "Product.Read",
+                ActionId = "OpenProductDetailReport",
                 SortOrder = 2,
                 IsEnabled = true
             },
@@ -231,6 +255,18 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
+                Id = ReportIds.BOMReport,
+                Name = "物料清單報表",
+                Description = "列印商品BOM物料清單，依配方分組顯示組件品號、品名、數量、單位、成本",
+                IconClass = "bi bi-diagram-3",
+                Category = ReportCategory.Product,
+                RequiredPermission = "ProductComposition.Read",
+                ActionId = "OpenBOMReport",
+                SortOrder = 4,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
                 Id = ReportIds.ProductionSchedule,
                 Name = "生產排程表",
                 Description = "查詢生產排程，含排程項目、數量、狀態、預計日期等明細",
@@ -238,9 +274,10 @@ public static class ReportRegistry
                 Category = ReportCategory.Product,
                 RequiredPermission = "ProductionSchedule.Read",
                 ActionId = "OpenProductionScheduleReport",
-                SortOrder = 4,
+                SortOrder = 5,
                 IsEnabled = true
             },
+
 
             // ==================== 庫存報表 ====================
             new ReportDefinition
@@ -317,6 +354,18 @@ public static class ReportRegistry
                 RequiredPermission = "Employee.Read",
                 ActionId = "OpenEmployeeRosterReport",
                 SortOrder = 1,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.EmployeeDetail,
+                Name = "員工詳細資料",
+                Description = "列印員工完整詳細資料，含聯絡資訊、緊急聯絡人、任職資訊等，每位員工各佔一區塊",
+                IconClass = "bi bi-person-vcard-fill",
+                Category = ReportCategory.HR,
+                RequiredPermission = "Employee.Read",
+                ActionId = "OpenEmployeeDetailReport",
+                SortOrder = 2,
                 IsEnabled = true
             },
 

@@ -222,8 +222,10 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IQuotationReportService, QuotationReportService>();
             // 沖款單報表服務（應收沖款單 FN003 / 應付沖款單 FN004）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISetoffDocumentReportService, SetoffDocumentReportService>();
-            // 商品資料表報表服務（PD001）
+            // 商品清單表報表服務（PD001）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductListReportService, ProductListReportService>();
+            // 商品詳細資料報表服務（PD005）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductDetailReportService, ProductDetailReportService>();
             // 物料清單報表服務（PD002）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IBOMReportService, BOMReportService>();
             // 客戶銷售分析報表服務（AR003）
@@ -246,10 +248,16 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IVehicleMaintenanceReportService, VehicleMaintenanceReportService>();
             // 員工名冊表報表服務（HR001）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IEmployeeRosterReportService, EmployeeRosterReportService>();
+            // 員工詳細資料報表服務（HR002）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IEmployeeDetailReportService, EmployeeDetailReportService>();
             // 客戶名冊表報表服務（AR005）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerRosterReportService, CustomerRosterReportService>();
+            // 客戶詳細資料報表服務（AR006）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerDetailReportService, CustomerDetailReportService>();
             // 廠商名冊表報表服務（AP004）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierRosterReportService, SupplierRosterReportService>();
+            // 廠商詳細資料報表服務（AP005）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierDetailReportService, SupplierDetailReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
         }

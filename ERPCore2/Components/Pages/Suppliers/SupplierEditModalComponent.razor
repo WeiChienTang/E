@@ -5,6 +5,7 @@
 @inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
 @inject ISupplierRosterReportService SupplierRosterReportService
+@inject ISupplierDetailReportService SupplierDetailReportService
 @inject IVehicleService VehicleService
 @inject ActionButtonHelper ActionButtonHelper
 
@@ -36,9 +37,9 @@
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
                           PrintButtonText="列印"
-                          ReportService="@SupplierRosterReportService"
-                          ReportId="@ReportIds.SupplierRoster"
-                          ReportPreviewTitle="廠商資料預覽"
+                          ReportService="@SupplierDetailReportService"
+                          ReportId="@ReportIds.SupplierDetail"
+                          ReportPreviewTitle="廠商詳細資料預覽"
                           GetReportDocumentName="@(e => $"廠商-{e.Code}")"
                           CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()" />
