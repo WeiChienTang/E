@@ -12,7 +12,8 @@
 @inject IProductService ProductService
 @inject INotificationService NotificationService
 
-<div>
+<FilterSectionGroup>
+    <FilterSectionColumn Title="條碼列印設定" Icon="bi bi-upc-scan">
     @* 商品選擇表格 *@
     <div class="mb-3">
         <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end mb-2">
@@ -80,7 +81,8 @@
             </div>
         </div>
     </div>
-</div>
+    </FilterSectionColumn>
+</FilterSectionGroup>
 
 @code {
     // ===== 內部狀態 =====

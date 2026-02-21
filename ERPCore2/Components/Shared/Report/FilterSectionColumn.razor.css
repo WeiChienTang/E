@@ -1,0 +1,59 @@
+/* ===== 篩選區段欄 ===== */
+
+/*
+ * flex: 1 1 280px
+ *   - flex-grow: 1  → 等比例瓜分剩餘空間
+ *   - flex-shrink: 1 → 可縮小
+ *   - flex-basis: 280px → 每欄基礎寬度
+ *
+ * 效果（搭配 filter-sections-container 的 flex-wrap）：
+ *   3 欄 @ > 900px 容器寬
+ *   2 欄 @ > 600px 容器寬
+ *   1 欄 @ <= 600px 或手機版
+ */
+.filter-section-column {
+    flex: 1 1 280px;
+    min-width: 0; /* 防止內容撐破 */
+}
+
+/* ===== 區段標題列 ===== */
+
+.filter-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.5rem;
+    margin-bottom: 0.4rem;
+    background-color: rgba(13, 110, 253, 0.06);
+    border-bottom: 2px solid rgba(13, 110, 253, 0.25);
+    border-radius: 4px 4px 0 0;
+}
+
+.filter-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0d6efd;
+    white-space: nowrap;
+}
+
+.filter-section-icon {
+    font-size: 1rem;
+    color: #0d6efd;
+    flex-shrink: 0;
+}
+
+/* ===== 欄位清單容器 ===== */
+
+.filter-section-fields {
+    display: flex;
+    flex-direction: column;
+    padding-top: 0.1rem;
+}
+
+/* ===== 響應式：768px 以下全寬 ===== */
+
+@media (max-width: 768px) {
+    .filter-section-column {
+        flex: 1 1 100%;
+    }
+}

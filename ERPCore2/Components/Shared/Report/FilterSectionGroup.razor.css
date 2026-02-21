@@ -1,0 +1,18 @@
+/* ===== 篩選區段群組：水平排列容器 ===== */
+
+.filter-sections-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    align-items: flex-start;
+    width: 100%;
+}
+
+/* ===== 響應式：768px 以下折成單欄 ===== */
+
+@media (max-width: 768px) {
+    .filter-sections-container {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}

@@ -12,54 +12,54 @@
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
 
-<div>
-    <FilterFieldRow Label="指定廠商">
-        <SearchSelectFilterComponent TItem="Supplier"
-                                   Items="@suppliers"
-                                   @bind-SelectedItems="@selectedSuppliers"
-                                   DisplayProperty="CompanyName"
-                                   ValueProperty="Id"
-                                   Placeholder="搜尋廠商..."
-                                   EmptyMessage="未選擇廠商（查詢全部廠商）" />
-    </FilterFieldRow>
+<FilterSectionGroup>
 
-    <FilterFieldRow Label="日期範圍">
-        <DateRangeFilterComponent @bind-StartDate="startDate"
-                                  @bind-EndDate="endDate"
-                                  ShowQuickSelectors="true"
-                                  AutoValidate="true"
-                                  ShowValidationMessage="true" />
-    </FilterFieldRow>
+    @* ===== 欄 1：基本篩選 ===== *@
+    <FilterSectionColumn Title="基本篩選" Icon="bi bi-building">
+        <FilterFieldRow Label="指定廠商">
+            <SearchSelectFilterComponent TItem="Supplier"
+                                       Items="@suppliers"
+                                       @bind-SelectedItems="@selectedSuppliers"
+                                       DisplayProperty="CompanyName"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋廠商..."
+                                       EmptyMessage="未選擇廠商（查詢全部廠商）" />
+        </FilterFieldRow>
 
-    <FilterFieldRow Label="選項">
-        <div class="d-flex flex-wrap gap-3">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="includeReceivings" @bind="includeReceivings">
-                <label class="form-check-label" for="includeReceivings">
-                    進貨單
-                </label>
+        <FilterFieldRow Label="選項">
+            <div class="d-flex flex-wrap gap-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includeReceivings" @bind="includeReceivings">
+                    <label class="form-check-label" for="includeReceivings">進貨單</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includeReturns" @bind="includeReturns">
+                    <label class="form-check-label" for="includeReturns">退貨單</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includePayments" @bind="includePayments">
+                    <label class="form-check-label" for="includePayments">付款</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="excludeCancelled" @bind="excludeCancelled">
+                    <label class="form-check-label" for="excludeCancelled">排除已取消</label>
+                </div>
             </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="includeReturns" @bind="includeReturns">
-                <label class="form-check-label" for="includeReturns">
-                    退貨單
-                </label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="includePayments" @bind="includePayments">
-                <label class="form-check-label" for="includePayments">
-                    付款
-                </label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="excludeCancelled" @bind="excludeCancelled">
-                <label class="form-check-label" for="excludeCancelled">
-                    排除已取消
-                </label>
-            </div>
-        </div>
-    </FilterFieldRow>
-</div>
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+    @* ===== 欄 2：日期範圍 ===== *@
+    <FilterSectionColumn Title="日期範圍" Icon="bi bi-calendar-range">
+        <FilterFieldRow Label="日期範圍">
+            <DateRangeFilterComponent @bind-StartDate="startDate"
+                                      @bind-EndDate="endDate"
+                                      ShowQuickSelectors="true"
+                                      AutoValidate="true"
+                                      ShowValidationMessage="true" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+</FilterSectionGroup>
 
 @code {
     // ===== 內部狀態 =====

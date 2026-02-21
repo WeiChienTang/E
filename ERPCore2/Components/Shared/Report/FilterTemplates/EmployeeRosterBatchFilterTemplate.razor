@@ -1,7 +1,7 @@
 @*
     員工名冊表篩選模板
     實作 IFilterTemplateComponent 介面，提供員工名冊表的篩選 UI
-    設計原則：使用 FilterFieldRow 統一佈局
+    設計原則：使用 FilterSectionGroup + FilterSectionColumn 三欄佈局
 *@
 
 @using ERPCore2.Models
@@ -15,98 +15,110 @@
 @inject IRoleService RoleService
 @inject INotificationService NotificationService
 
-<div>
-    <FilterFieldRow Label="指定員工">
-        <SearchSelectFilterComponent TItem="DisplayItem"
-                                     Items="@availableEmployees"
-                                     @bind-SelectedItems="@selectedEmployees"
-                                     DisplayProperty="DisplayName"
-                                     ValueProperty="Id"
-                                     Placeholder="搜尋員工編號或姓名..."
-                                     EmptyMessage="未選擇員工（查詢全部）" />
-    </FilterFieldRow>
+<FilterSectionGroup>
 
-    <FilterFieldRow Label="部門">
-        <SearchSelectFilterComponent TItem="DisplayItem"
-                                     Items="@availableDepartments"
-                                     @bind-SelectedItems="@selectedDepartments"
-                                     DisplayProperty="DisplayName"
-                                     ValueProperty="Id"
-                                     Placeholder="搜尋部門..."
-                                     EmptyMessage="未選擇部門（查詢全部）" />
-    </FilterFieldRow>
+    @* ===== 欄 1：人員基本篩選 ===== *@
+    <FilterSectionColumn Title="基本篩選" Icon="bi bi-people">
+        <FilterFieldRow Label="指定員工">
+            <SearchSelectFilterComponent TItem="DisplayItem"
+                                         Items="@availableEmployees"
+                                         @bind-SelectedItems="@selectedEmployees"
+                                         DisplayProperty="DisplayName"
+                                         ValueProperty="Id"
+                                         Placeholder="搜尋員工編號或姓名..."
+                                         EmptyMessage="未選擇員工（查詢全部）" />
+        </FilterFieldRow>
 
-    <FilterFieldRow Label="職位">
-        <SearchSelectFilterComponent TItem="DisplayItem"
-                                     Items="@availablePositions"
-                                     @bind-SelectedItems="@selectedPositions"
-                                     DisplayProperty="DisplayName"
-                                     ValueProperty="Id"
-                                     Placeholder="搜尋職位..."
-                                     EmptyMessage="未選擇職位（查詢全部）" />
-    </FilterFieldRow>
+        <FilterFieldRow Label="部門">
+            <SearchSelectFilterComponent TItem="DisplayItem"
+                                         Items="@availableDepartments"
+                                         @bind-SelectedItems="@selectedDepartments"
+                                         DisplayProperty="DisplayName"
+                                         ValueProperty="Id"
+                                         Placeholder="搜尋部門..."
+                                         EmptyMessage="未選擇部門（查詢全部）" />
+        </FilterFieldRow>
 
-    <FilterFieldRow Label="在職狀態">
-        <SearchSelectFilterComponent TItem="DisplayItem"
-                                     Items="@availableStatuses"
-                                     @bind-SelectedItems="@selectedStatuses"
-                                     DisplayProperty="DisplayName"
-                                     ValueProperty="Id"
-                                     Placeholder="搜尋狀態..."
-                                     EmptyMessage="未選擇狀態（查詢全部）" />
-    </FilterFieldRow>
+        <FilterFieldRow Label="職位">
+            <SearchSelectFilterComponent TItem="DisplayItem"
+                                         Items="@availablePositions"
+                                         @bind-SelectedItems="@selectedPositions"
+                                         DisplayProperty="DisplayName"
+                                         ValueProperty="Id"
+                                         Placeholder="搜尋職位..."
+                                         EmptyMessage="未選擇職位（查詢全部）" />
+        </FilterFieldRow>
 
-    <FilterFieldRow Label="權限組">
-        <SearchSelectFilterComponent TItem="DisplayItem"
-                                     Items="@availableRoles"
-                                     @bind-SelectedItems="@selectedRoles"
-                                     DisplayProperty="DisplayName"
-                                     ValueProperty="Id"
-                                     Placeholder="搜尋權限組..."
-                                     EmptyMessage="未選擇權限組（查詢全部）" />
-    </FilterFieldRow>
+        <FilterFieldRow Label="在職狀態">
+            <SearchSelectFilterComponent TItem="DisplayItem"
+                                         Items="@availableStatuses"
+                                         @bind-SelectedItems="@selectedStatuses"
+                                         DisplayProperty="DisplayName"
+                                         ValueProperty="Id"
+                                         Placeholder="搜尋狀態..."
+                                         EmptyMessage="未選擇狀態（查詢全部）" />
+        </FilterFieldRow>
 
-    <FilterFieldRow Label="到職日期">
-        <DateRangeFilterComponent @bind-StartDate="hireDateStart"
-                                   @bind-EndDate="hireDateEnd"
-                                   StartDateLabel="起始"
-                                   EndDateLabel="結束"
-                                   ShowQuickSelectors="true"
-                                   AutoValidate="true"
-                                   ShowValidationMessage="true" />
-    </FilterFieldRow>
+        <FilterFieldRow Label="權限組">
+            <SearchSelectFilterComponent TItem="DisplayItem"
+                                         Items="@availableRoles"
+                                         @bind-SelectedItems="@selectedRoles"
+                                         DisplayProperty="DisplayName"
+                                         ValueProperty="Id"
+                                         Placeholder="搜尋權限組..."
+                                         EmptyMessage="未選擇權限組（查詢全部）" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
 
-    <FilterFieldRow Label="離職日期">
-        <DateRangeFilterComponent @bind-StartDate="resignationDateStart"
-                                   @bind-EndDate="resignationDateEnd"
-                                   StartDateLabel="起始"
-                                   EndDateLabel="結束"
-                                   ShowQuickSelectors="true"
-                                   AutoValidate="true"
-                                   ShowValidationMessage="true" />
-    </FilterFieldRow>
+    @* ===== 欄 2：日期範圍篩選 ===== *@
+    <FilterSectionColumn Title="日期範圍" Icon="bi bi-calendar-range">
+        <FilterFieldRow Label="到職日期">
+            <DateRangeFilterComponent @bind-StartDate="hireDateStart"
+                                       @bind-EndDate="hireDateEnd"
+                                       StartDateLabel="起始"
+                                       EndDateLabel="結束"
+                                       ShowQuickSelectors="true"
+                                       AutoValidate="true"
+                                       ShowValidationMessage="true" />
+        </FilterFieldRow>
 
-    <FilterFieldRow Label="生日">
-        <DateRangeFilterComponent @bind-StartDate="birthDateStart"
-                                   @bind-EndDate="birthDateEnd"
-                                   StartDateLabel="起始"
-                                   EndDateLabel="結束"
-                                   ShowQuickSelectors="true"
-                                   AutoValidate="true"
-                                   ShowValidationMessage="true" />
-    </FilterFieldRow>
+        <FilterFieldRow Label="離職日期">
+            <DateRangeFilterComponent @bind-StartDate="resignationDateStart"
+                                       @bind-EndDate="resignationDateEnd"
+                                       StartDateLabel="起始"
+                                       EndDateLabel="結束"
+                                       ShowQuickSelectors="true"
+                                       AutoValidate="true"
+                                       ShowValidationMessage="true" />
+        </FilterFieldRow>
 
-    <FilterFieldRow Label="關鍵字">
-        <div class="d-flex align-items-center gap-2">
+        <FilterFieldRow Label="生日">
+            <DateRangeFilterComponent @bind-StartDate="birthDateStart"
+                                       @bind-EndDate="birthDateEnd"
+                                       StartDateLabel="起始"
+                                       EndDateLabel="結束"
+                                       ShowQuickSelectors="true"
+                                       AutoValidate="true"
+                                       ShowValidationMessage="true" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+    @* ===== 欄 3：快速條件 ===== *@
+    <FilterSectionColumn Title="快速條件" Icon="bi bi-search">
+        <FilterFieldRow Label="關鍵字">
             <input type="text" class="form-control" placeholder="搜尋員工編號、姓名..."
                    @bind="keyword" />
-            <div class="form-check text-nowrap">
+        </FilterFieldRow>
+
+        <FilterFieldRow Label="在職篩選">
+            <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="empActiveOnly" @bind="activeOnly">
-                <label class="form-check-label" for="empActiveOnly">僅在職</label>
+                <label class="form-check-label" for="empActiveOnly">僅顯示在職員工</label>
             </div>
-        </div>
-    </FilterFieldRow>
-</div>
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+</FilterSectionGroup>
 
 @code {
     // ===== 內部狀態 =====

@@ -12,31 +12,42 @@
 @inject ICustomerService CustomerService
 @inject INotificationService NotificationService
 
-<div>
-    <FilterFieldRow Label="指定客戶">
-        <SearchSelectFilterComponent TItem="Customer"
-                                   Items="@customers"
-                                   @bind-SelectedItems="@selectedCustomers"
-                                   DisplayProperty="CompanyName"
-                                   ValueProperty="Id"
-                                   Placeholder="搜尋客戶..."
-                                   EmptyMessage="未選擇客戶" />
-    </FilterFieldRow>
+<FilterSectionGroup>
 
-    <FilterFieldRow Label="訂單日期">
-        <DateRangeFilterComponent @bind-StartDate="startDate"
-                                  @bind-EndDate="endDate"
-                                  ShowQuickSelectors="true"
-                                  AutoValidate="true"
-                                  ShowValidationMessage="true" />
-    </FilterFieldRow>
+    @* ===== 欄 1：基本篩選 ===== *@
+    <FilterSectionColumn Title="基本篩選" Icon="bi bi-people">
+        <FilterFieldRow Label="指定客戶">
+            <SearchSelectFilterComponent TItem="Customer"
+                                       Items="@customers"
+                                       @bind-SelectedItems="@selectedCustomers"
+                                       DisplayProperty="CompanyName"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋客戶..."
+                                       EmptyMessage="未選擇客戶" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
 
-    <FilterFieldRow Label="單號">
-        <TextSearchFilterComponent @bind-Value="documentNumberKeyword"
-                                   Label="單號"
-                                   Placeholder="模糊搜尋..." />
-    </FilterFieldRow>
-</div>
+    @* ===== 欄 2：日期範圍 ===== *@
+    <FilterSectionColumn Title="日期範圍" Icon="bi bi-calendar-range">
+        <FilterFieldRow Label="訂單日期">
+            <DateRangeFilterComponent @bind-StartDate="startDate"
+                                      @bind-EndDate="endDate"
+                                      ShowQuickSelectors="true"
+                                      AutoValidate="true"
+                                      ShowValidationMessage="true" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+    @* ===== 欄 3：快速條件 ===== *@
+    <FilterSectionColumn Title="快速條件" Icon="bi bi-search">
+        <FilterFieldRow Label="單號">
+            <TextSearchFilterComponent @bind-Value="documentNumberKeyword"
+                                       Label="單號"
+                                       Placeholder="模糊搜尋..." />
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+</FilterSectionGroup>
 
 @code {
     // ===== 內部狀態 =====

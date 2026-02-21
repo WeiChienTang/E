@@ -80,7 +80,13 @@ public class ReportCategoryConfig
                 Category = ReportCategory.Vehicle,
                 Title = "車輛報表集",
                 Icon = "bi-truck-front-fill"
-            }
+            },
+            [ReportCategory.Waste] = new ReportCategoryConfig
+            {
+                Category = ReportCategory.Waste,
+                Title = "廢料報表集",
+                Icon = "bi-trash"
+            }            
         };
     }
     

@@ -1,0 +1,32 @@
+@*
+    篩選區段欄位組件
+    代表一個分組欄，包含可選的標題與圖示，欄位在內部直向堆疊
+    搭配 FilterSectionGroup 使用，自動依欄數決定寬度
+*@
+
+<div class="filter-section-column">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div class="filter-section-header">
+            @if (!string.IsNullOrEmpty(Icon))
+            {
+                <i class="@Icon filter-section-icon"></i>
+            }
+            <span class="filter-section-title">@Title</span>
+        </div>
+    }
+    <div class="filter-section-fields">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    /// <summary>區段標題（選填）</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>標題圖示 CSS 類別，例如 "bi bi-people"（選填）</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    /// <summary>區段內容</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -12,7 +12,7 @@
 - **模板註冊表**：集中管理報表 ID 與篩選模板的對應關係
 - **動態載入**：根據 ReportId 自動載入對應的篩選模板組件
 - **介面統一**：所有篩選模板實作 `IFilterTemplateComponent` 介面
-- **佈局統一**：所有篩選欄位使用 `FilterFieldRow` 組件包裝，確保標題與內容同行佈局一致
+- **佈局統一**：所有篩選模板使用 `FilterSectionGroup` + `FilterSectionColumn` 分欄佈局，欄位使用 `FilterFieldRow` 包裝
 - **可擴展**：新增報表只需建立模板組件並註冊即可
 
 ---
@@ -42,7 +42,9 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                Layer 3: 原子篩選組件庫                           │
 │   可重用的篩選組件                                               │
-│   - FilterFieldRow（佈局包裝：標題 + 內容同行）                 │
+│   - FilterSectionGroup（分欄容器：自動 1-3 欄水平排列）         │
+│   - FilterSectionColumn（區段欄：標題 + 欄位直向堆疊）          │
+│   - FilterFieldRow（欄位行：標題 + 內容同行）                   │
 │   - SearchSelectFilterComponent<T>（搜尋式多選）                │
 │   - DateRangeFilterComponent（日期範圍 + 快速選擇）             │
 │   - TextSearchFilterComponent（文字搜尋）                       │
@@ -68,6 +70,10 @@ Models/Reports/
 Components/Shared/Report/
 ├── GenericReportFilterModalComponent.razor  # 通用篩選 Modal
 ├── FilterTemplateInitializer.cs             # 模板初始化器
+├── FilterSectionGroup.razor                 # 分欄容器（自動 1-3 欄水平排列）
+├── FilterSectionGroup.razor.css             # 分欄容器樣式
+├── FilterSectionColumn.razor                # 區段欄（標題 + 欄位直向堆疊）
+├── FilterSectionColumn.razor.css            # 區段欄樣式（標題色、欄寬）
 ├── FilterFieldRow.razor                     # 篩選欄位行（標題 + 內容同行佈局）
 ├── FilterFieldRow.razor.css                 # FilterFieldRow 樣式（藍色標題、固定寬度）
 ├── SearchSelectFilterComponent.razor        # 搜尋式多選（搜尋 → 下拉 → badge 標籤）
@@ -171,7 +177,7 @@ public class CustomerStatementCriteria : IReportFilterCriteria
 
 ### 2. 建立篩選模板組件
 
-所有篩選欄位必須使用 `FilterFieldRow` 組件包裝，確保佈局一致：
+所有篩選欄位使用 `FilterSectionGroup` + `FilterSectionColumn` 分欄，欄位以 `FilterFieldRow` 包裝：
 
 ```razor
 @* Components/Shared/Report/FilterTemplates/CustomerStatementFilterTemplate.razor *@
@@ -179,36 +185,48 @@ public class CustomerStatementCriteria : IReportFilterCriteria
 @implements IFilterTemplateComponent
 @inject ICustomerService CustomerService
 
-<div>
-    <FilterFieldRow Label="指定客戶">
-        <SearchSelectFilterComponent TItem="Customer"
-                                   Items="@customers"
-                                   @bind-SelectedItems="@selectedCustomers"
-                                   DisplayProperty="CompanyName"
-                                   ValueProperty="Id"
-                                   Placeholder="搜尋客戶..."
-                                   EmptyMessage="未選擇客戶（查詢全部客戶）" />
-    </FilterFieldRow>
+<FilterSectionGroup>
 
-    <FilterFieldRow Label="日期範圍">
-        <DateRangeFilterComponent @bind-StartDate="startDate"
-                                  @bind-EndDate="endDate"
-                                  ShowQuickSelectors="true"
-                                  AutoValidate="true"
-                                  ShowValidationMessage="true" />
-    </FilterFieldRow>
+    @* ===== 欄 1：主要篩選 ===== *@
+    <FilterSectionColumn Title="基本篩選" Icon="bi bi-people">
+        <FilterFieldRow Label="指定客戶">
+            <SearchSelectFilterComponent TItem="Customer"
+                                       Items="@customers"
+                                       @bind-SelectedItems="@selectedCustomers"
+                                       DisplayProperty="CompanyName"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋客戶..."
+                                       EmptyMessage="未選擇客戶（查詢全部客戶）" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
 
-    <FilterFieldRow Label="關鍵字">
-        <div class="d-flex align-items-center gap-2">
+    @* ===== 欄 2：日期範圍 ===== *@
+    <FilterSectionColumn Title="日期範圍" Icon="bi bi-calendar-range">
+        <FilterFieldRow Label="日期範圍">
+            <DateRangeFilterComponent @bind-StartDate="startDate"
+                                      @bind-EndDate="endDate"
+                                      ShowQuickSelectors="true"
+                                      AutoValidate="true"
+                                      ShowValidationMessage="true" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+    @* ===== 欄 3：快速條件 ===== *@
+    <FilterSectionColumn Title="快速條件" Icon="bi bi-search">
+        <FilterFieldRow Label="關鍵字">
             <input type="text" class="form-control" placeholder="搜尋..."
                    @bind="keyword" />
-            <div class="form-check text-nowrap">
+        </FilterFieldRow>
+
+        <FilterFieldRow Label="顯示條件">
+            <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
                 <label class="form-check-label" for="activeOnly">僅啟用</label>
             </div>
-        </div>
-    </FilterFieldRow>
-</div>
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+</FilterSectionGroup>
 
 @code {
     private List<Customer> customers = new();
@@ -249,11 +267,12 @@ public class CustomerStatementCriteria : IReportFilterCriteria
 
 | 規範 | 說明 |
 |------|------|
-| **佈局包裝** | 每個欄位必須用 `<FilterFieldRow Label="...">` 包裝 |
+| **分欄佈局** | 最外層使用 `<FilterSectionGroup>`，欄位依功能類型分入不同 `<FilterSectionColumn>` |
+| **欄數原則** | 3 欄：SearchSelect + 日期 + 關鍵字各一欄；2 欄：SearchSelect + 日期；1 欄：欄位較少時 |
+| **欄位包裝** | 每個欄位用 `<FilterFieldRow Label="...">` 包裝 |
 | **多選欄位** | 使用 `SearchSelectFilterComponent`（搜尋 → 下拉 → badge 標籤） |
 | **日期範圍** | 使用 `DateRangeFilterComponent`，必須設定 `ShowQuickSelectors="true"` |
-| **關鍵字 + Checkbox** | 放在同一個 `FilterFieldRow` 內，用 `d-flex align-items-center gap-2` 排列 |
-| **Checkbox 群組** | 用 `<FilterFieldRow Label="選項">` 包裝，內部用 `d-flex gap-3` 排列 |
+| **關鍵字與 Checkbox** | 分別放入獨立的 `FilterFieldRow`，不再合併同行 |
 | **Checkbox label** | 使用 `form-check-label`（不加 `small` class） |
 
 ### 3. 在 FilterTemplateRegistry 註冊篩選配置
@@ -356,9 +375,43 @@ new ReportDefinition
 
 ## 🧩 原子篩選組件
 
-### FilterFieldRow（佈局包裝）
+### FilterSectionGroup（分欄容器）
 
-統一所有篩選模板的「標題 + 內容」同行佈局。未來修改佈局樣式只需改此組件。
+將多個 `FilterSectionColumn` 水平並排，自動依欄數決定寬度。
+
+| 參數 | 類型 | 說明 |
+|------|------|------|
+| `ChildContent` | `RenderFragment` | 放入 `FilterSectionColumn` |
+
+佈局行為（CSS flex-wrap，定義在 `FilterSectionGroup.razor.css`）：
+
+| 容器寬度 | 呈現效果 |
+|---|---|
+| ≥ 900px | 最多 3 欄並排（每欄 flex-basis 280px） |
+| 600–900px | 2 欄並排 |
+| ≤ 768px | 強制折成單欄 |
+
+### FilterSectionColumn（區段欄）
+
+代表一個分組欄，內部欄位直向堆疊，可設定標題與圖示。
+
+| 參數 | 類型 | 說明 |
+|------|------|------|
+| `Title` | `string?` | 區段標題（選填） |
+| `Icon` | `string?` | Bootstrap Icons CSS 類別（選填），例如 `"bi bi-people"` |
+| `ChildContent` | `RenderFragment` | 放入 `FilterFieldRow` 欄位 |
+
+**建議的區段分類：**
+
+| 區段名稱 | 建議圖示 | 適用欄位類型 |
+|---|---|---|
+| 基本篩選 | `bi bi-people` / `bi bi-box-seam` | SearchSelect（客戶、廠商、員工、商品 …） |
+| 日期範圍 | `bi bi-calendar-range` | DateRangeFilterComponent |
+| 快速條件 | `bi bi-search` | 關鍵字 input、Checkbox、簡單 select |
+
+### FilterFieldRow（欄位行）
+
+統一所有篩選欄位的「標題 + 內容」同行佈局。
 
 | 參數 | 類型 | 說明 |
 |------|------|------|
@@ -449,6 +502,7 @@ new ReportDefinition
    - 實作 `ToBatchPrintCriteria()` 方法
 3. ☐ 建立篩選模板組件（`Components/Shared/Report/FilterTemplates/`）
    - 建立 `.razor` 檔案（實作 `IFilterTemplateComponent`）
+   - **最外層使用 `FilterSectionGroup`，依功能類型分入 `FilterSectionColumn`**
    - **所有欄位使用 `FilterFieldRow` 包裝**
    - **多選欄位使用 `SearchSelectFilterComponent`**
    - **日期欄位設定 `ShowQuickSelectors="true"`**
@@ -462,13 +516,14 @@ new ReportDefinition
 ## ⚠️ 注意事項
 
 1. **模板組件必須實作 `IFilterTemplateComponent`**：否則 Modal 無法取得篩選條件
-2. **所有篩選欄位必須用 `FilterFieldRow` 包裝**：確保佈局一致，未來統一修改樣式
-3. **多選欄位使用 `SearchSelectFilterComponent`**：不要使用舊的 `MultiSelectFilterComponent`
-4. **FilterTemplateInitializer 在 MainLayout 啟動時呼叫**：確保在使用前完成初始化
-5. **驗證邏輯放在 Criteria 的 Validate() 方法**：不要在模板組件中處理
-6. **篩選條件須實作 `ToBatchPrintCriteria()`**：用於轉換為報表服務可用的批次篩選條件
-7. **報表服務使用 `BatchReportHelper`**：避免重複實作批次預覽邏輯，只需專注於資料查詢
-8. **紙張變更會觸發重新渲染**：GenericReportFilterModalComponent 處理 OnPaperSettingChanged 事件，更新 BatchPrintCriteria.PaperSetting 並重新產生預覽
+2. **最外層使用 `FilterSectionGroup`，欄位依功能類型分入 `FilterSectionColumn`**：確保分欄佈局一致，未來修改欄位排版只需改這兩個組件
+3. **所有篩選欄位必須用 `FilterFieldRow` 包裝**：確保標題與內容同行佈局
+4. **多選欄位使用 `SearchSelectFilterComponent`**：不要使用舊的 `MultiSelectFilterComponent`
+5. **FilterTemplateInitializer 在 MainLayout 啟動時呼叫**：確保在使用前完成初始化
+6. **驗證邏輯放在 Criteria 的 Validate() 方法**：不要在模板組件中處理
+7. **篩選條件須實作 `ToBatchPrintCriteria()`**：用於轉換為報表服務可用的批次篩選條件
+8. **報表服務使用 `BatchReportHelper`**：避免重複實作批次預覽邏輯，只需專注於資料查詢
+9. **紙張變更會觸發重新渲染**：GenericReportFilterModalComponent 處理 OnPaperSettingChanged 事件，更新 BatchPrintCriteria.PaperSetting 並重新產生預覽
 
 ---
 

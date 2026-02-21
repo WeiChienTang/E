@@ -1,0 +1,18 @@
+@*
+    篩選區段群組組件
+    將多個 FilterSectionColumn 水平排列，最多三欄自動換行
+    使用方式：
+        <FilterSectionGroup>
+            <FilterSectionColumn Title="基本篩選" Icon="bi bi-people">...</FilterSectionColumn>
+            <FilterSectionColumn Title="日期範圍"  Icon="bi bi-calendar-range">...</FilterSectionColumn>
+            <FilterSectionColumn Title="快速條件"  Icon="bi bi-search">...</FilterSectionColumn>
+        </FilterSectionGroup>
+*@
+
+<div class="filter-sections-container">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

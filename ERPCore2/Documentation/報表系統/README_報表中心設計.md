@@ -101,7 +101,8 @@ new ReportDefinition
 
 #### 方案 A：需要篩選（推薦）
 
-參考 [README_報表篩選架構設計總綱.md](README_報表篩選架構設計.md) 建立篩選模板。
+參考 [README_報表篩選架構設計.md](README_報表篩選架構設計.md) 建立篩選模板。
+篩選模板使用 `FilterSectionGroup` + `FilterSectionColumn` 分欄佈局，欄位以 `FilterFieldRow` 包裝。
 
 #### 方案 B：不需要篩選
 

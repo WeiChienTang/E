@@ -12,48 +12,50 @@
 @inject ICustomerService CustomerService
 @inject INotificationService NotificationService
 
-<div>
-    <FilterFieldRow Label="指定客戶">
-        <SearchSelectFilterComponent TItem="Customer"
-                                   Items="@customers"
-                                   @bind-SelectedItems="@selectedCustomers"
-                                   DisplayProperty="CompanyName"
-                                   ValueProperty="Id"
-                                   Placeholder="搜尋客戶..."
-                                   EmptyMessage="未選擇客戶（查詢全部客戶）" />
-    </FilterFieldRow>
+<FilterSectionGroup>
 
-    <FilterFieldRow Label="日期範圍">
-        <DateRangeFilterComponent @bind-StartDate="startDate"
-                                  @bind-EndDate="endDate"
-                                  ShowQuickSelectors="true"
-                                  AutoValidate="true"
-                                  ShowValidationMessage="true" />
-    </FilterFieldRow>
+    @* ===== 欄 1：基本篩選 ===== *@
+    <FilterSectionColumn Title="基本篩選" Icon="bi bi-people">
+        <FilterFieldRow Label="指定客戶">
+            <SearchSelectFilterComponent TItem="Customer"
+                                       Items="@customers"
+                                       @bind-SelectedItems="@selectedCustomers"
+                                       DisplayProperty="CompanyName"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋客戶..."
+                                       EmptyMessage="未選擇客戶（查詢全部客戶）" />
+        </FilterFieldRow>
 
-    <FilterFieldRow Label="選項">
-        <div class="d-flex flex-wrap gap-3">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="includeDeliveries" @bind="includeDeliveries">
-                <label class="form-check-label" for="includeDeliveries">
-                    出貨單
-                </label>
+        <FilterFieldRow Label="選項">
+            <div class="d-flex flex-wrap gap-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includeDeliveries" @bind="includeDeliveries">
+                    <label class="form-check-label" for="includeDeliveries">出貨單</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includeReturns" @bind="includeReturns">
+                    <label class="form-check-label" for="includeReturns">退貨單</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="excludeCancelled" @bind="excludeCancelled">
+                    <label class="form-check-label" for="excludeCancelled">排除已取消</label>
+                </div>
             </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="includeReturns" @bind="includeReturns">
-                <label class="form-check-label" for="includeReturns">
-                    退貨單
-                </label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="excludeCancelled" @bind="excludeCancelled">
-                <label class="form-check-label" for="excludeCancelled">
-                    排除已取消
-                </label>
-            </div>
-        </div>
-    </FilterFieldRow>
-</div>
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+    @* ===== 欄 2：日期範圍 ===== *@
+    <FilterSectionColumn Title="日期範圍" Icon="bi bi-calendar-range">
+        <FilterFieldRow Label="日期範圍">
+            <DateRangeFilterComponent @bind-StartDate="startDate"
+                                      @bind-EndDate="endDate"
+                                      ShowQuickSelectors="true"
+                                      AutoValidate="true"
+                                      ShowValidationMessage="true" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+</FilterSectionGroup>
 
 @code {
     // ===== 內部狀態 =====

@@ -12,28 +12,37 @@
 @inject IVehicleTypeService VehicleTypeService
 @inject INotificationService NotificationService
 
-<div>
-    <FilterFieldRow Label="指定車型">
-        <SearchSelectFilterComponent TItem="VehicleType"
-                                   Items="@vehicleTypes"
-                                   @bind-SelectedItems="@selectedVehicleTypes"
-                                   DisplayProperty="Name"
-                                   ValueProperty="Id"
-                                   Placeholder="搜尋車型..."
-                                   EmptyMessage="未選擇車型（查詢全部車型）" />
-    </FilterFieldRow>
+<FilterSectionGroup>
 
-    <FilterFieldRow Label="關鍵字">
-        <div class="d-flex align-items-center gap-2">
+    @* ===== 欄 1：基本篩選 ===== *@
+    <FilterSectionColumn Title="基本篩選" Icon="bi bi-truck">
+        <FilterFieldRow Label="指定車型">
+            <SearchSelectFilterComponent TItem="VehicleType"
+                                       Items="@vehicleTypes"
+                                       @bind-SelectedItems="@selectedVehicleTypes"
+                                       DisplayProperty="Name"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋車型..."
+                                       EmptyMessage="未選擇車型（查詢全部車型）" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+    @* ===== 欄 2：快速條件 ===== *@
+    <FilterSectionColumn Title="快速條件" Icon="bi bi-search">
+        <FilterFieldRow Label="關鍵字">
             <input type="text" class="form-control" placeholder="搜尋車牌號碼、車輛名稱、廠牌..."
                    @bind="keyword" />
-            <div class="form-check text-nowrap">
+        </FilterFieldRow>
+
+        <FilterFieldRow Label="顯示條件">
+            <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="activeOnly" @bind="activeOnly">
                 <label class="form-check-label" for="activeOnly">僅啟用</label>
             </div>
-        </div>
-    </FilterFieldRow>
-</div>
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+</FilterSectionGroup>
 
 @code {
     // ===== 內部狀態 =====

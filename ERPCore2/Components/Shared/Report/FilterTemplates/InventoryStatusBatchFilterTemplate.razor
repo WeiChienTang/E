@@ -12,38 +12,47 @@
 @inject IProductService ProductService
 @inject INotificationService NotificationService
 
-<div>
-    <FilterFieldRow Label="指定倉庫">
-        <SearchSelectFilterComponent TItem="Warehouse"
-                                   Items="@warehouses"
-                                   @bind-SelectedItems="@selectedWarehouses"
-                                   DisplayProperty="Name"
-                                   ValueProperty="Id"
-                                   Placeholder="搜尋倉庫..."
-                                   EmptyMessage="未選擇倉庫（查詢全部倉庫）" />
-    </FilterFieldRow>
+<FilterSectionGroup>
 
-    <FilterFieldRow Label="商品分類">
-        <SearchSelectFilterComponent TItem="ProductCategory"
-                                   Items="@categories"
-                                   @bind-SelectedItems="@selectedCategories"
-                                   DisplayProperty="Name"
-                                   ValueProperty="Id"
-                                   Placeholder="搜尋商品分類..."
-                                   EmptyMessage="未選擇分類（查詢全部分類）" />
-    </FilterFieldRow>
+    @* ===== 欄 1：基本篩選 ===== *@
+    <FilterSectionColumn Title="基本篩選" Icon="bi bi-box-seam">
+        <FilterFieldRow Label="指定倉庫">
+            <SearchSelectFilterComponent TItem="Warehouse"
+                                       Items="@warehouses"
+                                       @bind-SelectedItems="@selectedWarehouses"
+                                       DisplayProperty="Name"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋倉庫..."
+                                       EmptyMessage="未選擇倉庫（查詢全部倉庫）" />
+        </FilterFieldRow>
 
-    <FilterFieldRow Label="關鍵字">
-        <div class="d-flex align-items-center gap-2">
+        <FilterFieldRow Label="商品分類">
+            <SearchSelectFilterComponent TItem="ProductCategory"
+                                       Items="@categories"
+                                       @bind-SelectedItems="@selectedCategories"
+                                       DisplayProperty="Name"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋商品分類..."
+                                       EmptyMessage="未選擇分類（查詢全部分類）" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+    @* ===== 欄 2：快速條件 ===== *@
+    <FilterSectionColumn Title="快速條件" Icon="bi bi-search">
+        <FilterFieldRow Label="關鍵字">
             <input type="text" class="form-control" placeholder="搜尋品號、品名..."
                    @bind="keyword" />
-            <div class="form-check text-nowrap">
+        </FilterFieldRow>
+
+        <FilterFieldRow Label="顯示條件">
+            <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="includeZeroStock" @bind="includeZeroStock">
                 <label class="form-check-label" for="includeZeroStock">包含零庫存</label>
             </div>
-        </div>
-    </FilterFieldRow>
-</div>
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+</FilterSectionGroup>
 
 @code {
     // ===== 內部狀態 =====

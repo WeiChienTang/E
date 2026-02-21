@@ -116,4 +116,11 @@ public static class ReportIds
 
     /// <summary>應付沖款單</summary>
     public const string AccountsPayableSetoff = "FN004";
+
+    // ==================== 廢料報表 (WL) ====================
+    /// <summary>廢料記錄報表</summary>
+    public const string WasteRecord = "WL001";
+
+    /// <summary>廢料類別報表</summary>
+    public const string WasteCategory = "WL002";
 }

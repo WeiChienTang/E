@@ -12,30 +12,38 @@
 @inject IVehicleService VehicleService
 @inject INotificationService NotificationService
 
-<div>
-    <FilterFieldRow Label="指定車輛">
-        <SearchSelectFilterComponent TItem="Vehicle"
-                                   Items="@vehicles"
-                                   @bind-SelectedItems="@selectedVehicles"
-                                   DisplayProperty="LicensePlate"
-                                   ValueProperty="Id"
-                                   Placeholder="搜尋車輛..."
-                                   EmptyMessage="未選擇車輛（查詢全部車輛）" />
-    </FilterFieldRow>
+<FilterSectionGroup>
 
-    <FilterFieldRow Label="日期範圍">
-        <DateRangeFilterComponent @bind-StartDate="startDate"
-                                  @bind-EndDate="endDate"
-                                  ShowQuickSelectors="true"
-                                  AutoValidate="true"
-                                  ShowValidationMessage="true" />
-    </FilterFieldRow>
+    @* ===== 欄 1：基本篩選 ===== *@
+    <FilterSectionColumn Title="基本篩選" Icon="bi bi-truck">
+        <FilterFieldRow Label="指定車輛">
+            <SearchSelectFilterComponent TItem="Vehicle"
+                                       Items="@vehicles"
+                                       @bind-SelectedItems="@selectedVehicles"
+                                       DisplayProperty="LicensePlate"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋車輛..."
+                                       EmptyMessage="未選擇車輛（查詢全部車輛）" />
+        </FilterFieldRow>
 
-    <FilterFieldRow Label="關鍵字">
-        <input type="text" class="form-control" placeholder="搜尋車牌號碼、維修廠、保養描述..."
-               @bind="keyword" />
-    </FilterFieldRow>
-</div>
+        <FilterFieldRow Label="關鍵字">
+            <input type="text" class="form-control" placeholder="搜尋車牌號碼、維修廠、保養描述..."
+                   @bind="keyword" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+    @* ===== 欄 2：日期範圍 ===== *@
+    <FilterSectionColumn Title="日期範圍" Icon="bi bi-calendar-range">
+        <FilterFieldRow Label="日期範圍">
+            <DateRangeFilterComponent @bind-StartDate="startDate"
+                                      @bind-EndDate="endDate"
+                                      ShowQuickSelectors="true"
+                                      AutoValidate="true"
+                                      ShowValidationMessage="true" />
+        </FilterFieldRow>
+    </FilterSectionColumn>
+
+</FilterSectionGroup>
 
 @code {
     // ===== 內部狀態 =====
