@@ -135,7 +135,8 @@ Components/
 │   ├── DateRangeFilterComponent.razor     # 日期範圍
 │   ├── TextSearchFilterComponent.razor    # 文字搜尋
 │   └── FilterTemplates/
-│       └── DynamicFilterTemplate.razor    # 通用動態篩選模板（所有報表共用）
+│       ├── DynamicFilterTemplate.razor              # 通用動態篩選模板（所有報表共用）
+│       └── ProductBarcodeBatchFilterTemplate.razor  # 商品條碼專用模板（含列印數量設定）
 └── Pages/
     ├── Reports/
     │   └── GenericReportIndexPage.razor    # 報表中心
@@ -189,17 +190,17 @@ Components/
 
 所有篩選功能由單一 `DynamicFilterTemplate.razor` 處理，透過讀取 Criteria 類別上的 `Filter*Attribute` 自動產生篩選 UI，不再需要為每個報表撰寫獨立的 FilterTemplate.razor。
 
-| 分類 | 數量 | 狀態 |
-|------|------|------|
-| 人資（HR） | 2 | ✅ 完成 |
-| 客戶（AR） | 6 | ✅ 完成 |
-| 廠商（AP） | 3 | ✅ 完成 |
-| 銷售（SO） | 4 | ✅ 完成 |
-| 採購（PO） | 3 | ✅ 完成 |
-| 庫存（IV） | 2 | ✅ 完成 |
-| 生產（PD） | 2 | ✅ 完成 |
-| 產品（PD） | 2 | ✅ 完成 |
-| 車輛（VH） | 2 | ✅ 完成 |
+| 分類 | 數量 | 報表 ID | 狀態 |
+|------|------|---------|------|
+| 人資（HR） | 2 | HR001、HR002 | ✅ 完成 |
+| 客戶（AR） | 6 | AR001–AR006 | ✅ 完成 |
+| 廠商（AP） | 3 | AP002、AP004、AP005 | ✅ 完成 |
+| 銷售（SO） | 4 | SO001、SO002、SO004、SO005 | ✅ 完成 |
+| 採購（PO） | 3 | PO001–PO003 | ✅ 完成 |
+| 商品（PD） | 5 | PD001–PD005 | ✅ 完成 |
+| 庫存（IV） | 2 | IV002、IV003 | ✅ 完成 |
+| 車輛（VH） | 2 | VH001、VH002 | ✅ 完成 |
+| 財務（FN） | 2 | FN003、FN004 | ✅ 完成 |
 
 > 詳細清單請見 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)
 
@@ -298,7 +299,7 @@ RegisterConfig(new ReportFilterConfig
 1. **Windows 專屬**：`FormattedPrintService` 使用 `System.Drawing.Printing`，僅支援 Windows
 2. **Excel 匯出跨平台**：`ExcelExportService` 使用 ClosedXML，支援所有平台
 3. **單一報表 ID 原則**：每個單據類型只有一個報表 ID，入口點決定流程
-4. **DynamicFilterTemplate 共用**：所有報表共用單一 `DynamicFilterTemplate.razor`，篩選 UI 由 Criteria 屬性上的 `Filter*Attribute` 驅動，新增篩選欄位只需修改 Criteria 類別
+4. **DynamicFilterTemplate 共用**：絕大多數報表共用單一 `DynamicFilterTemplate.razor`，篩選 UI 由 Criteria 屬性上的 `Filter*Attribute` 驅動，新增篩選欄位只需修改 Criteria 類別。唯一例外：PD003（商品條碼）使用 `ProductBarcodeBatchFilterTemplate`，因需要逐品項設定列印數量
 
 ---
 

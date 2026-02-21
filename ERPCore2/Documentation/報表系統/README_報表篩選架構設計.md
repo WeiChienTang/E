@@ -405,21 +405,21 @@ new ReportDefinition
 
 ## ✅ 已實作的篩選配置
 
-共 26 個篩選配置，全部使用 `DynamicFilterTemplate` 自動產生 UI。
+共 29 個篩選配置，其中 28 個使用 `DynamicFilterTemplate` 自動產生 UI，1 個（PD003）使用 `ProductBarcodeBatchFilterTemplate` 專用模板。
 
 | 分類 | 報表 ID | Criteria 類別 | 篩選欄位摘要 |
 |------|---------|---------------|------------|
 | 人資 | HR001 | EmployeeRosterCriteria | 員工、部門、職位、在職狀態、權限組、到職/離職/生日日期、關鍵字、僅在職 |
 | 人資 | HR002 | EmployeeRosterCriteria | 同 HR001 |
-| 客戶 | AR001 | AccountsReceivableCriteria | 客戶、日期範圍、帳款狀態 |
-| 客戶 | AR002 | CustomerStatementCriteria | 客戶、日期範圍、交易類型 |
-| 客戶 | AR003 | SetoffDocumentBatchPrintCriteria | 客戶、日期範圍、單號 |
-| 客戶 | AR004 | CustomerTransactionCriteria | 客戶、日期範圍、選項 |
-| 客戶 | AR005 | CustomerRosterCriteria | 客戶、業務負責人、關鍵字 |
-| 客戶 | AR006 | CustomerSalesAnalysisCriteria | 客戶、日期範圍、選項 |
-| 廠商 | AP002 | SupplierStatementCriteria | 廠商、日期範圍、選項 |
-| 廠商 | AP003 | SetoffDocumentBatchPrintCriteria | 廠商、日期範圍、單號 |
-| 廠商 | AP004 | SupplierRosterCriteria | 廠商、關鍵字 |
+| 客戶 | AR001 | AccountsReceivableCriteria | 客戶、日期範圍 |
+| 客戶 | AR002 | CustomerStatementCriteria | 客戶、日期範圍、出貨/退貨/排除取消選項 |
+| 客戶 | AR003 | CustomerSalesAnalysisCriteria | 客戶、日期範圍、排除取消 |
+| 客戶 | AR004 | CustomerTransactionCriteria | 客戶、日期範圍、出貨/退貨/排除取消選項 |
+| 客戶 | AR005 | CustomerRosterCriteria | 客戶、業務負責人、關鍵字、僅啟用 |
+| 客戶 | AR006 | CustomerRosterCriteria | 同 AR005 |
+| 廠商 | AP002 | SupplierStatementCriteria | 廠商、日期範圍、進貨/退貨/付款/排除取消選項 |
+| 廠商 | AP004 | SupplierRosterCriteria | 廠商、關鍵字、僅啟用 |
+| 廠商 | AP005 | SupplierRosterCriteria | 同 AP004 |
 | 銷售 | SO001 | QuotationBatchPrintCriteria | 客戶、日期範圍、單號 |
 | 銷售 | SO002 | SalesOrderBatchPrintCriteria | 客戶、日期範圍、單號 |
 | 銷售 | SO004 | SalesDeliveryBatchPrintCriteria | 客戶、日期範圍、單號 |
@@ -427,14 +427,19 @@ new ReportDefinition
 | 採購 | PO001 | PurchaseOrderBatchPrintCriteria | 廠商、日期範圍、單號 |
 | 採購 | PO002 | PurchaseReceivingBatchPrintCriteria | 廠商、日期範圍、單號 |
 | 採購 | PO003 | PurchaseReturnBatchPrintCriteria | 廠商、日期範圍、單號 |
-| 庫存 | IV002 | InventoryStatusCriteria | 倉庫、商品分類、關鍵字 |
-| 庫存 | IV003 | StockTakingDifferenceCriteria | 倉庫、日期範圍、關鍵字 |
-| 生產 | PD001 | ProductionScheduleCriteria | 客戶、日期範圍、生產狀態 |
-| 生產 | PD002 | BOMReportCriteria | 成品、關鍵字 |
-| 產品 | PD004 | ProductListBatchPrintCriteria | 商品分類、採購類型、關鍵字 |
-| 產品 | PD005 | ProductBarcodeBatchPrintCriteria | 商品分類、關鍵字 |
+| 商品 | PD001 | ProductListBatchPrintCriteria | 商品分類、關鍵字、僅啟用 |
+| 商品 | PD002 | BOMReportCriteria | 成品、關鍵字 |
+| 商品 | PD003 ★ | ProductBarcodeBatchPrintCriteria | 商品分類、關鍵字（專用模板） |
+| 商品 | PD004 | ProductionScheduleCriteria | 客戶、日期範圍、生產狀態 |
+| 商品 | PD005 | ProductListBatchPrintCriteria | 同 PD001 |
+| 庫存 | IV002 | StockTakingDifferenceCriteria | 倉庫、日期範圍、關鍵字 |
+| 庫存 | IV003 | InventoryStatusCriteria | 倉庫、商品分類、關鍵字 |
 | 車輛 | VH001 | VehicleListCriteria | 車型、關鍵字 |
 | 車輛 | VH002 | VehicleMaintenanceCriteria | 車輛、日期範圍、關鍵字 |
+| 財務 | FN003 | AccountsReceivableSetoffCriteria | 客戶、日期範圍、單號 |
+| 財務 | FN004 | AccountsPayableSetoffCriteria | 廠商、日期範圍、單號 |
+
+> ★ PD003 使用 `ProductBarcodeBatchFilterTemplate`（含列印數量設定的特殊 UI），非 `DynamicFilterTemplate`
 
 ---
 
