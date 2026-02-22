@@ -408,6 +408,18 @@ public static class ReportRegistry
                 SortOrder = 2,
                 IsEnabled = true
             },
+            new ReportDefinition
+            {
+                Id = ReportIds.AccountItemList,
+                Name = "會計科目表",
+                Description = "列印標準會計科目表（Chart of Accounts），依科目大類分組顯示科目代碼、名稱、層級、借貸方向等",
+                IconClass = "bi bi-list-columns",
+                Category = ReportCategory.Financial,
+                RequiredPermission = "AccountItem.Read",
+                ActionId = "OpenAccountItemListReport",
+                SortOrder = 3,
+                IsEnabled = true
+            },
         };
     }
     

@@ -598,6 +598,22 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // FN005 - 會計科目表（依科目大類分組，顯示科目完整清單）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.AccountItemList,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(AccountItemListCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IAccountItemListReportService),
+            PreviewTitle = "會計科目表預覽",
+            FilterTitle = "會計科目表篩選條件",
+            IconClass = "bi-list-columns",
+            GetDocumentName = criteria =>
+            {
+                return $"會計科目表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
             _isInitialized = true;
         }
     }

@@ -1,0 +1,253 @@
+@* 可重用的會計科目編輯組件 - 可在任何頁面中嵌入 *@
+@inject IAccountItemService AccountItemService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="AccountItem"
+                          TService="IAccountItemService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@AccountItemId"
+                          Service="@AccountItemService"
+                          EntityName="會計科目"
+                          EntityNamePlural="會計科目"
+                          ModalTitle="@(AccountItemId.HasValue ? "編輯會計科目" : "新增會計科目")"
+                          Size="GenericEditModalComponent<AccountItem, IAccountItemService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadAccountItemData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(AccountItemId.HasValue ? "會計科目更新成功" : "會計科目新增成功")"
+                          SaveFailureMessage="會計科目儲存失敗"
+                          RequiredPermission="AccountItem.Read"
+                          OnEntitySaved="@OnAccountItemSaved"
+                          OnCancel="@OnCancel" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? AccountItemId { get; set; }
+    [Parameter] public EventCallback<AccountItem> OnAccountItemSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<AccountItem, IAccountItemService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<AccountItem> allAccountItems = new();
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !formFields.Any())
+        {
+            await LoadParentOptionsAsync();
+            InitializeFormFields();
+        }
+    }
+
+    private async Task LoadParentOptionsAsync()
+    {
+        try
+        {
+            allAccountItems = await AccountItemService.GetAllWithParentAsync();
+        }
+        catch (Exception)
+        {
+            allAccountItems = new List<AccountItem>();
+        }
+    }
+
+    private Task<AccountItem?> LoadAccountItemData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<AccountItem, IAccountItemService>(
+            AccountItemId, AccountItemService, NotificationService, "會計科目", "ACC", PrefilledValues,
+            a =>
+            {
+                a.AccountLevel = 4;
+                a.AccountType = ERPCore2.Models.Enums.AccountType.Asset;
+                a.Direction = ERPCore2.Models.Enums.AccountDirection.Debit;
+                a.IsDetailAccount = true;
+                a.SortOrder = 0;
+            });
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            // 建立上層科目選項（只顯示非第4層的科目）
+            var parentOptions = allAccountItems
+                .Where(a => a.AccountLevel < 4)
+                .OrderBy(a => a.AccountLevel)
+                .ThenBy(a => a.SortOrder)
+                .ThenBy(a => a.Code)
+                .Select(a => new SelectOption
+                {
+                    Value = a.Id.ToString(),
+                    Text = $"{new string('\u00A0', (a.AccountLevel - 1) * 4)}{a.Code} {a.Name}"
+                })
+                .ToList();
+
+            formFields = new List<FormFieldDefinition>
+            {
+                // 基本資訊
+                new()
+                {
+                    PropertyName = nameof(AccountItem.Code),
+                    Label = "科目代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入科目代碼",
+                    IsRequired = true,
+                    HelpText = "科目的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountItem.Name),
+                    Label = "科目名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入科目名稱",
+                    IsRequired = true,
+                    HelpText = "會計科目的中文名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountItem.EnglishName),
+                    Label = "英文名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入英文名稱",
+                    IsRequired = false,
+                    HelpText = "會計科目的英文名稱"
+                },
+
+                // 科目屬性
+                new()
+                {
+                    PropertyName = nameof(AccountItem.AccountType),
+                    Label = "科目大類",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "科目所屬的會計大類",
+                    Options = new List<SelectOption>
+                    {
+                        new SelectOption { Text = "資產", Value = ((int)ERPCore2.Models.Enums.AccountType.Asset).ToString() },
+                        new SelectOption { Text = "負債", Value = ((int)ERPCore2.Models.Enums.AccountType.Liability).ToString() },
+                        new SelectOption { Text = "權益", Value = ((int)ERPCore2.Models.Enums.AccountType.Equity).ToString() },
+                        new SelectOption { Text = "營業收入", Value = ((int)ERPCore2.Models.Enums.AccountType.Revenue).ToString() },
+                        new SelectOption { Text = "營業成本", Value = ((int)ERPCore2.Models.Enums.AccountType.Cost).ToString() },
+                        new SelectOption { Text = "營業費用", Value = ((int)ERPCore2.Models.Enums.AccountType.Expense).ToString() },
+                        new SelectOption { Text = "營業外收益及費損", Value = ((int)ERPCore2.Models.Enums.AccountType.NonOperatingIncomeAndExpense).ToString() },
+                        new SelectOption { Text = "綜合損益總額", Value = ((int)ERPCore2.Models.Enums.AccountType.ComprehensiveIncome).ToString() }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountItem.Direction),
+                    Label = "借貸方向",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "借方：資產、成本、費用類；貸方：負債、權益、收入類",
+                    Options = new List<SelectOption>
+                    {
+                        new SelectOption { Text = "借方（Debit）", Value = ((int)ERPCore2.Models.Enums.AccountDirection.Debit).ToString() },
+                        new SelectOption { Text = "貸方（Credit）", Value = ((int)ERPCore2.Models.Enums.AccountDirection.Credit).ToString() }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountItem.AccountLevel),
+                    Label = "科目層級",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "1=大分類、2=子分類、3=中分類、4=明細科目",
+                    Options = new List<SelectOption>
+                    {
+                        new SelectOption { Text = "第1層（大分類）", Value = "1" },
+                        new SelectOption { Text = "第2層（子分類）", Value = "2" },
+                        new SelectOption { Text = "第3層（中分類）", Value = "3" },
+                        new SelectOption { Text = "第4層（明細科目）", Value = "4" }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountItem.ParentId),
+                    Label = "上層科目",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    HelpText = "選擇此科目的上層（父）科目，第1層科目不需選擇",
+                    Options = parentOptions
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountItem.IsDetailAccount),
+                    Label = "是否為明細科目",
+                    FieldType = FormFieldType.Checkbox,
+                    IsRequired = false,
+                    HelpText = "僅明細科目可用於記帳分錄"
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountItem.SortOrder),
+                    Label = "排序順序",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "控制同層級科目的顯示順序",
+                    Min = 0,
+                    Step = 1
+                },
+
+                // 說明
+                new()
+                {
+                    PropertyName = nameof(AccountItem.Description),
+                    Label = "科目說明",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入科目說明",
+                    IsRequired = false,
+                    Rows = 3,
+                    ContainerCssClass = "col-12"
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountItem.EnglishDescription),
+                    Label = "英文說明",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入英文說明",
+                    IsRequired = false,
+                    Rows = 3,
+                    ContainerCssClass = "col-12"
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<AccountItem>()
+            };
+
+            formSections = FormSectionHelper<AccountItem>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    a => a.Code,
+                    a => a.Name,
+                    a => a.EnglishName)
+                .AddToSection("科目屬性",
+                    a => a.AccountType,
+                    a => a.Direction,
+                    a => a.AccountLevel,
+                    a => a.ParentId,
+                    a => a.IsDetailAccount,
+                    a => a.SortOrder)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    a => a.Description,
+                    a => a.EnglishDescription,
+                    a => a.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
+}

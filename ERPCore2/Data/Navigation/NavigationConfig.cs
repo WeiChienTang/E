@@ -795,6 +795,18 @@ public static class NavigationConfig
                         QuickActionId = "NewCurrency",
                         QuickActionName = "新增貨幣"
                     },
+                    new NavigationItem
+                    {
+                        Name = "會計科目",
+                        Description = "管理標準會計科目表（Chart of Accounts）",
+                        Route = "/account-items",
+                        IconClass = "",
+                        Category = "財務管理",
+                        RequiredPermission = "AccountItem.Read",
+                        SearchKeywords = new List<string> { "會計科目", "科目表", "chart of accounts", "會計" },
+                        QuickActionId = "NewAccountItem",
+                        QuickActionName = "新增會計科目"
+                    },
 
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem

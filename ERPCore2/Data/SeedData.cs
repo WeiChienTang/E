@@ -79,6 +79,7 @@ namespace ERPCore2.Data
                     new PaperSettingSeeder(),
                     new ReportPrintConfigurationSeeder(),  // 報表列印配置（在紙張設定之後）
                     new VehicleTypeSeeder(),               // 車輛類型（車型基礎資料）
+                    new AccountItemSeeder(),               // 會計科目表（商業會計項目表 112 年度）
                 };
             }
 

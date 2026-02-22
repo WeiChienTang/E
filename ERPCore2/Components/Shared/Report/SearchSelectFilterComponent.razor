@@ -137,16 +137,14 @@ else
     private void HandleInput(ChangeEventArgs e)
     {
         searchTerm = e.Value?.ToString() ?? "";
-        showDropdown = !string.IsNullOrWhiteSpace(searchTerm);
+        showDropdown = true;
         highlightedIndex = -1;
     }
 
     private void HandleFocus()
     {
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            showDropdown = true;
-        }
+        showDropdown = true;
+        highlightedIndex = -1;
     }
 
     private async Task HandleBlur()

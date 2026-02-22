@@ -129,6 +129,9 @@ public static class ReportIds
     /// <summary>應付沖款單</summary>
     public const string AccountsPayableSetoff = "FN004";
 
+    /// <summary>會計科目表</summary>
+    public const string AccountItemList = "FN005";
+
     // ==================== 廢料報表 (WL) ====================
     /// <summary>廢料記錄報表</summary>
     public const string WasteRecord = "WL001";

@@ -53,6 +53,7 @@ namespace ERPCore2.Data
             // 財務管理服務
             services.AddScoped<ICurrencyService, CurrencyService>();
             services.AddScoped<IBankService, BankService>();
+            services.AddScoped<IAccountItemService, AccountItemService>();
             services.AddScoped<ISetoffDocumentService, SetoffDocumentService>();
             services.AddScoped<ISetoffProductDetailService, SetoffProductDetailService>();
             services.AddScoped<ISetoffPaymentService, SetoffPaymentService>();
@@ -260,6 +261,8 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierDetailReportService, SupplierDetailReportService>();
             // 廢料記錄報表服務（WL001）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IWasteRecordReportService, WasteRecordReportService>();
+            // 會計科目表報表服務（FN005）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IAccountItemListReportService, AccountItemListReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
         }

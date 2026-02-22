@@ -1,0 +1,102 @@
+@page "/account-items"
+@inject IAccountItemService AccountItemService
+@rendermode InteractiveServer
+@inject INotificationService NotificationService
+
+<GenericIndexPageComponent TEntity="AccountItem"
+                          TService="IAccountItemService"
+                          Service="@AccountItemService"
+                          EntityBasePath="/account-items"
+                          PageTitle="會計科目管理"
+                          PageSubtitle="管理標準會計科目表（Chart of Accounts）"
+                          EntityName="會計科目"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadDataAsync"
+                          FilterApplier="@ApplyFilters"
+                          GetEntityDisplayName="@(a => $"{a.Code} {a.Name}")"
+                          RequiredPermission="AccountItem.Read"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+<AccountItemEditModalComponent IsVisible="@showEditModal"
+                              IsVisibleChanged="@((bool v) => showEditModal = v)"
+                              AccountItemId="@editingId"
+                              OnAccountItemSaved="@modalHandler.OnEntitySavedAsync"
+                              OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<AccountItem, IAccountItemService> indexComponent = default!;
+
+    // Modal 狀態
+    private bool showEditModal = false;
+    private int? editingId = null;
+
+    // Modal 處理器
+    private ModalHandler<AccountItem, GenericIndexPageComponent<AccountItem, IAccountItemService>> modalHandler = default!;
+
+    // 欄位配置
+    private AccountItemFieldConfiguration fieldConfiguration = default!;
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 1. 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<AccountItem,
+                GenericIndexPageComponent<AccountItem, IAccountItemService>>(
+                id => editingId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            // 2. 初始化麵包屑
+            await InitializeBreadcrumbsAsync();
+
+            // 3. 建立欄位配置
+            fieldConfiguration = new AccountItemFieldConfiguration(NotificationService);
+
+            // 4. 建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, nameof(OnInitializedAsync), GetType(),
+                additionalData: "初始化會計科目頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化頁面失敗");
+        }
+    }
+
+    // 麵包屑
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
+            "財務管理", "會計科目管理", null, NotificationService, GetType());
+
+    // 資料載入
+    private Task<List<AccountItem>> LoadDataAsync() =>
+        DataLoaderHelper.LoadAsync(
+            () => AccountItemService.GetAllWithParentAsync(),
+            "會計科目",
+            NotificationService,
+            GetType());
+
+    // 篩選邏輯
+    private IQueryable<AccountItem> ApplyFilters(
+        SearchFilterModel searchModel, IQueryable<AccountItem> query)
+    {
+        if (fieldConfiguration == null)
+            return query.OrderBy(a => a.AccountLevel).ThenBy(a => a.SortOrder).ThenBy(a => a.Code);
+
+        return fieldConfiguration.ApplyFilters(
+            searchModel, query, nameof(ApplyFilters), GetType());
+    }
+}

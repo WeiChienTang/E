@@ -1,0 +1,210 @@
+using ERPCore2.Data.Context;
+using ERPCore2.Data.Entities;
+using ERPCore2.Helpers;
+using ERPCore2.Models.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace ERPCore2.Services
+{
+    public class AccountItemService : GenericManagementService<AccountItem>, IAccountItemService
+    {
+        public AccountItemService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<AccountItem>> logger)
+            : base(contextFactory, logger)
+        {
+        }
+
+        public override async Task<List<AccountItem>> GetAllAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AccountItems
+                    .Include(a => a.Parent)
+                    .OrderBy(a => a.AccountLevel)
+                    .ThenBy(a => a.SortOrder)
+                    .ThenBy(a => a.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
+                return new List<AccountItem>();
+            }
+        }
+
+        public override async Task<List<AccountItem>> SearchAsync(string searchTerm)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AccountItems
+                    .Include(a => a.Parent)
+                    .Where(a => (a.Code != null && a.Code.Contains(searchTerm)) ||
+                               a.Name.Contains(searchTerm) ||
+                               (a.EnglishName != null && a.EnglishName.Contains(searchTerm)))
+                    .OrderBy(a => a.AccountLevel)
+                    .ThenBy(a => a.SortOrder)
+                    .ThenBy(a => a.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new
+                {
+                    SearchTerm = searchTerm
+                });
+                return new List<AccountItem>();
+            }
+        }
+
+        public async Task<bool> IsAccountItemCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.AccountItems.Where(a => a.Code == code);
+                if (excludeId.HasValue)
+                    query = query.Where(a => a.Id != excludeId.Value);
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsAccountItemCodeExistsAsync), GetType(), _logger, new
+                {
+                    Code = code,
+                    ExcludeId = excludeId
+                });
+                return false;
+            }
+        }
+
+        public async Task<List<AccountItem>> GetByAccountTypeAsync(AccountType accountType)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AccountItems
+                    .Include(a => a.Parent)
+                    .Where(a => a.AccountType == accountType)
+                    .OrderBy(a => a.AccountLevel)
+                    .ThenBy(a => a.SortOrder)
+                    .ThenBy(a => a.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByAccountTypeAsync), GetType(), _logger, new
+                {
+                    AccountType = accountType
+                });
+                return new List<AccountItem>();
+            }
+        }
+
+        public async Task<List<AccountItem>> GetByLevelAsync(int level)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AccountItems
+                    .Include(a => a.Parent)
+                    .Where(a => a.AccountLevel == level)
+                    .OrderBy(a => a.SortOrder)
+                    .ThenBy(a => a.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByLevelAsync), GetType(), _logger, new
+                {
+                    Level = level
+                });
+                return new List<AccountItem>();
+            }
+        }
+
+        public async Task<List<AccountItem>> GetDetailAccountsAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AccountItems
+                    .Include(a => a.Parent)
+                    .Where(a => a.IsDetailAccount)
+                    .OrderBy(a => a.AccountType)
+                    .ThenBy(a => a.SortOrder)
+                    .ThenBy(a => a.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetDetailAccountsAsync), GetType(), _logger);
+                return new List<AccountItem>();
+            }
+        }
+
+        public async Task<List<AccountItem>> GetAllWithParentAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AccountItems
+                    .Include(a => a.Parent)
+                    .OrderBy(a => a.AccountLevel)
+                    .ThenBy(a => a.SortOrder)
+                    .ThenBy(a => a.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllWithParentAsync), GetType(), _logger);
+                return new List<AccountItem>();
+            }
+        }
+
+        public override async Task<ServiceResult> ValidateAsync(AccountItem entity)
+        {
+            try
+            {
+                var errors = new List<string>();
+
+                if (string.IsNullOrWhiteSpace(entity.Code))
+                    errors.Add("科目代碼為必填欄位");
+
+                if (string.IsNullOrWhiteSpace(entity.Name))
+                    errors.Add("科目名稱為必填欄位");
+
+                if (entity.AccountLevel < 1 || entity.AccountLevel > 4)
+                    errors.Add("科目層級必須介於 1 至 4 之間");
+
+                if (!string.IsNullOrWhiteSpace(entity.Code) &&
+                    await IsAccountItemCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
+                    errors.Add("科目代碼已存在");
+
+                if (errors.Any())
+                    return ServiceResult.Failure(string.Join("; ", errors));
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new
+                {
+                    EntityId = entity.Id,
+                    EntityCode = entity.Code
+                });
+                return ServiceResult.Failure("驗證過程發生錯誤");
+            }
+        }
+    }
+}

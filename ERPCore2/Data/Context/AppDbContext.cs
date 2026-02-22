@@ -100,6 +100,7 @@ namespace ERPCore2.Data.Context
       public DbSet<VehicleMaintenance> VehicleMaintenances { get; set; }
       public DbSet<WasteType> WasteTypes { get; set; }
       public DbSet<WasteRecord> WasteRecords { get; set; }
+      public DbSet<AccountItem> AccountItems { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1283,6 +1284,28 @@ namespace ERPCore2.Data.Context
                   modelBuilder.Entity<WasteType>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                  });
+
+                  // 會計科目表相關
+                  modelBuilder.Entity<AccountItem>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 自我參照關聯（父子科目階層）
+                        entity.HasOne(a => a.Parent)
+                              .WithMany(a => a.Children)
+                              .HasForeignKey(a => a.ParentId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        // 科目代碼唯一索引
+                        entity.HasIndex(e => e.Code)
+                              .IsUnique();
+
+                        // 查詢索引
+                        entity.HasIndex(e => e.AccountType);
+                        entity.HasIndex(e => e.AccountLevel);
+                        entity.HasIndex(e => e.ParentId);
+                        entity.HasIndex(e => e.IsDetailAccount);
                   });
 
                   modelBuilder.Entity<WasteRecord>(entity =>

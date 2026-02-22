@@ -119,7 +119,11 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 採購
                 new Permission { Code = "PurchaseOrder.Read", Name = "檢視採購訂單", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購訂單與供應商交易" },
                 new Permission { Code = "PurchaseReceiving.Read", Name = "檢視採購收貨", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購收貨單與驗收記錄" },
-                new Permission { Code = "PurchaseReturn.Read", Name = "檢視採購退回貨", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購退貨與退回處理" }
+                new Permission { Code = "PurchaseReturn.Read", Name = "檢視採購退回貨", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購退貨與退回處理" },
+
+                // 會計
+                new Permission { Code = "AccountItem.Read", Name = "檢視會計科目", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視會計科目與相關設定" },
+            
             };
 
             var toAdd = permissions.Where(p => !existingCodes.Contains(p.Code)).ToArray();
