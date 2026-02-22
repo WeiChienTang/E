@@ -100,11 +100,6 @@ namespace ERPCore2.Data.Entities
         public Company Company { get; set; } = null!;
 
         /// <summary>
-        /// 關聯的財務交易記錄
-        /// </summary>
-        public ICollection<FinancialTransaction> FinancialTransactions { get; set; } = new List<FinancialTransaction>();
-
-        /// <summary>
         /// 關聯的收款記錄
         /// </summary>
         public ICollection<SetoffPayment> SetoffPayments { get; set; } = new List<SetoffPayment>();

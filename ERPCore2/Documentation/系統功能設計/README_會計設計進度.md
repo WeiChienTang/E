@@ -47,6 +47,8 @@
 
 **檔案位置：** `Models/Enums/AccountingEnums.cs`
 
+所有 Enum 值同時標記 `[Description]` 和 `[Display(Name)]`，前者供一般顯示邏輯使用，後者供報表篩選的 `DynamicFilterTemplate` 讀取。
+
 #### AccountType（科目大類）
 
 | 值 | 名稱 | 說明 |
@@ -66,6 +68,16 @@
 |----|------|------|
 | 1 | Debit | 借方（資產、成本、費用類） |
 | 2 | Credit | 貸方（負債、權益、收入類） |
+
+#### AccountLevelFilter（層級篩選，用於報表）
+
+| 值 | 名稱 | 說明 |
+|----|------|------|
+| 1 | Level1 | 第1層 |
+| 2 | Level2 | 第2層 |
+| 3 | Level3 | 第3層 |
+| 4 | Level4 | 第4層 |
+| 5 | Level5 | 第5層 |
 
 ### 3. DbContext 設定
 
@@ -110,6 +122,75 @@
 
 已執行 `Add-Migration` 與 `Update-Database`，資料表已建立並載入種子資料。
 
+### 7. Service 層
+
+**檔案位置：** `Services/FinancialManagement/IAccountItemService.cs` / `AccountItemService.cs`
+
+**介面自訂方法：**
+
+| 方法 | 說明 |
+|------|------|
+| `IsAccountItemCodeExistsAsync(code, excludeId?)` | 檢查科目代碼是否重複（供 EntityCodeGenerationHelper 反射呼叫） |
+| `GetByAccountTypeAsync(accountType)` | 依科目大類查詢 |
+| `GetByLevelAsync(level)` | 依層級查詢 |
+| `GetDetailAccountsAsync()` | 查詢所有明細科目 |
+| `GetAllWithParentAsync()` | 查詢所有科目並含上層科目資料（Include Parent） |
+
+> **命名規則注意：** `IsAccountItemCodeExistsAsync` 必須完整包含實體名稱，`EntityCodeGenerationHelper` 以反射尋找 `Is{EntityName}CodeExistsAsync` 方法來產生不重複編號。
+
+### 8. FieldConfiguration
+
+**檔案位置：** `Components/FieldConfiguration/AccountItemFieldConfiguration.cs`
+
+定義 7 個欄位：Code、Name、AccountLevel、AccountType、Direction、IsDetailAccount、ParentName
+
+### 9. Index 列表頁面
+
+**檔案位置：** `Components/Pages/FinancialManagement/AccountItemIndex.razor`
+
+- 路由：`/account-items`
+- 功能：科目列表、新增、編輯、刪除、狀態切換
+- 導覽：已加入 `NavigationConfig.cs`，QuickActionId = `"NewAccountItem"`
+
+### 10. EditModal 編輯表單
+
+**檔案位置：** `Components/Pages/FinancialManagement/AccountItemEditModalComponent.razor`
+
+三個欄位群組：
+- **基本資料**：科目代碼（自動產生）、科目名稱、英文名稱
+- **科目屬性**：科目大類、借貸方向、科目層級、上層科目、是否明細科目
+- **附加資料**：排序、說明、英文說明、狀態、備注
+
+### 11. QuickAction 按鈕
+
+**檔案位置：** `Components/Shared/Dashboard/QuickActionModalHost.razor`
+
+已在 `_registry` 字典中註冊 `"NewAccountItem"` → `AccountItemEditModalComponent`，首頁快速新增按鈕可正常運作。
+
+### 12. 會計科目表報表（FN005）
+
+**相關檔案：**
+- `Models/Reports/ReportIds.cs` — 新增 `AccountItemList = "FN005"` 常數
+- `Models/Reports/FilterCriteria/AccountItemListCriteria.cs` — 篩選條件
+- `Services/Reports/Interfaces/IAccountItemListReportService.cs` — 介面
+- `Services/Reports/AccountItemListReportService.cs` — 服務實作
+- `Data/Reports/ReportRegistry.cs` — FN005 報表定義
+- `Models/Reports/FilterTemplates/FilterTemplateRegistry.cs` — FN005 篩選配置
+- `Data/ServiceRegistration.cs` — DI 註冊
+
+**篩選條件（AccountItemListCriteria）：**
+
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| AccountTypes | FilterEnum(AccountType) | 科目大類多選 |
+| AccountDirections | FilterEnum(AccountDirection) | 借貸方向多選 |
+| AccountLevels | FilterEnum(AccountLevelFilter) | 層級多選（第1~5層） |
+| CodeKeyword | FilterKeyword | 科目代碼搜尋 |
+| NameKeyword | FilterKeyword | 科目名稱搜尋 |
+| DetailAccountOnly | FilterToggle | 僅顯示明細科目 |
+
+**報表格式：** 依科目大類分組，表格欄位包含項次、科目代碼、科目名稱（含層級縮排）、層級、借貸方向、明細標記、上層科目。頁尾顯示統計數量及製表/財務主管簽名欄。
+
 ---
 
 ## 階層結構說明
@@ -133,14 +214,76 @@ Level 1: Code "1"     → 資產（ParentId: null）
 
 ---
 
+## FinancialTransaction 現況調查（2026-02-22）
+
+### 檔案位置
+
+`Data/Entities/FinancialManagement/FinancialTransaction.cs`
+`Models/Enums/FinancialTransactionTypeEnum.cs`
+
+### 現況摘要
+
+| 項目 | 狀態 |
+|------|------|
+| 資料表（Migration） | ✅ 已建立 |
+| DbSet | ✅ 存在於 AppDbContext |
+| SetoffDocument 導航屬性 | ✅ `ICollection<FinancialTransaction>` |
+| SetoffDocumentService Include | ✅ 有 `.Include(s => s.FinancialTransactions)` |
+| IFinancialTransactionService | ❌ 不存在 |
+| FinancialTransactionService | ❌ 不存在 |
+| 寫入邏輯 | ❌ 無任何程式碼實際寫入資料 |
+| 查詢/UI 頁面 | ❌ 不存在 |
+
+### 設計意圖 vs 實際狀況
+
+**設計意圖（推測）：** 記錄沖款單相關的收付款流水，屬於現金流帳層面的記錄。
+
+**實際狀況：** `SetoffDocumentEditModalComponent.razor`（整個沖款作業的核心 Modal）完全不知道 FinancialTransaction 的存在：
+
+- 未注入任何 `IFinancialTransactionService`
+- 未建立、讀取或操作任何 FinancialTransaction 物件
+- 收付款記錄完全由 **SetoffPayment** 負責
+
+`SetoffDocumentService` 中的 `.Include(s => s.FinancialTransactions)` 只是載入一個永遠為空的集合，沒有任何實質作用。
+
+### SetoffPayment 已完整取代其功能
+
+SetoffPayment 已包含沖款收付款所需的全部欄位：
+
+| SetoffPayment 欄位 | 說明 |
+|--------------------|------|
+| BankId | 銀行別 |
+| PaymentMethodId | 付款方式 |
+| ReceivedAmount | 收款金額 |
+| AllowanceAmount | 折讓金額 |
+| CheckNumber | 支票號碼 |
+| DueDate | 到期日 |
+
+### 結論：FinancialTransaction 已無存在意義
+
+- **沖款收付款**：已由 SetoffPayment 完整實作，功能重複
+- **未來傳票**：JournalEntry 是正確的設計（含 AccountItem FK、借貸分錄），FinancialTransaction 的結構不適合這個用途
+- **沖銷流水帳**：此功能若有需要，應在 JournalEntry 系統中以「沖銷傳票」的方式實作
+
+### 處置結果（2026-02-23 完成）
+
+**已完成刪除，變更清單：**
+
+| 動作 | 檔案 |
+|------|------|
+| 移除 navigation property | `Data/Entities/FinancialManagement/SetoffDocument.cs` |
+| 移除 2 個 Include 呼叫 | `Services/FinancialManagement/SetoffDocumentService.cs` |
+| 移除 DbSet + ModelBuilder 設定 | `Data/Context/AppDbContext.cs` |
+| 移除 FinancialTransaction.Read 權限 | `Data/SeedDataManager/Seeders/PermissionSeeder.cs` |
+| 刪除 Entity 檔案 | `Data/Entities/FinancialManagement/FinancialTransaction.cs` |
+| 刪除 Enum 檔案 | `Models/Enums/FinancialTransactionTypeEnum.cs` |
+| Migration | `20260222201713_RemoveFinancialTransaction` — 刪除 `FinancialTransactions` 資料表及 `SetoffPrepayments.FinancialTransactionId` shadow 欄位 |
+
+資料表已從資料庫移除，無任何資料損失。
+
+---
+
 ## 待辦項目（未來規劃）
-
-### 近期
-
-- [ ] 建立 AccountItem 的 Service 層（IAccountItemService / AccountItemService）
-- [ ] 建立 FieldConfiguration（篩選器與表格欄位定義）
-- [ ] 建立 Index 列表頁面（含樹狀結構顯示）
-- [ ] 建立 EditModal 編輯表單
 
 ### 中期
 
@@ -152,6 +295,7 @@ Level 1: Code "1"     → 資產（ParentId: null）
 
 - [ ] 自動產生資產負債表（Balance Sheet）
 - [ ] 自動產生損益表（Income Statement）
+- [ ] 自動產生現金流量表
 - [ ] 自動產生綜合損益表
 - [ ] 報表期間篩選（月報、季報、年報）
 - [ ] 報表匯出功能（PDF / Excel）
@@ -163,10 +307,19 @@ Level 1: Code "1"     → 資產（ParentId: null）
 | 檔案 | 路徑 | 說明 |
 |------|------|------|
 | AccountItem.cs | `Data/Entities/FinancialManagement/` | Entity 定義 |
-| AccountingEnums.cs | `Models/Enums/` | AccountType、AccountDirection 列舉 |
+| AccountingEnums.cs | `Models/Enums/` | AccountType、AccountDirection、AccountLevelFilter 列舉 |
 | AccountItemSeeder.cs | `Data/SeedDataManager/Seeders/` | 553 筆種子資料 |
 | AppDbContext.cs | `Data/Context/` | DbSet 與關聯設定 |
 | SeedData.cs | `Data/` | Seeder 註冊 |
+| IAccountItemService.cs | `Services/FinancialManagement/` | 服務介面 |
+| AccountItemService.cs | `Services/FinancialManagement/` | 服務實作 |
+| AccountItemFieldConfiguration.cs | `Components/FieldConfiguration/` | 欄位定義 |
+| AccountItemIndex.razor | `Components/Pages/FinancialManagement/` | 列表頁面（/account-items） |
+| AccountItemEditModalComponent.razor | `Components/Pages/FinancialManagement/` | 編輯表單 |
+| QuickActionModalHost.razor | `Components/Shared/Dashboard/` | 首頁快速新增（NewAccountItem） |
+| AccountItemListCriteria.cs | `Models/Reports/FilterCriteria/` | 報表篩選條件（FN005） |
+| IAccountItemListReportService.cs | `Services/Reports/Interfaces/` | 報表服務介面 |
+| AccountItemListReportService.cs | `Services/Reports/` | 報表服務實作 |
 
 ---
 

@@ -316,10 +316,9 @@ new ReportDefinition
    ↓ 從 DynamicComponent 取得 IFilterTemplateComponent
    ↓ 呼叫 GetCriteria() → Validate()
 
-8. 轉換篩選條件並呼叫報表服務
-   ↓ criteria.ToBatchPrintCriteria()
-   ↓ ReportService.RenderBatchToImagesAsync(batchCriteria)
-   ↓ 使用 BatchReportHelper 產生批次預覽圖片（含紙張設定）
+8. 呼叫報表服務產生預覽圖片
+   ↓ 優先：ReportService.RenderBatchToImagesAsync(typedCriteria)（清單式報表）
+   ↓ 降級：ReportService.RenderBatchToImagesAsync(BatchPrintCriteria)（單據式報表）
 
 9. 設定預覽資料，開啟 ReportPreviewModalComponent
    ↓ previewImages = result.PreviewImages
@@ -405,7 +404,7 @@ new ReportDefinition
 
 ## ✅ 已實作的篩選配置
 
-共 29 個篩選配置，其中 28 個使用 `DynamicFilterTemplate` 自動產生 UI，1 個（PD003）使用 `ProductBarcodeBatchFilterTemplate` 專用模板。
+共 30 個篩選配置，其中 29 個使用 `DynamicFilterTemplate` 自動產生 UI，1 個（PD003）使用 `ProductBarcodeBatchFilterTemplate` 專用模板。
 
 | 分類 | 報表 ID | Criteria 類別 | 篩選欄位摘要 |
 |------|---------|---------------|------------|
@@ -438,6 +437,7 @@ new ReportDefinition
 | 車輛 | VH002 | VehicleMaintenanceCriteria | 車輛、日期範圍、關鍵字 |
 | 財務 | FN003 | AccountsReceivableSetoffCriteria | 客戶、日期範圍、單號 |
 | 財務 | FN004 | AccountsPayableSetoffCriteria | 廠商、日期範圍、單號 |
+| 財務 | FN005 | AccountItemListCriteria | 科目大類、借貸方向、層級、科目代碼、科目名稱、僅明細科目 |
 
 > ★ PD003 使用 `ProductBarcodeBatchFilterTemplate`（含列印數量設定的特殊 UI），非 `DynamicFilterTemplate`
 
@@ -453,7 +453,9 @@ new ReportDefinition
 3. ☐ 在 `FilterTemplateRegistry.cs` 的 `Initialize()` 中新增配置
    - `FilterTemplateTypeName` = `"ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate"`
 4. ☐ 在 `ReportRegistry.cs` 中確認報表 `IsEnabled = true`
-5. ☐ 報表服務實作 `RenderBatchToImagesAsync`（使用 `BatchReportHelper`）
+5. ☐ 報表服務實作 `RenderBatchToImagesAsync(TypedCriteria)` 方法
+   - **清單式報表**（如 AccountItemList、VehicleList）：服務直接接受具體 Criteria，內部篩選並建構 `FormattedDocument`
+   - **單據式報表**（如 PurchaseOrder、SalesOrder）：Criteria 實作 `ToBatchPrintCriteria()`，服務接受 `BatchPrintCriteria` 並透過 `BatchReportHelper` 逐筆合併
 
 ---
 
@@ -465,8 +467,8 @@ new ReportDefinition
 4. **FilterFK 需要 ServiceType**：`typeof(ICustomerService)` 等，系統用 `IServiceProvider` 在執行期解析並呼叫 `GetAllAsync()`
 5. **FilterTemplateInitializer 在 MainLayout 啟動時呼叫**：確保在使用前完成初始化
 6. **驗證邏輯放在 Criteria 的 Validate() 方法**：不要在其他地方處理
-7. **篩選條件須實作 `ToBatchPrintCriteria()`**：用於轉換為報表服務可用的批次篩選條件
-8. **報表服務使用 `BatchReportHelper`**：避免重複實作批次預覽邏輯
+7. **FilterEnum 對應的 Enum 須加 `[Display(Name)]`**：`DynamicFilterTemplate` 讀取 `[Display(Name)]` 產生選項顯示文字，使用 `[Description]` 無效
+8. **報表服務呼叫策略**：`GenericReportFilterModalComponent` 優先尋找接受具體 Criteria 的 `RenderBatchToImagesAsync` 方法（清單式報表標準做法），找不到才降級呼叫接受 `BatchPrintCriteria` 的版本（單據式報表降級路徑）
 
 ---
 

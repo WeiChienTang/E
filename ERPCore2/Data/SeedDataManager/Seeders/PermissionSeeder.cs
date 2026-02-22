@@ -104,7 +104,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 財務
                 new Permission { Code = "SetoffDocument.Read", Name = "檢視沖款單", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視客戶應收帳款與交易紀錄" },
                 new Permission { Code = "PaymentMethod.Read", Name = "檢視付款方式", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視系統付款方式設定" },
-                new Permission { Code = "FinancialTransaction.Read", Name = "檢視財務交易", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視財務交易紀錄與明細" },
                 new Permission { Code = "Bank.Read", Name = "檢視銀行", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視銀行基本資料與相關資訊"},
                 new Permission { Code = "Currency.Read", Name = "檢視貨幣", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視貨幣基本資料與匯率設定"},
 

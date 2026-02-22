@@ -70,7 +70,6 @@ namespace ERPCore2.Data.Context
       public DbSet<SetoffProductDetail> SetoffProductDetails { get; set; }
       public DbSet<SetoffPrepayment> SetoffPrepayments { get; set; }
       public DbSet<SetoffPrepaymentUsage> SetoffPrepaymentUsages { get; set; }
-      public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       public DbSet<Entities.PrepaymentType> PrepaymentTypes { get; set; }
       public DbSet<Currency> Currencies { get; set; }
       public DbSet<Material> Materials { get; set; }
@@ -817,53 +816,6 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => new { e.SourceDetailType, e.SourceDetailId });
                   });
                   
-                  modelBuilder.Entity<FinancialTransaction>(entity =>
-                  {
-                        entity.HasKey(ft => ft.Id);
-
-                        // 關聯設定
-                        entity.HasOne(ft => ft.Customer)
-                              .WithMany()
-                              .HasForeignKey(ft => ft.CustomerId)
-                              .OnDelete(DeleteBehavior.SetNull);
-
-                        entity.HasOne(ft => ft.Company)
-                              .WithMany()
-                              .HasForeignKey(ft => ft.CompanyId)
-                              .OnDelete(DeleteBehavior.Restrict);
-
-                        entity.HasOne(ft => ft.PaymentMethod)
-                              .WithMany()
-                              .HasForeignKey(ft => ft.PaymentMethodId)
-                              .OnDelete(DeleteBehavior.SetNull);
-
-                        entity.HasOne(ft => ft.ReversalTransaction)
-                              .WithMany(rft => rft.ReversedTransactions)
-                              .HasForeignKey(ft => ft.ReversalTransactionId)
-                              .OnDelete(DeleteBehavior.Restrict);
-
-                        // 為 decimal 屬性設定精確度和小數位數
-                        entity.Property(e => e.Amount)
-                              .HasPrecision(18, 2);
-                        entity.Property(e => e.BalanceBefore)
-                              .HasPrecision(18, 2);
-                        entity.Property(e => e.BalanceAfter)
-                              .HasPrecision(18, 2);
-                        entity.Property(e => e.OriginalAmount)
-                              .HasPrecision(18, 4);
-                        entity.Property(e => e.ExchangeRate)
-                              .HasPrecision(18, 6);
-
-                        // 設定索引
-                        entity.HasIndex(e => e.TransactionNumber)
-                              .IsUnique();
-                        entity.HasIndex(e => new { e.TransactionType, e.TransactionDate });
-                        entity.HasIndex(e => new { e.CustomerId, e.TransactionDate });
-                        entity.HasIndex(e => new { e.CompanyId, e.TransactionDate });
-                        entity.HasIndex(e => new { e.SourceDocumentType, e.SourceDocumentId });
-                        entity.HasIndex(e => e.VendorId); // 為未來的供應商功能預留
-                  });
-
                   modelBuilder.Entity<SetoffPrepayment>(entity =>
                   {
                         entity.HasKey(p => p.Id);

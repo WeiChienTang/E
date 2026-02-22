@@ -185,6 +185,7 @@ Components/
 | SalesOrderReportService | SO002 | ✅ 完成 |
 | SalesDeliveryReportService | SO004 | ✅ 完成 |
 | SalesReturnReportService | SO005 | ✅ 完成 |
+| AccountItemListReportService | FN005 | ✅ 完成 |
 
 ### 篩選模板（全部使用 DynamicFilterTemplate 統一產生 UI）
 
@@ -200,7 +201,7 @@ Components/
 | 商品（PD） | 5 | PD001–PD005 | ✅ 完成 |
 | 庫存（IV） | 2 | IV002、IV003 | ✅ 完成 |
 | 車輛（VH） | 2 | VH001、VH002 | ✅ 完成 |
-| 財務（FN） | 2 | FN003、FN004 | ✅ 完成 |
+| 財務（FN） | 3 | FN003、FN004、FN005 | ✅ 完成 |
 
 > 詳細清單請見 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)
 

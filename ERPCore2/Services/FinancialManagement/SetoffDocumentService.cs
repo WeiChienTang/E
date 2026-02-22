@@ -62,7 +62,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var setoffDocument = await context.SetoffDocuments
                     .Include(s => s.Company)
-                    .Include(s => s.FinancialTransactions)
                     .FirstOrDefaultAsync(s => s.Id == id);
 
                 if (setoffDocument != null)
@@ -416,7 +415,6 @@ namespace ERPCore2.Services
                     .Include(d => d.SetoffProductDetails)
                     .Include(d => d.SetoffPayments)
                     .Include(d => d.Prepayments)
-                    .Include(d => d.FinancialTransactions)
                     .FirstOrDefaultAsync(d => d.Id == id);
 
                 if (document == null)
