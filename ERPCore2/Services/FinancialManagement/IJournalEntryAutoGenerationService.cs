@@ -47,5 +47,17 @@ namespace ERPCore2.Services
         /// 將指定銷貨退回單轉為傳票（借：銷貨收入+銷項稅額 / 貸：應收帳款）
         /// </summary>
         Task<(bool Success, string ErrorMessage)> JournalizeSalesReturnAsync(int id, string createdBy);
+
+        /// <summary>
+        /// 查詢尚未轉傳票的沖款單（含應收沖款與應付沖款）
+        /// </summary>
+        Task<List<SetoffDocument>> GetPendingSetoffDocumentsAsync(DateTime? from = null, DateTime? to = null);
+
+        /// <summary>
+        /// 將指定沖款單轉為傳票
+        /// 應收沖款：借 銀行存款(1113)+銷貨折讓(4114)+預收貨款(2221) / 貸 應收帳款(1191)
+        /// 應付沖款：借 應付帳款(2171) / 貸 銀行存款(1113)+進貨折讓(5124)+預付貨款(1266)
+        /// </summary>
+        Task<(bool Success, string ErrorMessage)> JournalizeSetoffDocumentAsync(int id, string createdBy);
     }
 }

@@ -614,6 +614,60 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // FN006 - 試算表（本期發生額 + 期末累計餘額）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.TrialBalance,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(TrialBalanceCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ITrialBalanceReportService),
+            PreviewTitle = "試算表預覽",
+            FilterTitle = "試算表篩選條件",
+            IconClass = "bi-calculator",
+            GetDocumentName = criteria =>
+            {
+                return $"試算表-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
+        // FN007 - 損益表（Revenue/Cost/Expense/NonOperating 彙總）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.IncomeStatement,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(IncomeStatementCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IIncomeStatementReportService),
+            PreviewTitle = "損益表預覽",
+            FilterTitle = "損益表篩選條件",
+            IconClass = "bi-graph-up",
+            GetDocumentName = criteria =>
+            {
+                var ic = (IncomeStatementCriteria)criteria;
+                var period = ic.StartDate.HasValue && ic.EndDate.HasValue
+                    ? $"{ic.StartDate:yyyyMM}-{ic.EndDate:yyyyMM}"
+                    : DateTime.Now.ToString("yyyyMM");
+                return $"損益表-{period}";
+            }
+        });
+
+        // FN008 - 資產負債表（Asset/Liability/Equity 累積餘額快照）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.BalanceSheet,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(BalanceSheetCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IBalanceSheetReportService),
+            PreviewTitle = "資產負債表預覽",
+            FilterTitle = "資產負債表篩選條件",
+            IconClass = "bi-bank",
+            GetDocumentName = criteria =>
+            {
+                var bc = (BalanceSheetCriteria)criteria;
+                var date = bc.EndDate?.ToString("yyyyMMdd") ?? DateTime.Now.ToString("yyyyMMdd");
+                return $"資產負債表-{date}";
+            }
+        });
+
             _isInitialized = true;
         }
     }

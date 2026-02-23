@@ -1270,12 +1270,20 @@ namespace ERPCore2.Services.Reports
         /// </summary>
         private float MeasureReportHeaderBlockHeight(Graphics g, ReportHeaderBlockElement block, DocumentPageSettings settings)
         {
-            // 以右側高度為基準
             using var rightFont = new System.Drawing.Font(settings.FontName, block.RightFontSize);
             float rightLineHeight = rightFont.GetHeight(g) + 1;
             float rightTotalHeight = block.RightLines.Count * rightLineHeight;
 
-            return rightTotalHeight + 3;
+            // 計算中間行總高度，取兩欄較大者為區塊高度
+            float centerContentHeight = 0;
+            foreach (var (_, fontSize, bold) in block.CenterLines)
+            {
+                var fontStyle = bold ? FontStyle.Bold : FontStyle.Regular;
+                using var font = new System.Drawing.Font(settings.FontName, fontSize, fontStyle);
+                centerContentHeight += font.GetHeight(g);
+            }
+
+            return Math.Max(rightTotalHeight, centerContentHeight) + 3;
         }
 
         /// <summary>
@@ -1285,22 +1293,22 @@ namespace ERPCore2.Services.Reports
         {
             using var brush = new System.Drawing.SolidBrush(DrawingColor.Black);
 
-            // 以右側高度為基準
             using var rightFont = new System.Drawing.Font(settings.FontName, block.RightFontSize);
             float rightLineHeight = rightFont.GetHeight(g) + 1;
             float rightTotalHeight = block.RightLines.Count * rightLineHeight;
-            float blockHeight = rightTotalHeight;
 
-            // 計算中間區域每行的實際高度（字體高度）
+            // 先計算中間行總高度，再取兩欄較大者為區塊高度
             float centerContentHeight = 0;
-            foreach (var (text, fontSize, bold) in block.CenterLines)
+            foreach (var (_, fontSize, bold) in block.CenterLines)
             {
                 var fontStyle = bold ? FontStyle.Bold : FontStyle.Regular;
                 using var font = new System.Drawing.Font(settings.FontName, fontSize, fontStyle);
                 centerContentHeight += font.GetHeight(g);
             }
 
-            // 計算中間行之間的間距，使總高度等於區塊高度
+            float blockHeight = Math.Max(rightTotalHeight, centerContentHeight);
+
+            // 計算中間行之間的均勻間距（blockHeight >= centerContentHeight，spacing 必為非負）
             float centerSpacing = 0;
             if (block.CenterLines.Count > 1)
             {

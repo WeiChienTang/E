@@ -31,6 +31,11 @@ namespace ERPCore2.Services
         private const string SalesRevenueCode      = "4111"; // 銷貨收入
         private const string InputVatCode          = "1268"; // 進項稅額
         private const string OutputVatCode         = "2204"; // 銷項稅額
+        private const string BankDepositCode          = "1113"; // 銀行存款
+        private const string SalesAllowanceCode       = "4114"; // 銷貨折讓
+        private const string PurchaseAllowanceCode    = "5124"; // 進貨折讓
+        private const string AdvanceFromCustomerCode  = "2221"; // 預收貨款
+        private const string AdvanceToSupplierCode    = "1266"; // 預付貨款
 
         public JournalEntryAutoGenerationService(
             IDbContextFactory<AppDbContext> contextFactory,
@@ -465,6 +470,196 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(JournalizeSalesReturnAsync), GetType(), _logger, new { Id = id });
+                return (false, "轉傳票過程發生錯誤，請稍後再試");
+            }
+        }
+
+        // ===== 沖款單 =====
+
+        public async Task<List<SetoffDocument>> GetPendingSetoffDocumentsAsync(DateTime? from = null, DateTime? to = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.SetoffDocuments
+                    .Where(d => !d.IsJournalized);
+
+                if (from.HasValue)
+                    query = query.Where(d => d.SetoffDate >= from.Value);
+                if (to.HasValue)
+                    query = query.Where(d => d.SetoffDate <= to.Value.Date.AddDays(1).AddTicks(-1));
+
+                return await query.OrderByDescending(d => d.SetoffDate).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingSetoffDocumentsAsync), GetType(), _logger);
+                return new List<SetoffDocument>();
+            }
+        }
+
+        public async Task<(bool Success, string ErrorMessage)> JournalizeSetoffDocumentAsync(int id, string createdBy)
+        {
+            try
+            {
+                // 防重複
+                var existing = await _journalEntryService.GetBySourceDocumentAsync("SetoffDocument", id);
+                if (existing != null)
+                    return (false, "此沖款單已有對應傳票，請勿重複轉傳票");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var doc = await context.SetoffDocuments.FindAsync(id);
+                if (doc == null)
+                    return (false, $"找不到沖款單 ID: {id}");
+
+                if (doc.CurrentSetoffAmount <= 0)
+                    return (false, "沖銷金額為零，無需轉傳票");
+
+                // 共用科目
+                var bank = await _accountItemService.GetByCodeAsync(BankDepositCode);
+                if (bank == null) return (false, $"找不到科目 {BankDepositCode}（銀行存款）");
+
+                List<JournalEntryLine> lines;
+                string description;
+
+                if (doc.SetoffType == SetoffType.AccountsReceivable)
+                {
+                    // 應收沖款：借 銀行存款+銷貨折讓+預收貨款 / 貸 應收帳款
+                    var receivable = await _accountItemService.GetByCodeAsync(AccountReceivableCode);
+                    if (receivable == null) return (false, $"找不到科目 {AccountReceivableCode}（應收帳款）");
+
+                    lines = new List<JournalEntryLine>();
+                    int lineNum = 1;
+
+                    if (doc.TotalCollectionAmount > 0)
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lineNum++,
+                            AccountItemId = bank.Id,
+                            Direction = AccountDirection.Debit,
+                            Amount = doc.TotalCollectionAmount,
+                            LineDescription = $"銀行存款收款－{doc.Code}"
+                        });
+
+                    if (doc.TotalAllowanceAmount > 0)
+                    {
+                        var salesAllowance = await _accountItemService.GetByCodeAsync(SalesAllowanceCode);
+                        if (salesAllowance == null) return (false, $"找不到科目 {SalesAllowanceCode}（銷貨折讓）");
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lineNum++,
+                            AccountItemId = salesAllowance.Id,
+                            Direction = AccountDirection.Debit,
+                            Amount = doc.TotalAllowanceAmount,
+                            LineDescription = "銷貨折讓"
+                        });
+                    }
+
+                    if (doc.PrepaymentSetoffAmount > 0)
+                    {
+                        var advanceFromCustomer = await _accountItemService.GetByCodeAsync(AdvanceFromCustomerCode);
+                        if (advanceFromCustomer == null) return (false, $"找不到科目 {AdvanceFromCustomerCode}（預收貨款）");
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lineNum++,
+                            AccountItemId = advanceFromCustomer.Id,
+                            Direction = AccountDirection.Debit,
+                            Amount = doc.PrepaymentSetoffAmount,
+                            LineDescription = "預收貨款沖回"
+                        });
+                    }
+
+                    lines.Add(new JournalEntryLine
+                    {
+                        LineNumber = lineNum,
+                        AccountItemId = receivable.Id,
+                        Direction = AccountDirection.Credit,
+                        Amount = doc.CurrentSetoffAmount,
+                        LineDescription = $"應收帳款沖銷－{doc.Code}"
+                    });
+
+                    description = $"應收沖款：{doc.Code}";
+                }
+                else
+                {
+                    // 應付沖款：借 應付帳款 / 貸 銀行存款+進貨折讓+預付貨款
+                    var payable = await _accountItemService.GetByCodeAsync(AccountPayableCode);
+                    if (payable == null) return (false, $"找不到科目 {AccountPayableCode}（應付帳款）");
+
+                    lines = new List<JournalEntryLine>
+                    {
+                        new JournalEntryLine
+                        {
+                            LineNumber = 1,
+                            AccountItemId = payable.Id,
+                            Direction = AccountDirection.Debit,
+                            Amount = doc.CurrentSetoffAmount,
+                            LineDescription = $"應付帳款沖銷－{doc.Code}"
+                        }
+                    };
+                    int lineNum = 2;
+
+                    if (doc.TotalCollectionAmount > 0)
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lineNum++,
+                            AccountItemId = bank.Id,
+                            Direction = AccountDirection.Credit,
+                            Amount = doc.TotalCollectionAmount,
+                            LineDescription = $"銀行存款付款－{doc.Code}"
+                        });
+
+                    if (doc.TotalAllowanceAmount > 0)
+                    {
+                        var purchaseAllowance = await _accountItemService.GetByCodeAsync(PurchaseAllowanceCode);
+                        if (purchaseAllowance == null) return (false, $"找不到科目 {PurchaseAllowanceCode}（進貨折讓）");
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lineNum++,
+                            AccountItemId = purchaseAllowance.Id,
+                            Direction = AccountDirection.Credit,
+                            Amount = doc.TotalAllowanceAmount,
+                            LineDescription = "進貨折讓"
+                        });
+                    }
+
+                    if (doc.PrepaymentSetoffAmount > 0)
+                    {
+                        var advanceToSupplier = await _accountItemService.GetByCodeAsync(AdvanceToSupplierCode);
+                        if (advanceToSupplier == null) return (false, $"找不到科目 {AdvanceToSupplierCode}（預付貨款）");
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lineNum,
+                            AccountItemId = advanceToSupplier.Id,
+                            Direction = AccountDirection.Credit,
+                            Amount = doc.PrepaymentSetoffAmount,
+                            LineDescription = "預付貨款沖回"
+                        });
+                    }
+
+                    description = $"應付沖款：{doc.Code}";
+                }
+
+                var result = await CreateAndPostEntryAsync(
+                    doc.SetoffDate,
+                    description,
+                    "SetoffDocument",
+                    doc.Id,
+                    doc.Code ?? string.Empty,
+                    lines,
+                    createdBy);
+
+                if (!result.Success) return result;
+
+                doc.IsJournalized = true;
+                doc.JournalizedAt = DateTime.Now;
+                await context.SaveChangesAsync();
+
+                return (true, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(JournalizeSetoffDocumentAsync), GetType(), _logger, new { Id = id });
                 return (false, "轉傳票過程發生錯誤，請稍後再試");
             }
         }

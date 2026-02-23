@@ -216,6 +216,69 @@
         }
     </div>
 
+    @* 沖款單 Section *@
+    <div class="card mb-3">
+        <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showSetoffDocument = !showSetoffDocument)">
+            <span class="me-2">@(showSetoffDocument ? "▼" : "▶")</span>
+            <strong>沖款單（應收／應付）</strong>
+            <span class="badge bg-secondary ms-2">@setoffDocuments.Count 筆待轉</span>
+        </div>
+        @if (showSetoffDocument)
+        {
+            <div class="card-body p-0">
+                @if (setoffDocuments.Count == 0)
+                {
+                    <p class="text-muted p-3 mb-0">無待轉傳票的沖款單</p>
+                }
+                else
+                {
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>單號</th>
+                                <th>沖款日期</th>
+                                <th>類型</th>
+                                <th class="text-end">沖銷金額</th>
+                                <th class="text-end">收款/付款</th>
+                                <th class="text-end">折讓</th>
+                                <th class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in setoffDocuments)
+                            {
+                                <tr>
+                                    <td><code>@doc.Code</code></td>
+                                    <td>@doc.SetoffDate.ToString("yyyy/MM/dd")</td>
+                                    <td>
+                                        @if (doc.IsAccountsReceivable)
+                                        {
+                                            <span class="badge bg-info text-dark">應收</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">應付</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">@doc.CurrentSetoffAmount.ToString("N2")</td>
+                                    <td class="text-end">@doc.TotalCollectionAmount.ToString("N2")</td>
+                                    <td class="text-end">@doc.TotalAllowanceAmount.ToString("N2")</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                @onclick="@(() => JournalizeSingleAsync("SetoffDocument", doc.Id, doc.Code ?? ""))"
+                                                disabled="@isProcessing">
+                                            轉傳票
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        }
+    </div>
+
     @* 銷貨退回 Section *@
     <div class="card mb-3">
         <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showSalesReturn = !showSalesReturn)">
@@ -277,6 +340,7 @@
     private List<PurchaseReturn> purchaseReturns = new();
     private List<SalesDelivery> salesDeliveries = new();
     private List<SalesReturn> salesReturns = new();
+    private List<SetoffDocument> setoffDocuments = new();
 
     // 篩選條件
     private DateTime? filterFrom;
@@ -289,12 +353,13 @@
     private bool showPurchaseReturn = true;
     private bool showSalesDelivery = true;
     private bool showSalesReturn = true;
+    private bool showSetoffDocument = true;
 
     // 目前使用者
     private string currentUser = "System";
 
     private int TotalPendingCount =>
-        purchaseReceivings.Count + purchaseReturns.Count + salesDeliveries.Count + salesReturns.Count;
+        purchaseReceivings.Count + purchaseReturns.Count + salesDeliveries.Count + salesReturns.Count + setoffDocuments.Count;
 
     protected override async Task OnInitializedAsync()
     {
@@ -313,11 +378,13 @@
             var t2 = AutoGenerationService.GetPendingPurchaseReturnsAsync(filterFrom, filterTo);
             var t3 = AutoGenerationService.GetPendingSalesDeliveriesAsync(filterFrom, filterTo);
             var t4 = AutoGenerationService.GetPendingSalesReturnsAsync(filterFrom, filterTo);
-            await Task.WhenAll(t1, t2, t3, t4);
+            var t5 = AutoGenerationService.GetPendingSetoffDocumentsAsync(filterFrom, filterTo);
+            await Task.WhenAll(t1, t2, t3, t4, t5);
             purchaseReceivings = t1.Result;
             purchaseReturns    = t2.Result;
             salesDeliveries    = t3.Result;
             salesReturns       = t4.Result;
+            setoffDocuments    = t5.Result;
         }
         finally
         {
@@ -345,6 +412,7 @@
                 "PurchaseReturn"    => await AutoGenerationService.JournalizePurchaseReturnAsync(id, currentUser),
                 "SalesDelivery"     => await AutoGenerationService.JournalizeSalesDeliveryAsync(id, currentUser),
                 "SalesReturn"       => await AutoGenerationService.JournalizeSalesReturnAsync(id, currentUser),
+                "SetoffDocument"    => await AutoGenerationService.JournalizeSetoffDocumentAsync(id, currentUser),
                 _ => (false, "未知的單據類型")
             };
 
@@ -387,6 +455,11 @@
             foreach (var doc in salesReturns.ToList())
             {
                 var (ok, _) = await AutoGenerationService.JournalizeSalesReturnAsync(doc.Id, currentUser);
+                if (ok) successCount++; else failCount++;
+            }
+            foreach (var doc in setoffDocuments.ToList())
+            {
+                var (ok, _) = await AutoGenerationService.JournalizeSetoffDocumentAsync(doc.Id, currentUser);
                 if (ok) successCount++; else failCount++;
             }
 

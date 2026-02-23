@@ -1,7 +1,7 @@
 # 會計模組設計進度
 
 ## 更新日期
-2026-02-23（第三次更新）
+2026-02-23（第五次更新）
 
 ---
 
@@ -514,12 +514,14 @@ public interface IJournalEntryAutoGenerationService
     Task<List<PurchaseReturn>>    GetPendingPurchaseReturnsAsync   (DateTime? from = null, DateTime? to = null);
     Task<List<SalesDelivery>>     GetPendingSalesDeliveriesAsync   (DateTime? from = null, DateTime? to = null);
     Task<List<SalesReturn>>       GetPendingSalesReturnsAsync      (DateTime? from = null, DateTime? to = null);
+    Task<List<SetoffDocument>>    GetPendingSetoffDocumentsAsync   (DateTime? from = null, DateTime? to = null);
 
     // 轉傳票（建立傳票、自動過帳、標記 IsJournalized）
     Task<(bool Success, string ErrorMessage)> JournalizePurchaseReceivingAsync(int id, string createdBy);
     Task<(bool Success, string ErrorMessage)> JournalizePurchaseReturnAsync   (int id, string createdBy);
     Task<(bool Success, string ErrorMessage)> JournalizeSalesDeliveryAsync    (int id, string createdBy);
     Task<(bool Success, string ErrorMessage)> JournalizeSalesReturnAsync      (int id, string createdBy);
+    Task<(bool Success, string ErrorMessage)> JournalizeSetoffDocumentAsync   (int id, string createdBy);
 }
 ```
 
@@ -537,6 +539,11 @@ public interface IJournalEntryAutoGenerationService
 | `SalesRevenueCode` | `"4111"` | 銷貨收入 | Credit |
 | `InputVatCode` | `"1268"` | 進項稅額 | Debit |
 | `OutputVatCode` | `"2204"` | 銷項稅額 | Credit |
+| `BankDepositCode` | `"1113"` | 銀行存款 | Debit |
+| `SalesAllowanceCode` | `"4114"` | 銷貨折讓 | Debit |
+| `PurchaseAllowanceCode` | `"5124"` | 進貨折讓 | Credit |
+| `AdvanceFromCustomerCode` | `"2221"` | 預收貨款 | Credit |
+| `AdvanceToSupplierCode` | `"1266"` | 預付貨款 | Debit |
 
 **完整三行分錄規則（稅額 > 0 時產生第三行；稅額 = 0 時僅兩行）：**
 
@@ -560,7 +567,21 @@ public interface IJournalEntryAutoGenerationService
   借：銷貨收入 (4111)    = TotalReturnAmount
   借：銷項稅額 (2204)    = ReturnTaxAmount                  ← 稅額 > 0 才加（沖回銷項）
     貸：應收帳款 (1191)  = TotalReturnAmountWithTax
+
+應收沖款 (SetoffDocument, IsAccountsReceivable = true)：
+  借：銀行存款 (1113)    = TotalCollectionAmount            ← > 0 才加
+  借：銷貨折讓 (4114)    = TotalAllowanceAmount             ← > 0 才加
+  借：預收貨款 (2221)    = PrepaymentSetoffAmount           ← > 0 才加（沖回預收）
+    貸：應收帳款 (1191)  = CurrentSetoffAmount              ← 應收沖銷總額
+
+應付沖款 (SetoffDocument, IsAccountsReceivable = false)：
+  借：應付帳款 (2171)    = CurrentSetoffAmount              ← 應付沖銷總額
+    貸：銀行存款 (1113)  = TotalCollectionAmount            ← > 0 才加
+    貸：進貨折讓 (5124)  = TotalAllowanceAmount             ← > 0 才加
+    貸：預付貨款 (1266)  = PrepaymentSetoffAmount           ← > 0 才加（沖回預付）
 ```
+
+> **餘額等式確認：** `CurrentSetoffAmount = TotalCollectionAmount + TotalAllowanceAmount + PrepaymentSetoffAmount`，確保分錄借貸自動平衡。
 
 **JournalizeXxxAsync 執行流程：**
 
@@ -583,15 +604,158 @@ public interface IJournalEntryAutoGenerationService
 **頁面功能：**
 
 - 頂部日期範圍篩選（從/至）+ 查詢、清除篩選按鈕
-- 4 個可折疊 Section，各顯示 `IsJournalized = false` 的待轉清單：
+- 5 個可折疊 Section，各顯示 `IsJournalized = false` 的待轉清單：
   - 進貨入庫（Code、進貨日期、供應商、未稅金額、稅額、含稅總額）
   - 進貨退回（Code、退回日期、供應商、未稅金額、稅額、含稅總額）
   - 銷貨出貨（Code、出貨日期、客戶、未稅金額、稅額、含稅總額）
+  - 沖款單（Code、沖款日期、應收/應付 badge、沖銷金額、收付款金額、折讓金額）
   - 銷貨退回（Code、退回日期、客戶、未稅金額、稅額、含稅總額）
 - 每列有「轉傳票」按鈕（單筆）
-- 右上角「全部轉傳票（N 筆）」批次按鈕
+- 右上角「全部轉傳票（N 筆）」批次按鈕（含 5 類）
 - 轉換結果以 NotificationService 顯示成功/失敗通知，完成後重新載入清單
-- 查詢使用 `Task.WhenAll` 並行取得四類待轉清單
+- 查詢使用 `Task.WhenAll` 並行取得五類待轉清單
+
+### 24. SetoffDocument 新增 IsJournalized 欄位
+
+**修改 Entity：** `Data/Entities/FinancialManagement/SetoffDocument.cs`
+
+```csharp
+[Display(Name = "已轉傳票")]
+public bool IsJournalized { get; set; } = false;
+
+[Display(Name = "轉傳票時間")]
+public DateTime? JournalizedAt { get; set; }
+```
+
+**Migration：** `20260223031940_AddIsJournalizedToSetoffDocument`
+— `SetoffDocuments` 資料表加 `IsJournalized (bit, default 0)` + `JournalizedAt (datetime2, nullable)`
+
+---
+
+## 財務報表系統（2026-02-23 完成）
+
+### 25. 試算表（FN006）
+
+**相關檔案：**
+- `Models/Reports/FilterCriteria/TrialBalanceCriteria.cs` — 篩選條件
+- `Services/Reports/Interfaces/ITrialBalanceReportService.cs` — 服務介面
+- `Services/Reports/TrialBalanceReportService.cs` — 服務實作
+
+**篩選條件（TrialBalanceCriteria）：**
+
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| StartDate / EndDate | FilterDateRange | 傳票日期範圍（本期發生額的起訖） |
+| AccountTypes | FilterEnum(AccountType) | 科目大類多選（空=全部） |
+| ShowZeroBalance | FilterToggle | 顯示零餘額科目（預設 false） |
+
+**報表格式：**
+- 依 AccountType 分組，每組顯示科目明細表格
+- 欄位：科目代碼 | 科目名稱 | 本期借方 | 本期貸方 | 期末借方餘額 | 期末貸方餘額
+- 頁尾：借方/貸方合計各驗證平衡（✓ 平衡 或顯示差額）、製表人員/財務主管簽名欄
+
+**查詢邏輯（兩次查詢）：**
+- Query 1：`EntryDate BETWEEN StartDate AND EndDate` → 本期借方/貸方發生額
+- Query 2：`EntryDate <= EndDate`（不限起始）→ 期末累計借方/貸方餘額
+
+**期末餘額計算：**
+- 借方正常科目（資產/成本/費用）：`EndingDebitBalance = CumulativeDebit - CumulativeCredit`（正值）
+- 貸方正常科目（負債/權益/收入）：`EndingCreditBalance = CumulativeCredit - CumulativeDebit`（正值）
+
+---
+
+### 26. 損益表（FN007）
+
+**相關檔案：**
+- `Models/Reports/FilterCriteria/IncomeStatementCriteria.cs` — 篩選條件
+- `Services/Reports/Interfaces/IIncomeStatementReportService.cs` — 服務介面
+- `Services/Reports/IncomeStatementReportService.cs` — 服務實作
+
+**篩選條件（IncomeStatementCriteria）：**
+
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| StartDate / EndDate | FilterDateRange | 會計期間（傳票日期範圍） |
+
+**固定查詢範圍：** AccountType in {Revenue(4), Cost(5), Expense(6), NonOperatingIncomeAndExpense(7)}
+
+**報表結構：**
+```
+一、銷貨收入 xxx
+    各科目明細...
+
+二、減：銷貨成本 (xxx)
+    各科目明細...
+
+毛利潤：xxx
+
+三、減：營業費用 (xxx)
+    各科目明細...
+
+營業損益：xxx
+
+四、營業外收益及費損 xxx（淨額）
+    各科目明細（收益加號/費損負號）...
+
+稅前損益：xxx
+```
+
+**餘額計算規則：**
+- Revenue (Credit 正常)：Balance = Credit - Debit
+- Cost/Expense (Debit 正常)：Balance = Debit - Credit
+- NonOperating：依各科目 `Direction` 屬性決定（Credit 正常則 Credit-Debit；Debit 正常則 Debit-Credit）
+
+---
+
+### 27. 資產負債表（FN008）
+
+**相關檔案：**
+- `Models/Reports/FilterCriteria/BalanceSheetCriteria.cs` — 篩選條件
+- `Services/Reports/Interfaces/IBalanceSheetReportService.cs` — 服務介面
+- `Services/Reports/BalanceSheetReportService.cs` — 服務實作
+
+**篩選條件（BalanceSheetCriteria）：**
+
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| StartDate / EndDate | FilterDateRange | EndDate 作為截止日（StartDate 選填，若填則限制累計起點） |
+
+**核心屬性：** `AsOfDate` = `EndDate ?? DateTime.Today`（截止日）
+
+**固定查詢範圍：** AccountType in {Asset(1), Liability(2), Equity(3)}，`EntryDate <= AsOfDate`
+
+**報表結構：**
+```
+【資產】
+  各科目明細（餘額 = Debit - Credit）
+資產合計 xxx
+
+【負債】
+  各科目明細（餘額 = Credit - Debit）
+負債合計 xxx
+
+【權益】
+  各科目明細（餘額 = Credit - Debit）
+權益合計 xxx
+
+負債及權益合計 xxx
+```
+- 頁尾：驗證 `|資產合計 - 負債及權益合計| < 0.01`（容差），✓ 平衡 或 ⚠ 差額
+
+**恆等式：** 資產合計 = 負債合計 + 權益合計（會計基本等式）
+
+---
+
+### 通用架構（FN006~FN008 共通）
+
+| 項目 | 設計 |
+|------|------|
+| 服務介面模式 | **不繼承** `IEntityReportService<T>`，只定義 `RenderBatchToImagesAsync(XxxCriteria)` |
+| 呼叫方式 | `GenericReportFilterModalComponent` 透過反射找到具體類型的 `RenderBatchToImagesAsync` 方法 |
+| 入口點 | 報表中心（Alt+R 或選單）→ 搜尋報表名稱 → 篩選 → 預覽 → 列印 |
+| DI 注冊 | `AddScoped<IXxxReportService, XxxReportService>()` 於 `ServiceRegistration.cs` |
+| 報表定義 | `ReportRegistry.cs`，Category = `ReportCategory.Financial`，RequiredPermission = `JournalEntry.Read` |
+| 篩選模板 | `FilterTemplateRegistry.cs`，使用 `DynamicFilterTemplate` |
 
 ---
 
@@ -599,22 +763,20 @@ public interface IJournalEntryAutoGenerationService
 
 ### 近期
 
-- [ ] SetoffDocumentService 確認時轉傳票（應收沖款：借 銀行存款 / 貸 應收帳款；應付沖款：借 應付帳款 / 貸 銀行存款）
 - [ ] 在業務單據的 EditModal 加入「相關傳票」顯示區塊（透過 SourceDocumentType + SourceDocumentId 查詢）
 - [ ] 銷貨成本分錄（COGS）：借 銷貨成本(5111) / 貸 商品存貨(1231)（需先確認庫存成本計算方式）
 
-### 中期
+### 報表系統（2026-02-23 完成）
 
-- [ ] 建立科目餘額查詢功能（試算表）
-- [ ] 實作科目層級彙總邏輯
+- [x] **FN006 試算表（Trial Balance）** — 本期發生額（StartDate ~ EndDate）＋期末累計餘額（~ EndDate），依科目大類分組，頁尾驗證借貸平衡
+- [x] **FN007 損益表（Income Statement）** — 彙總 Revenue/Cost/Expense/NonOperating，顯示毛利潤、營業損益、稅前損益
+- [x] **FN008 資產負債表（Balance Sheet）** — 累積至截止日（EndDate）的 Asset/Liability/Equity 餘額，頁尾驗證 資產 = 負債 + 權益
 
-### 長期（報表系統）
+### 中長期
 
-- [ ] 自動產生資產負債表（Balance Sheet）
-- [ ] 自動產生損益表（Income Statement）
-- [ ] 自動產生現金流量表
-- [ ] 自動產生綜合損益表
-- [ ] 報表期間篩選（月報、季報、年報）
+- [ ] 科目餘額細帳（依科目查傳票明細，類似帳卡）
+- [ ] 期末結帳功能（Closing Entries：收入/費用科目歸零 → 轉本期損益 → 轉保留盈餘）
+- [ ] 現金流量表（間接法）
 - [ ] 報表匯出功能（PDF / Excel）
 
 ---
@@ -645,9 +807,19 @@ public interface IJournalEntryAutoGenerationService
 | JournalEntryFieldConfiguration.cs | `Components/FieldConfiguration/` | 傳票欄位定義 |
 | JournalEntryIndex.razor | `Components/Pages/FinancialManagement/` | 傳票列表頁面（/journal-entries） |
 | JournalEntryEditModalComponent.razor | `Components/Pages/FinancialManagement/` | 傳票編輯 Modal（全客製，含分錄明細） |
-| IJournalEntryAutoGenerationService.cs | `Services/FinancialManagement/` | 批次轉傳票服務介面 |
-| JournalEntryAutoGenerationService.cs | `Services/FinancialManagement/` | 批次轉傳票服務實作（三行分錄含稅） |
-| JournalEntryBatchPage.razor | `Components/Pages/FinancialManagement/` | 批次轉傳票頁面（/journal-entry-batch） |
+| IJournalEntryAutoGenerationService.cs | `Services/FinancialManagement/` | 批次轉傳票服務介面（含沖款單） |
+| JournalEntryAutoGenerationService.cs | `Services/FinancialManagement/` | 批次轉傳票服務實作（含稅三行分錄 + 沖款單） |
+| JournalEntryBatchPage.razor | `Components/Pages/FinancialManagement/` | 批次轉傳票頁面（/journal-entry-batch，5 類單據） |
+| SetoffDocument.cs | `Data/Entities/FinancialManagement/` | 沖款單 Entity（新增 IsJournalized + JournalizedAt） |
+| TrialBalanceCriteria.cs | `Models/Reports/FilterCriteria/` | 試算表篩選條件（FN006） |
+| IncomeStatementCriteria.cs | `Models/Reports/FilterCriteria/` | 損益表篩選條件（FN007） |
+| BalanceSheetCriteria.cs | `Models/Reports/FilterCriteria/` | 資產負債表篩選條件（FN008） |
+| ITrialBalanceReportService.cs | `Services/Reports/Interfaces/` | 試算表報表服務介面 |
+| IIncomeStatementReportService.cs | `Services/Reports/Interfaces/` | 損益表報表服務介面 |
+| IBalanceSheetReportService.cs | `Services/Reports/Interfaces/` | 資產負債表報表服務介面 |
+| TrialBalanceReportService.cs | `Services/Reports/` | 試算表報表服務實作 |
+| IncomeStatementReportService.cs | `Services/Reports/` | 損益表報表服務實作 |
+| BalanceSheetReportService.cs | `Services/Reports/` | 資產負債表報表服務實作 |
 
 ---
 

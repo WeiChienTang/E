@@ -265,6 +265,10 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IWasteRecordReportService, WasteRecordReportService>();
             // 會計科目表報表服務（FN005）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IAccountItemListReportService, AccountItemListReportService>();
+            // 財務報表服務（FN006~FN008）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ITrialBalanceReportService, TrialBalanceReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IIncomeStatementReportService, IncomeStatementReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IBalanceSheetReportService, BalanceSheetReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
         }

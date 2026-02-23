@@ -93,6 +93,18 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal PrepaymentSetoffAmount { get; set; } = 0;
 
+        /// <summary>
+        /// 已轉傳票
+        /// </summary>
+        [Display(Name = "已轉傳票")]
+        public bool IsJournalized { get; set; } = false;
+
+        /// <summary>
+        /// 轉傳票時間
+        /// </summary>
+        [Display(Name = "轉傳票時間")]
+        public DateTime? JournalizedAt { get; set; }
+
         // Navigation Properties
         /// <summary>
         /// 公司導航屬性

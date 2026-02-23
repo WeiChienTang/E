@@ -420,6 +420,42 @@ public static class ReportRegistry
                 SortOrder = 3,
                 IsEnabled = true
             },
+            new ReportDefinition
+            {
+                Id = ReportIds.TrialBalance,
+                Name = "試算表",
+                Description = "依科目匯總已過帳傳票的本期借貸發生額與期末累計餘額，驗證借貸平衡",
+                IconClass = "bi bi-calculator",
+                Category = ReportCategory.Financial,
+                RequiredPermission = "JournalEntry.Read",
+                ActionId = "OpenTrialBalanceReport",
+                SortOrder = 4,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.IncomeStatement,
+                Name = "損益表",
+                Description = "彙總指定期間的營業收入、成本、費用，計算毛利潤、營業損益及稅前損益",
+                IconClass = "bi bi-graph-up",
+                Category = ReportCategory.Financial,
+                RequiredPermission = "JournalEntry.Read",
+                ActionId = "OpenIncomeStatementReport",
+                SortOrder = 5,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.BalanceSheet,
+                Name = "資產負債表",
+                Description = "彙總截止日當天的資產、負債、權益累計餘額（資產 = 負債 + 權益）",
+                IconClass = "bi bi-bank",
+                Category = ReportCategory.Financial,
+                RequiredPermission = "JournalEntry.Read",
+                ActionId = "OpenBalanceSheetReport",
+                SortOrder = 6,
+                IsEnabled = true
+            },
         };
     }
     

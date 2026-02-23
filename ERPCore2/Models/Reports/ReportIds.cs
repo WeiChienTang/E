@@ -132,6 +132,15 @@ public static class ReportIds
     /// <summary>會計科目表</summary>
     public const string AccountItemList = "FN005";
 
+    /// <summary>試算表</summary>
+    public const string TrialBalance = "FN006";
+
+    /// <summary>損益表</summary>
+    public const string IncomeStatement = "FN007";
+
+    /// <summary>資產負債表</summary>
+    public const string BalanceSheet = "FN008";
+
     // ==================== 廢料報表 (WL) ====================
     /// <summary>廢料記錄報表</summary>
     public const string WasteRecord = "WL001";
