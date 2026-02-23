@@ -43,6 +43,12 @@ namespace ERPCore2.Data.Entities
         [MaxLength(50, ErrorMessage = "批號不可超過50個字元")]
         public string? BatchNumber { get; set; }
 
+        [Display(Name = "已轉傳票")]
+        public bool IsJournalized { get; set; } = false;
+
+        [Display(Name = "轉傳票時間")]
+        public DateTime? JournalizedAt { get; set; }
+
         // Foreign Keys
         [Required(ErrorMessage = "供應商為必填")]
         [Display(Name = "供應商")]

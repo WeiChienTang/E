@@ -100,6 +100,8 @@ namespace ERPCore2.Data.Context
       public DbSet<WasteType> WasteTypes { get; set; }
       public DbSet<WasteRecord> WasteRecords { get; set; }
       public DbSet<AccountItem> AccountItems { get; set; }
+      public DbSet<JournalEntry> JournalEntries { get; set; }
+      public DbSet<JournalEntryLine> JournalEntryLines { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1282,6 +1284,52 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(wr => wr.CustomerId)
                               .OnDelete(DeleteBehavior.SetNull);
                   });
+
+                  // 傳票相關
+                  modelBuilder.Entity<JournalEntry>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 公司關聯
+                        entity.HasOne(je => je.Company)
+                              .WithMany()
+                              .HasForeignKey(je => je.CompanyId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        // 沖銷傳票自我參照（此傳票被哪張傳票沖銷）
+                        entity.HasOne(je => je.ReversalEntry)
+                              .WithMany()
+                              .HasForeignKey(je => je.ReversalEntryId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        // 金額精度
+                        entity.Property(e => e.TotalDebitAmount).HasPrecision(18, 2);
+                        entity.Property(e => e.TotalCreditAmount).HasPrecision(18, 2);
+
+                        // 傳票號碼唯一索引
+                        entity.HasIndex(e => e.Code).IsUnique();
+                  });
+
+                  modelBuilder.Entity<JournalEntryLine>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 傳票關聯（Cascade — 傳票刪除時分錄一併刪除）
+                        entity.HasOne(jel => jel.JournalEntry)
+                              .WithMany(je => je.Lines)
+                              .HasForeignKey(jel => jel.JournalEntryId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        // 會計科目關聯
+                        entity.HasOne(jel => jel.AccountItem)
+                              .WithMany()
+                              .HasForeignKey(jel => jel.AccountItemId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        // 金額精度
+                        entity.Property(e => e.Amount).HasPrecision(18, 2);
+                  });
+
             }
     }
 }

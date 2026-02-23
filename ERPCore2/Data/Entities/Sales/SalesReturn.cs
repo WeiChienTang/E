@@ -53,6 +53,12 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "退款日期")]
         public DateTime? RefundDate { get; set; }
 
+        [Display(Name = "已轉傳票")]
+        public bool IsJournalized { get; set; } = false;
+
+        [Display(Name = "轉傳票時間")]
+        public DateTime? JournalizedAt { get; set; }
+
         // Foreign Keys
         [Required(ErrorMessage = "客戶為必填")]
         [Display(Name = "客戶")]

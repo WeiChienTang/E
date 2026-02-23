@@ -1,0 +1,102 @@
+@page "/journal-entries"
+@inject IJournalEntryService JournalEntryService
+@rendermode InteractiveServer
+@inject INotificationService NotificationService
+
+<GenericIndexPageComponent TEntity="JournalEntry"
+                          TService="IJournalEntryService"
+                          Service="@JournalEntryService"
+                          EntityBasePath="/journal-entries"
+                          PageTitle="傳票管理"
+                          PageSubtitle="管理會計傳票與分錄明細"
+                          EntityName="傳票"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadDataAsync"
+                          FilterApplier="@ApplyFilters"
+                          GetEntityDisplayName="@(je => $"{je.Code} {je.Description}")"
+                          RequiredPermission="JournalEntry.Read"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+<JournalEntryEditModalComponent IsVisible="@showEditModal"
+                                IsVisibleChanged="@((bool v) => showEditModal = v)"
+                                JournalEntryId="@editingId"
+                                OnJournalEntrySaved="@modalHandler.OnEntitySavedAsync"
+                                OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<JournalEntry, IJournalEntryService> indexComponent = default!;
+
+    // Modal 狀態
+    private bool showEditModal = false;
+    private int? editingId = null;
+
+    // Modal 處理器
+    private ModalHandler<JournalEntry, GenericIndexPageComponent<JournalEntry, IJournalEntryService>> modalHandler = default!;
+
+    // 欄位配置
+    private JournalEntryFieldConfiguration fieldConfiguration = default!;
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 1. 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<JournalEntry,
+                GenericIndexPageComponent<JournalEntry, IJournalEntryService>>(
+                id => editingId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            // 2. 初始化麵包屑
+            await InitializeBreadcrumbsAsync();
+
+            // 3. 建立欄位配置
+            fieldConfiguration = new JournalEntryFieldConfiguration(NotificationService);
+
+            // 4. 建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, nameof(OnInitializedAsync), GetType(),
+                additionalData: "初始化傳票管理頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化頁面失敗");
+        }
+    }
+
+    // 麵包屑
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
+            "財務管理", "傳票管理", null, NotificationService, GetType());
+
+    // 資料載入
+    private Task<List<JournalEntry>> LoadDataAsync() =>
+        DataLoaderHelper.LoadAsync(
+            () => JournalEntryService.GetAllAsync(),
+            "傳票",
+            NotificationService,
+            GetType());
+
+    // 篩選邏輯
+    private IQueryable<JournalEntry> ApplyFilters(
+        SearchFilterModel searchModel, IQueryable<JournalEntry> query)
+    {
+        if (fieldConfiguration == null)
+            return query.OrderByDescending(je => je.EntryDate);
+
+        return fieldConfiguration.ApplyFilters(
+            searchModel, query, nameof(ApplyFilters), GetType());
+    }
+}

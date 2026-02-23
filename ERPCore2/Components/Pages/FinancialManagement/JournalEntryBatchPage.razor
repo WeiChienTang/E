@@ -1,0 +1,404 @@
+@page "/journal-entry-batch"
+@inject IJournalEntryAutoGenerationService AutoGenerationService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@rendermode InteractiveServer
+
+<PageTitle>批次轉傳票</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h4 class="mb-1">批次轉傳票</h4>
+            <p class="text-muted mb-0">將未轉傳票的業務單據批次產生會計傳票</p>
+        </div>
+    </div>
+
+    @* 日期範圍篩選器 *@
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label">日期範圍（由）</label>
+                    <input type="date" class="form-control" @bind="filterFrom" />
+                </div>
+                <div class="col-auto">
+                    <label class="form-label">日期範圍（至）</label>
+                    <input type="date" class="form-control" @bind="filterTo" />
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" @onclick="LoadAllAsync" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        查詢
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" @onclick="ClearFilter">清除篩選</button>
+                </div>
+                <div class="col-auto ms-auto">
+                    <button class="btn btn-success" @onclick="JournalizeAllAsync"
+                            disabled="@(isProcessing || TotalPendingCount == 0)">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            <span>處理中...</span>
+                        }
+                        else
+                        {
+                            <span>全部轉傳票（@TotalPendingCount 筆）</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 進貨入庫 Section *@
+    <div class="card mb-3">
+        <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showPurchaseReceiving = !showPurchaseReceiving)">
+            <span class="me-2">@(showPurchaseReceiving ? "▼" : "▶")</span>
+            <strong>進貨入庫</strong>
+            <span class="badge bg-secondary ms-2">@purchaseReceivings.Count 筆待轉</span>
+        </div>
+        @if (showPurchaseReceiving)
+        {
+            <div class="card-body p-0">
+                @if (purchaseReceivings.Count == 0)
+                {
+                    <p class="text-muted p-3 mb-0">無待轉傳票的進貨入庫單</p>
+                }
+                else
+                {
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>單號</th>
+                                <th>進貨日期</th>
+                                <th>供應商</th>
+                                <th class="text-end">未稅金額</th>
+                                <th class="text-end">稅額</th>
+                                <th class="text-end">含稅總額</th>
+                                <th class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in purchaseReceivings)
+                            {
+                                <tr>
+                                    <td><code>@doc.Code</code></td>
+                                    <td>@doc.ReceiptDate.ToString("yyyy/MM/dd")</td>
+                                    <td>@doc.Supplier?.CompanyName</td>
+                                    <td class="text-end">@doc.TotalAmount.ToString("N2")</td>
+                                    <td class="text-end">@doc.PurchaseReceivingTaxAmount.ToString("N2")</td>
+                                    <td class="text-end">@doc.PurchaseReceivingTotalAmountIncludingTax.ToString("N2")</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                @onclick="@(() => JournalizeSingleAsync("PurchaseReceiving", doc.Id, doc.Code ?? ""))"
+                                                disabled="@isProcessing">
+                                            轉傳票
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        }
+    </div>
+
+    @* 進貨退回 Section *@
+    <div class="card mb-3">
+        <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showPurchaseReturn = !showPurchaseReturn)">
+            <span class="me-2">@(showPurchaseReturn ? "▼" : "▶")</span>
+            <strong>進貨退回</strong>
+            <span class="badge bg-secondary ms-2">@purchaseReturns.Count 筆待轉</span>
+        </div>
+        @if (showPurchaseReturn)
+        {
+            <div class="card-body p-0">
+                @if (purchaseReturns.Count == 0)
+                {
+                    <p class="text-muted p-3 mb-0">無待轉傳票的進貨退回單</p>
+                }
+                else
+                {
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>單號</th>
+                                <th>退回日期</th>
+                                <th>供應商</th>
+                                <th class="text-end">未稅金額</th>
+                                <th class="text-end">稅額</th>
+                                <th class="text-end">含稅總額</th>
+                                <th class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in purchaseReturns)
+                            {
+                                <tr>
+                                    <td><code>@doc.Code</code></td>
+                                    <td>@doc.ReturnDate.ToString("yyyy/MM/dd")</td>
+                                    <td>@doc.Supplier?.CompanyName</td>
+                                    <td class="text-end">@doc.TotalReturnAmount.ToString("N2")</td>
+                                    <td class="text-end">@doc.ReturnTaxAmount.ToString("N2")</td>
+                                    <td class="text-end">@doc.TotalReturnAmountWithTax.ToString("N2")</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                @onclick="@(() => JournalizeSingleAsync("PurchaseReturn", doc.Id, doc.Code ?? ""))"
+                                                disabled="@isProcessing">
+                                            轉傳票
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        }
+    </div>
+
+    @* 銷貨出貨 Section *@
+    <div class="card mb-3">
+        <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showSalesDelivery = !showSalesDelivery)">
+            <span class="me-2">@(showSalesDelivery ? "▼" : "▶")</span>
+            <strong>銷貨出貨</strong>
+            <span class="badge bg-secondary ms-2">@salesDeliveries.Count 筆待轉</span>
+        </div>
+        @if (showSalesDelivery)
+        {
+            <div class="card-body p-0">
+                @if (salesDeliveries.Count == 0)
+                {
+                    <p class="text-muted p-3 mb-0">無待轉傳票的銷貨出貨單</p>
+                }
+                else
+                {
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>單號</th>
+                                <th>出貨日期</th>
+                                <th>客戶</th>
+                                <th class="text-end">未稅金額</th>
+                                <th class="text-end">稅額</th>
+                                <th class="text-end">含稅總額</th>
+                                <th class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in salesDeliveries)
+                            {
+                                <tr>
+                                    <td><code>@doc.Code</code></td>
+                                    <td>@doc.DeliveryDate.ToString("yyyy/MM/dd")</td>
+                                    <td>@doc.Customer?.CompanyName</td>
+                                    <td class="text-end">@doc.TotalAmount.ToString("N2")</td>
+                                    <td class="text-end">@doc.TaxAmount.ToString("N2")</td>
+                                    <td class="text-end">@doc.TotalAmountWithTax.ToString("N2")</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                @onclick="@(() => JournalizeSingleAsync("SalesDelivery", doc.Id, doc.Code ?? ""))"
+                                                disabled="@isProcessing">
+                                            轉傳票
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        }
+    </div>
+
+    @* 銷貨退回 Section *@
+    <div class="card mb-3">
+        <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showSalesReturn = !showSalesReturn)">
+            <span class="me-2">@(showSalesReturn ? "▼" : "▶")</span>
+            <strong>銷貨退回</strong>
+            <span class="badge bg-secondary ms-2">@salesReturns.Count 筆待轉</span>
+        </div>
+        @if (showSalesReturn)
+        {
+            <div class="card-body p-0">
+                @if (salesReturns.Count == 0)
+                {
+                    <p class="text-muted p-3 mb-0">無待轉傳票的銷貨退回單</p>
+                }
+                else
+                {
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>單號</th>
+                                <th>退回日期</th>
+                                <th>客戶</th>
+                                <th class="text-end">未稅金額</th>
+                                <th class="text-end">稅額</th>
+                                <th class="text-end">含稅總額</th>
+                                <th class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in salesReturns)
+                            {
+                                <tr>
+                                    <td><code>@doc.Code</code></td>
+                                    <td>@doc.ReturnDate.ToString("yyyy/MM/dd")</td>
+                                    <td>@doc.Customer?.CompanyName</td>
+                                    <td class="text-end">@doc.TotalReturnAmount.ToString("N2")</td>
+                                    <td class="text-end">@doc.ReturnTaxAmount.ToString("N2")</td>
+                                    <td class="text-end">@doc.TotalReturnAmountWithTax.ToString("N2")</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                @onclick="@(() => JournalizeSingleAsync("SalesReturn", doc.Id, doc.Code ?? ""))"
+                                                disabled="@isProcessing">
+                                            轉傳票
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    // 資料
+    private List<PurchaseReceiving> purchaseReceivings = new();
+    private List<PurchaseReturn> purchaseReturns = new();
+    private List<SalesDelivery> salesDeliveries = new();
+    private List<SalesReturn> salesReturns = new();
+
+    // 篩選條件
+    private DateTime? filterFrom;
+    private DateTime? filterTo;
+
+    // UI 狀態
+    private bool isLoading = false;
+    private bool isProcessing = false;
+    private bool showPurchaseReceiving = true;
+    private bool showPurchaseReturn = true;
+    private bool showSalesDelivery = true;
+    private bool showSalesReturn = true;
+
+    // 目前使用者
+    private string currentUser = "System";
+
+    private int TotalPendingCount =>
+        purchaseReceivings.Count + purchaseReturns.Count + salesDeliveries.Count + salesReturns.Count;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        currentUser = authState.User.Identity?.Name ?? "System";
+        await LoadAllAsync();
+    }
+
+    private async Task LoadAllAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        try
+        {
+            var t1 = AutoGenerationService.GetPendingPurchaseReceivingsAsync(filterFrom, filterTo);
+            var t2 = AutoGenerationService.GetPendingPurchaseReturnsAsync(filterFrom, filterTo);
+            var t3 = AutoGenerationService.GetPendingSalesDeliveriesAsync(filterFrom, filterTo);
+            var t4 = AutoGenerationService.GetPendingSalesReturnsAsync(filterFrom, filterTo);
+            await Task.WhenAll(t1, t2, t3, t4);
+            purchaseReceivings = t1.Result;
+            purchaseReturns    = t2.Result;
+            salesDeliveries    = t3.Result;
+            salesReturns       = t4.Result;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ClearFilter()
+    {
+        filterFrom = null;
+        filterTo = null;
+        await LoadAllAsync();
+    }
+
+    private async Task JournalizeSingleAsync(string docType, int id, string code)
+    {
+        isProcessing = true;
+        StateHasChanged();
+        try
+        {
+            var (success, error) = docType switch
+            {
+                "PurchaseReceiving" => await AutoGenerationService.JournalizePurchaseReceivingAsync(id, currentUser),
+                "PurchaseReturn"    => await AutoGenerationService.JournalizePurchaseReturnAsync(id, currentUser),
+                "SalesDelivery"     => await AutoGenerationService.JournalizeSalesDeliveryAsync(id, currentUser),
+                "SalesReturn"       => await AutoGenerationService.JournalizeSalesReturnAsync(id, currentUser),
+                _ => (false, "未知的單據類型")
+            };
+
+            if (success)
+                await NotificationService.ShowSuccessAsync($"{code} 轉傳票成功");
+            else
+                await NotificationService.ShowErrorAsync($"{code} 轉傳票失敗：{error}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+        await LoadAllAsync();
+    }
+
+    private async Task JournalizeAllAsync()
+    {
+        isProcessing = true;
+        StateHasChanged();
+        int successCount = 0;
+        int failCount = 0;
+        try
+        {
+            // 依序轉傳票（避免同時多筆 DB 操作衝突）
+            foreach (var doc in purchaseReceivings.ToList())
+            {
+                var (ok, _) = await AutoGenerationService.JournalizePurchaseReceivingAsync(doc.Id, currentUser);
+                if (ok) successCount++; else failCount++;
+            }
+            foreach (var doc in purchaseReturns.ToList())
+            {
+                var (ok, _) = await AutoGenerationService.JournalizePurchaseReturnAsync(doc.Id, currentUser);
+                if (ok) successCount++; else failCount++;
+            }
+            foreach (var doc in salesDeliveries.ToList())
+            {
+                var (ok, _) = await AutoGenerationService.JournalizeSalesDeliveryAsync(doc.Id, currentUser);
+                if (ok) successCount++; else failCount++;
+            }
+            foreach (var doc in salesReturns.ToList())
+            {
+                var (ok, _) = await AutoGenerationService.JournalizeSalesReturnAsync(doc.Id, currentUser);
+                if (ok) successCount++; else failCount++;
+            }
+
+            if (failCount == 0)
+                await NotificationService.ShowSuccessAsync($"批次轉傳票完成，共成功 {successCount} 筆");
+            else
+                await NotificationService.ShowWarningAsync($"批次轉傳票完成：成功 {successCount} 筆，失敗 {failCount} 筆");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+        await LoadAllAsync();
+    }
+}

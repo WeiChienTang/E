@@ -1,0 +1,517 @@
+using ERPCore2.Data.Context;
+using ERPCore2.Data.Entities;
+using ERPCore2.Helpers;
+using ERPCore2.Models.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace ERPCore2.Services
+{
+    /// <summary>
+    /// 批次轉傳票服務實作
+    /// 三行分錄規則（含稅）：
+    ///   進貨入庫：借 商品存貨(1231) + 進項稅額(1268) / 貸 應付帳款(2171)
+    ///   進貨退回：借 應付帳款(2171) / 貸 商品存貨(1231) + 進項稅額(1268)
+    ///   銷貨出貨：借 應收帳款(1191) / 貸 銷貨收入(4111) + 銷項稅額(2204)
+    ///   銷貨退回：借 銷貨收入(4111) + 銷項稅額(2204) / 貸 應收帳款(1191)
+    /// 稅額為零時，僅建立兩行分錄
+    /// </summary>
+    public class JournalEntryAutoGenerationService : IJournalEntryAutoGenerationService
+    {
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
+        private readonly IAccountItemService _accountItemService;
+        private readonly IJournalEntryService _journalEntryService;
+        private readonly ICompanyService _companyService;
+        private readonly ILogger<JournalEntryAutoGenerationService> _logger;
+
+        // 標準科目代碼常數（來自商業會計項目表 112 年度種子資料）
+        private const string AccountReceivableCode = "1191"; // 應收帳款
+        private const string AccountPayableCode    = "2171"; // 應付帳款
+        private const string InventoryCode         = "1231"; // 商品存貨
+        private const string SalesRevenueCode      = "4111"; // 銷貨收入
+        private const string InputVatCode          = "1268"; // 進項稅額
+        private const string OutputVatCode         = "2204"; // 銷項稅額
+
+        public JournalEntryAutoGenerationService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            IAccountItemService accountItemService,
+            IJournalEntryService journalEntryService,
+            ICompanyService companyService,
+            ILogger<JournalEntryAutoGenerationService> logger)
+        {
+            _contextFactory = contextFactory;
+            _accountItemService = accountItemService;
+            _journalEntryService = journalEntryService;
+            _companyService = companyService;
+            _logger = logger;
+        }
+
+        // ===== 查詢待轉傳票的單據 =====
+
+        public async Task<List<PurchaseReceiving>> GetPendingPurchaseReceivingsAsync(DateTime? from = null, DateTime? to = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.PurchaseReceivings
+                    .Include(pr => pr.Supplier)
+                    .Where(pr => !pr.IsJournalized);
+
+                if (from.HasValue)
+                    query = query.Where(pr => pr.ReceiptDate >= from.Value.Date);
+                if (to.HasValue)
+                    query = query.Where(pr => pr.ReceiptDate <= to.Value.Date.AddDays(1).AddSeconds(-1));
+
+                return await query.OrderByDescending(pr => pr.ReceiptDate).ThenByDescending(pr => pr.Code).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingPurchaseReceivingsAsync), GetType(), _logger);
+                return new List<PurchaseReceiving>();
+            }
+        }
+
+        public async Task<List<PurchaseReturn>> GetPendingPurchaseReturnsAsync(DateTime? from = null, DateTime? to = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.PurchaseReturns
+                    .Include(pr => pr.Supplier)
+                    .Where(pr => !pr.IsJournalized);
+
+                if (from.HasValue)
+                    query = query.Where(pr => pr.ReturnDate >= from.Value.Date);
+                if (to.HasValue)
+                    query = query.Where(pr => pr.ReturnDate <= to.Value.Date.AddDays(1).AddSeconds(-1));
+
+                return await query.OrderByDescending(pr => pr.ReturnDate).ThenByDescending(pr => pr.Code).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingPurchaseReturnsAsync), GetType(), _logger);
+                return new List<PurchaseReturn>();
+            }
+        }
+
+        public async Task<List<SalesDelivery>> GetPendingSalesDeliveriesAsync(DateTime? from = null, DateTime? to = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.SalesDeliveries
+                    .Include(sd => sd.Customer)
+                    .Where(sd => !sd.IsJournalized);
+
+                if (from.HasValue)
+                    query = query.Where(sd => sd.DeliveryDate >= from.Value.Date);
+                if (to.HasValue)
+                    query = query.Where(sd => sd.DeliveryDate <= to.Value.Date.AddDays(1).AddSeconds(-1));
+
+                return await query.OrderByDescending(sd => sd.DeliveryDate).ThenByDescending(sd => sd.Code).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingSalesDeliveriesAsync), GetType(), _logger);
+                return new List<SalesDelivery>();
+            }
+        }
+
+        public async Task<List<SalesReturn>> GetPendingSalesReturnsAsync(DateTime? from = null, DateTime? to = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.SalesReturns
+                    .Include(sr => sr.Customer)
+                    .Where(sr => !sr.IsJournalized);
+
+                if (from.HasValue)
+                    query = query.Where(sr => sr.ReturnDate >= from.Value.Date);
+                if (to.HasValue)
+                    query = query.Where(sr => sr.ReturnDate <= to.Value.Date.AddDays(1).AddSeconds(-1));
+
+                return await query.OrderByDescending(sr => sr.ReturnDate).ThenByDescending(sr => sr.Code).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingSalesReturnsAsync), GetType(), _logger);
+                return new List<SalesReturn>();
+            }
+        }
+
+        // ===== 轉傳票 =====
+
+        public async Task<(bool Success, string ErrorMessage)> JournalizePurchaseReceivingAsync(int id, string createdBy)
+        {
+            try
+            {
+                // 防重複
+                var existing = await _journalEntryService.GetBySourceDocumentAsync("PurchaseReceiving", id);
+                if (existing != null)
+                    return (false, $"進貨入庫單已有對應傳票（{existing.Code}），請先沖銷後再重新轉傳票");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var doc = await context.PurchaseReceivings
+                    .Include(pr => pr.Supplier)
+                    .FirstOrDefaultAsync(pr => pr.Id == id);
+
+                if (doc == null)
+                    return (false, "找不到指定的進貨入庫單");
+
+                var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
+                var payable   = await _accountItemService.GetByCodeAsync(AccountPayableCode);
+                var inputVat  = await _accountItemService.GetByCodeAsync(InputVatCode);
+
+                if (inventory == null || payable == null)
+                    return (false, "找不到必要的會計科目（商品存貨或應付帳款），請確認種子資料已正確載入");
+
+                var lines = new List<JournalEntryLine>
+                {
+                    new JournalEntryLine
+                    {
+                        LineNumber = 1,
+                        AccountItemId = inventory.Id,
+                        Direction = AccountDirection.Debit,
+                        Amount = doc.TotalAmount,
+                        LineDescription = "商品存貨"
+                    }
+                };
+
+                // 稅額行（僅在稅額 > 0 時建立）
+                if (doc.PurchaseReceivingTaxAmount > 0 && inputVat != null)
+                {
+                    lines.Add(new JournalEntryLine
+                    {
+                        LineNumber = 2,
+                        AccountItemId = inputVat.Id,
+                        Direction = AccountDirection.Debit,
+                        Amount = doc.PurchaseReceivingTaxAmount,
+                        LineDescription = "進項稅額"
+                    });
+                }
+
+                lines.Add(new JournalEntryLine
+                {
+                    LineNumber = lines.Count + 1,
+                    AccountItemId = payable.Id,
+                    Direction = AccountDirection.Credit,
+                    Amount = doc.PurchaseReceivingTotalAmountIncludingTax,
+                    LineDescription = $"應付帳款－{doc.Supplier?.CompanyName ?? doc.SupplierId.ToString()}"
+                });
+
+                var result = await CreateAndPostEntryAsync(
+                    doc.ReceiptDate,
+                    $"進貨入庫：{doc.Code}",
+                    "PurchaseReceiving",
+                    doc.Id,
+                    doc.Code ?? string.Empty,
+                    lines,
+                    createdBy);
+
+                if (result.Success)
+                {
+                    doc.IsJournalized = true;
+                    doc.JournalizedAt = DateTime.Now;
+                    await context.SaveChangesAsync();
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(JournalizePurchaseReceivingAsync), GetType(), _logger, new { Id = id });
+                return (false, "轉傳票過程發生錯誤，請稍後再試");
+            }
+        }
+
+        public async Task<(bool Success, string ErrorMessage)> JournalizePurchaseReturnAsync(int id, string createdBy)
+        {
+            try
+            {
+                var existing = await _journalEntryService.GetBySourceDocumentAsync("PurchaseReturn", id);
+                if (existing != null)
+                    return (false, $"進貨退回單已有對應傳票（{existing.Code}），請先沖銷後再重新轉傳票");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var doc = await context.PurchaseReturns
+                    .Include(pr => pr.Supplier)
+                    .FirstOrDefaultAsync(pr => pr.Id == id);
+
+                if (doc == null)
+                    return (false, "找不到指定的進貨退回單");
+
+                var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
+                var payable   = await _accountItemService.GetByCodeAsync(AccountPayableCode);
+                var inputVat  = await _accountItemService.GetByCodeAsync(InputVatCode);
+
+                if (inventory == null || payable == null)
+                    return (false, "找不到必要的會計科目（商品存貨或應付帳款），請確認種子資料已正確載入");
+
+                // 借：應付帳款 / 貸：商品存貨 + 進項稅額（沖回）
+                var lines = new List<JournalEntryLine>
+                {
+                    new JournalEntryLine
+                    {
+                        LineNumber = 1,
+                        AccountItemId = payable.Id,
+                        Direction = AccountDirection.Debit,
+                        Amount = doc.TotalReturnAmountWithTax,
+                        LineDescription = $"應付帳款沖回－{doc.Supplier?.CompanyName ?? doc.SupplierId.ToString()}"
+                    },
+                    new JournalEntryLine
+                    {
+                        LineNumber = 2,
+                        AccountItemId = inventory.Id,
+                        Direction = AccountDirection.Credit,
+                        Amount = doc.TotalReturnAmount,
+                        LineDescription = "商品存貨退回"
+                    }
+                };
+
+                if (doc.ReturnTaxAmount > 0 && inputVat != null)
+                {
+                    lines.Add(new JournalEntryLine
+                    {
+                        LineNumber = 3,
+                        AccountItemId = inputVat.Id,
+                        Direction = AccountDirection.Credit,
+                        Amount = doc.ReturnTaxAmount,
+                        LineDescription = "進項稅額沖回"
+                    });
+                }
+
+                var result = await CreateAndPostEntryAsync(
+                    doc.ReturnDate,
+                    $"進貨退回：{doc.Code}",
+                    "PurchaseReturn",
+                    doc.Id,
+                    doc.Code ?? string.Empty,
+                    lines,
+                    createdBy);
+
+                if (result.Success)
+                {
+                    doc.IsJournalized = true;
+                    doc.JournalizedAt = DateTime.Now;
+                    await context.SaveChangesAsync();
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(JournalizePurchaseReturnAsync), GetType(), _logger, new { Id = id });
+                return (false, "轉傳票過程發生錯誤，請稍後再試");
+            }
+        }
+
+        public async Task<(bool Success, string ErrorMessage)> JournalizeSalesDeliveryAsync(int id, string createdBy)
+        {
+            try
+            {
+                var existing = await _journalEntryService.GetBySourceDocumentAsync("SalesDelivery", id);
+                if (existing != null)
+                    return (false, $"銷貨出貨單已有對應傳票（{existing.Code}），請先沖銷後再重新轉傳票");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var doc = await context.SalesDeliveries
+                    .Include(sd => sd.Customer)
+                    .FirstOrDefaultAsync(sd => sd.Id == id);
+
+                if (doc == null)
+                    return (false, "找不到指定的銷貨出貨單");
+
+                var receivable  = await _accountItemService.GetByCodeAsync(AccountReceivableCode);
+                var revenue     = await _accountItemService.GetByCodeAsync(SalesRevenueCode);
+                var outputVat   = await _accountItemService.GetByCodeAsync(OutputVatCode);
+
+                if (receivable == null || revenue == null)
+                    return (false, "找不到必要的會計科目（應收帳款或銷貨收入），請確認種子資料已正確載入");
+
+                // 借：應收帳款（含稅）/ 貸：銷貨收入（未稅）+ 銷項稅額
+                var lines = new List<JournalEntryLine>
+                {
+                    new JournalEntryLine
+                    {
+                        LineNumber = 1,
+                        AccountItemId = receivable.Id,
+                        Direction = AccountDirection.Debit,
+                        Amount = doc.TotalAmountWithTax,
+                        LineDescription = $"應收帳款－{doc.Customer?.CompanyName ?? doc.CustomerId.ToString()}"
+                    },
+                    new JournalEntryLine
+                    {
+                        LineNumber = 2,
+                        AccountItemId = revenue.Id,
+                        Direction = AccountDirection.Credit,
+                        Amount = doc.TotalAmount,
+                        LineDescription = "銷貨收入"
+                    }
+                };
+
+                if (doc.TaxAmount > 0 && outputVat != null)
+                {
+                    lines.Add(new JournalEntryLine
+                    {
+                        LineNumber = 3,
+                        AccountItemId = outputVat.Id,
+                        Direction = AccountDirection.Credit,
+                        Amount = doc.TaxAmount,
+                        LineDescription = "銷項稅額"
+                    });
+                }
+
+                var result = await CreateAndPostEntryAsync(
+                    doc.DeliveryDate,
+                    $"銷貨出貨：{doc.Code}",
+                    "SalesDelivery",
+                    doc.Id,
+                    doc.Code ?? string.Empty,
+                    lines,
+                    createdBy);
+
+                if (result.Success)
+                {
+                    doc.IsJournalized = true;
+                    doc.JournalizedAt = DateTime.Now;
+                    await context.SaveChangesAsync();
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(JournalizeSalesDeliveryAsync), GetType(), _logger, new { Id = id });
+                return (false, "轉傳票過程發生錯誤，請稍後再試");
+            }
+        }
+
+        public async Task<(bool Success, string ErrorMessage)> JournalizeSalesReturnAsync(int id, string createdBy)
+        {
+            try
+            {
+                var existing = await _journalEntryService.GetBySourceDocumentAsync("SalesReturn", id);
+                if (existing != null)
+                    return (false, $"銷貨退回單已有對應傳票（{existing.Code}），請先沖銷後再重新轉傳票");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var doc = await context.SalesReturns
+                    .Include(sr => sr.Customer)
+                    .FirstOrDefaultAsync(sr => sr.Id == id);
+
+                if (doc == null)
+                    return (false, "找不到指定的銷貨退回單");
+
+                var receivable  = await _accountItemService.GetByCodeAsync(AccountReceivableCode);
+                var revenue     = await _accountItemService.GetByCodeAsync(SalesRevenueCode);
+                var outputVat   = await _accountItemService.GetByCodeAsync(OutputVatCode);
+
+                if (receivable == null || revenue == null)
+                    return (false, "找不到必要的會計科目（應收帳款或銷貨收入），請確認種子資料已正確載入");
+
+                // 借：銷貨收入 + 銷項稅額（沖回）/ 貸：應收帳款（含稅）
+                var lines = new List<JournalEntryLine>
+                {
+                    new JournalEntryLine
+                    {
+                        LineNumber = 1,
+                        AccountItemId = revenue.Id,
+                        Direction = AccountDirection.Debit,
+                        Amount = doc.TotalReturnAmount,
+                        LineDescription = "銷貨收入沖回"
+                    }
+                };
+
+                if (doc.ReturnTaxAmount > 0 && outputVat != null)
+                {
+                    lines.Add(new JournalEntryLine
+                    {
+                        LineNumber = 2,
+                        AccountItemId = outputVat.Id,
+                        Direction = AccountDirection.Debit,
+                        Amount = doc.ReturnTaxAmount,
+                        LineDescription = "銷項稅額沖回"
+                    });
+                }
+
+                lines.Add(new JournalEntryLine
+                {
+                    LineNumber = lines.Count + 1,
+                    AccountItemId = receivable.Id,
+                    Direction = AccountDirection.Credit,
+                    Amount = doc.TotalReturnAmountWithTax,
+                    LineDescription = $"應收帳款沖回－{doc.Customer?.CompanyName ?? doc.CustomerId.ToString()}"
+                });
+
+                var result = await CreateAndPostEntryAsync(
+                    doc.ReturnDate,
+                    $"銷貨退回：{doc.Code}",
+                    "SalesReturn",
+                    doc.Id,
+                    doc.Code ?? string.Empty,
+                    lines,
+                    createdBy);
+
+                if (result.Success)
+                {
+                    doc.IsJournalized = true;
+                    doc.JournalizedAt = DateTime.Now;
+                    await context.SaveChangesAsync();
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(JournalizeSalesReturnAsync), GetType(), _logger, new { Id = id });
+                return (false, "轉傳票過程發生錯誤，請稍後再試");
+            }
+        }
+
+        // ===== 私有 Helper =====
+
+        /// <summary>
+        /// 建立傳票、呼叫 SaveWithLinesAsync（取得 Id）後立即 PostEntryAsync
+        /// </summary>
+        private async Task<(bool Success, string ErrorMessage)> CreateAndPostEntryAsync(
+            DateTime entryDate,
+            string description,
+            string sourceDocumentType,
+            int sourceDocumentId,
+            string sourceDocumentCode,
+            List<JournalEntryLine> lines,
+            string createdBy)
+        {
+            var company = await _companyService.GetPrimaryCompanyAsync();
+            if (company == null)
+                return (false, "找不到預設公司，請先在系統設定中建立公司資料");
+
+            var entry = new JournalEntry
+            {
+                EntryDate            = entryDate,
+                EntryType            = JournalEntryType.AutoGenerated,
+                JournalEntryStatus   = JournalEntryStatus.Draft,
+                Description          = description,
+                CompanyId            = company.Id,
+                FiscalYear           = entryDate.Year,
+                FiscalPeriod         = entryDate.Month,
+                SourceDocumentType   = sourceDocumentType,
+                SourceDocumentId     = sourceDocumentId,
+                SourceDocumentCode   = sourceDocumentCode,
+                Lines                = lines
+            };
+
+            var (saved, saveError) = await _journalEntryService.SaveWithLinesAsync(entry, createdBy);
+            if (!saved)
+                return (false, $"建立傳票失敗：{saveError}");
+
+            // EF Core 在 SaveChangesAsync 後已將 entry.Id 回填
+            var (posted, postError) = await _journalEntryService.PostEntryAsync(entry.Id, createdBy);
+            if (!posted)
+                return (false, $"過帳失敗：{postError}");
+
+            return (true, string.Empty);
+        }
+    }
+}

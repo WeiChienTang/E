@@ -39,6 +39,12 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalReturnAmountWithTax => TotalReturnAmount + ReturnTaxAmount;
 
+        [Display(Name = "已轉傳票")]
+        public bool IsJournalized { get; set; } = false;
+
+        [Display(Name = "轉傳票時間")]
+        public DateTime? JournalizedAt { get; set; }
+
         // Foreign Keys
         [Required(ErrorMessage = "供應商為必填")]
         [Display(Name = "供應商")]

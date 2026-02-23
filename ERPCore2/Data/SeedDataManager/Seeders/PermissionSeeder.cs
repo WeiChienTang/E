@@ -122,6 +122,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
                 // 會計
                 new Permission { Code = "AccountItem.Read", Name = "檢視會計科目", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視會計科目與相關設定" },
+                new Permission { Code = "JournalEntry.Read", Name = "檢視傳票", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視會計傳票與分錄明細" },
             
             };
 

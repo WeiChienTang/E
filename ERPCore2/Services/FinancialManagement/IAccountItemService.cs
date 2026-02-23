@@ -6,6 +6,7 @@ namespace ERPCore2.Services
     public interface IAccountItemService : IGenericManagementService<AccountItem>
     {
         Task<bool> IsAccountItemCodeExistsAsync(string code, int? excludeId = null);
+        Task<AccountItem?> GetByCodeAsync(string code);
         Task<List<AccountItem>> GetByAccountTypeAsync(AccountType accountType);
         Task<List<AccountItem>> GetByLevelAsync(int level);
         Task<List<AccountItem>> GetDetailAccountsAsync();

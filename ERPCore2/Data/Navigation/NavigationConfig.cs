@@ -807,6 +807,28 @@ public static class NavigationConfig
                         QuickActionId = "NewAccountItem",
                         QuickActionName = "新增會計科目"
                     },
+                    new NavigationItem
+                    {
+                        Name = "傳票管理",
+                        Description = "管理會計傳票（日記帳分錄）",
+                        Route = "/journal-entries",
+                        IconClass = "",
+                        Category = "財務管理",
+                        RequiredPermission = "JournalEntry.Read",
+                        SearchKeywords = new List<string> { "傳票", "日記帳", "分錄", "journal entry", "會計分錄" },
+                        QuickActionId = "NewJournalEntry",
+                        QuickActionName = "新增傳票"
+                    },
+                    new NavigationItem
+                    {
+                        Name = "批次轉傳票",
+                        Description = "將進貨、銷貨、退回等業務單據批次產生會計傳票",
+                        Route = "/journal-entry-batch",
+                        IconClass = "",
+                        Category = "財務管理",
+                        RequiredPermission = "JournalEntry.Read",
+                        SearchKeywords = new List<string> { "批次轉傳票", "自動傳票", "進貨轉傳票", "銷貨轉傳票", "轉帳" }
+                    },
 
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem

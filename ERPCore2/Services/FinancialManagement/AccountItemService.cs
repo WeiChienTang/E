@@ -88,6 +88,27 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<AccountItem?> GetByCodeAsync(string code)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                    return null;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.AccountItems
+                    .FirstOrDefaultAsync(a => a.Code == code && a.Status == EntityStatus.Active);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCodeAsync), GetType(), _logger, new
+                {
+                    Code = code
+                });
+                return null;
+            }
+        }
+
         public async Task<List<AccountItem>> GetByAccountTypeAsync(AccountType accountType)
         {
             try
