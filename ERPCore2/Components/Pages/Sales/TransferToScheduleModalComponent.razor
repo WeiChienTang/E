@@ -183,9 +183,9 @@
             // 1. 載入銷貨訂單的所有明細
             var allDetails = await SalesOrderDetailService.GetBySalesOrderIdAsync(SalesOrderId);
             
-            // 2. 篩選可轉排程的明細（Product.ProcurementType = Manufactured 且 PendingQuantity > 0）
+            // 2. 篩選可轉排程的明細（PendingQuantity > 0）
             var schedulableDetailEntities = allDetails
-                .Where(d => d.Product?.ProcurementType == ProcurementType.Manufactured && d.PendingScheduleQuantity > 0)
+                .Where(d => d.PendingScheduleQuantity > 0)
                 .ToList();
             
             // 3. 為每筆明細載入 BOM
@@ -201,7 +201,7 @@
                     ProductCode = detail.Product?.Code ?? "",
                     OrderQuantity = detail.OrderQuantity,
                     ScheduledQuantity = detail.ScheduledQuantity,
-                    CanSchedule = detail.Product?.ProcurementType == ProcurementType.Manufactured,
+                    CanSchedule = true,
                     HasBom = bom.Any(),
                     BomDetails = bom,
                     IsSelected = false,  // 預設不勾選
@@ -265,7 +265,7 @@
                 TotalQuantity = totalNeeded,
                 CurrentStock = currentStock,
                 Shortage = shortage,
-                NeedsProduction = shortage > 0 && (bomDetail.ComponentProduct?.ProcurementType == ProcurementType.Manufactured),
+                NeedsProduction = shortage > 0,
                 UnitId = bomDetail.UnitId,
                 UnitName = bomDetail.Unit?.Name
             });

@@ -394,12 +394,12 @@
             new()
             {
                 PropertyName = nameof(Product.UnitId),
-                Label = "基本單位",
+                Label = "採購單位",
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇基本計量單位",
+                Placeholder = "請輸入或選擇採購計量單位",
                 IsRequired = true,
                 MinSearchLength = 0,
-                HelpText = "商品的基本計量單位（庫存單位）",
+                HelpText = "商品的採購計量單位（例如：包、箱、公斤）",
                 ActionButtons = await GetUnitActionButtonsAsync()
             },
             new()
@@ -422,7 +422,7 @@
                 Placeholder = "請輸入換算係數",
                 IsRequired = false,
                 IsVisible = true,
-                HelpText = "1 商品單位 = N 製程單位（例如：1 包 = 30 公斤，則輸入 30）",
+                HelpText = "1 採購單位 = N 製程單位（例如：1 包 = 30 公斤，則輸入 30）",
                 UseThousandsSeparator = false,
                 BindOnInput = true,
             },
@@ -448,32 +448,6 @@
                 HelpText = "商品的成本（財務/成本核算用）",
                 Min = 0
             },*/
-            new FormFieldDefinition()
-            {
-                PropertyName = nameof(Product.ListPrice),
-                Label = "建議售價",
-                FieldType = FormFieldType.Number,
-                Placeholder = "請輸入建議售價",
-                IsRequired = false,
-                HelpText = "商品的建議零售售價（參考用）",
-                Min = 0
-            },
-            new FormFieldDefinition()
-            {
-                PropertyName = nameof(Product.ProcurementType),
-                Label = "採購類型",
-                FieldType = FormFieldType.Select,
-                IsRequired = true,
-                HelpText = "指示商品的取得方式(外購/自製/委外)",
-                Options = Enum.GetValues(typeof(ProcurementType))
-                    .Cast<ProcurementType>()
-                    .Select(e => new SelectOption
-                    {
-                        Text = GetProcurementTypeDisplayName(e),
-                        Value = ((int)e).ToString()
-                    })
-                    .ToList()
-            },
             new()
             {
                 PropertyName = nameof(Product.Specification),
@@ -494,9 +468,7 @@
                 p => p.Barcode,
                 p => p.Name,
                 p => p.TaxRate,
-                p => p.StandardCost,
-                p => p.ListPrice,
-                p => p.ProcurementType)
+                p => p.StandardCost)
             .AddToSection(FormSectionNames.CategoryAndSpecification,
                 p => p.UnitId,
                 p => p.ProductionUnitId,
@@ -849,20 +821,6 @@
         }
     }
     
-    /// <summary>
-    /// 取得採購類型的顯示名稱
-    /// </summary>
-    private static string GetProcurementTypeDisplayName(ProcurementType procurementType)
-    {
-        return procurementType switch
-        {
-            ProcurementType.Purchased => "外購",
-            ProcurementType.Manufactured => "自製",
-            ProcurementType.Outsourced => "委外",
-            _ => procurementType.ToString()
-        };
-    }
-    
     // ===== 單位換算相關方法 =====
     
     /// <summary>
@@ -886,7 +844,7 @@
     
     /// <summary>
     /// 產生製程單位換算欄位的動態標籤
-    /// 格式：「1 [商品單位名稱] = [換算率] [製程單位名稱]」
+    /// 格式：「1 [採購單位名稱] = [換算率] [製程單位名稱]」
     /// 如果有設定換算率則顯示實際數值，否則顯示問號
     /// </summary>
     private string GetProductionUnitConversionLabel()

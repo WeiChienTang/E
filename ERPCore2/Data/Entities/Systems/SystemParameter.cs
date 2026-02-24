@@ -87,11 +87,53 @@ namespace ERPCore2.Data.Entities
         public string CustomerSubAccountParentCode { get; set; } = "1191";
 
         /// <summary>
+        /// 應收票據統制科目代碼（客戶票據子科目的父層），預設 1131
+        /// </summary>
+        [MaxLength(20)]
+        [Display(Name = "應收票據統制科目代碼")]
+        public string CustomerNoteSubAccountParentCode { get; set; } = "1131";
+
+        /// <summary>
+        /// 銷貨退回統制科目代碼（客戶退回子科目的父層），預設 4191
+        /// </summary>
+        [MaxLength(20)]
+        [Display(Name = "銷貨退回統制科目代碼")]
+        public string CustomerReturnSubAccountParentCode { get; set; } = "4191";
+
+        /// <summary>
+        /// 預收款項統制科目代碼（客戶預收子科目的父層），預設 2163
+        /// </summary>
+        [MaxLength(20)]
+        [Display(Name = "預收款項統制科目代碼")]
+        public string CustomerAdvanceSubAccountParentCode { get; set; } = "2163";
+
+        /// <summary>
         /// 應付帳款統制科目代碼（廠商子科目的父層），預設 2171
         /// </summary>
         [MaxLength(20)]
         [Display(Name = "應付帳款統制科目代碼")]
         public string SupplierSubAccountParentCode { get; set; } = "2171";
+
+        /// <summary>
+        /// 應付票據統制科目代碼（廠商票據子科目的父層），預設 2131
+        /// </summary>
+        [MaxLength(20)]
+        [Display(Name = "應付票據統制科目代碼")]
+        public string SupplierNoteSubAccountParentCode { get; set; } = "2131";
+
+        /// <summary>
+        /// 進貨退出統制科目代碼（廠商退回子科目的父層），預設 5111
+        /// </summary>
+        [MaxLength(20)]
+        [Display(Name = "進貨退出統制科目代碼")]
+        public string SupplierReturnSubAccountParentCode { get; set; } = "5111";
+
+        /// <summary>
+        /// 預付款項統制科目代碼（廠商預付子科目的父層），預設 1161
+        /// </summary>
+        [MaxLength(20)]
+        [Display(Name = "預付款項統制科目代碼")]
+        public string SupplierAdvanceSubAccountParentCode { get; set; } = "1161";
 
         /// <summary>
         /// 商品存貨統制科目代碼（商品子科目的父層），預設 1231

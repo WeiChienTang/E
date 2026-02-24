@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
+using ERPCore2.Helpers.EditModal;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -318,6 +319,13 @@ namespace ERPCore2.Services
                 if (journalEntry.Id == 0)
                 {
                     // 新增
+                    // 若傳票編號為空，自動產生
+                    if (string.IsNullOrWhiteSpace(journalEntry.Code))
+                    {
+                        journalEntry.Code = await EntityCodeGenerationHelper
+                            .GenerateForEntity<JournalEntry, IJournalEntryService>(this, "JE");
+                    }
+
                     journalEntry.CreatedAt = DateTime.Now;
                     journalEntry.CreatedBy = savedBy;
                     journalEntry.JournalEntryStatus = JournalEntryStatus.Draft;
@@ -396,6 +404,11 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
+                if (entity.Code == null)
+                {
+                    errors.Add("傳票資料為空");
+                    return ServiceResult.Failure(string.Join("; ", errors));
+                }
                 if (entity.EntryDate == default)
                     errors.Add("傳票日期為必填欄位");
 

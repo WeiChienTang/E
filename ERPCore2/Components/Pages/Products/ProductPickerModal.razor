@@ -1,0 +1,265 @@
+@* 商品批量選擇器 Modal - 提供篩選+點擊選取，批量加入材料清單 *@
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@(async (bool visible) => { if (!visible) await Close(); })"
+                    Title="選擇清單"
+                    Icon="bi bi-grid-3x3-gap-fill"
+                    HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                    ShowCloseButton="true"
+                    ShowFooter="false"
+                    CloseOnBackdropClick="false"
+                    CloseOnEscape="true"
+                    OnClose="Close">
+
+    <HeaderButtons>
+        <div class="d-flex align-items-center gap-2">
+            <div class="flex-grow-1">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" placeholder="搜尋商品名稱/編號..."
+                           value="@_searchText"
+                           @oninput="e => { _searchText = e.Value?.ToString() ?? string.Empty; ApplyFilters(); }" />
+                </div>
+            </div>
+            <div style="width: 160px;">
+                <input type="text" class="form-control form-control-sm" placeholder="規格篩選..."
+                       value="@_specSearch"
+                       @oninput="e => { _specSearch = e.Value?.ToString() ?? string.Empty; ApplyFilters(); }" />
+            </div>
+            <div style="width: 140px;">
+                <select class="form-select form-select-sm" @onchange="OnCategoryChanged">
+                    <option value="">所有類別</option>
+                    @foreach (var cat in AvailableCategories)
+                    {
+                        <option value="@cat.Id" selected="@(_selectedCategoryId == cat.Id)">@cat.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="form-check mb-0 me-3">
+                    <input class="form-check-input" type="checkbox" id="pickerHideAdded"
+                           checked="@_hideAlreadyAdded"
+                           @onchange="e => { _hideAlreadyAdded = (bool)(e.Value ?? false); ApplyFilters(); }" />
+                    <label class="form-check-label small text-nowrap" for="pickerHideAdded">隱藏已加入</label>
+                </div>
+                <GenericButtonComponent Text="確認"
+                                        Variant="ButtonVariant.Green"
+                                        Size="ButtonSize.Small"
+                                        IsDisabled="@(!_selectedItems.Any())"
+                                        OnClick="Confirm" />
+            </div>
+        </div>
+    </HeaderButtons>
+
+    <BodyContent>
+        <div style="max-height: 450px; overflow: auto;">
+            <InteractiveTableComponent TItem="Product"
+                                       Items="@_filteredProducts"
+                                       ColumnDefinitions="@_columnDefinitions"
+                                       ShowRowNumbers="false"
+                                       IsStriped="false"
+                                       EnableRowSelection="true"
+                                       EnableRowClick="true"
+                                       AllowMultipleSelection="true"
+                                       SelectedItems="@_selectedItems"
+                                       OnSelectionChanged="HandleSelectionChanged"
+                                       GetRowCssClass="@GetRowCssClass"
+                                       EmptyMessage="無符合條件的商品">
+                <EmptyTemplate>
+                    <i class="bi bi-inbox me-2"></i>無符合條件的商品
+                </EmptyTemplate>
+            </InteractiveTableComponent>
+        </div>
+    </BodyContent>
+</BaseModalComponent>
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public List<Product> AvailableProducts { get; set; } = new();
+    [Parameter] public List<ProductCategory> AvailableCategories { get; set; } = new();
+    [Parameter] public List<Unit> AvailableUnits { get; set; } = new();
+    [Parameter] public HashSet<int> AlreadyAddedProductIds { get; set; } = new();
+    [Parameter] public EventCallback<List<Product>> OnConfirmed { get; set; }
+    [Parameter] public EventCallback OnCancelled { get; set; }
+
+    // ===== 私有欄位 =====
+    private string _searchText = string.Empty;
+    private string _specSearch = string.Empty;
+    private int? _selectedCategoryId = null;
+    private bool _hideAlreadyAdded = false;
+    private HashSet<Product> _selectedItems = new();
+    private List<Product> _filteredProducts = new();
+    private List<InteractiveColumnDefinition>? _columnDefinitions;
+    private bool _wasVisible = false;
+
+    // ===== 生命週期 =====
+    protected override void OnInitialized()
+    {
+        InitializeColumnDefinitions();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible && !_wasVisible)
+        {
+            _searchText = string.Empty;
+            _specSearch = string.Empty;
+            _selectedCategoryId = null;
+            _hideAlreadyAdded = false;
+            _selectedItems = new();
+            ApplyFilters();
+        }
+        _wasVisible = IsVisible;
+    }
+
+    // ===== 篩選 =====
+    private void ApplyFilters()
+    {
+        var query = AvailableProducts.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(_searchText))
+        {
+            query = query.Where(p =>
+                (p.Code?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.Name?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        if (!string.IsNullOrWhiteSpace(_specSearch))
+        {
+            query = query.Where(p =>
+                p.Specification?.Contains(_specSearch, StringComparison.OrdinalIgnoreCase) ?? false);
+        }
+
+        if (_selectedCategoryId.HasValue)
+        {
+            query = query.Where(p => p.ProductCategoryId == _selectedCategoryId.Value);
+        }
+
+        if (_hideAlreadyAdded)
+        {
+            query = query.Where(p => !AlreadyAddedProductIds.Contains(p.Id));
+        }
+
+        _filteredProducts = query.ToList();
+        StateHasChanged();
+    }
+
+    private void OnCategoryChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        _selectedCategoryId = int.TryParse(value, out var id) ? id : (int?)null;
+        ApplyFilters();
+    }
+
+    // ===== 欄位定義 =====
+    private void InitializeColumnDefinitions()
+    {
+        _columnDefinitions = new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "商品編號",
+                PropertyName = nameof(Product.Code),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "15%"
+            },
+            new()
+            {
+                Title = "商品名稱",
+                PropertyName = nameof(Product.Name),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "30%",
+                CustomTemplate = item => builder =>
+                {
+                    var product = (Product)item;
+                    builder.OpenElement(0, "span");
+                    builder.AddContent(1, product.Name);
+                    builder.CloseElement();
+
+                    if (AlreadyAddedProductIds.Contains(product.Id))
+                    {
+                        builder.AddMarkupContent(2, "&nbsp;");
+                        builder.OpenElement(3, "span");
+                        builder.AddAttribute(4, "class", "badge bg-secondary small");
+                        builder.AddContent(5, "已加入");
+                        builder.CloseElement();
+                    }
+                }
+            },
+            new()
+            {
+                Title = "類別",
+                PropertyName = "CategoryName",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                CustomTemplate = item => builder =>
+                {
+                    var product = (Product)item;
+                    var cat = product.ProductCategoryId.HasValue
+                        ? AvailableCategories.FirstOrDefault(c => c.Id == product.ProductCategoryId.Value)
+                        : null;
+                    builder.OpenElement(0, "span");
+                    builder.AddContent(1, cat?.Name ?? string.Empty);
+                    builder.CloseElement();
+                }
+            },
+            new()
+            {
+                Title = "規格",
+                PropertyName = nameof(Product.Specification),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "25%"
+            },
+            new()
+            {
+                Title = "單位",
+                PropertyName = "UnitName",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "10%",
+                CustomTemplate = item => builder =>
+                {
+                    var product = (Product)item;
+                    var unit = product.UnitId > 0
+                        ? AvailableUnits.FirstOrDefault(u => u.Id == product.UnitId)
+                        : null;
+                    builder.OpenElement(0, "span");
+                    builder.AddContent(1, unit?.Name ?? string.Empty);
+                    builder.CloseElement();
+                }
+            }
+        };
+    }
+
+    // ===== 事件處理 =====
+    private void HandleSelectionChanged(HashSet<Product> selectedItems)
+    {
+        // 排除已加入的商品（點擊已加入商品不應加入選取）
+        selectedItems.RemoveWhere(p => AlreadyAddedProductIds.Contains(p.Id));
+        _selectedItems = selectedItems;
+        StateHasChanged();
+    }
+
+    private string GetRowCssClass(Product item, int index)
+    {
+        if (AlreadyAddedProductIds.Contains(item.Id))
+            return "table-secondary text-muted";
+        if (_selectedItems.Contains(item))
+            return "table-primary";
+        return string.Empty;
+    }
+
+    private async Task Close()
+    {
+        if (OnCancelled.HasDelegate)
+            await OnCancelled.InvokeAsync();
+    }
+
+    private async Task Confirm()
+    {
+        if (!_selectedItems.Any()) return;
+
+        if (OnConfirmed.HasDelegate)
+            await OnConfirmed.InvokeAsync(_selectedItems.ToList());
+    }
+}

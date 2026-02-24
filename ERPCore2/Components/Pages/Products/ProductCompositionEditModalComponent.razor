@@ -151,12 +151,10 @@ ShowPrintButton="true"
             // 載入所有商品列表（只查詢一次資料庫）
             var allProducts = await ProductService.GetAllAsync();
             
-            // 主檔商品選項：只顯示自製商品（需要排程生產的成品）
-            availableParentProducts = allProducts
-                .Where(p => p.ProcurementType == ProcurementType.Manufactured)
-                .ToList();
-            
-            // 明細材料選項：顯示所有商品（自製 + 外購，但會在 Table 中排除主檔商品）
+            // 主檔商品選項：顯示所有商品
+            availableParentProducts = allProducts.ToList();
+
+            // 明細材料選項：顯示所有商品（但會在 Table 中排除主檔商品）
             availableComponentProducts = allProducts.ToList();
             
             // 載入可選擇的單位列表

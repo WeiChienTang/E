@@ -1849,11 +1849,9 @@ else
     private List<Product> GetAvailableProducts()
     {
         // 報價單不需要檢查客戶，只要商品可販售即可
-        // 只顯示自製類型的商品（可排程生產的商品才需要報價）
         var filtered = Products
-            .Where(p => p.ProductCategory != null && 
-                       p.ProductCategory.IsSaleable &&
-                       p.ProcurementType == ProcurementType.Manufactured)
+            .Where(p => p.ProductCategory != null &&
+                       p.ProductCategory.IsSaleable)
             .ToList();
         
         return filtered;

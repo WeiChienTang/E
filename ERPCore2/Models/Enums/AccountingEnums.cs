@@ -72,6 +72,28 @@ namespace ERPCore2.Models.Enums
     }
 
     /// <summary>
+    /// 子科目連結類型（對應客戶/廠商的科目種類，null 視同 ReceivablePayable 以維持舊資料相容）
+    /// </summary>
+    public enum SubAccountLinkType
+    {
+        [Description("應收/應付帳款")]
+        [Display(Name = "應收/應付帳款")]
+        ReceivablePayable = 0,
+
+        [Description("應收/應付票據")]
+        [Display(Name = "應收/應付票據")]
+        NoteReceivablePayable = 1,
+
+        [Description("銷貨退回/進貨退出")]
+        [Display(Name = "銷貨退回/進貨退出")]
+        SalesPurchaseReturn = 2,
+
+        [Description("預收/預付款項")]
+        [Display(Name = "預收/預付款項")]
+        AdvanceReceiptPayment = 3
+    }
+
+    /// <summary>
     /// 會計科目層級（用於報表篩選）
     /// </summary>
     public enum AccountLevelFilter

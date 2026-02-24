@@ -245,12 +245,6 @@ namespace ERPCore2.Services.Reports
                     criteria.CategoryIds.Contains(p.ProductCategoryId.Value)).ToList();
             }
 
-            // 篩選採購類型
-            if (criteria.ProcurementTypes.Any())
-            {
-                results = results.Where(p => criteria.ProcurementTypes.Contains(p.ProcurementType)).ToList();
-            }
-
             // 關鍵字搜尋
             if (!string.IsNullOrEmpty(criteria.Keyword))
             {
@@ -312,7 +306,6 @@ namespace ERPCore2.Services.Reports
                      .AddColumn("條碼", 1.0f, Models.Reports.TextAlignment.Left)
                      .AddColumn("分類", 0.7f, Models.Reports.TextAlignment.Center)
                      .AddColumn("單位", 0.5f, Models.Reports.TextAlignment.Center)
-                     .AddColumn("採購類型", 0.6f, Models.Reports.TextAlignment.Center)
                      .ShowBorder(false)
                      .ShowHeaderBackground(false)
                      .ShowHeaderSeparator(false)
@@ -321,14 +314,6 @@ namespace ERPCore2.Services.Reports
                 int rowNum = 1;
                 foreach (var product in products)
                 {
-                    var procurementTypeText = product.ProcurementType switch
-                    {
-                        ProcurementType.Purchased => "外購",
-                        ProcurementType.Manufactured => "自製",
-                        ProcurementType.Outsourced => "委外",
-                        _ => ""
-                    };
-
                     table.AddRow(
                         rowNum.ToString(),
                         product.Code ?? "",
@@ -336,8 +321,7 @@ namespace ERPCore2.Services.Reports
                         product.Specification ?? "",
                         product.Barcode ?? "",
                         product.ProductCategory?.Name ?? "",
-                        product.Unit?.Name ?? "",
-                        procurementTypeText
+                        product.Unit?.Name ?? ""
                     );
                     rowNum++;
                 }

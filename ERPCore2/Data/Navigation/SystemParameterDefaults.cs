@@ -69,8 +69,26 @@ public static class SystemParameterDefaults
     /// <summary>預設應收帳款統制科目代碼</summary>
     public const string DefaultCustomerSubAccountParentCode = "1191";
 
+    /// <summary>預設應收票據統制科目代碼</summary>
+    public const string DefaultCustomerNoteSubAccountParentCode = "1131";
+
+    /// <summary>預設銷貨退回統制科目代碼</summary>
+    public const string DefaultCustomerReturnSubAccountParentCode = "4191";
+
+    /// <summary>預設預收款項統制科目代碼</summary>
+    public const string DefaultCustomerAdvanceSubAccountParentCode = "2163";
+
     /// <summary>預設應付帳款統制科目代碼</summary>
     public const string DefaultSupplierSubAccountParentCode = "2171";
+
+    /// <summary>預設應付票據統制科目代碼</summary>
+    public const string DefaultSupplierNoteSubAccountParentCode = "2131";
+
+    /// <summary>預設進貨退出統制科目代碼</summary>
+    public const string DefaultSupplierReturnSubAccountParentCode = "5111";
+
+    /// <summary>預設預付款項統制科目代碼</summary>
+    public const string DefaultSupplierAdvanceSubAccountParentCode = "1161";
 
     /// <summary>預設商品存貨統制科目代碼</summary>
     public const string DefaultProductSubAccountParentCode = "1231";
@@ -98,7 +116,13 @@ public static class SystemParameterDefaults
         parameter.AutoCreateSupplierSubAccount = DefaultAutoCreateSupplierSubAccount;
         parameter.AutoCreateProductSubAccount = DefaultAutoCreateProductSubAccount;
         parameter.CustomerSubAccountParentCode = DefaultCustomerSubAccountParentCode;
+        parameter.CustomerNoteSubAccountParentCode = DefaultCustomerNoteSubAccountParentCode;
+        parameter.CustomerReturnSubAccountParentCode = DefaultCustomerReturnSubAccountParentCode;
+        parameter.CustomerAdvanceSubAccountParentCode = DefaultCustomerAdvanceSubAccountParentCode;
         parameter.SupplierSubAccountParentCode = DefaultSupplierSubAccountParentCode;
+        parameter.SupplierNoteSubAccountParentCode = DefaultSupplierNoteSubAccountParentCode;
+        parameter.SupplierReturnSubAccountParentCode = DefaultSupplierReturnSubAccountParentCode;
+        parameter.SupplierAdvanceSubAccountParentCode = DefaultSupplierAdvanceSubAccountParentCode;
         parameter.ProductSubAccountParentCode = DefaultProductSubAccountParentCode;
         parameter.SubAccountCodeFormat = DefaultSubAccountCodeFormat;
     }

@@ -3,8 +3,27 @@
 @inject INotificationService NotificationService
 @inject IProductService ProductService
 @inject IUnitService UnitService
+@inject IProductCategoryService ProductCategoryService
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
+
+@if (!IsReadOnly)
+{
+    <div class="mb-2">
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                Size="ButtonSize.Small"
+                                Text="批量選擇"
+                                OnClick="OpenProductPicker" />
+    </div>
+}
+
+<ProductPickerModal IsVisible="@_showProductPicker"
+                   AvailableProducts="@GetAvailableProducts()"
+                   AvailableCategories="@AvailableCategories"
+                   AvailableUnits="@AvailableUnits"
+                   AlreadyAddedProductIds="@GetAlreadyAddedProductIds()"
+                   OnConfirmed="@HandleProductsSelected"
+                   OnCancelled="@(() => _showProductPicker = false)" />
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
@@ -28,6 +47,7 @@
     // ===== 私有欄位 =====
     private readonly HashSet<int> _deletedDetailIds = new HashSet<int>();
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    private bool _showProductPicker = false;  // 批量選擇器顯示控制
     
     // ===== 內部資料清單 =====
     private List<CompositionItem> CompositionItems { get; set; } = new();
@@ -36,6 +56,7 @@
     [Parameter] public List<ProductCompositionDetail> Items { get; set; } = new();
     [Parameter] public List<Product> AvailableProducts { get; set; } = new(); // 可選擇的商品清單
     [Parameter] public List<Unit> AvailableUnits { get; set; } = new(); // 可選擇的單位清單
+    [Parameter] public List<ProductCategory> AvailableCategories { get; set; } = new(); // 可選擇的商品類別（批量選擇器使用）
     [Parameter] public int ParentEntityId { get; set; }
     [Parameter] public int ParentProductId { get; set; }
     [Parameter] public bool IsReadOnly { get; set; } = false;
@@ -103,10 +124,15 @@
             {
                 AvailableProducts = await ProductService.GetAllAsync();
             }
-            
+
             if (!AvailableUnits.Any())
             {
                 AvailableUnits = await UnitService.GetAllAsync();
+            }
+
+            if (!AvailableCategories.Any())
+            {
+                AvailableCategories = await ProductCategoryService.GetAllAsync();
             }
         }
         catch (Exception ex)
@@ -297,6 +323,45 @@
         return AvailableProducts
             .Where(p => p.Id != ParentProductId)
             .ToList();
+    }
+
+    // ===== 批量選擇器方法 =====
+
+    private void OpenProductPicker() => _showProductPicker = true;
+
+    /// <summary>
+    /// 取得已加入材料清單的商品 ID 集合（供批量選擇器標記「已加入」）
+    /// </summary>
+    private HashSet<int> GetAlreadyAddedProductIds()
+    {
+        return CompositionItems
+            .Where(i => i.SelectedProduct != null)
+            .Select(i => i.SelectedProduct!.Id)
+            .ToHashSet();
+    }
+
+    /// <summary>
+    /// 批量選擇器確認後，將選中的商品批量加入材料清單
+    /// </summary>
+    private async Task HandleProductsSelected(List<Product> selectedProducts)
+    {
+        _showProductPicker = false;
+
+        var alreadyAdded = GetAlreadyAddedProductIds();
+        foreach (var product in selectedProducts.Where(p => !alreadyAdded.Contains(p.Id)))
+        {
+            var item = new CompositionItem
+            {
+                SelectedProduct = product,
+                ProductSearchValue = GetProductDisplayText(product),
+                Quantity = 1,
+                UnitId = product.UnitId > 0 ? product.UnitId : null,
+                Unit = product.UnitId > 0 ? AvailableUnits.FirstOrDefault(u => u.Id == product.UnitId) : null
+            };
+            CompositionItems.Add(item);
+        }
+
+        await NotifyItemsChanged();
     }
 
     // ===== SearchableSelect 事件處理 =====

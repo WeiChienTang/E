@@ -113,8 +113,11 @@
         {
             var now = DateTime.Now;
             var primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
+            var autoCode = await EntityCodeGenerationHelper
+                .GenerateForEntity<JournalEntry, IJournalEntryService>(JournalEntryService, "JE");
             entry = new JournalEntry
             {
+                Code = autoCode,
                 EntryDate = now,
                 EntryType = JournalEntryType.Manual,
                 JournalEntryStatus = JournalEntryStatus.Draft,

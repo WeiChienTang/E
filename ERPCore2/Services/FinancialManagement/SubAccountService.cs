@@ -8,8 +8,9 @@ namespace ERPCore2.Services
 {
     /// <summary>
     /// 子科目自動產生服務實作
+    /// 每位客戶/廠商會在四個統制科目下各建立一支明細子科目：
+    ///   應收/應付帳款、應收/應付票據、銷貨退回/進貨退出、預收/預付款項
     /// 代碼格式：{上層科目代碼}.{流水號3位}（例如 1191.001）
-    /// 新增客戶/廠商/商品後，若系統參數啟用，則在對應統制科目下自動建立明細子科目
     /// </summary>
     public class SubAccountService : ISubAccountService
     {
@@ -27,14 +28,15 @@ namespace ERPCore2.Services
             _logger = logger;
         }
 
-        // ===== 查詢 =====
+        // ===== 查詢（只回傳主應收/應付帳款子科目，供傳票自動產生用）=====
 
         public async Task<AccountItem?> GetSubAccountForCustomerAsync(int customerId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.AccountItems
                 .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.LinkedCustomerId == customerId);
+                .FirstOrDefaultAsync(a => a.LinkedCustomerId == customerId
+                    && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable));
         }
 
         public async Task<AccountItem?> GetSubAccountForSupplierAsync(int supplierId)
@@ -42,7 +44,8 @@ namespace ERPCore2.Services
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.AccountItems
                 .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.LinkedSupplierId == supplierId);
+                .FirstOrDefaultAsync(a => a.LinkedSupplierId == supplierId
+                    && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable));
         }
 
         public async Task<AccountItem?> GetSubAccountForProductAsync(int productId)
@@ -53,48 +56,39 @@ namespace ERPCore2.Services
                 .FirstOrDefaultAsync(a => a.LinkedProductId == productId);
         }
 
-        // ===== 建立 =====
+        // ===== 建立（若已存在則直接回傳）=====
 
         public async Task<AccountItem?> GetOrCreateCustomerSubAccountAsync(int customerId, string createdBy)
         {
             try
             {
-                using var context = await _contextFactory.CreateDbContextAsync();
-
-                // 若已存在，直接回傳
-                var existing = await context.AccountItems
-                    .FirstOrDefaultAsync(a => a.LinkedCustomerId == customerId);
-                if (existing != null) return existing;
-
-                // 檢查系統參數
                 var param = await _systemParameterService.GetSystemParameterAsync();
                 if (param?.AutoCreateCustomerSubAccount != true) return null;
 
-                // 取得統制科目
-                var parentCode = param.CustomerSubAccountParentCode;
-                var parent = await context.AccountItems
-                    .FirstOrDefaultAsync(a => a.Code == parentCode);
-                if (parent == null)
-                {
-                    _logger?.LogWarning("找不到客戶子科目統制科目（{Code}），跳過建立", parentCode);
-                    return null;
-                }
+                using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 取得客戶名稱
                 var customer = await context.Customers.FindAsync(customerId);
                 if (customer == null) return null;
 
-                // 產生代碼並建立子科目（Name 繼承上層科目名稱，公司名稱存 Description）
-                var code = await GenerateSubAccountCodeAsync(context, parent, param.SubAccountCodeFormat, customer.Code);
-                var subAccount = BuildSubAccount(code, parent.Name, parent, createdBy);
-                subAccount.Description = customer.CompanyName ?? $"客戶{customerId}";
-                subAccount.LinkedCustomerId = customerId;
+                var customerName = customer.CompanyName ?? $"客戶{customerId}";
 
-                context.AccountItems.Add(subAccount);
-                await context.SaveChangesAsync();
+                var specs = BuildCustomerSpecs(param);
+                var results = await GetOrCreateAllSubAccountsAsync(
+                    context, specs, customerName, customer.Code,
+                    param.SubAccountCodeFormat, createdBy,
+                    subAccount => subAccount.LinkedCustomerId = customerId,
+                    id => context.AccountItems
+                        .FirstOrDefaultAsync(a => a.LinkedCustomerId == id
+                            && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable)),
+                    (id, type) => context.AccountItems
+                        .FirstOrDefaultAsync(a => a.LinkedCustomerId == id && a.SubAccountLinkType == type),
+                    customerId);
 
-                _logger?.LogInformation("已建立客戶子科目 {Code} 對應客戶 {CustomerId}", code, customerId);
-                return subAccount;
+                var arAccount = results.FirstOrDefault(a =>
+                    a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable);
+
+                _logger?.LogInformation("已完成客戶子科目建立（CustomerId={CustomerId}，共 {Count} 支）", customerId, results.Count);
+                return arAccount;
             }
             catch (Exception ex)
             {
@@ -107,37 +101,33 @@ namespace ERPCore2.Services
         {
             try
             {
-                using var context = await _contextFactory.CreateDbContextAsync();
-
-                var existing = await context.AccountItems
-                    .FirstOrDefaultAsync(a => a.LinkedSupplierId == supplierId);
-                if (existing != null) return existing;
-
                 var param = await _systemParameterService.GetSystemParameterAsync();
                 if (param?.AutoCreateSupplierSubAccount != true) return null;
 
-                var parentCode = param.SupplierSubAccountParentCode;
-                var parent = await context.AccountItems
-                    .FirstOrDefaultAsync(a => a.Code == parentCode);
-                if (parent == null)
-                {
-                    _logger?.LogWarning("找不到廠商子科目統制科目（{Code}），跳過建立", parentCode);
-                    return null;
-                }
+                using var context = await _contextFactory.CreateDbContextAsync();
 
                 var supplier = await context.Suppliers.FindAsync(supplierId);
                 if (supplier == null) return null;
 
-                var code = await GenerateSubAccountCodeAsync(context, parent, param.SubAccountCodeFormat, supplier.Code);
-                var subAccount = BuildSubAccount(code, parent.Name, parent, createdBy);
-                subAccount.Description = supplier.CompanyName ?? $"廠商{supplierId}";
-                subAccount.LinkedSupplierId = supplierId;
+                var supplierName = supplier.CompanyName ?? $"廠商{supplierId}";
 
-                context.AccountItems.Add(subAccount);
-                await context.SaveChangesAsync();
+                var specs = BuildSupplierSpecs(param);
+                var results = await GetOrCreateAllSubAccountsAsync(
+                    context, specs, supplierName, supplier.Code,
+                    param.SubAccountCodeFormat, createdBy,
+                    subAccount => subAccount.LinkedSupplierId = supplierId,
+                    id => context.AccountItems
+                        .FirstOrDefaultAsync(a => a.LinkedSupplierId == id
+                            && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable)),
+                    (id, type) => context.AccountItems
+                        .FirstOrDefaultAsync(a => a.LinkedSupplierId == id && a.SubAccountLinkType == type),
+                    supplierId);
 
-                _logger?.LogInformation("已建立廠商子科目 {Code} 對應廠商 {SupplierId}", code, supplierId);
-                return subAccount;
+                var apAccount = results.FirstOrDefault(a =>
+                    a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable);
+
+                _logger?.LogInformation("已完成廠商子科目建立（SupplierId={SupplierId}，共 {Count} 支）", supplierId, results.Count);
+                return apAccount;
             }
             catch (Exception ex)
             {
@@ -171,9 +161,10 @@ namespace ERPCore2.Services
                 var product = await context.Products.FindAsync(productId);
                 if (product == null) return null;
 
+                var productName = product.Name ?? $"商品{productId}";
                 var code = await GenerateSubAccountCodeAsync(context, parent, param.SubAccountCodeFormat, product.Code);
-                var subAccount = BuildSubAccount(code, parent.Name, parent, createdBy);
-                subAccount.Description = product.Name ?? $"商品{productId}";
+                var subAccount = BuildSubAccount(code, $"{parent.Name} - {productName}", parent, createdBy);
+                subAccount.Description = productName;
                 subAccount.LinkedProductId = productId;
 
                 context.AccountItems.Add(subAccount);
@@ -208,9 +199,11 @@ namespace ERPCore2.Services
                 {
                     try
                     {
-                        var existing = await context.AccountItems
-                            .AnyAsync(a => a.LinkedCustomerId == id);
-                        if (existing)
+                        // 以主應收科目是否存在作為「已補建」判斷依據
+                        var hasMain = await context.AccountItems
+                            .AnyAsync(a => a.LinkedCustomerId == id
+                                && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable));
+                        if (hasMain)
                         {
                             skipped++;
                             continue;
@@ -251,9 +244,10 @@ namespace ERPCore2.Services
                 {
                     try
                     {
-                        var existing = await context.AccountItems
-                            .AnyAsync(a => a.LinkedSupplierId == id);
-                        if (existing)
+                        var hasMain = await context.AccountItems
+                            .AnyAsync(a => a.LinkedSupplierId == id
+                                && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable));
+                        if (hasMain)
                         {
                             skipped++;
                             continue;
@@ -323,6 +317,85 @@ namespace ERPCore2.Services
         // ===== 私有方法 =====
 
         /// <summary>
+        /// 建立客戶的四種子科目規格（應收帳款、應收票據、銷貨退回、預收款項）
+        /// </summary>
+        private static List<(SubAccountLinkType LinkType, string ParentCode)> BuildCustomerSpecs(Data.Entities.SystemParameter param) =>
+        [
+            (SubAccountLinkType.ReceivablePayable,   param.CustomerSubAccountParentCode),
+            (SubAccountLinkType.NoteReceivablePayable, param.CustomerNoteSubAccountParentCode),
+            (SubAccountLinkType.SalesPurchaseReturn, param.CustomerReturnSubAccountParentCode),
+            (SubAccountLinkType.AdvanceReceiptPayment, param.CustomerAdvanceSubAccountParentCode),
+        ];
+
+        /// <summary>
+        /// 建立廠商的四種子科目規格（應付帳款、應付票據、進貨退出、預付款項）
+        /// </summary>
+        private static List<(SubAccountLinkType LinkType, string ParentCode)> BuildSupplierSpecs(Data.Entities.SystemParameter param) =>
+        [
+            (SubAccountLinkType.ReceivablePayable,   param.SupplierSubAccountParentCode),
+            (SubAccountLinkType.NoteReceivablePayable, param.SupplierNoteSubAccountParentCode),
+            (SubAccountLinkType.SalesPurchaseReturn, param.SupplierReturnSubAccountParentCode),
+            (SubAccountLinkType.AdvanceReceiptPayment, param.SupplierAdvanceSubAccountParentCode),
+        ];
+
+        /// <summary>
+        /// 針對一個實體（客戶或廠商），依規格清單逐類建立子科目（已存在者跳過）。
+        /// 回傳本次已存在或新建的全部 AccountItem。
+        /// </summary>
+        private async Task<List<AccountItem>> GetOrCreateAllSubAccountsAsync(
+            AppDbContext context,
+            List<(SubAccountLinkType LinkType, string ParentCode)> specs,
+            string entityName,
+            string? entityCode,
+            SubAccountCodeFormat format,
+            string createdBy,
+            Action<AccountItem> setLink,
+            Func<int, Task<AccountItem?>> findMainExisting,
+            Func<int, SubAccountLinkType, Task<AccountItem?>> findByType,
+            int entityId)
+        {
+            var results = new List<AccountItem>();
+
+            foreach (var (linkType, parentCode) in specs)
+            {
+                if (string.IsNullOrWhiteSpace(parentCode)) continue;
+
+                // 查詢是否已存在（主應收/應付類型需相容舊的 null 值）
+                AccountItem? existing = linkType == SubAccountLinkType.ReceivablePayable
+                    ? await findMainExisting(entityId)
+                    : await findByType(entityId, linkType);
+
+                if (existing != null)
+                {
+                    results.Add(existing);
+                    continue;
+                }
+
+                var parent = await context.AccountItems
+                    .FirstOrDefaultAsync(a => a.Code == parentCode);
+                if (parent == null)
+                {
+                    _logger?.LogWarning("找不到子科目統制科目（{Code}，類型={Type}），跳過", parentCode, linkType);
+                    continue;
+                }
+
+                var code = await GenerateSubAccountCodeAsync(context, parent, format, entityCode);
+                var subAccount = BuildSubAccount(code, $"{parent.Name} - {entityName}", parent, createdBy);
+                subAccount.Description = entityName;
+                subAccount.SubAccountLinkType = linkType;
+                setLink(subAccount);
+
+                context.AccountItems.Add(subAccount);
+                await context.SaveChangesAsync();
+
+                _logger?.LogInformation("已建立子科目 {Code}（類型={Type}）對應實體 {EntityId}", code, linkType, entityId);
+                results.Add(subAccount);
+            }
+
+            return results;
+        }
+
+        /// <summary>
         /// 產生下一個子科目代碼
         /// Sequential：{parentCode}.001, .002...
         /// EntityCode：{parentCode}.{entityCode}（點號與特殊字元會被過濾）
@@ -336,7 +409,6 @@ namespace ERPCore2.Services
             // 實體編碼模式：直接用實體自身代碼作後綴
             if (format == SubAccountCodeFormat.EntityCode && !string.IsNullOrWhiteSpace(entityCode))
             {
-                // 過濾點號（避免與分隔符衝突）及前後空白
                 var sanitized = entityCode.Trim().Replace(".", "");
                 if (!string.IsNullOrWhiteSpace(sanitized))
                     return $"{parent.Code}.{sanitized}";
@@ -369,20 +441,20 @@ namespace ERPCore2.Services
         {
             return new AccountItem
             {
-                Code        = code,
-                Name        = name,
+                Code            = code,
+                Name            = name,
                 AccountLevel    = parent.AccountLevel + 1,
-                ParentId    = parent.Id,
-                AccountType = parent.AccountType,
-                Direction   = parent.Direction,
+                ParentId        = parent.Id,
+                AccountType     = parent.AccountType,
+                Direction       = parent.Direction,
                 IsDetailAccount = true,
                 IsAutoGenerated = true,
-                SortOrder   = 0,
-                Status      = EntityStatus.Active,
-                CreatedAt   = DateTime.UtcNow,
-                UpdatedAt   = DateTime.UtcNow,
-                CreatedBy   = createdBy,
-                UpdatedBy   = createdBy
+                SortOrder       = 0,
+                Status          = EntityStatus.Active,
+                CreatedAt       = DateTime.UtcNow,
+                UpdatedAt       = DateTime.UtcNow,
+                CreatedBy       = createdBy,
+                UpdatedBy       = createdBy
             };
         }
     }

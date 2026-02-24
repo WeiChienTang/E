@@ -22,7 +22,7 @@ namespace ERPCore2.Data.Entities
 
         // Foreign Keys
         [Required(ErrorMessage = "商品單位為必填")]
-        [Display(Name = "基本單位")]
+        [Display(Name = "採購單位")]
         [ForeignKey(nameof(Unit))]
         public int UnitId { get; set; }
 
@@ -60,17 +60,6 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,6)")]
         [Range(0, double.MaxValue, ErrorMessage = "標準成本必須大於或等於 0")]
         public decimal? StandardCost { get; set; }
-
-        [Display(Name = "建議售價")]
-        [Column(TypeName = "decimal(18,6)")]
-        [Range(0, double.MaxValue, ErrorMessage = "建議售價必須大於或等於 0")]
-        public decimal? ListPrice { get; set; }
-
-        /// <summary>
-        /// 採購/製造類型 - 決定商品的取得方式
-        /// </summary>
-        [Display(Name = "採購類型")]
-        public ProcurementType ProcurementType { get; set; } = ProcurementType.Purchased;
 
         // Navigation Properties
         public Unit? Unit { get; set; }

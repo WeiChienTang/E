@@ -1,5 +1,4 @@
 using ERPCore2.Data.Entities;
-using ERPCore2.Models.Enums;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
 using ERPCore2.Services;
@@ -21,15 +20,6 @@ public class ProductListBatchPrintCriteria : IReportFilterCriteria
         EmptyMessage = "未選擇分類（列印全部分類）",
         Order = 1)]
     public List<int> CategoryIds { get; set; } = new();
-
-    /// <summary>
-    /// 採購類型篩選（空表示全部）
-    /// </summary>
-    [FilterEnum(typeof(ProcurementType),
-        Group = FilterGroup.Basic,
-        Label = "採購類型",
-        Order = 2)]
-    public List<ProcurementType> ProcurementTypes { get; set; } = new();
 
     /// <summary>
     /// 關鍵字搜尋（品號、品名、條碼、規格）
@@ -59,7 +49,6 @@ public class ProductListBatchPrintCriteria : IReportFilterCriteria
         return new Dictionary<string, object?>
         {
             ["categoryIds"] = CategoryIds.Any() ? CategoryIds : null,
-            ["procurementTypes"] = ProcurementTypes.Any() ? ProcurementTypes : null,
             ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword,
             ["activeOnly"] = ActiveOnly
         };
@@ -74,18 +63,6 @@ public class ProductListBatchPrintCriteria : IReportFilterCriteria
 
         if (CategoryIds.Any())
             summary.Add($"分類：{CategoryIds.Count} 個");
-
-        if (ProcurementTypes.Any())
-        {
-            var typeNames = ProcurementTypes.Select(t => t switch
-            {
-                ProcurementType.Purchased => "外購",
-                ProcurementType.Manufactured => "自製",
-                ProcurementType.Outsourced => "委外",
-                _ => t.ToString()
-            });
-            summary.Add($"採購類型：{string.Join("、", typeNames)}");
-        }
 
         if (!string.IsNullOrEmpty(Keyword))
             summary.Add($"關鍵字：{Keyword}");

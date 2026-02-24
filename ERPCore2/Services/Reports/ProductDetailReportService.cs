@@ -216,9 +216,6 @@ namespace ERPCore2.Services.Reports
                     criteria.CategoryIds.Contains(p.ProductCategoryId.Value)).ToList();
             }
 
-            if (criteria.ProcurementTypes.Any())
-                results = results.Where(p => criteria.ProcurementTypes.Contains(p.ProcurementType)).ToList();
-
             if (!string.IsNullOrEmpty(criteria.Keyword))
             {
                 var keyword = criteria.Keyword;
@@ -281,14 +278,6 @@ namespace ERPCore2.Services.Reports
                 }
                 isFirst = false;
 
-                var procurementTypeText = product.ProcurementType switch
-                {
-                    ProcurementType.Purchased => "外購",
-                    ProcurementType.Manufactured => "自製",
-                    ProcurementType.Outsourced => "委外",
-                    _ => ""
-                };
-
                 // 基本資訊
                 doc.AddKeyValueRow(
                     ("品號", product.Code ?? ""),
@@ -303,8 +292,8 @@ namespace ERPCore2.Services.Reports
                     ("單位", product.Unit?.Name ?? ""));
 
                 doc.AddKeyValueRow(
-                    ("採購類型", procurementTypeText),
-                    ("尺寸", product.Size?.Name ?? ""));
+                    ("尺寸", product.Size?.Name ?? ""),
+                    ("", ""));
 
                 // 財務資訊
                 doc.AddKeyValueRow(
@@ -312,8 +301,8 @@ namespace ERPCore2.Services.Reports
                     ("標準成本", product.StandardCost > 0 ? product.StandardCost.Value.ToString("N2") : ""));
 
                 doc.AddKeyValueRow(
-                    ("定價", product.ListPrice > 0 ? product.ListPrice.Value.ToString("N2") : ""),
-                    ("生產單位", product.ProductionUnit?.Name ?? ""));
+                    ("生產單位", product.ProductionUnit?.Name ?? ""),
+                    ("", ""));
 
                 // 生產換算比率（有生產單位且比率不為 1 時顯示）
                 if (product.ProductionUnit != null && product.ProductionUnitConversionRate != null && product.ProductionUnitConversionRate != 1)
