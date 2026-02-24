@@ -29,10 +29,19 @@ Entity（資料模型）
   ├─ Permission.cs            ← 使用者層級功能權限
   └─ RolePermission.cs        ← 角色與權限對應
 
+Model（導航模型）
+  └─ NavigationItem.cs        ← 新增 ModuleKey 屬性（對應 CompanyModule）
+
+Config（導航配置）
+  └─ NavigationConfig.cs      ← 父級選單設定 ModuleKey，作為模組唯一來源
+
 Service（商業邏輯）
   ├─ ICompanyModuleService.cs
   ├─ CompanyModuleService.cs  ← 模組啟用查詢（含 30 分鐘快取）
   └─ NavigationPermissionService.cs ← 整合雙層檢查
+
+Seeder（種子資料）
+  └─ CompanyModuleSeeder.cs   ← 從 NavigationConfig 自動衍生模組記錄
 
 UI（使用者介面）
   ├─ SystemParameter/                    ← 系統參數設定（多檔拆分）
@@ -43,9 +52,6 @@ UI（使用者介面）
   │   └─ ModuleManagementTab.razor           ← 模組管理 Tab（SuperAdmin 限定）
   ├─ GenericIndexPageComponent.razor（頁面層級封鎖）
   └─ NavigationPermissionCheck.razor（導航列隱藏）
-
-Seeder（種子資料）
-  └─ Migration AddCompanyModule（12 個預設模組，全部啟用）
 ```
 
 ---
@@ -70,24 +76,87 @@ Seeder（種子資料）
 
 ### 2-2. 預設模組清單
 
-由 Migration `AddCompanyModule` 種子資料寫入，初始全部啟用：
+由 `CompanyModuleSeeder` 從 `NavigationConfig.cs` 父級選單自動衍生，初始全部啟用：
 
-| ModuleKey | DisplayName | SortOrder |
-|-----------|------------|-----------|
-| Customers | 客戶管理 | 10 |
-| Suppliers | 廠商管理 | 20 |
-| Products | 商品管理 | 30 |
-| Purchase | 採購管理 | 40 |
-| Sales | 銷售管理 | 50 |
-| Warehouse | 倉庫管理 | 60 |
-| FinancialManagement | 財務管理 | 70 |
-| ProductionManagement | 生產管理 | 80 |
-| Employees | 員工管理 | 90 |
-| Vehicles | 車輛管理 | 100 |
-| WasteManagement | 廢棄物管理 | 110 |
-| Reports | 報表 | 120 |
+| ModuleKey | DisplayName | 對應 NavigationConfig MenuKey |
+|-----------|------------|-------------------------------|
+| Employees | 人力管理 | employee_management |
+| Suppliers | 供應鏈管理 | supplier_management |
+| Customers | 客戶關係管理 | customer_management |
+| Products | 商品管理 | product_management |
+| Warehouse | 庫存管理 | inventory_management |
+| Purchase | 採購管理 | purchase_management |
+| Sales | 銷售管理 | sales_management |
+| Vehicles | 車輛管理 | vehicle_management |
+| WasteManagement | 廢料管理 | waste_management |
+| FinancialManagement | 財務管理 | financial_management |
+| Accounting | 會計管理 | accounting_management |
 
-### 2-3. Service 介面
+> **注意**：`system_management` 不設定 `ModuleKey`，系統管理不可被停用。
+
+### 2-3. 自動衍生機制（CompanyModuleSeeder）
+
+位置：`Data/SeedDataManager/Seeders/CompanyModuleSeeder.cs`
+
+遵循與 `ReportPrintConfigurationSeeder`（從 `ReportRegistry` 衍生）相同的設計模式：
+
+```
+應用程式啟動
+    │
+    ▼
+SeedData.InitializeAsync()
+    │
+    ▼
+CompanyModuleSeeder.SeedAsync()
+    │
+    ├─ 從 NavigationConfig.GetAllNavigationItems() 篩選
+    │   IsParent = true 且 ModuleKey 非空的項目
+    │
+    ├─ 查詢資料庫已存在的 ModuleKey
+    │
+    ├─ 比對後僅新增尚未存在的模組（insert-if-not-exists）
+    │   ├─ ModuleKey ← NavigationItem.ModuleKey
+    │   ├─ DisplayName ← NavigationItem.Category（如「財務管理」）
+    │   ├─ Description ← NavigationItem.Description
+    │   ├─ IsEnabled ← true（預設啟用）
+    │   └─ SortOrder ← 自動遞增（從現有最大值 + 10）
+    │
+    └─ 批次寫入資料庫
+```
+
+**設計要點**：
+- `Order = 5`，在 PermissionSeeder 等基礎 seeder 之前執行
+- 不會修改已存在的模組記錄（包括 Migration 建立的初始 12 筆）
+- 新增模組預設啟用，SuperAdmin 可隨時在模組管理 Tab 停用
+
+### 2-4. NavigationItem.ModuleKey 屬性
+
+位置：`Models/Navigation/NavigationItem.cs`
+
+```csharp
+/// <summary>
+/// 對應的公司模組識別鍵（僅父級選單使用）
+/// 設定後 CompanyModuleSeeder 會自動建立對應的 CompanyModule 記錄
+/// 未設定表示此選單群組不受模組啟用控制（如系統管理）
+/// </summary>
+public string? ModuleKey { get; set; }
+```
+
+NavigationConfig 中的設定範例：
+
+```csharp
+new NavigationItem
+{
+    Name = "會計",
+    Description = "會計相關功能管理",
+    IsParent = true,
+    MenuKey = "accounting_management",
+    ModuleKey = "Accounting",              // ← Seeder 自動建立對應 CompanyModule
+    ...
+}
+```
+
+### 2-5. Service 介面
 
 位置：`Services/Systems/ICompanyModuleService.cs`
 
@@ -101,7 +170,7 @@ public interface ICompanyModuleService
 }
 ```
 
-### 2-4. Service 實作重點
+### 2-6. Service 實作重點
 
 位置：`Services/Systems/CompanyModuleService.cs`
 
@@ -271,7 +340,7 @@ SuperAdmin 開啟系統設定
 點擊「模組管理」Tab
     │
     ▼
-顯示 12 個模組開關清單
+顯示所有模組開關清單（從 CompanyModuleSeeder 自動衍生的模組）
     │
     ▼
 切換特定模組的啟用狀態
@@ -305,11 +374,39 @@ NotificationService.ShowSuccessAsync("模組設定已儲存")
 
 若系統需要新增功能模組，依序執行以下步驟：
 
-1. **新增 Migration**：在 `CompanyModules` 資料表插入新模組記錄（`ModuleKey`、`DisplayName`、`SortOrder`）
-2. **建立頁面目錄**：在 `Components/Pages/[ModuleKey]/` 建立對應頁面
-3. **設定 RequiredModule**：所有新頁面的 `GenericIndexPageComponent` 加入 `RequiredModule="[ModuleKey]"`
-4. **設定導航**：在 `NavMenu.razor` 新增對應導航項目，設定 `ModuleKey` 參數供 `NavigationPermissionCheck` 使用
+1. **在 NavigationConfig 新增父級選單**：設定 `IsParent = true`、`MenuKey`、`ModuleKey`
+2. **重啟應用**：`CompanyModuleSeeder` 自動從 NavigationConfig 衍生新的 CompanyModule 記錄（insert-if-not-exists）
+3. **建立頁面目錄**：在 `Components/Pages/[ModuleKey]/` 建立對應頁面
+4. **設定 RequiredModule**：所有新頁面的 `GenericIndexPageComponent` 加入 `RequiredModule="[ModuleKey]"`
 5. **定義權限**：在 Permission Seeder 新增該模組的功能權限（格式：`[ModuleKey].[Feature].[Action]`）
+
+> **重要**：不需要手動新增 Migration 來插入 CompanyModule 記錄，Seeder 會自動處理。
+
+### 範例：新增「排班管理」模組
+
+```csharp
+// Step 1: NavigationConfig.cs 新增父級選單
+new NavigationItem
+{
+    Name = "排班",
+    Description = "排班相關功能管理",
+    Route = "#",
+    IconClass = "bi bi-calendar-week",
+    Category = "排班管理",
+    IsParent = true,
+    MenuKey = "scheduling_management",
+    ModuleKey = "Scheduling",          // ← Seeder 自動建立 CompanyModule
+    Children = new List<NavigationItem> { ... }
+}
+
+// Step 2: 重啟應用 → CompanyModuleSeeder 自動建立：
+//   ModuleKey = "Scheduling"
+//   DisplayName = "排班管理"  (取自 Category)
+//   IsEnabled = true          (預設啟用)
+
+// Step 3-4: 頁面設定
+// <GenericIndexPageComponent RequiredModule="Scheduling" ... />
+```
 
 ---
 
@@ -331,6 +428,15 @@ Edit Modal 永遠由 Index 頁面的事件觸發渲染，不存在直接 URL 存
 
 安全預設（fail-open）的設計：若管理員尚未在資料庫建立某模組記錄，系統預設允許存取，避免因設定遺漏而意外封鎖正當用戶。反之，若需要嚴格封鎖（fail-closed），則需確保所有模組均已種子資料建立。
 
+### Q：為何改用 Seeder 而非 Migration 管理模組記錄？
+
+Migration 適合結構變更（建立資料表），但不適合隨業務演進持續新增的資料。Seeder 具備以下優勢：
+
+- **自動衍生**：從 NavigationConfig 自動建立模組，與 `ReportPrintConfigurationSeeder`（從 `ReportRegistry` 衍生）採用相同模式
+- **insert-if-not-exists**：每次啟動只新增缺少的模組，不影響已存在的記錄（包括 IsEnabled 狀態）
+- **自動恢復**：即使手動刪除資料庫記錄，下次啟動會自動補回
+- **零維護成本**：新增模組只需在 NavigationConfig 加上 `ModuleKey`，無需額外寫 Migration
+
 ---
 
 ## 十、檔案異動清單
@@ -339,7 +445,11 @@ Edit Modal 永遠由 Index 頁面的事件觸發渲染，不存在直接 URL 存
 |------|---------|------|
 | `Data/Entities/Systems/CompanyModule.cs` | 新增 | 公司層級模組控制 Entity |
 | `Data/Context/AppDbContext.cs` | 修改 | 新增 `DbSet<CompanyModule>` |
-| `Migrations/AddCompanyModule.cs` | 新增 | 建立資料表 + 種子資料（12 個模組） |
+| `Migrations/AddCompanyModule.cs` | 新增 | 建立資料表（含初始 12 筆種子資料）|
+| `Models/Navigation/NavigationItem.cs` | 修改 | 新增 `ModuleKey` 屬性（對應 CompanyModule） |
+| `Data/Navigation/NavigationConfig.cs` | 修改 | 11 個父級選單設定 `ModuleKey` |
+| `Data/SeedDataManager/Seeders/CompanyModuleSeeder.cs` | 新增 | 從 NavigationConfig 自動衍生模組記錄 |
+| `Data/SeedData.cs` | 修改 | 註冊 `CompanyModuleSeeder`（兩個分支皆加入） |
 | `Services/Systems/ICompanyModuleService.cs` | 新增 | 模組管理服務介面 |
 | `Services/Systems/CompanyModuleService.cs` | 新增 | 服務實作（含 30 分鐘快取） |
 | `Services/Auth/NavigationPermissionService.cs` | 修改 | `CanAccessModuleAsync` 整合雙層檢查 |

@@ -1,0 +1,219 @@
+@* 個人化設定 Modal *@
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IEmployeePreferenceService EmployeePreferenceService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="個人化設定"
+                   Icon="bi bi-person-gear"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   IsLoading="@isLoading"
+                   LoadingMessage="載入設定中..."
+                   OnClose="@HandleClose">
+
+    <HeaderButtons>
+        <div class="d-flex gap-2 align-items-center">
+            <GenericButtonComponent Variant="ButtonVariant.Green"
+                                  Size="ButtonSize.Small"
+                                  Text="儲存"
+                                  Icon="bi bi-check-lg"
+                                  OnClick="HandleSave"
+                                  IsDisabled="@isLoading"
+                                  Title="儲存個人化設定" />
+        </div>
+    </HeaderButtons>
+
+    <BodyContent>
+        <GenericFormComponent TModel="EmployeePreference"
+                              Model="@employeePreference"
+                              FieldDefinitions="@allFields"
+                              FieldSections="@fieldSections"
+                              TabDefinitions="@tabDefinitions" />
+    </BodyContent>
+
+</BaseModalComponent>
+
+@code {
+    // ===== 參數 =====
+
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnSaved { get; set; }
+
+    // ===== 私有欄位 =====
+
+    private bool isLoading = false;
+    private int? currentEmployeeId = null;
+
+    // 語言偏好
+    private EmployeePreference employeePreference = new();
+
+    // 個人資料
+    private Employee? currentEmployee = null;
+    private string newPassword = string.Empty;
+    private string confirmPassword = string.Empty;
+
+    // Tab 定義
+    private readonly List<FormFieldDefinition> allFields = new();
+    private readonly Dictionary<string, string> fieldSections = new();
+    private List<FormTabDefinition> tabDefinitions = new();
+
+    // ===== Tab RenderFragment =====
+
+    private RenderFragment CreatePersonalDataTabContent() => __builder =>
+    {
+        <PersonalDataTab Model="@currentEmployee"
+                         NewPassword="@newPassword"
+                         NewPasswordChanged="@((pwd) => { newPassword = pwd; StateHasChanged(); })"
+                         ConfirmPassword="@confirmPassword"
+                         ConfirmPasswordChanged="@((pwd) => { confirmPassword = pwd; StateHasChanged(); })" />
+    };
+
+    private RenderFragment CreateLanguageRegionTabContent() => __builder =>
+    {
+        <LanguageRegionTab Model="@employeePreference" />
+    };
+
+    // ===== 生命週期 =====
+
+    protected override void OnInitialized()
+    {
+        tabDefinitions = new List<FormTabDefinition>
+        {
+            new() { Label = "個人資料", Icon = "bi bi-person", SectionNames = new(), CustomContent = CreatePersonalDataTabContent() },
+            new() { Label = "語言與地區", Icon = "bi bi-translate", SectionNames = new(), CustomContent = CreateLanguageRegionTabContent() }
+        };
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isLoading && currentEmployeeId == null)
+        {
+            await LoadDataAsync();
+        }
+    }
+
+    // ===== 資料載入 =====
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            currentEmployeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+
+            if (currentEmployeeId.HasValue)
+            {
+                // 載入語言偏好
+                employeePreference = await EmployeePreferenceService.GetByEmployeeIdAsync(currentEmployeeId.Value);
+
+                // 載入員工個人資料
+                currentEmployee = await EmployeeService.GetByIdAsync(currentEmployeeId.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入設定失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 事件處理 =====
+
+    private async Task HandleSave()
+    {
+        if (!currentEmployeeId.HasValue)
+        {
+            await NotificationService.ShowErrorAsync("無法識別目前登入的使用者");
+            return;
+        }
+
+        // 密碼確認驗證
+        if (!string.IsNullOrEmpty(newPassword) && newPassword != confirmPassword)
+        {
+            await NotificationService.ShowErrorAsync("兩次輸入的密碼不一致，請重新確認");
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 1. 儲存語言偏好
+            var preferenceResult = await EmployeePreferenceService.SavePreferenceAsync(currentEmployeeId.Value, employeePreference);
+
+            if (!preferenceResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync($"儲存語言設定失敗：{preferenceResult.ErrorMessage}");
+                return;
+            }
+
+            // 2. 儲存個人資料
+            if (currentEmployee != null)
+            {
+                var profileResult = await EmployeeService.UpdateSelfProfileAsync(
+                    currentEmployeeId.Value,
+                    currentEmployee.Name ?? string.Empty,
+                    currentEmployee.Mobile,
+                    currentEmployee.Email,
+                    string.IsNullOrWhiteSpace(newPassword) ? null : newPassword
+                );
+
+                if (!profileResult.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync($"儲存個人資料失敗：{profileResult.ErrorMessage}");
+                    return;
+                }
+            }
+
+            await NotificationService.ShowSuccessAsync("個人化設定已儲存");
+
+            if (OnSaved.HasDelegate)
+                await OnSaved.InvokeAsync();
+
+            await CloseModalAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleClose()
+    {
+        await CloseModalAsync();
+    }
+
+    private async Task CloseModalAsync()
+    {
+        // 關閉時重置狀態，下次開啟時重新載入
+        currentEmployeeId = null;
+        currentEmployee = null;
+        employeePreference = new();
+        newPassword = string.Empty;
+        confirmPassword = string.Empty;
+
+        if (IsVisibleChanged.HasDelegate)
+            await IsVisibleChanged.InvokeAsync(false);
+    }
+}

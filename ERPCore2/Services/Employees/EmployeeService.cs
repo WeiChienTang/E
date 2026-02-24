@@ -1014,6 +1014,48 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 個人資料自助更新
+
+        /// <summary>
+        /// 員工自助更新個人資料（僅允許更新 Name、Mobile、Email、Password）
+        /// Account、RoleId 等敏感欄位由管理員控制，不在此更新範圍
+        /// </summary>
+        public async Task<ServiceResult> UpdateSelfProfileAsync(int employeeId, string name, string? mobile, string? email, string? newPassword)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                    return ServiceResult.Failure("姓名不能為空");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
+
+                if (employee == null)
+                    return ServiceResult.Failure("找不到員工資料");
+
+                employee.Name = name.Trim();
+                employee.Mobile = string.IsNullOrWhiteSpace(mobile) ? null : mobile.Trim();
+                employee.Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+                employee.UpdatedAt = DateTime.Now;
+
+                if (!string.IsNullOrWhiteSpace(newPassword))
+                {
+                    employee.Password = SeedDataHelper.HashPassword(newPassword);
+                }
+
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateSelfProfileAsync), GetType(), _logger,
+                    new { EmployeeId = employeeId });
+                return ServiceResult.Failure("更新個人資料時發生錯誤");
+            }
+        }
+
+        #endregion
     }
 }
 

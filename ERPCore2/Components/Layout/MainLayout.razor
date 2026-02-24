@@ -90,6 +90,10 @@
 <SystemParameterSettingsModal IsVisible="@showSystemParameterSettings"
                              IsVisibleChanged="@((bool visible) => showSystemParameterSettings = visible)" />
 
+@* 個人化設定 Modal *@
+<PersonalPreferenceModalComponent IsVisible="@showPersonalPreference"
+                                  IsVisibleChanged="@((bool visible) => showPersonalPreference = visible)" />
+
 @* 快速功能表（右下角浮動按鈕） *@
 <QuickActionMenu @rendermode="InteractiveServer" 
                 OnPageSearchClick="@OpenPageSearch"
@@ -122,6 +126,9 @@
     
     // 系統參數設定 Modal 狀態
     private bool showSystemParameterSettings = false;
+
+    // 個人化設定 Modal 狀態
+    private bool showPersonalPreference = false;
     
     // Action 處理器註册表
     private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;
@@ -153,6 +160,7 @@
         actionRegistry.Register("OpenAccountsReceivableReport", OpenAccountsReceivableReport);
         actionRegistry.Register("OpenRolePermissionManagement", OpenRolePermissionManagement);
         actionRegistry.Register("OpenSystemParameterSettings", OpenSystemParameterSettings);
+        actionRegistry.Register("OpenPersonalPreference", OpenPersonalPreference);
         actionRegistry.Register("OpenCustomerReportIndex", OpenCustomerReportIndex);
         actionRegistry.Register("OpenSupplierReportIndex", OpenSupplierReportIndex);        
         actionRegistry.Register("OpenProductReportIndex", OpenProductReportIndex);
@@ -357,6 +365,23 @@
         catch
         {
             // 忽略開啟系統參數設定失敗
+        }
+    }
+
+    /// <summary>
+    /// 開啟個人化設定 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenPersonalPreference()
+    {
+        try
+        {
+            showPersonalPreference = true;
+            StateHasChanged();
+        }
+        catch
+        {
+            // 忽略開啟個人化設定失敗
         }
     }
     

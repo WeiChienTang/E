@@ -154,6 +154,7 @@ namespace ERPCore2.Data.Entities
         public Role? Role { get; set; }
         public Department? Department { get; set; }
         public EmployeePosition? EmployeePosition { get; set; }
+        public EmployeePreference? Preference { get; set; }
         
         // 聯絡資訊請使用 IContactService 取得 (OwnerType = "Employee", OwnerId = this.Id)
         // 地址資訊請使用 IAddressService 取得

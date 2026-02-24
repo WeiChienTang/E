@@ -18,6 +18,7 @@
 | [README_系統參數設計.md](README_系統參數設計.md) | SystemParameter 實體、快取服務、審核流程開關、Tab 式設定介面 |
 | [README_首頁客製化設計.md](README_首頁客製化設計.md) | 動態面板架構、3 種導航類型、DashboardService、Widget 選擇器 |
 | [README_系統控制設計.md](README_系統控制設計.md) | 雙層存取控制、CompanyModule 模組管理、三層防護機制 |
+| [README_個人化設定設計.md](README_個人化設定設計.md) | EmployeePreference 1-to-1 設計、語言設定、未來擴充指南 |
 
 ---
 

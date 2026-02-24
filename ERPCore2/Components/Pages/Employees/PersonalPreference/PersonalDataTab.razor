@@ -1,0 +1,118 @@
+@* 個人資料 Tab *@
+@* 帳號唯讀、姓名/手機/Email 可編輯；密碼獨立區塊 *@
+
+<GenericFormComponent TModel="Employee"
+                      Model="@(Model ?? _fallback)"
+                      FieldDefinitions="@allFields"
+                      FieldSections="@fieldSections" />
+
+@* ===== 變更密碼 ===== *@
+<div class="mt-4 pt-3 border-top">
+    <h6 class="mb-3">
+        <i class="bi bi-shield-lock me-2"></i>變更密碼
+    </h6>
+    <p class="text-muted small mb-3">留空表示不變更密碼。</p>
+
+    <div class="row g-3">
+        <div class="col-12 col-sm-6">
+            <label class="form-label fw-medium">新密碼</label>
+            <input type="password" class="form-control" maxlength="20"
+                   placeholder="留空表示不變更密碼"
+                   value="@NewPassword"
+                   @oninput="@(e => NewPasswordChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty))"
+                   autocomplete="new-password" />
+        </div>
+        <div class="col-12 col-sm-6">
+            <label class="form-label fw-medium">確認新密碼</label>
+            <input type="password" class="form-control" maxlength="20"
+                   placeholder="再次輸入新密碼"
+                   value="@ConfirmPassword"
+                   @oninput="@(e => ConfirmPasswordChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty))"
+                   autocomplete="new-password" />
+            @if (!string.IsNullOrEmpty(NewPassword) && NewPassword != ConfirmPassword)
+            {
+                <div class="form-text text-danger mt-1">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    兩次輸入的密碼不一致
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(NewPassword) && NewPassword == ConfirmPassword)
+            {
+                <div class="form-text text-success mt-1">
+                    <i class="bi bi-check-circle me-1"></i>
+                    密碼一致
+                </div>
+            }
+            else
+            {
+                <div class="form-text text-muted mt-1">
+                    <i class="bi bi-info-circle me-1"></i>
+                    留空表示不變更密碼
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Employee? Model { get; set; }
+
+    [Parameter]
+    public string NewPassword { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> NewPasswordChanged { get; set; }
+
+    [Parameter]
+    public string ConfirmPassword { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ConfirmPasswordChanged { get; set; }
+
+    private readonly Employee _fallback = new();
+
+    private readonly List<FormFieldDefinition> allFields = new()
+    {
+        new FormFieldDefinition
+        {
+            PropertyName = nameof(Employee.Account),
+            Label = "登入帳號",
+            FieldType = FormFieldType.Text,
+            IsReadOnly = true,
+            HelpText = "帳號由管理員設定，無法自行修改"
+        },
+        new FormFieldDefinition
+        {
+            PropertyName = nameof(Employee.Name),
+            Label = "姓名",
+            FieldType = FormFieldType.Text,
+            IsRequired = true,
+            MaxLength = 10,
+            Placeholder = "請輸入姓名"
+        },
+        new FormFieldDefinition
+        {
+            PropertyName = nameof(Employee.Mobile),
+            Label = "手機號碼",
+            FieldType = FormFieldType.MobilePhone,
+            Placeholder = "0912-345-678"
+        },
+        new FormFieldDefinition
+        {
+            PropertyName = nameof(Employee.Email),
+            Label = "電子郵件",
+            FieldType = FormFieldType.Text,
+            MaxLength = 50,
+            Placeholder = "請輸入電子郵件"
+        }
+    };
+
+    private readonly Dictionary<string, string> fieldSections = new()
+    {
+        { nameof(Employee.Account), "帳號資訊" },
+        { nameof(Employee.Name),    "基本資料" },
+        { nameof(Employee.Mobile),  "基本資料" },
+        { nameof(Employee.Email),   "基本資料" }
+    };
+}

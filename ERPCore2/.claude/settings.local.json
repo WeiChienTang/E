@@ -23,7 +23,8 @@
       "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Data\\\\Entities\\\\FinancialManagement\\\\FinancialTransaction.cs\")",
       "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Models\\\\Enums\\\\FinancialTransactionTypeEnum.cs\")",
       "Bash(dotnet ef:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Employees\\\\PersonalPreferenceModalComponent.razor\" -Force)"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

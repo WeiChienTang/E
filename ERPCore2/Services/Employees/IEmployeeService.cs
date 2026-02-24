@@ -152,5 +152,17 @@ namespace ERPCore2.Services
         /// </summary>
         /// <returns>是否為超級管理員</returns>
         Task<bool> IsSuperAdminAsync();
+
+        /// <summary>
+        /// 員工自助更新個人資料（僅允許更新 Name、Mobile、Email、Password）
+        /// Account、RoleId 等欄位由管理員控制，不在此更新範圍
+        /// </summary>
+        /// <param name="employeeId">員工ID</param>
+        /// <param name="name">姓名</param>
+        /// <param name="mobile">手機號碼</param>
+        /// <param name="email">電子郵件</param>
+        /// <param name="newPassword">新密碼（空白表示不變更）</param>
+        /// <returns>操作結果</returns>
+        Task<ServiceResult> UpdateSelfProfileAsync(int employeeId, string name, string? mobile, string? email, string? newPassword);
     }
 }

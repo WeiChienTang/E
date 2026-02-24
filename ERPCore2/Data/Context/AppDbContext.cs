@@ -94,6 +94,7 @@ namespace ERPCore2.Data.Context
       public DbSet<TextMessageTemplate> TextMessageTemplates { get; set; }
       public DbSet<EmployeeDashboardPanel> EmployeeDashboardPanels { get; set; }
       public DbSet<EmployeeDashboardConfig> EmployeeDashboardConfigs { get; set; }
+      public DbSet<EmployeePreference> EmployeePreferences { get; set; }
       public DbSet<VehicleType> VehicleTypes { get; set; }
       public DbSet<Vehicle> Vehicles { get; set; }
       public DbSet<VehicleMaintenance> VehicleMaintenances { get; set; }
@@ -1233,6 +1234,17 @@ namespace ERPCore2.Data.Context
                               .OnDelete(DeleteBehavior.NoAction);
 
                         // 面板關聯（已在 Panel Entity 設定，此處可省略）
+                  });
+
+                  // 員工個人化設定（1-to-1）
+                  modelBuilder.Entity<EmployeePreference>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        entity.HasOne(ep => ep.Employee)
+                              .WithOne(e => e.Preference)
+                              .HasForeignKey<EmployeePreference>(ep => ep.EmployeeId)
+                              .OnDelete(DeleteBehavior.Cascade);
                   });
 
                   // 廢料管理相關

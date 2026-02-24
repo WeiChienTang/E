@@ -66,6 +66,7 @@ namespace ERPCore2.Data
                 return new List<IDataSeeder>
                 {        
                     new SystemParameterSeeder(),    
+                    new CompanyModuleSeeder(),              // 公司模組（從 NavigationConfig 自動衍生）
                     new PermissionSeeder(),                    
                     new RoleSeeder(),
                     new RolePermissionSeeder(),     // 在 Role 和 Permission 之後執行
@@ -86,6 +87,7 @@ namespace ERPCore2.Data
             return new List<IDataSeeder>
             {
                 new SystemParameterSeeder(),    
+                new CompanyModuleSeeder(),              // 公司模組（從 NavigationConfig 自動衍生）
                 new RoleSeeder(),
                 new RolePermissionSeeder(),
                 new PaymentMethodSeeder(),
