@@ -25,6 +25,7 @@
                         EntityName="領料單"
                         GetEntityDisplayName="@(issue => issue.Code ?? "未命名")"
                         RequiredPermission="MaterialIssue.Read"
+                        RequiredModule="Warehouse"
                         OnAddClick="@HandleAddClick"
                         OnRowClick="@HandleEditClick"
                         @ref="indexComponent"/>

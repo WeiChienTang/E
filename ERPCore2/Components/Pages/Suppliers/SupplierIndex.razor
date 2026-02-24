@@ -17,6 +17,7 @@
                           FilterApplier="@ApplySupplierFilters"
                           GetEntityDisplayName="@(supplier => supplier.CompanyName)"
                           RequiredPermission="Supplier.Read"
+                          RequiredModule="Suppliers"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />

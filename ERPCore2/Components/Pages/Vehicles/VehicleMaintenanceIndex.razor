@@ -17,6 +17,7 @@
                           FilterApplier="@ApplyMaintenanceFilters"
                           GetEntityDisplayName="@(vm => $"{vm.Vehicle?.LicensePlate} - {vm.MaintenanceDate:yyyy/MM/dd}")"
                           RequiredPermission="VehicleMaintenance.Read"
+                          RequiredModule="Vehicles"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />

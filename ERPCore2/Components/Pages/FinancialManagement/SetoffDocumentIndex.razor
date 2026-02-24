@@ -19,6 +19,7 @@
                       FilterApplier="@ApplySetoffDocumentFilters"
                       GetEntityDisplayName="@(setoffDoc => setoffDoc.Code)"
                       RequiredPermission="SetoffDocument.Read"
+                      RequiredModule="FinancialManagement"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
                       @ref="indexComponent" />

@@ -177,7 +177,10 @@ namespace ERPCore2.Data
             
             // 公司設定服務
             services.AddScoped<ICompanyService, CompanyService>();
-            
+
+            // 公司模組管理服務（控制各功能模組的啟用狀態）
+            services.AddScoped<ICompanyModuleService, CompanyModuleService>();
+
             // 系統參數服務
             services.AddScoped<ISystemParameterService, SystemParameterService>();
             

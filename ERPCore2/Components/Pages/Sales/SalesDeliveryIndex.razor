@@ -23,6 +23,7 @@
                           FilterApplier="@ApplySalesDeliveryFilters"
                           GetEntityDisplayName="@(delivery => delivery.Code)"
                           RequiredPermission="SalesDelivery.Read"
+                          RequiredModule="Sales"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"

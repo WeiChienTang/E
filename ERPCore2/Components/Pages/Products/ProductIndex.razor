@@ -20,6 +20,7 @@
                           FilterApplier="@ApplyProductFilters"
                           GetEntityDisplayName="@(product => product.Name)"
                           RequiredPermission="Product.Read"
+                          RequiredModule="Products"
                           ShowBarcodePrintButton="true"
                           OnBarcodePrintClick="@HandleBarcodePrintClick"
                           OnAddClick="@modalHandler.ShowAddModalAsync"

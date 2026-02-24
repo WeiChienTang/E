@@ -18,6 +18,7 @@
                         EntityName="部門"
                         GetEntityDisplayName="@(dept => dept.Name)"
                         RequiredPermission="Department.Read"
+                        RequiredModule="Employees"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>

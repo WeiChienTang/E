@@ -26,6 +26,7 @@
                           FilterApplier="@ApplyPurchaseReturnFilters"
                           GetEntityDisplayName="@(returnItem => returnItem.Code)"
                           RequiredPermission="PurchaseReturn.Read"
+                          RequiredModule="Purchase"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"

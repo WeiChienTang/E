@@ -29,6 +29,7 @@ namespace ERPCore2.Services
     public class NavigationPermissionService : INavigationPermissionService
     {
         private readonly IPermissionService _permissionService;
+        private readonly ICompanyModuleService _companyModuleService;
         private readonly AuthenticationStateProvider _authenticationStateProvider;
         private readonly ILogger<NavigationPermissionService> _logger;
         private readonly IMemoryCache _cache;
@@ -37,11 +38,13 @@ namespace ERPCore2.Services
 
         public NavigationPermissionService(
             IPermissionService permissionService,
+            ICompanyModuleService companyModuleService,
             AuthenticationStateProvider authenticationStateProvider,
             ILogger<NavigationPermissionService> logger,
             IMemoryCache cache)
         {
             _permissionService = permissionService;
+            _companyModuleService = companyModuleService;
             _authenticationStateProvider = authenticationStateProvider;
             _logger = logger;
             _cache = cache;
@@ -82,18 +85,26 @@ namespace ERPCore2.Services
                 var employeeId = await GetCurrentEmployeeIdAsync();
                 if (employeeId <= 0) return false;
 
-                // 使用批次快取
+                // 使用批次快取取得使用者權限
                 var allPermissions = await GetAllEmployeePermissionsAsync(employeeId);
-                
-                // 檢查是否有該模組的任何權限
+
+                // SuperAdmin 跳過所有限制
+                if (allPermissions.Contains("System.Admin"))
+                    return true;
+
+                // 公司層級：檢查此模組是否已啟用
+                if (!await _companyModuleService.IsModuleEnabledAsync(module))
+                    return false;
+
+                // 使用者層級：檢查是否有該模組的任何權限
                 return allPermissions.Any(p => p.StartsWith(module + ".", StringComparison.OrdinalIgnoreCase));
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanAccessModuleAsync), GetType(), _logger, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanAccessModuleAsync), GetType(), _logger, new {
                     Method = nameof(CanAccessModuleAsync),
                     ServiceType = GetType().Name,
-                    Module = module 
+                    Module = module
                 });
                 return false;
             }

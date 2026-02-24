@@ -18,6 +18,7 @@
                         EntityName="付款方式"
                         GetEntityDisplayName="@(pm => pm.Name)"
                         RequiredPermission="PaymentMethod.Read"
+                        RequiredModule="FinancialManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>

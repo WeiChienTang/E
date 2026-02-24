@@ -17,6 +17,7 @@
                           FilterApplier="@ApplyRoleFilters"
                           GetEntityDisplayName="@(role => role.Name)"
                           RequiredPermission="Role.Read"
+                          RequiredModule="Employees"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />

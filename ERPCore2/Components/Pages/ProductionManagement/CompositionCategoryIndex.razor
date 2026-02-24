@@ -18,6 +18,7 @@
                         EntityName="物料清單類型"
                         GetEntityDisplayName="@(category => category.Name)"
                         RequiredPermission="CompositionCategory.Read"
+                        RequiredModule="ProductionManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>

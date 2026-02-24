@@ -17,6 +17,7 @@
                           FilterApplier="@ApplyUnitFilters"
                           GetEntityDisplayName="@(unit => unit.Name)"
                           RequiredPermission="Unit.Read"
+                          RequiredModule="Products"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />

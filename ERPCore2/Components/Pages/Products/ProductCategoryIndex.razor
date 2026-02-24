@@ -17,6 +17,7 @@
                         EntityName="商品類型"
                         GetEntityDisplayName="@(category => category.Name)"
                         RequiredPermission="ProductCategory.Read"
+                        RequiredModule="Products"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent">

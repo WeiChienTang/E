@@ -21,6 +21,7 @@
                         EntityName="生產排程"
                         GetEntityDisplayName="@(schedule => schedule.Code)"
                         RequiredPermission="ProductionSchedule.Read"
+                        RequiredModule="ProductionManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>

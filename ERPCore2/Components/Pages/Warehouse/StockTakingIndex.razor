@@ -27,6 +27,7 @@
                           EntityName="盤點單"
                           GetEntityDisplayName="@(st => st.TakingNumber ?? "未命名")"
                           RequiredPermission="StockTaking.Read"
+                          RequiredModule="Warehouse"
                           OnAddClick="@HandleAddClick"
                           OnRowClick="@HandleEditClick"
                           @ref="indexComponent" />

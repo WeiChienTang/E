@@ -25,6 +25,7 @@
                           FilterApplier="@ApplySalesReturnFilters"
                           GetEntityDisplayName="@(salesReturn => salesReturn.Code)"
                           RequiredPermission="SalesReturn.Read"
+                          RequiredModule="Sales"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"

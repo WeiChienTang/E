@@ -21,6 +21,7 @@
                       FilterApplier="@ApplySalesOrderFilters"
                       GetEntityDisplayName="@(salesOrder => salesOrder.Code)"
                       RequiredPermission="SalesOrder.Read"
+                      RequiredModule="Sales"
                       ShowBatchPrintButton="true"
                       OnBatchPrintClick="@HandleBatchPrintAsync"
                       OnAddClick="@modalHandler.ShowAddModalAsync"

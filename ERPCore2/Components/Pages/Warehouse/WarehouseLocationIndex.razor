@@ -18,6 +18,7 @@
                         FilterApplier="@ApplyWarehouseLocationFilters"
                         GetEntityDisplayName="@(warehouseLocation => $"{warehouseLocation.Warehouse?.Name} - {warehouseLocation.Code}")"
                         RequiredPermission="WarehouseLocation.Read"
+                        RequiredModule="Warehouse"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent" />

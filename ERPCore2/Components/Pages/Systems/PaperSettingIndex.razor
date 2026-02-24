@@ -17,6 +17,7 @@
                       FilterApplier="@ApplyPaperSettingFilters"
                       GetEntityDisplayName="@(paper => paper.Name)"
                       RequiredPermission="PaperSetting.Read"
+                      RequiredModule="Systems"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
                       @ref="indexComponent" />

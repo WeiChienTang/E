@@ -17,6 +17,7 @@
                           FilterApplier="@ApplyWasteRecordFilters"
                           GetEntityDisplayName="@(wr => wr.Code ?? $"廢料記錄#{wr.Id}")"
                           RequiredPermission="WasteRecord.Read"
+                          RequiredModule="WasteManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />

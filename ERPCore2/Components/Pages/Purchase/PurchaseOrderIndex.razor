@@ -22,6 +22,7 @@
                           FilterApplier="@ApplyPurchaseOrderFilters"
                           GetEntityDisplayName="@(order => order.Code)"
                           RequiredPermission="PurchaseOrder.Read"
+                          RequiredModule="Purchase"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
                           ShowBatchApprovalButton="true"

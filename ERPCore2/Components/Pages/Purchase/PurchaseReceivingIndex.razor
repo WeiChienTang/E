@@ -23,6 +23,7 @@
                           FilterApplier="@ApplyPurchaseReceivingFilters"
                           GetEntityDisplayName="@(receipt => receipt.Code)"
                           RequiredPermission="PurchaseReceiving.Read"
+                          RequiredModule="Purchase"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"

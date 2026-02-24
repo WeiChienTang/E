@@ -25,6 +25,7 @@
                         EntityName="庫存"
                         GetEntityDisplayName="@(stock => $"{GetProductName(stock.ProductId)}")"
                         RequiredPermission="InventoryStock.Read"
+                        RequiredModule="Warehouse"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         ShowStatisticsCards="true"

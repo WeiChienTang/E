@@ -18,6 +18,7 @@
                         EntityName="職位設定"
                         GetEntityDisplayName="@(position => position.Name)"
                         RequiredPermission="EmployeePosition.Read"
+                        RequiredModule="Employees"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>

@@ -21,6 +21,7 @@
                           FilterApplier="@ApplyInventoryTransactionFilters"
                           GetEntityDisplayName="@(transaction => transaction.TransactionNumber)"
                           RequiredPermission="InventoryTransaction.Read"
+                          RequiredModule="Warehouse"
                           ShowAddButton="false"
                           AutoAddRemarksColumn="false"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

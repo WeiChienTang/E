@@ -17,6 +17,7 @@
                           FilterApplier="@ApplyFilters"
                           GetEntityDisplayName="@(je => $"{je.Code} {je.Description}")"
                           RequiredPermission="JournalEntry.Read"
+                          RequiredModule="FinancialManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />

@@ -7,6 +7,8 @@
 
 @inject ISystemParameterService SystemParameterService
 @inject ISubAccountService SubAccountService
+@inject ICompanyModuleService CompanyModuleService
+@inject INavigationPermissionService NavigationPermissionService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -107,6 +109,11 @@
     private bool IsBatchCreatingSupplier => isBatchCreating && batchTarget == "supplier";
     private bool IsBatchCreatingProduct  => isBatchCreating && batchTarget == "product";
 
+    // 模組管理
+    private bool isSuperAdmin = false;
+    private List<CompanyModule> companyModules = new();
+    private bool isModuleSaving = false;
+
     // ===== 表單欄位與 Tab 定義 =====
 
     private readonly List<FormFieldDefinition> allFields = new()
@@ -189,6 +196,31 @@
                 ExtraContent = CreateSubAccountBatchContent()
             }
         };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        // 使用現有權限服務檢查是否為 SuperAdmin
+        try
+        {
+            isSuperAdmin = await NavigationPermissionService.CanAccessAsync("System.Admin");
+        }
+        catch { }
+
+        // SuperAdmin 才加入模組管理 Tab（載入後動態加入）
+        if (isSuperAdmin)
+        {
+            companyModules = await CompanyModuleService.GetAllAsync();
+            tabDefinitions.Add(new FormTabDefinition
+            {
+                Label = "模組管理",
+                Icon = "bi bi-toggles",
+                SectionNames = new(),
+                ExtraContent = CreateModuleManagementContent()
+            });
+        }
     }
 
     private RenderFragment CreateSubAccountBatchContent() => __builder =>
@@ -387,6 +419,79 @@
         finally
         {
             isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 模組管理 =====
+
+    private RenderFragment CreateModuleManagementContent() => __builder =>
+    {
+        <div class="mt-2">
+            <p class="text-muted mb-3">控制此系統可使用的功能模組。停用的模組將對所有使用者隱藏（SuperAdmin 除外）。</p>
+            <div class="list-group mb-3">
+                @foreach (var module in companyModules)
+                {
+                    <div class="list-group-item d-flex align-items-center gap-3">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   role="switch"
+                                   id="module_@module.Id"
+                                   checked="@module.IsEnabled"
+                                   disabled="@(isModuleSaving || isSaving || isLoading)"
+                                   @onchange="@((e) => module.IsEnabled = (bool)(e.Value ?? true))" />
+                        </div>
+                        <label class="mb-0 flex-grow-1" for="module_@module.Id">
+                            <strong>@module.DisplayName</strong>
+                            @if (!string.IsNullOrEmpty(module.Description))
+                            {
+                                <small class="text-muted d-block">@module.Description</small>
+                            }
+                        </label>
+                        <span class="badge @(module.IsEnabled ? "bg-success" : "bg-secondary")">
+                            @(module.IsEnabled ? "啟用" : "停用")
+                        </span>
+                    </div>
+                }
+            </div>
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                   Text="儲存模組設定"
+                                   OnClick="HandleSaveModulesAsync"
+                                   IsDisabled="@(isModuleSaving || isSaving || isLoading)"
+                                   IsLoading="@isModuleSaving"
+                                   Title="儲存功能模組啟用狀態" />
+        </div>
+    };
+
+    private async Task HandleSaveModulesAsync()
+    {
+        if (isModuleSaving) return;
+
+        try
+        {
+            isModuleSaving = true;
+            StateHasChanged();
+
+            var createdBy = await GetCurrentUserAsync();
+            var result = await CompanyModuleService.UpdateModulesAsync(companyModules, createdBy);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("模組設定已儲存");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存模組設定時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isModuleSaving = false;
             StateHasChanged();
         }
     }

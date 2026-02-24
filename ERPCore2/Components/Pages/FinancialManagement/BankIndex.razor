@@ -18,6 +18,7 @@
                         EntityName="銀行"
                         GetEntityDisplayName="@(bank => bank.BankName)"
                         RequiredPermission="Bank.Read"
+                        RequiredModule="FinancialManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>

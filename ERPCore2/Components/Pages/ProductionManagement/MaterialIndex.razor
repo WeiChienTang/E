@@ -19,6 +19,7 @@
                           EntityName="材質"
                           GetEntityDisplayName="@(material => material.Name)"
                           RequiredPermission="Material.Read"
+                          RequiredModule="ProductionManagement"
                           @ref="indexComponent" />
 
 @code {

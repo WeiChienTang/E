@@ -20,6 +20,7 @@
                         EntityName="商品物料清單"
                         GetEntityDisplayName="@(comp => comp.Code ?? $"物料清單{comp.Id}")"
                         RequiredPermission="ProductComposition.Read"
+                        RequiredModule="ProductionManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>

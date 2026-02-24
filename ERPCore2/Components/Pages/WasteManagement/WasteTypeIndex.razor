@@ -17,6 +17,7 @@
                           FilterApplier="@ApplyWasteTypeFilters"
                           GetEntityDisplayName="@(wt => wt.Name)"
                           RequiredPermission="WasteType.Read"
+                          RequiredModule="WasteManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />

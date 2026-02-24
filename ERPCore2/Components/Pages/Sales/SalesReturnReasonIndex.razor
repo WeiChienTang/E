@@ -19,6 +19,7 @@
                           FilterApplier="@ApplySalesReturnReasonFilters"
                           GetEntityDisplayName="@(reason => reason.Name)"
                           RequiredPermission="SalesReturnReason.Read"
+                          RequiredModule="Sales"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />

@@ -17,6 +17,7 @@
                         FilterApplier="@ApplyWarehouseFilters"
                         GetEntityDisplayName="@(warehouse => warehouse.Name)"
                         RequiredPermission="Warehouse.Read"
+                        RequiredModule="Warehouse"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent" />

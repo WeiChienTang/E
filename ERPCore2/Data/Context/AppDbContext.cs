@@ -102,6 +102,7 @@ namespace ERPCore2.Data.Context
       public DbSet<AccountItem> AccountItems { get; set; }
       public DbSet<JournalEntry> JournalEntries { get; set; }
       public DbSet<JournalEntryLine> JournalEntryLines { get; set; }
+      public DbSet<CompanyModule> CompanyModules { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {

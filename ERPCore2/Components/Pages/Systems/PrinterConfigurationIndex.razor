@@ -17,6 +17,7 @@
                       FilterApplier="@ApplyPrinterConfigurationFilters"
                       GetEntityDisplayName="@(printer => printer.Name)"
                       RequiredPermission="PrinterConfiguration.Read"
+                      RequiredModule="Systems"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
                       @ref="indexComponent" />

@@ -6,6 +6,7 @@
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICompanyModuleService CompanyModuleService
 
 @using ERPCore2.Models.Enums
 @using ERPCore2.Components.Shared.UI.Form
@@ -22,6 +23,18 @@
         requiredPermission = "System.RequiredPermissionNotSet";
     }
 }
+
+@* 公司層級模組檢查 - 模組未啟用時顯示拒絕畫面 *@
+@if (!string.IsNullOrWhiteSpace(RequiredModule) && !_isModuleEnabled)
+{
+    <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 60vh;">
+        <i class="bi bi-lock-fill text-secondary" style="font-size: 4rem;"></i>
+        <h4 class="mt-3 text-secondary">此功能未開放</h4>
+        <p class="text-muted">您的系統目前未啟用此功能模組，請聯絡系統管理員。</p>
+    </div>
+}
+else
+{
 
 <PagePermissionCheck RequiredPermission="@requiredPermission">
 
@@ -124,6 +137,8 @@
 </div>
 </PagePermissionCheck>
 
+} @* end else (module enabled) *@
+
 @code {
     // ===== 刷新方式枚舉 =====
     
@@ -146,6 +161,9 @@
     
     // 權限檢查參數
     [Parameter] public string RequiredPermission { get; set; } = "";
+
+    // 公司層級模組檢查參數
+    [Parameter] public string RequiredModule { get; set; } = "";
     
     // 頁面行為設定
     [Parameter] public RefreshMode PageRefreshMode { get; set; } = RefreshMode.Smooth;
@@ -736,6 +754,7 @@
     
     // 狀態管理
     private bool isLoading = true;
+    private bool _isModuleEnabled = true; // 公司層級模組是否啟用（預設 true，避免閃爍）
     
     // ===== 公開屬性 (供外部存取) =====
     public SearchFilterModel SearchModel => searchModel;
@@ -750,7 +769,17 @@
     protected override async Task OnInitializedAsync()
     {
         pageSize = DefaultPageSize;
-        await InitializePageAsync();
+
+        // 公司層級模組檢查（在頁面初始化時執行，阻擋直接輸入網址存取）
+        if (!string.IsNullOrWhiteSpace(RequiredModule))
+        {
+            _isModuleEnabled = await CompanyModuleService.IsModuleEnabledAsync(RequiredModule);
+        }
+
+        if (_isModuleEnabled)
+        {
+            await InitializePageAsync();
+        }
     }
     
     // ===== 初始化方法 =====

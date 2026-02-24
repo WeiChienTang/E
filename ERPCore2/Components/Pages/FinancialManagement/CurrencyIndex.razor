@@ -18,6 +18,7 @@
                         EntityName="貨幣"
                         GetEntityDisplayName="@(currency => currency.Name)"
                         RequiredPermission="Currency.Read"
+                        RequiredModule="FinancialManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>

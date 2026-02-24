@@ -21,6 +21,7 @@
                         EntityName="員工"
                         GetEntityDisplayName="@(employee => employee.Name?.Trim() ?? "")"
                         RequiredPermission="Employee.Read"
+                        RequiredModule="Employees"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent" />
