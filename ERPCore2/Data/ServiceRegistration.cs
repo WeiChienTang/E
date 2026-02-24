@@ -55,6 +55,7 @@ namespace ERPCore2.Data
             services.AddScoped<IBankService, BankService>();
             services.AddScoped<IAccountItemService, AccountItemService>();
             services.AddScoped<IJournalEntryService, JournalEntryService>();
+            services.AddScoped<ISubAccountService, SubAccountService>();
             services.AddScoped<IJournalEntryAutoGenerationService, JournalEntryAutoGenerationService>();
             services.AddScoped<ISetoffDocumentService, SetoffDocumentService>();
             services.AddScoped<ISetoffProductDetailService, SetoffProductDetailService>();

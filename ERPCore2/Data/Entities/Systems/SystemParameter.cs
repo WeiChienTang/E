@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ERPCore2.Models.Enums;
 
 namespace ERPCore2.Data.Entities
 {
@@ -57,5 +58,52 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Display(Name = "啟用庫存調撥審核")]
         public bool EnableInventoryTransferApproval { get; set; } = false;
+
+        // ===== 子科目自動產生設定 =====
+
+        /// <summary>
+        /// 新增客戶時自動建立應收帳款子科目
+        /// </summary>
+        [Display(Name = "自動建立客戶子科目")]
+        public bool AutoCreateCustomerSubAccount { get; set; } = false;
+
+        /// <summary>
+        /// 新增廠商時自動建立應付帳款子科目
+        /// </summary>
+        [Display(Name = "自動建立廠商子科目")]
+        public bool AutoCreateSupplierSubAccount { get; set; } = false;
+
+        /// <summary>
+        /// 新增商品時自動建立存貨子科目
+        /// </summary>
+        [Display(Name = "自動建立商品子科目")]
+        public bool AutoCreateProductSubAccount { get; set; } = false;
+
+        /// <summary>
+        /// 應收帳款統制科目代碼（客戶子科目的父層），預設 1191
+        /// </summary>
+        [MaxLength(20)]
+        [Display(Name = "應收帳款統制科目代碼")]
+        public string CustomerSubAccountParentCode { get; set; } = "1191";
+
+        /// <summary>
+        /// 應付帳款統制科目代碼（廠商子科目的父層），預設 2171
+        /// </summary>
+        [MaxLength(20)]
+        [Display(Name = "應付帳款統制科目代碼")]
+        public string SupplierSubAccountParentCode { get; set; } = "2171";
+
+        /// <summary>
+        /// 商品存貨統制科目代碼（商品子科目的父層），預設 1231
+        /// </summary>
+        [MaxLength(20)]
+        [Display(Name = "商品存貨統制科目代碼")]
+        public string ProductSubAccountParentCode { get; set; } = "1231";
+
+        /// <summary>
+        /// 子科目代碼格式：Sequential（流水號）或 EntityCode（實體代碼）
+        /// </summary>
+        [Display(Name = "子科目代碼格式")]
+        public SubAccountCodeFormat SubAccountCodeFormat { get; set; } = SubAccountCodeFormat.Sequential;
     }
 }

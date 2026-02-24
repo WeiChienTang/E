@@ -12,24 +12,41 @@ namespace ERPCore2.Services
     /// </summary>
     public class SupplierService : GenericManagementService<Supplier>, ISupplierService
     {
+        private readonly ISubAccountService _subAccountService;
+
         /// <summary>
         /// 完整建構子 - 包含 ILogger
         /// </summary>
         public SupplierService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
+            ISubAccountService subAccountService,
             ILogger<GenericManagementService<Supplier>> logger) : base(contextFactory, logger)
         {
+            _subAccountService = subAccountService;
         }
 
         /// <summary>
         /// 簡易建構子 - 不包含 ILogger
         /// </summary>
         public SupplierService(
-            IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ISubAccountService subAccountService) : base(contextFactory)
         {
+            _subAccountService = subAccountService;
         }
 
         #region 覆寫基底方法
+
+        /// <summary>
+        /// 覆寫建立方法 - 建立後自動產生子科目（若系統參數啟用）
+        /// </summary>
+        public override async Task<ServiceResult<Supplier>> CreateAsync(Supplier entity)
+        {
+            var result = await base.CreateAsync(entity);
+            if (result.IsSuccess)
+                await _subAccountService.GetOrCreateSupplierSubAccountAsync(entity.Id, entity.CreatedBy ?? "system");
+            return result;
+        }
 
         public override async Task<List<Supplier>> GetAllAsync()
         {

@@ -181,6 +181,9 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.AccountItems
                     .Include(a => a.Parent)
+                    .Include(a => a.LinkedCustomer)
+                    .Include(a => a.LinkedSupplier)
+                    .Include(a => a.LinkedProduct)
                     .OrderBy(a => a.AccountLevel)
                     .ThenBy(a => a.SortOrder)
                     .ThenBy(a => a.Code)
@@ -211,6 +214,31 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(entity.Code) &&
                     await IsAccountItemCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("科目代碼已存在");
+
+                // 更新時：若已有已過帳傳票，鎖定關鍵欄位（科目大類、借貸方向、上層科目）
+                if (entity.Id > 0)
+                {
+                    using var ctx = await _contextFactory.CreateDbContextAsync();
+                    var original = await ctx.AccountItems.AsNoTracking()
+                        .FirstOrDefaultAsync(a => a.Id == entity.Id);
+
+                    if (original != null)
+                    {
+                        bool hasPostedLines = await ctx.JournalEntryLines
+                            .AnyAsync(l => l.AccountItemId == entity.Id &&
+                                           l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted);
+
+                        if (hasPostedLines)
+                        {
+                            if (entity.AccountType != original.AccountType)
+                                errors.Add("科目大類不可更改（已有已過帳傳票）");
+                            if (entity.Direction != original.Direction)
+                                errors.Add("借貸方向不可更改（已有已過帳傳票）");
+                            if (entity.ParentId != original.ParentId)
+                                errors.Add("上層科目不可更改（已有已過帳傳票）");
+                        }
+                    }
+                }
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

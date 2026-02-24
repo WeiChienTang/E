@@ -56,6 +56,22 @@ namespace ERPCore2.Models.Enums
     }
 
     /// <summary>
+    /// 子科目代碼格式
+    /// Sequential：依序流水號（1191.001, 1191.002...）
+    /// EntityCode：使用實體自身代碼作為後綴（1191.C0001）
+    /// </summary>
+    public enum SubAccountCodeFormat
+    {
+        [Description("流水號（001, 002...）")]
+        [Display(Name = "流水號（001, 002...）")]
+        Sequential = 0,
+
+        [Description("實體編碼（客戶/廠商/商品代碼）")]
+        [Display(Name = "實體編碼（客戶/廠商/商品代碼）")]
+        EntityCode = 1
+    }
+
+    /// <summary>
     /// 會計科目層級（用於報表篩選）
     /// </summary>
     public enum AccountLevelFilter

@@ -1,3 +1,5 @@
+using ERPCore2.Models.Enums;
+
 namespace ERPCore2.Data.Navigation;
 
 /// <summary>
@@ -53,6 +55,29 @@ public static class SystemParameterDefaults
     /// </summary>
     public const bool DefaultEnableInventoryTransferApproval = false;
 
+    // ===== 子科目自動產生預設值 =====
+
+    /// <summary>預設：不自動建立客戶子科目</summary>
+    public const bool DefaultAutoCreateCustomerSubAccount = false;
+
+    /// <summary>預設：不自動建立廠商子科目</summary>
+    public const bool DefaultAutoCreateSupplierSubAccount = false;
+
+    /// <summary>預設：不自動建立商品子科目</summary>
+    public const bool DefaultAutoCreateProductSubAccount = false;
+
+    /// <summary>預設應收帳款統制科目代碼</summary>
+    public const string DefaultCustomerSubAccountParentCode = "1191";
+
+    /// <summary>預設應付帳款統制科目代碼</summary>
+    public const string DefaultSupplierSubAccountParentCode = "2171";
+
+    /// <summary>預設商品存貨統制科目代碼</summary>
+    public const string DefaultProductSubAccountParentCode = "1231";
+
+    /// <summary>預設子科目代碼格式：流水號</summary>
+    public const SubAccountCodeFormat DefaultSubAccountCodeFormat = SubAccountCodeFormat.Sequential;
+
     /// <summary>
     /// 將系統參數實體的所有業務欄位重置為預設值
     /// 保留 Id、CreatedAt、CreatedBy 等基礎欄位不變
@@ -69,5 +94,12 @@ public static class SystemParameterDefaults
         parameter.EnableSalesOrderApproval = DefaultEnableSalesOrderApproval;
         parameter.EnableSalesReturnApproval = DefaultEnableSalesReturnApproval;
         parameter.EnableInventoryTransferApproval = DefaultEnableInventoryTransferApproval;
+        parameter.AutoCreateCustomerSubAccount = DefaultAutoCreateCustomerSubAccount;
+        parameter.AutoCreateSupplierSubAccount = DefaultAutoCreateSupplierSubAccount;
+        parameter.AutoCreateProductSubAccount = DefaultAutoCreateProductSubAccount;
+        parameter.CustomerSubAccountParentCode = DefaultCustomerSubAccountParentCode;
+        parameter.SupplierSubAccountParentCode = DefaultSupplierSubAccountParentCode;
+        parameter.ProductSubAccountParentCode = DefaultProductSubAccountParentCode;
+        parameter.SubAccountCodeFormat = DefaultSubAccountCodeFormat;
     }
 }

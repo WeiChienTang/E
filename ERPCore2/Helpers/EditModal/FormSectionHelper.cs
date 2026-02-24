@@ -25,6 +25,11 @@ namespace ERPCore2.Helpers.EditModal
         /// 當設定此屬性時，SectionNames 可以為空列表
         /// </summary>
         public RenderFragment? CustomContent { get; set; }
+
+        /// <summary>
+        /// 額外內容 RenderFragment（在表單欄位區段之後渲染，CustomContent 為 null 時有效）
+        /// </summary>
+        public RenderFragment? ExtraContent { get; set; }
     }
 
     /// <summary>

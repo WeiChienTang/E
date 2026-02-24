@@ -12,33 +12,43 @@ namespace ERPCore2.Services
     /// </summary>
     public class ProductService : GenericManagementService<Product>, IProductService
     {
+        private readonly ISubAccountService _subAccountService;
+
         /// <summary>
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public ProductService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
+            ISubAccountService subAccountService,
             ILogger<GenericManagementService<Product>> logger) : base(contextFactory, logger)
         {
+            _subAccountService = subAccountService;
         }
 
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public ProductService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public ProductService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ISubAccountService subAccountService) : base(contextFactory)
         {
+            _subAccountService = subAccountService;
         }
 
         #region 覆寫基底方法
 
         /// <summary>
-        /// 覆寫建立方法 - 在儲存前設定製程單位預設值
+        /// 覆寫建立方法 - 在儲存前設定製程單位預設值，儲存後自動產生子科目（若系統參數啟用）
         /// </summary>
         public override async Task<ServiceResult<Product>> CreateAsync(Product entity)
         {
             // 設定製程單位預設值
             SetDefaultProductionUnit(entity);
-            
-            return await base.CreateAsync(entity);
+
+            var result = await base.CreateAsync(entity);
+            if (result.IsSuccess)
+                await _subAccountService.GetOrCreateProductSubAccountAsync(entity.Id, entity.CreatedBy ?? "system");
+            return result;
         }
 
         public override async Task<List<Product>> GetAllAsync()

@@ -6,7 +6,9 @@
 @using System.ComponentModel.DataAnnotations
 
 @inject ISystemParameterService SystemParameterService
+@inject ISubAccountService SubAccountService
 @inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@IsVisibleChanged"
@@ -95,6 +97,16 @@
     private SystemParameter systemParameter = new();
     private bool isResetConfirmVisible = false;
 
+    // 批次補建子科目
+    private bool isBatchCreating = false;
+    private string batchTarget = string.Empty;
+    private string batchResultMessage = string.Empty;
+    private string batchResultCssClass = "alert-info";
+    private string batchResultIcon = "bi-info-circle";
+    private bool IsBatchCreatingCustomer => isBatchCreating && batchTarget == "customer";
+    private bool IsBatchCreatingSupplier => isBatchCreating && batchTarget == "supplier";
+    private bool IsBatchCreatingProduct  => isBatchCreating && batchTarget == "product";
+
     // ===== 表單欄位與 Tab 定義 =====
 
     private readonly List<FormFieldDefinition> allFields = new()
@@ -119,41 +131,99 @@
             Placeholder = "請輸入備註",
             Rows = 3,
             MaxLength = 500
-        }
-        // 未來：加入 purchase, sales, inventory 欄位
-        // new FormFieldDefinition { PropertyName = "EnablePurchaseOrderApproval", Label = "採購單審核", FieldType = FormFieldType.Checkbox },
-        // new FormFieldDefinition { PropertyName = "EnablePurchaseReceivingApproval", Label = "進貨單審核", FieldType = FormFieldType.Checkbox },
-        // new FormFieldDefinition { PropertyName = "EnablePurchaseReturnApproval", Label = "進貨退回審核", FieldType = FormFieldType.Checkbox },
-        // new FormFieldDefinition { PropertyName = "EnableQuotationApproval", Label = "報價單審核", FieldType = FormFieldType.Checkbox },
-        // new FormFieldDefinition { PropertyName = "EnableSalesOrderApproval", Label = "銷貨單審核", FieldType = FormFieldType.Checkbox },
-        // new FormFieldDefinition { PropertyName = "EnableSalesReturnApproval", Label = "銷貨退回審核", FieldType = FormFieldType.Checkbox },
-        // new FormFieldDefinition { PropertyName = "EnableInventoryTransferApproval", Label = "庫存調撥審核", FieldType = FormFieldType.Checkbox }
+        },
+        // ===== 子科目自動產生開關 =====
+        new FormFieldDefinition { PropertyName = "AutoCreateCustomerSubAccount", Label = "客戶子科目", FieldType = FormFieldType.Checkbox },
+        new FormFieldDefinition { PropertyName = "AutoCreateSupplierSubAccount", Label = "廠商子科目", FieldType = FormFieldType.Checkbox },
+        new FormFieldDefinition { PropertyName = "AutoCreateProductSubAccount",  Label = "商品子科目", FieldType = FormFieldType.Checkbox },
+        new FormFieldDefinition
+        {
+            PropertyName = "SubAccountCodeFormat",
+            Label = "代碼格式",
+            FieldType = FormFieldType.Select,
+            Options = new List<SelectOption>
+            {
+                new() { Value = "0", Text = "流水號（001, 002...）" },
+                new() { Value = "1", Text = "實體編碼（使用客戶/廠商/商品代碼）" }
+            },
+            LabelHelpItems = new List<LabelHelpItem>
+            {
+                new() { Title = "流水號", Description = "依序產生三位流水號，例：1191.001、1191.002。簡潔整齊，適合大量客戶/廠商。" },
+                new() { Title = "實體編碼", Description = "使用客戶/廠商/商品的代碼作為後綴，例：1191.C0001。一眼可辨認對應實體，適合代碼有意義的場景。" }
+            }
+        },
+        // ===== 統制科目代碼 =====
+        new FormFieldDefinition { PropertyName = "CustomerSubAccountParentCode", Label = "應收帳款", FieldType = FormFieldType.Text, Placeholder = "預設：1191", MaxLength = 20 },
+        new FormFieldDefinition { PropertyName = "SupplierSubAccountParentCode", Label = "應付帳款", FieldType = FormFieldType.Text, Placeholder = "預設：2171", MaxLength = 20 },
+        new FormFieldDefinition { PropertyName = "ProductSubAccountParentCode",  Label = "商品存貨", FieldType = FormFieldType.Text, Placeholder = "預設：1231", MaxLength = 20 }
     };
 
     private readonly Dictionary<string, string> fieldSections = new()
     {
         { "TaxRate", "稅務設定" },
-        { "Remarks", "稅務設定" }
-        // 未來：
-        // { "EnablePurchaseOrderApproval", "採購流程審核" },
-        // { "EnablePurchaseReceivingApproval", "採購流程審核" },
-        // { "EnablePurchaseReturnApproval", "採購流程審核" },
-        // { "EnableQuotationApproval", "銷售流程審核" },
-        // { "EnableSalesOrderApproval", "銷售流程審核" },
-        // { "EnableSalesReturnApproval", "銷售流程審核" },
-        // { "EnableInventoryTransferApproval", "庫存流程審核" }
+        { "Remarks", "稅務設定" },
+        // 子科目自動產生
+        { "AutoCreateCustomerSubAccount", "自動產生設定" },
+        { "AutoCreateSupplierSubAccount", "自動產生設定" },
+        { "AutoCreateProductSubAccount",  "自動產生設定" },
+        { "SubAccountCodeFormat",         "自動產生設定" },
+        { "CustomerSubAccountParentCode", "統制科目代碼" },
+        { "SupplierSubAccountParentCode", "統制科目代碼" },
+        { "ProductSubAccountParentCode",  "統制科目代碼" }
     };
 
-    private readonly List<FormTabDefinition> tabDefinitions = new()
-    {
-        new() { Label = "稅務設定", Icon = "bi bi-cash-stack", SectionNames = new() { "稅務設定" } }
-        // 未來啟用更多區段時加入更多 Tab：
-        // new() { Label = "採購流程審核", Icon = "bi bi-cart-check", SectionNames = new() { "採購流程審核" } },
-        // new() { Label = "銷售流程審核", Icon = "bi bi-receipt", SectionNames = new() { "銷售流程審核" } },
-        // new() { Label = "庫存流程審核", Icon = "bi bi-box-seam", SectionNames = new() { "庫存流程審核" } }
-    };
+    private List<FormTabDefinition> tabDefinitions = new();
 
     // ===== 生命週期方法 =====
+
+    protected override void OnInitialized()
+    {
+        tabDefinitions = new List<FormTabDefinition>
+        {
+            new() { Label = "稅務設定", Icon = "bi bi-cash-stack", SectionNames = new() { "稅務設定" } },
+            new()
+            {
+                Label = "子科目設定",
+                Icon = "bi bi-diagram-3",
+                SectionNames = new() { "自動產生設定", "統制科目代碼" },
+                ExtraContent = CreateSubAccountBatchContent()
+            }
+        };
+    }
+
+    private RenderFragment CreateSubAccountBatchContent() => __builder =>
+    {
+        <div class="mt-4 pt-3 border-top">
+            <h6 class="mb-3"><i class="bi bi-diagram-3 me-2"></i>批次補建子科目</h6>
+            <p class="text-muted mb-3">為現有客戶、廠商、商品補建子科目（已有子科目者略過）。執行前請先確認上方統制科目代碼設定正確並已儲存。</p>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                       Text="補建客戶"
+                                       OnClick="HandleBatchCreateCustomerAsync"
+                                       IsDisabled="@(isBatchCreating || isLoading || isSaving)"
+                                       IsLoading="@IsBatchCreatingCustomer"
+                                       Title="為所有現有客戶補建子科目" />
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                       Text="補建廠商"
+                                       OnClick="HandleBatchCreateSupplierAsync"
+                                       IsDisabled="@(isBatchCreating || isLoading || isSaving)"
+                                       IsLoading="@IsBatchCreatingSupplier"
+                                       Title="為所有現有廠商補建子科目" />
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                       Text="補建商品"
+                                       OnClick="HandleBatchCreateProductAsync"
+                                       IsDisabled="@(isBatchCreating || isLoading || isSaving)"
+                                       IsLoading="@IsBatchCreatingProduct"
+                                       Title="為所有現有商品補建子科目" />
+            </div>
+            @if (!string.IsNullOrEmpty(batchResultMessage))
+            {
+                <div class="alert @batchResultCssClass py-2 mb-0 small">
+                    <i class="bi @batchResultIcon me-1"></i>@batchResultMessage
+                </div>
+            }
+        </div>
+    };
 
     protected override async Task OnParametersSetAsync()
     {
@@ -271,6 +341,10 @@
 
     private async Task HandleClose()
     {
+        batchResultMessage = string.Empty;
+        batchResultCssClass = "alert-info";
+        batchResultIcon = "bi-info-circle";
+
         if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(false);
@@ -313,6 +387,82 @@
         finally
         {
             isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 批次補建子科目 =====
+
+    private async Task<string> GetCurrentUserAsync()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            return authState.User.Identity?.Name ?? "system";
+        }
+        catch
+        {
+            return "system";
+        }
+    }
+
+    private async Task HandleBatchCreateCustomerAsync()
+    {
+        await ExecuteBatchCreateAsync("customer", async (createdBy) =>
+            await SubAccountService.BatchCreateForAllCustomersAsync(createdBy), "客戶");
+    }
+
+    private async Task HandleBatchCreateSupplierAsync()
+    {
+        await ExecuteBatchCreateAsync("supplier", async (createdBy) =>
+            await SubAccountService.BatchCreateForAllSuppliersAsync(createdBy), "廠商");
+    }
+
+    private async Task HandleBatchCreateProductAsync()
+    {
+        await ExecuteBatchCreateAsync("product", async (createdBy) =>
+            await SubAccountService.BatchCreateForAllProductsAsync(createdBy), "商品");
+    }
+
+    private async Task ExecuteBatchCreateAsync(
+        string target,
+        Func<string, Task<(int Created, int Skipped, List<string> Errors)>> batchFunc,
+        string entityLabel)
+    {
+        try
+        {
+            isBatchCreating = true;
+            batchTarget = target;
+            batchResultMessage = string.Empty;
+            StateHasChanged();
+
+            var createdBy = await GetCurrentUserAsync();
+            var (created, skipped, errors) = await batchFunc(createdBy);
+
+            if (errors.Count == 0)
+            {
+                batchResultMessage = $"{entityLabel}子科目補建完成：建立 {created} 筆，略過 {skipped} 筆";
+                batchResultCssClass = "alert-success";
+                batchResultIcon = "bi-check-circle";
+            }
+            else
+            {
+                batchResultMessage = $"{entityLabel}子科目補建完成：建立 {created} 筆，略過 {skipped} 筆，錯誤 {errors.Count} 筆（{string.Join("；", errors.Take(3))}{(errors.Count > 3 ? "…" : "")}）";
+                batchResultCssClass = "alert-warning";
+                batchResultIcon = "bi-exclamation-triangle";
+            }
+        }
+        catch (Exception ex)
+        {
+            batchResultMessage = $"批次補建{entityLabel}子科目時發生錯誤：{ex.Message}";
+            batchResultCssClass = "alert-danger";
+            batchResultIcon = "bi-x-circle";
+            await NotificationService.ShowErrorAsync($"批次補建{entityLabel}子科目失敗");
+        }
+        finally
+        {
+            isBatchCreating = false;
+            batchTarget = string.Empty;
             StateHasChanged();
         }
     }

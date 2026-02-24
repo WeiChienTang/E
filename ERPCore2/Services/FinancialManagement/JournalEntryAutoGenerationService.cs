@@ -9,12 +9,13 @@ namespace ERPCore2.Services
 {
     /// <summary>
     /// 批次轉傳票服務實作
-    /// 三行分錄規則（含稅）：
+    /// 分錄規則（含稅；稅額為零時省略稅額行；COGS 為零時省略成本行）：
     ///   進貨入庫：借 商品存貨(1231) + 進項稅額(1268) / 貸 應付帳款(2171)
     ///   進貨退回：借 應付帳款(2171) / 貸 商品存貨(1231) + 進項稅額(1268)
     ///   銷貨出貨：借 應收帳款(1191) / 貸 銷貨收入(4111) + 銷項稅額(2204)
+    ///             借 銷貨成本(5111) / 貸 商品存貨(1231)             ← COGS（移動加權平均）
     ///   銷貨退回：借 銷貨收入(4111) + 銷項稅額(2204) / 貸 應收帳款(1191)
-    /// 稅額為零時，僅建立兩行分錄
+    ///             借 商品存貨(1231) / 貸 銷貨成本(5111)             ← COGS 沖回
     /// </summary>
     public class JournalEntryAutoGenerationService : IJournalEntryAutoGenerationService
     {
@@ -22,6 +23,7 @@ namespace ERPCore2.Services
         private readonly IAccountItemService _accountItemService;
         private readonly IJournalEntryService _journalEntryService;
         private readonly ICompanyService _companyService;
+        private readonly ISubAccountService _subAccountService;
         private readonly ILogger<JournalEntryAutoGenerationService> _logger;
 
         // 標準科目代碼常數（來自商業會計項目表 112 年度種子資料）
@@ -31,6 +33,7 @@ namespace ERPCore2.Services
         private const string SalesRevenueCode      = "4111"; // 銷貨收入
         private const string InputVatCode          = "1268"; // 進項稅額
         private const string OutputVatCode         = "2204"; // 銷項稅額
+        private const string CostOfGoodsSoldCode      = "5111"; // 銷貨成本
         private const string BankDepositCode          = "1113"; // 銀行存款
         private const string SalesAllowanceCode       = "4114"; // 銷貨折讓
         private const string PurchaseAllowanceCode    = "5124"; // 進貨折讓
@@ -42,12 +45,14 @@ namespace ERPCore2.Services
             IAccountItemService accountItemService,
             IJournalEntryService journalEntryService,
             ICompanyService companyService,
+            ISubAccountService subAccountService,
             ILogger<JournalEntryAutoGenerationService> logger)
         {
             _contextFactory = contextFactory;
             _accountItemService = accountItemService;
             _journalEntryService = journalEntryService;
             _companyService = companyService;
+            _subAccountService = subAccountService;
             _logger = logger;
         }
 
@@ -165,7 +170,7 @@ namespace ERPCore2.Services
                     return (false, "找不到指定的進貨入庫單");
 
                 var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
-                var payable   = await _accountItemService.GetByCodeAsync(AccountPayableCode);
+                var payable   = await GetAPAccountForSupplierAsync(doc.SupplierId);
                 var inputVat  = await _accountItemService.GetByCodeAsync(InputVatCode);
 
                 if (inventory == null || payable == null)
@@ -247,7 +252,7 @@ namespace ERPCore2.Services
                     return (false, "找不到指定的進貨退回單");
 
                 var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
-                var payable   = await _accountItemService.GetByCodeAsync(AccountPayableCode);
+                var payable   = await GetAPAccountForSupplierAsync(doc.SupplierId);
                 var inputVat  = await _accountItemService.GetByCodeAsync(InputVatCode);
 
                 if (inventory == null || payable == null)
@@ -327,7 +332,7 @@ namespace ERPCore2.Services
                 if (doc == null)
                     return (false, "找不到指定的銷貨出貨單");
 
-                var receivable  = await _accountItemService.GetByCodeAsync(AccountReceivableCode);
+                var receivable  = await GetARAccountForCustomerAsync(doc.CustomerId);
                 var revenue     = await _accountItemService.GetByCodeAsync(SalesRevenueCode);
                 var outputVat   = await _accountItemService.GetByCodeAsync(OutputVatCode);
 
@@ -365,6 +370,38 @@ namespace ERPCore2.Services
                         Amount = doc.TaxAmount,
                         LineDescription = "銷項稅額"
                     });
+                }
+
+                // 銷貨成本分錄（COGS）：借 銷貨成本(5111) / 貸 商品存貨(1231)
+                // 金額來源：InventoryTransaction.TotalAmount（ReduceStockAsync 寫入的出庫成本 = 出庫量 × 移動加權均價）
+                var cogsAmount = await context.InventoryTransactions
+                    .Where(t => t.SourceDocumentType == "SalesDelivery" && t.SourceDocumentId == id)
+                    .SumAsync(t => t.TotalAmount);
+
+                if (cogsAmount > 0)
+                {
+                    var cogs      = await _accountItemService.GetByCodeAsync(CostOfGoodsSoldCode);
+                    var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
+
+                    if (cogs != null && inventory != null)
+                    {
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lines.Count + 1,
+                            AccountItemId = cogs.Id,
+                            Direction = AccountDirection.Debit,
+                            Amount = cogsAmount,
+                            LineDescription = "銷貨成本"
+                        });
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lines.Count + 1,
+                            AccountItemId = inventory.Id,
+                            Direction = AccountDirection.Credit,
+                            Amount = cogsAmount,
+                            LineDescription = "商品存貨－銷貨出倉"
+                        });
+                    }
                 }
 
                 var result = await CreateAndPostEntryAsync(
@@ -408,7 +445,7 @@ namespace ERPCore2.Services
                 if (doc == null)
                     return (false, "找不到指定的銷貨退回單");
 
-                var receivable  = await _accountItemService.GetByCodeAsync(AccountReceivableCode);
+                var receivable  = await GetARAccountForCustomerAsync(doc.CustomerId);
                 var revenue     = await _accountItemService.GetByCodeAsync(SalesRevenueCode);
                 var outputVat   = await _accountItemService.GetByCodeAsync(OutputVatCode);
 
@@ -448,6 +485,38 @@ namespace ERPCore2.Services
                     Amount = doc.TotalReturnAmountWithTax,
                     LineDescription = $"應收帳款沖回－{doc.Customer?.CompanyName ?? doc.CustomerId.ToString()}"
                 });
+
+                // 銷貨退回成本沖回：借 商品存貨(1231) / 貸 銷貨成本(5111)
+                // 金額來源：InventoryTransaction.TotalAmount（AddStockAsync 寫入的退回入庫成本）
+                var returnCogsAmount = await context.InventoryTransactions
+                    .Where(t => t.SourceDocumentType == "SalesReturn" && t.SourceDocumentId == id)
+                    .SumAsync(t => t.TotalAmount);
+
+                if (returnCogsAmount > 0)
+                {
+                    var cogs      = await _accountItemService.GetByCodeAsync(CostOfGoodsSoldCode);
+                    var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
+
+                    if (cogs != null && inventory != null)
+                    {
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lines.Count + 1,
+                            AccountItemId = inventory.Id,
+                            Direction = AccountDirection.Debit,
+                            Amount = returnCogsAmount,
+                            LineDescription = "商品存貨－退回入庫"
+                        });
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lines.Count + 1,
+                            AccountItemId = cogs.Id,
+                            Direction = AccountDirection.Credit,
+                            Amount = returnCogsAmount,
+                            LineDescription = "銷貨成本沖回"
+                        });
+                    }
+                }
 
                 var result = await CreateAndPostEntryAsync(
                     doc.ReturnDate,
@@ -665,6 +734,24 @@ namespace ERPCore2.Services
         }
 
         // ===== 私有 Helper =====
+
+        /// <summary>
+        /// 取得客戶的應收帳款科目（優先使用子科目，fallback 統制科目 1191）
+        /// </summary>
+        private async Task<AccountItem?> GetARAccountForCustomerAsync(int customerId)
+        {
+            var sub = await _subAccountService.GetSubAccountForCustomerAsync(customerId);
+            return sub ?? await _accountItemService.GetByCodeAsync(AccountReceivableCode);
+        }
+
+        /// <summary>
+        /// 取得廠商的應付帳款科目（優先使用子科目，fallback 統制科目 2171）
+        /// </summary>
+        private async Task<AccountItem?> GetAPAccountForSupplierAsync(int supplierId)
+        {
+            var sub = await _subAccountService.GetSubAccountForSupplierAsync(supplierId);
+            return sub ?? await _accountItemService.GetByCodeAsync(AccountPayableCode);
+        }
 
         /// <summary>
         /// 建立傳票、呼叫 SaveWithLinesAsync（取得 Id）後立即 PostEntryAsync

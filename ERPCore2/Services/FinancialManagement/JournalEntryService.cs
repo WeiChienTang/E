@@ -322,8 +322,11 @@ namespace ERPCore2.Services
                     journalEntry.CreatedBy = savedBy;
                     journalEntry.JournalEntryStatus = JournalEntryStatus.Draft;
 
+                    // 清除導航屬性，防止 EF Core 將已存在的實體誤判為 Added 並嘗試插入
+                    journalEntry.Company = null!;
                     foreach (var line in lines)
                     {
+                        line.AccountItem = null!;
                         line.CreatedAt = DateTime.Now;
                         line.CreatedBy = savedBy;
                     }
@@ -362,11 +365,12 @@ namespace ERPCore2.Services
                     existing.UpdatedAt = DateTime.Now;
                     existing.UpdatedBy = savedBy;
 
-                    // 加入新分錄
+                    // 加入新分錄（清除導航屬性，防止 EF Core 誤判為 Added）
                     foreach (var line in lines)
                     {
                         line.Id = 0;
                         line.JournalEntryId = existing.Id;
+                        line.AccountItem = null!;
                         line.CreatedAt = DateTime.Now;
                         line.CreatedBy = savedBy;
                         context.JournalEntryLines.Add(line);

@@ -1,0 +1,369 @@
+@* 傳票分錄行管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
+
+@using ERPCore2.Helpers
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <InteractiveTableComponent @ref="tableComponent"
+                                  TItem="JournalEntryLineItem"
+                                  Items="@lineItems"
+                                  ColumnDefinitions="@lineColumns"
+                                  IsReadOnly="@IsReadOnly"
+                                  EnableAutoEmptyRow="@(!IsReadOnly)"
+                                  CreateEmptyItem="@(() => new JournalEntryLineItem())"
+                                  ShowBuiltInActions="@(!IsReadOnly)"
+                                  OnItemDelete="@HandleLineItemDelete"
+                                  DataLoadCompleted="@_dataLoadCompleted"
+                                  ShowRowNumbers="true"
+                                  EmptyMessage="尚未新增分錄行" />
+    </div>
+    
+    @* 借貸合計 *@
+    <div class="card-footer">
+        <div class="d-flex align-items-center gap-3 justify-content-end flex-wrap">
+            <span class="text-primary fw-semibold">借方合計：@TotalDebit.ToString("N2")</span>
+            <span class="text-success fw-semibold">貸方合計：@TotalCredit.ToString("N2")</span>
+            @if (IsBalanced)
+            {
+                <span class="badge bg-success">
+                    <i class="bi bi-check-circle me-1"></i>借貸平衡
+                </span>
+            }
+            else if (lineItems.Any(l => l.SelectedAccount != null))
+            {
+                <span class="badge bg-danger">
+                    差額 @Math.Abs(TotalDebit - TotalCredit).ToString("N2")
+                </span>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public List<AccountItem> AccountItems { get; set; } = new();
+    [Parameter] public List<JournalEntryLine> ExistingLines { get; set; } = new();
+    [Parameter] public EventCallback<List<JournalEntryLine>> OnLinesChanged { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    [Parameter] public bool IsParentLoading { get; set; } = false;
+    [Parameter] public int DataVersion { get; set; } = 0;
+    [Parameter] public EventCallback<(decimal TotalDebit, decimal TotalCredit, bool IsBalanced)> OnTotalsChanged { get; set; }
+
+    // ===== 公開屬性 =====
+    public decimal TotalDebit { get; private set; } = 0;
+    public decimal TotalCredit { get; private set; } = 0;
+    public bool IsBalanced => TotalDebit == TotalCredit && TotalDebit > 0;
+
+    // ===== 內部狀態 =====
+    private InteractiveTableComponent<JournalEntryLineItem>? tableComponent;
+    private List<JournalEntryLineItem> lineItems = new();
+    private List<InteractiveColumnDefinition> lineColumns = new();
+    private bool _dataLoadCompleted = true;
+    private int _previousDataVersion = 0;
+
+    // ===== 分錄行內部模型 =====
+    public class JournalEntryLineItem
+    {
+        public AccountDirection Direction { get; set; } = AccountDirection.Debit;
+        public decimal Amount { get; set; } = 0;
+        public string? LineDescription { get; set; }
+
+        // 借貸方向字串橋接屬性（供 InteractiveTableComponent Select 欄位使用）
+        // InteractiveTableComponent.ConvertValue 不支援 enum，以字串繞過
+        public string DirectionValue
+        {
+            get => Direction.ToString(); // "Debit" or "Credit"
+            set { if (Enum.TryParse<AccountDirection>(value, out var dir)) Direction = dir; }
+        }
+
+        // SearchableSelect 支援屬性
+        public string AccountSearchValue { get; set; } = string.Empty;
+        public AccountItem? SelectedAccount { get; set; }
+        public List<object> FilteredAccounts { get; set; } = new();
+        public bool ShowAccountDropdown { get; set; } = false;
+        public int AccountSelectedIndex { get; set; } = -1;
+
+        public JournalEntryLine ToLine(int lineNumber) => new JournalEntryLine
+        {
+            LineNumber = lineNumber,
+            AccountItemId = SelectedAccount?.Id ?? 0,
+            AccountItem = SelectedAccount!,
+            Direction = Direction,
+            Amount = Amount,
+            LineDescription = LineDescription
+        };
+
+        public static JournalEntryLineItem FromLine(JournalEntryLine line) => new()
+        {
+            Direction = line.Direction,
+            Amount = line.Amount,
+            LineDescription = line.LineDescription,
+            SelectedAccount = line.AccountItem,
+            AccountSearchValue = line.AccountItem != null
+                ? $"[{line.AccountItem.Code}] {line.AccountItem.Name}"
+                : string.Empty
+        };
+    }
+
+    // ===== 生命週期 =====
+    protected override void OnInitialized()
+    {
+        InitializeLineColumns();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 修正：如果父元件正在載入中，跳過資料載入
+        // 重要：此時不設定 _previousDataVersion，讓 OnParametersSetAsync 能夠偵測到變化
+        if (IsParentLoading)
+            return;
+
+        _previousDataVersion = DataVersion;
+        await LoadExistingLinesAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        bool versionChanged = DataVersion != _previousDataVersion;
+
+        if (versionChanged)
+        {
+            _previousDataVersion = DataVersion;
+            await LoadExistingLinesAsync();
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task LoadExistingLinesAsync()
+    {
+        _dataLoadCompleted = false;
+
+        lineItems.Clear();
+
+        if (ExistingLines?.Any() == true)
+        {
+            lineItems = ExistingLines
+                .OrderBy(l => l.LineNumber)
+                .Select(JournalEntryLineItem.FromLine)
+                .ToList();
+        }
+
+        RecalculateTotals();
+        _dataLoadCompleted = true;
+        StateHasChanged();
+
+        // 通知父組件合計數據（確保父組件在初始載入時也能取得正確的合計）
+        if (OnTotalsChanged.HasDelegate)
+            await OnTotalsChanged.InvokeAsync((TotalDebit, TotalCredit, IsBalanced));
+    }
+
+    // ===== 分錄行欄位初始化 =====
+    private void InitializeLineColumns()
+    {
+        lineColumns = new List<InteractiveColumnDefinition>
+        {
+            // 會計科目（SearchableSelect）
+            new InteractiveColumnDefinition
+            {
+                Title = "會計科目",
+                PropertyName = nameof(JournalEntryLineItem.AccountSearchValue),
+                EmptyCheckPropertyName = nameof(JournalEntryLineItem.SelectedAccount),
+                TriggerEmptyRowOnFilled = true,
+                ColumnType = InteractiveColumnType.SearchableSelect,
+                Width = "40%",
+                Placeholder = "請輸入科目編號或名稱",
+                IsRequired = true,
+
+                SearchValuePropertyName = nameof(JournalEntryLineItem.AccountSearchValue),
+                FilteredItemsPropertyName = nameof(JournalEntryLineItem.FilteredAccounts),
+                ShowDropdownPropertyName = nameof(JournalEntryLineItem.ShowAccountDropdown),
+                SelectedIndexPropertyName = nameof(JournalEntryLineItem.AccountSelectedIndex),
+
+                ItemDisplayFormatter = item =>
+                {
+                    var account = (AccountItem)item;
+                    return $"[{account.Code}] {account.Name}";
+                },
+
+                OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
+                {
+                    var (item, searchValue) = tuple;
+                    HandleAccountSearch((JournalEntryLineItem)item, searchValue);
+                }),
+
+                OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
+                {
+                    var (item, selectedItem) = tuple;
+                    await HandleAccountSelect((JournalEntryLineItem)item, (AccountItem?)selectedItem);
+                }),
+
+                OnInputFocus = EventCallback.Factory.Create<object>(this, item =>
+                {
+                    HandleAccountFocus((JournalEntryLineItem)item);
+                }),
+
+                OnInputBlur = EventCallback.Factory.Create<object>(this, item =>
+                {
+                    HandleAccountBlur((JournalEntryLineItem)item);
+                }),
+
+                EnableKeyboardNavigation = true,
+                GetDropdownItems = item => ((JournalEntryLineItem)item).FilteredAccounts,
+                GetSelectedIndex = item => ((JournalEntryLineItem)item).AccountSelectedIndex,
+                SetSelectedIndex = (item, index) => ((JournalEntryLineItem)item).AccountSelectedIndex = index,
+                GetShowDropdown = item => ((JournalEntryLineItem)item).ShowAccountDropdown,
+                SetShowDropdown = (item, show) => ((JournalEntryLineItem)item).ShowAccountDropdown = show,
+
+                MaxDisplayItems = 20
+            },
+
+            // 借貸方向（Select）— 使用 DirectionValue 字串屬性繞過 InteractiveTableComponent 不支援 enum 的限制
+            new InteractiveColumnDefinition
+            {
+                Title = "借貸",
+                PropertyName = "DirectionValue",
+                ColumnType = InteractiveColumnType.Select,
+                Width = "150px",
+                ExcludeFromEmptyCheck = true,
+                Options = new List<InteractiveSelectOption>
+                {
+                    new InteractiveSelectOption { Value = "Debit",  Text = "借（Debit）" },
+                    new InteractiveSelectOption { Value = "Credit", Text = "貸（Credit）" }
+                },
+                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async _ =>
+                {
+                    await NotifyLinesChanged();
+                })
+            },
+
+            // 金額（Number）
+            new InteractiveColumnDefinition
+            {
+                Title = "金額",
+                PropertyName = nameof(JournalEntryLineItem.Amount),
+                ColumnType = InteractiveColumnType.Number,
+                Width = "150px",
+                ExcludeFromEmptyCheck = true,
+                UseThousandsSeparator = true,
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async _ =>
+                {
+                    await NotifyLinesChanged();
+                })
+            },
+
+            // 說明（Input）
+            new InteractiveColumnDefinition
+            {
+                Title = "說明",
+                PropertyName = nameof(JournalEntryLineItem.LineDescription),
+                ColumnType = InteractiveColumnType.Input,
+                ExcludeFromEmptyCheck = true,
+                Placeholder = "說明（選填）"
+            }
+        };
+    }
+
+    // ===== 科目搜尋事件處理 =====
+    private void HandleAccountSearch(JournalEntryLineItem item, string? searchValue)
+    {
+        item.AccountSearchValue = searchValue ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            item.FilteredAccounts = AccountItems.Take(20).Cast<object>().ToList();
+        }
+        else
+        {
+            var search = searchValue.ToLower();
+            item.FilteredAccounts = AccountItems
+                .Where(a =>
+                    (a.Code?.ToLower().Contains(search) ?? false) ||
+                    (a.Name?.ToLower().Contains(search) ?? false))
+                .Take(20)
+                .Cast<object>()
+                .ToList();
+        }
+
+        item.ShowAccountDropdown = true;
+        item.AccountSelectedIndex = -1;
+        StateHasChanged();
+    }
+
+    private async Task HandleAccountSelect(JournalEntryLineItem item, AccountItem? account)
+    {
+        item.SelectedAccount = account;
+        item.AccountSearchValue = account != null ? $"[{account.Code}] {account.Name}" : string.Empty;
+        item.ShowAccountDropdown = false;
+        item.AccountSelectedIndex = -1;
+        await NotifyLinesChanged();
+    }
+
+    private void HandleAccountFocus(JournalEntryLineItem item)
+    {
+        item.FilteredAccounts = AccountItems.Take(20).Cast<object>().ToList();
+        item.ShowAccountDropdown = true;
+        item.AccountSelectedIndex = -1;
+        StateHasChanged();
+    }
+
+    private void HandleAccountBlur(JournalEntryLineItem item)
+    {
+        Task.Delay(200).ContinueWith(_ =>
+        {
+            item.ShowAccountDropdown = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    // ===== 分錄行操作 =====
+    private async Task HandleLineItemDelete(JournalEntryLineItem item)
+    {
+        lineItems.Remove(item);
+        await NotifyLinesChanged();
+    }
+
+    private void RecalculateTotals()
+    {
+        TotalDebit = lineItems
+            .Where(l => l.SelectedAccount != null && l.Direction == AccountDirection.Debit)
+            .Sum(l => l.Amount);
+        TotalCredit = lineItems
+            .Where(l => l.SelectedAccount != null && l.Direction == AccountDirection.Credit)
+            .Sum(l => l.Amount);
+    }
+
+    // ===== 通知父組件 =====
+    private async Task NotifyLinesChanged()
+    {
+        RecalculateTotals();
+        StateHasChanged();
+
+        var lines = ConvertToEntryLines();
+        if (OnLinesChanged.HasDelegate)
+            await OnLinesChanged.InvokeAsync(lines);
+
+        if (OnTotalsChanged.HasDelegate)
+            await OnTotalsChanged.InvokeAsync((TotalDebit, TotalCredit, IsBalanced));
+    }
+
+    private List<JournalEntryLine> ConvertToEntryLines()
+    {
+        return lineItems
+            .Where(l => l.SelectedAccount != null)
+            .Select((l, i) => l.ToLine(i + 1))
+            .ToList();
+    }
+
+    // ===== 公開方法 =====
+
+    /// <summary>
+    /// 公開方法：手動刷新分錄行資料
+    /// 適用於父組件需要重新載入資料的場景
+    /// </summary>
+    public async Task RefreshLinesAsync()
+    {
+        await LoadExistingLinesAsync();
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
+    }
+}

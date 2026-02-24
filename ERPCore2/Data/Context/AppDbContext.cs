@@ -1260,6 +1260,27 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.AccountLevel);
                         entity.HasIndex(e => e.ParentId);
                         entity.HasIndex(e => e.IsDetailAccount);
+
+                        // 子科目實體連結（SetNull：刪除客戶/廠商/商品時，子科目保留但連結清空）
+                        entity.HasOne(a => a.LinkedCustomer)
+                              .WithMany()
+                              .HasForeignKey(a => a.LinkedCustomerId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(a => a.LinkedSupplier)
+                              .WithMany()
+                              .HasForeignKey(a => a.LinkedSupplierId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(a => a.LinkedProduct)
+                              .WithMany()
+                              .HasForeignKey(a => a.LinkedProductId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        // 子科目連結索引（Filtered：僅非 null 值才建索引）
+                        entity.HasIndex(a => a.LinkedCustomerId).HasFilter("[LinkedCustomerId] IS NOT NULL");
+                        entity.HasIndex(a => a.LinkedSupplierId).HasFilter("[LinkedSupplierId] IS NOT NULL");
+                        entity.HasIndex(a => a.LinkedProductId).HasFilter("[LinkedProductId] IS NOT NULL");
                   });
 
                   modelBuilder.Entity<WasteRecord>(entity =>
