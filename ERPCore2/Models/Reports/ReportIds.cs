@@ -141,6 +141,15 @@ public static class ReportIds
     /// <summary>資產負債表</summary>
     public const string BalanceSheet = "FN008";
 
+    /// <summary>總分類帳</summary>
+    public const string GeneralLedger = "FN009";
+
+    /// <summary>明細分類帳</summary>
+    public const string SubsidiaryLedger = "FN010";
+
+    /// <summary>明細科目餘額表</summary>
+    public const string DetailAccountBalance = "FN011";
+
     // ==================== 廢料報表 (WL) ====================
     /// <summary>廢料記錄報表</summary>
     public const string WasteRecord = "WL001";

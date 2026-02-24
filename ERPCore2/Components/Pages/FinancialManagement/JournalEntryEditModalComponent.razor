@@ -196,29 +196,6 @@
             },
             new FormFieldDefinition
             {
-                PropertyName = nameof(JournalEntry.FiscalYear),
-                Label = "會計年度",
-                FieldType = FormFieldType.Number,
-                IsRequired = true,
-                IsReadOnly = isPosted,
-                Min = 2000,
-                Max = 2100
-            },
-            new FormFieldDefinition
-            {
-                PropertyName = nameof(JournalEntry.FiscalPeriod),
-                Label = "會計期間（月）",
-                FieldType = FormFieldType.Select,
-                IsRequired = true,
-                IsReadOnly = isPosted,
-                Options = Enumerable.Range(1, 12).Select(m => new SelectOption
-                {
-                    Value = m.ToString(),
-                    Text = $"{m} 月"
-                }).ToList()
-            },
-            new FormFieldDefinition
-            {
                 PropertyName = nameof(JournalEntry.Description),
                 Label = "傳票說明",
                 FieldType = FormFieldType.Text,
@@ -228,10 +205,9 @@
             new FormFieldDefinition
             {
                 PropertyName = nameof(JournalEntry.Remarks),
-                Label = "備注",
+                Label = "備註",
                 FieldType = FormFieldType.TextArea,
                 IsReadOnly = isPosted,
-                Rows = 2,
                 Placeholder = ""
             }
         };
@@ -241,9 +217,7 @@
                 je => je.Code,
                 je => je.EntryDate,
                 je => je.CompanyId,
-                je => je.EntryType,
-                je => je.FiscalYear,
-                je => je.FiscalPeriod)
+                je => je.EntryType)
             .AddToSection(FormSectionNames.OtherInfo,
                 je => je.Description,
                 je => je.Remarks)

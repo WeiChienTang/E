@@ -1,0 +1,99 @@
+@* 模組管理 Tab（SuperAdmin 限定） *@
+
+@inject ICompanyModuleService CompanyModuleService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="mt-2">
+    <p class="text-muted mb-3">控制此系統可使用的功能模組。停用的模組將對所有使用者隱藏（SuperAdmin 除外）。</p>
+    <div class="list-group mb-3">
+        @foreach (var module in companyModules)
+        {
+            <div class="list-group-item d-flex align-items-center gap-3">
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           role="switch"
+                           id="module_@module.Id"
+                           checked="@module.IsEnabled"
+                           disabled="@(isModuleSaving || IsDisabled)"
+                           @onchange="@((e) => module.IsEnabled = (bool)(e.Value ?? true))" />
+                </div>
+                <label class="mb-0 flex-grow-1" for="module_@module.Id">
+                    <strong>@module.DisplayName</strong>
+                    @if (!string.IsNullOrEmpty(module.Description))
+                    {
+                        <small class="text-muted d-block">@module.Description</small>
+                    }
+                </label>
+                <span class="badge @(module.IsEnabled ? "bg-success" : "bg-secondary")">
+                    @(module.IsEnabled ? "啟用" : "停用")
+                </span>
+            </div>
+        }
+    </div>
+    <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                           Text="儲存模組設定"
+                           OnClick="HandleSaveModulesAsync"
+                           IsDisabled="@(isModuleSaving || IsDisabled)"
+                           IsLoading="@isModuleSaving"
+                           Title="儲存功能模組啟用狀態" />
+</div>
+
+@code {
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
+    private List<CompanyModule> companyModules = new();
+    private bool isModuleSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        companyModules = await CompanyModuleService.GetAllAsync();
+    }
+
+    private async Task<string> GetCurrentUserAsync()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            return authState.User.Identity?.Name ?? "system";
+        }
+        catch
+        {
+            return "system";
+        }
+    }
+
+    private async Task HandleSaveModulesAsync()
+    {
+        if (isModuleSaving) return;
+
+        try
+        {
+            isModuleSaving = true;
+            StateHasChanged();
+
+            var createdBy = await GetCurrentUserAsync();
+            var result = await CompanyModuleService.UpdateModulesAsync(companyModules, createdBy);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("模組設定已儲存");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存模組設定時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isModuleSaving = false;
+            StateHasChanged();
+        }
+    }
+}

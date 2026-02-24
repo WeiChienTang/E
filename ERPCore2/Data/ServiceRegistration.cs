@@ -181,6 +181,9 @@ namespace ERPCore2.Data
             // 公司模組管理服務（控制各功能模組的啟用狀態）
             services.AddScoped<ICompanyModuleService, CompanyModuleService>();
 
+            // 憑證管理服務（自動產生自簽 SSL 憑證）
+            services.AddScoped<ICertificateService, CertificateService>();
+
             // 系統參數服務
             services.AddScoped<ISystemParameterService, SystemParameterService>();
             
@@ -269,10 +272,13 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IWasteRecordReportService, WasteRecordReportService>();
             // 會計科目表報表服務（FN005）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IAccountItemListReportService, AccountItemListReportService>();
-            // 財務報表服務（FN006~FN008）
+            // 會計報表服務（FN006~FN011）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ITrialBalanceReportService, TrialBalanceReportService>();
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IIncomeStatementReportService, IncomeStatementReportService>();
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IBalanceSheetReportService, BalanceSheetReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IGeneralLedgerReportService, GeneralLedgerReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISubsidiaryLedgerReportService, SubsidiaryLedgerReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IDetailAccountBalanceReportService, DetailAccountBalanceReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
         }

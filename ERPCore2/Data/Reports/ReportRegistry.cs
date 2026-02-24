@@ -408,16 +408,17 @@ public static class ReportRegistry
                 SortOrder = 2,
                 IsEnabled = true
             },
+            // ==================== 會計報表 ====================
             new ReportDefinition
             {
                 Id = ReportIds.AccountItemList,
                 Name = "會計科目表",
                 Description = "列印標準會計科目表（Chart of Accounts），依科目大類分組顯示科目代碼、名稱、層級、借貸方向等",
                 IconClass = "bi bi-list-columns",
-                Category = ReportCategory.Financial,
+                Category = ReportCategory.Accounting,
                 RequiredPermission = "AccountItem.Read",
                 ActionId = "OpenAccountItemListReport",
-                SortOrder = 3,
+                SortOrder = 1,
                 IsEnabled = true
             },
             new ReportDefinition
@@ -426,10 +427,10 @@ public static class ReportRegistry
                 Name = "試算表",
                 Description = "依科目匯總已過帳傳票的本期借貸發生額與期末累計餘額，驗證借貸平衡",
                 IconClass = "bi bi-calculator",
-                Category = ReportCategory.Financial,
+                Category = ReportCategory.Accounting,
                 RequiredPermission = "JournalEntry.Read",
                 ActionId = "OpenTrialBalanceReport",
-                SortOrder = 4,
+                SortOrder = 2,
                 IsEnabled = true
             },
             new ReportDefinition
@@ -438,10 +439,10 @@ public static class ReportRegistry
                 Name = "損益表",
                 Description = "彙總指定期間的營業收入、成本、費用，計算毛利潤、營業損益及稅前損益",
                 IconClass = "bi bi-graph-up",
-                Category = ReportCategory.Financial,
+                Category = ReportCategory.Accounting,
                 RequiredPermission = "JournalEntry.Read",
                 ActionId = "OpenIncomeStatementReport",
-                SortOrder = 5,
+                SortOrder = 3,
                 IsEnabled = true
             },
             new ReportDefinition
@@ -450,10 +451,46 @@ public static class ReportRegistry
                 Name = "資產負債表",
                 Description = "彙總截止日當天的資產、負債、權益累計餘額（資產 = 負債 + 權益）",
                 IconClass = "bi bi-bank",
-                Category = ReportCategory.Financial,
+                Category = ReportCategory.Accounting,
                 RequiredPermission = "JournalEntry.Read",
                 ActionId = "OpenBalanceSheetReport",
+                SortOrder = 4,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.GeneralLedger,
+                Name = "總分類帳",
+                Description = "顯示所有科目的帳戶卡片，依科目大類分組，每個科目列出所有已過帳傳票明細（含期初餘額、逐筆流水餘額、期末餘額）",
+                IconClass = "bi bi-journal-text",
+                Category = ReportCategory.Accounting,
+                RequiredPermission = "JournalEntry.Read",
+                ActionId = "OpenGeneralLedgerReport",
+                SortOrder = 5,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.SubsidiaryLedger,
+                Name = "明細分類帳",
+                Description = "依科目代碼/名稱關鍵字查詢特定科目的帳戶卡片，顯示已過帳傳票明細與流水餘額，適合查看應收帳款按客戶、應付帳款按廠商等明細",
+                IconClass = "bi bi-journal-bookmark",
+                Category = ReportCategory.Accounting,
+                RequiredPermission = "JournalEntry.Read",
+                ActionId = "OpenSubsidiaryLedgerReport",
                 SortOrder = 6,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.DetailAccountBalance,
+                Name = "明細科目餘額表",
+                Description = "彙總各科目的期初餘額、本期借方發生額、本期貸方發生額及期末餘額，無逐筆明細，適合快速掌握各科目餘額變動",
+                IconClass = "bi bi-table",
+                Category = ReportCategory.Accounting,
+                RequiredPermission = "JournalEntry.Read",
+                ActionId = "OpenDetailAccountBalanceReport",
+                SortOrder = 7,
                 IsEnabled = true
             },
         };
@@ -492,6 +529,14 @@ public static class ReportRegistry
     public static List<ReportDefinition> GetFinancialReports()
     {
         return GetReportsByCategory(ReportCategory.Financial);
+    }
+
+    /// <summary>
+    /// 取得會計相關報表
+    /// </summary>
+    public static List<ReportDefinition> GetAccountingReports()
+    {
+        return GetReportsByCategory(ReportCategory.Accounting);
     }
     
     /// <summary>

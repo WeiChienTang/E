@@ -146,5 +146,11 @@ namespace ERPCore2.Services
         /// <param name="employeeCode">員工編號</param>
         /// <returns>衝突檢查結果</returns>
         Task<ServiceResult<SoftDeletedEmployeeCheckResult>> CheckSoftDeletedConflictAsync(string account, string employeeCode);
+
+        /// <summary>
+        /// 檢查當前登入使用者是否為超級管理員（根據 Employee.IsSuperAdmin 欄位）
+        /// </summary>
+        /// <returns>是否為超級管理員</returns>
+        Task<bool> IsSuperAdminAsync();
     }
 }

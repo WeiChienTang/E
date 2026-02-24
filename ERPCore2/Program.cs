@@ -53,6 +53,61 @@ if (isMigrationMode || isSeedDataMode || isSetupMode)
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 條件式 HTTPS 設定：只有當憑證檔案存在時才啟用，不存在時自動降級為 HTTP
+var httpsConfig = builder.Configuration.GetSection("HttpsConfig");
+if (httpsConfig.Exists() && httpsConfig.GetValue<bool>("Enabled"))
+{
+    var certPath = httpsConfig["CertificatePath"] ?? string.Empty;
+    var certPassword = httpsConfig["CertificatePassword"] ?? string.Empty;
+    var httpPort = httpsConfig.GetValue<int>("HttpPort", 6011);
+    var httpsPort = httpsConfig.GetValue<int>("HttpsPort", 6012);
+
+    // 優先從 .pwd 檔案讀取最新密碼
+    // 原因：dotnet publish 會覆蓋 appsettings.Production.json（還原舊密碼），
+    //       但 .pwd 檔案與 cert.pfx 同目錄且不在 publish 輸出中，因此不受影響。
+    //       如此一來使用者不需要在每次程式更新後重新安裝憑證。
+    if (!string.IsNullOrEmpty(certPath))
+    {
+        var pwdFilePath = Path.ChangeExtension(certPath, ".pwd");
+        if (File.Exists(pwdFilePath))
+        {
+            try { certPassword = File.ReadAllText(pwdFilePath).Trim(); }
+            catch { /* 讀取失敗時繼續使用 appsettings 的密碼 */ }
+        }
+    }
+
+    if (!string.IsNullOrEmpty(certPath) && File.Exists(certPath))
+    {
+        // 預先驗證憑證密碼，避免密碼不符時直接崩潰
+        bool certValid = false;
+        try
+        {
+            using var testCert = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(
+                certPath, certPassword);
+            certValid = true;
+        }
+        catch (Exception certEx)
+        {
+            Console.Error.WriteLine($"[WARNING] 憑證密碼不符或憑證損毀，已自動降級為 HTTP 模式。錯誤：{certEx.Message}");
+            Console.Error.WriteLine("[WARNING] 請至系統設定 → 憑證管理 → 重新產生憑證，再重新啟動伺服器。");
+        }
+
+        if (certValid)
+        {
+            builder.WebHost.ConfigureKestrel(serverOptions =>
+            {
+                serverOptions.ListenAnyIP(httpPort);
+                serverOptions.ListenAnyIP(httpsPort, listenOptions =>
+                {
+                    listenOptions.UseHttps(certPath, certPassword);
+                });
+            });
+            builder.Configuration["urls"] = $"https://*:{httpsPort};http://*:{httpPort}";
+        }
+    }
+    // 憑證不存在或密碼不符時靜默降級，維持 HTTP 模式
+}
+
 // 註冊應用程式服務
 builder.Services.AddApplicationServices(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
@@ -84,7 +139,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         }
         else
         {
-            options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+            // SameAsRequest：HTTP 連線時不加 Secure，HTTPS 連線時自動加 Secure
+            // 避免在尚未設定憑證的 HTTP 環境下，Cookie 因 Secure 旗標無法傳送導致登入失敗
+            options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
         }
         
         // 加入事件處理來調試 Cookie 問題
@@ -157,9 +214,14 @@ if (!app.Environment.IsDevelopment())
 }
 
 // 只在開發環境或有 HTTPS 設定時才使用 HTTPS 重新導向
+// 排除 /api/certificate 路徑：用戶在安裝憑證前無法建立 HTTPS 信任關係，
+// 若對此路徑做重新導向，會造成「需要憑證才能下載憑證」的死結。
 if (app.Environment.IsDevelopment() || builder.Configuration["urls"]?.Contains("https") == true)
 {
-    app.UseHttpsRedirection();
+    app.UseWhen(
+        context => !context.Request.Path.StartsWithSegments("/api/certificate"),
+        appBuilder => appBuilder.UseHttpsRedirection()
+    );
 }
 
 app.UseAuthentication();

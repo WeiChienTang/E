@@ -19,7 +19,7 @@ ERPCore2 採用**雙層存取控制**架構：
       → 由管理員透過角色與權限指派設定
 ```
 
-兩層檢查皆通過，使用者才能正常使用功能。SuperAdmin（持有 `System.Admin` 權限）可繞過第一層限制。
+兩層檢查皆通過，使用者才能正常使用功能。SuperAdmin（`Employee.IsSuperAdmin = true`）可繞過第一層限制。
 
 ### 分層結構圖
 
@@ -35,7 +35,12 @@ Service（商業邏輯）
   └─ NavigationPermissionService.cs ← 整合雙層檢查
 
 UI（使用者介面）
-  ├─ SystemParameterSettingsModal.razor（模組管理 Tab，SuperAdmin 限定）
+  ├─ SystemParameter/                    ← 系統參數設定（多檔拆分）
+  │   ├─ SystemParameterSettingsModal.razor  ← 主檔（Modal 外殼、Tab 切換、CRUD）
+  │   ├─ TaxSettingsTab.razor                ← 稅務設定 Tab
+  │   ├─ SubAccountSettingsTab.razor         ← 子科目設定 Tab
+  │   ├─ CertificateTab.razor                ← 安全憑證 Tab（目前停用）
+  │   └─ ModuleManagementTab.razor           ← 模組管理 Tab（SuperAdmin 限定）
   ├─ GenericIndexPageComponent.razor（頁面層級封鎖）
   └─ NavigationPermissionCheck.razor（導航列隱藏）
 
@@ -135,9 +140,9 @@ public interface ICompanyModuleService
     ▼
 批次載入員工所有權限（含快取）
     │
-    ├─── 含有 "System.Admin"？
+    ├─── 含有 "System.Admin" 權限？
     │         ↓ 是
-    │    直接回傳 true（SuperAdmin 不受限）
+    │    直接回傳 true（SuperAdmin 不受模組限制）
     │
     ▼ 否
 檢查 CompanyModuleService.IsModuleEnabledAsync("FinancialManagement")
@@ -154,8 +159,14 @@ public interface ICompanyModuleService
 
 ### 3-3. SuperAdmin 識別方式
 
-SuperAdmin 透過**擁有 `System.Admin` 權限**來識別，而非 `IsSuperAdmin` 資料庫欄位。
-這是因為 `IsSuperAdmin` 未存入 JWT Claim，使用現有的權限快取系統更一致且高效。
+SuperAdmin 在不同場景有兩種識別方式：
+
+| 場景 | 識別方式 | 說明 |
+|------|---------|------|
+| **導航/頁面存取**（NavigationPermissionService） | `System.Admin` 權限 | 使用權限快取系統，判斷是否繞過模組限制 |
+| **功能 UI 控制**（如模組管理 Tab 顯示） | `Employee.IsSuperAdmin` 欄位 | 透過 `EmployeeService.IsSuperAdminAsync()` 查詢資料庫，僅 Seeder 設定的超級管理員才為 true |
+
+`Employee.IsSuperAdmin` 欄位由 Seeder 設定，Service 層會保護此欄位不被前端修改，確保只有真正的超級管理員才能存取敏感功能（如模組管理）。
 
 ---
 
@@ -229,17 +240,29 @@ SuperAdmin 透過**擁有 `System.Admin` 權限**來識別，而非 `IsSuperAdmi
 
 ## 六、模組管理 UI（SuperAdmin 專屬）
 
-### 6-1. SystemParameterSettingsModal 模組管理 Tab
+### 6-1. 系統參數設定（多檔拆分架構）
 
-位置：`Components/Pages/Systems/SystemParameterSettingsModal.razor`
+位置：`Components/Pages/Systems/SystemParameter/`
+
+系統參數設定 Modal 已拆分為多個獨立元件，主檔負責 Modal 外殼與 Tab 切換，各 Tab 內容獨立維護：
+
+| 檔案 | 說明 |
+|------|------|
+| `SystemParameterSettingsModal.razor` | 主檔：Modal 外殼、Tab 切換（使用 `GenericFormComponent` + `CustomContent`）、共用 CRUD 操作 |
+| `TaxSettingsTab.razor` | 稅務設定 Tab：稅率、備註（內嵌獨立的 `GenericFormComponent`） |
+| `SubAccountSettingsTab.razor` | 子科目設定 Tab：自動產生設定、統制科目代碼、批次補建子科目 |
+| `CertificateTab.razor` | 安全憑證 Tab（目前停用，預留未來啟用） |
+| `ModuleManagementTab.razor` | 模組管理 Tab（僅 SuperAdmin 可見） |
+
+### 6-2. 模組管理 Tab
 
 - Tab 名稱：「模組管理」，僅 SuperAdmin 可見
-- SuperAdmin 判斷：`NavigationPermissionService.CanAccessAsync("System.Admin")`
+- SuperAdmin 判斷：`EmployeeService.IsSuperAdminAsync()`（檢查 `Employee.IsSuperAdmin` 資料庫欄位）
 - 顯示所有模組的開關清單（依 SortOrder 排序）
 - 每個模組顯示：模組名稱、說明文字、啟用/停用 Toggle
 - 儲存按鈕呼叫 `CompanyModuleService.UpdateModulesAsync()`，儲存後顯示成功通知
 
-### 6-2. 操作流程
+### 6-3. 操作流程
 
 ```
 SuperAdmin 開啟系統設定
@@ -321,6 +344,8 @@ Edit Modal 永遠由 Index 頁面的事件觸發渲染，不存在直接 URL 存
 | `Services/Systems/CompanyModuleService.cs` | 新增 | 服務實作（含 30 分鐘快取） |
 | `Services/Auth/NavigationPermissionService.cs` | 修改 | `CanAccessModuleAsync` 整合雙層檢查 |
 | `Data/ServiceRegistration.cs` | 修改 | 注冊 `ICompanyModuleService` |
-| `Components/Pages/Systems/SystemParameterSettingsModal.razor` | 修改 | 新增「模組管理」Tab（SuperAdmin 限定） |
+| `Components/Pages/Systems/SystemParameter/` | 重構 | 系統參數設定拆分為多檔案架構（主檔 + 4 個 Tab 元件） |
+| `Services/Employees/IEmployeeService.cs` | 修改 | 新增 `IsSuperAdminAsync()` 介面方法 |
+| `Services/Employees/EmployeeService.cs` | 修改 | 公開 `IsSuperAdminAsync()` 實作 |
 | `Components/Shared/Page/GenericIndexPageComponent.razor` | 修改 | 新增 `RequiredModule` 參數與封鎖畫面 |
 | 全部 46 個 Index 頁面 | 修改 | 加入 `RequiredModule` 參數 |

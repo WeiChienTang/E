@@ -37,6 +37,7 @@ public static class NavigationConfig
                 Category = "人力管理",
                 IsParent = true,
                 MenuKey = "employee_management",
+                ModuleKey = "Employees",
                 SearchKeywords = new List<string> { "員工", "人員", "人事", "HR", "employee", "staff" },
                 Children = new List<NavigationItem>
                 {
@@ -138,6 +139,7 @@ public static class NavigationConfig
                 Category = "供應鏈管理",
                 IsParent = true,
                 MenuKey = "supplier_management",
+                ModuleKey = "Suppliers",
                 SearchKeywords = new List<string> { "廠商", "供應商", "supplier", "vendor" },
                 Children = new List<NavigationItem>
                 {
@@ -182,6 +184,7 @@ public static class NavigationConfig
                 Category = "客戶關係管理",
                 IsParent = true,
                 MenuKey = "customer_management",
+                ModuleKey = "Customers",
                 SearchKeywords = new List<string> { "客戶", "顧客", "customer", "client", "CRM" },
                 Children = new List<NavigationItem>
                 {
@@ -226,6 +229,7 @@ public static class NavigationConfig
                 Category = "商品管理",
                 IsParent = true,
                 MenuKey = "product_management",
+                ModuleKey = "Products",
                 SearchKeywords = new List<string> { "商品", "商品", "product", "item" },
                 Children = new List<NavigationItem>
                 {
@@ -342,6 +346,7 @@ public static class NavigationConfig
                 Category = "庫存管理",
                 IsParent = true,
                 MenuKey = "inventory_management",
+                ModuleKey = "Warehouse",
                 SearchKeywords = new List<string> { "庫存", "倉庫", "inventory", "warehouse", "stock" },
                 Children = new List<NavigationItem>
                 {
@@ -445,6 +450,7 @@ public static class NavigationConfig
                 Category = "採購管理",
                 IsParent = true,
                 MenuKey = "purchase_management",
+                ModuleKey = "Purchase",
                 SearchKeywords = new List<string> { "採購", "進貨", "purchase", "procurement" },
                 Children = new List<NavigationItem>
                 {
@@ -514,6 +520,7 @@ public static class NavigationConfig
                 Category = "銷售管理",
                 IsParent = true,
                 MenuKey = "sales_management",
+                ModuleKey = "Sales",
                 SearchKeywords = new List<string> { "銷貨", "銷售", "sales", "order" },
                 Children = new List<NavigationItem>
                 {
@@ -607,6 +614,7 @@ public static class NavigationConfig
                 Category = "車輛管理",
                 IsParent = true,
                 MenuKey = "vehicle_management",
+                ModuleKey = "Vehicles",
                 SearchKeywords = new List<string> { "車輛", "車輛管理", "vehicle", "fleet", "車隊" },
                 Children = new List<NavigationItem>
                 {
@@ -675,6 +683,7 @@ public static class NavigationConfig
                 Category = "廢料管理",
                 IsParent = true,
                 MenuKey = "waste_management",
+                ModuleKey = "WasteManagement",
                 SearchKeywords = new List<string> { "廢料", "廢棄物", "廢料管理", "waste", "scrap" },
                 Children = new List<NavigationItem>
                 {
@@ -731,6 +740,7 @@ public static class NavigationConfig
                 Category = "財務管理",
                 IsParent = true,
                 MenuKey = "financial_management",
+                ModuleKey = "FinancialManagement",
                 SearchKeywords = new List<string> { "財務", "會計", "finance", "accounting" },
                 Children = new List<NavigationItem>
                 {
@@ -795,41 +805,6 @@ public static class NavigationConfig
                         QuickActionId = "NewCurrency",
                         QuickActionName = "新增貨幣"
                     },
-                    new NavigationItem
-                    {
-                        Name = "會計科目",
-                        Description = "管理標準會計科目表（Chart of Accounts）",
-                        Route = "/account-items",
-                        IconClass = "",
-                        Category = "財務管理",
-                        RequiredPermission = "AccountItem.Read",
-                        SearchKeywords = new List<string> { "會計科目", "科目表", "chart of accounts", "會計" },
-                        QuickActionId = "NewAccountItem",
-                        QuickActionName = "新增會計科目"
-                    },
-                    new NavigationItem
-                    {
-                        Name = "傳票管理",
-                        Description = "管理會計傳票（日記帳分錄）",
-                        Route = "/journal-entries",
-                        IconClass = "",
-                        Category = "財務管理",
-                        RequiredPermission = "JournalEntry.Read",
-                        SearchKeywords = new List<string> { "傳票", "日記帳", "分錄", "journal entry", "會計分錄" },
-                        QuickActionId = "NewJournalEntry",
-                        QuickActionName = "新增傳票"
-                    },
-                    new NavigationItem
-                    {
-                        Name = "批次轉傳票",
-                        Description = "將進貨、銷貨、退回等業務單據批次產生會計傳票",
-                        Route = "/journal-entry-batch",
-                        IconClass = "",
-                        Category = "財務管理",
-                        RequiredPermission = "JournalEntry.Read",
-                        SearchKeywords = new List<string> { "批次轉傳票", "自動傳票", "進貨轉傳票", "銷貨轉傳票", "轉帳" }
-                    },
-
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
@@ -846,6 +821,74 @@ public static class NavigationConfig
                         searchKeywords: new List<string> { "財務報表", "財務報表集", "financial report", "沖款單報表", "應收沖款", "應付沖款" }
                     ),
 
+                }
+            },
+
+            // ==================== 會計管理 ====================
+            new NavigationItem
+            {
+                Name = "會計",
+                Description = "會計相關功能管理",
+                Route = "#",
+                IconClass = "bi bi-calculator",
+                Category = "會計管理",
+                IsParent = true,
+                MenuKey = "accounting_management",
+                ModuleKey = "Accounting",
+                SearchKeywords = new List<string> { "會計", "傳票", "科目", "accounting", "journal" },
+                Children = new List<NavigationItem>
+                {
+                    new NavigationItem
+                    {
+                        Name = "傳票管理",
+                        Description = "管理會計傳票（日記帳分錄）",
+                        Route = "/journal-entries",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "會計管理",
+                        RequiredPermission = "JournalEntry.Read",
+                        SearchKeywords = new List<string> { "傳票", "日記帳", "分錄", "journal entry", "會計分錄" },
+                        QuickActionId = "NewJournalEntry",
+                        QuickActionName = "新增傳票"
+                    },                    
+                    new NavigationItem
+                    {
+                        Name = "批次轉傳票",
+                        Description = "將進貨、銷貨、退回等業務單據批次產生會計傳票",
+                        Route = "/journal-entry-batch",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "會計管理",
+                        RequiredPermission = "JournalEntry.Read",
+                        SearchKeywords = new List<string> { "批次轉傳票", "自動傳票", "進貨轉傳票", "銷貨轉傳票", "轉帳" }
+                    },
+                    new NavigationItem
+                    {
+                        Name = "會計科目",
+                        Description = "管理標準會計科目表（Chart of Accounts）",
+                        Route = "/account-items",
+                        IconClass = "",
+                        Category = "會計管理",
+                        RequiredPermission = "AccountItem.Read",
+                        SearchKeywords = new List<string> { "會計科目", "科目表", "chart of accounts", "會計" },
+                        QuickActionId = "NewAccountItem",
+                        QuickActionName = "新增會計科目"
+                    },
+
+
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
+                    NavigationActionHelper.CreateActionItem(
+                        name: "會計報表集",
+                        description: "查看和列印所有會計相關報表（科目表、試算表、損益表、資產負債表、總分類帳、明細分類帳、明細科目餘額表）",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenAccountingReportIndex",
+                        category: "會計管理",
+                        requiredPermission: "JournalEntry.Read",
+                        searchKeywords: new List<string> { "會計報表", "試算表", "損益表", "資產負債表", "科目表", "總分類帳", "明細分類帳", "明細科目餘額表", "accounting report" }
+                    ),
                 }
             },
 
@@ -1070,6 +1113,7 @@ public static class NavigationConfig
             "採購管理" => "bi bi-truck",
             "銷售管理" => "bi bi-cart-fill",
             "財務管理" => "bi bi-journal-text",
+            "會計管理" => "bi bi-calculator",
             "車輛管理" => "bi bi-truck-front-fill",
             "廢料管理" => "bi bi-recycle",
             "系統管理" => "bi bi-gear-fill",

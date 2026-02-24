@@ -86,7 +86,13 @@ public class ReportCategoryConfig
                 Category = ReportCategory.Waste,
                 Title = "廢料報表集",
                 Icon = "bi-trash"
-            }            
+            },
+            [ReportCategory.Accounting] = new ReportCategoryConfig
+            {
+                Category = ReportCategory.Accounting,
+                Title = "會計報表集",
+                Icon = "bi-calculator"
+            }
         };
     }
     

@@ -54,6 +54,13 @@ namespace ERPCore2.Models.Navigation
         public string? MenuKey { get; set; }
         
         /// <summary>
+        /// 對應的公司模組識別鍵（僅父級選單使用）
+        /// 設定後 CompanyModuleSeeder 會自動建立對應的 CompanyModule 記錄
+        /// 未設定表示此選單群組不受模組啟用控制（如系統管理）
+        /// </summary>
+        public string? ModuleKey { get; set; }
+        
+        /// <summary>
         /// 搜尋關鍵字（包含同義詞等）
         /// </summary>
         public List<string> SearchKeywords { get; set; } = new();

@@ -1,0 +1,335 @@
+@* 系統參數設定 Modal - 主檔（Tab 切換與共用 CRUD 操作） *@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Navigation
+@using ERPCore2.Helpers.EditModal
+@using System.ComponentModel.DataAnnotations
+
+@inject ISystemParameterService SystemParameterService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="系統參數設定"
+                    Icon="bi-gear-fill"
+                    Size="BaseModalComponent.ModalSize.Desktop"
+                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                    UseWhiteCloseButton="true"
+                    CloseOnEscape="true"
+                    CloseOnBackdropClick="false"
+                    IsLoading="@isLoading"
+                    ErrorMessage="@errorMessage"
+                    OnClose="@HandleClose">
+    <HeaderButtons>
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                               Text="確定"
+                               OnClick="HandleSaveAsync"
+                               IsDisabled="@(isSaving || isLoading)"
+                               IsLoading="@isSaving"
+                               Title="儲存系統參數設定" />
+        <GenericButtonComponent Variant="ButtonVariant.Green"
+                               Text="重整"
+                               OnClick="ReloadData"
+                               IsDisabled="@(isSaving || isLoading)"
+                               Title="重整資料" />
+        <GenericButtonComponent Variant="ButtonVariant.Orange"
+                               Text="恢復預設"
+                               OnClick="HandleResetToDefault"
+                               IsDisabled="@(isSaving || isLoading)"
+                               Title="將所有參數恢復為出廠預設值" />
+        <GenericButtonComponent Variant="ButtonVariant.Red"
+                               Text="取消"
+                               OnClick="HandleClose"
+                               Title="關閉" />
+    </HeaderButtons>
+    <BodyContent>
+        <GenericFormComponent TModel="SystemParameter"
+                              Model="@systemParameter"
+                              FieldDefinitions="@allFields"
+                              FieldSections="@fieldSections"
+                              TabDefinitions="@tabDefinitions" />
+
+        @* ===== 底部審計資訊 ===== *@
+        @if (systemParameter.Id > 0)
+        {
+            <div class="mt-4 pt-3 border-top">
+                <div class="text-muted small d-flex flex-wrap gap-3">
+                    <span><strong>建立時間：</strong>@systemParameter.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                    <span><strong>創建者：</strong>@(systemParameter.CreatedBy ?? "系統")</span>
+                    @if (systemParameter.UpdatedAt.HasValue)
+                    {
+                        <span><strong>最後更新：</strong>@systemParameter.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                        <span><strong>最後修改者：</strong>@(systemParameter.UpdatedBy ?? "系統")</span>
+                    }
+                </div>
+            </div>
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+@* 恢復預設確認對話框 *@
+<GenericConfirmModalComponent IsVisible="@isResetConfirmVisible"
+                              IsVisibleChanged="@((value) => isResetConfirmVisible = value)"
+                              Title="恢復預設確認"
+                              Icon="bi-arrow-counterclockwise"
+                              Message="確定要將系統參數重置為預設配置嗎？現有的自訂配置將被清除。"
+                              ConfirmButtonText="確定恢復"
+                              ConfirmButtonVariant="ButtonVariant.Orange"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                              OnConfirm="ConfirmResetToDefault" />
+
+@code {
+    // ===== 參數 =====
+
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // ===== 狀態變數 =====
+
+    private bool isLoading = false;
+    private bool isSaving = false;
+    private string errorMessage = string.Empty;
+    private SystemParameter systemParameter = new();
+    private bool isResetConfirmVisible = false;
+
+    // Tab 子元件參考
+    private SubAccountSettingsTab? subAccountTab;
+
+    // Tab 與權限
+    private bool isSuperAdmin = false;
+
+    // ===== 表單欄位與 Tab 定義（所有 Tab 使用 CustomContent，欄位定義為空） =====
+
+    private readonly List<FormFieldDefinition> allFields = new();
+    private readonly Dictionary<string, string> fieldSections = new();
+    private List<FormTabDefinition> tabDefinitions = new();
+
+    // ===== Tab 內容 RenderFragment =====
+
+    private RenderFragment CreateTaxTabContent() => __builder =>
+    {
+        <TaxSettingsTab Model="@systemParameter" />
+    };
+
+    private RenderFragment CreateSubAccountTabContent() => __builder =>
+    {
+        <SubAccountSettingsTab @ref="subAccountTab"
+                               Model="@systemParameter"
+                               IsDisabled="@(isSaving || isLoading)" />
+    };
+
+    private RenderFragment CreateCertificateTabContent() => __builder =>
+    {
+        <CertificateTab />
+    };
+
+    private RenderFragment CreateModuleManagementTabContent() => __builder =>
+    {
+        <ModuleManagementTab IsDisabled="@(isSaving || isLoading)" />
+    };
+
+    // ===== 生命週期方法 =====
+
+    protected override void OnInitialized()
+    {
+        tabDefinitions = new List<FormTabDefinition>
+        {
+            new() { Label = "稅務設定", Icon = "bi bi-cash-stack", SectionNames = new(), CustomContent = CreateTaxTabContent() },
+            new() { Label = "子科目設定", Icon = "bi bi-diagram-3", SectionNames = new(), CustomContent = CreateSubAccountTabContent() },
+            // 安全憑證 Tab 暫時停用（HTTPS 自簽憑證方案未完成，詳見 README_HTTPS憑證設計(失敗).md）
+            // new() { Label = "安全憑證", Icon = "bi bi-shield-lock", SectionNames = new(), CustomContent = CreateCertificateTabContent() },
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        // 檢查當前使用者是否為超級管理員（根據 Employee.IsSuperAdmin 欄位）
+        try
+        {
+            isSuperAdmin = await EmployeeService.IsSuperAdminAsync();
+        }
+        catch { }
+
+        // SuperAdmin 才加入模組管理 Tab
+        if (isSuperAdmin)
+        {
+            tabDefinitions.Add(new FormTabDefinition
+            {
+                Label = "模組管理",
+                Icon = "bi bi-toggles",
+                SectionNames = new(),
+                CustomContent = CreateModuleManagementTabContent()
+            });
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && systemParameter.Id == 0 && !isLoading)
+        {
+            await LoadSystemParameterAsync();
+        }
+    }
+
+    // ===== 資料載入 =====
+
+    private async Task LoadSystemParameterAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            StateHasChanged();
+
+            var existingParameter = await SystemParameterService.GetSystemParameterAsync();
+
+            if (existingParameter != null)
+            {
+                systemParameter = existingParameter;
+            }
+            else
+            {
+                systemParameter = new SystemParameter();
+                SystemParameterDefaults.ApplyDefaults(systemParameter);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"載入系統參數時發生錯誤：{ex.Message}";
+            await NotificationService.ShowErrorAsync("載入系統參數失敗");
+
+            systemParameter = new SystemParameter();
+            SystemParameterDefaults.ApplyDefaults(systemParameter);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 儲存 =====
+
+    private async Task HandleSaveAsync()
+    {
+        if (isSaving) return;
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            // 程式化驗證
+            var validationContext = new ValidationContext(systemParameter);
+            var validationResults = new List<ValidationResult>();
+            if (!Validator.TryValidateObject(systemParameter, validationContext, validationResults, true))
+            {
+                var errors = string.Join("、", validationResults.Select(r => r.ErrorMessage));
+                await NotificationService.ShowErrorAsync($"驗證失敗：{errors}");
+                return;
+            }
+
+            ServiceResult<SystemParameter> result;
+
+            if (systemParameter.Id > 0)
+            {
+                result = await SystemParameterService.UpdateAsync(systemParameter);
+            }
+            else
+            {
+                result = await SystemParameterService.CreateAsync(systemParameter);
+            }
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("系統參數已成功儲存！");
+                if (result.Data != null)
+                {
+                    systemParameter = result.Data;
+                }
+            }
+            else
+            {
+                var errorMsg = !string.IsNullOrEmpty(result.ErrorMessage)
+                    ? result.ErrorMessage
+                    : "儲存失敗";
+                await NotificationService.ShowErrorAsync($"儲存系統參數失敗：{errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存系統參數時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 重整 =====
+
+    private async Task ReloadData()
+    {
+        await LoadSystemParameterAsync();
+        await NotificationService.ShowSuccessAsync("資料已重新載入");
+    }
+
+    // ===== 關閉 =====
+
+    private async Task HandleClose()
+    {
+        subAccountTab?.ClearBatchResult();
+
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 恢復預設 =====
+
+    private void HandleResetToDefault()
+    {
+        isResetConfirmVisible = true;
+    }
+
+    private async Task ConfirmResetToDefault()
+    {
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            var result = await SystemParameterService.ResetToDefaultAsync();
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("已重置為預設配置");
+                await LoadSystemParameterAsync();
+            }
+            else
+            {
+                var errorMsg = !string.IsNullOrEmpty(result.ErrorMessage)
+                    ? result.ErrorMessage
+                    : "重置失敗";
+                await NotificationService.ShowErrorAsync($"恢復預設失敗：{errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"恢復預設時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,13 +1,13 @@
 # 會計模組設計進度
 
 ## 更新日期
-2026-02-23
+2026-02-24
 
 ---
 
 ## 概述
 
-本文件記錄 ERPCore2 會計模組的設計與實作現況，涵蓋科目表、傳票系統、批次轉傳票、及財務報表。
+本文件記錄 ERPCore2 會計模組的設計與實作現況，涵蓋科目表、傳票系統、批次轉傳票、財務報表，及會計帳冊報表（總分類帳、明細分類帳、明細科目餘額表）。
 
 ---
 
@@ -485,6 +485,109 @@ public DateTime? JournalizedAt { get; set; }
 
 ---
 
+### 17. 總分類帳（FN009）
+
+| 檔案 | 路徑 |
+|------|------|
+| `GeneralLedgerCriteria.cs` | `Models/Reports/FilterCriteria/` |
+| `IGeneralLedgerReportService.cs` | `Services/Reports/Interfaces/` |
+| `GeneralLedgerReportService.cs` | `Services/Reports/` |
+
+**定義：** 顯示指定期間內所有科目的帳戶卡片，按科目大類分組，每科目包含期初餘額、逐筆傳票明細（含流水餘額）、期末餘額。適合財務人員掌握全盤帳目與編製財務報表。
+
+**篩選條件（GeneralLedgerCriteria）：**
+
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| StartDate / EndDate | FilterDateRange | 傳票日期範圍 |
+| AccountTypes | FilterEnum(AccountType) | 科目大類多選（空=全部） |
+| ShowZeroBalance | FilterToggle | 顯示零餘額科目（預設 false） |
+
+**查詢邏輯（兩次查詢）：**
+- 期初 Query：`EntryDate < StartDate`，`JournalEntryStatus == Posted`，依 AccountItemId 彙總借貸
+- 本期 Query：`StartDate ≤ EntryDate ≤ EndDate`，`JournalEntryStatus == Posted`，取逐筆明細
+- 餘額符號：借方為正（`balance += DebitAmount - CreditAmount`）
+- 期末餘額 = 期初餘額 + 本期借方合計 − 本期貸方合計
+
+**報表格式：**
+```
+科目大類分組標題
+  [科目代碼] [科目名稱]
+  日期        傳票號碼   摘要         借方      貸方      餘額
+  ──────────────────────────────────────────────────────────
+  期初餘額                                                xxx
+  2026/01/01  JV0001    進貨入庫     xxx                  xxx
+  2026/01/15  JV0002    銷貨出貨               xxx         xxx
+  ──────────────────────────────────────────────────────────
+  本期合計               xxx       xxx
+  期末餘額（本期合計最後欄位顯示）                          xxx
+```
+
+**餘額顯示格式：** 正數 = `N2`；負數 = `(N2)` 括號；零 = `0.00`
+
+---
+
+### 18. 明細分類帳（FN010）
+
+| 檔案 | 路徑 |
+|------|------|
+| `SubsidiaryLedgerCriteria.cs` | `Models/Reports/FilterCriteria/` |
+| `ISubsidiaryLedgerReportService.cs` | `Services/Reports/Interfaces/` |
+| `SubsidiaryLedgerReportService.cs` | `Services/Reports/` |
+
+**定義：** 與總分類帳格式相同，但允許依科目代碼/名稱關鍵字篩選，只顯示符合條件的科目。適合查詢應收帳款（依客戶子科目）、應付帳款（依廠商子科目）等特定帳戶明細，支援日常應收/應付管理。
+
+**篩選條件（SubsidiaryLedgerCriteria）：**
+
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| StartDate / EndDate | FilterDateRange | 傳票日期範圍 |
+| AccountKeyword | FilterKeyword | 科目代碼或名稱關鍵字（空=顯示全部） |
+| AccountTypes | FilterEnum(AccountType) | 科目大類多選（空=全部） |
+
+**查詢邏輯：** 同 FN009，額外加入 `AccountItem.Code LIKE keyword OR AccountItem.Name LIKE keyword` 篩選。若關鍵字空白則行為與 FN009 相同。
+
+**報表格式：** 同 FN009 帳戶卡片格式，頁首額外顯示科目關鍵字。
+
+---
+
+### 19. 明細科目餘額表（FN011）
+
+| 檔案 | 路徑 |
+|------|------|
+| `DetailAccountBalanceCriteria.cs` | `Models/Reports/FilterCriteria/` |
+| `IDetailAccountBalanceReportService.cs` | `Services/Reports/Interfaces/` |
+| `DetailAccountBalanceReportService.cs` | `Services/Reports/` |
+
+**定義：** 彙總報表（無逐筆明細），顯示各科目的期初餘額、本期借方合計、本期貸方合計、期末餘額。適合月底快速核對各科目餘額，確認帳務數字整體正確。
+
+**篩選條件（DetailAccountBalanceCriteria）：**
+
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| StartDate / EndDate | FilterDateRange | 傳票日期範圍 |
+| AccountTypes | FilterEnum(AccountType) | 科目大類多選（空=全部） |
+| ShowZeroBalance | FilterToggle | 顯示零餘額科目（預設 false） |
+
+**查詢邏輯：**
+- 期初 Query：`EntryDate < StartDate`，依 AccountItemId 彙總借貸各別金額
+- 本期 Query：`StartDate ≤ EntryDate ≤ EndDate`，依 AccountItemId 彙總借貸各別金額
+- 期初餘額 = `期初借方合計 - 期初貸方合計`（借方正號）
+- 期末餘額 = 期初餘額 + 本期借方合計 − 本期貸方合計
+
+**報表格式：**
+```
+科目大類分組標題
+  科目代碼  科目名稱    期初餘額    本期借方    本期貸方    期末餘額
+  1191      應收帳款    100,000     200,000    150,000    150,000
+  ...
+  [科目大類 小計]       xxx         xxx        xxx        xxx
+
+頁尾合計：科目數 | 期初餘額合計 | 本期借方合計 | 本期貸方合計 | 期末餘額合計
+```
+
+---
+
 ## 科目階層結構
 
 科目表採用四層樹狀結構，以「庫存現金」為例：
@@ -504,7 +607,7 @@ Level 1: Code "1"     → 資產（ParentId: null）
 
 ---
 
-## 報表系統通用架構（FN005~FN008）
+## 報表系統通用架構（FN005~FN011）
 
 | 項目 | 設計 |
 |------|------|
@@ -512,24 +615,33 @@ Level 1: Code "1"     → 資產（ParentId: null）
 | 呼叫方式 | `GenericReportFilterModalComponent` 透過反射呼叫 |
 | 入口點 | 報表中心（Alt+R 或選單）→ 搜尋 → 篩選 → 預覽 → 列印 |
 | DI 注冊 | `AddScoped<IXxxReportService, XxxReportService>()` in `ServiceRegistration.cs` |
-| 報表定義 | `ReportRegistry.cs`，Category = `ReportCategory.Financial`，Permission = `JournalEntry.Read` |
+| 報表定義 | `ReportRegistry.cs`，FN005~FN011 Category = `ReportCategory.Accounting`，Permission = `JournalEntry.Read` |
 | 篩選模板 | `FilterTemplateRegistry.cs`，使用 `DynamicFilterTemplate` |
+
+**報表分類（ReportCategory）：**
+
+| 分類 | 說明 | 報表 |
+|------|------|------|
+| `Financial` | 財務報表集（財務管理模組） | FN003 應收沖款單、FN004 應付沖款單 |
+| `Accounting` | 會計報表集（會計管理模組） | FN005~FN011 所有會計相關報表 |
+
+**導覽入口：**
+- 財務管理 → 「財務報表集」→ `OpenFinancialReportIndex` action → `ReportCategory.Financial`
+- 會計管理 → 「會計報表集」→ `OpenAccountingReportIndex` action → `ReportCategory.Accounting`
+
+`OpenAccountingReportIndex` 定義於 `Components/Layout/MainLayout.razor`，並在 `actionRegistry.Register` 中註冊。
 
 ---
 
 ## 待辦項目
 
-### 近期
-
-- [ ] 在業務單據 EditModal 加入「相關傳票」顯示區塊（透過 SourceDocumentType + SourceDocumentId 查詢）
-
 ### 中長期
 
 - [ ] 期初存貨建立功能（正式程序輸入量+成本，同時產生 InventoryTransaction + JournalEntry：借 商品存貨 / 貸 期初存貨調整）
-- [ ] 科目餘額細帳（依科目查傳票明細，類似帳卡）
 - [ ] 期末結帳功能（Closing Entries：收入/費用科目歸零 → 轉本期損益 → 轉保留盈餘）
 - [ ] 現金流量表（間接法）
 - [ ] 報表匯出功能（PDF / Excel）
+- [ ] 在業務單據 EditModal 加入「相關傳票」顯示區塊（透過 SourceDocumentType + SourceDocumentId 查詢）
 
 ---
 
@@ -566,12 +678,21 @@ Level 1: Code "1"     → 資產（ParentId: null）
 | TrialBalanceCriteria.cs | `Models/Reports/FilterCriteria/` | FN006 篩選條件 |
 | IncomeStatementCriteria.cs | `Models/Reports/FilterCriteria/` | FN007 篩選條件 |
 | BalanceSheetCriteria.cs | `Models/Reports/FilterCriteria/` | FN008 篩選條件 |
+| GeneralLedgerCriteria.cs | `Models/Reports/FilterCriteria/` | FN009 篩選條件 |
+| SubsidiaryLedgerCriteria.cs | `Models/Reports/FilterCriteria/` | FN010 篩選條件 |
+| DetailAccountBalanceCriteria.cs | `Models/Reports/FilterCriteria/` | FN011 篩選條件 |
 | ITrialBalanceReportService.cs | `Services/Reports/Interfaces/` | FN006 服務介面 |
 | IIncomeStatementReportService.cs | `Services/Reports/Interfaces/` | FN007 服務介面 |
 | IBalanceSheetReportService.cs | `Services/Reports/Interfaces/` | FN008 服務介面 |
+| IGeneralLedgerReportService.cs | `Services/Reports/Interfaces/` | FN009 服務介面 |
+| ISubsidiaryLedgerReportService.cs | `Services/Reports/Interfaces/` | FN010 服務介面 |
+| IDetailAccountBalanceReportService.cs | `Services/Reports/Interfaces/` | FN011 服務介面 |
 | TrialBalanceReportService.cs | `Services/Reports/` | FN006 服務實作 |
 | IncomeStatementReportService.cs | `Services/Reports/` | FN007 服務實作 |
 | BalanceSheetReportService.cs | `Services/Reports/` | FN008 服務實作 |
+| GeneralLedgerReportService.cs | `Services/Reports/` | FN009 服務實作 |
+| SubsidiaryLedgerReportService.cs | `Services/Reports/` | FN010 服務實作 |
+| DetailAccountBalanceReportService.cs | `Services/Reports/` | FN011 服務實作 |
 
 ---
 

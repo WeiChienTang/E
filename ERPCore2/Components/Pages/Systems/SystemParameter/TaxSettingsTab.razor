@@ -1,0 +1,42 @@
+@* 稅務設定 Tab *@
+
+<GenericFormComponent TModel="SystemParameter"
+                      Model="@Model"
+                      FieldDefinitions="@allFields"
+                      FieldSections="@fieldSections" />
+
+@code {
+    [Parameter]
+    public SystemParameter Model { get; set; } = new();
+
+    private readonly List<FormFieldDefinition> allFields = new()
+    {
+        new FormFieldDefinition
+        {
+            PropertyName = "TaxRate",
+            Label = "稅率 (%)",
+            FieldType = FormFieldType.Number,
+            IsRequired = true,
+            Min = 0,
+            Max = 100,
+            Step = 0.01m,
+            DecimalPlaces = 2,
+            Placeholder = "請輸入稅率"
+        },
+        new FormFieldDefinition
+        {
+            PropertyName = "Remarks",
+            Label = "備註",
+            FieldType = FormFieldType.TextArea,
+            Placeholder = "請輸入備註",
+            Rows = 3,
+            MaxLength = 500
+        }
+    };
+
+    private readonly Dictionary<string, string> fieldSections = new()
+    {
+        { "TaxRate", "稅務設定" },
+        { "Remarks", "稅務設定" }
+    };
+}

@@ -668,6 +668,67 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // FN009 - 總分類帳（所有科目帳戶卡片，含期初/流水/期末餘額）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.GeneralLedger,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(GeneralLedgerCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IGeneralLedgerReportService),
+            PreviewTitle = "總分類帳預覽",
+            FilterTitle = "總分類帳篩選條件",
+            IconClass = "bi-journal-text",
+            GetDocumentName = criteria =>
+            {
+                var c = (GeneralLedgerCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"總分類帳-{dateRange}";
+            }
+        });
+
+        // FN010 - 明細分類帳（依科目關鍵字篩選特定科目的帳戶卡片）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.SubsidiaryLedger,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(SubsidiaryLedgerCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISubsidiaryLedgerReportService),
+            PreviewTitle = "明細分類帳預覽",
+            FilterTitle = "明細分類帳篩選條件",
+            IconClass = "bi-journal-bookmark",
+            GetDocumentName = criteria =>
+            {
+                var c = (SubsidiaryLedgerCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                var keyword = !string.IsNullOrWhiteSpace(c.AccountKeyword) ? $"-{c.AccountKeyword}" : string.Empty;
+                return $"明細分類帳{keyword}-{dateRange}";
+            }
+        });
+
+        // FN011 - 明細科目餘額表（各科目期初/本期借貸/期末彙總，無逐筆明細）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.DetailAccountBalance,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(DetailAccountBalanceCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IDetailAccountBalanceReportService),
+            PreviewTitle = "明細科目餘額表預覽",
+            FilterTitle = "明細科目餘額表篩選條件",
+            IconClass = "bi-table",
+            GetDocumentName = criteria =>
+            {
+                var c = (DetailAccountBalanceCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"明細科目餘額表-{dateRange}";
+            }
+        });
+
             _isInitialized = true;
         }
     }

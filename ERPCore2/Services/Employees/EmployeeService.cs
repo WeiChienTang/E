@@ -68,9 +68,9 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查當前使用者是否為超級管理員
+        /// 檢查當前使用者是否為超級管理員（根據 Employee.IsSuperAdmin 欄位）
         /// </summary>
-        private async Task<bool> IsCurrentUserSuperAdminAsync()
+        public async Task<bool> IsSuperAdminAsync()
         {
             var currentEmployeeId = await GetCurrentEmployeeIdAsync();
             if (!currentEmployeeId.HasValue)

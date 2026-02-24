@@ -1,0 +1,185 @@
+@* 安全憑證 Tab（目前停用，預留未來啟用） *@
+
+@inject ICertificateService CertificateService
+@inject IWebHostEnvironment WebHostEnvironment
+@inject NavigationManager NavigationManager
+@inject IConfiguration Configuration
+
+<div class="mt-2">
+    <p class="text-muted mb-3">
+        提供使用者下載並安裝伺服器憑證，安裝後瀏覽器將不再顯示 HTTPS 安全警告。
+    </p>
+
+    @* ── 產生憑證區塊（永遠顯示） ── *@
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="bi bi-shield-plus me-2"></i>伺服器憑證管理</h6>
+        </div>
+        <div class="card-body">
+            @if (certFileExists)
+            {
+                <p class="text-muted small mb-3">憑證已存在。若需重新產生（例如伺服器 IP 變更），請點擊下方按鈕。</p>
+            }
+            else
+            {
+                <p class="text-muted small mb-3">尚未產生憑證。點擊下方按鈕可自動產生並套用，無需手動執行任何指令。</p>
+            }
+            <div class="mb-3">
+                <label class="form-label small fw-bold">
+                    <i class="bi bi-globe me-1"></i>對外 IP / 主機名稱（選填）
+                </label>
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="例：59.126.246.98, myserver.example.com（逗號分隔）"
+                       value="@certExtraSans"
+                       @oninput="@(e => certExtraSans = e.Value?.ToString() ?? string.Empty)"
+                       disabled="@isGeneratingCert" />
+                <div class="form-text">
+                    若使用者透過外部 IP 或網域連線（例如對外網路），請在此輸入，以確保憑證涵蓋該位址。
+                </div>
+            </div>
+            <GenericButtonComponent Variant="@(certFileExists ? ButtonVariant.Orange : ButtonVariant.DarkBlue)"
+                                   Text="@(certFileExists ? "重新產生憑證" : "一鍵產生憑證")"
+                                   OnClick="HandleGenerateCertAsync"
+                                   IsDisabled="@isGeneratingCert"
+                                   IsLoading="@isGeneratingCert"
+                                   Title="自動產生自簽 SSL 憑證（含所有伺服器 IP），無需手動操作" />
+
+            @if (!string.IsNullOrEmpty(certGenerateMessage))
+            {
+                <div class="alert @certGenerateCssClass mt-3 mb-0 small">
+                    <i class="bi @certGenerateIcon me-1"></i>@certGenerateMessage
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ── 憑證下載區塊（憑證存在才顯示） ── *@
+    @if (certFileExists)
+    {
+        <div class="list-group mb-4">
+            <div class="list-group-item">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-file-earmark-arrow-down fs-4 text-primary"></i>
+                    <div class="flex-grow-1">
+                        <strong>一鍵安裝程式</strong>
+                        <small class="text-muted d-block">使用者下載後雙擊執行，按一次「是」即自動完成安裝</small>
+                        <small class="text-muted font-monospace">@certInstallerUrl</small>
+                    </div>
+                    <a href="@certInstallerUrl" class="btn btn-primary" target="_blank">
+                        <i class="bi bi-download me-1"></i>下載
+                    </a>
+                </div>
+            </div>
+            <div class="list-group-item">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-file-earmark-binary fs-4 text-secondary"></i>
+                    <div class="flex-grow-1">
+                        <strong>憑證公鑰 (.cer)</strong>
+                        <small class="text-muted d-block">進階用途，手動安裝用</small>
+                        <small class="text-muted font-monospace">@certDownloadUrl</small>
+                    </div>
+                    <a href="@certDownloadUrl" class="btn btn-outline-secondary" target="_blank">
+                        <i class="bi bi-download me-1"></i>下載
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 bg-light">
+            <div class="card-body">
+                <h6 class="card-title"><i class="bi bi-info-circle me-2"></i>使用者安裝步驟</h6>
+                <ol class="mb-0 small">
+                    <li class="mb-1">將上方「一鍵安裝程式」連結提供給使用者，或直接下載後透過 USB / 郵件傳送</li>
+                    <li class="mb-1">使用者雙擊 <strong>install-cert.bat</strong></li>
+                    <li class="mb-1">Windows 彈出詢問視窗，點擊<strong>「是」</strong></li>
+                    <li class="mb-1">看到「憑證安裝成功」後關閉所有瀏覽器</li>
+                    <li>重新開啟瀏覽器即可正常連線，不再顯示安全警告</li>
+                </ol>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // 安全憑證
+    private bool certFileExists = false;
+    private string certInstallerUrl = string.Empty;
+    private string certDownloadUrl = string.Empty;
+    private bool isGeneratingCert = false;
+    private string certGenerateMessage = string.Empty;
+    private string certGenerateCssClass = string.Empty;
+    private string certGenerateIcon = string.Empty;
+    private string certExtraSans = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // 檢查憑證檔案是否存在
+        var certPath = Path.Combine(WebHostEnvironment.ContentRootPath, "Resources", "erpcore2.cer");
+        certFileExists = File.Exists(certPath);
+
+        // 建立憑證相關 URL：根據當前連線協定動態選擇，避免 HTTPS 頁面中 HTTP 連結被瀏覽器 Mixed Content 封鎖
+        var baseUri = new Uri(NavigationManager.BaseUri);
+        var httpsSection = Configuration.GetSection("HttpsConfig");
+        string downloadBase;
+        if (baseUri.Scheme == "https")
+        {
+            var httpsPort = httpsSection.GetValue<int>("HttpsPort", 6012);
+            downloadBase = $"https://{baseUri.Host}:{httpsPort}";
+        }
+        else
+        {
+            var httpPort = httpsSection.GetValue<int>("HttpPort", 6011);
+            downloadBase = $"http://{baseUri.Host}:{httpPort}";
+        }
+        certInstallerUrl = $"{downloadBase}/api/certificate/installer";
+        certDownloadUrl = $"{downloadBase}/api/certificate/cer";
+    }
+
+    private async Task HandleGenerateCertAsync()
+    {
+        if (isGeneratingCert) return;
+
+        try
+        {
+            isGeneratingCert = true;
+            certGenerateMessage = string.Empty;
+            StateHasChanged();
+
+            var extraSansArray = certExtraSans
+                .Split(new[] { ',', ';', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToArray();
+
+            var (success, message) = await CertificateService.GenerateSelfSignedCertificateAsync(
+                extraSansArray.Length > 0 ? extraSansArray : null);
+
+            if (success)
+            {
+                certGenerateMessage = message;
+                certGenerateCssClass = "alert-success";
+                certGenerateIcon = "bi-check-circle";
+
+                // 更新憑證狀態
+                certFileExists = CertificateService.CertificateExists();
+            }
+            else
+            {
+                certGenerateMessage = message;
+                certGenerateCssClass = "alert-danger";
+                certGenerateIcon = "bi-x-circle";
+            }
+        }
+        catch (Exception ex)
+        {
+            certGenerateMessage = $"產生憑證時發生錯誤：{ex.Message}";
+            certGenerateCssClass = "alert-danger";
+            certGenerateIcon = "bi-x-circle";
+        }
+        finally
+        {
+            isGeneratingCert = false;
+            StateHasChanged();
+        }
+    }
+}

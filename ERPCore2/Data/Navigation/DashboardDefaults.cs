@@ -48,6 +48,20 @@ public static class DashboardDefaults
                 "QuickAction:NewPurchaseOrder",  // 新增採購單
                 "QuickAction:NewSalesOrder",      // 新增訂單
             }
+        },
+        new DefaultPanelDefinition
+        {
+            Title = "會計",
+            SortOrder = 2,
+            IconClass = "bi bi-calculator",
+            ItemKeys = new List<string>
+            {
+                "/account-items",                   // 會計科目
+                "/journal-entries",                  // 傳票管理
+                "/journal-entry-batch",              // 批次轉傳票
+                "QuickAction:NewAccountItem",        // 新增會計科目
+                "QuickAction:NewJournalEntry",       // 新增傳票
+            }
         }
     };
 
