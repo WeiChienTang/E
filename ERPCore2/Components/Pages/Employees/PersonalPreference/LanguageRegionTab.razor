@@ -1,4 +1,5 @@
 @* 語言與地區 Tab *@
+@inject IStringLocalizer<SharedResource> L
 
 <GenericFormComponent TModel="EmployeePreference"
                       Model="@(Model ?? _fallback)"
@@ -11,24 +12,30 @@
 
     private readonly EmployeePreference _fallback = new();
 
-    private readonly List<FormFieldDefinition> allFields = new()
-    {
-        new FormFieldDefinition
-        {
-            PropertyName = nameof(EmployeePreference.Language),
-            Label = "介面語言",
-            FieldType = FormFieldType.Select,
-            Options = new List<SelectOption>
-            {
-                new() { Value = "1", Text = "繁體中文" },
-                new() { Value = "2", Text = "English" }
-            },
-            HelpText = "語言切換功能即將推出"
-        }
-    };
+    private List<FormFieldDefinition> allFields = new();
+    private Dictionary<string, string> fieldSections = new();
 
-    private readonly Dictionary<string, string> fieldSections = new()
+    protected override void OnInitialized()
     {
-        { nameof(EmployeePreference.Language), "語言與地區" }
-    };
+        allFields = new List<FormFieldDefinition>
+        {
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(EmployeePreference.Language),
+                Label = L["Preference.Language"],
+                FieldType = FormFieldType.Select,
+                Options = new List<SelectOption>
+                {
+                    new() { Value = "1", Text = "繁體中文" },
+                    new() { Value = "2", Text = "English" }
+                },
+                HelpText = L["Preference.LanguageHelpText"]
+            }
+        };
+
+        fieldSections = new Dictionary<string, string>
+        {
+            { nameof(EmployeePreference.Language), L["Preference.LanguageRegion"] }
+        };
+    }
 }

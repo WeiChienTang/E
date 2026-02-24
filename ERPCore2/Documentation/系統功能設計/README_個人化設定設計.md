@@ -344,7 +344,154 @@ dotnet ef database update
 ## 注意事項
 
 1. **不要直接讀取 `Employee.Preference`**：除非在 `Include()` 時已載入，否則此導航屬性為 `null`。建議透過 `IEmployeePreferenceService.GetByEmployeeIdAsync()` 取得偏好設定
-2. **語言切換功能尚未實作**：目前 Modal 已可儲存語言選擇至 DB，但實際的 UI 語言切換邏輯（Blazor i18n / `IStringLocalizer`）留待後續開發
+2. **語言切換功能尚未實作**：目前 Modal 已可儲存語言選擇至 DB，但實際的 UI 語言切換邏輯（Blazor i18n / `IStringLocalizer`）留待後續開發（詳見下方語言切換設計章節）
 3. **BaseEntity 的 Code 欄位**：`EmployeePreference` 繼承自 `BaseEntity`，`Code` 欄位不使用，在 DB 中為 `null`，這是正常的
 4. **個人資料 Tab 僅對有帳號的員工有意義**：非系統使用者（`IsSystemUser = false`）可開啟 Modal 但帳號欄位顯示「—」
 5. **Select 欄位 enum 對應**：`FormSelectField` 將 enum 值轉為整數字串比對，`UILanguage.ZhTW = 1` 對應 option value `"1"`，`UILanguage.EnUS = 2` 對應 `"2"`
+
+---
+
+## 語言切換設計（待實作）
+
+### Blazor Server 的切換限制
+
+Blazor Server 使用 SignalR 長連線，culture 在 HTTP 請求建立時即已確定，**無法在連線存續期間動態切換**。因此語言切換的流程必須是：
+
+```
+儲存語言偏好至 DB → 寫入 culture cookie → window.location.reload()
+```
+
+### 四層架構
+
+```
+[DB] EmployeePreference.Language          ← 持久化使用者偏好（已完成）
+    ↓ 登入後 / 語言變更後
+[Cookie] .AspNetCore.Culture=c=zh-TW|uic=zh-TW
+    ↓ 每次 HTTP 請求
+[Middleware] UseRequestLocalization       → 設定 CultureInfo.CurrentUICulture
+    ↓ 元件渲染時
+[Component] IStringLocalizer<SharedResource> → @L["Employee.Name"]
+```
+
+### 新增檔案
+
+| 檔案 | 說明 |
+|------|------|
+| `Resources/SharedResource.cs` | IStringLocalizer 定位用的空 marker class |
+| `Resources/SharedResource.resx` | 繁體中文字串（預設，key = 英文點記法） |
+| `Resources/SharedResource.en-US.resx` | 英文翻譯字串 |
+| `Helpers/CultureHelper.cs` | `UILanguage` ↔ culture code 轉換工具 |
+| `wwwroot/js/culture-helper.js` | 寫入 cookie 並執行 `window.location.reload()` |
+
+### 修改檔案
+
+| 檔案 | 變更說明 |
+|------|----------|
+| `Program.cs` | 加入 `AddLocalization`、`UseRequestLocalization` |
+| `Components/App.razor` | `<html lang="...">` 改為動態讀取 `CultureInfo.CurrentUICulture` |
+| 登入 handler | 登入成功後依 `EmployeePreference.Language` 寫入 culture cookie |
+| `PersonalPreferenceModalComponent.razor` | `HandleSave()` 語言變更後呼叫 JS reload |
+| `Components/Pages/Employees/PersonalPreference/LanguageRegionTab.razor` | `HelpText` 由「即將推出」改為正式說明 |
+
+### CultureHelper
+
+```csharp
+// Helpers/CultureHelper.cs
+public static class CultureHelper
+{
+    public static string ToCultureCode(UILanguage language) => language switch
+    {
+        UILanguage.ZhTW => "zh-TW",
+        UILanguage.EnUS => "en-US",
+        _ => "zh-TW"
+    };
+
+    public static readonly string[] SupportedCultures = ["zh-TW", "en-US"];
+}
+```
+
+### Program.cs 設定
+
+```csharp
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+// UseAuthentication() 之前
+app.UseRequestLocalization(new RequestLocalizationOptions()
+    .SetDefaultCulture("zh-TW")
+    .AddSupportedCultures(CultureHelper.SupportedCultures)
+    .AddSupportedUICultures(CultureHelper.SupportedCultures));
+// CookieRequestCultureProvider 預設已啟用，自動讀取 .AspNetCore.Culture cookie
+```
+
+### 登入後設置 Culture Cookie
+
+```csharp
+// 登入成功後（AuthController 或 LoginPage）
+var preference = await employeePreferenceService.GetByEmployeeIdAsync(employeeId);
+var cultureCode = CultureHelper.ToCultureCode(preference.Language);
+var cookieValue = CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(cultureCode));
+Response.Cookies.Append(
+    CookieRequestCultureProvider.DefaultCookieName,  // ".AspNetCore.Culture"
+    cookieValue,
+    new CookieOptions { MaxAge = TimeSpan.FromDays(365), Path = "/" }
+);
+```
+
+### 語言切換後 Reload（PersonalPreferenceModalComponent）
+
+```csharp
+// HandleSave() 語言偏好儲存成功後
+await JSRuntime.InvokeVoidAsync("setCultureAndReload",
+    CultureHelper.ToCultureCode(employeePreference.Language));
+```
+
+```javascript
+// wwwroot/js/culture-helper.js
+window.setCultureAndReload = function (culture) {
+    const cookieValue = `c=${culture}|uic=${culture}`;
+    document.cookie = `.AspNetCore.Culture=${cookieValue};path=/;max-age=31536000`;
+    window.location.reload();
+};
+```
+
+### 資源檔格式
+
+`SharedResource.resx`（zh-TW 預設，key 採英文點記法）：
+
+| Name | Value |
+|------|-------|
+| `Employee.Name` | 姓名 |
+| `Employee.Account` | 登入帳號 |
+| `Employee.Mobile` | 手機號碼 |
+| `Button.Save` | 儲存 |
+| `Button.Cancel` | 取消 |
+
+`SharedResource.en-US.resx`：
+
+| Name | Value |
+|------|-------|
+| `Employee.Name` | Name |
+| `Employee.Account` | Account |
+| `Employee.Mobile` | Mobile |
+| `Button.Save` | Save |
+| `Button.Cancel` | Cancel |
+
+### 元件使用方式
+
+```razor
+@inject IStringLocalizer<SharedResource> L
+
+<label class="form-label fw-medium">@L["Employee.Name"]</label>
+<GenericButtonComponent Text="@L["Button.Save"]" ... />
+```
+
+### 遷移策略（漸進式）
+
+目前所有字串均硬編碼為繁體中文。遷移分四個階段，不需要一次全部完成：
+
+| 階段 | 工作 | 備註 |
+|------|------|------|
+| Phase 1 | 建立基礎設施（`AddLocalization`、`CultureHelper`、`Resources/`、JS） | 語言切換機制上線 |
+| Phase 2 | 登入後寫入 cookie + 切換時 reload | 使用者能實際看到語言切換效果 |
+| Phase 3 | 共用字串遷移（Button、通用標籤、錯誤訊息） | 從使用頻率最高處開始 |
+| Phase 4 | 頁面逐一遷移 | 不影響系統穩定性，可按優先順序推進 |

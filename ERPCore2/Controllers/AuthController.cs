@@ -1,5 +1,8 @@
+using ERPCore2.Helpers;
+using ERPCore2.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -8,11 +11,16 @@ namespace ERPCore2.Controllers
     public class AuthController : Controller
     {
         private readonly Services.IAuthenticationService _authService;
+        private readonly IEmployeePreferenceService _employeePreferenceService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(Services.IAuthenticationService authService, ILogger<AuthController> logger)
+        public AuthController(
+            Services.IAuthenticationService authService,
+            IEmployeePreferenceService employeePreferenceService,
+            ILogger<AuthController> logger)
         {
             _authService = authService;
+            _employeePreferenceService = employeePreferenceService;
             _logger = logger;
         }
 
@@ -82,6 +90,15 @@ namespace ERPCore2.Controllers
 
                 // 更新最後登入時間
                 await _authService.UpdateLastLoginAsync(employee.Id);
+
+                // 依員工語言偏好寫入 culture cookie，使下次請求套用正確語言
+                var preference = await _employeePreferenceService.GetByEmployeeIdAsync(employee.Id);
+                var cultureCode = CultureHelper.ToCultureCode(preference.Language);
+                var cookieValue = CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(cultureCode));
+                Response.Cookies.Append(
+                    CookieRequestCultureProvider.DefaultCookieName,
+                    cookieValue,
+                    new CookieOptions { MaxAge = TimeSpan.FromDays(365), Path = "/" });
 
                 // 導向目標頁面
                 return LocalRedirect(returnUrl ?? "/");

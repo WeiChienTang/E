@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>1.3</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- ===== 通用按鈕 ===== -->
+  <data name="Button.Save" xml:space="preserve">
+    <value>儲存</value>
+  </data>
+  <data name="Button.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Button.Close" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="Button.Add" xml:space="preserve">
+    <value>新增</value>
+  </data>
+  <data name="Button.Edit" xml:space="preserve">
+    <value>編輯</value>
+  </data>
+  <data name="Button.Delete" xml:space="preserve">
+    <value>刪除</value>
+  </data>
+  <data name="Button.Search" xml:space="preserve">
+    <value>搜尋</value>
+  </data>
+  <data name="Button.Reset" xml:space="preserve">
+    <value>重置</value>
+  </data>
+  <data name="Button.Export" xml:space="preserve">
+    <value>匯出</value>
+  </data>
+  <data name="Button.Print" xml:space="preserve">
+    <value>列印</value>
+  </data>
+
+  <!-- ===== 通用標籤 ===== -->
+  <data name="Label.Loading" xml:space="preserve">
+    <value>載入中...</value>
+  </data>
+  <data name="Label.NoData" xml:space="preserve">
+    <value>無資料</value>
+  </data>
+  <data name="Label.Required" xml:space="preserve">
+    <value>必填</value>
+  </data>
+  <data name="Label.Optional" xml:space="preserve">
+    <value>選填</value>
+  </data>
+  <data name="Label.Yes" xml:space="preserve">
+    <value>是</value>
+  </data>
+  <data name="Label.No" xml:space="preserve">
+    <value>否</value>
+  </data>
+  <data name="Label.Enable" xml:space="preserve">
+    <value>啟用</value>
+  </data>
+  <data name="Label.Disable" xml:space="preserve">
+    <value>停用</value>
+  </data>
+  <data name="Label.All" xml:space="preserve">
+    <value>全部</value>
+  </data>
+
+  <!-- ===== 通用訊息 ===== -->
+  <data name="Message.SaveSuccess" xml:space="preserve">
+    <value>儲存成功</value>
+  </data>
+  <data name="Message.SaveFailed" xml:space="preserve">
+    <value>儲存失敗</value>
+  </data>
+  <data name="Message.DeleteSuccess" xml:space="preserve">
+    <value>刪除成功</value>
+  </data>
+  <data name="Message.DeleteFailed" xml:space="preserve">
+    <value>刪除失敗</value>
+  </data>
+  <data name="Message.DeleteConfirm" xml:space="preserve">
+    <value>確定要刪除嗎？</value>
+  </data>
+  <data name="Message.OperationFailed" xml:space="preserve">
+    <value>操作失敗</value>
+  </data>
+
+  <!-- ===== 員工 ===== -->
+  <data name="Employee.Name" xml:space="preserve">
+    <value>姓名</value>
+  </data>
+  <data name="Employee.Account" xml:space="preserve">
+    <value>登入帳號</value>
+  </data>
+  <data name="Employee.Mobile" xml:space="preserve">
+    <value>手機號碼</value>
+  </data>
+  <data name="Employee.Email" xml:space="preserve">
+    <value>電子郵件</value>
+  </data>
+  <data name="Employee.Password" xml:space="preserve">
+    <value>密碼</value>
+  </data>
+  <data name="Employee.NewPassword" xml:space="preserve">
+    <value>新密碼</value>
+  </data>
+  <data name="Employee.ConfirmPassword" xml:space="preserve">
+    <value>確認新密碼</value>
+  </data>
+  <data name="Employee.Department" xml:space="preserve">
+    <value>部門</value>
+  </data>
+  <data name="Employee.Position" xml:space="preserve">
+    <value>職稱</value>
+  </data>
+  <data name="Employee.Role" xml:space="preserve">
+    <value>角色</value>
+  </data>
+
+  <!-- ===== 個人化設定 ===== -->
+  <data name="Preference.Title" xml:space="preserve">
+    <value>個人化設定</value>
+  </data>
+  <data name="Preference.Language" xml:space="preserve">
+    <value>介面語言</value>
+  </data>
+  <data name="Preference.PersonalData" xml:space="preserve">
+    <value>個人資料</value>
+  </data>
+  <data name="Preference.LanguageRegion" xml:space="preserve">
+    <value>語言與地區</value>
+  </data>
+  <data name="Preference.ChangePassword" xml:space="preserve">
+    <value>變更密碼</value>
+  </data>
+  <data name="Preference.AccountInfo" xml:space="preserve">
+    <value>帳號資訊</value>
+  </data>
+  <data name="Preference.BasicInfo" xml:space="preserve">
+    <value>基本資料</value>
+  </data>
+  <data name="Preference.LoadingMessage" xml:space="preserve">
+    <value>載入設定中...</value>
+  </data>
+  <data name="Preference.SaveTooltip" xml:space="preserve">
+    <value>儲存個人化設定</value>
+  </data>
+  <data name="Preference.SaveSuccess" xml:space="preserve">
+    <value>個人化設定已儲存</value>
+  </data>
+  <data name="Preference.LanguageHelpText" xml:space="preserve">
+    <value>儲存後頁面將重新載入以套用新語言</value>
+  </data>
+
+  <!-- ===== 員工帳號 ===== -->
+  <data name="Employee.AccountHelpText" xml:space="preserve">
+    <value>帳號由管理員設定，無法自行修改</value>
+  </data>
+
+  <!-- ===== 密碼 ===== -->
+  <data name="Password.LeaveBlank" xml:space="preserve">
+    <value>留空表示不變更密碼</value>
+  </data>
+  <data name="Password.Mismatch" xml:space="preserve">
+    <value>兩次輸入的密碼不一致</value>
+  </data>
+  <data name="Password.Match" xml:space="preserve">
+    <value>密碼一致</value>
+  </data>
+
+  <!-- ===== 錯誤訊息 ===== -->
+  <data name="Error.UnknownUser" xml:space="preserve">
+    <value>無法識別目前登入的使用者</value>
+  </data>
+  <data name="Error.PasswordMismatch" xml:space="preserve">
+    <value>兩次輸入的密碼不一致，請重新確認</value>
+  </data>
+  <data name="Error.SavePreferenceFailed" xml:space="preserve">
+    <value>儲存語言設定失敗：{0}</value>
+  </data>
+  <data name="Error.SaveProfileFailed" xml:space="preserve">
+    <value>儲存個人資料失敗：{0}</value>
+  </data>
+  <data name="Error.SaveFailed" xml:space="preserve">
+    <value>儲存時發生錯誤：{0}</value>
+  </data>
+  <data name="Error.LoadFailed" xml:space="preserve">
+    <value>載入設定失敗：{0}</value>
+  </data>
+
+  <!-- ===== Placeholder ===== -->
+  <data name="Placeholder.Name" xml:space="preserve">
+    <value>請輸入姓名</value>
+  </data>
+  <data name="Placeholder.Email" xml:space="preserve">
+    <value>請輸入電子郵件</value>
+  </data>
+  <data name="Placeholder.NewPassword" xml:space="preserve">
+    <value>留空表示不變更密碼</value>
+  </data>
+  <data name="Placeholder.ConfirmPassword" xml:space="preserve">
+    <value>再次輸入新密碼</value>
+  </data>
+  <data name="Placeholder.MobilePhone" xml:space="preserve">
+    <value>0912-345-678</value>
+  </data>
+
+</root>

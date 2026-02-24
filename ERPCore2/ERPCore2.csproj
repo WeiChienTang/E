@@ -30,7 +30,7 @@
 
   <!-- 確保 Resources 資料夾在 publish 時被複製 -->
   <ItemGroup>
-    <None Include="Resources\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Resources\**" Exclude="Resources\*.resx" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>1.3</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- ===== Buttons ===== -->
+  <data name="Button.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Button.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Button.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Button.Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Button.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Button.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Button.Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Button.Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Button.Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Button.Print" xml:space="preserve">
+    <value>Print</value>
+  </data>
+
+  <!-- ===== Labels ===== -->
+  <data name="Label.Loading" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="Label.NoData" xml:space="preserve">
+    <value>No data</value>
+  </data>
+  <data name="Label.Required" xml:space="preserve">
+    <value>Required</value>
+  </data>
+  <data name="Label.Optional" xml:space="preserve">
+    <value>Optional</value>
+  </data>
+  <data name="Label.Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Label.No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Label.Enable" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="Label.Disable" xml:space="preserve">
+    <value>Disable</value>
+  </data>
+  <data name="Label.All" xml:space="preserve">
+    <value>All</value>
+  </data>
+
+  <!-- ===== Messages ===== -->
+  <data name="Message.SaveSuccess" xml:space="preserve">
+    <value>Saved successfully</value>
+  </data>
+  <data name="Message.SaveFailed" xml:space="preserve">
+    <value>Save failed</value>
+  </data>
+  <data name="Message.DeleteSuccess" xml:space="preserve">
+    <value>Deleted successfully</value>
+  </data>
+  <data name="Message.DeleteFailed" xml:space="preserve">
+    <value>Delete failed</value>
+  </data>
+  <data name="Message.DeleteConfirm" xml:space="preserve">
+    <value>Are you sure you want to delete?</value>
+  </data>
+  <data name="Message.OperationFailed" xml:space="preserve">
+    <value>Operation failed</value>
+  </data>
+
+  <!-- ===== Employee ===== -->
+  <data name="Employee.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Employee.Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Employee.Mobile" xml:space="preserve">
+    <value>Mobile</value>
+  </data>
+  <data name="Employee.Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Employee.Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Employee.NewPassword" xml:space="preserve">
+    <value>New Password</value>
+  </data>
+  <data name="Employee.ConfirmPassword" xml:space="preserve">
+    <value>Confirm Password</value>
+  </data>
+  <data name="Employee.Department" xml:space="preserve">
+    <value>Department</value>
+  </data>
+  <data name="Employee.Position" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="Employee.Role" xml:space="preserve">
+    <value>Role</value>
+  </data>
+
+  <!-- ===== Preferences ===== -->
+  <data name="Preference.Title" xml:space="preserve">
+    <value>Personalization</value>
+  </data>
+  <data name="Preference.Language" xml:space="preserve">
+    <value>Interface Language</value>
+  </data>
+  <data name="Preference.PersonalData" xml:space="preserve">
+    <value>Personal Info</value>
+  </data>
+  <data name="Preference.LanguageRegion" xml:space="preserve">
+    <value>Language &amp; Region</value>
+  </data>
+  <data name="Preference.ChangePassword" xml:space="preserve">
+    <value>Change Password</value>
+  </data>
+  <data name="Preference.AccountInfo" xml:space="preserve">
+    <value>Account Info</value>
+  </data>
+  <data name="Preference.BasicInfo" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="Preference.LoadingMessage" xml:space="preserve">
+    <value>Loading settings...</value>
+  </data>
+  <data name="Preference.SaveTooltip" xml:space="preserve">
+    <value>Save settings</value>
+  </data>
+  <data name="Preference.SaveSuccess" xml:space="preserve">
+    <value>Settings saved</value>
+  </data>
+  <data name="Preference.LanguageHelpText" xml:space="preserve">
+    <value>Page will reload after saving to apply new language</value>
+  </data>
+
+  <!-- ===== Employee Account ===== -->
+  <data name="Employee.AccountHelpText" xml:space="preserve">
+    <value>Account is set by administrator and cannot be changed</value>
+  </data>
+
+  <!-- ===== Password ===== -->
+  <data name="Password.LeaveBlank" xml:space="preserve">
+    <value>Leave blank to keep current password</value>
+  </data>
+  <data name="Password.Mismatch" xml:space="preserve">
+    <value>Passwords do not match</value>
+  </data>
+  <data name="Password.Match" xml:space="preserve">
+    <value>Passwords match</value>
+  </data>
+
+  <!-- ===== Error Messages ===== -->
+  <data name="Error.UnknownUser" xml:space="preserve">
+    <value>Unable to identify current user</value>
+  </data>
+  <data name="Error.PasswordMismatch" xml:space="preserve">
+    <value>Passwords do not match, please confirm again</value>
+  </data>
+  <data name="Error.SavePreferenceFailed" xml:space="preserve">
+    <value>Failed to save language settings: {0}</value>
+  </data>
+  <data name="Error.SaveProfileFailed" xml:space="preserve">
+    <value>Failed to save profile: {0}</value>
+  </data>
+  <data name="Error.SaveFailed" xml:space="preserve">
+    <value>An error occurred while saving: {0}</value>
+  </data>
+  <data name="Error.LoadFailed" xml:space="preserve">
+    <value>Failed to load settings: {0}</value>
+  </data>
+
+  <!-- ===== Placeholders ===== -->
+  <data name="Placeholder.Name" xml:space="preserve">
+    <value>Enter name</value>
+  </data>
+  <data name="Placeholder.Email" xml:space="preserve">
+    <value>Enter email</value>
+  </data>
+  <data name="Placeholder.NewPassword" xml:space="preserve">
+    <value>Leave blank to keep current password</value>
+  </data>
+  <data name="Placeholder.ConfirmPassword" xml:space="preserve">
+    <value>Re-enter new password</value>
+  </data>
+  <data name="Placeholder.MobilePhone" xml:space="preserve">
+    <value>0912-345-678</value>
+  </data>
+
+</root>

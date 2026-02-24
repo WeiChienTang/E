@@ -4,25 +4,27 @@
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
-                   Title="個人化設定"
+                   Title="@L["Preference.Title"]"
                    Icon="bi bi-person-gear"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    IsLoading="@isLoading"
-                   LoadingMessage="載入設定中..."
+                   LoadingMessage="@L["Preference.LoadingMessage"]"
                    OnClose="@HandleClose">
 
     <HeaderButtons>
         <div class="d-flex gap-2 align-items-center">
             <GenericButtonComponent Variant="ButtonVariant.Green"
                                   Size="ButtonSize.Small"
-                                  Text="儲存"
+                                  Text="@L["Button.Save"]"
                                   Icon="bi bi-check-lg"
                                   OnClick="HandleSave"
                                   IsDisabled="@isLoading"
-                                  Title="儲存個人化設定" />
+                                  Title="@L["Preference.SaveTooltip"]" />
         </div>
     </HeaderButtons>
 
@@ -55,6 +57,7 @@
 
     // 語言偏好
     private EmployeePreference employeePreference = new();
+    private UILanguage _originalLanguage = UILanguage.ZhTW; // 記錄載入時的語言，用於判斷是否需要 reload
 
     // 個人資料
     private Employee? currentEmployee = null;
@@ -88,8 +91,8 @@
     {
         tabDefinitions = new List<FormTabDefinition>
         {
-            new() { Label = "個人資料", Icon = "bi bi-person", SectionNames = new(), CustomContent = CreatePersonalDataTabContent() },
-            new() { Label = "語言與地區", Icon = "bi bi-translate", SectionNames = new(), CustomContent = CreateLanguageRegionTabContent() }
+            new() { Label = L["Preference.PersonalData"], Icon = "bi bi-person", SectionNames = new(), CustomContent = CreatePersonalDataTabContent() },
+            new() { Label = L["Preference.LanguageRegion"], Icon = "bi bi-translate", SectionNames = new(), CustomContent = CreateLanguageRegionTabContent() }
         };
     }
 
@@ -114,8 +117,9 @@
 
             if (currentEmployeeId.HasValue)
             {
-                // 載入語言偏好
+                // 載入語言偏好，並記錄原始語言供儲存後比對
                 employeePreference = await EmployeePreferenceService.GetByEmployeeIdAsync(currentEmployeeId.Value);
+                _originalLanguage = employeePreference.Language;
 
                 // 載入員工個人資料
                 currentEmployee = await EmployeeService.GetByIdAsync(currentEmployeeId.Value);
@@ -123,7 +127,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入設定失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(L["Error.LoadFailed", ex.Message]);
         }
         finally
         {
@@ -138,14 +142,14 @@
     {
         if (!currentEmployeeId.HasValue)
         {
-            await NotificationService.ShowErrorAsync("無法識別目前登入的使用者");
+            await NotificationService.ShowErrorAsync(L["Error.UnknownUser"]);
             return;
         }
 
         // 密碼確認驗證
         if (!string.IsNullOrEmpty(newPassword) && newPassword != confirmPassword)
         {
-            await NotificationService.ShowErrorAsync("兩次輸入的密碼不一致，請重新確認");
+            await NotificationService.ShowErrorAsync(L["Error.PasswordMismatch"]);
             return;
         }
 
@@ -159,7 +163,7 @@
 
             if (!preferenceResult.IsSuccess)
             {
-                await NotificationService.ShowErrorAsync($"儲存語言設定失敗：{preferenceResult.ErrorMessage}");
+                await NotificationService.ShowErrorAsync(L["Error.SavePreferenceFailed", preferenceResult.ErrorMessage ?? ""]);
                 return;
             }
 
@@ -176,21 +180,29 @@
 
                 if (!profileResult.IsSuccess)
                 {
-                    await NotificationService.ShowErrorAsync($"儲存個人資料失敗：{profileResult.ErrorMessage}");
+                    await NotificationService.ShowErrorAsync(L["Error.SaveProfileFailed", profileResult.ErrorMessage ?? ""]);
                     return;
                 }
             }
 
-            await NotificationService.ShowSuccessAsync("個人化設定已儲存");
+            await NotificationService.ShowSuccessAsync(L["Preference.SaveSuccess"]);
 
             if (OnSaved.HasDelegate)
                 await OnSaved.InvokeAsync();
+
+            // 語言若與目前 UI 文化不同，寫入 cookie 並重新載入頁面以套用新語言
+            var newCultureCode = ERPCore2.Helpers.CultureHelper.ToCultureCode(employeePreference.Language);
+            if (newCultureCode != System.Globalization.CultureInfo.CurrentUICulture.Name)
+            {
+                await JSRuntime.InvokeVoidAsync("setCultureAndReload", newCultureCode);
+                return; // reload 後頁面會重整，不需要繼續執行
+            }
 
             await CloseModalAsync();
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(L["Error.SaveFailed", ex.Message]);
         }
         finally
         {
@@ -210,6 +222,7 @@
         currentEmployeeId = null;
         currentEmployee = null;
         employeePreference = new();
+        _originalLanguage = UILanguage.ZhTW;
         newPassword = string.Empty;
         confirmPassword = string.Empty;
 

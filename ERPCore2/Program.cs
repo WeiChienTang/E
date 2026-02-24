@@ -111,6 +111,9 @@ if (httpsConfig.Exists() && httpsConfig.GetValue<bool>("Enabled"))
 // 註冊應用程式服務
 builder.Services.AddApplicationServices(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
+// 加入多語言支援
+builder.Services.AddLocalization();
+
 // 加入 HttpContextAccessor（.NET 9 互動式元件必需）
 builder.Services.AddHttpContextAccessor();
 
@@ -223,6 +226,13 @@ if (app.Environment.IsDevelopment() || builder.Configuration["urls"]?.Contains("
         appBuilder => appBuilder.UseHttpsRedirection()
     );
 }
+
+// 套用語言設定（必須在 UseAuthentication 之前）
+app.UseRequestLocalization(new RequestLocalizationOptions()
+    .SetDefaultCulture("zh-TW")
+    .AddSupportedCultures(ERPCore2.Helpers.CultureHelper.SupportedCultures)
+    .AddSupportedUICultures(ERPCore2.Helpers.CultureHelper.SupportedCultures));
+// CookieRequestCultureProvider 預設已啟用，自動讀取 .AspNetCore.Culture cookie
 
 app.UseAuthentication();
 app.UseAuthorization();
