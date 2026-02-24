@@ -93,13 +93,11 @@
 .form-field-label {
     flex: 0 0 auto;
     min-width: 80px;
-    max-width: 120px;
     font-size: 1rem;
     font-weight: 500;
     color: #495057;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
 }
 
 /* Input 容器 */
@@ -118,8 +116,9 @@
 .form-field-row-checkbox .form-field-label {
     flex: 0 0 auto;
     min-width: 80px;
-    max-width: 120px;
     margin-right: 0.5rem;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .form-field-row-checkbox .form-field-input {
@@ -345,11 +344,12 @@
         width: 100%;
     }
     
-    /* 手機版 Label 樣式 - 固定寬度 */
+    /* 手機版 Label 樣式 - 自適應寬度 */
     .form-field-label {
         flex: 0 0 auto;
         min-width: 70px;
-        max-width: 100px;
+        white-space: normal;
+        word-break: break-word;
     }
     
     /* 手機版 Input 容器佔滿剩餘寬度 */
