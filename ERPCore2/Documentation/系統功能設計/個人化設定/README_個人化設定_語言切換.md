@@ -67,11 +67,16 @@ Blazor Server 使用 SignalR 長連線，culture 在 HTTP 請求建立時即已�
 | `Controllers/AuthController.cs` | 登入成功後依 `EmployeePreference.Language` 寫入 culture cookie |
 | `PersonalPreferenceModalComponent.razor` | `HandleSave()` 語言變更後呼叫 JS reload |
 | `Components/_Imports.razor` | 加入 `@using Microsoft.Extensions.Localization` |
+| `Data/Entities/Employees/EmployeePreference.cs` | `UILanguage` 枚舉加入 `JaJP`、`ZhCN`、`FilPH` |
 | `Models/Navigation/NavigationItem.cs` | 新增 `NameKey` 屬性（可選，供 NavMenu 多語系顯示用） |
 | `Helpers/Common/NavigationActionHelper.cs` | `CreateActionItem()` 加入可選 `nameKey` 參數 |
 | `Data/Navigation/NavigationConfig.cs` | 所有 NavigationItem 加入 `NameKey = "Nav.xxx"` |
 | `Components/Layout/NavMenu.razor` | 注入 `L`，改用 `L[item.NameKey]` 顯示導航項目名稱 |
-| `Data/Entities/Employees/EmployeePreference.cs` | `UILanguage` 枚舉加入 `JaJP`、`ZhCN`、`FilPH` |
+| `Models/Reports/ReportDefinition.cs` | 新增 `NameKey` 屬性（可選，供報表列表多語系顯示用） |
+| `Data/Reports/ReportRegistry.cs` | 所有 ReportDefinition 加入 `NameKey = "Report.xxx"` |
+| `Components/Shared/Report/GenericReportIndexModalComponent.razor` | 注入 `L`，用 `DisplayFormatter` 顯示本地化報表名稱，UI 文字改用資源 key |
+| `Components/Pages/Reports/GenericReportIndexPage.razor` | 注入 `L`，報表集標題改用 `L[$"ReportCategory.{Category}"]` |
+| `Components/Pages/Employees/PersonalPreference/LanguageRegionTab.razor` | 語言選單加入 Filipino 選項 |
 
 ---
 
@@ -199,6 +204,66 @@ Text="@(menuItem.NameKey != null ? L[menuItem.NameKey].ToString() : menuItem.Nam
 
 ---
 
+## 報表集多語系設計
+
+### 機制：ReportDefinition.NameKey + DisplayFormatter
+
+`ReportDefinition` 有可選的 `NameKey` 屬性（同 NavigationItem 模式）：
+
+```csharp
+// Models/Reports/ReportDefinition.cs
+public string? NameKey { get; set; }
+```
+
+`GenericReportIndexModalComponent` 透過 `InteractiveColumnDefinition.DisplayFormatter` 取得本地化名稱：
+
+```csharp
+// Components/Shared/Report/GenericReportIndexModalComponent.razor
+@inject IStringLocalizer<SharedResource> L
+
+new InteractiveColumnDefinition
+{
+    PropertyName = "Name",
+    Title = L["Report.NameColumn"],
+    DisplayFormatter = (item) =>
+    {
+        var report = item as ReportDefinition;
+        return report?.NameKey != null
+            ? L[report.NameKey].ToString() ?? report.Name
+            : report?.Name ?? "";
+    }
+}
+```
+
+報表集標題在 `GenericReportIndexPage.razor` 透過分類 key 取得：
+
+```razor
+@* Components/Pages/Reports/GenericReportIndexPage.razor *@
+@inject IStringLocalizer<SharedResource> L
+
+Title="@L[$"ReportCategory.{Category}"].ToString()"
+```
+
+搜尋同時比對原始中文 `Name` 與本地化名稱（雙語搜尋）：
+
+```csharp
+result = result.Where(r =>
+    r.Name.ToLower().Contains(keyword) ||
+    (r.NameKey != null && L[r.NameKey].ToString()!.ToLower().Contains(keyword)));
+```
+
+### Report.* key 命名規則
+
+| 類型 | 格式 | 範例 |
+|------|------|------|
+| 報表集標題 | `ReportCategory.{Category}` | `ReportCategory.Customer`、`ReportCategory.HR` |
+| 報表名稱 | `Report.{ActionId前綴}` | `Report.CustomerStatement`、`Report.TrialBalance` |
+| 報表 UI 文字 | `Report.{動作}` | `Report.GoTo`、`Report.SearchPlaceholder`、`Report.NoReports` |
+
+目前共 57 個 `Report.*` / `ReportCategory.*` key，涵蓋全部 38 份報表名稱、11 個分類標題及 8 個 UI 文字。
+
+---
+
 ## IStringLocalizer 使用方式
 
 ### Marker class
@@ -244,19 +309,11 @@ private readonly List<FormFieldDefinition> allFields = new()
 
 | Name | Value |
 |------|-------|
-| `Employee.Name` | 姓名 |
 | `Button.Save` | 儲存 |
-| `Preference.Title` | 個人化設定 |
-| `Error.PasswordMismatch` | 兩次輸入的密碼不一致，請重新確認 |
-
-`SharedResource.en-US.resx`：
-
-| Name | Value |
-|------|-------|
-| `Employee.Name` | Name |
-| `Button.Save` | Save |
-| `Preference.Title` | Personalization |
-| `Error.PasswordMismatch` | Passwords do not match, please confirm again |
+| `Employee.Name` | 姓名 |
+| `Nav.Home` | 首頁 |
+| `Report.CustomerStatement` | 客戶對帳單 |
+| `ReportCategory.Customer` | 客戶報表集 |
 
 > key 一律使用英文點記法（`Module.Property`），不因語言而異。未提供翻譯的 key 會直接顯示 key 名稱（`IStringLocalizer` 預設行為）。
 
@@ -300,7 +357,8 @@ public static readonly string[] SupportedCultures = [..., "xx-XX"];  // 加入�
 **⚠️ resx XML 注意事項**（避免 MSB3103 build error）：
 - 所有值中的 `&` 必須寫成 `&amp;`（例如 `Language &amp; Region`）
 - 同理：`<` → `&lt;`，`>` → `&gt;`
-- 若用程式生成 resx，建議用字串拼接（避免 template literal 含多語系字元時的 parse 問題），值直接使用 Unicode 轉義（`\uXXXX`）確保 ASCII 安全
+- 若用 Node.js 腳本生成 resx，值一律使用 `\uXXXX` Unicode 轉義表示非 ASCII 字元，避免 buffer/parse 問題
+- **生成後必須驗證**：確認值是目標語言（而非英文 placeholder）
 
 ### 4. 更新語言選單 UI
 
@@ -333,39 +391,36 @@ new() { Value = "6", Text = "顯示名稱" },
 <value>Language &amp; Region</value>
 ```
 
-**目前處理**：`zh-TW` 的 `Preference.LanguageRegion` 值為「語言與地區」（無 `&`）；`en-US` 已正確寫為 `Language &amp; Region`。新語言的此 key 若需使用 `&` 符號，必須同樣轉義。
+### 2. 腳本生成 resx 需驗證目標語言
 
-### 2. LanguageRegionTab 語言選單需手動維護
+**問題**：以 Node.js 腳本批次生成 resx 時，若腳本邏輯有誤，可能將英文 placeholder 寫入目標語言的 resx，導致 UI 顯示英文而非目標語言。
 
-**問題**：`LanguageRegionTab.razor` 的語言下拉選單是**硬編碼**的 `SelectOption` 清單，新增語言後必須手動加入對應選項，否則新語言不會出現在 UI。
+**實際案例**：`SharedResource.ja-JP.resx` 初次生成時，`Button.*`、`Label.*`、`Employee.*` 等 key 全部帶英文值（如 `Save`、`Name`），僅 `Preference.LanguageRegion` 例外。已於 2026-02-25 修正 59 個 key。
 
-**目前狀態**：
+**預防方式**：
+- 生成後抽查幾個 key，確認值是目標語言文字
+- `zh-CN.resx` 和 `fil.resx` 可作為參考（生成正確）
+
+### 3. LanguageRegionTab 語言選單需手動維護
+
+**問題**：`LanguageRegionTab.razor` 的語言下拉選單是**硬編碼**的 `SelectOption` 清單，新增語言後必須手動加入對應選項。
+
+**目前狀態**（5 種語言，已完整）：
 ```csharp
-// LanguageRegionTab.razor（截至 2026-02-25）
 new() { Value = "1", Text = "繁體中文" },
 new() { Value = "2", Text = "English" },
 new() { Value = "3", Text = "日本語" },
 new() { Value = "4", Text = "简体中文" },
-// ⚠️ 缺少 FilPH (Value = "5", Text = "Filipino")
+new() { Value = "5", Text = "Filipino" },
 ```
 
-**待辦**：補上 `Filipino` 選項（見下方遷移策略待辦清單）。
+**未來建議**：可改為從 `UILanguage` 枚舉動態產生選項（`Enum.GetValues` + `Display` Attribute）。
 
-**根本解法建議**：未來可改為從 `UILanguage` 枚舉動態產生選項（透過 `Enum.GetValues` + `Display` Attribute），避免每次新增語言都要修改 UI 程式碼。
+### 4. NavMenu 搜尋不支援多語系
 
-### 3. NavMenu 搜尋不支援多語系
+**問題**：搜尋功能（CommandBar 等）使用 `NavigationItem.Name`（繁體中文）與 `SearchKeywords`，搜尋結果名稱不隨使用者語言變更。
 
-**問題**：搜尋功能（CommandBar 等）使用 `NavigationItem.Name`（繁體中文）與 `SearchKeywords`，不會依使用者語言顯示搜尋結果名稱。
-
-**現況**：可接受，搜尋關鍵字可在 `NavigationConfig.cs` 各項目的 `SearchKeywords` 中加入多語言詞彙。
-
-### 4. 程式生成 resx 的工具限制
-
-**問題**：用 Claude Code 的 Write 工具直接寫入大型多語系 resx（含日文等非 ASCII 字元）時，曾遇到：
-- Template literal 含多語系字元導致 Node.js parse 錯誤
-- 改用字串拼接（`+` 運算子）+ Unicode 轉義（`\uXXXX`）解決
-
-**建議**：使用 Node.js 腳本生成 resx 時，值一律用 `\uXXXX` 轉義表示非 ASCII 字元，避免工具 buffer 問題。
+**現況**：可接受，可在 `NavigationConfig.cs` 各項目的 `SearchKeywords` 中加入多語言詞彙補充。
 
 ---
 
@@ -376,26 +431,19 @@ new() { Value = "4", Text = "简体中文" },
 | Phase 1 | 建立基礎設施（`AddLocalization`、`CultureHelper`、`Resources/`、JS） | ✅ 完成 |
 | Phase 2 | 登入後寫入 cookie + 切換時 reload | ✅ 完成 |
 | Phase 3 | PersonalPreference 元件字串遷移 | ✅ 完成 |
-| Phase 4a | NavMenu + NavigationConfig 翻譯（`Nav.*` key，5 種語言） | ✅ 完成 |
-| Phase 4b | `LanguageRegionTab.razor` 補上 Filipino 選項 | ⏳ 待辦 |
-| Phase 4c | 其他頁面逐一遷移 | 待推進 |
+| Phase 4a | NavMenu + NavigationConfig 翻譯（75 個 `Nav.*` key，5 種語言） | ✅ 完成 |
+| Phase 4b | `LanguageRegionTab.razor` 加入 Filipino 選項 | ✅ 完成 |
+| Phase 4c | `ReportRegistry` + `GenericReportIndexModalComponent` 翻譯（57 個 `Report.*` key） | ✅ 完成 |
+| Phase 5 | 其他頁面逐一遷移 | 待推進 |
 
-### Phase 4b 立即待辦
-
-`LanguageRegionTab.razor` 缺少 Filipino 選項，需補上：
-
-```csharp
-new() { Value = "5", Text = "Filipino" },
-```
-
-### Phase 4c 新頁面翻譯流程
+### Phase 5 新頁面翻譯流程
 
 新增頁面翻譯時：
 1. 在所有語言的 `.resx` 加入新 key（命名格式：`模組.欄位`）
 2. 在目標元件注入 `@inject IStringLocalizer<SharedResource> L`
 3. 將硬編碼中文字串改為 `@L["Key"]`
 
-> 翻譯範圍建議順序：高使用頻率頁面優先（員工、採購、銷貨）。
+> 翻譯範圍建議優先順序：高使用頻率的共用元件（`GenericIndexPageComponent`、`GenericFormComponent`）→ 各業務模組頁面。
 
 ---
 
