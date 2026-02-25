@@ -473,4 +473,63 @@
     <value>Ang feature na ito ay isinasagawa pa</value>
   </data>
 
+
+  <!-- ===== 報表 ===== -->
+  <data name="ReportCategory.Customer" xml:space="preserve"><value>Mga Ulat ng Customer</value></data>
+  <data name="ReportCategory.Supplier" xml:space="preserve"><value>Mga Ulat ng Supplier</value></data>
+  <data name="ReportCategory.Product" xml:space="preserve"><value>Mga Ulat ng Produkto</value></data>
+  <data name="ReportCategory.Inventory" xml:space="preserve"><value>Mga Ulat ng Imbentaryo</value></data>
+  <data name="ReportCategory.Sales" xml:space="preserve"><value>Mga Ulat ng Benta</value></data>
+  <data name="ReportCategory.Purchase" xml:space="preserve"><value>Mga Ulat ng Pagbili</value></data>
+  <data name="ReportCategory.Financial" xml:space="preserve"><value>Mga Ulat sa Pananalapi</value></data>
+  <data name="ReportCategory.HR" xml:space="preserve"><value>Mga Ulat ng HR</value></data>
+  <data name="ReportCategory.Vehicle" xml:space="preserve"><value>Mga Ulat ng Sasakyan</value></data>
+  <data name="ReportCategory.Waste" xml:space="preserve"><value>Mga Ulat ng Basura</value></data>
+  <data name="ReportCategory.Accounting" xml:space="preserve"><value>Mga Ulat sa Accounting</value></data>
+  <data name="Report.NoReports" xml:space="preserve"><value>Walang available na ulat</value></data>
+  <data name="Report.SearchPlaceholder" xml:space="preserve"><value>Hanapin ang pangalan ng ulat...</value></data>
+  <data name="Report.GoTo" xml:space="preserve"><value>Buksan</value></data>
+  <data name="Report.NotAvailable" xml:space="preserve"><value>Hindi pa available ang ulat na ito</value></data>
+  <data name="Report.InstructionText" xml:space="preserve"><value>I-click ang "Buksan" o ang hilera upang buksan ang mga filter ng ulat</value></data>
+  <data name="Report.NameColumn" xml:space="preserve"><value>Pangalan ng Ulat</value></data>
+  <data name="Report.DescriptionColumn" xml:space="preserve"><value>Paglalarawan</value></data>
+  <data name="Report.SearchEmpty" xml:space="preserve"><value>Walang ulat na tumutugma sa "{0}"</value></data>
+  <data name="Report.CustomerStatement" xml:space="preserve"><value>Pahayag ng Customer</value></data>
+  <data name="Report.CustomerSalesAnalysis" xml:space="preserve"><value>Pagsusuri ng Benta ng Customer</value></data>
+  <data name="Report.CustomerTransaction" xml:space="preserve"><value>Detalye ng Transaksyon ng Customer</value></data>
+  <data name="Report.CustomerRoster" xml:space="preserve"><value>Listahan ng Customer</value></data>
+  <data name="Report.CustomerDetail" xml:space="preserve"><value>Detalye ng Customer</value></data>
+  <data name="Report.SupplierStatement" xml:space="preserve"><value>Pahayag ng Supplier</value></data>
+  <data name="Report.SupplierPurchaseAnalysis" xml:space="preserve"><value>Pagsusuri ng Pagbili ng Supplier</value></data>
+  <data name="Report.SupplierRoster" xml:space="preserve"><value>Listahan ng Supplier</value></data>
+  <data name="Report.SupplierDetail" xml:space="preserve"><value>Detalye ng Supplier</value></data>
+  <data name="Report.PurchaseOrder" xml:space="preserve"><value>Purchase Order</value></data>
+  <data name="Report.PurchaseReceiving" xml:space="preserve"><value>Resibo ng Pagbili</value></data>
+  <data name="Report.PurchaseReturn" xml:space="preserve"><value>Pagbabalik ng Pagbili</value></data>
+  <data name="Report.Quotation" xml:space="preserve"><value>Quotation</value></data>
+  <data name="Report.SalesOrder" xml:space="preserve"><value>Sales Order</value></data>
+  <data name="Report.SalesDelivery" xml:space="preserve"><value>Delivery Order</value></data>
+  <data name="Report.SalesReturn" xml:space="preserve"><value>Sales Return</value></data>
+  <data name="Report.ProductList" xml:space="preserve"><value>Listahan ng Produkto</value></data>
+  <data name="Report.ProductDetail" xml:space="preserve"><value>Detalye ng Produkto</value></data>
+  <data name="Report.ProductBarcode" xml:space="preserve"><value>Barcode ng Produkto</value></data>
+  <data name="Report.BOMReport" xml:space="preserve"><value>BOM Report</value></data>
+  <data name="Report.ProductionSchedule" xml:space="preserve"><value>Iskedyul ng Produksyon</value></data>
+  <data name="Report.InventoryStatus" xml:space="preserve"><value>Katayuan ng Imbentaryo</value></data>
+  <data name="Report.InventoryTransaction" xml:space="preserve"><value>Transaksyon ng Imbentaryo</value></data>
+  <data name="Report.InventoryCount" xml:space="preserve"><value>Pagkakaiba sa Pagbibilang</value></data>
+  <data name="Report.VehicleList" xml:space="preserve"><value>Listahan ng Sasakyan</value></data>
+  <data name="Report.VehicleMaintenance" xml:space="preserve"><value>Pagpapanatili ng Sasakyan</value></data>
+  <data name="Report.EmployeeRoster" xml:space="preserve"><value>Listahan ng Empleyado</value></data>
+  <data name="Report.EmployeeDetail" xml:space="preserve"><value>Detalye ng Empleyado</value></data>
+  <data name="Report.WasteRecord" xml:space="preserve"><value>Talaan ng Basura</value></data>
+  <data name="Report.AccountsReceivableSetoff" xml:space="preserve"><value>A/R Setoff</value></data>
+  <data name="Report.AccountsPayableSetoff" xml:space="preserve"><value>A/P Setoff</value></data>
+  <data name="Report.AccountItemList" xml:space="preserve"><value>Chart of Accounts</value></data>
+  <data name="Report.TrialBalance" xml:space="preserve"><value>Trial Balance</value></data>
+  <data name="Report.IncomeStatement" xml:space="preserve"><value>Income Statement</value></data>
+  <data name="Report.BalanceSheet" xml:space="preserve"><value>Balance Sheet</value></data>
+  <data name="Report.GeneralLedger" xml:space="preserve"><value>General Ledger</value></data>
+  <data name="Report.SubsidiaryLedger" xml:space="preserve"><value>Subsidiary Ledger</value></data>
+  <data name="Report.DetailAccountBalance" xml:space="preserve"><value>Account Balance Summary</value></data>
 </root>

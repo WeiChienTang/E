@@ -1,5 +1,6 @@
 @using ERPCore2.Models
 @using ERPCore2.Models.Reports
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -10,14 +11,14 @@
                    UseWhiteCloseButton="true"
                    BodyCssClass="p-0"
                    OnClose="@HandleClose">
-    
+
     <BodyContent>
         <div class="p-3">
             @if (Reports == null || !Reports.Any())
             {
                 <div class="alert alert-info mb-0">
                     <i class="bi bi-info-circle me-2"></i>
-                    目前沒有可用的報表
+                    @L["Report.NoReports"]
                 </div>
             }
             else
@@ -26,9 +27,9 @@
                 <div class="mb-3">
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" 
-                               class="form-control" 
-                               placeholder="搜尋報表名稱..."
+                        <input type="text"
+                               class="form-control"
+                               placeholder="@L["Report.SearchPlaceholder"]"
                                @bind="searchKeyword"
                                @bind:event="oninput" />
                         @if (!string.IsNullOrEmpty(searchKeyword))
@@ -39,7 +40,7 @@
                         }
                     </div>
                 </div>
-                
+
                 <InteractiveTableComponent TItem="ReportDefinition"
                                           Items="@FilteredReports"
                                           ColumnDefinitions="@columnDefinitions"
@@ -60,76 +61,76 @@
                         }
                         <GenericButtonComponent Variant="@(isEnabled ? ButtonVariant.DarkBlue : ButtonVariant.Gray)"
                                               Size="ButtonSize.Small"
-                                              Text="前往"
+                                              Text="@L["Report.GoTo"]"
                                               IsDisabled="@(!isEnabled)"
-                                              Title="@(isEnabled ? $"前往 {report.Name}" : "此報表尚未開放")"
+                                              Title="@(isEnabled ? $"{L["Report.GoTo"]} {GetLocalizedName(report)}" : L["Report.NotAvailable"].ToString())"
                                               OnClick="@(() => HandlePrintClick(report))" />
                     </CustomActionsTemplate>
                 </InteractiveTableComponent>
-                
+
                 @* 說明區塊 *@
                 <div class="mt-3 text-muted small">
                     <i class="bi bi-info-circle me-1"></i>
-                    點擊「前往」或點擊該列可開啟報表篩選條件設定
+                    @L["Report.InstructionText"]
                 </div>
             }
         </div>
     </BodyContent>
-    
+
 </BaseModalComponent>
 
 @code {
     // ===== 參數定義 =====
-    
+
     /// <summary>
     /// Modal 是否顯示
     /// </summary>
     [Parameter]
     public bool IsVisible { get; set; }
-    
+
     /// <summary>
     /// Modal 顯示狀態變更事件
     /// </summary>
     [Parameter]
     public EventCallback<bool> IsVisibleChanged { get; set; }
-    
+
     /// <summary>
     /// Modal 標題
     /// </summary>
     [Parameter]
     public string Title { get; set; } = "報表中心";
-    
+
     /// <summary>
     /// Modal 圖示
     /// </summary>
     [Parameter]
     public string Icon { get; set; } = "bi-printer";
-    
+
     /// <summary>
     /// 報表清單
     /// </summary>
     [Parameter]
     public IEnumerable<ReportDefinition>? Reports { get; set; }
-    
+
     /// <summary>
     /// 報表選擇事件（傳遞 ActionId）
     /// </summary>
     [Parameter]
     public EventCallback<string> OnReportSelected { get; set; }
-    
+
     /// <summary>
     /// 關閉事件
     /// </summary>
     [Parameter]
     public EventCallback OnClose { get; set; }
-    
+
     // ===== 私有欄位 =====
-    
+
     private List<InteractiveColumnDefinition> columnDefinitions = new();
     private string searchKeyword = string.Empty;
-    
+
     // ===== 計算屬性 =====
-    
+
     /// <summary>
     /// 篩選後的報表清單
     /// </summary>
@@ -139,27 +140,29 @@
         {
             if (Reports == null)
                 return new List<ReportDefinition>();
-            
+
             var result = Reports.AsEnumerable();
-            
-            // 關鍵字搜尋（報表名稱）
+
+            // 關鍵字搜尋（原始中文名稱 + 本地化名稱）
             if (!string.IsNullOrWhiteSpace(searchKeyword))
             {
                 var keyword = searchKeyword.Trim().ToLower();
-                result = result.Where(r => r.Name.ToLower().Contains(keyword));
+                result = result.Where(r =>
+                    r.Name.ToLower().Contains(keyword) ||
+                    (r.NameKey != null && L[r.NameKey].ToString()!.ToLower().Contains(keyword)));
             }
-            
+
             return result.OrderBy(r => r.SortOrder).ToList();
         }
     }
-    
+
     // ===== 生命週期方法 =====
-    
+
     protected override void OnInitialized()
     {
         InitializeColumnDefinitions();
     }
-    
+
     private void InitializeColumnDefinitions()
     {
         columnDefinitions = new List<InteractiveColumnDefinition>
@@ -167,74 +170,77 @@
             new InteractiveColumnDefinition
             {
                 PropertyName = "Name",
-                Title = "報表名稱",
+                Title = L["Report.NameColumn"],
                 ColumnType = InteractiveColumnType.Display,
-                Width = "200px"
+                Width = "200px",
+                DisplayFormatter = (item) =>
+                {
+                    var report = item as ReportDefinition;
+                    return GetLocalizedName(report);
+                }
             },
             new InteractiveColumnDefinition
             {
                 PropertyName = "Description",
-                Title = "說明",
+                Title = L["Report.DescriptionColumn"],
                 ColumnType = InteractiveColumnType.Display
             }
         };
     }
-    
+
+    // ===== 輔助方法 =====
+
+    private string GetLocalizedName(ReportDefinition? report)
+    {
+        if (report == null) return "";
+        if (report.NameKey != null)
+            return L[report.NameKey].ToString() ?? report.Name;
+        return report.Name;
+    }
+
     // ===== 事件處理方法 =====
-    
-    /// <summary>
-    /// 處理行點擊事件
-    /// </summary>
+
     private async Task HandleRowClick(ReportDefinition report)
     {
         await HandlePrintClick(report);
     }
-    
+
     private async Task HandlePrintClick(ReportDefinition report)
     {
         if (!report.IsEnabled)
         {
             return;
         }
-        
-        // 先關閉索引 Modal
+
         await IsVisibleChanged.InvokeAsync(false);
-        
-        // 觸發報表選擇事件，傳遞 ActionId 給父組件處理
+
         if (OnReportSelected.HasDelegate && !string.IsNullOrEmpty(report.ActionId))
         {
             await OnReportSelected.InvokeAsync(report.ActionId);
         }
     }
-    
+
     private async Task HandleClose()
     {
-        // 關閉時清除搜尋條件
         searchKeyword = string.Empty;
-        
+
         if (OnClose.HasDelegate)
         {
             await OnClose.InvokeAsync();
         }
     }
-    
-    /// <summary>
-    /// 清除搜尋關鍵字
-    /// </summary>
+
     private void ClearSearch()
     {
         searchKeyword = string.Empty;
     }
-    
-    /// <summary>
-    /// 取得空資料訊息
-    /// </summary>
+
     private string GetEmptyMessage()
     {
         if (!string.IsNullOrWhiteSpace(searchKeyword))
         {
-            return $"找不到符合「{searchKeyword}」的報表";
+            return string.Format(L["Report.SearchEmpty"], searchKeyword);
         }
-        return "目前沒有可用的報表";
+        return L["Report.NoReports"];
     }
 }

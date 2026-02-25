@@ -6,10 +6,11 @@
 
 @using ERPCore2.Data
 @using ERPCore2.Models.Reports
+@inject IStringLocalizer<SharedResource> L
 
 <GenericReportIndexModalComponent IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
-                          Title="@categoryConfig.Title"
+                          Title="@L[$"ReportCategory.{Category}"].ToString()"
                           Icon="@categoryConfig.Icon"
                           Reports="@reports"
                           OnReportSelected="@HandleReportSelected" />

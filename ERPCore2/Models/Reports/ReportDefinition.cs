@@ -11,10 +11,16 @@ namespace ERPCore2.Models.Reports
         public string Id { get; set; } = string.Empty;
         
         /// <summary>
-        /// 報表名稱
+        /// 報表名稱（繁體中文，用於搜尋 fallback）
         /// </summary>
         public string Name { get; set; } = string.Empty;
-        
+
+        /// <summary>
+        /// 多語系資源鍵（設定後 UI 會使用 IStringLocalizer 取得當前語言名稱）
+        /// 格式：Report.Xxx，對應 SharedResource.resx 中的 key
+        /// </summary>
+        public string? NameKey { get; set; }
+
         /// <summary>
         /// 報表說明
         /// </summary>

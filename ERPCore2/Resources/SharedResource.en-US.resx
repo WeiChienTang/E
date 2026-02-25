@@ -473,4 +473,63 @@
     <value>0912-345-678</value>
   </data>
 
+
+  <!-- ===== 報表 ===== -->
+  <data name="ReportCategory.Customer" xml:space="preserve"><value>Customer Reports</value></data>
+  <data name="ReportCategory.Supplier" xml:space="preserve"><value>Supplier Reports</value></data>
+  <data name="ReportCategory.Product" xml:space="preserve"><value>Product Reports</value></data>
+  <data name="ReportCategory.Inventory" xml:space="preserve"><value>Inventory Reports</value></data>
+  <data name="ReportCategory.Sales" xml:space="preserve"><value>Sales Reports</value></data>
+  <data name="ReportCategory.Purchase" xml:space="preserve"><value>Purchase Reports</value></data>
+  <data name="ReportCategory.Financial" xml:space="preserve"><value>Financial Reports</value></data>
+  <data name="ReportCategory.HR" xml:space="preserve"><value>HR Reports</value></data>
+  <data name="ReportCategory.Vehicle" xml:space="preserve"><value>Vehicle Reports</value></data>
+  <data name="ReportCategory.Waste" xml:space="preserve"><value>Waste Reports</value></data>
+  <data name="ReportCategory.Accounting" xml:space="preserve"><value>Accounting Reports</value></data>
+  <data name="Report.NoReports" xml:space="preserve"><value>No reports available</value></data>
+  <data name="Report.SearchPlaceholder" xml:space="preserve"><value>Search report name...</value></data>
+  <data name="Report.GoTo" xml:space="preserve"><value>Open</value></data>
+  <data name="Report.NotAvailable" xml:space="preserve"><value>This report is not yet available</value></data>
+  <data name="Report.InstructionText" xml:space="preserve"><value>Click "Open" or click the row to open report filter settings</value></data>
+  <data name="Report.NameColumn" xml:space="preserve"><value>Report Name</value></data>
+  <data name="Report.DescriptionColumn" xml:space="preserve"><value>Description</value></data>
+  <data name="Report.SearchEmpty" xml:space="preserve"><value>No reports matching "{0}"</value></data>
+  <data name="Report.CustomerStatement" xml:space="preserve"><value>Customer Statement</value></data>
+  <data name="Report.CustomerSalesAnalysis" xml:space="preserve"><value>Customer Sales Analysis</value></data>
+  <data name="Report.CustomerTransaction" xml:space="preserve"><value>Customer Transaction Detail</value></data>
+  <data name="Report.CustomerRoster" xml:space="preserve"><value>Customer Roster</value></data>
+  <data name="Report.CustomerDetail" xml:space="preserve"><value>Customer Detail</value></data>
+  <data name="Report.SupplierStatement" xml:space="preserve"><value>Supplier Statement</value></data>
+  <data name="Report.SupplierPurchaseAnalysis" xml:space="preserve"><value>Supplier Purchase Analysis</value></data>
+  <data name="Report.SupplierRoster" xml:space="preserve"><value>Supplier Roster</value></data>
+  <data name="Report.SupplierDetail" xml:space="preserve"><value>Supplier Detail</value></data>
+  <data name="Report.PurchaseOrder" xml:space="preserve"><value>Purchase Order</value></data>
+  <data name="Report.PurchaseReceiving" xml:space="preserve"><value>Purchase Receiving</value></data>
+  <data name="Report.PurchaseReturn" xml:space="preserve"><value>Purchase Return</value></data>
+  <data name="Report.Quotation" xml:space="preserve"><value>Quotation</value></data>
+  <data name="Report.SalesOrder" xml:space="preserve"><value>Sales Order</value></data>
+  <data name="Report.SalesDelivery" xml:space="preserve"><value>Delivery Order</value></data>
+  <data name="Report.SalesReturn" xml:space="preserve"><value>Sales Return</value></data>
+  <data name="Report.ProductList" xml:space="preserve"><value>Product List</value></data>
+  <data name="Report.ProductDetail" xml:space="preserve"><value>Product Detail</value></data>
+  <data name="Report.ProductBarcode" xml:space="preserve"><value>Product Barcode</value></data>
+  <data name="Report.BOMReport" xml:space="preserve"><value>BOM Report</value></data>
+  <data name="Report.ProductionSchedule" xml:space="preserve"><value>Production Schedule</value></data>
+  <data name="Report.InventoryStatus" xml:space="preserve"><value>Inventory Status</value></data>
+  <data name="Report.InventoryTransaction" xml:space="preserve"><value>Inventory Transaction</value></data>
+  <data name="Report.InventoryCount" xml:space="preserve"><value>Inventory Count Variance</value></data>
+  <data name="Report.VehicleList" xml:space="preserve"><value>Vehicle List</value></data>
+  <data name="Report.VehicleMaintenance" xml:space="preserve"><value>Vehicle Maintenance</value></data>
+  <data name="Report.EmployeeRoster" xml:space="preserve"><value>Employee Roster</value></data>
+  <data name="Report.EmployeeDetail" xml:space="preserve"><value>Employee Detail</value></data>
+  <data name="Report.WasteRecord" xml:space="preserve"><value>Waste Record</value></data>
+  <data name="Report.AccountsReceivableSetoff" xml:space="preserve"><value>A/R Setoff</value></data>
+  <data name="Report.AccountsPayableSetoff" xml:space="preserve"><value>A/P Setoff</value></data>
+  <data name="Report.AccountItemList" xml:space="preserve"><value>Chart of Accounts</value></data>
+  <data name="Report.TrialBalance" xml:space="preserve"><value>Trial Balance</value></data>
+  <data name="Report.IncomeStatement" xml:space="preserve"><value>Income Statement</value></data>
+  <data name="Report.BalanceSheet" xml:space="preserve"><value>Balance Sheet</value></data>
+  <data name="Report.GeneralLedger" xml:space="preserve"><value>General Ledger</value></data>
+  <data name="Report.SubsidiaryLedger" xml:space="preserve"><value>Subsidiary Ledger</value></data>
+  <data name="Report.DetailAccountBalance" xml:space="preserve"><value>Account Balance Summary</value></data>
 </root>

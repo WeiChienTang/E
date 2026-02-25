@@ -41,200 +41,200 @@
 
   <!-- ===== Buttons ===== -->
   <data name="Button.Save" xml:space="preserve">
-    <value>Save</value>
+    <value>保存</value>
   </data>
   <data name="Button.Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>キャンセル</value>
   </data>
   <data name="Button.Close" xml:space="preserve">
-    <value>Close</value>
+    <value>閉じる</value>
   </data>
   <data name="Button.Add" xml:space="preserve">
-    <value>Add</value>
+    <value>追加</value>
   </data>
   <data name="Button.Edit" xml:space="preserve">
-    <value>Edit</value>
+    <value>編集</value>
   </data>
   <data name="Button.Delete" xml:space="preserve">
-    <value>Delete</value>
+    <value>削除</value>
   </data>
   <data name="Button.Search" xml:space="preserve">
-    <value>Search</value>
+    <value>検索</value>
   </data>
   <data name="Button.Reset" xml:space="preserve">
-    <value>Reset</value>
+    <value>リセット</value>
   </data>
   <data name="Button.Export" xml:space="preserve">
-    <value>Export</value>
+    <value>エクスポート</value>
   </data>
   <data name="Button.Print" xml:space="preserve">
-    <value>Print</value>
+    <value>印刷</value>
   </data>
 
   <!-- ===== Labels ===== -->
   <data name="Label.Loading" xml:space="preserve">
-    <value>Loading...</value>
+    <value>読み込み中...</value>
   </data>
   <data name="Label.NoData" xml:space="preserve">
-    <value>No data</value>
+    <value>データなし</value>
   </data>
   <data name="Label.Required" xml:space="preserve">
-    <value>Required</value>
+    <value>必須</value>
   </data>
   <data name="Label.Optional" xml:space="preserve">
-    <value>Optional</value>
+    <value>任意</value>
   </data>
   <data name="Label.Yes" xml:space="preserve">
-    <value>Yes</value>
+    <value>はい</value>
   </data>
   <data name="Label.No" xml:space="preserve">
-    <value>No</value>
+    <value>いいえ</value>
   </data>
   <data name="Label.Enable" xml:space="preserve">
-    <value>Enable</value>
+    <value>有効</value>
   </data>
   <data name="Label.Disable" xml:space="preserve">
-    <value>Disable</value>
+    <value>無効</value>
   </data>
   <data name="Label.All" xml:space="preserve">
-    <value>All</value>
+    <value>すべて</value>
   </data>
 
   <!-- ===== Messages ===== -->
   <data name="Message.SaveSuccess" xml:space="preserve">
-    <value>Saved successfully</value>
+    <value>保存しました</value>
   </data>
   <data name="Message.SaveFailed" xml:space="preserve">
-    <value>Save failed</value>
+    <value>保存に失敗しました</value>
   </data>
   <data name="Message.DeleteSuccess" xml:space="preserve">
-    <value>Deleted successfully</value>
+    <value>削除しました</value>
   </data>
   <data name="Message.DeleteFailed" xml:space="preserve">
-    <value>Delete failed</value>
+    <value>削除に失敗しました</value>
   </data>
   <data name="Message.DeleteConfirm" xml:space="preserve">
-    <value>Are you sure you want to delete?</value>
+    <value>削除してもよろしいですか？</value>
   </data>
   <data name="Message.OperationFailed" xml:space="preserve">
-    <value>Operation failed</value>
+    <value>操作に失敗しました</value>
   </data>
 
   <!-- ===== Employee ===== -->
   <data name="Employee.Name" xml:space="preserve">
-    <value>Name</value>
+    <value>氏名</value>
   </data>
   <data name="Employee.Account" xml:space="preserve">
-    <value>Account</value>
+    <value>アカウント</value>
   </data>
   <data name="Employee.Mobile" xml:space="preserve">
-    <value>Mobile</value>
+    <value>携帯電話</value>
   </data>
   <data name="Employee.Email" xml:space="preserve">
-    <value>Email</value>
+    <value>メール</value>
   </data>
   <data name="Employee.Password" xml:space="preserve">
-    <value>Password</value>
+    <value>パスワード</value>
   </data>
   <data name="Employee.NewPassword" xml:space="preserve">
-    <value>New Password</value>
+    <value>新しいパスワード</value>
   </data>
   <data name="Employee.ConfirmPassword" xml:space="preserve">
-    <value>Confirm Password</value>
+    <value>パスワード確認</value>
   </data>
   <data name="Employee.Department" xml:space="preserve">
-    <value>Department</value>
+    <value>部署</value>
   </data>
   <data name="Employee.Position" xml:space="preserve">
-    <value>Position</value>
+    <value>役職</value>
   </data>
   <data name="Employee.Role" xml:space="preserve">
-    <value>Role</value>
+    <value>ロール</value>
   </data>
 
   <!-- ===== Preferences ===== -->
   <data name="Preference.Title" xml:space="preserve">
-    <value>Personalization</value>
+    <value>個人設定</value>
   </data>
   <data name="Preference.Language" xml:space="preserve">
-    <value>Interface Language</value>
+    <value>表示言語</value>
   </data>
   <data name="Preference.PersonalData" xml:space="preserve">
-    <value>Personal Info</value>
+    <value>個人情報</value>
   </data>
   <data name="Preference.LanguageRegion" xml:space="preserve">
     <value>言語と地域</value>
   </data>
   <data name="Preference.ChangePassword" xml:space="preserve">
-    <value>Change Password</value>
+    <value>パスワード変更</value>
   </data>
   <data name="Preference.AccountInfo" xml:space="preserve">
-    <value>Account Info</value>
+    <value>アカウント情報</value>
   </data>
   <data name="Preference.BasicInfo" xml:space="preserve">
-    <value>Profile</value>
+    <value>基本情報</value>
   </data>
   <data name="Preference.LoadingMessage" xml:space="preserve">
-    <value>Loading settings...</value>
+    <value>設定を読み込み中...</value>
   </data>
   <data name="Preference.SaveTooltip" xml:space="preserve">
-    <value>Save settings</value>
+    <value>設定を保存</value>
   </data>
   <data name="Preference.SaveSuccess" xml:space="preserve">
-    <value>Settings saved</value>
+    <value>設定を保存しました</value>
   </data>
   <data name="Preference.LanguageHelpText" xml:space="preserve">
-    <value>Page will reload after saving to apply new language</value>
+    <value>保存後、新しい言語を適用するためにページがリロードされます</value>
   </data>
 
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
-    <value>Account is set by administrator and cannot be changed</value>
+    <value>アカウントは管理者が設定するため、変更できません</value>
   </data>
 
   <!-- ===== Password ===== -->
   <data name="Password.LeaveBlank" xml:space="preserve">
-    <value>Leave blank to keep current password</value>
+    <value>現在のパスワードを維持する場合は空白のままにしてください</value>
   </data>
   <data name="Password.Mismatch" xml:space="preserve">
-    <value>Passwords do not match</value>
+    <value>パスワードが一致しません</value>
   </data>
   <data name="Password.Match" xml:space="preserve">
-    <value>Passwords match</value>
+    <value>パスワードが一致しています</value>
   </data>
 
   <!-- ===== Errors ===== -->
   <data name="Error.UnknownUser" xml:space="preserve">
-    <value>Unable to identify current user</value>
+    <value>現在のユーザーを特定できません</value>
   </data>
   <data name="Error.PasswordMismatch" xml:space="preserve">
-    <value>Passwords do not match, please confirm again</value>
+    <value>パスワードが一致しません。再度確認してください</value>
   </data>
   <data name="Error.SavePreferenceFailed" xml:space="preserve">
-    <value>Failed to save language settings: {0}</value>
+    <value>言語設定の保存に失敗しました: {0}</value>
   </data>
   <data name="Error.SaveProfileFailed" xml:space="preserve">
-    <value>Failed to save profile: {0}</value>
+    <value>プロフィールの保存に失敗しました: {0}</value>
   </data>
   <data name="Error.SaveFailed" xml:space="preserve">
-    <value>An error occurred while saving: {0}</value>
+    <value>保存中にエラーが発生しました: {0}</value>
   </data>
   <data name="Error.LoadFailed" xml:space="preserve">
-    <value>Failed to load settings: {0}</value>
+    <value>設定の読み込みに失敗しました: {0}</value>
   </data>
 
   <!-- ===== Placeholders ===== -->
   <data name="Placeholder.Name" xml:space="preserve">
-    <value>Enter name</value>
+    <value>名前を入力</value>
   </data>
   <data name="Placeholder.Email" xml:space="preserve">
-    <value>Enter email</value>
+    <value>メールアドレスを入力</value>
   </data>
   <data name="Placeholder.NewPassword" xml:space="preserve">
-    <value>Leave blank to keep current password</value>
+    <value>現在のパスワードを維持する場合は空白</value>
   </data>
   <data name="Placeholder.ConfirmPassword" xml:space="preserve">
-    <value>Re-enter new password</value>
+    <value>新しいパスワードを再入力</value>
   </data>
   <data name="Placeholder.MobilePhone" xml:space="preserve">
     <value>0912-345-678</value>
@@ -473,4 +473,63 @@
     <value>この機能は準備中です</value>
   </data>
 
+
+  <!-- ===== 報表 ===== -->
+  <data name="ReportCategory.Customer" xml:space="preserve"><value>得意先レポート</value></data>
+  <data name="ReportCategory.Supplier" xml:space="preserve"><value>仕入先レポート</value></data>
+  <data name="ReportCategory.Product" xml:space="preserve"><value>商品レポート</value></data>
+  <data name="ReportCategory.Inventory" xml:space="preserve"><value>在庫レポート</value></data>
+  <data name="ReportCategory.Sales" xml:space="preserve"><value>売上レポート</value></data>
+  <data name="ReportCategory.Purchase" xml:space="preserve"><value>仕入レポート</value></data>
+  <data name="ReportCategory.Financial" xml:space="preserve"><value>財務レポート</value></data>
+  <data name="ReportCategory.HR" xml:space="preserve"><value>人事レポート</value></data>
+  <data name="ReportCategory.Vehicle" xml:space="preserve"><value>車両レポート</value></data>
+  <data name="ReportCategory.Waste" xml:space="preserve"><value>廃棄物レポート</value></data>
+  <data name="ReportCategory.Accounting" xml:space="preserve"><value>会計レポート</value></data>
+  <data name="Report.NoReports" xml:space="preserve"><value>利用可能なレポートはありません</value></data>
+  <data name="Report.SearchPlaceholder" xml:space="preserve"><value>レポート名を検索...</value></data>
+  <data name="Report.GoTo" xml:space="preserve"><value>開く</value></data>
+  <data name="Report.NotAvailable" xml:space="preserve"><value>このレポートはまだ利用できません</value></data>
+  <data name="Report.InstructionText" xml:space="preserve"><value>「開く」または行をクリックしてレポートフィルター設定を開く</value></data>
+  <data name="Report.NameColumn" xml:space="preserve"><value>レポート名</value></data>
+  <data name="Report.DescriptionColumn" xml:space="preserve"><value>説明</value></data>
+  <data name="Report.SearchEmpty" xml:space="preserve"><value>「{0}」に一致するレポートはありません</value></data>
+  <data name="Report.CustomerStatement" xml:space="preserve"><value>得意先照合書</value></data>
+  <data name="Report.CustomerSalesAnalysis" xml:space="preserve"><value>得意先売上分析</value></data>
+  <data name="Report.CustomerTransaction" xml:space="preserve"><value>得意先取引明細</value></data>
+  <data name="Report.CustomerRoster" xml:space="preserve"><value>得意先一覧表</value></data>
+  <data name="Report.CustomerDetail" xml:space="preserve"><value>得意先詳細</value></data>
+  <data name="Report.SupplierStatement" xml:space="preserve"><value>仕入先照合書</value></data>
+  <data name="Report.SupplierPurchaseAnalysis" xml:space="preserve"><value>仕入先仕入分析</value></data>
+  <data name="Report.SupplierRoster" xml:space="preserve"><value>仕入先一覧表</value></data>
+  <data name="Report.SupplierDetail" xml:space="preserve"><value>仕入先詳細</value></data>
+  <data name="Report.PurchaseOrder" xml:space="preserve"><value>発注書</value></data>
+  <data name="Report.PurchaseReceiving" xml:space="preserve"><value>入荷伝票</value></data>
+  <data name="Report.PurchaseReturn" xml:space="preserve"><value>仕入返品伝票</value></data>
+  <data name="Report.Quotation" xml:space="preserve"><value>見積書</value></data>
+  <data name="Report.SalesOrder" xml:space="preserve"><value>受注書</value></data>
+  <data name="Report.SalesDelivery" xml:space="preserve"><value>出荷伝票</value></data>
+  <data name="Report.SalesReturn" xml:space="preserve"><value>返品伝票</value></data>
+  <data name="Report.ProductList" xml:space="preserve"><value>商品一覧表</value></data>
+  <data name="Report.ProductDetail" xml:space="preserve"><value>商品詳細</value></data>
+  <data name="Report.ProductBarcode" xml:space="preserve"><value>商品バーコード</value></data>
+  <data name="Report.BOMReport" xml:space="preserve"><value>BOMレポート</value></data>
+  <data name="Report.ProductionSchedule" xml:space="preserve"><value>生産スケジュール</value></data>
+  <data name="Report.InventoryStatus" xml:space="preserve"><value>在庫現況表</value></data>
+  <data name="Report.InventoryTransaction" xml:space="preserve"><value>在庫履歴明細</value></data>
+  <data name="Report.InventoryCount" xml:space="preserve"><value>棚卸差異表</value></data>
+  <data name="Report.VehicleList" xml:space="preserve"><value>車両一覧表</value></data>
+  <data name="Report.VehicleMaintenance" xml:space="preserve"><value>車両メンテナンス表</value></data>
+  <data name="Report.EmployeeRoster" xml:space="preserve"><value>従業員一覧表</value></data>
+  <data name="Report.EmployeeDetail" xml:space="preserve"><value>従業員詳細</value></data>
+  <data name="Report.WasteRecord" xml:space="preserve"><value>廃棄物記録表</value></data>
+  <data name="Report.AccountsReceivableSetoff" xml:space="preserve"><value>売掛決済伝票</value></data>
+  <data name="Report.AccountsPayableSetoff" xml:space="preserve"><value>買掛決済伝票</value></data>
+  <data name="Report.AccountItemList" xml:space="preserve"><value>勘定科目一覧</value></data>
+  <data name="Report.TrialBalance" xml:space="preserve"><value>試算表</value></data>
+  <data name="Report.IncomeStatement" xml:space="preserve"><value>損益計算書</value></data>
+  <data name="Report.BalanceSheet" xml:space="preserve"><value>貸岑対照表</value></data>
+  <data name="Report.GeneralLedger" xml:space="preserve"><value>总分类帐</value></data>
+  <data name="Report.SubsidiaryLedger" xml:space="preserve"><value>明細元帳</value></data>
+  <data name="Report.DetailAccountBalance" xml:space="preserve"><value>勘定科目殘高表</value></data>
 </root>

@@ -473,4 +473,63 @@
     <value>0912-345-678</value>
   </data>
 
+
+  <!-- ===== 報表 ===== -->
+  <data name="ReportCategory.Customer" xml:space="preserve"><value>客戶報表集</value></data>
+  <data name="ReportCategory.Supplier" xml:space="preserve"><value>廠商報表集</value></data>
+  <data name="ReportCategory.Product" xml:space="preserve"><value>產品報表集</value></data>
+  <data name="ReportCategory.Inventory" xml:space="preserve"><value>庫存報表集</value></data>
+  <data name="ReportCategory.Sales" xml:space="preserve"><value>銷售報表集</value></data>
+  <data name="ReportCategory.Purchase" xml:space="preserve"><value>採購報表集</value></data>
+  <data name="ReportCategory.Financial" xml:space="preserve"><value>財務報表集</value></data>
+  <data name="ReportCategory.HR" xml:space="preserve"><value>人力報表集</value></data>
+  <data name="ReportCategory.Vehicle" xml:space="preserve"><value>車輛報表集</value></data>
+  <data name="ReportCategory.Waste" xml:space="preserve"><value>廢料報表集</value></data>
+  <data name="ReportCategory.Accounting" xml:space="preserve"><value>會計報表集</value></data>
+  <data name="Report.NoReports" xml:space="preserve"><value>目前沒有可用的報表</value></data>
+  <data name="Report.SearchPlaceholder" xml:space="preserve"><value>搜尋報表名稱...</value></data>
+  <data name="Report.GoTo" xml:space="preserve"><value>前往</value></data>
+  <data name="Report.NotAvailable" xml:space="preserve"><value>此報表尚未開放</value></data>
+  <data name="Report.InstructionText" xml:space="preserve"><value>點擊「前往」或點擊該列可開啟報表篩選條件設定</value></data>
+  <data name="Report.NameColumn" xml:space="preserve"><value>報表名稱</value></data>
+  <data name="Report.DescriptionColumn" xml:space="preserve"><value>說明</value></data>
+  <data name="Report.SearchEmpty" xml:space="preserve"><value>找不到符合「{0}」的報表</value></data>
+  <data name="Report.CustomerStatement" xml:space="preserve"><value>客戶對帳單</value></data>
+  <data name="Report.CustomerSalesAnalysis" xml:space="preserve"><value>客戶銷售分析</value></data>
+  <data name="Report.CustomerTransaction" xml:space="preserve"><value>客戶交易明細</value></data>
+  <data name="Report.CustomerRoster" xml:space="preserve"><value>客戶名冊表</value></data>
+  <data name="Report.CustomerDetail" xml:space="preserve"><value>客戶詳細資料</value></data>
+  <data name="Report.SupplierStatement" xml:space="preserve"><value>廠商對帳單</value></data>
+  <data name="Report.SupplierPurchaseAnalysis" xml:space="preserve"><value>廠商進貨分析</value></data>
+  <data name="Report.SupplierRoster" xml:space="preserve"><value>廠商名冊表</value></data>
+  <data name="Report.SupplierDetail" xml:space="preserve"><value>廠商詳細資料</value></data>
+  <data name="Report.PurchaseOrder" xml:space="preserve"><value>採購單</value></data>
+  <data name="Report.PurchaseReceiving" xml:space="preserve"><value>進貨單</value></data>
+  <data name="Report.PurchaseReturn" xml:space="preserve"><value>進貨退出單</value></data>
+  <data name="Report.Quotation" xml:space="preserve"><value>報價單</value></data>
+  <data name="Report.SalesOrder" xml:space="preserve"><value>銷貨訂單</value></data>
+  <data name="Report.SalesDelivery" xml:space="preserve"><value>出貨單</value></data>
+  <data name="Report.SalesReturn" xml:space="preserve"><value>銷貨退回單</value></data>
+  <data name="Report.ProductList" xml:space="preserve"><value>商品清單表</value></data>
+  <data name="Report.ProductDetail" xml:space="preserve"><value>商品詳細資料</value></data>
+  <data name="Report.ProductBarcode" xml:space="preserve"><value>商品條碼</value></data>
+  <data name="Report.BOMReport" xml:space="preserve"><value>物料清單報表</value></data>
+  <data name="Report.ProductionSchedule" xml:space="preserve"><value>生產排程表</value></data>
+  <data name="Report.InventoryStatus" xml:space="preserve"><value>庫存現況表</value></data>
+  <data name="Report.InventoryTransaction" xml:space="preserve"><value>庫存異動明細</value></data>
+  <data name="Report.InventoryCount" xml:space="preserve"><value>盤點差異表</value></data>
+  <data name="Report.VehicleList" xml:space="preserve"><value>車輛管理表</value></data>
+  <data name="Report.VehicleMaintenance" xml:space="preserve"><value>車輛保養表</value></data>
+  <data name="Report.EmployeeRoster" xml:space="preserve"><value>員工名冊表</value></data>
+  <data name="Report.EmployeeDetail" xml:space="preserve"><value>員工詳細資料</value></data>
+  <data name="Report.WasteRecord" xml:space="preserve"><value>廢料記錄表</value></data>
+  <data name="Report.AccountsReceivableSetoff" xml:space="preserve"><value>應收沖款單</value></data>
+  <data name="Report.AccountsPayableSetoff" xml:space="preserve"><value>應付沖款單</value></data>
+  <data name="Report.AccountItemList" xml:space="preserve"><value>會計科目表</value></data>
+  <data name="Report.TrialBalance" xml:space="preserve"><value>試算表</value></data>
+  <data name="Report.IncomeStatement" xml:space="preserve"><value>損益表</value></data>
+  <data name="Report.BalanceSheet" xml:space="preserve"><value>資產負債表</value></data>
+  <data name="Report.GeneralLedger" xml:space="preserve"><value>總分類帳</value></data>
+  <data name="Report.SubsidiaryLedger" xml:space="preserve"><value>明細分類帳</value></data>
+  <data name="Report.DetailAccountBalance" xml:space="preserve"><value>明細科目餘額表</value></data>
 </root>
