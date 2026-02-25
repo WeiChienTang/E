@@ -38,6 +38,15 @@ namespace ERPCore2.Data.Entities
         ZhTW = 1,
 
         [Display(Name = "English")]
-        EnUS = 2
+        EnUS = 2,
+
+        [Display(Name = "日本語")]
+        JaJP = 3,
+
+        [Display(Name = "简体中文")]
+        ZhCN = 4,
+
+        [Display(Name = "Filipino")]
+        FilPH = 5
     }
 }

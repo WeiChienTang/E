@@ -29,6 +29,20 @@ Blazor Server 使用 SignalR 長連線，culture 在 HTTP 請求建立時即已�
 
 ---
 
+## 支援語言清單
+
+| UILanguage 枚舉 | Culture Code | 顯示名稱 | .resx 檔案 |
+|----------------|-------------|---------|------------|
+| `ZhTW = 1` | `zh-TW` | 繁體中文 | `SharedResource.resx`（預設） |
+| `EnUS = 2` | `en-US` | English | `SharedResource.en-US.resx` |
+| `JaJP = 3` | `ja-JP` | 日本語 | `SharedResource.ja-JP.resx` |
+| `ZhCN = 4` | `zh-CN` | 简体中文 | `SharedResource.zh-CN.resx` |
+| `FilPH = 5` | `fil` | Filipino | `SharedResource.fil.resx` |
+
+新增語言時，需同步更新以下三處（見下方「新增語言 SOP」）。
+
+---
+
 ## 相關檔案
 
 ### 新增
@@ -38,6 +52,9 @@ Blazor Server 使用 SignalR 長連線，culture 在 HTTP 請求建立時即已�
 | `Resources/SharedResource.cs` | IStringLocalizer 定位用的空 marker class（namespace 必須為專案根命名空間 `ERPCore2`） |
 | `Resources/SharedResource.resx` | 繁體中文字串（預設，key = 英文點記法） |
 | `Resources/SharedResource.en-US.resx` | 英文翻譯字串 |
+| `Resources/SharedResource.ja-JP.resx` | 日文翻譯字串 |
+| `Resources/SharedResource.zh-CN.resx` | 簡體中文翻譯字串 |
+| `Resources/SharedResource.fil.resx` | 菲律賓語翻譯字串 |
 | `Helpers/CultureHelper.cs` | `UILanguage` ↔ culture code 轉換工具 |
 | `wwwroot/js/culture-helper.js` | 寫入 cookie 並執行 `window.location.reload()` |
 
@@ -50,6 +67,11 @@ Blazor Server 使用 SignalR 長連線，culture 在 HTTP 請求建立時即已�
 | `Controllers/AuthController.cs` | 登入成功後依 `EmployeePreference.Language` 寫入 culture cookie |
 | `PersonalPreferenceModalComponent.razor` | `HandleSave()` 語言變更後呼叫 JS reload |
 | `Components/_Imports.razor` | 加入 `@using Microsoft.Extensions.Localization` |
+| `Models/Navigation/NavigationItem.cs` | 新增 `NameKey` 屬性（可選，供 NavMenu 多語系顯示用） |
+| `Helpers/Common/NavigationActionHelper.cs` | `CreateActionItem()` 加入可選 `nameKey` 參數 |
+| `Data/Navigation/NavigationConfig.cs` | 所有 NavigationItem 加入 `NameKey = "Nav.xxx"` |
+| `Components/Layout/NavMenu.razor` | 注入 `L`，改用 `L[item.NameKey]` 顯示導航項目名稱 |
+| `Data/Entities/Employees/EmployeePreference.cs` | `UILanguage` 枚舉加入 `JaJP`、`ZhCN`、`FilPH` |
 
 ---
 
@@ -63,10 +85,13 @@ public static class CultureHelper
     {
         UILanguage.ZhTW => "zh-TW",
         UILanguage.EnUS => "en-US",
+        UILanguage.JaJP => "ja-JP",
+        UILanguage.ZhCN => "zh-CN",
+        UILanguage.FilPH => "fil",
         _ => "zh-TW"
     };
 
-    public static readonly string[] SupportedCultures = ["zh-TW", "en-US"];
+    public static readonly string[] SupportedCultures = ["zh-TW", "en-US", "ja-JP", "zh-CN", "fil"];
 }
 ```
 
@@ -141,6 +166,39 @@ window.setCultureAndReload = function (culture) {
 
 ---
 
+## NavMenu 多語系設計
+
+### 機制：NameKey + IStringLocalizer
+
+`NavigationItem` 有可選的 `NameKey` 屬性，NavMenu 在渲染時將其對應到 `SharedResource` 的 key：
+
+```csharp
+// Models/Navigation/NavigationItem.cs
+public string? NameKey { get; set; }
+```
+
+```razor
+@* Components/Layout/NavMenu.razor *@
+@inject IStringLocalizer<SharedResource> L
+
+Text="@(menuItem.NameKey != null ? L[menuItem.NameKey].ToString() : menuItem.Name)"
+```
+
+`NameKey` 為 `null` 時 fallback 到 `Name`（繁體中文），向下相容。搜尋功能繼續使用 `Name` 與 `SearchKeywords`，不受語言影響。
+
+### Nav.* key 命名規則
+
+| 類型 | 格式 | 範例 |
+|------|------|------|
+| 父層選單 | `Nav.XxxGroup` | `Nav.HumanResources`、`Nav.SupplierGroup` |
+| 子頁面 | `Nav.Xxxs`（複數）| `Nav.Employees`、`Nav.Products` |
+| Action 項目 | `Nav.XxxReportIndex` | `Nav.HRReportIndex`、`Nav.SalesReportIndex` |
+| NavMenu UI | `Nav.SignIn`、`Nav.SignOut`、`Nav.PersonalData` 等 | — |
+
+目前共 75 個 `Nav.*` key，涵蓋全部選單項目與 NavMenu UI 文字。
+
+---
+
 ## IStringLocalizer 使用方式
 
 ### Marker class
@@ -204,21 +262,140 @@ private readonly List<FormFieldDefinition> allFields = new()
 
 ---
 
-## 遷移策略
+## 新增語言 SOP
 
-目前翻譯範圍：PersonalPreference 系列元件（Phase 1–3 完成）。
+新增一種新語言時，需依序完成以下 4 步：
+
+### 1. 加入 UILanguage 枚舉值
+
+```csharp
+// Data/Entities/Employees/EmployeePreference.cs
+public enum UILanguage
+{
+    ZhTW = 1,
+    EnUS = 2,
+    JaJP = 3,
+    ZhCN = 4,
+    FilPH = 5,
+    // 新增在此，值從 6 開始遞增
+    XxXX = 6,  // [Display(Name = "顯示名稱")]
+}
+```
+
+> **注意**：枚舉值以 int 儲存於 DB，加入新值不需 Migration。現有資料不受影響。
+
+### 2. 更新 CultureHelper
+
+```csharp
+// Helpers/CultureHelper.cs
+UILanguage.XxXX => "xx-XX",    // 加入對應 culture code
+
+public static readonly string[] SupportedCultures = [..., "xx-XX"];  // 加入陣列
+```
+
+### 3. 建立 .resx 翻譯檔
+
+新建 `Resources/SharedResource.xx-XX.resx`，包含與 `SharedResource.resx` 相同的所有 key，值替換為目標語言。
+
+**⚠️ resx XML 注意事項**（避免 MSB3103 build error）：
+- 所有值中的 `&` 必須寫成 `&amp;`（例如 `Language &amp; Region`）
+- 同理：`<` → `&lt;`，`>` → `&gt;`
+- 若用程式生成 resx，建議用字串拼接（避免 template literal 含多語系字元時的 parse 問題），值直接使用 Unicode 轉義（`\uXXXX`）確保 ASCII 安全
+
+### 4. 更新語言選單 UI
+
+```csharp
+// Components/Pages/Employees/PersonalPreference/LanguageRegionTab.razor
+// OnInitialized() 中的 Options 清單加入新選項：
+new() { Value = "6", Text = "顯示名稱" },
+// Value 對應 UILanguage 枚舉的 int 值（強型別），Text 固定顯示（不走 L[]）
+```
+
+> **注意**：`Value` 必須與 UILanguage 枚舉的整數值完全對應。
+
+---
+
+## ⚠️ 已知問題與注意事項
+
+### 1. resx XML 實體字元（MSB3103）
+
+**問題**：建置報錯 `MSB3103: Invalid Resx file. System.Xml.XmlException: An error occurred while parsing EntityName`
+
+**原因**：resx 是 XML 格式，值中若直接含 `&` 字元（如 `Language & Region`）會導致 XML 解析失敗。
+
+**解法**：所有 resx 值中的 `&` 一律改寫為 `&amp;`。
+
+```xml
+<!-- ❌ 錯誤 -->
+<value>Language & Region</value>
+
+<!-- ✅ 正確 -->
+<value>Language &amp; Region</value>
+```
+
+**目前處理**：`zh-TW` 的 `Preference.LanguageRegion` 值為「語言與地區」（無 `&`）；`en-US` 已正確寫為 `Language &amp; Region`。新語言的此 key 若需使用 `&` 符號，必須同樣轉義。
+
+### 2. LanguageRegionTab 語言選單需手動維護
+
+**問題**：`LanguageRegionTab.razor` 的語言下拉選單是**硬編碼**的 `SelectOption` 清單，新增語言後必須手動加入對應選項，否則新語言不會出現在 UI。
+
+**目前狀態**：
+```csharp
+// LanguageRegionTab.razor（截至 2026-02-25）
+new() { Value = "1", Text = "繁體中文" },
+new() { Value = "2", Text = "English" },
+new() { Value = "3", Text = "日本語" },
+new() { Value = "4", Text = "简体中文" },
+// ⚠️ 缺少 FilPH (Value = "5", Text = "Filipino")
+```
+
+**待辦**：補上 `Filipino` 選項（見下方遷移策略待辦清單）。
+
+**根本解法建議**：未來可改為從 `UILanguage` 枚舉動態產生選項（透過 `Enum.GetValues` + `Display` Attribute），避免每次新增語言都要修改 UI 程式碼。
+
+### 3. NavMenu 搜尋不支援多語系
+
+**問題**：搜尋功能（CommandBar 等）使用 `NavigationItem.Name`（繁體中文）與 `SearchKeywords`，不會依使用者語言顯示搜尋結果名稱。
+
+**現況**：可接受，搜尋關鍵字可在 `NavigationConfig.cs` 各項目的 `SearchKeywords` 中加入多語言詞彙。
+
+### 4. 程式生成 resx 的工具限制
+
+**問題**：用 Claude Code 的 Write 工具直接寫入大型多語系 resx（含日文等非 ASCII 字元）時，曾遇到：
+- Template literal 含多語系字元導致 Node.js parse 錯誤
+- 改用字串拼接（`+` 運算子）+ Unicode 轉義（`\uXXXX`）解決
+
+**建議**：使用 Node.js 腳本生成 resx 時，值一律用 `\uXXXX` 轉義表示非 ASCII 字元，避免工具 buffer 問題。
+
+---
+
+## 遷移策略
 
 | 階段 | 工作 | 狀態 |
 |------|------|------|
 | Phase 1 | 建立基礎設施（`AddLocalization`、`CultureHelper`、`Resources/`、JS） | ✅ 完成 |
 | Phase 2 | 登入後寫入 cookie + 切換時 reload | ✅ 完成 |
 | Phase 3 | PersonalPreference 元件字串遷移 | ✅ 完成 |
-| Phase 4 | 其他頁面逐一遷移 | 待推進 |
+| Phase 4a | NavMenu + NavigationConfig 翻譯（`Nav.*` key，5 種語言） | ✅ 完成 |
+| Phase 4b | `LanguageRegionTab.razor` 補上 Filipino 選項 | ⏳ 待辦 |
+| Phase 4c | 其他頁面逐一遷移 | 待推進 |
 
-新增頁面翻譯時（Phase 4）：
-1. 在兩份 `.resx` 加入新 key
+### Phase 4b 立即待辦
+
+`LanguageRegionTab.razor` 缺少 Filipino 選項，需補上：
+
+```csharp
+new() { Value = "5", Text = "Filipino" },
+```
+
+### Phase 4c 新頁面翻譯流程
+
+新增頁面翻譯時：
+1. 在所有語言的 `.resx` 加入新 key（命名格式：`模組.欄位`）
 2. 在目標元件注入 `@inject IStringLocalizer<SharedResource> L`
 3. 將硬編碼中文字串改為 `@L["Key"]`
+
+> 翻譯範圍建議順序：高使用頻率頁面優先（員工、採購、銷貨）。
 
 ---
 

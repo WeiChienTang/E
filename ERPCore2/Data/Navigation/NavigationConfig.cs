@@ -20,6 +20,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "首頁",
+                NameKey = "Nav.Home",
                 Description = "系統首頁和總覽",
                 Route = "/",
                 IconClass = "bi-house-door-fill",
@@ -31,6 +32,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "人力資源",
+                NameKey = "Nav.HumanResources",
                 Description = "員工相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-person-badge-fill",
@@ -44,6 +46,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "員工",
+                        NameKey = "Nav.Employees",
                         Description = "管理員工資料和人事資訊",
                         Route = "/employees",
                         IconClass = "bi bi-caret-right-fill",
@@ -56,6 +59,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "部門",
+                        NameKey = "Nav.Departments",
                         Description = "管理公司部門組織架構",
                         Route = "/departments",
                         IconClass = "",
@@ -68,6 +72,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "職位",
+                        NameKey = "Nav.Positions",
                         Description = "管理員工職位設定",
                         Route = "/employee-positions",
                         IconClass = "",
@@ -84,11 +89,13 @@ public static class NavigationConfig
                         actionId: "OpenRolePermissionManagement",
                         category: "人力管理",
                         requiredPermission: "Role.Read",
-                        searchKeywords: new List<string> { "權限分配", "角色權限", "role permission", "權限設定" }
+                        searchKeywords: new List<string> { "權限分配", "角色權限", "role permission", "權限設定" },
+                        nameKey: "Nav.RolePermission"
                     ),
                     new NavigationItem
                     {
                         Name = "權限組",
+                        NameKey = "Nav.Roles",
                         Description = "管理使用者權限組",
                         Route = "/roles",
                         IconClass = "",
@@ -101,6 +108,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "權限",
+                        NameKey = "Nav.Permissions",
                         Description = "管理系統權限設定",
                         Route = "/permissions",
                         IconClass = "",
@@ -124,7 +132,8 @@ public static class NavigationConfig
                         actionId: "OpenHRReportIndex",
                         category: "人力管理",
                         requiredPermission: "Employee.Read",
-                        searchKeywords: new List<string> { "人力報表", "人力報表集", "HR report", "員工名冊" }
+                        searchKeywords: new List<string> { "人力報表", "人力報表集", "HR report", "員工名冊" },
+                        nameKey: "Nav.HRReportIndex"
                     ),
                 }
             },
@@ -133,6 +142,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "廠商",
+                NameKey = "Nav.SupplierGroup",
                 Description = "廠商相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-building-gear",
@@ -146,6 +156,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "廠商",
+                        NameKey = "Nav.Suppliers",
                         Description = "管理供應商和廠商資料",
                         Route = "/suppliers",
                         IconClass = "bi bi-caret-right-fill",
@@ -169,7 +180,8 @@ public static class NavigationConfig
                         actionId: "OpenSupplierReportIndex",
                         category: "供應鏈管理",
                         requiredPermission: "Supplier.Read",
-                        searchKeywords: new List<string> { "廠商報表", "廠商報表集", "supplier report", "應付帳款" }
+                        searchKeywords: new List<string> { "廠商報表", "廠商報表集", "supplier report", "應付帳款" },
+                        nameKey: "Nav.SupplierReportIndex"
                     ),
                 }
             },
@@ -178,6 +190,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "客戶",
+                NameKey = "Nav.CustomerGroup",
                 Description = "客戶相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-people-fill",
@@ -191,6 +204,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "客戶",
+                        NameKey = "Nav.Customers",
                         Description = "管理客戶資料、聯絡資訊和客戶關係",
                         Route = "/customers",
                         IconClass = "bi bi-caret-right-fill",
@@ -214,7 +228,8 @@ public static class NavigationConfig
                         actionId: "OpenCustomerReportIndex",
                         category: "客戶關係管理",
                         requiredPermission: "Customer.Read",
-                        searchKeywords: new List<string> { "客戶報表", "客戶報表集", "customer report", "應收帳款" }
+                        searchKeywords: new List<string> { "客戶報表", "客戶報表集", "customer report", "應收帳款" },
+                        nameKey: "Nav.CustomerReportIndex"
                     ),
                 }
             },
@@ -223,6 +238,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "商品",
+                NameKey = "Nav.ProductGroup",
                 Description = "商品相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-box-seam-fill",
@@ -236,6 +252,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "商品",
+                        NameKey = "Nav.Products",
                         Description = "管理商品資料和商品目錄",
                         Route = "/products",
                         IconClass = "bi bi-caret-right-fill",
@@ -248,6 +265,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "類型",
+                        NameKey = "Nav.ProductCategories",
                         Description = "管理商品類型分類",
                         Route = "/product-categories",
                         IconClass = "",
@@ -260,6 +278,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "單位",
+                        NameKey = "Nav.Units",
                         Description = "管理商品計量單位",
                         Route = "/units",
                         IconClass = "",
@@ -273,6 +292,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "尺寸",
+                        NameKey = "Nav.Sizes",
                         Description = "管理商品尺寸規格",
                         Route = "/sizes",
                         IconClass = "",
@@ -285,6 +305,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "物料清單",
+                        NameKey = "Nav.ProductCompositions",
                         Description = "管理商品的配方和組件結構",
                         Route = "/product-compositions",
                         IconClass = "bi bi-caret-right-fill",
@@ -297,6 +318,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "物料類型",
+                        NameKey = "Nav.CompositionCategories",
                         Description = "管理物料清單的類型分類",
                         Route = "/composition-categories",
                         IconClass = "",
@@ -309,6 +331,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "生產排程",
+                        NameKey = "Nav.ProductionSchedules",
                         Description = "管理生產排程的詳細資料",
                         Route = "/production-schedules",
                         IconClass = "bi bi-caret-right-fill",
@@ -331,7 +354,8 @@ public static class NavigationConfig
                         actionId: "OpenProductReportIndex",
                         category: "商品管理",
                         requiredPermission: "Product.Read",
-                        searchKeywords: new List<string> { "商品報表", "商品報表集", "product report", "產品報表" }
+                        searchKeywords: new List<string> { "商品報表", "商品報表集", "product report", "產品報表" },
+                        nameKey: "Nav.ProductReportIndex"
                     ),
                 }
             },
@@ -340,6 +364,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "庫存",
+                NameKey = "Nav.InventoryGroup",
                 Description = "庫存相關功能管理",
                 Route = "#",
                 IconClass = "bi-boxes nav-menu-bi",
@@ -353,6 +378,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "庫存查詢",
+                        NameKey = "Nav.InventoryStocks",
                         Description = "查詢和管理庫存資料",
                         Route = "/inventoryStocks",
                         IconClass = "bi bi-caret-right-fill",
@@ -365,6 +391,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "倉庫",
+                        NameKey = "Nav.Warehouses",
                         Description = "管理倉庫資料和設定",
                         Route = "/warehouses",
                         IconClass = "",
@@ -377,6 +404,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "庫位",
+                        NameKey = "Nav.WarehouseLocations",
                         Description = "管理倉庫內的儲位配置",
                         Route = "/warehouseLocations",
                         IconClass = "",
@@ -389,6 +417,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "庫存盤點",
+                        NameKey = "Nav.StockTakings",
                         Description = "管理庫存盤點作業",
                         Route = "/stockTakings",
                         IconClass = "bi bi-caret-right-fill",
@@ -412,6 +441,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "領料",
+                        NameKey = "Nav.MaterialIssues",
                         Description = "管理物料領用作業",
                         Route = "/materialIssues",
                         IconClass = "bi bi-caret-right-fill",
@@ -435,7 +465,8 @@ public static class NavigationConfig
                         actionId: "OpenInventoryReportIndex",
                         category: "庫存管理",
                         requiredPermission: "InventoryStock.Read",
-                        searchKeywords: new List<string> { "倉庫報表", "庫存報表", "倉庫報表集", "inventory report", "庫存現況" }
+                        searchKeywords: new List<string> { "倉庫報表", "庫存報表", "倉庫報表集", "inventory report", "庫存現況" },
+                        nameKey: "Nav.InventoryReportIndex"
                     ),
                 }
             },
@@ -444,6 +475,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "採購",
+                NameKey = "Nav.PurchaseGroup",
                 Description = "採購相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-truck",
@@ -457,6 +489,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "採購",
+                        NameKey = "Nav.PurchaseOrders",
                         Description = "管理採購訂單",
                         Route = "/purchase/orders",
                         IconClass = "bi bi-caret-right-fill",
@@ -470,6 +503,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "進貨",
+                        NameKey = "Nav.PurchaseReceiving",
                         Description = "管理進貨作業",
                         Route = "/purchase/receiving",
                         IconClass = "bi bi-caret-right-fill",
@@ -482,6 +516,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "進貨退出",
+                        NameKey = "Nav.PurchaseReturns",
                         Description = "管理進貨退回作業",
                         Route = "/purchase/returns",
                         IconClass = "bi bi-caret-right-fill",
@@ -505,7 +540,8 @@ public static class NavigationConfig
                         actionId: "OpenPurchaseReportIndex",
                         category: "採購管理",
                         requiredPermission: "PurchaseOrder.Read",
-                        searchKeywords: new List<string> { "採購報表", "採購報表集", "purchase report", "進貨報表" }
+                        searchKeywords: new List<string> { "採購報表", "採購報表集", "purchase report", "進貨報表" },
+                        nameKey: "Nav.PurchaseReportIndex"
                     ),
                 }
             },
@@ -514,6 +550,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "銷貨",
+                NameKey = "Nav.SalesGroup",
                 Description = "銷貨相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-cart-fill",
@@ -527,6 +564,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "報價",
+                        NameKey = "Nav.Quotations",
                         Description = "管理銷售報價單",
                         Route = "/quotations",
                         IconClass = "bi bi-caret-right-fill",
@@ -539,6 +577,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "訂單",
+                        NameKey = "Nav.SalesOrders",
                         Description = "管理訂單",
                         Route = "/salesOrders",
                         IconClass = "bi bi-caret-right-fill",
@@ -552,6 +591,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "銷貨",
+                        NameKey = "Nav.SalesDeliveries",
                         Description = "管理銷貨出貨作業",
                         Route = "/salesDeliveries",
                         IconClass = "bi bi-caret-right-fill",
@@ -564,6 +604,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "銷貨退回",
+                        NameKey = "Nav.SalesReturns",
                         Description = "管理銷貨退回作業",
                         Route = "/salesReturns",
                         IconClass = "bi bi-caret-right-fill",
@@ -576,6 +617,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "銷退原因",
+                        NameKey = "Nav.SalesReturnReasons",
                         Description = "管理退貨原因分類",
                         Route = "/salesReturnReasons",
                         IconClass = "",
@@ -599,7 +641,8 @@ public static class NavigationConfig
                         actionId: "OpenSalesReportIndex",
                         category: "銷售管理",
                         requiredPermission: "SalesOrder.Read",
-                        searchKeywords: new List<string> { "銷貨報表", "銷貨報表集", "sales report", "銷售報表" }
+                        searchKeywords: new List<string> { "銷貨報表", "銷貨報表集", "sales report", "銷售報表" },
+                        nameKey: "Nav.SalesReportIndex"
                     ),
                 }
             },
@@ -608,6 +651,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "車輛",
+                NameKey = "Nav.VehicleGroup",
                 Description = "車輛相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-truck-front-fill",
@@ -621,6 +665,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "車輛",
+                        NameKey = "Nav.Vehicles",
                         Description = "管理車輛基本資料",
                         Route = "/vehicles",
                         IconClass = "bi bi-caret-right-fill",
@@ -633,6 +678,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "車型",
+                        NameKey = "Nav.VehicleTypes",
                         Description = "管理車輛類型設定",
                         Route = "/vehicle-types",
                         IconClass = "",
@@ -645,6 +691,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "保養紀錄",
+                        NameKey = "Nav.VehicleMaintenances",
                         Description = "管理車輛保養與維修紀錄",
                         Route = "/vehicle-maintenances",
                         IconClass = "bi bi-caret-right-fill",
@@ -668,7 +715,8 @@ public static class NavigationConfig
                         actionId: "OpenVehicleReportIndex",
                         category: "車輛管理",
                         requiredPermission: "Vehicle.Read",
-                        searchKeywords: new List<string> { "車輛報表", "車輛報表集", "vehicle report", "保養報表" }
+                        searchKeywords: new List<string> { "車輛報表", "車輛報表集", "vehicle report", "保養報表" },
+                        nameKey: "Nav.VehicleReportIndex"
                     ),
                 }
             },
@@ -677,6 +725,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "廢料",
+                NameKey = "Nav.WasteGroup",
                 Description = "廢料收料記錄與類型管理",
                 Route = "#",
                 IconClass = "bi bi-recycle",
@@ -690,6 +739,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "廢料記錄",
+                        NameKey = "Nav.WasteRecords",
                         Description = "管理廢料收料記錄",
                         Route = "/waste-records",
                         IconClass = "bi bi-caret-right-fill",
@@ -702,6 +752,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "廢料類型",
+                        NameKey = "Nav.WasteTypes",
                         Description = "管理廢料類型分類設定",
                         Route = "/waste-types",
                         IconClass = "",
@@ -725,7 +776,8 @@ public static class NavigationConfig
                         actionId: "OpenWasteReportIndex",
                         category: "廢料管理",
                         requiredPermission: "WasteRecord.Read",
-                        searchKeywords: new List<string> { "廢料報表", "廢料報表集", "waste report", "廢料記錄表" }
+                        searchKeywords: new List<string> { "廢料報表", "廢料報表集", "waste report", "廢料記錄表" },
+                        nameKey: "Nav.WasteReportIndex"
                     ),
                 }
             },
@@ -734,6 +786,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "財務",
+                NameKey = "Nav.FinanceGroup",
                 Description = "財務相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-journal-text",
@@ -748,6 +801,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "應收沖款",
+                        NameKey = "Nav.ARSetoff",
                         Description = "管理應收帳款沖款",
                         Route = "/accountsReceivableSetoff",
                         IconClass = "bi bi-caret-right-fill",
@@ -760,6 +814,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "應付沖款",
+                        NameKey = "Nav.APSetoff",
                         Description = "管理應付帳款沖款",
                         Route = "/accountsPayableSetoff",
                         IconClass = "bi bi-caret-right-fill",
@@ -772,6 +827,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "付款方式",
+                        NameKey = "Nav.PaymentMethods",
                         Description = "管理付款方式設定",
                         Route = "/paymentMethods",
                         IconClass = "",
@@ -784,6 +840,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "銀行",
+                        NameKey = "Nav.Banks",
                         Description = "管理銀行帳戶資料",
                         Route = "/banks",
                         IconClass = "",
@@ -796,6 +853,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "貨幣",
+                        NameKey = "Nav.Currencies",
                         Description = "管理貨幣和匯率設定",
                         Route = "/currencies",
                         IconClass = "",
@@ -818,7 +876,8 @@ public static class NavigationConfig
                         actionId: "OpenFinancialReportIndex",
                         category: "財務管理",
                         requiredPermission: "SetoffDocument.Read",
-                        searchKeywords: new List<string> { "財務報表", "財務報表集", "financial report", "沖款單報表", "應收沖款", "應付沖款" }
+                        searchKeywords: new List<string> { "財務報表", "財務報表集", "financial report", "沖款單報表", "應收沖款", "應付沖款" },
+                        nameKey: "Nav.FinancialReportIndex"
                     ),
 
                 }
@@ -828,6 +887,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "會計",
+                NameKey = "Nav.AccountingGroup",
                 Description = "會計相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-calculator",
@@ -841,6 +901,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "傳票管理",
+                        NameKey = "Nav.JournalEntries",
                         Description = "管理會計傳票（日記帳分錄）",
                         Route = "/journal-entries",
                         IconClass = "bi bi-caret-right-fill",
@@ -853,6 +914,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "批次轉傳票",
+                        NameKey = "Nav.JournalEntryBatch",
                         Description = "將進貨、銷貨、退回等業務單據批次產生會計傳票",
                         Route = "/journal-entry-batch",
                         IconClass = "bi bi-caret-right-fill",
@@ -863,6 +925,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "會計科目",
+                        NameKey = "Nav.AccountItems",
                         Description = "管理標準會計科目表（Chart of Accounts）",
                         Route = "/account-items",
                         IconClass = "",
@@ -887,7 +950,8 @@ public static class NavigationConfig
                         actionId: "OpenAccountingReportIndex",
                         category: "會計管理",
                         requiredPermission: "JournalEntry.Read",
-                        searchKeywords: new List<string> { "會計報表", "試算表", "損益表", "資產負債表", "科目表", "總分類帳", "明細分類帳", "明細科目餘額表", "accounting report" }
+                        searchKeywords: new List<string> { "會計報表", "試算表", "損益表", "資產負債表", "科目表", "總分類帳", "明細分類帳", "明細科目餘額表", "accounting report" },
+                        nameKey: "Nav.AccountingReportIndex"
                     ),
                 }
             },
@@ -896,6 +960,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "系統",
+                NameKey = "Nav.SystemGroup",
                 Description = "系統管理和管理功能",
                 Route = "#",
                 IconClass = "bi bi-gear-fill",
@@ -912,11 +977,13 @@ public static class NavigationConfig
                         actionId: "OpenSystemParameterSettings",
                         category: "系統管理",
                         requiredPermission: "SystemParameter.Read",
-                        searchKeywords: new List<string> { "系統參數", "參數設定", "parameter", "config", "設定" }
+                        searchKeywords: new List<string> { "系統參數", "參數設定", "parameter", "config", "設定" },
+                        nameKey: "Nav.SystemParameters"
                     ),
                     new NavigationItem
                     {
                         Name = "公司",
+                        NameKey = "Nav.Companies",
                         Description = "管理公司基本資料",
                         Route = "/companies",
                         IconClass = "",
@@ -929,6 +996,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "錯誤記錄",
+                        NameKey = "Nav.ErrorLogs",
                         Description = "檢視和管理系統錯誤記錄",
                         Route = "/error-logs",
                         IconClass = "",
@@ -939,6 +1007,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "印表機",
+                        NameKey = "Nav.PrinterConfigurations",
                         Description = "管理印表機配置",
                         Route = "/printerCconfigurations",
                         IconClass = "",
@@ -951,6 +1020,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "紙張",
+                        NameKey = "Nav.PaperSettings",
                         Description = "管理列印紙張設定",
                         Route = "/paper-settings",
                         IconClass = "",
@@ -963,6 +1033,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "報表",
+                        NameKey = "Nav.ReportPrintConfigurations",
                         Description = "管理報表列印配置",
                         Route = "/reportPrintConfigurations",
                         IconClass = "",

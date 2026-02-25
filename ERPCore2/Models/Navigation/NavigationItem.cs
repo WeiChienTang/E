@@ -6,9 +6,15 @@ namespace ERPCore2.Models.Navigation
     public class NavigationItem : ISearchableItem
     {
         /// <summary>
-        /// 功能名稱
+        /// 功能名稱（繁體中文，用於搜尋 fallback）
         /// </summary>
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 多語系資源鍵（設定後 NavMenu 會使用 IStringLocalizer 取得當前語言名稱）
+        /// 格式：Nav.Xxx，對應 SharedResource.resx 中的 key
+        /// </summary>
+        public string? NameKey { get; set; }
         
         /// <summary>
         /// 功能描述

@@ -223,6 +223,239 @@
     <value>Failed to load settings: {0}</value>
   </data>
 
+  <!-- ===== Navigation Menu ===== -->
+  <data name="Nav.Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="Nav.HumanResources" xml:space="preserve">
+    <value>HR</value>
+  </data>
+  <data name="Nav.Employees" xml:space="preserve">
+    <value>Employees</value>
+  </data>
+  <data name="Nav.Departments" xml:space="preserve">
+    <value>Departments</value>
+  </data>
+  <data name="Nav.Positions" xml:space="preserve">
+    <value>Positions</value>
+  </data>
+  <data name="Nav.RolePermission" xml:space="preserve">
+    <value>Role Permissions</value>
+  </data>
+  <data name="Nav.Roles" xml:space="preserve">
+    <value>Roles</value>
+  </data>
+  <data name="Nav.Permissions" xml:space="preserve">
+    <value>Permissions</value>
+  </data>
+  <data name="Nav.HRReportIndex" xml:space="preserve">
+    <value>HR Reports</value>
+  </data>
+  <data name="Nav.SupplierGroup" xml:space="preserve">
+    <value>Suppliers</value>
+  </data>
+  <data name="Nav.Suppliers" xml:space="preserve">
+    <value>Suppliers</value>
+  </data>
+  <data name="Nav.SupplierReportIndex" xml:space="preserve">
+    <value>Supplier Reports</value>
+  </data>
+  <data name="Nav.CustomerGroup" xml:space="preserve">
+    <value>Customers</value>
+  </data>
+  <data name="Nav.Customers" xml:space="preserve">
+    <value>Customers</value>
+  </data>
+  <data name="Nav.CustomerReportIndex" xml:space="preserve">
+    <value>Customer Reports</value>
+  </data>
+  <data name="Nav.ProductGroup" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="Nav.Products" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="Nav.ProductCategories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="Nav.Units" xml:space="preserve">
+    <value>Units</value>
+  </data>
+  <data name="Nav.Sizes" xml:space="preserve">
+    <value>Sizes</value>
+  </data>
+  <data name="Nav.ProductCompositions" xml:space="preserve">
+    <value>BOM</value>
+  </data>
+  <data name="Nav.CompositionCategories" xml:space="preserve">
+    <value>BOM Types</value>
+  </data>
+  <data name="Nav.ProductionSchedules" xml:space="preserve">
+    <value>Production Schedules</value>
+  </data>
+  <data name="Nav.ProductReportIndex" xml:space="preserve">
+    <value>Product Reports</value>
+  </data>
+  <data name="Nav.InventoryGroup" xml:space="preserve">
+    <value>Inventory</value>
+  </data>
+  <data name="Nav.InventoryStocks" xml:space="preserve">
+    <value>Stock Inquiry</value>
+  </data>
+  <data name="Nav.Warehouses" xml:space="preserve">
+    <value>Warehouses</value>
+  </data>
+  <data name="Nav.WarehouseLocations" xml:space="preserve">
+    <value>Locations</value>
+  </data>
+  <data name="Nav.StockTakings" xml:space="preserve">
+    <value>Stock Taking</value>
+  </data>
+  <data name="Nav.MaterialIssues" xml:space="preserve">
+    <value>Material Issues</value>
+  </data>
+  <data name="Nav.InventoryReportIndex" xml:space="preserve">
+    <value>Inventory Reports</value>
+  </data>
+  <data name="Nav.PurchaseGroup" xml:space="preserve">
+    <value>Purchase</value>
+  </data>
+  <data name="Nav.PurchaseOrders" xml:space="preserve">
+    <value>Purchase Orders</value>
+  </data>
+  <data name="Nav.PurchaseReceiving" xml:space="preserve">
+    <value>Receiving</value>
+  </data>
+  <data name="Nav.PurchaseReturns" xml:space="preserve">
+    <value>Purchase Returns</value>
+  </data>
+  <data name="Nav.PurchaseReportIndex" xml:space="preserve">
+    <value>Purchase Reports</value>
+  </data>
+  <data name="Nav.SalesGroup" xml:space="preserve">
+    <value>Sales</value>
+  </data>
+  <data name="Nav.Quotations" xml:space="preserve">
+    <value>Quotations</value>
+  </data>
+  <data name="Nav.SalesOrders" xml:space="preserve">
+    <value>Orders</value>
+  </data>
+  <data name="Nav.SalesDeliveries" xml:space="preserve">
+    <value>Deliveries</value>
+  </data>
+  <data name="Nav.SalesReturns" xml:space="preserve">
+    <value>Sales Returns</value>
+  </data>
+  <data name="Nav.SalesReturnReasons" xml:space="preserve">
+    <value>Return Reasons</value>
+  </data>
+  <data name="Nav.SalesReportIndex" xml:space="preserve">
+    <value>Sales Reports</value>
+  </data>
+  <data name="Nav.VehicleGroup" xml:space="preserve">
+    <value>Vehicles</value>
+  </data>
+  <data name="Nav.Vehicles" xml:space="preserve">
+    <value>Vehicles</value>
+  </data>
+  <data name="Nav.VehicleTypes" xml:space="preserve">
+    <value>Vehicle Types</value>
+  </data>
+  <data name="Nav.VehicleMaintenances" xml:space="preserve">
+    <value>Maintenance</value>
+  </data>
+  <data name="Nav.VehicleReportIndex" xml:space="preserve">
+    <value>Vehicle Reports</value>
+  </data>
+  <data name="Nav.WasteGroup" xml:space="preserve">
+    <value>Waste</value>
+  </data>
+  <data name="Nav.WasteRecords" xml:space="preserve">
+    <value>Waste Records</value>
+  </data>
+  <data name="Nav.WasteTypes" xml:space="preserve">
+    <value>Waste Types</value>
+  </data>
+  <data name="Nav.WasteReportIndex" xml:space="preserve">
+    <value>Waste Reports</value>
+  </data>
+  <data name="Nav.FinanceGroup" xml:space="preserve">
+    <value>Finance</value>
+  </data>
+  <data name="Nav.ARSetoff" xml:space="preserve">
+    <value>AR Setoff</value>
+  </data>
+  <data name="Nav.APSetoff" xml:space="preserve">
+    <value>AP Setoff</value>
+  </data>
+  <data name="Nav.PaymentMethods" xml:space="preserve">
+    <value>Payment Methods</value>
+  </data>
+  <data name="Nav.Banks" xml:space="preserve">
+    <value>Banks</value>
+  </data>
+  <data name="Nav.Currencies" xml:space="preserve">
+    <value>Currencies</value>
+  </data>
+  <data name="Nav.FinancialReportIndex" xml:space="preserve">
+    <value>Finance Reports</value>
+  </data>
+  <data name="Nav.AccountingGroup" xml:space="preserve">
+    <value>Accounting</value>
+  </data>
+  <data name="Nav.JournalEntries" xml:space="preserve">
+    <value>Journal Entries</value>
+  </data>
+  <data name="Nav.JournalEntryBatch" xml:space="preserve">
+    <value>Batch to Journal</value>
+  </data>
+  <data name="Nav.AccountItems" xml:space="preserve">
+    <value>Chart of Accounts</value>
+  </data>
+  <data name="Nav.AccountingReportIndex" xml:space="preserve">
+    <value>Accounting Reports</value>
+  </data>
+  <data name="Nav.SystemGroup" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Nav.SystemParameters" xml:space="preserve">
+    <value>System Parameters</value>
+  </data>
+  <data name="Nav.Companies" xml:space="preserve">
+    <value>Companies</value>
+  </data>
+  <data name="Nav.ErrorLogs" xml:space="preserve">
+    <value>Error Logs</value>
+  </data>
+  <data name="Nav.PrinterConfigurations" xml:space="preserve">
+    <value>Printers</value>
+  </data>
+  <data name="Nav.PaperSettings" xml:space="preserve">
+    <value>Paper Settings</value>
+  </data>
+  <data name="Nav.ReportPrintConfigurations" xml:space="preserve">
+    <value>Reports</value>
+  </data>
+  <data name="Nav.DefaultUser" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="Nav.PersonalData" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="Nav.SignOut" xml:space="preserve">
+    <value>Sign Out</value>
+  </data>
+  <data name="Nav.SignIn" xml:space="preserve">
+    <value>Sign In</value>
+  </data>
+  <data name="Nav.ToggleNav" xml:space="preserve">
+    <value>Toggle Navigation</value>
+  </data>
+  <data name="Nav.UnderConstruction" xml:space="preserve">
+    <value>This feature is under construction</value>
+  </data>
+
   <!-- ===== Placeholders ===== -->
   <data name="Placeholder.Name" xml:space="preserve">
     <value>Enter name</value>

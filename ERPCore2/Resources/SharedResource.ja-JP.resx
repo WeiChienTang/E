@@ -39,235 +39,252 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 
-  <!-- ===== 通用按鈕 ===== -->
+  <!-- ===== Buttons ===== -->
   <data name="Button.Save" xml:space="preserve">
-    <value>儲存</value>
+    <value>Save</value>
   </data>
   <data name="Button.Cancel" xml:space="preserve">
-    <value>取消</value>
+    <value>Cancel</value>
   </data>
   <data name="Button.Close" xml:space="preserve">
-    <value>關閉</value>
+    <value>Close</value>
   </data>
   <data name="Button.Add" xml:space="preserve">
-    <value>新增</value>
+    <value>Add</value>
   </data>
   <data name="Button.Edit" xml:space="preserve">
-    <value>編輯</value>
+    <value>Edit</value>
   </data>
   <data name="Button.Delete" xml:space="preserve">
-    <value>刪除</value>
+    <value>Delete</value>
   </data>
   <data name="Button.Search" xml:space="preserve">
-    <value>搜尋</value>
+    <value>Search</value>
   </data>
   <data name="Button.Reset" xml:space="preserve">
-    <value>重置</value>
+    <value>Reset</value>
   </data>
   <data name="Button.Export" xml:space="preserve">
-    <value>匯出</value>
+    <value>Export</value>
   </data>
   <data name="Button.Print" xml:space="preserve">
-    <value>列印</value>
+    <value>Print</value>
   </data>
 
-  <!-- ===== 通用標籤 ===== -->
+  <!-- ===== Labels ===== -->
   <data name="Label.Loading" xml:space="preserve">
-    <value>載入中...</value>
+    <value>Loading...</value>
   </data>
   <data name="Label.NoData" xml:space="preserve">
-    <value>無資料</value>
+    <value>No data</value>
   </data>
   <data name="Label.Required" xml:space="preserve">
-    <value>必填</value>
+    <value>Required</value>
   </data>
   <data name="Label.Optional" xml:space="preserve">
-    <value>選填</value>
+    <value>Optional</value>
   </data>
   <data name="Label.Yes" xml:space="preserve">
-    <value>是</value>
+    <value>Yes</value>
   </data>
   <data name="Label.No" xml:space="preserve">
-    <value>否</value>
+    <value>No</value>
   </data>
   <data name="Label.Enable" xml:space="preserve">
-    <value>啟用</value>
+    <value>Enable</value>
   </data>
   <data name="Label.Disable" xml:space="preserve">
-    <value>停用</value>
+    <value>Disable</value>
   </data>
   <data name="Label.All" xml:space="preserve">
-    <value>全部</value>
+    <value>All</value>
   </data>
 
-  <!-- ===== 通用訊息 ===== -->
+  <!-- ===== Messages ===== -->
   <data name="Message.SaveSuccess" xml:space="preserve">
-    <value>儲存成功</value>
+    <value>Saved successfully</value>
   </data>
   <data name="Message.SaveFailed" xml:space="preserve">
-    <value>儲存失敗</value>
+    <value>Save failed</value>
   </data>
   <data name="Message.DeleteSuccess" xml:space="preserve">
-    <value>刪除成功</value>
+    <value>Deleted successfully</value>
   </data>
   <data name="Message.DeleteFailed" xml:space="preserve">
-    <value>刪除失敗</value>
+    <value>Delete failed</value>
   </data>
   <data name="Message.DeleteConfirm" xml:space="preserve">
-    <value>確定要刪除嗎？</value>
+    <value>Are you sure you want to delete?</value>
   </data>
   <data name="Message.OperationFailed" xml:space="preserve">
-    <value>操作失敗</value>
+    <value>Operation failed</value>
   </data>
 
-  <!-- ===== 員工 ===== -->
+  <!-- ===== Employee ===== -->
   <data name="Employee.Name" xml:space="preserve">
-    <value>姓名</value>
+    <value>Name</value>
   </data>
   <data name="Employee.Account" xml:space="preserve">
-    <value>登入帳號</value>
+    <value>Account</value>
   </data>
   <data name="Employee.Mobile" xml:space="preserve">
-    <value>手機號碼</value>
+    <value>Mobile</value>
   </data>
   <data name="Employee.Email" xml:space="preserve">
-    <value>電子郵件</value>
+    <value>Email</value>
   </data>
   <data name="Employee.Password" xml:space="preserve">
-    <value>密碼</value>
+    <value>Password</value>
   </data>
   <data name="Employee.NewPassword" xml:space="preserve">
-    <value>新密碼</value>
+    <value>New Password</value>
   </data>
   <data name="Employee.ConfirmPassword" xml:space="preserve">
-    <value>確認新密碼</value>
+    <value>Confirm Password</value>
   </data>
   <data name="Employee.Department" xml:space="preserve">
-    <value>部門</value>
+    <value>Department</value>
   </data>
   <data name="Employee.Position" xml:space="preserve">
-    <value>職稱</value>
+    <value>Position</value>
   </data>
   <data name="Employee.Role" xml:space="preserve">
-    <value>角色</value>
+    <value>Role</value>
   </data>
 
-  <!-- ===== 個人化設定 ===== -->
+  <!-- ===== Preferences ===== -->
   <data name="Preference.Title" xml:space="preserve">
-    <value>個人化設定</value>
+    <value>Personalization</value>
   </data>
   <data name="Preference.Language" xml:space="preserve">
-    <value>介面語言</value>
+    <value>Interface Language</value>
   </data>
   <data name="Preference.PersonalData" xml:space="preserve">
-    <value>個人資料</value>
+    <value>Personal Info</value>
   </data>
   <data name="Preference.LanguageRegion" xml:space="preserve">
-    <value>語言與地區</value>
+    <value>言語と地域</value>
   </data>
   <data name="Preference.ChangePassword" xml:space="preserve">
-    <value>變更密碼</value>
+    <value>Change Password</value>
   </data>
   <data name="Preference.AccountInfo" xml:space="preserve">
-    <value>帳號資訊</value>
+    <value>Account Info</value>
   </data>
   <data name="Preference.BasicInfo" xml:space="preserve">
-    <value>基本資料</value>
+    <value>Profile</value>
   </data>
   <data name="Preference.LoadingMessage" xml:space="preserve">
-    <value>載入設定中...</value>
+    <value>Loading settings...</value>
   </data>
   <data name="Preference.SaveTooltip" xml:space="preserve">
-    <value>儲存個人化設定</value>
+    <value>Save settings</value>
   </data>
   <data name="Preference.SaveSuccess" xml:space="preserve">
-    <value>個人化設定已儲存</value>
+    <value>Settings saved</value>
   </data>
   <data name="Preference.LanguageHelpText" xml:space="preserve">
-    <value>儲存後頁面將重新載入以套用新語言</value>
+    <value>Page will reload after saving to apply new language</value>
   </data>
 
-  <!-- ===== 員工帳號 ===== -->
+  <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
-    <value>帳號由管理員設定，無法自行修改</value>
+    <value>Account is set by administrator and cannot be changed</value>
   </data>
 
-  <!-- ===== 密碼 ===== -->
+  <!-- ===== Password ===== -->
   <data name="Password.LeaveBlank" xml:space="preserve">
-    <value>留空表示不變更密碼</value>
+    <value>Leave blank to keep current password</value>
   </data>
   <data name="Password.Mismatch" xml:space="preserve">
-    <value>兩次輸入的密碼不一致</value>
+    <value>Passwords do not match</value>
   </data>
   <data name="Password.Match" xml:space="preserve">
-    <value>密碼一致</value>
+    <value>Passwords match</value>
   </data>
 
-  <!-- ===== 錯誤訊息 ===== -->
+  <!-- ===== Errors ===== -->
   <data name="Error.UnknownUser" xml:space="preserve">
-    <value>無法識別目前登入的使用者</value>
+    <value>Unable to identify current user</value>
   </data>
   <data name="Error.PasswordMismatch" xml:space="preserve">
-    <value>兩次輸入的密碼不一致，請重新確認</value>
+    <value>Passwords do not match, please confirm again</value>
   </data>
   <data name="Error.SavePreferenceFailed" xml:space="preserve">
-    <value>儲存語言設定失敗：{0}</value>
+    <value>Failed to save language settings: {0}</value>
   </data>
   <data name="Error.SaveProfileFailed" xml:space="preserve">
-    <value>儲存個人資料失敗：{0}</value>
+    <value>Failed to save profile: {0}</value>
   </data>
   <data name="Error.SaveFailed" xml:space="preserve">
-    <value>儲存時發生錯誤：{0}</value>
+    <value>An error occurred while saving: {0}</value>
   </data>
   <data name="Error.LoadFailed" xml:space="preserve">
-    <value>載入設定失敗：{0}</value>
+    <value>Failed to load settings: {0}</value>
   </data>
 
-  <!-- ===== 導航選單 ===== -->
+  <!-- ===== Placeholders ===== -->
+  <data name="Placeholder.Name" xml:space="preserve">
+    <value>Enter name</value>
+  </data>
+  <data name="Placeholder.Email" xml:space="preserve">
+    <value>Enter email</value>
+  </data>
+  <data name="Placeholder.NewPassword" xml:space="preserve">
+    <value>Leave blank to keep current password</value>
+  </data>
+  <data name="Placeholder.ConfirmPassword" xml:space="preserve">
+    <value>Re-enter new password</value>
+  </data>
+  <data name="Placeholder.MobilePhone" xml:space="preserve">
+    <value>0912-345-678</value>
+  </data>
+
+  <!-- ===== Navigation Menu - ja ===== -->
   <data name="Nav.Home" xml:space="preserve">
-    <value>首頁</value>
+    <value>ホーム</value>
   </data>
   <data name="Nav.HumanResources" xml:space="preserve">
-    <value>人力資源</value>
+    <value>人事</value>
   </data>
   <data name="Nav.Employees" xml:space="preserve">
-    <value>員工</value>
+    <value>従業員</value>
   </data>
   <data name="Nav.Departments" xml:space="preserve">
     <value>部門</value>
   </data>
   <data name="Nav.Positions" xml:space="preserve">
-    <value>職位</value>
+    <value>役職</value>
   </data>
   <data name="Nav.RolePermission" xml:space="preserve">
-    <value>權限分配</value>
+    <value>権限割当</value>
   </data>
   <data name="Nav.Roles" xml:space="preserve">
-    <value>權限組</value>
+    <value>ロール</value>
   </data>
   <data name="Nav.Permissions" xml:space="preserve">
-    <value>權限</value>
+    <value>権限</value>
   </data>
   <data name="Nav.HRReportIndex" xml:space="preserve">
-    <value>人力報表集</value>
+    <value>人事レポート</value>
   </data>
   <data name="Nav.SupplierGroup" xml:space="preserve">
-    <value>廠商</value>
+    <value>仕入先</value>
   </data>
   <data name="Nav.Suppliers" xml:space="preserve">
-    <value>廠商</value>
+    <value>仕入先</value>
   </data>
   <data name="Nav.SupplierReportIndex" xml:space="preserve">
-    <value>廠商報表集</value>
+    <value>仕入先レポート</value>
   </data>
   <data name="Nav.CustomerGroup" xml:space="preserve">
-    <value>客戶</value>
+    <value>顧客</value>
   </data>
   <data name="Nav.Customers" xml:space="preserve">
-    <value>客戶</value>
+    <value>顧客</value>
   </data>
   <data name="Nav.CustomerReportIndex" xml:space="preserve">
-    <value>客戶報表集</value>
+    <value>顧客レポート</value>
   </data>
   <data name="Nav.ProductGroup" xml:space="preserve">
     <value>商品</value>
@@ -276,201 +293,184 @@
     <value>商品</value>
   </data>
   <data name="Nav.ProductCategories" xml:space="preserve">
-    <value>類型</value>
+    <value>分類</value>
   </data>
   <data name="Nav.Units" xml:space="preserve">
-    <value>單位</value>
+    <value>単位</value>
   </data>
   <data name="Nav.Sizes" xml:space="preserve">
-    <value>尺寸</value>
+    <value>サイズ</value>
   </data>
   <data name="Nav.ProductCompositions" xml:space="preserve">
-    <value>物料清單</value>
+    <value>BOM</value>
   </data>
   <data name="Nav.CompositionCategories" xml:space="preserve">
-    <value>物料類型</value>
+    <value>BOM種別</value>
   </data>
   <data name="Nav.ProductionSchedules" xml:space="preserve">
-    <value>生產排程</value>
+    <value>生産スケジュール</value>
   </data>
   <data name="Nav.ProductReportIndex" xml:space="preserve">
-    <value>商品報表集</value>
+    <value>商品レポート</value>
   </data>
   <data name="Nav.InventoryGroup" xml:space="preserve">
-    <value>庫存</value>
+    <value>在庫</value>
   </data>
   <data name="Nav.InventoryStocks" xml:space="preserve">
-    <value>庫存查詢</value>
+    <value>在庫照会</value>
   </data>
   <data name="Nav.Warehouses" xml:space="preserve">
     <value>倉庫</value>
   </data>
   <data name="Nav.WarehouseLocations" xml:space="preserve">
-    <value>庫位</value>
+    <value>ロケーション</value>
   </data>
   <data name="Nav.StockTakings" xml:space="preserve">
-    <value>庫存盤點</value>
+    <value>棚卸</value>
   </data>
   <data name="Nav.MaterialIssues" xml:space="preserve">
-    <value>領料</value>
+    <value>出庫</value>
   </data>
   <data name="Nav.InventoryReportIndex" xml:space="preserve">
-    <value>倉庫報表集</value>
+    <value>在庫レポート</value>
   </data>
   <data name="Nav.PurchaseGroup" xml:space="preserve">
-    <value>採購</value>
+    <value>購買</value>
   </data>
   <data name="Nav.PurchaseOrders" xml:space="preserve">
-    <value>採購</value>
+    <value>購買注文</value>
   </data>
   <data name="Nav.PurchaseReceiving" xml:space="preserve">
-    <value>進貨</value>
+    <value>入荷</value>
   </data>
   <data name="Nav.PurchaseReturns" xml:space="preserve">
-    <value>進貨退出</value>
+    <value>購買返品</value>
   </data>
   <data name="Nav.PurchaseReportIndex" xml:space="preserve">
-    <value>採購報表集</value>
+    <value>購買レポート</value>
   </data>
   <data name="Nav.SalesGroup" xml:space="preserve">
-    <value>銷貨</value>
+    <value>販売</value>
   </data>
   <data name="Nav.Quotations" xml:space="preserve">
-    <value>報價</value>
+    <value>見積</value>
   </data>
   <data name="Nav.SalesOrders" xml:space="preserve">
-    <value>訂單</value>
+    <value>受注</value>
   </data>
   <data name="Nav.SalesDeliveries" xml:space="preserve">
-    <value>銷貨</value>
+    <value>出荷</value>
   </data>
   <data name="Nav.SalesReturns" xml:space="preserve">
-    <value>銷貨退回</value>
+    <value>返品</value>
   </data>
   <data name="Nav.SalesReturnReasons" xml:space="preserve">
-    <value>銷退原因</value>
+    <value>返品理由</value>
   </data>
   <data name="Nav.SalesReportIndex" xml:space="preserve">
-    <value>銷貨報表集</value>
+    <value>販売レポート</value>
   </data>
   <data name="Nav.VehicleGroup" xml:space="preserve">
-    <value>車輛</value>
+    <value>車両</value>
   </data>
   <data name="Nav.Vehicles" xml:space="preserve">
-    <value>車輛</value>
+    <value>車両</value>
   </data>
   <data name="Nav.VehicleTypes" xml:space="preserve">
-    <value>車型</value>
+    <value>車種</value>
   </data>
   <data name="Nav.VehicleMaintenances" xml:space="preserve">
-    <value>保養紀錄</value>
+    <value>整備記録</value>
   </data>
   <data name="Nav.VehicleReportIndex" xml:space="preserve">
-    <value>車輛報表集</value>
+    <value>車両レポート</value>
   </data>
   <data name="Nav.WasteGroup" xml:space="preserve">
-    <value>廢料</value>
+    <value>廃材</value>
   </data>
   <data name="Nav.WasteRecords" xml:space="preserve">
-    <value>廢料記錄</value>
+    <value>廃材記録</value>
   </data>
   <data name="Nav.WasteTypes" xml:space="preserve">
-    <value>廢料類型</value>
+    <value>廃材種別</value>
   </data>
   <data name="Nav.WasteReportIndex" xml:space="preserve">
-    <value>廢料報表集</value>
+    <value>廃材レポート</value>
   </data>
   <data name="Nav.FinanceGroup" xml:space="preserve">
     <value>財務</value>
   </data>
   <data name="Nav.ARSetoff" xml:space="preserve">
-    <value>應收沖款</value>
+    <value>売掛相殿</value>
   </data>
   <data name="Nav.APSetoff" xml:space="preserve">
-    <value>應付沖款</value>
+    <value>買掛相殿</value>
   </data>
   <data name="Nav.PaymentMethods" xml:space="preserve">
-    <value>付款方式</value>
+    <value>支払方法</value>
   </data>
   <data name="Nav.Banks" xml:space="preserve">
     <value>銀行</value>
   </data>
   <data name="Nav.Currencies" xml:space="preserve">
-    <value>貨幣</value>
+    <value>通貨</value>
   </data>
   <data name="Nav.FinancialReportIndex" xml:space="preserve">
-    <value>財務報表集</value>
+    <value>財務レポート</value>
   </data>
   <data name="Nav.AccountingGroup" xml:space="preserve">
-    <value>會計</value>
+    <value>会計</value>
   </data>
   <data name="Nav.JournalEntries" xml:space="preserve">
-    <value>傳票管理</value>
+    <value>仕訳帳</value>
   </data>
   <data name="Nav.JournalEntryBatch" xml:space="preserve">
-    <value>批次轉傳票</value>
+    <value>一括仕訳生成</value>
   </data>
   <data name="Nav.AccountItems" xml:space="preserve">
-    <value>會計科目</value>
+    <value>勘定科目</value>
   </data>
   <data name="Nav.AccountingReportIndex" xml:space="preserve">
-    <value>會計報表集</value>
+    <value>会計レポート</value>
   </data>
   <data name="Nav.SystemGroup" xml:space="preserve">
-    <value>系統</value>
+    <value>システム</value>
   </data>
   <data name="Nav.SystemParameters" xml:space="preserve">
-    <value>系統參數</value>
+    <value>システムパラメータ</value>
   </data>
   <data name="Nav.Companies" xml:space="preserve">
-    <value>公司</value>
+    <value>会社</value>
   </data>
   <data name="Nav.ErrorLogs" xml:space="preserve">
-    <value>錯誤記錄</value>
+    <value>エラーログ</value>
   </data>
   <data name="Nav.PrinterConfigurations" xml:space="preserve">
-    <value>印表機</value>
+    <value>プリンター</value>
   </data>
   <data name="Nav.PaperSettings" xml:space="preserve">
-    <value>紙張</value>
+    <value>用紙設定</value>
   </data>
   <data name="Nav.ReportPrintConfigurations" xml:space="preserve">
-    <value>報表</value>
+    <value>レポート</value>
   </data>
   <data name="Nav.DefaultUser" xml:space="preserve">
-    <value>使用者</value>
+    <value>ユーザー</value>
   </data>
   <data name="Nav.PersonalData" xml:space="preserve">
-    <value>個人資料</value>
+    <value>プロフィール</value>
   </data>
   <data name="Nav.SignOut" xml:space="preserve">
-    <value>登出</value>
+    <value>ログアウト</value>
   </data>
   <data name="Nav.SignIn" xml:space="preserve">
-    <value>登入</value>
+    <value>ログイン</value>
   </data>
   <data name="Nav.ToggleNav" xml:space="preserve">
-    <value>切換導航選單</value>
+    <value>ナビゲーション切替</value>
   </data>
   <data name="Nav.UnderConstruction" xml:space="preserve">
-    <value>此功能還在設計中</value>
-  </data>
-
-  <!-- ===== Placeholder ===== -->
-  <data name="Placeholder.Name" xml:space="preserve">
-    <value>請輸入姓名</value>
-  </data>
-  <data name="Placeholder.Email" xml:space="preserve">
-    <value>請輸入電子郵件</value>
-  </data>
-  <data name="Placeholder.NewPassword" xml:space="preserve">
-    <value>留空表示不變更密碼</value>
-  </data>
-  <data name="Placeholder.ConfirmPassword" xml:space="preserve">
-    <value>再次輸入新密碼</value>
-  </data>
-  <data name="Placeholder.MobilePhone" xml:space="preserve">
-    <value>0912-345-678</value>
+    <value>この機能は準備中です</value>
   </data>
 
 </root>

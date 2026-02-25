@@ -39,438 +39,438 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 
-  <!-- ===== 通用按鈕 ===== -->
+  <!-- ===== Buttons ===== -->
   <data name="Button.Save" xml:space="preserve">
-    <value>儲存</value>
+    <value>I-save</value>
   </data>
   <data name="Button.Cancel" xml:space="preserve">
-    <value>取消</value>
+    <value>Kanselahin</value>
   </data>
   <data name="Button.Close" xml:space="preserve">
-    <value>關閉</value>
+    <value>Isara</value>
   </data>
   <data name="Button.Add" xml:space="preserve">
-    <value>新增</value>
+    <value>Idagdag</value>
   </data>
   <data name="Button.Edit" xml:space="preserve">
-    <value>編輯</value>
+    <value>I-edit</value>
   </data>
   <data name="Button.Delete" xml:space="preserve">
-    <value>刪除</value>
+    <value>Burahin</value>
   </data>
   <data name="Button.Search" xml:space="preserve">
-    <value>搜尋</value>
+    <value>Maghanap</value>
   </data>
   <data name="Button.Reset" xml:space="preserve">
-    <value>重置</value>
+    <value>I-reset</value>
   </data>
   <data name="Button.Export" xml:space="preserve">
-    <value>匯出</value>
+    <value>I-export</value>
   </data>
   <data name="Button.Print" xml:space="preserve">
-    <value>列印</value>
+    <value>I-print</value>
   </data>
 
-  <!-- ===== 通用標籤 ===== -->
+  <!-- ===== Labels ===== -->
   <data name="Label.Loading" xml:space="preserve">
-    <value>載入中...</value>
+    <value>Naglo-load...</value>
   </data>
   <data name="Label.NoData" xml:space="preserve">
-    <value>無資料</value>
+    <value>Walang data</value>
   </data>
   <data name="Label.Required" xml:space="preserve">
-    <value>必填</value>
+    <value>Kailangan</value>
   </data>
   <data name="Label.Optional" xml:space="preserve">
-    <value>選填</value>
+    <value>Opsyonal</value>
   </data>
   <data name="Label.Yes" xml:space="preserve">
-    <value>是</value>
+    <value>Oo</value>
   </data>
   <data name="Label.No" xml:space="preserve">
-    <value>否</value>
+    <value>Hindi</value>
   </data>
   <data name="Label.Enable" xml:space="preserve">
-    <value>啟用</value>
+    <value>I-enable</value>
   </data>
   <data name="Label.Disable" xml:space="preserve">
-    <value>停用</value>
+    <value>I-disable</value>
   </data>
   <data name="Label.All" xml:space="preserve">
-    <value>全部</value>
+    <value>Lahat</value>
   </data>
 
-  <!-- ===== 通用訊息 ===== -->
+  <!-- ===== Messages ===== -->
   <data name="Message.SaveSuccess" xml:space="preserve">
-    <value>儲存成功</value>
+    <value>Matagumpay na na-save</value>
   </data>
   <data name="Message.SaveFailed" xml:space="preserve">
-    <value>儲存失敗</value>
+    <value>Hindi na-save</value>
   </data>
   <data name="Message.DeleteSuccess" xml:space="preserve">
-    <value>刪除成功</value>
+    <value>Matagumpay na nabura</value>
   </data>
   <data name="Message.DeleteFailed" xml:space="preserve">
-    <value>刪除失敗</value>
+    <value>Hindi nabura</value>
   </data>
   <data name="Message.DeleteConfirm" xml:space="preserve">
-    <value>確定要刪除嗎？</value>
+    <value>Sigurado ka bang gusto mong burahin?</value>
   </data>
   <data name="Message.OperationFailed" xml:space="preserve">
-    <value>操作失敗</value>
+    <value>Nabigong maisagawa ang operasyon</value>
   </data>
 
-  <!-- ===== 員工 ===== -->
+  <!-- ===== Employee ===== -->
   <data name="Employee.Name" xml:space="preserve">
-    <value>姓名</value>
+    <value>Pangalan</value>
   </data>
   <data name="Employee.Account" xml:space="preserve">
-    <value>登入帳號</value>
+    <value>Account</value>
   </data>
   <data name="Employee.Mobile" xml:space="preserve">
-    <value>手機號碼</value>
+    <value>Mobile</value>
   </data>
   <data name="Employee.Email" xml:space="preserve">
-    <value>電子郵件</value>
+    <value>Email</value>
   </data>
   <data name="Employee.Password" xml:space="preserve">
-    <value>密碼</value>
+    <value>Password</value>
   </data>
   <data name="Employee.NewPassword" xml:space="preserve">
-    <value>新密碼</value>
+    <value>Bagong Password</value>
   </data>
   <data name="Employee.ConfirmPassword" xml:space="preserve">
-    <value>確認新密碼</value>
+    <value>Kumpirmahin ang Password</value>
   </data>
   <data name="Employee.Department" xml:space="preserve">
-    <value>部門</value>
+    <value>Departamento</value>
   </data>
   <data name="Employee.Position" xml:space="preserve">
-    <value>職稱</value>
+    <value>Posisyon</value>
   </data>
   <data name="Employee.Role" xml:space="preserve">
-    <value>角色</value>
+    <value>Tungkulin</value>
   </data>
 
-  <!-- ===== 個人化設定 ===== -->
+  <!-- ===== Preferences ===== -->
   <data name="Preference.Title" xml:space="preserve">
-    <value>個人化設定</value>
+    <value>Personalisasyon</value>
   </data>
   <data name="Preference.Language" xml:space="preserve">
-    <value>介面語言</value>
+    <value>Wika ng Interface</value>
   </data>
   <data name="Preference.PersonalData" xml:space="preserve">
-    <value>個人資料</value>
+    <value>Personal na Impormasyon</value>
   </data>
   <data name="Preference.LanguageRegion" xml:space="preserve">
-    <value>語言與地區</value>
+    <value>Wika at Rehiyon</value>
   </data>
   <data name="Preference.ChangePassword" xml:space="preserve">
-    <value>變更密碼</value>
+    <value>Baguhin ang Password</value>
   </data>
   <data name="Preference.AccountInfo" xml:space="preserve">
-    <value>帳號資訊</value>
+    <value>Impormasyon ng Account</value>
   </data>
   <data name="Preference.BasicInfo" xml:space="preserve">
-    <value>基本資料</value>
+    <value>Profile</value>
   </data>
   <data name="Preference.LoadingMessage" xml:space="preserve">
-    <value>載入設定中...</value>
+    <value>Naglo-load ng mga setting...</value>
   </data>
   <data name="Preference.SaveTooltip" xml:space="preserve">
-    <value>儲存個人化設定</value>
+    <value>I-save ang mga setting</value>
   </data>
   <data name="Preference.SaveSuccess" xml:space="preserve">
-    <value>個人化設定已儲存</value>
+    <value>Nai-save ang mga setting</value>
   </data>
   <data name="Preference.LanguageHelpText" xml:space="preserve">
-    <value>儲存後頁面將重新載入以套用新語言</value>
+    <value>Mag-reload ang pahina pagkatapos i-save upang ilapat ang bagong wika</value>
   </data>
 
-  <!-- ===== 員工帳號 ===== -->
+  <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
-    <value>帳號由管理員設定，無法自行修改</value>
+    <value>Itinakda ng administrator ang account at hindi maaaring baguhin</value>
   </data>
 
-  <!-- ===== 密碼 ===== -->
+  <!-- ===== Password ===== -->
   <data name="Password.LeaveBlank" xml:space="preserve">
-    <value>留空表示不變更密碼</value>
+    <value>Iwanang blangko upang panatilihin ang kasalukuyang password</value>
   </data>
   <data name="Password.Mismatch" xml:space="preserve">
-    <value>兩次輸入的密碼不一致</value>
+    <value>Hindi tugma ang mga password</value>
   </data>
   <data name="Password.Match" xml:space="preserve">
-    <value>密碼一致</value>
+    <value>Tugma ang mga password</value>
   </data>
 
-  <!-- ===== 錯誤訊息 ===== -->
+  <!-- ===== Errors ===== -->
   <data name="Error.UnknownUser" xml:space="preserve">
-    <value>無法識別目前登入的使用者</value>
+    <value>Hindi makilala ang kasalukuyang user</value>
   </data>
   <data name="Error.PasswordMismatch" xml:space="preserve">
-    <value>兩次輸入的密碼不一致，請重新確認</value>
+    <value>Hindi tugma ang mga password, pakikumpirma muli</value>
   </data>
   <data name="Error.SavePreferenceFailed" xml:space="preserve">
-    <value>儲存語言設定失敗：{0}</value>
+    <value>Nabigong i-save ang setting ng wika: {0}</value>
   </data>
   <data name="Error.SaveProfileFailed" xml:space="preserve">
-    <value>儲存個人資料失敗：{0}</value>
+    <value>Nabigong i-save ang profile: {0}</value>
   </data>
   <data name="Error.SaveFailed" xml:space="preserve">
-    <value>儲存時發生錯誤：{0}</value>
+    <value>May error habang sino-save: {0}</value>
   </data>
   <data name="Error.LoadFailed" xml:space="preserve">
-    <value>載入設定失敗：{0}</value>
+    <value>Nabigong i-load ang mga setting: {0}</value>
   </data>
 
-  <!-- ===== 導航選單 ===== -->
-  <data name="Nav.Home" xml:space="preserve">
-    <value>首頁</value>
-  </data>
-  <data name="Nav.HumanResources" xml:space="preserve">
-    <value>人力資源</value>
-  </data>
-  <data name="Nav.Employees" xml:space="preserve">
-    <value>員工</value>
-  </data>
-  <data name="Nav.Departments" xml:space="preserve">
-    <value>部門</value>
-  </data>
-  <data name="Nav.Positions" xml:space="preserve">
-    <value>職位</value>
-  </data>
-  <data name="Nav.RolePermission" xml:space="preserve">
-    <value>權限分配</value>
-  </data>
-  <data name="Nav.Roles" xml:space="preserve">
-    <value>權限組</value>
-  </data>
-  <data name="Nav.Permissions" xml:space="preserve">
-    <value>權限</value>
-  </data>
-  <data name="Nav.HRReportIndex" xml:space="preserve">
-    <value>人力報表集</value>
-  </data>
-  <data name="Nav.SupplierGroup" xml:space="preserve">
-    <value>廠商</value>
-  </data>
-  <data name="Nav.Suppliers" xml:space="preserve">
-    <value>廠商</value>
-  </data>
-  <data name="Nav.SupplierReportIndex" xml:space="preserve">
-    <value>廠商報表集</value>
-  </data>
-  <data name="Nav.CustomerGroup" xml:space="preserve">
-    <value>客戶</value>
-  </data>
-  <data name="Nav.Customers" xml:space="preserve">
-    <value>客戶</value>
-  </data>
-  <data name="Nav.CustomerReportIndex" xml:space="preserve">
-    <value>客戶報表集</value>
-  </data>
-  <data name="Nav.ProductGroup" xml:space="preserve">
-    <value>商品</value>
-  </data>
-  <data name="Nav.Products" xml:space="preserve">
-    <value>商品</value>
-  </data>
-  <data name="Nav.ProductCategories" xml:space="preserve">
-    <value>類型</value>
-  </data>
-  <data name="Nav.Units" xml:space="preserve">
-    <value>單位</value>
-  </data>
-  <data name="Nav.Sizes" xml:space="preserve">
-    <value>尺寸</value>
-  </data>
-  <data name="Nav.ProductCompositions" xml:space="preserve">
-    <value>物料清單</value>
-  </data>
-  <data name="Nav.CompositionCategories" xml:space="preserve">
-    <value>物料類型</value>
-  </data>
-  <data name="Nav.ProductionSchedules" xml:space="preserve">
-    <value>生產排程</value>
-  </data>
-  <data name="Nav.ProductReportIndex" xml:space="preserve">
-    <value>商品報表集</value>
-  </data>
-  <data name="Nav.InventoryGroup" xml:space="preserve">
-    <value>庫存</value>
-  </data>
-  <data name="Nav.InventoryStocks" xml:space="preserve">
-    <value>庫存查詢</value>
-  </data>
-  <data name="Nav.Warehouses" xml:space="preserve">
-    <value>倉庫</value>
-  </data>
-  <data name="Nav.WarehouseLocations" xml:space="preserve">
-    <value>庫位</value>
-  </data>
-  <data name="Nav.StockTakings" xml:space="preserve">
-    <value>庫存盤點</value>
-  </data>
-  <data name="Nav.MaterialIssues" xml:space="preserve">
-    <value>領料</value>
-  </data>
-  <data name="Nav.InventoryReportIndex" xml:space="preserve">
-    <value>倉庫報表集</value>
-  </data>
-  <data name="Nav.PurchaseGroup" xml:space="preserve">
-    <value>採購</value>
-  </data>
-  <data name="Nav.PurchaseOrders" xml:space="preserve">
-    <value>採購</value>
-  </data>
-  <data name="Nav.PurchaseReceiving" xml:space="preserve">
-    <value>進貨</value>
-  </data>
-  <data name="Nav.PurchaseReturns" xml:space="preserve">
-    <value>進貨退出</value>
-  </data>
-  <data name="Nav.PurchaseReportIndex" xml:space="preserve">
-    <value>採購報表集</value>
-  </data>
-  <data name="Nav.SalesGroup" xml:space="preserve">
-    <value>銷貨</value>
-  </data>
-  <data name="Nav.Quotations" xml:space="preserve">
-    <value>報價</value>
-  </data>
-  <data name="Nav.SalesOrders" xml:space="preserve">
-    <value>訂單</value>
-  </data>
-  <data name="Nav.SalesDeliveries" xml:space="preserve">
-    <value>銷貨</value>
-  </data>
-  <data name="Nav.SalesReturns" xml:space="preserve">
-    <value>銷貨退回</value>
-  </data>
-  <data name="Nav.SalesReturnReasons" xml:space="preserve">
-    <value>銷退原因</value>
-  </data>
-  <data name="Nav.SalesReportIndex" xml:space="preserve">
-    <value>銷貨報表集</value>
-  </data>
-  <data name="Nav.VehicleGroup" xml:space="preserve">
-    <value>車輛</value>
-  </data>
-  <data name="Nav.Vehicles" xml:space="preserve">
-    <value>車輛</value>
-  </data>
-  <data name="Nav.VehicleTypes" xml:space="preserve">
-    <value>車型</value>
-  </data>
-  <data name="Nav.VehicleMaintenances" xml:space="preserve">
-    <value>保養紀錄</value>
-  </data>
-  <data name="Nav.VehicleReportIndex" xml:space="preserve">
-    <value>車輛報表集</value>
-  </data>
-  <data name="Nav.WasteGroup" xml:space="preserve">
-    <value>廢料</value>
-  </data>
-  <data name="Nav.WasteRecords" xml:space="preserve">
-    <value>廢料記錄</value>
-  </data>
-  <data name="Nav.WasteTypes" xml:space="preserve">
-    <value>廢料類型</value>
-  </data>
-  <data name="Nav.WasteReportIndex" xml:space="preserve">
-    <value>廢料報表集</value>
-  </data>
-  <data name="Nav.FinanceGroup" xml:space="preserve">
-    <value>財務</value>
-  </data>
-  <data name="Nav.ARSetoff" xml:space="preserve">
-    <value>應收沖款</value>
-  </data>
-  <data name="Nav.APSetoff" xml:space="preserve">
-    <value>應付沖款</value>
-  </data>
-  <data name="Nav.PaymentMethods" xml:space="preserve">
-    <value>付款方式</value>
-  </data>
-  <data name="Nav.Banks" xml:space="preserve">
-    <value>銀行</value>
-  </data>
-  <data name="Nav.Currencies" xml:space="preserve">
-    <value>貨幣</value>
-  </data>
-  <data name="Nav.FinancialReportIndex" xml:space="preserve">
-    <value>財務報表集</value>
-  </data>
-  <data name="Nav.AccountingGroup" xml:space="preserve">
-    <value>會計</value>
-  </data>
-  <data name="Nav.JournalEntries" xml:space="preserve">
-    <value>傳票管理</value>
-  </data>
-  <data name="Nav.JournalEntryBatch" xml:space="preserve">
-    <value>批次轉傳票</value>
-  </data>
-  <data name="Nav.AccountItems" xml:space="preserve">
-    <value>會計科目</value>
-  </data>
-  <data name="Nav.AccountingReportIndex" xml:space="preserve">
-    <value>會計報表集</value>
-  </data>
-  <data name="Nav.SystemGroup" xml:space="preserve">
-    <value>系統</value>
-  </data>
-  <data name="Nav.SystemParameters" xml:space="preserve">
-    <value>系統參數</value>
-  </data>
-  <data name="Nav.Companies" xml:space="preserve">
-    <value>公司</value>
-  </data>
-  <data name="Nav.ErrorLogs" xml:space="preserve">
-    <value>錯誤記錄</value>
-  </data>
-  <data name="Nav.PrinterConfigurations" xml:space="preserve">
-    <value>印表機</value>
-  </data>
-  <data name="Nav.PaperSettings" xml:space="preserve">
-    <value>紙張</value>
-  </data>
-  <data name="Nav.ReportPrintConfigurations" xml:space="preserve">
-    <value>報表</value>
-  </data>
-  <data name="Nav.DefaultUser" xml:space="preserve">
-    <value>使用者</value>
-  </data>
-  <data name="Nav.PersonalData" xml:space="preserve">
-    <value>個人資料</value>
-  </data>
-  <data name="Nav.SignOut" xml:space="preserve">
-    <value>登出</value>
-  </data>
-  <data name="Nav.SignIn" xml:space="preserve">
-    <value>登入</value>
-  </data>
-  <data name="Nav.ToggleNav" xml:space="preserve">
-    <value>切換導航選單</value>
-  </data>
-  <data name="Nav.UnderConstruction" xml:space="preserve">
-    <value>此功能還在設計中</value>
-  </data>
-
-  <!-- ===== Placeholder ===== -->
+  <!-- ===== Placeholders ===== -->
   <data name="Placeholder.Name" xml:space="preserve">
-    <value>請輸入姓名</value>
+    <value>Ilagay ang pangalan</value>
   </data>
   <data name="Placeholder.Email" xml:space="preserve">
-    <value>請輸入電子郵件</value>
+    <value>Ilagay ang email</value>
   </data>
   <data name="Placeholder.NewPassword" xml:space="preserve">
-    <value>留空表示不變更密碼</value>
+    <value>Iwanang blangko upang panatilihin ang kasalukuyang password</value>
   </data>
   <data name="Placeholder.ConfirmPassword" xml:space="preserve">
-    <value>再次輸入新密碼</value>
+    <value>Ilagay muli ang bagong password</value>
   </data>
   <data name="Placeholder.MobilePhone" xml:space="preserve">
     <value>0912-345-678</value>
+  </data>
+
+  <!-- ===== Navigation Menu - fil ===== -->
+  <data name="Nav.Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="Nav.HumanResources" xml:space="preserve">
+    <value>Human Resources</value>
+  </data>
+  <data name="Nav.Employees" xml:space="preserve">
+    <value>Mga Empleyado</value>
+  </data>
+  <data name="Nav.Departments" xml:space="preserve">
+    <value>Mga Departamento</value>
+  </data>
+  <data name="Nav.Positions" xml:space="preserve">
+    <value>Mga Posisyon</value>
+  </data>
+  <data name="Nav.RolePermission" xml:space="preserve">
+    <value>Pagtatalaga ng Pahintulot</value>
+  </data>
+  <data name="Nav.Roles" xml:space="preserve">
+    <value>Mga Tungkulin</value>
+  </data>
+  <data name="Nav.Permissions" xml:space="preserve">
+    <value>Mga Pahintulot</value>
+  </data>
+  <data name="Nav.HRReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng HR</value>
+  </data>
+  <data name="Nav.SupplierGroup" xml:space="preserve">
+    <value>Mga Supplier</value>
+  </data>
+  <data name="Nav.Suppliers" xml:space="preserve">
+    <value>Mga Supplier</value>
+  </data>
+  <data name="Nav.SupplierReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng Supplier</value>
+  </data>
+  <data name="Nav.CustomerGroup" xml:space="preserve">
+    <value>Mga Customer</value>
+  </data>
+  <data name="Nav.Customers" xml:space="preserve">
+    <value>Mga Customer</value>
+  </data>
+  <data name="Nav.CustomerReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng Customer</value>
+  </data>
+  <data name="Nav.ProductGroup" xml:space="preserve">
+    <value>Mga Produkto</value>
+  </data>
+  <data name="Nav.Products" xml:space="preserve">
+    <value>Mga Produkto</value>
+  </data>
+  <data name="Nav.ProductCategories" xml:space="preserve">
+    <value>Mga Kategorya</value>
+  </data>
+  <data name="Nav.Units" xml:space="preserve">
+    <value>Mga Yunit</value>
+  </data>
+  <data name="Nav.Sizes" xml:space="preserve">
+    <value>Mga Sukat</value>
+  </data>
+  <data name="Nav.ProductCompositions" xml:space="preserve">
+    <value>BOM</value>
+  </data>
+  <data name="Nav.CompositionCategories" xml:space="preserve">
+    <value>Mga Uri ng BOM</value>
+  </data>
+  <data name="Nav.ProductionSchedules" xml:space="preserve">
+    <value>Mga Iskedyul ng Produksyon</value>
+  </data>
+  <data name="Nav.ProductReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng Produkto</value>
+  </data>
+  <data name="Nav.InventoryGroup" xml:space="preserve">
+    <value>Imbentaryo</value>
+  </data>
+  <data name="Nav.InventoryStocks" xml:space="preserve">
+    <value>Pagtatanong sa Stock</value>
+  </data>
+  <data name="Nav.Warehouses" xml:space="preserve">
+    <value>Mga Bodega</value>
+  </data>
+  <data name="Nav.WarehouseLocations" xml:space="preserve">
+    <value>Mga Lokasyon</value>
+  </data>
+  <data name="Nav.StockTakings" xml:space="preserve">
+    <value>Pag-iimbentaryo</value>
+  </data>
+  <data name="Nav.MaterialIssues" xml:space="preserve">
+    <value>Pag-isyu ng Materyales</value>
+  </data>
+  <data name="Nav.InventoryReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng Imbentaryo</value>
+  </data>
+  <data name="Nav.PurchaseGroup" xml:space="preserve">
+    <value>Pagbili</value>
+  </data>
+  <data name="Nav.PurchaseOrders" xml:space="preserve">
+    <value>Mga Purchase Order</value>
+  </data>
+  <data name="Nav.PurchaseReceiving" xml:space="preserve">
+    <value>Pagtanggap</value>
+  </data>
+  <data name="Nav.PurchaseReturns" xml:space="preserve">
+    <value>Mga Purchase Return</value>
+  </data>
+  <data name="Nav.PurchaseReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng Pagbili</value>
+  </data>
+  <data name="Nav.SalesGroup" xml:space="preserve">
+    <value>Benta</value>
+  </data>
+  <data name="Nav.Quotations" xml:space="preserve">
+    <value>Mga Quotasyon</value>
+  </data>
+  <data name="Nav.SalesOrders" xml:space="preserve">
+    <value>Mga Order</value>
+  </data>
+  <data name="Nav.SalesDeliveries" xml:space="preserve">
+    <value>Mga Pagpapadala</value>
+  </data>
+  <data name="Nav.SalesReturns" xml:space="preserve">
+    <value>Mga Sales Return</value>
+  </data>
+  <data name="Nav.SalesReturnReasons" xml:space="preserve">
+    <value>Mga Dahilan ng Pagbabalik</value>
+  </data>
+  <data name="Nav.SalesReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng Benta</value>
+  </data>
+  <data name="Nav.VehicleGroup" xml:space="preserve">
+    <value>Mga Sasakyan</value>
+  </data>
+  <data name="Nav.Vehicles" xml:space="preserve">
+    <value>Mga Sasakyan</value>
+  </data>
+  <data name="Nav.VehicleTypes" xml:space="preserve">
+    <value>Mga Uri ng Sasakyan</value>
+  </data>
+  <data name="Nav.VehicleMaintenances" xml:space="preserve">
+    <value>Mga Talaan ng Pagpapanatili</value>
+  </data>
+  <data name="Nav.VehicleReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng Sasakyan</value>
+  </data>
+  <data name="Nav.WasteGroup" xml:space="preserve">
+    <value>Basura</value>
+  </data>
+  <data name="Nav.WasteRecords" xml:space="preserve">
+    <value>Mga Talaan ng Basura</value>
+  </data>
+  <data name="Nav.WasteTypes" xml:space="preserve">
+    <value>Mga Uri ng Basura</value>
+  </data>
+  <data name="Nav.WasteReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng Basura</value>
+  </data>
+  <data name="Nav.FinanceGroup" xml:space="preserve">
+    <value>Pananalapi</value>
+  </data>
+  <data name="Nav.ARSetoff" xml:space="preserve">
+    <value>AR Setoff</value>
+  </data>
+  <data name="Nav.APSetoff" xml:space="preserve">
+    <value>AP Setoff</value>
+  </data>
+  <data name="Nav.PaymentMethods" xml:space="preserve">
+    <value>Mga Paraan ng Bayad</value>
+  </data>
+  <data name="Nav.Banks" xml:space="preserve">
+    <value>Mga Bangko</value>
+  </data>
+  <data name="Nav.Currencies" xml:space="preserve">
+    <value>Mga Pera</value>
+  </data>
+  <data name="Nav.FinancialReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng Pananalapi</value>
+  </data>
+  <data name="Nav.AccountingGroup" xml:space="preserve">
+    <value>Accounting</value>
+  </data>
+  <data name="Nav.JournalEntries" xml:space="preserve">
+    <value>Mga Journal Entry</value>
+  </data>
+  <data name="Nav.JournalEntryBatch" xml:space="preserve">
+    <value>Batch to Journal</value>
+  </data>
+  <data name="Nav.AccountItems" xml:space="preserve">
+    <value>Chart of Accounts</value>
+  </data>
+  <data name="Nav.AccountingReportIndex" xml:space="preserve">
+    <value>Mga Ulat ng Accounting</value>
+  </data>
+  <data name="Nav.SystemGroup" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="Nav.SystemParameters" xml:space="preserve">
+    <value>Mga Parameter ng Sistema</value>
+  </data>
+  <data name="Nav.Companies" xml:space="preserve">
+    <value>Mga Kumpanya</value>
+  </data>
+  <data name="Nav.ErrorLogs" xml:space="preserve">
+    <value>Mga Error Log</value>
+  </data>
+  <data name="Nav.PrinterConfigurations" xml:space="preserve">
+    <value>Mga Printer</value>
+  </data>
+  <data name="Nav.PaperSettings" xml:space="preserve">
+    <value>Mga Setting ng Papel</value>
+  </data>
+  <data name="Nav.ReportPrintConfigurations" xml:space="preserve">
+    <value>Mga Ulat</value>
+  </data>
+  <data name="Nav.DefaultUser" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="Nav.PersonalData" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="Nav.SignOut" xml:space="preserve">
+    <value>Mag-sign Out</value>
+  </data>
+  <data name="Nav.SignIn" xml:space="preserve">
+    <value>Mag-sign In</value>
+  </data>
+  <data name="Nav.ToggleNav" xml:space="preserve">
+    <value>I-toggle ang Navigasyon</value>
+  </data>
+  <data name="Nav.UnderConstruction" xml:space="preserve">
+    <value>Ang feature na ito ay isinasagawa pa</value>
   </data>
 
 </root>

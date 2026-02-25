@@ -31,11 +31,13 @@ public static class NavigationActionHelper
         string? requiredPermission = null,
         List<string>? searchKeywords = null,
         string? quickActionId = null,
-        string? quickActionName = null)
+        string? quickActionName = null,
+        string? nameKey = null)
     {
         return new NavigationItem
         {
             Name = name,
+            NameKey = nameKey,
             Description = description,
             IconClass = iconClass,
             ActionId = actionId,

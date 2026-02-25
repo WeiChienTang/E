@@ -25,7 +25,22 @@
       "Bash(dotnet ef:*)",
       "Bash(netstat:*)",
       "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Employees\\\\PersonalPreferenceModalComponent.razor\" -Force)",
-      "Bash(dotnet clean:*)"
+      "Bash(dotnet clean:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(py --version)",
+      "Bash(python3.11 --version)",
+      "Bash(node -e \":*)",
+      "Bash(python3 -:*)",
+      "Bash(python3 patch_nav.py)",
+      "Bash(py patch_nav.py)",
+      "Bash(python patch_nav.py)",
+      "Bash(node \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\patch_nav.py\")",
+      "Bash(node \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\patch_nav.js\")",
+      "Bash(node \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\create_resx.js\")",
+      "Bash(node -e \"require\\(''fs''\\).readFileSync\\(''c:\\\\\\\\Users\\\\\\\\cses3\\\\\\\\source\\\\\\\\repos\\\\\\\\ERPCore2\\\\\\\\ERPCore2\\\\\\\\create_resx.js'', ''utf8''\\)\")",
+      "Bash(node --check \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\create_resx.js\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const c=fs.readFileSync\\(''c:/Users/cses3/source/repos/ERPCore2/ERPCore2/create_resx.js'',''utf8''\\); const half=c.slice\\(0,Math.floor\\(c.length/2\\)\\); try{new Function\\(half\\)}catch\\(e\\){console.log\\(''Error in first half:'',e.message\\)} try{new Function\\(c\\)}catch\\(e\\){console.log\\(''Error in full:'',e.message\\)}\")",
+      "Bash(node \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\make_resx.js\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

@@ -14,11 +14,14 @@ public static class CultureHelper
     {
         UILanguage.ZhTW => "zh-TW",
         UILanguage.EnUS => "en-US",
+        UILanguage.JaJP => "ja-JP",
+        UILanguage.ZhCN => "zh-CN",
+        UILanguage.FilPH => "fil",
         _ => "zh-TW"
     };
 
     /// <summary>
     /// 應用程式支援的 culture code 清單
     /// </summary>
-    public static readonly string[] SupportedCultures = ["zh-TW", "en-US"];
+    public static readonly string[] SupportedCultures = ["zh-TW", "en-US", "ja-JP", "zh-CN", "fil"];
 }

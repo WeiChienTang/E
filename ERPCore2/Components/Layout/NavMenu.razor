@@ -7,6 +7,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject INavigationPermissionService PermissionService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 
 <CascadingValue Value="@this" Name="NavMenuInstance">
 <div class="nav-menu-container">
@@ -19,31 +20,31 @@
                 @* 使用者資訊選單 *@
                 <AuthorizeView>
                     <Authorized>
-                        <NavMenuItem Text="@(context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? context.User.Identity?.Name ?? "使用者")" 
+                        <NavMenuItem Text="@(context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? context.User.Identity?.Name ?? L["Nav.DefaultUser"].ToString())"
                                     IconClass="bi bi-person-circle" 
                                     ShowDropdownArrow ="false"
                                     AutoDetectPermissions="false">
                             <DropdownItems>
-                                <NavDropdownItem Text="個人資料"
+                                <NavDropdownItem Text="@L["Nav.PersonalData"]"
                                                ItemType="NavigationItemType.Action"
                                                ActionId="OpenPersonalPreference"
                                                IconClass="bi bi-person" />
-                                <NavDropdownItem Text="登出" 
-                                               Url="/auth/signout" 
+                                <NavDropdownItem Text="@L["Nav.SignOut"]"
+                                               Url="/auth/signout"
                                                IconClass="bi bi-box-arrow-right" />
                             </DropdownItems>
                         </NavMenuItem>
                     </Authorized>
                     <NotAuthorized>
-                        <NavMenuItem Text="登入" 
-                                    IconClass="bi bi-box-arrow-in-right" 
+                        <NavMenuItem Text="@L["Nav.SignIn"]"
+                                    IconClass="bi bi-box-arrow-in-right"
                                     Url="/auth/login" />
                     </NotAuthorized>
                 </AuthorizeView>
             </nav>
             
             @* 切換按鈕的視覺 label *@
-            <label for="nav-toggle" class="navbar-toggler-label" title="切換導航選單">
+            <label for="nav-toggle" class="navbar-toggler-label" title="@L["Nav.ToggleNav"]">
                 <span class="navbar-toggler-icon"></span>
             </label>
         </div>
@@ -58,14 +59,14 @@
                     @if (menuItem.IsParent && menuItem.Children.Any())
                     {
                         <!-- 有子選單的項目 -->
-                        <NavMenuItem Text="@menuItem.Name" 
-                                    IconClass="@menuItem.IconClass" 
+                        <NavMenuItem Text="@(menuItem.NameKey != null ? L[menuItem.NameKey].ToString() : menuItem.Name)"
+                                    IconClass="@menuItem.IconClass"
                                     MenuKey="@menuItem.MenuKey"
                                     AutoDetectPermissions="false">
                             <DropdownItems>
                                 @foreach (var child in menuItem.Children)
                                 {
-                                    <NavDropdownItem Text="@child.Name" 
+                                    <NavDropdownItem Text="@(child.NameKey != null ? L[child.NameKey].ToString() : child.Name)"
                                                    Url="@child.Route"
                                                    ItemType="@child.ItemType"
                                                    ActionId="@child.ActionId"
@@ -80,8 +81,8 @@
                     else
                     {
                         <!-- 單一連結項目 -->
-                        <NavMenuItem Text="@menuItem.Name" 
-                                    IconClass="@menuItem.IconClass" 
+                        <NavMenuItem Text="@(menuItem.NameKey != null ? L[menuItem.NameKey].ToString() : menuItem.Name)"
+                                    IconClass="@menuItem.IconClass"
                                     Url="@menuItem.Route"
                                     AutoDetectPermissions="false" />
                     }
@@ -267,6 +268,6 @@
     
     private async Task ShowUnderConstructionMessage()
     {
-        await JSRuntime.InvokeVoidAsync("alert", "此功能還在設計中");
+        await JSRuntime.InvokeVoidAsync("alert", L["Nav.UnderConstruction"].ToString());
     }
 }
