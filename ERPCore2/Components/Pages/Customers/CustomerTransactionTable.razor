@@ -1,0 +1,313 @@
+@* 客戶交易紀錄查詢組件 - 顯示報價單、銷貨訂單、出貨單、退貨單 *@
+@using ERPCore2.Models
+@using ERPCore2.Models.Enums
+@using ERPCore2.Helpers
+@inject IQuotationService QuotationService
+@inject ISalesOrderService SalesOrderService
+@inject ISalesDeliveryService SalesDeliveryService
+@inject ISalesReturnService SalesReturnService
+@inject INotificationService NotificationService
+@inject NavigationManager NavigationManager
+
+@if (_isLoading)
+{
+    <div class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">載入中...</span>
+        </div>
+    </div>
+}
+else
+{
+    @* 篩選列 *@
+    <div class="d-flex align-items-center gap-3 mb-2 p-2 bg-light rounded border">
+        <span class="text-muted small fw-semibold me-1">顯示：</span>
+        <div class="form-check form-check-inline mb-0">
+            <input class="form-check-input" type="checkbox" id="chk-delivery"
+                   checked="@_showDeliveries"
+                   @onchange="@(e => { _showDeliveries = (bool)e.Value!; })" />
+            <label class="form-check-label small" for="chk-delivery">
+                <span class="badge bg-info me-1"><i class="bi bi-truck"></i></span>出貨單
+            </label>
+        </div>
+        <div class="form-check form-check-inline mb-0">
+            <input class="form-check-input" type="checkbox" id="chk-return"
+                   checked="@_showReturns"
+                   @onchange="@(e => { _showReturns = (bool)e.Value!; })" />
+            <label class="form-check-label small" for="chk-return">
+                <span class="badge bg-warning text-dark me-1"><i class="bi bi-arrow-return-left"></i></span>退貨單
+            </label>
+        </div>
+        <div class="vr mx-1"></div>
+        <div class="form-check form-check-inline mb-0">
+            <input class="form-check-input" type="checkbox" id="chk-order"
+                   checked="@_showSalesOrders"
+                   @onchange="@(e => { _showSalesOrders = (bool)e.Value!; })" />
+            <label class="form-check-label small" for="chk-order">
+                <span class="badge bg-primary me-1"><i class="bi bi-cart-check"></i></span>銷貨訂單
+            </label>
+        </div>
+        <div class="form-check form-check-inline mb-0">
+            <input class="form-check-input" type="checkbox" id="chk-quotation"
+                   checked="@_showQuotations"
+                   @onchange="@(e => { _showQuotations = (bool)e.Value!; })" />
+            <label class="form-check-label small" for="chk-quotation">
+                <span class="badge bg-warning text-dark me-1"><i class="bi bi-file-earmark-text"></i></span>報價單
+            </label>
+        </div>
+        @if (_allTransactions.Any())
+        {
+            <span class="ms-auto text-muted small">共 @FilteredTransactions.Count 筆</span>
+        }
+    </div>
+
+    <InteractiveTableComponent TItem="RelatedDocumentInfo"
+                               Items="@FilteredTransactions"
+                               ColumnDefinitions="@_columnDefinitions"
+                               IsReadOnly="true"
+                               ShowBuiltInActions="false"
+                               ShowActions="true"
+                               ActionsTemplate="@GetActionsTemplate"
+                               ActionsHeader="操作"
+                               ActionsColumnWidth="70px"
+                               EmptyMessage="沒有相關交易紀錄" />
+}
+
+@* 單據預覽 Modal - 點擊操作時顯示 *@
+<RelatedDocumentsModalComponent IsVisible="@_isDocumentModalVisible"
+                                IsVisibleChanged="@((bool v) => { _isDocumentModalVisible = v; StateHasChanged(); })"
+                                ProductName="@(_selectedDocument?.DocumentNumber ?? string.Empty)"
+                                RelatedDocuments="@GetModalDocuments()"
+                                IsLoading="false"
+                                OnDocumentClick="@HandleModalDocumentClick" />
+
+@code {
+    [Parameter] public int? CustomerId { get; set; }
+
+    private List<RelatedDocumentInfo> _allTransactions = new();
+    private List<InteractiveColumnDefinition> _columnDefinitions = new();
+    private bool _isLoading = false;
+    private int? _previousCustomerId = null;
+
+    // 篩選選項：出貨單和退貨單預設勾選，報價單和銷貨訂單預設不顯示
+    private bool _showDeliveries  = true;
+    private bool _showReturns     = true;
+    private bool _showSalesOrders = false;
+    private bool _showQuotations  = false;
+
+    private List<RelatedDocumentInfo> FilteredTransactions => _allTransactions
+        .Where(t => (_showDeliveries  && t.DocumentType == RelatedDocumentType.DeliveryDocument)
+                 || (_showReturns     && t.DocumentType == RelatedDocumentType.ReturnDocument)
+                 || (_showSalesOrders && t.DocumentType == RelatedDocumentType.SalesOrder)
+                 || (_showQuotations  && t.DocumentType == RelatedDocumentType.Quotation))
+        .ToList();
+
+    // 單據預覽 Modal 狀態
+    private RelatedDocumentInfo? _selectedDocument;
+    private bool _isDocumentModalVisible = false;
+
+    protected override void OnInitialized()
+    {
+        InitColumnDefinitions();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        if (CustomerId != _previousCustomerId)
+        {
+            _previousCustomerId = CustomerId;
+            if (CustomerId.HasValue && CustomerId.Value > 0)
+                await LoadTransactionsAsync();
+            else
+                _allTransactions.Clear();
+        }
+    }
+
+    private async Task LoadTransactionsAsync()
+    {
+        if (!CustomerId.HasValue || CustomerId.Value <= 0) return;
+
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var all = new List<RelatedDocumentInfo>();
+
+            // 載入報價單
+            var quotations = await QuotationService.GetByCustomerIdAsync(CustomerId.Value);
+            all.AddRange(quotations.Select(q => new RelatedDocumentInfo
+            {
+                DocumentId = q.Id,
+                DocumentType = RelatedDocumentType.Quotation,
+                DocumentNumber = q.Code ?? string.Empty,
+                DocumentDate = q.QuotationDate,
+                TotalAmount = q.TotalAmount,
+                Remarks = q.Remarks
+            }));
+
+            // 載入銷貨訂單
+            var salesOrders = await SalesOrderService.GetByCustomerIdAsync(CustomerId.Value);
+            all.AddRange(salesOrders.Select(so => new RelatedDocumentInfo
+            {
+                DocumentId = so.Id,
+                DocumentType = RelatedDocumentType.SalesOrder,
+                DocumentNumber = so.Code ?? string.Empty,
+                DocumentDate = so.OrderDate,
+                TotalAmount = so.TotalAmountWithTax,
+                Remarks = so.Remarks
+            }));
+
+            // 載入出貨單
+            var salesDeliveries = await SalesDeliveryService.GetByCustomerIdAsync(CustomerId.Value);
+            all.AddRange(salesDeliveries.Select(sd => new RelatedDocumentInfo
+            {
+                DocumentId = sd.Id,
+                DocumentType = RelatedDocumentType.DeliveryDocument,
+                DocumentNumber = sd.Code ?? string.Empty,
+                DocumentDate = sd.DeliveryDate,
+                TotalAmount = sd.TotalAmountWithTax,
+                Remarks = sd.Remarks
+            }));
+
+            // 載入退貨單
+            var salesReturns = await SalesReturnService.GetByCustomerIdAsync(CustomerId.Value);
+            all.AddRange(salesReturns.Select(sr => new RelatedDocumentInfo
+            {
+                DocumentId = sr.Id,
+                DocumentType = RelatedDocumentType.ReturnDocument,
+                DocumentNumber = sr.Code ?? string.Empty,
+                DocumentDate = sr.ReturnDate,
+                TotalAmount = sr.TotalReturnAmountWithTax,
+                Remarks = sr.Remarks
+            }));
+
+            // 依日期降序排序，存入全量快取
+            _allTransactions = all.OrderByDescending(t => t.DocumentDate).ToList();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入交易紀錄時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitColumnDefinitions()
+    {
+        _columnDefinitions = new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "日期",
+                PropertyName = nameof(RelatedDocumentInfo.DocumentDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                DisplayFormatter = item =>
+                {
+                    var doc = (RelatedDocumentInfo)item!;
+                    return doc.DocumentDate.ToString("yyyy-MM-dd");
+                }
+            },
+            new()
+            {
+                Title = "訂單類型",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "90px",
+                CustomTemplate = item =>
+                {
+                    var doc = (RelatedDocumentInfo)item;
+                    return @<span class="badge bg-@doc.BadgeColor @(doc.DocumentType == RelatedDocumentType.Quotation || doc.DocumentType == RelatedDocumentType.ReturnDocument ? "text-dark" : "")">
+                        <i class="bi @doc.Icon me-1"></i>@doc.TypeDisplayName
+                    </span>;
+                }
+            },
+            new()
+            {
+                Title = "訂單編號",
+                PropertyName = nameof(RelatedDocumentInfo.DocumentNumber),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "150px"
+            },
+            new()
+            {
+                // 金額欄位：依單據類型套用不同顏色
+                // - 報價單 (gray): 僅報價，尚未產生現金流
+                // - 銷貨訂單 (blue): 已確認承諾，但尚未出貨/收款
+                // - 出貨單 (green): 實際出貨 = 收入實現
+                // - 退貨單 (red): 退款 = 負向現金流
+                Title = "金額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px",
+                TextAlign = "right",
+                DisplayFormatter = item =>
+                {
+                    var doc = (RelatedDocumentInfo)item!;
+                    if (!doc.TotalAmount.HasValue || doc.TotalAmount.Value == 0)
+                        return "<span class=\"text-muted\">-</span>";
+
+                    var amount = NumberFormatHelper.FormatSmartTrim(doc.TotalAmount.Value, useThousandsSeparator: true);
+                    var cssClass = doc.DocumentType switch
+                    {
+                        RelatedDocumentType.DeliveryDocument => "text-success fw-bold",
+                        RelatedDocumentType.ReturnDocument   => "text-danger fw-bold",
+                        RelatedDocumentType.SalesOrder       => "text-primary",
+                        _                                    => "text-muted"  // Quotation
+                    };
+                    return $"<span class=\"{cssClass}\">{amount}</span>";
+                }
+            }
+        };
+    }
+
+    // ===== 操作欄 =====
+
+    private RenderFragment<RelatedDocumentInfo> GetActionsTemplate => item => __builder =>
+    {
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                               IconClass="bi bi-search text-white"
+                               Size="ButtonSize.Large"
+                               Title="查看"
+                               OnClick="async () => await ShowDocumentModalAsync(item)"
+                               StopPropagation="true"
+                               CssClass="btn-square" />
+    };
+
+    // ===== 單據預覽 Modal 相關方法 =====
+
+    private List<RelatedDocumentInfo> GetModalDocuments()
+        => _selectedDocument != null ? new List<RelatedDocumentInfo> { _selectedDocument } : new();
+
+    private Task ShowDocumentModalAsync(RelatedDocumentInfo doc)
+    {
+        _selectedDocument = doc;
+        _isDocumentModalVisible = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 從 Modal 點擊單據：導航至對應的 Index 頁面
+    /// </summary>
+    private void HandleModalDocumentClick(RelatedDocumentInfo doc)
+    {
+        _isDocumentModalVisible = false;
+        NavigationManager.NavigateTo(GetDocumentUrl(doc));
+    }
+
+    private string GetDocumentUrl(RelatedDocumentInfo doc) => doc.DocumentType switch
+    {
+        RelatedDocumentType.Quotation        => "/quotations",
+        RelatedDocumentType.SalesOrder       => "/salesOrders",
+        RelatedDocumentType.DeliveryDocument => "/salesDeliveries",
+        RelatedDocumentType.ReturnDocument   => "/salesReturns",
+        _                                    => "/"
+    };
+}

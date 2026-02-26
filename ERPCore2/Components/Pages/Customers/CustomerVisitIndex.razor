@@ -1,0 +1,78 @@
+@page "/customer-visits"
+@inject ICustomerVisitService CustomerVisitService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="CustomerVisit"
+                          TService="ICustomerVisitService"
+                          Service="@CustomerVisitService"
+                          EntityBasePath="/customer-visits"
+                          PageTitle="拜訪紀錄維護"
+                          PageSubtitle="管理客戶拜訪與聯繫紀錄"
+                          EntityName="拜訪紀錄"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadVisitsAsync"
+                          FilterApplier="@ApplyVisitFilters"
+                          GetEntityDisplayName="@(v => $"{v.Customer?.CompanyName} - {v.VisitDate:yyyy/MM/dd}")"
+                          RequiredPermission="Customer.Read"
+                          RequiredModule="Customers"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+<CustomerVisitEditModalComponent IsVisible="@showEditModal"
+                                 IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                 CustomerVisitId="@editingVisitId"
+                                 OnCustomerVisitSaved="@modalHandler.OnEntitySavedAsync"
+                                 OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<CustomerVisit, ICustomerVisitService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingVisitId = null;
+
+    private ModalHandler<CustomerVisit, GenericIndexPageComponent<CustomerVisit, ICustomerVisitService>> modalHandler = default!;
+
+    private CustomerVisitFieldConfiguration fieldConfiguration = default!;
+
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<CustomerVisit, GenericIndexPageComponent<CustomerVisit, ICustomerVisitService>>(
+                id => editingVisitId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new CustomerVisitFieldConfiguration(NotificationService);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化拜訪紀錄頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化拜訪紀錄頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("客戶管理", "拜訪紀錄維護", "#", NotificationService, GetType());
+
+    private Task<List<CustomerVisit>> LoadVisitsAsync() => DataLoaderHelper.LoadAsync(() => CustomerVisitService.GetAllAsync(), "拜訪紀錄", NotificationService, GetType());
+
+    private IQueryable<CustomerVisit> ApplyVisitFilters(SearchFilterModel searchModel, IQueryable<CustomerVisit> query)
+    {
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyVisitFilters), GetType());
+    }
+}

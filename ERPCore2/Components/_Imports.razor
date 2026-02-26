@@ -20,6 +20,8 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
 @using ERPCore2.Data.Context
+@* 消除 ApexCharts.Size 與 ERPCore2.Data.Entities.Size 的型別衝突 *@
+@using Size = ERPCore2.Data.Entities.Size
 
 @* Models資料夾 *@
 @using ERPCore2.Models
@@ -33,6 +35,10 @@
 
 @* 組件配置 *@
 @using ERPCore2.FieldConfiguration
+
+@* 圖表系統 *@
+@using ERPCore2.Models.Charts
+@using ERPCore2.Components.Shared.Chart
 
 @* 共享組件 *@
 @using ERPCore2.Components.Shared
@@ -67,12 +73,15 @@
 
 @* 頁面組件 *@
 @using ERPCore2.Components.Pages.Suppliers
+@using ERPCore2.Components.Pages.Suppliers.SupplierEditModal
 @using ERPCore2.Components.Pages.Products
 @using ERPCore2.Components.Pages.Purchase
 @using ERPCore2.Components.Pages.Employees
 @using ERPCore2.Components.Pages.Employees.PersonalPreference
+@using ERPCore2.Components.Pages.Employees.EmployeeEditModal
 @using ERPCore2.Components.Pages.Warehouse
 @using ERPCore2.Components.Pages.Customers
+@using ERPCore2.Components.Pages.Customers.CustomerEditModal
 @using ERPCore2.Components.Pages.FinancialManagement
 @using ERPCore2.Components.Pages.Sales
 @using ERPCore2.Components.Pages.Vehicles
@@ -83,3 +92,4 @@
 @using ERPCore2.Components.Pages.Systems
 @using ERPCore2.Components.Pages.Systems.SystemParameter
 @using ERPCore2.Components.Pages.ErrorHandling
+

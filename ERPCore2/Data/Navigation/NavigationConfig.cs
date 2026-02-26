@@ -214,7 +214,30 @@ public static class NavigationConfig
                         QuickActionId = "NewCustomer",
                         QuickActionName = "新增客戶"
                     },
-                    
+                    new NavigationItem
+                    {
+                        Name = "拜訪紀錄",
+                        NameKey = "Nav.CustomerVisits",
+                        Description = "管理客戶拜訪與聯繫紀錄",
+                        Route = "/customer-visits",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "客戶關係管理",
+                        RequiredPermission = "Customer.Read",
+                        SearchKeywords = new List<string> { "客戶拜訪", "拜訪紀錄", "customer visit", "聯繫紀錄" },
+                        QuickActionId = "NewCustomerVisit",
+                        QuickActionName = "新增拜訪紀錄"
+                    },
+                    NavigationActionHelper.CreateActionItem(
+                        name: "客戶圖表",
+                        description: "依多維度查看客戶統計分析圖表",
+                        iconClass: "bi bi-bar-chart-fill",
+                        actionId: "OpenCustomerCharts",
+                        category: "客戶關係管理",
+                        requiredPermission: "Customer.Read",
+                        searchKeywords: new List<string> { "客戶圖表", "客戶分析", "統計分析", "customer chart", "analytics" },
+                        nameKey: "Nav.CustomerCharts"
+                    ),
+
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {

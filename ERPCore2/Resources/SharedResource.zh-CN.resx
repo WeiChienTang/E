@@ -283,6 +283,12 @@
   <data name="Nav.Customers" xml:space="preserve">
     <value>客户</value>
   </data>
+  <data name="Nav.CustomerVisits" xml:space="preserve">
+    <value>拜访记录</value>
+  </data>
+  <data name="Nav.CustomerCharts" xml:space="preserve">
+    <value>客户图表</value>
+  </data>
   <data name="Nav.CustomerReportIndex" xml:space="preserve">
     <value>客户报表集</value>
   </data>

@@ -1,0 +1,134 @@
+@* 客戶拜訪紀錄 Tab - 自包含元件，主組件透過 @ref 協調 *@
+@inject ICustomerVisitService CustomerVisitService
+@inject INotificationService NotificationService
+
+@* 拜訪紀錄列表 *@
+<CustomerVisitTable Visits="@customerVisits"
+                   OnAddVisit="@HandleAddVisit"
+                   OnEditVisit="@HandleEditVisit"
+                   OnDeleteVisit="@HandleDeleteVisitRequest" />
+
+@* 拜訪紀錄編輯 Modal *@
+<CustomerVisitEditModalComponent IsVisible="@isVisitModalVisible"
+                                 IsVisibleChanged="@HandleVisitModalVisibilityChanged"
+                                 CustomerVisitId="@editingVisitId"
+                                 PrefilledCustomerId="@CustomerId"
+                                 OnCustomerVisitSaved="@OnVisitSavedWrapper"
+                                 OnCancel="@HandleVisitModalCancel" />
+
+@* 刪除確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showDeleteVisitModal"
+                              IsVisibleChanged="@((bool v) => showDeleteVisitModal = v)"
+                              Title="刪除拜訪紀錄"
+                              Icon="bi-trash"
+                              Message="確定要刪除此筆拜訪紀錄嗎？"
+                              ConfirmButtonText="確認刪除"
+                              CancelButtonText="取消"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@HandleConfirmDeleteVisit"
+                              OnCancel="@(() => showDeleteVisitModal = false)" />
+
+@code {
+    /// <summary>目前客戶 ID（供新增拜訪紀錄時預填）</summary>
+    [Parameter] public int? CustomerId { get; set; }
+
+    // ===== 內部狀態 =====
+    private List<CustomerVisit> customerVisits = new();
+    private bool isVisitModalVisible = false;
+    private int? editingVisitId = null;
+    private bool showDeleteVisitModal = false;
+    private CustomerVisit? deletingVisit = null;
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    /// <summary>載入指定客戶的拜訪紀錄</summary>
+    public async Task LoadAsync(int customerId)
+    {
+        customerVisits = await CustomerVisitService.GetByCustomerAsync(customerId);
+        StateHasChanged();
+    }
+
+    /// <summary>清除拜訪紀錄（切換至新增模式時使用）</summary>
+    public void Clear()
+    {
+        customerVisits = new();
+        StateHasChanged();
+    }
+
+    // ===== 拜訪紀錄 Modal 處理 =====
+
+    private void HandleAddVisit()
+    {
+        editingVisitId = null;
+        isVisitModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleEditVisit(CustomerVisit visit)
+    {
+        editingVisitId = visit.Id;
+        isVisitModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleDeleteVisitRequest(CustomerVisit visit)
+    {
+        deletingVisit = visit;
+        showDeleteVisitModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleConfirmDeleteVisit()
+    {
+        if (deletingVisit == null) return;
+
+        try
+        {
+            var result = await CustomerVisitService.DeleteAsync(deletingVisit.Id);
+            if (result.IsSuccess)
+            {
+                customerVisits.RemoveAll(v => v.Id == deletingVisit.Id);
+                await NotificationService.ShowSuccessAsync("拜訪紀錄已刪除");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"刪除失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除拜訪紀錄時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            deletingVisit = null;
+            showDeleteVisitModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnVisitSavedWrapper(CustomerVisit savedVisit)
+    {
+        var existingIndex = customerVisits.FindIndex(v => v.Id == savedVisit.Id);
+        if (existingIndex >= 0)
+            customerVisits[existingIndex] = savedVisit;
+        else
+            customerVisits.Insert(0, savedVisit);
+
+        isVisitModalVisible = false;
+        StateHasChanged();
+    }
+
+    private void HandleVisitModalVisibilityChanged(bool isVisible)
+    {
+        isVisitModalVisible = isVisible;
+        StateHasChanged();
+    }
+
+    private void HandleVisitModalCancel()
+    {
+        isVisitModalVisible = false;
+        StateHasChanged();
+    }
+}

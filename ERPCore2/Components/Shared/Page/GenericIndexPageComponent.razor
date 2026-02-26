@@ -67,6 +67,9 @@ else
                 OnBatchApprovalClick="@HandleBatchApprovalClick"
                 ShowImportScheduleButton="@ShowImportScheduleButton"
                 OnImportScheduleClick="@HandleImportScheduleClick"
+                ShowBatchDeleteButton="@ShowBatchDeleteButton"
+                IsBatchDeleteDisabled="@IsBatchDeleteDisabled"
+                OnBatchDeleteClick="@HandleBatchDeleteClick"
                 IsLoading="@IsLoading"
                 LoadingOnRefresh="true" />
         }
@@ -203,7 +206,12 @@ else
     // 匯入排程功能控制
     [Parameter] public bool ShowImportScheduleButton { get; set; } = false;
     [Parameter] public EventCallback OnImportScheduleClick { get; set; }
-    
+
+    // 批次刪除功能控制
+    [Parameter] public bool ShowBatchDeleteButton { get; set; } = false;
+    [Parameter] public bool IsBatchDeleteDisabled { get; set; } = false;
+    [Parameter] public EventCallback OnBatchDeleteClick { get; set; }
+
     // 麵包屑導航
     [Parameter] public List<BreadcrumbItem> BreadcrumbItems { get; set; } = new();
     
@@ -367,7 +375,16 @@ else
             await OnImportScheduleClick.InvokeAsync();
         }
     }
-      // 公開方法供外部調用
+
+    private async Task HandleBatchDeleteClick()
+    {
+        if (OnBatchDeleteClick.HasDelegate)
+        {
+            await OnBatchDeleteClick.InvokeAsync();
+        }
+    }
+
+    // 公開方法供外部調用
     public void NavigateToEdit(TEntity entity)
     {
         var url = !string.IsNullOrEmpty(EditUrl) ? EditUrl.Replace("{id}", entity.Id.ToString()) : $"{EntityBasePath}/edit/{entity.Id}";
@@ -759,6 +776,7 @@ else
     // ===== 公開屬性 (供外部存取) =====
     public SearchFilterModel SearchModel => searchModel;
     public List<TEntity> PagedItems => pagedItems; // 改為返回快取的分頁資料
+    public List<TEntity> FilteredItems => filteredItems; // 目前篩選後的完整資料（供批次操作使用）
     public int CurrentPage => currentPage;
     public int PageSize => pageSize;
     public int TotalItems => totalItems;

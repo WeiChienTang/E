@@ -4,6 +4,7 @@
 @inject IRoleService RoleService
 @inject IEmployeePositionService EmployeePositionService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject INavigationPermissionService NavigationPermissionService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
 
@@ -33,6 +34,16 @@
                            OnEmployeeSaved="@modalHandler.OnEntitySavedAsync"
                            OnCancel="@modalHandler.OnModalCancelAsync" />
 
+@* 帳號管理 Modal *@
+@if (hasAccountPermission)
+{
+    <EmployeeAccountModalComponent IsVisible="@showAccountModal"
+                                  IsVisibleChanged="@((bool visible) => showAccountModal = visible)"
+                                  EmployeeId="@accountManagementEmployeeId"
+                                  OnSaved="@HandleAccountSaved"
+                                  OnCancel="@(() => showAccountModal = false)" />
+}
+
 @code {
     // 組件參考
     private GenericIndexPageComponent<Employee, IEmployeeService> indexComponent = default!;
@@ -40,6 +51,9 @@
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingEmployeeId = null;
+    private bool showAccountModal = false;
+    private int? accountManagementEmployeeId = null;
+    private bool hasAccountPermission = false;
     
     // Modal 處理器
     private ModalHandler<Employee, GenericIndexPageComponent<Employee, IEmployeeService>> modalHandler = default!;
@@ -84,10 +98,39 @@
             
             // 建立欄位配置（在載入相關資料後，並傳遞 NotificationService）
             fieldConfiguration = new EmployeeFieldConfiguration(departments, roles, employeePositions, NotificationService);
-            
+
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
+
+            // 檢查是否有帳號管理權限，有則加入帳號管理按鈕欄位
+            hasAccountPermission = await NavigationPermissionService.CanAccessAsync("EmployeeEdit_Account_Password.Read");
+            if (hasAccountPermission)
+            {
+                columnDefinitions.Add(TableColumnDefinition.Template(
+                    "帳號管理",
+                    entity => builder =>
+                    {
+                        var emp = (Employee)entity;
+                        builder.OpenElement(0, "button");
+                        builder.AddAttribute(1, "type", "button");
+                        builder.AddAttribute(2, "class", "btn btn-sm btn-outline-secondary");
+                        builder.AddAttribute(3, "onclick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, () =>
+                        {
+                            accountManagementEmployeeId = emp.Id;
+                            showAccountModal = true;
+                            StateHasChanged();
+                        }));
+                        builder.AddEventStopPropagationAttribute(4, "onclick", true);
+                        builder.OpenElement(5, "i");
+                        builder.AddAttribute(6, "class", "bi bi-person-lock me-1");
+                        builder.CloseElement();
+                        builder.AddContent(7, "帳號管理");
+                        builder.CloseElement();
+                    },
+                    "text-center"
+                ));
+            }
         }
         catch (Exception ex)
         {
@@ -142,6 +185,13 @@
 
     // 載入員工職位資料
     private async Task LoadEmployeePositionsAsync() => employeePositions = await DataLoaderHelper.LoadAsync(() => EmployeePositionService.GetAllAsync(), "員工職位", NotificationService, GetType());
+
+    private async Task HandleAccountSaved()
+    {
+        showAccountModal = false;
+        if (indexComponent != null)
+            await indexComponent.Refresh();
+    }
 
     // 篩選方法 - 現在已由 FilterHelper 處理所有錯誤情況
     private IQueryable<Employee> ApplyEmployeeFilters(SearchFilterModel searchModel, IQueryable<Employee> query)

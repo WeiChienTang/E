@@ -42,7 +42,22 @@
       "Bash(node -e \"const fs=require\\(''fs''\\); const c=fs.readFileSync\\(''c:/Users/cses3/source/repos/ERPCore2/ERPCore2/create_resx.js'',''utf8''\\); const half=c.slice\\(0,Math.floor\\(c.length/2\\)\\); try{new Function\\(half\\)}catch\\(e\\){console.log\\(''Error in first half:'',e.message\\)} try{new Function\\(c\\)}catch\\(e\\){console.log\\(''Error in full:'',e.message\\)}\")",
       "Bash(node \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\make_resx.js\")",
       "Bash(node patch_reports.js)",
-      "Bash(node fix_ja_resx.js)"
+      "Bash(node fix_ja_resx.js)",
+      "Bash(dotnet add package Blazor-ApexCharts)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:apexcharts.com)",
+      "WebFetch(domain:apexcharts.github.io)",
+      "Bash(dotnet list package --include-transitive)",
+      "Bash(powershell -Command \"[System.Reflection.Assembly]::LoadFrom\\(''/c/Users/cses3/.nuget/packages/blazor-apexcharts/6.1.0/lib/net8.0/Blazor-ApexCharts.dll''\\).GetType\\(''ApexCharts.SeriesType''\\).GetMembers\\(\\) | ForEach-Object { $_.Name }\")",
+      "Bash(powershell -Command \"[System.Reflection.Assembly]::LoadFrom\\(''C:\\\\Users\\\\cses3\\\\.nuget\\\\packages\\\\blazor-apexcharts\\\\6.1.0\\\\lib\\\\net8.0\\\\Blazor-ApexCharts.dll''\\).GetType\\(''ApexCharts.SeriesType''\\).GetMembers\\([System.Reflection.BindingFlags]::Public -bor [System.Reflection.BindingFlags]::Static\\) | ForEach-Object { $_.Name }\")",
+      "Bash(powershell -Command \"Add-Type -AssemblyName ''System.Reflection''; $asm = [System.Reflection.Assembly]::LoadFrom\\(''C:\\\\Users\\\\cses3\\\\.nuget\\\\packages\\\\blazor-apexcharts\\\\6.1.0\\\\lib\\\\net8.0\\\\Blazor-ApexCharts.dll''\\); $asm.GetType\\(''ApexCharts.SeriesType''\\)\")",
+      "Bash(powershell -Command '[System.Reflection.Assembly]::LoadFrom\\(\"\"C:\\\\\\\\Users\\\\\\\\cses3\\\\\\\\.nuget\\\\\\\\packages\\\\\\\\blazor-apexcharts\\\\\\\\6.1.0\\\\\\\\lib\\\\\\\\net8.0\\\\\\\\Blazor-ApexCharts.dll\"\"\\).GetType\\(\"\"ApexCharts.SeriesType\"\"\\).GetFields\\([System.Reflection.BindingFlags]::Public\\) | Select-Object -ExpandProperty Name')",
+      "WebFetch(domain:api.github.com)",
+      "Bash(git stash)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Employees\\\\EmployeeEditModalComponent.razor\" -Force)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Employees\\\\EmployeeToolTable.razor\" -Force)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Employees\\\\EmployeeToolEditModalComponent.razor\" -Force)"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

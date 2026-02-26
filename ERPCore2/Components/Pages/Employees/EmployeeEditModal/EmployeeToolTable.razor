@@ -1,0 +1,137 @@
+@* 可重用的員工工具配給列表面板 - 用於員工 EditModal 的 Tab 頁籤中 *@
+@using ERPCore2.Data.Entities
+
+<div class="employee-tool-table-panel">
+    @* 工具列 *@
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        @if (!IsReadOnly)
+        {
+            <GenericButtonComponent Text="新增工具紀錄"
+                                  Variant="ButtonVariant.DarkBlue"
+                                  Size="ButtonSize.Small"
+                                  OnClick="@HandleAddTool"
+                                  Title="新增一筆工具配給紀錄" />
+        }
+        else
+        {
+            <span></span>
+        }
+    </div>
+
+    @* 工具配給紀錄表格 *@
+    <InteractiveTableComponent TItem="EmployeeTool"
+                              Items="@(Tools ?? new List<EmployeeTool>())"
+                              ColumnDefinitions="@GetColumnDefinitions()"
+                              ShowHeader="true"
+                              ShowRowNumbers="true"
+                              IsStriped="true"
+                              IsHoverable="true"
+                              IsBordered="true"
+                              IsReadOnly="true"
+                              ShowBuiltInActions="@(!IsReadOnly)"
+                              ShowBuiltInDeleteButton="false"
+                              EnableAutoEmptyRow="false"
+                              EmptyMessage="尚無工具配給紀錄"
+                              CustomActionsTemplate="@GetActionsTemplate()"
+                              ActionsColumnWidth="80px" />
+</div>
+
+@code {
+    /// <summary>工具配給紀錄清單</summary>
+    [Parameter] public List<EmployeeTool>? Tools { get; set; }
+
+    /// <summary>是否唯讀模式</summary>
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+
+    /// <summary>點擊「新增工具紀錄」的回調</summary>
+    [Parameter] public EventCallback OnAddTool { get; set; }
+
+    /// <summary>點擊編輯的回調</summary>
+    [Parameter] public EventCallback<EmployeeTool> OnEditTool { get; set; }
+
+    /// <summary>點擊刪除的回調</summary>
+    [Parameter] public EventCallback<EmployeeTool> OnDeleteTool { get; set; }
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = "工具名稱",
+                PropertyName = nameof(EmployeeTool.ToolName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "150px"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "序號/型號",
+                PropertyName = nameof(EmployeeTool.ToolCode),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px",
+                NullDisplayText = "-"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "配給日期",
+                PropertyName = nameof(EmployeeTool.AssignedDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                DisplayFormatter = item =>
+                {
+                    if (item is EmployeeTool t)
+                        return t.AssignedDate.ToString("yyyy-MM-dd");
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "歸還日期",
+                PropertyName = nameof(EmployeeTool.ReturnedDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                DisplayFormatter = item =>
+                {
+                    if (item is EmployeeTool t && t.ReturnedDate.HasValue)
+                        return t.ReturnedDate.Value.ToString("yyyy-MM-dd");
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "備註",
+                PropertyName = nameof(EmployeeTool.Remarks),
+                ColumnType = InteractiveColumnType.Display,
+                NullDisplayText = "-"
+            }
+        };
+    }
+
+    private RenderFragment<EmployeeTool>? GetActionsTemplate()
+    {
+        if (IsReadOnly) return null;
+
+        return tool => __builder =>
+        {
+            <div class="d-flex gap-1">
+                <GenericButtonComponent IconClass="bi bi-pencil-square text-white"
+                                      Variant="ButtonVariant.DarkBlue"
+                                      Size="ButtonSize.Large"
+                                      OnClick="@(() => OnEditTool.InvokeAsync(tool))"
+                                      Title="編輯此筆紀錄"
+                                      CssClass="btn-square" />
+                <GenericButtonComponent IconClass="bi bi-trash text-white"
+                                      Variant="ButtonVariant.Red"
+                                      Size="ButtonSize.Large"
+                                      OnClick="@(() => OnDeleteTool.InvokeAsync(tool))"
+                                      Title="刪除此筆紀錄"
+                                      CssClass="btn-square" />
+            </div>
+        };
+    }
+
+    private async Task HandleAddTool()
+    {
+        await OnAddTool.InvokeAsync();
+    }
+}

@@ -1,0 +1,220 @@
+@using ApexCharts
+@using ERPCore2.Data.Charts
+@inject IServiceProvider ServiceProvider
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@Title"
+                   Icon="@Icon"
+                   Size="BaseModalComponent.ModalSize.Desktop"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   OnOpening="@LoadDataAsync">
+    <BodyContent>
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-content-center align-items-center py-5">
+                <div class="spinner-border text-primary me-2" style="width:1.5rem;height:1.5rem;border-width:0.15em;" role="status">
+                    <span class="visually-hidden">載入中...</span>
+                </div>
+                <span>載入圖表資料中...</span>
+            </div>
+        }
+        else
+        {
+            @* 可選摘要區塊 *@
+            @if (SummaryContent != null)
+            {
+                @SummaryContent
+            }
+
+            @* 頁籤導覽 *@
+            @if (_charts.Count > 0)
+            {
+                <ul class="nav nav-tabs mb-3">
+                    @for (int i = 0; i < _charts.Count; i++)
+                    {
+                        var idx = i;
+                        var chart = _charts[i];
+                        <li class="nav-item">
+                            <button class="nav-link @(_activeChartIndex == idx ? "active" : "")"
+                                    @onclick="() => _activeChartIndex = idx">
+                                @chart.Title
+                            </button>
+                        </li>
+                    }
+                </ul>
+
+                @* 圖表區域 *@
+                @for (int i = 0; i < _charts.Count; i++)
+                {
+                    var chart = _charts[i];
+                    var idx = i;
+
+                    if (_activeChartIndex != idx) continue;
+
+                    var data = _data.TryGetValue(chart.ChartId, out var d) ? d : new();
+                    var selectedType = _selectedTypes.TryGetValue(chart.ChartId, out var t) ? t : chart.DefaultSeriesType;
+
+                    <div class="chart-panel">
+                        @* 圖表類型切換列 *@
+                        @if (chart.AllowedSeriesTypes.Count > 1)
+                        {
+                            <div class="d-flex justify-content-end mb-2">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    @foreach (var st in chart.AllowedSeriesTypes)
+                                    {
+                                        var seriesType = st;
+                                        <button type="button"
+                                                class="btn @(selectedType == seriesType ? "btn-primary" : "btn-outline-secondary")"
+                                                title="@ChartSeriesTypeInfo.GetLabel(seriesType)"
+                                                @onclick="() => SwitchType(chart.ChartId, seriesType)">
+                                            <i class="@ChartSeriesTypeInfo.GetIcon(seriesType) me-1"></i>
+                                            @ChartSeriesTypeInfo.GetLabel(seriesType)
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @* 圖表本體 *@
+                        <div style="min-height: 360px;">
+                            @if (data.Count > 0)
+                            {
+                                <ApexChart @key="@($"{chart.ChartId}_{selectedType}")"
+                                           TItem="ChartDataItem"
+                                           Title="@chart.Title"
+                                           Options="@GetDefaultOptions(selectedType)">
+                                    <ApexPointSeries TItem="ChartDataItem"
+                                                     Items="@data"
+                                                     Name="@chart.Title"
+                                                     SeriesType="@selectedType"
+                                                     XValue="@(e => e.Label)"
+                                                     YValue="@(e => (decimal?)e.Value)" />
+                                </ApexChart>
+                            }
+                            else
+                            {
+                                <div class="text-center text-muted py-5">尚無資料</div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public string Category { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = "分析圖表";
+    [Parameter] public string Icon { get; set; } = "bi bi-bar-chart-fill";
+    [Parameter] public RenderFragment? SummaryContent { get; set; }
+    [Parameter] public EventCallback OnDataLoading { get; set; }
+
+    private List<ChartDefinition> _charts = new();
+    private Dictionary<string, List<ChartDataItem>> _data = new();
+    private Dictionary<string, SeriesType> _selectedTypes = new();
+    private int _activeChartIndex = 0;
+    private bool _isLoading = true;
+
+    private void SwitchType(string chartId, SeriesType type)
+    {
+        _selectedTypes[chartId] = type;
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        _activeChartIndex = 0;
+        StateHasChanged();
+
+        try
+        {
+            ChartRegistry.EnsureInitialized();
+            _charts = ChartRegistry.GetByCategory(Category);
+
+            _data.Clear();
+            _selectedTypes.Clear();
+            foreach (var c in _charts)
+                _selectedTypes[c.ChartId] = c.DefaultSeriesType;
+
+            if (OnDataLoading.HasDelegate)
+                await OnDataLoading.InvokeAsync();
+
+            await Task.WhenAll(_charts.Select(LoadChartDataAsync));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[GenericChartModal] 載入錯誤: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadChartDataAsync(ChartDefinition chart)
+    {
+        try
+        {
+            _data[chart.ChartId] = await chart.DataFetcher(ServiceProvider);
+        }
+        catch
+        {
+            _data[chart.ChartId] = new();
+        }
+    }
+
+    private ApexChartOptions<ChartDataItem> GetDefaultOptions(SeriesType type) => type switch
+    {
+        SeriesType.Donut => new()
+        {
+            PlotOptions = new PlotOptions { Pie = new PlotOptionsPie { Donut = new PlotOptionsDonut { Size = "65%" } } },
+            Legend = new Legend { Position = LegendPosition.Bottom }
+        },
+        SeriesType.Pie => new()
+        {
+            Legend = new Legend { Position = LegendPosition.Bottom }
+        },
+        SeriesType.RadialBar => new()
+        {
+            PlotOptions = new PlotOptions { RadialBar = new PlotOptionsRadialBar { } },
+            Legend = new Legend { Position = LegendPosition.Bottom }
+        },
+        SeriesType.Line => new()
+        {
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = new List<int> { 3 } },
+            Markers = new Markers { Size = new List<double> { 5 } },
+            Legend = new Legend { Show = false }
+        },
+        SeriesType.Area => new()
+        {
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = new List<int> { 2 } },
+            Legend = new Legend { Show = false }
+        },
+        SeriesType.Bar => new()
+        {
+            PlotOptions = new PlotOptions { Bar = new PlotOptionsBar { Horizontal = false, ColumnWidth = "55%" } },
+            Legend = new Legend { Show = false }
+        },
+        SeriesType.Treemap => new()
+        {
+            Legend = new Legend { Show = false }
+        },
+        SeriesType.PolarArea => new()
+        {
+            Legend = new Legend { Position = LegendPosition.Bottom }
+        },
+        SeriesType.Radar => new()
+        {
+            Legend = new Legend { Show = false }
+        },
+        _ => new()
+        {
+            Legend = new Legend { Show = false }
+        }
+    };
+}

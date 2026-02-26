@@ -1,0 +1,67 @@
+@using ERPCore2.Models.Charts
+@using ERPCore2.Services.Customers
+@inject ICustomerChartService ChartService
+
+<GenericChartModalComponent IsVisible="@IsVisible"
+                            IsVisibleChanged="@IsVisibleChanged"
+                            Category="@ChartCategory.Customer"
+                            Title="客戶分析圖表"
+                            Icon="bi bi-bar-chart-fill"
+                            OnDataLoading="@LoadSummaryAsync">
+    <SummaryContent>
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm h-100">
+                    <div class="card-body py-3">
+                        <div class="fs-2 fw-bold text-primary">@(_summary?.TotalCustomers ?? 0)</div>
+                        <div class="text-muted small">客戶總數</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm h-100">
+                    <div class="card-body py-3">
+                        <div class="fs-2 fw-bold text-success">@(_summary?.ActiveCustomers ?? 0)</div>
+                        <div class="text-muted small">啟用中</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm h-100">
+                    <div class="card-body py-3">
+                        <div class="fs-2 fw-bold text-info">@(_summary?.CustomersThisMonth ?? 0)</div>
+                        <div class="text-muted small">本月新增</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm h-100">
+                    <div class="card-body py-3">
+                        @if (_summary?.AverageCreditLimit.HasValue == true)
+                        {
+                            <div class="fs-2 fw-bold text-warning">@_summary.AverageCreditLimit.Value.ToString("N0")</div>
+                        }
+                        else
+                        {
+                            <div class="fs-2 fw-bold text-warning">-</div>
+                        }
+                        <div class="text-muted small">平均信用額度</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </SummaryContent>
+</GenericChartModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private CustomerChartSummary? _summary;
+
+    private async Task LoadSummaryAsync()
+    {
+        _summary = await ChartService.GetSummaryAsync();
+        StateHasChanged();
+    }
+}

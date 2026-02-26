@@ -86,6 +86,10 @@
 <RolePermissionManagement IsVisible="@showRolePermissionManagement"
                          IsVisibleChanged="@((bool visible) => showRolePermissionManagement = visible)" />
 
+@* 客戶分析圖表 Modal *@
+<CustomerChartModalComponent IsVisible="@showCustomerCharts"
+                             IsVisibleChanged="@((bool visible) => showCustomerCharts = visible)" />
+
 @* 系統參數設定 Modal *@
 <SystemParameterSettingsModal IsVisible="@showSystemParameterSettings"
                              IsVisibleChanged="@((bool visible) => showSystemParameterSettings = visible)" />
@@ -123,6 +127,9 @@
     
     // 角色權限管理 Modal 狀態
     private bool showRolePermissionManagement = false;
+
+    // 客戶分析圖表 Modal 狀態
+    private bool showCustomerCharts = false;
     
     // 系統參數設定 Modal 狀態
     private bool showSystemParameterSettings = false;
@@ -162,6 +169,7 @@
         actionRegistry.Register("OpenSystemParameterSettings", OpenSystemParameterSettings);
         actionRegistry.Register("OpenPersonalPreference", OpenPersonalPreference);
         actionRegistry.Register("OpenCustomerReportIndex", OpenCustomerReportIndex);
+        actionRegistry.Register("OpenCustomerCharts", OpenCustomerCharts);
         actionRegistry.Register("OpenSupplierReportIndex", OpenSupplierReportIndex);        
         actionRegistry.Register("OpenProductReportIndex", OpenProductReportIndex);
         actionRegistry.Register("OpenPurchaseReportIndex", OpenPurchaseReportIndex);
@@ -407,6 +415,16 @@
     /// </summary>
     [JSInvokable]
     public void OpenCustomerReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Customer);
+
+    /// <summary>
+    /// 開啟客戶分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenCustomerCharts()
+    {
+        try { showCustomerCharts = true; StateHasChanged(); }
+        catch { }
+    }
     
     /// <summary>
     /// 開啟廠商報表中心 Modal（保留供 JSInvokable 使用）

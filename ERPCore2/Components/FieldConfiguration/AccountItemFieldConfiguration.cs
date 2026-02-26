@@ -49,30 +49,6 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(AccountItem.AccountLevel),
-                        new FieldDefinition<AccountItem>
-                        {
-                            PropertyName = nameof(AccountItem.AccountLevel),
-                            DisplayName = "層級",
-                            TableOrder = 3,
-                            FilterType = SearchFilterType.Select,
-                            Options = new List<SelectOption>
-                            {
-                                new SelectOption { Text = "第1層（大分類）", Value = "1" },
-                                new SelectOption { Text = "第2層（子分類）", Value = "2" },
-                                new SelectOption { Text = "第3層（中分類）", Value = "3" },
-                                new SelectOption { Text = "第4層（明細）", Value = "4" }
-                            },
-                            FilterFunction = (model, query) =>
-                            {
-                                var filterValue = model.GetFilterValue(nameof(AccountItem.AccountLevel))?.ToString();
-                                if (!string.IsNullOrWhiteSpace(filterValue) && int.TryParse(filterValue, out var level))
-                                    return query.Where(a => a.AccountLevel == level);
-                                return query;
-                            }
-                        }
-                    },
-                    {
                         nameof(AccountItem.AccountType),
                         new FieldDefinition<AccountItem>
                         {
@@ -192,17 +168,6 @@ namespace ERPCore2.FieldConfiguration
                             }
                         }
                     },
-                    {
-                        "ParentName",
-                        new FieldDefinition<AccountItem>
-                        {
-                            PropertyName = "Parent.Name",
-                            DisplayName = "上層科目",
-                            TableOrder = 7,
-                            ShowInFilter = false,
-                            NullDisplayText = "-"
-                        }
-                    }
                 };
             }
             catch (Exception ex)

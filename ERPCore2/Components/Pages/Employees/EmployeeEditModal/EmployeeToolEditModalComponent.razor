@@ -1,0 +1,143 @@
+@* 可重用的員工工具配給紀錄編輯組件 - 用於員工 EditModal 的 Tab 頁籤中 *@
+@inject IEmployeeToolService EmployeeToolService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="EmployeeTool"
+                          TService="IEmployeeToolService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@EmployeeToolId"
+                          Service="@EmployeeToolService"
+                          EntityName="工具配給紀錄"
+                          EntityNamePlural="工具配給紀錄"
+                          ModalTitle="@(EmployeeToolId.HasValue ? "編輯工具配給紀錄" : "新增工具配給紀錄")"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadToolData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(EmployeeToolId.HasValue ? "工具配給紀錄更新成功" : "工具配給紀錄新增成功")"
+                          SaveFailureMessage="工具配給紀錄儲存失敗"
+                          RequiredPermission="Employee.Read"
+                          OnEntitySaved="@OnEmployeeToolSaved"
+                          OnCancel="@OnCancel" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? EmployeeToolId { get; set; }
+    [Parameter] public int? PrefilledEmployeeId { get; set; }
+    [Parameter] public EventCallback<EmployeeTool> OnEmployeeToolSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<EmployeeTool, IEmployeeToolService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task<EmployeeTool?> LoadToolData()
+    {
+        try
+        {
+            if (!EmployeeToolId.HasValue)
+            {
+                var newTool = new EmployeeTool
+                {
+                    AssignedDate = DateTime.Today,
+                    Status = EntityStatus.Active
+                };
+
+                if (PrefilledEmployeeId.HasValue)
+                    newTool.EmployeeId = PrefilledEmployeeId.Value;
+
+                return newTool;
+            }
+
+            return await EmployeeToolService.GetByIdAsync(EmployeeToolId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入工具配給紀錄時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(EmployeeTool.ToolName),
+                    Label = "工具名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入工具名稱",
+                    IsRequired = true,
+                    MaxLength = 50,
+                    HelpText = "配給工具的名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeTool.ToolCode),
+                    Label = "序號/型號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入工具序號或型號",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "工具的序號、型號或識別碼（選填）"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeTool.AssignedDate),
+                    Label = "配給日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "公司將工具配給員工的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeTool.ReturnedDate),
+                    Label = "歸還日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "員工歸還工具的日期（未歸還則留空）"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<EmployeeTool>()
+            };
+
+            formSections = FormSectionHelper<EmployeeTool>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    t => t.ToolName,
+                    t => t.ToolCode,
+                    t => t.AssignedDate,
+                    t => t.ReturnedDate)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    t => t.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化工具配給紀錄表單欄位時發生錯誤");
+        }
+    }
+}

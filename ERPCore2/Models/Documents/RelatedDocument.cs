@@ -69,6 +69,7 @@ namespace ERPCore2.Models.Documents
             RelatedDocumentType.ProductionSchedule => "bi-calendar-check",
             RelatedDocumentType.SupplierRecommendation => "bi-shop",
             RelatedDocumentType.InventoryTransaction => "bi-arrow-left-right",
+            RelatedDocumentType.Quotation => "bi-file-earmark-text",
             _ => "bi-file-text"
         };
 
@@ -86,6 +87,7 @@ namespace ERPCore2.Models.Documents
             RelatedDocumentType.ProductionSchedule => "dark",
             RelatedDocumentType.SupplierRecommendation => "success",
             RelatedDocumentType.InventoryTransaction => "secondary",
+            RelatedDocumentType.Quotation => "warning",
             _ => "secondary"
         };
 
@@ -103,6 +105,7 @@ namespace ERPCore2.Models.Documents
             RelatedDocumentType.ProductionSchedule => "生產排程",
             RelatedDocumentType.SupplierRecommendation => "供應商推薦",
             RelatedDocumentType.InventoryTransaction => "庫存異動",
+            RelatedDocumentType.Quotation => "報價單",
             _ => "未知單據"
         };
     }

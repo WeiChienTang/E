@@ -20,6 +20,8 @@
                           RequiredModule="FinancialManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
+                          ShowBatchDeleteButton="true"
+                          OnBatchDeleteClick="@OpenBatchDeleteModal"
                           @ref="indexComponent" />
 
 <AccountItemEditModalComponent IsVisible="@showEditModal"
@@ -28,6 +30,16 @@
                               OnAccountItemSaved="@modalHandler.OnEntitySavedAsync"
                               OnCancel="@modalHandler.OnModalCancelAsync" />
 
+<BatchDeleteConfirmModalComponent TItem="AccountItem"
+                                  IsVisible="@showBatchDeleteModal"
+                                  IsVisibleChanged="@((bool v) => showBatchDeleteModal = v)"
+                                  Title="批次刪除會計科目"
+                                  Items="@(indexComponent?.FilteredItems)"
+                                  ColumnDefinitions="@batchDeleteColumns"
+                                  IsDeleting="@isDeleting"
+                                  OnConfirmDelete="@ExecuteBatchDeleteAsync"
+                                  OnCancel="@CloseBatchDeleteModal" />
+
 @code {
     // 組件參考
     private GenericIndexPageComponent<AccountItem, IAccountItemService> indexComponent = default!;
@@ -35,6 +47,11 @@
     // Modal 狀態
     private bool showEditModal = false;
     private int? editingId = null;
+
+    // 批次刪除狀態
+    private bool showBatchDeleteModal = false;
+    private bool isDeleting = false;
+    private List<InteractiveColumnDefinition> batchDeleteColumns = new();
 
     // Modal 處理器
     private ModalHandler<AccountItem, GenericIndexPageComponent<AccountItem, IAccountItemService>> modalHandler = default!;
@@ -67,6 +84,15 @@
             // 4. 建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
+
+            // 5. 批次刪除欄位定義
+            batchDeleteColumns = new List<InteractiveColumnDefinition>
+            {
+                new() { Title = "科目編號", PropertyName = nameof(AccountItem.Code), Width = "120px" },
+                new() { Title = "科目名稱", PropertyName = nameof(AccountItem.Name) },
+                new() { Title = "層級", PropertyName = nameof(AccountItem.AccountLevel), Width = "70px", TextAlign = "center" },
+                new() { Title = "科目類型", PropertyName = nameof(AccountItem.AccountType), Width = "110px" }
+            };
         }
         catch (Exception ex)
         {
@@ -89,6 +115,49 @@
             "會計科目",
             NotificationService,
             GetType());
+
+    // 批次刪除方法
+    private void OpenBatchDeleteModal()
+    {
+        showBatchDeleteModal = true;
+    }
+
+    private void CloseBatchDeleteModal()
+    {
+        showBatchDeleteModal = false;
+    }
+
+    private async Task ExecuteBatchDeleteAsync(List<AccountItem> selectedItems)
+    {
+        if (selectedItems.Count == 0) return;
+        try
+        {
+            isDeleting = true;
+            StateHasChanged();
+
+            var ids = selectedItems.Select(i => i.Id).ToList();
+            var result = await AccountItemService.DeleteBatchAsync(ids);
+            if (result.IsSuccess)
+            {
+                CloseBatchDeleteModal();
+                await NotificationService.ShowSuccessAsync($"成功刪除 {selectedItems.Count} 筆會計科目");
+                await indexComponent.Refresh();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"批次刪除失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"批次刪除時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isDeleting = false;
+            StateHasChanged();
+        }
+    }
 
     // 篩選邏輯
     private IQueryable<AccountItem> ApplyFilters(

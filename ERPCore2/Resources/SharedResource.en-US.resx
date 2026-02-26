@@ -266,6 +266,12 @@
   <data name="Nav.Customers" xml:space="preserve">
     <value>Customers</value>
   </data>
+  <data name="Nav.CustomerVisits" xml:space="preserve">
+    <value>Visit Records</value>
+  </data>
+  <data name="Nav.CustomerCharts" xml:space="preserve">
+    <value>Customer Charts</value>
+  </data>
   <data name="Nav.CustomerReportIndex" xml:space="preserve">
     <value>Customer Reports</value>
   </data>

@@ -6,10 +6,9 @@
 @inject INotificationService NotificationService
 @inject ISupplierRosterReportService SupplierRosterReportService
 @inject ISupplierDetailReportService SupplierDetailReportService
-@inject IVehicleService VehicleService
 @inject ActionButtonHelper ActionButtonHelper
 
-<GenericEditModalComponent TEntity="Supplier" 
+<GenericEditModalComponent TEntity="Supplier"
                           TService="ISupplierService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
@@ -52,24 +51,6 @@
                                 OnPaymentMethodSaved="@paymentMethodModalManager.OnSavedAsync"
                                 OnCancel="@paymentMethodModalManager.HandleModalCancelAsync" />
 
-@* 車輛編輯 Modal - 條件式渲染避免循環元件實例化 *@
-@if (isVehicleModalVisible)
-{
-    <VehicleEditModalComponent @ref="vehicleEditModal"
-                              IsVisible="@isVehicleModalVisible"
-                              IsVisibleChanged="@HandleVehicleModalVisibilityChanged"
-                              VehicleId="@editingVehicleId"
-                              PrefilledValues="@GetVehiclePrefilledValues()"
-                              OnVehicleSaved="@OnVehicleSavedWrapper"
-                              OnCancel="@HandleVehicleModalCancel" />
-}
-
-@* 車輛選擇 Modal *@
-<VehicleSelectModal IsVisible="@isVehicleSelectModalVisible"
-                    IsVisibleChanged="@HandleVehicleSelectModalVisibilityChanged"
-                    ExcludeVehicleIds="@GetCurrentVehicleIds()"
-                    OnVehicleSelected="@HandleVehicleSelected" />
-
 @* 複製至客戶確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showCopyToCustomerModal"
                               IsVisibleChanged="@((bool v) => showCopyToCustomerModal = v)"
@@ -97,72 +78,43 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<FormTabDefinition>? tabDefinitions;
-    
+
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
-    
+
     // 付款方式選項
     private List<PaymentMethod> availablePaymentMethods = new();
-    
+
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
-    
+
     // 付款方式編輯 Modal 相關變數 - 使用泛型管理器
     private PaymentMethodEditModalComponent? paymentMethodEditModal;
     private RelatedEntityModalManager<PaymentMethod> paymentMethodModalManager = default!;
 
-    /// <summary>
-    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
-    /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
-    {
-        try
-        {
-            // 清除待處理的車輛變更（切換記錄或新增時）
-            _pendingVehicleLinks.Clear();
-            _pendingVehicleUnlinks.Clear();
-
-            // 載入該廠商的車輛資訊
-            if (loadedEntityId > 0)
-            {
-                supplierVehicles = await VehicleService.GetBySupplierAsync(loadedEntityId);
-            }
-            else
-            {
-                supplierVehicles = new();
-            }
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-    
     // 資料載入狀態標記
     private bool isDataLoaded = false;
-
-    // 車輛 Tab 相關
-    private List<Vehicle> supplierVehicles = new();
-    private VehicleEditModalComponent? vehicleEditModal;
-    private bool isVehicleModalVisible = false;
-    private int? editingVehicleId = null;
-    private bool isVehicleSelectModalVisible = false;
-
-    // 車輛配給緩衝（參考 PurchaseOrderTable 模式，等主檔儲存時才寫入 DB）
-    private List<Vehicle> _pendingVehicleLinks = new();
-    private List<Vehicle> _pendingVehicleUnlinks = new();
 
     // 複製至客戶
     private bool showCopyToCustomerModal = false;
     private List<string> copyToCustomerConditions = new();
 
+    // Tab 元件參考（透過 @ref 呼叫公開方法）
+    private SupplierVehicleTab? vehicleTab;
+
+    // ===== Tab 內容 RenderFragment =====
+
+    private RenderFragment CreateVehicleTabContent() => __builder =>
+    {
+        <SupplierVehicleTab @ref="vehicleTab" SupplierId="@SupplierId" />
+    };
+
+    // ===== 生命週期 =====
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 使用 ModalManagerInitHelper 初始化所有 Manager
             modalManagers = ModalManagerInitHelper.CreateBuilder<Supplier, ISupplierService>(
                     () => editModalComponent,
                     NotificationService,
@@ -171,8 +123,7 @@
                     InitializeFormFieldsAsync)
                 .AddManager<PaymentMethod>(nameof(Supplier.PaymentMethodId), "付款方式")
                 .Build();
-            
-            // 取得個別 Manager 供組件使用
+
             paymentMethodModalManager = modalManagers.Get<PaymentMethod>(nameof(Supplier.PaymentMethodId));
         }
         catch (Exception)
@@ -180,7 +131,7 @@
             await NotificationService.ShowErrorAsync("初始化廠商編輯組件時發生錯誤");
         }
     }
-    
+
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible && !isDataLoaded)
@@ -195,14 +146,96 @@
         }
     }
 
+    // ===== 事件處理 =====
+
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            if (loadedEntityId > 0)
+            {
+                if (vehicleTab != null) await vehicleTab.LoadAsync(loadedEntityId);
+            }
+            else
+            {
+                vehicleTab?.Clear();
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task OnSaveSuccess()
+    {
+        try
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                await OnSupplierSaved.InvokeAsync(editModalComponent.Entity);
+            }
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("儲存成功回調時發生錯誤");
+        }
+    }
+
+    // ===== 資料載入 =====
+
+    private async Task<Supplier?> LoadSupplierData()
+    {
+        try
+        {
+            if (!SupplierId.HasValue)
+            {
+                vehicleTab?.Clear();
+
+                var newSupplier = new Supplier
+                {
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Supplier, ISupplierService>(SupplierService, "S"),
+                    CompanyName = "",
+                    ContactPerson = "",
+                    TaxNumber = "",
+                    Status = EntityStatus.Active
+                };
+
+                PrefilledValueHelper.ApplyPrefilledValues(newSupplier, PrefilledValues);
+                return newSupplier;
+            }
+
+            var supplier = await SupplierService.GetByIdAsync(SupplierId.Value);
+
+            if (supplier == null)
+            {
+                _ = NotificationService.ShowErrorAsync("找不到指定的廠商資料");
+                return null;
+            }
+
+            return supplier;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("載入廠商資料時發生錯誤");
+            return new Supplier
+            {
+                Code = "",
+                CompanyName = "",
+                ContactPerson = "",
+                TaxNumber = "",
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
     private async Task LoadAdditionalDataAsync()
     {
         try
         {
-            // 載入可選擇的付款方式列表
             availablePaymentMethods = await PaymentMethodService.GetAllAsync();
-            
-            // 配置 AutoComplete
+
             autoCompleteConfig = new AutoCompleteConfigBuilder<Supplier>()
                 .AddField(nameof(Supplier.PaymentMethodId), "Name", availablePaymentMethods)
                 .Build();
@@ -213,6 +246,44 @@
             availablePaymentMethods = new List<PaymentMethod>();
         }
     }
+
+    // ===== 自訂儲存（含車輛緩衝提交） =====
+
+    private async Task<bool> SaveSupplier(Supplier entity)
+    {
+        try
+        {
+            var validationResult = await SupplierService.ValidateAsync(entity);
+            if (!validationResult.IsSuccess)
+            {
+                _ = NotificationService.ShowErrorAsync(validationResult.ErrorMessage);
+                return false;
+            }
+
+            ServiceResult result;
+
+            if (SupplierId.HasValue)
+                result = await SupplierService.UpdateAsync(entity);
+            else
+                result = await SupplierService.CreateAsync(entity);
+
+            if (!result.IsSuccess)
+                return false;
+
+            // 車輛 Tab 有緩衝機制，需在主檔儲存後提交
+            if (vehicleTab != null)
+                await vehicleTab.SavePendingChangesAsync(entity.Id);
+
+            return true;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("儲存廠商資料時發生錯誤");
+            return false;
+        }
+    }
+
+    // ===== 表單欄位定義 =====
 
     private async Task InitializeFormFieldsAsync()
     {
@@ -382,11 +453,9 @@
                     MaxLength = 20,
                     HelpText = "負責人或是公司聯絡電話"
                 },
-
                 FormFieldConfigurationHelper.CreateRemarksField<Supplier>()
             };
 
-            // 更新表單區段定義
             var layout = FormSectionHelper<Supplier>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     s => s.Code,
@@ -412,7 +481,7 @@
                 .GroupIntoTab("廠商資料", "bi-shop", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo)
                 .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())
                 .BuildAll();
-            
+
             formSections = layout.FieldSections;
             tabDefinitions = layout.TabDefinitions;
         }
@@ -422,139 +491,22 @@
         }
     }
 
-    private async Task<Supplier?> LoadSupplierData()
+    // ===== 欄位操作按鈕 =====
+
+    private async Task<List<FieldActionButton>> GetPaymentMethodActionButtonsAsync()
     {
-        try
-        {
-            if (!SupplierId.HasValue) 
-            {
-                // 新增模式 - 清除前一筆的車輛資料與暫存
-                supplierVehicles = new List<Vehicle>();
-                _pendingVehicleLinks.Clear();
-                _pendingVehicleUnlinks.Clear();
-
-                var newSupplier = new Supplier
-                {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Supplier, ISupplierService>(SupplierService, "S"),
-                    CompanyName = "",
-                    ContactPerson = "",
-                    TaxNumber = "",
-                    Status = EntityStatus.Active
-                };
-                
-                // 應用預填值
-                PrefilledValueHelper.ApplyPrefilledValues(newSupplier, PrefilledValues);
-                
-                return newSupplier;
-            }
-
-            var supplier = await SupplierService.GetByIdAsync(SupplierId.Value);            
-            
-            if (supplier == null)
-            {
-                _ = NotificationService.ShowErrorAsync("找不到指定的廠商資料");
-                return null;
-            }
-
-            // 載入該廠商的車輛資訊
-            supplierVehicles = await VehicleService.GetBySupplierAsync(SupplierId.Value);
-            
-            return supplier;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("載入廠商資料時發生錯誤");
-            
-            // 設定安全的預設值，確保程式不會崩潰
-            return new Supplier
-            {
-                Code = "",
-                CompanyName = "",
-                ContactPerson = "",
-                TaxNumber = "",
-                Status = EntityStatus.Active
-            };
-        }
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            paymentMethodModalManager,
+            nameof(Supplier.PaymentMethodId)
+        );
     }
 
-    private async Task<bool> SaveSupplier(Supplier entity)
-    {
-        try
-        {
-            // 使用服務的完整驗證邏輯（包含重複檢查）
-            var validationResult = await SupplierService.ValidateAsync(entity);
-            if (!validationResult.IsSuccess)
-            {
-                _ = NotificationService.ShowErrorAsync(validationResult.ErrorMessage);
-                return false;
-            }
-
-            ServiceResult result;
-            
-            if (SupplierId.HasValue)
-            {
-                // 更新現有廠商
-                result = await SupplierService.UpdateAsync(entity);
-            }
-            else
-            {
-                // 新增廠商
-                result = await SupplierService.CreateAsync(entity);
-            }
-
-            if (!result.IsSuccess)
-            {
-                return false;
-            }
-
-            // 儲存待處理的車輛配給變更（參考 PurchaseOrderTable 模式）
-            await SavePendingVehicleChangesAsync(entity.Id);
-
-            return true;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("儲存廠商資料時發生錯誤");
-            return false;
-        }
-    }
-
-    private async Task OnSaveSuccess()
-    {
-        try
-        {
-            if (editModalComponent?.Entity != null)
-            {
-                // 儲存後重新載入車輛列表（確保與 DB 同步）
-                if (editModalComponent.Entity.Id > 0)
-                {
-                    supplierVehicles = await VehicleService.GetBySupplierAsync(editModalComponent.Entity.Id);
-                }
-                await OnSupplierSaved.InvokeAsync(editModalComponent.Entity);
-            }
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("儲存成功回調時發生錯誤");
-        }
-    }
-
-    /// <summary>
-    /// 配置自訂模組
-    /// </summary>
-    private List<GenericEditModalComponent<Supplier, ISupplierService>.CustomModule> GetCustomModules()
-    {
-        return new List<GenericEditModalComponent<Supplier, ISupplierService>.CustomModule>();
-    }
-
-    /// <summary>
-    /// 產生聯絡人操作按鈕 - 複製負責人資料
-    /// </summary>
     private Task<List<FieldActionButton>> GetContactPersonActionButtonsAsync()
     {
-        var buttons = new List<FieldActionButton>
+        return Task.FromResult(new List<FieldActionButton>
         {
-            new FieldActionButton
+            new()
             {
                 Text = "複製",
                 Variant = "OutlinePrimary",
@@ -563,57 +515,14 @@
                 OnClick = async () => await CopyResponsiblePersonToContactPerson(),
                 IsDisabled = false
             }
-        };
-        
-        return Task.FromResult(buttons);
+        });
     }
 
-    /// <summary>
-    /// 將負責人資料複製到聯絡人欄位（包含姓名與電話）
-    /// </summary>
-    private async Task CopyResponsiblePersonToContactPerson()
-    {
-        try
-        {
-            if (editModalComponent?.Entity != null)
-            {
-                var entity = editModalComponent.Entity;
-                
-                // 檢查是否有資料可複製
-                if (string.IsNullOrWhiteSpace(entity.ResponsiblePerson) && 
-                    string.IsNullOrWhiteSpace(entity.SupplierContactPhone))
-                {
-                    await NotificationService.ShowWarningAsync("負責人姓名與聯絡電話皆為空，無資料可複製");
-                    return;
-                }
-                
-                // 複製負責人姓名到聯絡人
-                entity.ContactPerson = entity.ResponsiblePerson;
-                
-                // 複製負責人聯絡電話到聯絡人電話
-                entity.ContactPhone = entity.SupplierContactPhone;
-                
-                // 通知 UI 更新
-                StateHasChanged();
-                
-                // 顯示成功訊息
-                await NotificationService.ShowSuccessAsync("已將負責人資料複製到聯絡人資訊");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"複製負責人資料時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 產生公司地址操作按鈕 - 同聯絡地址
-    /// </summary>
     private Task<List<FieldActionButton>> GetSupplierAddressActionButtonsAsync()
     {
-        var buttons = new List<FieldActionButton>
+        return Task.FromResult(new List<FieldActionButton>
         {
-            new FieldActionButton
+            new()
             {
                 Text = "複製",
                 Variant = "OutlinePrimary",
@@ -622,218 +531,56 @@
                 OnClick = async () => await CopyContactAddressToSupplierAddress(),
                 IsDisabled = false
             }
-        };
-        
-        return Task.FromResult(buttons);
+        });
     }
 
-    /// <summary>
-    /// 將聯絡地址複製到公司地址欄位
-    /// </summary>
+    private async Task CopyResponsiblePersonToContactPerson()
+    {
+        if (editModalComponent?.Entity != null)
+        {
+            var entity = editModalComponent.Entity;
+
+            if (string.IsNullOrWhiteSpace(entity.ResponsiblePerson) &&
+                string.IsNullOrWhiteSpace(entity.SupplierContactPhone))
+            {
+                await NotificationService.ShowWarningAsync("負責人姓名與聯絡電話皆為空，無資料可複製");
+                return;
+            }
+
+            entity.ContactPerson = entity.ResponsiblePerson;
+            entity.ContactPhone = entity.SupplierContactPhone;
+            StateHasChanged();
+            await NotificationService.ShowSuccessAsync("已將負責人資料複製到聯絡人資訊");
+        }
+    }
+
     private async Task CopyContactAddressToSupplierAddress()
     {
-        try
+        if (editModalComponent?.Entity != null)
         {
-            if (editModalComponent?.Entity != null)
+            var entity = editModalComponent.Entity;
+
+            if (string.IsNullOrWhiteSpace(entity.ContactAddress))
             {
-                var entity = editModalComponent.Entity;
-                
-                // 檢查是否有資料可複製
-                if (string.IsNullOrWhiteSpace(entity.ContactAddress))
-                {
-                    await NotificationService.ShowWarningAsync("聯絡地址為空，無資料可複製");
-                    return;
-                }
-                
-                // 複製聯絡地址到公司地址
-                entity.SupplierAddress = entity.ContactAddress;
-                
-                // 通知 UI 更新
-                StateHasChanged();
-                
-                // 顯示成功訊息
-                await NotificationService.ShowSuccessAsync("已將聯絡地址複製到公司地址");
+                await NotificationService.ShowWarningAsync("聯絡地址為空，無資料可複製");
+                return;
             }
+
+            entity.SupplierAddress = entity.ContactAddress;
+            StateHasChanged();
+            await NotificationService.ShowSuccessAsync("已將聯絡地址複製到公司地址");
         }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"複製聯絡地址時發生錯誤：{ex.Message}");
-        }
     }
 
-    /// <summary>
-    /// 使用統一 Helper 產生付款方式操作按鈕
-    /// </summary>
-    private async Task<List<FieldActionButton>> GetPaymentMethodActionButtonsAsync()
-    {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            paymentMethodModalManager, 
-            nameof(Supplier.PaymentMethodId)
-        );
-    }
-    
+    // ===== 自訂模組 =====
 
-    // ===== 車輛 Tab 相關方法 =====
-
-    /// <summary>
-    /// 取得車輛預填值（新增時自動帶入 SupplierId）
-    /// </summary>
-    private Dictionary<string, object?>? GetVehiclePrefilledValues()
+    private List<GenericEditModalComponent<Supplier, ISupplierService>.CustomModule> GetCustomModules()
     {
-        if (!editingVehicleId.HasValue && SupplierId.HasValue)
-        {
-            return new Dictionary<string, object?>
-            {
-                { nameof(Vehicle.SupplierId), SupplierId.Value }
-            };
-        }
-        return null;
+        return new List<GenericEditModalComponent<Supplier, ISupplierService>.CustomModule>();
     }
 
-    /// <summary>
-    /// 建立車輛 Tab 的自訂內容 RenderFragment
-    /// </summary>
-    private RenderFragment CreateVehicleTabContent() => __builder =>
-    {
-        <VehicleTable Vehicles="@supplierVehicles"
-                     OnAddVehicle="@HandleAddVehicle"
-                     OnSelectVehicle="@HandleOpenVehicleSelectModal"
-                     OnEditVehicle="@HandleEditVehicle"
-                     OnUnlinkVehicle="@HandleUnlinkVehicle" />
-    };
+    // ===== 複製至客戶 =====
 
-    /// <summary>
-    /// 新增車輛資訊
-    /// </summary>
-    private void HandleAddVehicle()
-    {
-        editingVehicleId = null;
-        isVehicleModalVisible = true;
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 編輯車輛
-    /// </summary>
-    private void HandleEditVehicle(Vehicle vehicle)
-    {
-        editingVehicleId = vehicle.Id;
-        isVehicleModalVisible = true;
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 解除車輛配給 - 緩衝處理，等主檔儲存時才寫入 DB
-    /// </summary>
-    private void HandleUnlinkVehicle(Vehicle vehicle)
-    {
-        // 從本地列表移除
-        supplierVehicles.RemoveAll(v => v.Id == vehicle.Id);
-
-        // 如果之前選擇過配給，從待配給清單中移除
-        _pendingVehicleLinks.RemoveAll(v => v.Id == vehicle.Id);
-
-        // 加入待解除配給清單
-        if (!_pendingVehicleUnlinks.Any(v => v.Id == vehicle.Id))
-        {
-            _pendingVehicleUnlinks.Add(vehicle);
-        }
-
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 車輛儲存後的回調 - 更新本地列表（不重新查詢 DB）
-    /// </summary>
-    private void OnVehicleSavedWrapper(Vehicle savedVehicle)
-    {
-        // VehicleEditModal 已儲存車輛實體到 DB（含 PrefilledValues 中的 FK）
-        // 更新本地列表以反映變更
-        var existingIndex = supplierVehicles.FindIndex(v => v.Id == savedVehicle.Id);
-        if (existingIndex >= 0)
-        {
-            // 編輯模式：更新本地列表中的車輛
-            supplierVehicles[existingIndex] = savedVehicle;
-        }
-        else
-        {
-            // 新增模式：加入本地列表
-            supplierVehicles.Add(savedVehicle);
-        }
-
-        isVehicleModalVisible = false;
-        StateHasChanged();
-    }
-
-    private void HandleVehicleModalVisibilityChanged(bool isVisible)
-    {
-        isVehicleModalVisible = isVisible;
-        StateHasChanged();
-    }
-
-    private void HandleVehicleModalCancel()
-    {
-        isVehicleModalVisible = false;
-        StateHasChanged();
-    }
-
-    // ===== 車輛選擇 Modal 相關 =====
-
-    /// <summary>
-    /// 開啟車輛選擇 Modal
-    /// </summary>
-    private void HandleOpenVehicleSelectModal()
-    {
-        isVehicleSelectModalVisible = true;
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 車輛選擇 Modal 顯示狀態變更
-    /// </summary>
-    private void HandleVehicleSelectModalVisibilityChanged(bool isVisible)
-    {
-        isVehicleSelectModalVisible = isVisible;
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 取得目前已車輛資訊的 ID 清單（用於排除已在列表中的車輛）
-    /// </summary>
-    private List<int> GetCurrentVehicleIds()
-    {
-        return supplierVehicles.Select(v => v.Id).ToList();
-    }
-
-    /// <summary>
-    /// 處理從選擇 Modal 選取的車輛 - 緩衝處理，等主檔儲存時才寫入 DB
-    /// </summary>
-    private void HandleVehicleSelected(Vehicle vehicle)
-    {
-        // 加入本地列表（供 UI 顯示）
-        if (!supplierVehicles.Any(v => v.Id == vehicle.Id))
-        {
-            supplierVehicles.Add(vehicle);
-        }
-
-        // 如果之前解除過配給，從待解除清單中移除
-        _pendingVehicleUnlinks.RemoveAll(v => v.Id == vehicle.Id);
-
-        // 加入待配給清單
-        if (!_pendingVehicleLinks.Any(v => v.Id == vehicle.Id))
-        {
-            _pendingVehicleLinks.Add(vehicle);
-        }
-
-        StateHasChanged();
-    }
-
-    // ===== 複製至客戶方法 =====
-
-    /// <summary>
-    /// 產生自訂操作按鈕（僅在編輯模式顯示）
-    /// </summary>
     private RenderFragment? GetCustomActionButtons() => __builder =>
     {
         if (editModalComponent?.Entity != null && SupplierId.HasValue)
@@ -845,9 +592,6 @@
         }
     };
 
-    /// <summary>
-    /// 點擊「複製至客戶」按鈕：發出欄位清單確認 Modal（驗證交由服務層處理）
-    /// </summary>
     private async Task HandleCopyToCustomerClick()
     {
         try
@@ -865,7 +609,6 @@
                 return;
             }
 
-            // 動態產生將被複製的欄位清單（UI 層顯示用；實際驗證交由服務層處理）
             copyToCustomerConditions = new List<string>();
             copyToCustomerConditions.Add($"公司名稱：{entity.CompanyName}");
             if (!string.IsNullOrWhiteSpace(entity.ContactPerson))        copyToCustomerConditions.Add($"聯絡人：{entity.ContactPerson}");
@@ -892,9 +635,6 @@
         }
     }
 
-    /// <summary>
-    /// 確認複製：委托服務層執行驗證、編號產生及資料庫寫入
-    /// </summary>
     private async Task HandleConfirmCopyToCustomer()
     {
         try
@@ -920,28 +660,5 @@
         {
             await NotificationService.ShowErrorAsync($"複製至客戶時發生錯誤：{ex.Message}");
         }
-    }
-
-    // ===== 車輛配給儲存方法（參考 PurchaseOrderTable 模式） =====
-
-    /// <summary>
-    /// 儲存待處理的車輛配給變更
-    /// </summary>
-    private async Task SavePendingVehicleChangesAsync(int supplierId)
-    {
-        foreach (var vehicle in _pendingVehicleLinks)
-        {
-            vehicle.SupplierId = supplierId;
-            await VehicleService.UpdateAsync(vehicle);
-        }
-
-        foreach (var vehicle in _pendingVehicleUnlinks)
-        {
-            vehicle.SupplierId = null;
-            await VehicleService.UpdateAsync(vehicle);
-        }
-
-        _pendingVehicleLinks.Clear();
-        _pendingVehicleUnlinks.Clear();
     }
 }

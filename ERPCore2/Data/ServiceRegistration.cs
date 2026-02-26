@@ -47,6 +47,11 @@ namespace ERPCore2.Data
 
             // 客戶相關服務
             services.AddScoped<ICustomerService, CustomerService>();
+            services.AddScoped<ICustomerVisitService, CustomerVisitService>();
+
+            // 員工工具配給服務
+            services.AddScoped<IEmployeeToolService, EmployeeToolService>();
+            services.AddScoped<ERPCore2.Services.Customers.ICustomerChartService, ERPCore2.Services.Customers.CustomerChartService>();
 
             services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 

@@ -31,9 +31,16 @@
 
     @if (ShowImportScheduleButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Blue" Text="排程入庫" 
-                               OnClick="HandleImportScheduleClick" IsDisabled="@(IsLoading || IsImportScheduleDisabled)" 
+        <GenericButtonComponent Variant="ButtonVariant.Blue" Text="排程入庫"
+                               OnClick="HandleImportScheduleClick" IsDisabled="@(IsLoading || IsImportScheduleDisabled)"
                                IsLoading="@(IsLoading && LoadingOnImportSchedule)" Title="排程入庫"/>
+    }
+
+    @if (ShowBatchDeleteButton)
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Red" Text="批次刪除"
+                               OnClick="HandleBatchDeleteClick" IsDisabled="@(IsLoading || IsBatchDeleteDisabled)"
+                               IsLoading="@(IsLoading && LoadingOnBatchDelete)" Title="批次刪除"/>
     }
 
     @if (ShowRefreshButton)
@@ -134,6 +141,12 @@
     [Parameter] public bool LoadingOnImportSchedule { get; set; } = false;
     [Parameter] public EventCallback OnImportScheduleClick { get; set; }
 
+    // 批次刪除按鈕相關參數
+    [Parameter] public bool ShowBatchDeleteButton { get; set; } = false;
+    [Parameter] public bool IsBatchDeleteDisabled { get; set; } = false;
+    [Parameter] public bool LoadingOnBatchDelete { get; set; } = false;
+    [Parameter] public EventCallback OnBatchDeleteClick { get; set; }
+
     // 通用狀態參數
     [Parameter] public bool IsLoading { get; set; } = false;
     
@@ -201,6 +214,14 @@
         if (OnImportScheduleClick.HasDelegate && !IsLoading && !IsImportScheduleDisabled)
         {
             await OnImportScheduleClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleBatchDeleteClick()
+    {
+        if (OnBatchDeleteClick.HasDelegate && !IsLoading && !IsBatchDeleteDisabled)
+        {
+            await OnBatchDeleteClick.InvokeAsync();
         }
     }
 }

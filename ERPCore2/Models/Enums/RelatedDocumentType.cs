@@ -48,6 +48,11 @@ namespace ERPCore2.Models.Enums
         /// <summary>
         /// 庫存異動記錄（原始交易 + 調整記錄）
         /// </summary>
-        InventoryTransaction
+        InventoryTransaction,
+
+        /// <summary>
+        /// 報價單（銷貨報價）
+        /// </summary>
+        Quotation
     }
 }

@@ -1,0 +1,284 @@
+@inject IEmployeeService EmployeeService
+@inject IRoleService RoleService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@($"帳號管理{(employee != null ? $" - {employee.Name}" : "")}")"
+                   Icon="bi bi-person-lock"
+                   Size="BaseModalComponent.ModalSize.Default"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   IsLoading="@isSaving"
+                   LoadingMessage="儲存中..."
+                   OnClose="@HandleCancel">
+
+    <HeaderButtons>
+        <div class="d-flex gap-2">
+            <GenericButtonComponent Variant="ButtonVariant.Green"
+                                   Text="儲存"
+                                   IsLoading="@isSaving"
+                                   OnClick="@HandleSave"
+                                   Title="儲存帳號設定" />
+            @if (employee?.IsSystemUser == true)
+            {
+                <GenericButtonComponent Variant="ButtonVariant.Red"
+                                       Text="停用帳號"
+                                       IsDisabled="@isSaving"
+                                       OnClick="@HandleDisableAccount"
+                                       Title="清除帳號使此員工無法登入系統" />
+            }
+            <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                   Text="取消"
+                                   IsDisabled="@isSaving"
+                                   OnClick="@HandleCancel"
+                                   Title="取消並關閉" />
+        </div>
+    </HeaderButtons>
+
+    <BodyContent>
+        @if (employee != null)
+        {
+            @* 目前狀態 *@
+            <div class="mb-4 d-flex align-items-center gap-2">
+                <span class="text-muted small">目前狀態：</span>
+                @if (employee.IsSystemUser)
+                {
+                    <span class="badge bg-success">系統使用者</span>
+                    @if (employee.LastLoginAt.HasValue)
+                    {
+                        <span class="text-muted small">最後登入：@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm")</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted small">從未登入</span>
+                    }
+                }
+                else
+                {
+                    <span class="badge bg-secondary">一般員工（無帳號）</span>
+                }
+            </div>
+
+            @* 帳號 *@
+            <div class="mb-3">
+                <label class="form-label fw-semibold">登入帳號</label>
+                <input type="text" class="form-control"
+                       maxlength="20"
+                       autocomplete="off"
+                       placeholder="請輸入登入帳號（留空表示無法登入）"
+                       @bind="_account" />
+                <div class="form-text">留空表示此員工無法登入系統</div>
+            </div>
+
+            @* 密碼 *@
+            <div class="mb-3">
+                <label class="form-label fw-semibold">登入密碼</label>
+                <input type="password" class="form-control"
+                       maxlength="20"
+                       autocomplete="new-password"
+                       placeholder="@(employee.IsSystemUser ? "留空表示不變更現有密碼" : "請設定登入密碼")"
+                       @bind="_newPassword" />
+                @if (employee.IsSystemUser)
+                {
+                    <div class="form-text">編輯時留空表示不變更現有密碼</div>
+                }
+            </div>
+
+            @* 權限組 *@
+            <div class="mb-3">
+                <label class="form-label fw-semibold">權限組</label>
+                <select class="form-select" @bind="_roleIdStr">
+                    <option value="">-- 請選擇權限組 --</option>
+                    @foreach (var role in _availableRoles)
+                    {
+                        <option value="@role.Id">@role.Name</option>
+                    }
+                </select>
+                <div class="form-text">設定此員工在系統中的操作權限（有帳號時必填）</div>
+            </div>
+        }
+        else if (!isLoading)
+        {
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <p>找不到員工資料</p>
+            </div>
+        }
+    </BodyContent>
+
+</BaseModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? EmployeeId { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private Employee? employee;
+    private List<Role> _availableRoles = new();
+    private string _account = string.Empty;
+    private string _newPassword = string.Empty;
+    private string _roleIdStr = string.Empty;
+
+    private bool isSaving = false;
+    private bool isLoading = false;
+    private bool isDataLoaded = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadDataAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            isLoading = true;
+            if (!EmployeeId.HasValue) return;
+
+            employee = await EmployeeService.GetByIdAsync(EmployeeId.Value);
+            if (employee == null) return;
+
+            _account = employee.Account ?? string.Empty;
+            _newPassword = string.Empty;
+            _roleIdStr = employee.RoleId?.ToString() ?? string.Empty;
+
+            var currentUserRole = await CurrentUserHelper.GetCurrentRoleAsync(AuthenticationStateProvider);
+            var rolesResult = await RoleService.GetAssignableRolesForCurrentUserAsync(currentUserRole);
+            _availableRoles = rolesResult.IsSuccess ? rolesResult.Data ?? new() : new();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入帳號資料時發生錯誤");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSave()
+    {
+        if (employee == null) return;
+
+        try
+        {
+            isSaving = true;
+
+            bool hasAccount = !string.IsNullOrWhiteSpace(_account);
+
+            if (hasAccount)
+            {
+                // 驗證帳號唯一性
+                var accountExists = await EmployeeService.IsAccountExistsAsync(_account, EmployeeId);
+                if (accountExists)
+                {
+                    await NotificationService.ShowErrorAsync($"帳號 '{_account}' 已存在，請使用其他帳號");
+                    return;
+                }
+
+                // 驗證權限組必填
+                int? roleId = int.TryParse(_roleIdStr, out var rid) ? rid : null;
+                if (!roleId.HasValue)
+                {
+                    await NotificationService.ShowErrorAsync("設定帳號時必須指派權限組");
+                    return;
+                }
+
+                // 首次設定帳號時密碼必填
+                if (string.IsNullOrWhiteSpace(_newPassword) && string.IsNullOrWhiteSpace(employee.Password))
+                {
+                    await NotificationService.ShowErrorAsync("首次設定帳號時，密碼為必填");
+                    return;
+                }
+
+                employee.Account = _account;
+                employee.RoleId = roleId;
+                employee.IsSystemUser = true;
+
+                if (!string.IsNullOrWhiteSpace(_newPassword))
+                {
+                    employee.Password = SeedDataHelper.HashPassword(_newPassword);
+                }
+            }
+            else
+            {
+                employee.IsSystemUser = false;
+                employee.Account = null;
+                employee.Password = null;
+                employee.RoleId = null;
+            }
+
+            var result = await EmployeeService.UpdateAsync(employee);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("帳號設定已儲存");
+                await IsVisibleChanged.InvokeAsync(false);
+                if (OnSaved.HasDelegate) await OnSaved.InvokeAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("儲存帳號設定時發生錯誤");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task HandleDisableAccount()
+    {
+        if (employee == null) return;
+
+        try
+        {
+            isSaving = true;
+
+            employee.IsSystemUser = false;
+            employee.Account = null;
+            employee.Password = null;
+            employee.RoleId = null;
+
+            var result = await EmployeeService.UpdateAsync(employee);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("帳號已停用");
+                await IsVisibleChanged.InvokeAsync(false);
+                if (OnSaved.HasDelegate) await OnSaved.InvokeAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"停用失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("停用帳號時發生錯誤");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+        if (OnCancel.HasDelegate) await OnCancel.InvokeAsync();
+    }
+}

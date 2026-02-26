@@ -1,0 +1,134 @@
+@* 員工個人工具 Tab - 自包含元件，主組件透過 @ref 協調 *@
+@inject IEmployeeToolService EmployeeToolService
+@inject INotificationService NotificationService
+
+@* 工具配給列表 *@
+<EmployeeToolTable Tools="@employeeTools"
+                  OnAddTool="@HandleAddTool"
+                  OnEditTool="@HandleEditTool"
+                  OnDeleteTool="@HandleDeleteToolRequest" />
+
+@* 工具配給紀錄編輯 Modal *@
+<EmployeeToolEditModalComponent IsVisible="@isToolModalVisible"
+                                IsVisibleChanged="@HandleToolModalVisibilityChanged"
+                                EmployeeToolId="@editingToolId"
+                                PrefilledEmployeeId="@EmployeeId"
+                                OnEmployeeToolSaved="@OnToolSavedWrapper"
+                                OnCancel="@HandleToolModalCancel" />
+
+@* 刪除確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showDeleteToolModal"
+                              IsVisibleChanged="@((bool v) => showDeleteToolModal = v)"
+                              Title="刪除工具配給紀錄"
+                              Icon="bi-trash"
+                              Message="確定要刪除此筆工具配給紀錄嗎？"
+                              ConfirmButtonText="確認刪除"
+                              CancelButtonText="取消"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@HandleConfirmDeleteTool"
+                              OnCancel="@(() => showDeleteToolModal = false)" />
+
+@code {
+    /// <summary>目前員工 ID（供新增工具時預填）</summary>
+    [Parameter] public int? EmployeeId { get; set; }
+
+    // ===== 內部狀態 =====
+    private List<EmployeeTool> employeeTools = new();
+    private bool isToolModalVisible = false;
+    private int? editingToolId = null;
+    private bool showDeleteToolModal = false;
+    private EmployeeTool? deletingTool = null;
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    /// <summary>載入指定員工的工具配給紀錄</summary>
+    public async Task LoadAsync(int employeeId)
+    {
+        employeeTools = await EmployeeToolService.GetByEmployeeAsync(employeeId);
+        StateHasChanged();
+    }
+
+    /// <summary>清除工具資料（切換至新增模式時使用）</summary>
+    public void Clear()
+    {
+        employeeTools = new();
+        StateHasChanged();
+    }
+
+    // ===== 工具編輯 Modal 處理 =====
+
+    private void HandleAddTool()
+    {
+        editingToolId = null;
+        isToolModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleEditTool(EmployeeTool tool)
+    {
+        editingToolId = tool.Id;
+        isToolModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleDeleteToolRequest(EmployeeTool tool)
+    {
+        deletingTool = tool;
+        showDeleteToolModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleConfirmDeleteTool()
+    {
+        if (deletingTool == null) return;
+
+        try
+        {
+            var result = await EmployeeToolService.DeleteAsync(deletingTool.Id);
+            if (result.IsSuccess)
+            {
+                employeeTools.RemoveAll(t => t.Id == deletingTool.Id);
+                await NotificationService.ShowSuccessAsync("工具配給紀錄已刪除");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"刪除失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除工具配給紀錄時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            deletingTool = null;
+            showDeleteToolModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnToolSavedWrapper(EmployeeTool savedTool)
+    {
+        var existingIndex = employeeTools.FindIndex(t => t.Id == savedTool.Id);
+        if (existingIndex >= 0)
+            employeeTools[existingIndex] = savedTool;
+        else
+            employeeTools.Insert(0, savedTool);
+
+        isToolModalVisible = false;
+        StateHasChanged();
+    }
+
+    private void HandleToolModalVisibilityChanged(bool isVisible)
+    {
+        isToolModalVisible = isVisible;
+        StateHasChanged();
+    }
+
+    private void HandleToolModalCancel()
+    {
+        isToolModalVisible = false;
+        StateHasChanged();
+    }
+}

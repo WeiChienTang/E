@@ -132,7 +132,17 @@ public class DocumentSectionConfig
                 BadgeColor = "secondary",
                 ShowAddButton = false
             },
-            
+
+            RelatedDocumentType.Quotation => new()
+            {
+                Title = "報價單",
+                Icon = "file-earmark-text",
+                TextColor = "warning",
+                BadgeColor = "warning",
+                BadgeTextClass = "text-dark",
+                ShowAddButton = false
+            },
+
             _ => throw new ArgumentException($"未知的單據類型: {type}")
         };
     }

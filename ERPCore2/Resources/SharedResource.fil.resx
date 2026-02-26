@@ -283,6 +283,12 @@
   <data name="Nav.Customers" xml:space="preserve">
     <value>Mga Customer</value>
   </data>
+  <data name="Nav.CustomerVisits" xml:space="preserve">
+    <value>Mga Rekord ng Pagbisita</value>
+  </data>
+  <data name="Nav.CustomerCharts" xml:space="preserve">
+    <value>Tsart ng Customer</value>
+  </data>
   <data name="Nav.CustomerReportIndex" xml:space="preserve">
     <value>Mga Ulat ng Customer</value>
   </data>

@@ -1,0 +1,270 @@
+@* 可重用的客戶拜訪紀錄編輯組件 - 用於客戶 EditModal 的 Tab 頁籤中 *@
+@inject ICustomerVisitService CustomerVisitService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
+
+<GenericEditModalComponent TEntity="CustomerVisit"
+                          TService="ICustomerVisitService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@CustomerVisitId"
+                          Service="@CustomerVisitService"
+                          EntityName="拜訪紀錄"
+                          EntityNamePlural="拜訪紀錄"
+                          ModalTitle="@(CustomerVisitId.HasValue ? "編輯拜訪紀錄" : "新增拜訪紀錄")"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          ModalManagers="@modalManagers?.AsDictionary()"
+                          DataLoader="@LoadVisitData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(CustomerVisitId.HasValue ? "拜訪紀錄更新成功" : "拜訪紀錄新增成功")"
+                          SaveFailureMessage="拜訪紀錄儲存失敗"
+                          RequiredPermission="Customer.Read"
+                          OnEntitySaved="@OnCustomerVisitSaved"
+                          OnCancel="@OnCancel" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? CustomerVisitId { get; set; }
+    [Parameter] public int? PrefilledCustomerId { get; set; }
+    [Parameter] public EventCallback<CustomerVisit> OnCustomerVisitSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<CustomerVisit, ICustomerVisitService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    // 選項資料
+    private List<Employee> availableEmployees = new();
+
+    // Modal Manager 集合
+    private ModalManagerCollection? modalManagers;
+
+    // 員工編輯 Modal
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalManagers = ModalManagerInitHelper.CreateBuilder<CustomerVisit, ICustomerVisitService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Employee>(nameof(CustomerVisit.EmployeeId), "員工")
+                .Build();
+
+            employeeModalManager = modalManagers.Get<Employee>(nameof(CustomerVisit.EmployeeId));
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化拜訪紀錄編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task<CustomerVisit?> LoadVisitData()
+    {
+        try
+        {
+            if (!CustomerVisitId.HasValue)
+            {
+                var newVisit = new CustomerVisit
+                {
+                    VisitDate = DateTime.Today,
+                    VisitType = VisitType.Phone,
+                    Status = EntityStatus.Active
+                };
+
+                if (PrefilledCustomerId.HasValue)
+                    newVisit.CustomerId = PrefilledCustomerId.Value;
+
+                return newVisit;
+            }
+
+            return await CustomerVisitService.GetByIdAsync(CustomerVisitId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入拜訪紀錄資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(CustomerVisit.VisitDate),
+                    Label = "拜訪日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "進行拜訪或聯繫的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerVisit.VisitType),
+                    Label = "拜訪方式",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "此次拜訪或聯繫的方式",
+                    Options = Enum.GetValues(typeof(VisitType))
+                        .Cast<VisitType>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = e switch
+                            {
+                                VisitType.Phone => "電話",
+                                VisitType.OnSite => "現場拜訪",
+                                VisitType.VideoConference => "視訊會議",
+                                VisitType.Email => "Email",
+                                VisitType.Other => "其他",
+                                _ => e.ToString()
+                            },
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerVisit.EmployeeId),
+                    Label = "業務人員",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇業務人員",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "負責此次拜訪的業務人員",
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerVisit.Purpose),
+                    Label = "拜訪目的",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入拜訪目的",
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "此次拜訪或聯繫的主要目的"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerVisit.Content),
+                    Label = "拜訪內容",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入拜訪內容",
+                    IsRequired = false,
+                    MaxLength = 1000,
+                    HelpText = "詳細記錄此次拜訪或聯繫的內容"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerVisit.Result),
+                    Label = "結果摘要",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入結果摘要",
+                    IsRequired = false,
+                    MaxLength = 200,
+                    HelpText = "此次拜訪的結果或成果摘要"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerVisit.NextFollowUpDate),
+                    Label = "下次追蹤日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "預計下次追蹤或拜訪的日期"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<CustomerVisit>()
+            };
+
+            formSections = FormSectionHelper<CustomerVisit>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    v => v.VisitDate,
+                    v => v.VisitType,
+                    v => v.EmployeeId,
+                    v => v.Purpose)
+                .AddToSection("拜訪詳情",
+                    v => v.Content,
+                    v => v.Result,
+                    v => v.NextFollowUpDate)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    v => v.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化拜訪紀錄表單欄位時發生錯誤");
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<CustomerVisit>()
+                .AddField(nameof(CustomerVisit.EmployeeId), "Name", availableEmployees)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入拜訪紀錄編輯相關資料時發生錯誤");
+            availableEmployees = new List<Employee>();
+        }
+    }
+
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            employeeModalManager,
+            nameof(CustomerVisit.EmployeeId)
+        );
+    }
+}

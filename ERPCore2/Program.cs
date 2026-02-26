@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using ERPCore2.Services;
 using Microsoft.AspNetCore.Authorization;
+using ApexCharts;
 
 // 檢查命令列參數
 var commandLineArgs = Environment.GetCommandLineArgs();
@@ -113,6 +114,9 @@ builder.Services.AddApplicationServices(builder.Configuration.GetConnectionStrin
 
 // 加入多語言支援
 builder.Services.AddLocalization();
+
+// 加入圖表支援
+builder.Services.AddApexCharts();
 
 // 加入 HttpContextAccessor（.NET 9 互動式元件必需）
 builder.Services.AddHttpContextAccessor();

@@ -1,0 +1,187 @@
+@* 員工車輛資訊 Tab - 自包含元件，主組件透過 @ref 協調 *@
+@inject IVehicleService VehicleService
+@inject INotificationService NotificationService
+
+@* 車輛列表 *@
+<VehicleTable Vehicles="@employeeVehicles"
+             OnAddVehicle="@HandleAddVehicle"
+             OnSelectVehicle="@HandleOpenVehicleSelectModal"
+             OnEditVehicle="@HandleEditVehicle"
+             OnUnlinkVehicle="@HandleUnlinkVehicle" />
+
+@* 車輛編輯 Modal - 條件式渲染避免循環元件實例化 *@
+@if (isVehicleModalVisible)
+{
+    <VehicleEditModalComponent @ref="vehicleEditModal"
+                              IsVisible="@isVehicleModalVisible"
+                              IsVisibleChanged="@HandleVehicleModalVisibilityChanged"
+                              VehicleId="@editingVehicleId"
+                              PrefilledValues="@GetVehiclePrefilledValues()"
+                              OnVehicleSaved="@OnVehicleSavedWrapper"
+                              OnCancel="@HandleVehicleModalCancel" />
+}
+
+@* 車輛選擇 Modal *@
+<VehicleSelectModal IsVisible="@isVehicleSelectModalVisible"
+                    IsVisibleChanged="@HandleVehicleSelectModalVisibilityChanged"
+                    ExcludeVehicleIds="@GetCurrentVehicleIds()"
+                    OnVehicleSelected="@HandleVehicleSelected" />
+
+@code {
+    /// <summary>目前員工 ID（供新增車輛時預填）</summary>
+    [Parameter] public int? EmployeeId { get; set; }
+
+    // ===== 內部狀態 =====
+    private List<Vehicle> employeeVehicles = new();
+    private VehicleEditModalComponent? vehicleEditModal;
+    private bool isVehicleModalVisible = false;
+    private int? editingVehicleId = null;
+    private bool isVehicleSelectModalVisible = false;
+
+    // 車輛配給緩衝（等主檔儲存時才寫入 DB）
+    private List<Vehicle> _pendingVehicleLinks = new();
+    private List<Vehicle> _pendingVehicleUnlinks = new();
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    /// <summary>載入指定員工的車輛列表</summary>
+    public async Task LoadAsync(int employeeId)
+    {
+        employeeVehicles = await VehicleService.GetByEmployeeAsync(employeeId);
+        _pendingVehicleLinks.Clear();
+        _pendingVehicleUnlinks.Clear();
+        StateHasChanged();
+    }
+
+    /// <summary>清除車輛資料（切換至新增模式時使用）</summary>
+    public void Clear()
+    {
+        employeeVehicles = new();
+        _pendingVehicleLinks.Clear();
+        _pendingVehicleUnlinks.Clear();
+        StateHasChanged();
+    }
+
+    /// <summary>儲存待處理的車輛配給變更（主組件儲存主檔後呼叫）</summary>
+    public async Task SavePendingChangesAsync(int employeeId)
+    {
+        foreach (var vehicle in _pendingVehicleLinks)
+        {
+            vehicle.EmployeeId = employeeId;
+            await VehicleService.UpdateAsync(vehicle);
+        }
+
+        foreach (var vehicle in _pendingVehicleUnlinks)
+        {
+            vehicle.EmployeeId = null;
+            await VehicleService.UpdateAsync(vehicle);
+        }
+
+        _pendingVehicleLinks.Clear();
+        _pendingVehicleUnlinks.Clear();
+    }
+
+    /// <summary>儲存成功後重新載入（確保與 DB 同步）</summary>
+    public async Task ReloadAsync(int employeeId)
+    {
+        employeeVehicles = await VehicleService.GetByEmployeeAsync(employeeId);
+        StateHasChanged();
+    }
+
+    // ===== 車輛預填值 =====
+
+    private Dictionary<string, object?>? GetVehiclePrefilledValues()
+    {
+        if (!editingVehicleId.HasValue && EmployeeId.HasValue)
+        {
+            return new Dictionary<string, object?>
+            {
+                { nameof(Vehicle.EmployeeId), EmployeeId.Value }
+            };
+        }
+        return null;
+    }
+
+    private List<int> GetCurrentVehicleIds()
+    {
+        return employeeVehicles.Select(v => v.Id).ToList();
+    }
+
+    // ===== 車輛編輯 Modal 處理 =====
+
+    private void HandleAddVehicle()
+    {
+        editingVehicleId = null;
+        isVehicleModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleEditVehicle(Vehicle vehicle)
+    {
+        editingVehicleId = vehicle.Id;
+        isVehicleModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleUnlinkVehicle(Vehicle vehicle)
+    {
+        employeeVehicles.RemoveAll(v => v.Id == vehicle.Id);
+        _pendingVehicleLinks.RemoveAll(v => v.Id == vehicle.Id);
+
+        if (!_pendingVehicleUnlinks.Any(v => v.Id == vehicle.Id))
+            _pendingVehicleUnlinks.Add(vehicle);
+
+        StateHasChanged();
+    }
+
+    private void OnVehicleSavedWrapper(Vehicle savedVehicle)
+    {
+        var existingIndex = employeeVehicles.FindIndex(v => v.Id == savedVehicle.Id);
+        if (existingIndex >= 0)
+            employeeVehicles[existingIndex] = savedVehicle;
+        else
+            employeeVehicles.Add(savedVehicle);
+
+        isVehicleModalVisible = false;
+        StateHasChanged();
+    }
+
+    private void HandleVehicleModalVisibilityChanged(bool isVisible)
+    {
+        isVehicleModalVisible = isVisible;
+        StateHasChanged();
+    }
+
+    private void HandleVehicleModalCancel()
+    {
+        isVehicleModalVisible = false;
+        StateHasChanged();
+    }
+
+    // ===== 車輛選擇 Modal 處理 =====
+
+    private void HandleOpenVehicleSelectModal()
+    {
+        isVehicleSelectModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleVehicleSelectModalVisibilityChanged(bool isVisible)
+    {
+        isVehicleSelectModalVisible = isVisible;
+        StateHasChanged();
+    }
+
+    private void HandleVehicleSelected(Vehicle vehicle)
+    {
+        if (!employeeVehicles.Any(v => v.Id == vehicle.Id))
+            employeeVehicles.Add(vehicle);
+
+        _pendingVehicleUnlinks.RemoveAll(v => v.Id == vehicle.Id);
+
+        if (!_pendingVehicleLinks.Any(v => v.Id == vehicle.Id))
+            _pendingVehicleLinks.Add(vehicle);
+
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,665 @@
+@* 可重用的客戶編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
+@inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
+@inject IPaymentMethodService PaymentMethodService
+@inject INotificationService NotificationService
+@inject ICustomerRosterReportService CustomerRosterReportService
+@inject ICustomerDetailReportService CustomerDetailReportService
+@inject ActionButtonHelper ActionButtonHelper
+
+<GenericEditModalComponent TEntity="Customer"
+                          TService="ICustomerService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@CustomerId"
+                          Service="@CustomerService"
+                          EntityName="客戶"
+                          EntityNamePlural="客戶"
+                          ModalTitle="@(CustomerId.HasValue ? "編輯客戶" : "新增客戶")"
+                          Size="GenericEditModalComponent<Customer, ICustomerService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          ModalManagers="@modalManagers?.AsDictionary()"
+                          DataLoader="@LoadCustomerData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(CustomerId.HasValue ? "客戶更新成功" : "客戶新增成功")"
+                          SaveFailureMessage="客戶儲存失敗"
+                          RequiredPermission="Customer.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@OnCancel"
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ShowPrintButton="true"
+                          PrintButtonText="列印"
+                          ReportService="@CustomerDetailReportService"
+                          ReportId="@ReportIds.CustomerDetail"
+                          ReportPreviewTitle="客戶詳細資料預覽"
+                          GetReportDocumentName="@(e => $"客戶-{e.Code}")"
+                          CustomActionButtons="@GetCustomActionButtons()" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@* 付款方式編輯 Modal *@
+<PaymentMethodEditModalComponent @ref="paymentMethodEditModal"
+                                IsVisible="@paymentMethodModalManager.IsModalVisible"
+                                IsVisibleChanged="@paymentMethodModalManager.HandleModalVisibilityChangedAsync"
+                                PaymentMethodId="@paymentMethodModalManager.SelectedEntityId"
+                                OnPaymentMethodSaved="@paymentMethodModalManager.OnSavedAsync"
+                                OnCancel="@paymentMethodModalManager.HandleModalCancelAsync" />
+
+@* 複製至廠商確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showCopyToSupplierModal"
+                              IsVisibleChanged="@((bool v) => showCopyToSupplierModal = v)"
+                              Title="複製至廠商"
+                              Icon="bi-building-add"
+                              Message="確定要將此客戶的資料複製為新廠商嗎？"
+                              Conditions="@copyToSupplierConditions"
+                              SummaryMessage="複製後將在廠商清單中建立一筆新資料"
+                              ConfirmButtonText="確認複製"
+                              CancelButtonText="取消"
+                              ConfirmButtonVariant="ButtonVariant.Green"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                              OnConfirm="@HandleConfirmCopyToSupplier"
+                              OnCancel="@(() => showCopyToSupplierModal = false)" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? CustomerId { get; set; }
+    [Parameter] public EventCallback<Customer> OnCustomerSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<Customer, ICustomerService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    // 選項資料
+    private List<Employee> availableEmployees = new();
+    private List<PaymentMethod> availablePaymentMethods = new();
+
+    // Modal Manager 集合
+    private ModalManagerCollection? modalManagers;
+
+    // 員工編輯 Modal 相關變數 - 使用泛型管理器
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+
+    // 付款方式編輯 Modal 相關變數 - 使用泛型管理器
+    private PaymentMethodEditModalComponent? paymentMethodEditModal;
+    private RelatedEntityModalManager<PaymentMethod> paymentMethodModalManager = default!;
+
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+
+    // 複製至廠商
+    private bool showCopyToSupplierModal = false;
+    private List<string> copyToSupplierConditions = new();
+
+    // Tab 元件參考（透過 @ref 呼叫公開方法）
+    private CustomerVehicleTab? vehicleTab;
+    private CustomerVisitTab? visitTab;
+
+    // ===== Tab 內容 RenderFragment =====
+
+    private RenderFragment CreateVehicleTabContent() => __builder =>
+    {
+        <CustomerVehicleTab @ref="vehicleTab" CustomerId="@CustomerId" />
+    };
+
+    private RenderFragment CreateVisitTabContent() => __builder =>
+    {
+        <CustomerVisitTab @ref="visitTab" CustomerId="@CustomerId" />
+    };
+
+    private RenderFragment CreateTransactionTabContent() => __builder =>
+    {
+        <CustomerTransactionTable CustomerId="@CustomerId" />
+    };
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalManagers = ModalManagerInitHelper.CreateBuilder<Customer, ICustomerService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Employee>(nameof(Customer.EmployeeId), "員工")
+                .AddManager<PaymentMethod>(nameof(Customer.PaymentMethodId), "付款方式")
+                .Build();
+
+            employeeModalManager = modalManagers.Get<Employee>(nameof(Customer.EmployeeId));
+            paymentMethodModalManager = modalManagers.Get<PaymentMethod>(nameof(Customer.PaymentMethodId));
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化客戶編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    // ===== 事件處理 =====
+
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            if (loadedEntityId > 0)
+            {
+                if (vehicleTab != null) await vehicleTab.LoadAsync(loadedEntityId);
+                if (visitTab != null)   await visitTab.LoadAsync(loadedEntityId);
+            }
+            else
+            {
+                vehicleTab?.Clear();
+                visitTab?.Clear();
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        if (editModalComponent?.Entity != null)
+        {
+            // 車輛 Tab 有緩衝機制，需在主檔儲存後提交
+            if (vehicleTab != null)
+                await vehicleTab.SavePendingChangesAsync(editModalComponent.Entity.Id);
+
+            await OnCustomerSaved.InvokeAsync(editModalComponent.Entity);
+        }
+    }
+
+    // ===== 資料載入 =====
+
+    private async Task<Customer?> LoadCustomerData()
+    {
+        try
+        {
+            if (!CustomerId.HasValue)
+            {
+                vehicleTab?.Clear();
+                visitTab?.Clear();
+
+                return new Customer
+                {
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Customer, ICustomerService>(CustomerService, "CUST"),
+                    Status = EntityStatus.Active
+                };
+            }
+
+            return await CustomerService.GetByIdAsync(CustomerId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入客戶資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+            availablePaymentMethods = await PaymentMethodService.GetAllAsync();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Customer>()
+                .AddField(nameof(Customer.EmployeeId), "Name", availableEmployees)
+                .AddField(nameof(Customer.PaymentMethodId), "Name", availablePaymentMethods)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入客戶編輯相關資料時發生錯誤");
+            availableEmployees = new List<Employee>();
+            availablePaymentMethods = new List<PaymentMethod>();
+        }
+    }
+
+    // ===== 表單欄位定義 =====
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Customer.Code),
+                    Label = "客戶編號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入客戶編號",
+                    IsRequired = true,
+                    MaxLength = 20,
+                    HelpText = "客戶的唯一識別編號，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.CompanyName),
+                    Label = "公司名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入公司名稱",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "客戶的完整公司名稱（公司名稱、負責人或聯絡人至少需填寫一項）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.ContactPerson),
+                    Label = "聯絡人",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡人姓名",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "主要聯絡人姓名（公司名稱、負責人或聯絡人至少需填寫一項）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.TaxNumber),
+                    Label = "統一編號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入統一編號",
+                    IsRequired = false,
+                    MaxLength = 8,
+                    HelpText = "公司統一編號（8位數字）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.ResponsiblePerson),
+                    Label = "負責人",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入負責人姓名",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "公司負責人姓名（公司名稱、負責人或聯絡人至少需填寫一項）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.JobTitle),
+                    Label = "職稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入職稱",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "聯絡人職稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.ContactPhone),
+                    Label = "聯絡電話",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡電話",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "聯絡人或是公司聯絡電話"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.MobilePhone),
+                    Label = "行動電話",
+                    FieldType = FormFieldType.MobilePhone,
+                    Placeholder = "0912-345-678",
+                    HelpText = "聯絡人行動電話（10碼，以09開頭）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.Fax),
+                    Label = "傳真",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入傳真號碼",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "公司傳真號碼"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.Email),
+                    Label = "信箱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入電子郵件",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "聯絡人電子郵件地址"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.Website),
+                    Label = "公司網址",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入公司網址",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    ContainerCssClass = "col-4",
+                    HelpText = "公司官方網站網址"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.ContactAddress),
+                    Label = "聯絡地址",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡地址",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "公司聯絡地址",
+                    ContainerCssClass = "col-4"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.ShippingAddress),
+                    Label = "貨運地址",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入貨運地址",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "貨物運送地址",
+                    ContainerCssClass = "col-4",
+                    ActionButtons = await GetShippingAddressActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.PaymentMethodId),
+                    Label = "付款方式",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇付款方式",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "客戶的付款方式（例如：現金、支票、匯款等）",
+                    ActionButtons = await GetPaymentMethodActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.PaymentTerms),
+                    Label = "付款條件",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入付款條件",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "付款條件說明（例如：月結30天、貨到付款等）"
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(Customer.PaymentDate),
+                    Label = "收款日",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "收款日1-30，30 表示每月最後一天",
+                    IsRequired = false,
+                    Min = 0,
+                    Max = 30,
+                    HelpText = "每月固定收款日期 (1-30)，輸入 0 表示月底收款。例如：12 表示每月12日、30 表示每月最後一天",
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(Customer.InvoiceTitle),
+                    Label = "發票抬頭",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入發票抬頭",
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "開立發票時使用的抬頭名稱",
+                    ActionButtons = await GetInvoiceTitleActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.EmployeeId),
+                    Label = "業務負責人",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇業務負責人",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "負責此客戶的業務人員",
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(Customer.CompanyContactPhone),
+                    Label = "聯絡電話",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡電話",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "負責人或是公司聯絡電話"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<Customer>()
+            };
+
+            var layout = FormSectionHelper<Customer>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    c => c.Code,
+                    c => c.CompanyName,
+                    c => c.ResponsiblePerson,
+                    c => c.CompanyContactPhone,
+                    c => c.TaxNumber,
+                    c => c.Fax,
+                    c => c.Website,
+                    c => c.ContactAddress,
+                    c => c.ShippingAddress)
+                .AddToSection(FormSectionNames.ContactPersonInfo,
+                    c => c.ContactPerson,
+                    c => c.JobTitle,
+                    c => c.ContactPhone,
+                    c => c.MobilePhone,
+                    c => c.Email)
+                .AddToSection(FormSectionNames.PaymentInfo,
+                    c => c.PaymentMethodId,
+                    c => c.PaymentTerms,
+                    c => c.PaymentDate,
+                    c => c.InvoiceTitle,
+                    c => c.CreditLimit,
+                    c => c.CurrentBalance)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    c => c.EmployeeId,
+                    c => c.Remarks)
+                .GroupIntoTab("客戶資料", "bi-building", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo)
+                .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())
+                .GroupIntoCustomTab("拜訪紀錄", "bi-journal-text", CreateVisitTabContent())
+                .GroupIntoCustomTab("交易紀錄", "bi-receipt", CreateTransactionTabContent())
+                .BuildAll();
+
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    // ===== 欄位操作按鈕 =====
+
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            employeeModalManager,
+            nameof(Customer.EmployeeId)
+        );
+    }
+
+    private async Task<List<FieldActionButton>> GetPaymentMethodActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            paymentMethodModalManager,
+            nameof(Customer.PaymentMethodId)
+        );
+    }
+
+    private Task<List<FieldActionButton>> GetInvoiceTitleActionButtonsAsync()
+    {
+        return Task.FromResult(new List<FieldActionButton>
+        {
+            new()
+            {
+                Text = "複製",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = "將公司名稱複製到發票抬頭",
+                OnClick = async () => await CopyCompanyNameToInvoiceTitle(),
+                IsDisabled = false
+            }
+        });
+    }
+
+    private Task<List<FieldActionButton>> GetShippingAddressActionButtonsAsync()
+    {
+        return Task.FromResult(new List<FieldActionButton>
+        {
+            new()
+            {
+                Text = "複製",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = "將聯絡地址複製到貨運地址",
+                OnClick = async () => await CopyContactAddressToShippingAddress(),
+                IsDisabled = false
+            }
+        });
+    }
+
+    private async Task CopyCompanyNameToInvoiceTitle()
+    {
+        if (editModalComponent?.Entity != null)
+        {
+            editModalComponent.Entity.InvoiceTitle = editModalComponent.Entity.CompanyName;
+            StateHasChanged();
+            await NotificationService.ShowSuccessAsync("已將公司名稱複製到發票抬頭");
+        }
+    }
+
+    private async Task CopyContactAddressToShippingAddress()
+    {
+        if (editModalComponent?.Entity != null)
+        {
+            editModalComponent.Entity.ShippingAddress = editModalComponent.Entity.ContactAddress;
+            StateHasChanged();
+            await NotificationService.ShowSuccessAsync("已將聯絡地址複製到貨運地址");
+        }
+    }
+
+    // ===== 複製至廠商 =====
+
+    private RenderFragment? GetCustomActionButtons() => __builder =>
+    {
+        if (editModalComponent?.Entity != null && CustomerId.HasValue)
+        {
+            <GenericButtonComponent Text="複製至廠商"
+                                    Variant="ButtonVariant.Green"
+                                    OnClick="HandleCopyToSupplierClick"
+                                    Title="將此客戶資料複製為新廠商" />
+        }
+    };
+
+    private async Task HandleCopyToSupplierClick()
+    {
+        try
+        {
+            var entity = editModalComponent?.Entity;
+            if (entity == null)
+            {
+                await NotificationService.ShowErrorAsync("無法取得客戶資料");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(entity.CompanyName))
+            {
+                await NotificationService.ShowErrorAsync("客戶公司名稱不可為空白，無法複製至廠商");
+                return;
+            }
+
+            copyToSupplierConditions = new List<string>();
+            copyToSupplierConditions.Add($"公司名稱：{entity.CompanyName}");
+            if (!string.IsNullOrWhiteSpace(entity.ContactPerson))      copyToSupplierConditions.Add($"聯絡人：{entity.ContactPerson}");
+            if (!string.IsNullOrWhiteSpace(entity.TaxNumber))           copyToSupplierConditions.Add($"統一編號：{entity.TaxNumber}");
+            if (!string.IsNullOrWhiteSpace(entity.ResponsiblePerson))   copyToSupplierConditions.Add($"負責人：{entity.ResponsiblePerson}");
+            if (!string.IsNullOrWhiteSpace(entity.CompanyContactPhone)) copyToSupplierConditions.Add($"公司聯絡電話：{entity.CompanyContactPhone}");
+            if (!string.IsNullOrWhiteSpace(entity.ContactPhone))        copyToSupplierConditions.Add($"聯絡電話：{entity.ContactPhone}");
+            if (!string.IsNullOrWhiteSpace(entity.MobilePhone))         copyToSupplierConditions.Add($"行動電話：{entity.MobilePhone}");
+            if (!string.IsNullOrWhiteSpace(entity.Email))               copyToSupplierConditions.Add($"信箱：{entity.Email}");
+            if (!string.IsNullOrWhiteSpace(entity.Fax))                 copyToSupplierConditions.Add($"傳真：{entity.Fax}");
+            if (!string.IsNullOrWhiteSpace(entity.ContactAddress))      copyToSupplierConditions.Add($"聯絡地址：{entity.ContactAddress}");
+            if (!string.IsNullOrWhiteSpace(entity.ShippingAddress))     copyToSupplierConditions.Add($"公司地址：{entity.ShippingAddress}");
+            if (!string.IsNullOrWhiteSpace(entity.Website))             copyToSupplierConditions.Add($"公司網址：{entity.Website}");
+            if (!string.IsNullOrWhiteSpace(entity.JobTitle))            copyToSupplierConditions.Add($"職稱：{entity.JobTitle}");
+            if (!string.IsNullOrWhiteSpace(entity.PaymentTerms))        copyToSupplierConditions.Add($"付款條件：{entity.PaymentTerms}");
+            if (entity.PaymentMethodId.HasValue)                        copyToSupplierConditions.Add("付款方式（依對應帳款方式）");
+
+            showCopyToSupplierModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"操作時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleConfirmCopyToSupplier()
+    {
+        try
+        {
+            if (!CustomerId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得客戶 ID");
+                return;
+            }
+
+            var result = await CustomerService.CopyToSupplierAsync(CustomerId.Value);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync($"已成功將「{editModalComponent?.Entity?.CompanyName}」複製為廠商（編號：{result.Data?.Code}）");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"複製至廠商失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"複製至廠商時發生錯誤：{ex.Message}");
+        }
+    }
+}

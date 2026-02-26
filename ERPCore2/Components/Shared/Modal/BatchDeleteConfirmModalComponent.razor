@@ -1,0 +1,165 @@
+@*
+    批次刪除確認 Modal 組件（泛型）
+    用途：列出項目供使用者點擊行或勾選選取，確認後刪除
+
+    使用方式：
+    1. 指定 TItem 類型
+    2. 傳入 Items（來源清單，通常為 indexComponent.FilteredItems）
+    3. 傳入 ColumnDefinitions（Display 欄位即可）
+    4. OnConfirmDelete 回傳使用者選取的 List<TItem>
+
+    範例：
+    <BatchDeleteConfirmModalComponent TItem="MyEntity"
+        IsVisible="@showModal"
+        IsVisibleChanged="@((v) => showModal = v)"
+        Title="批次刪除 XXX"
+        Items="@indexComponent.FilteredItems"
+        ColumnDefinitions="@batchDeleteColumns"
+        IsDeleting="@isDeleting"
+        OnConfirmDelete="@ExecuteBatchDelete"
+        OnCancel="@(() => showModal = false)" />
+
+    private async Task ExecuteBatchDelete(List<MyEntity> selectedItems)
+    {
+        var ids = selectedItems.Select(i => i.Id).ToList();
+        var result = await MyService.DeleteBatchAsync(ids);
+        ...
+    }
+*@
+@typeparam TItem
+@using ERPCore2.Components.Shared.Table
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@Title"
+                   Icon="bi bi-trash3-fill"
+                   Size="BaseModalComponent.ModalSize.Large"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                   IsLoading="@IsDeleting"
+                   LoadingMessage="正在刪除中，請稍候..."
+                   ShowCloseButton="@(!IsDeleting)"
+                   CloseOnBackdropClick="@(!IsDeleting)"
+                   CloseOnEscape="@(!IsDeleting)"
+                   OnClose="@HandleCancel">
+
+    <HeaderButtons>
+        <div class="d-flex gap-2">
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   Text="確認刪除"
+                                   IsDisabled="@(IsDeleting || SelectedCount == 0)"
+                                   IsLoading="@IsDeleting"
+                                   OnClick="@HandleConfirmDelete"
+                                   Title="確認執行批次刪除" />
+            <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                   Text="取消"
+                                   IsDisabled="@IsDeleting"
+                                   OnClick="@HandleCancel"
+                                   Title="取消並關閉" />
+        </div>
+    </HeaderButtons>
+
+    <BodyContent>
+        @* 警告區塊 *@
+        <div class="alert alert-danger d-flex align-items-start gap-3 mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-4 flex-shrink-0 mt-1"></i>
+            <div>
+                <strong>警告：此操作無法還原！</strong>
+            </div>
+        </div>
+
+        @* 項目清單 *@
+        @if (Items != null && ColumnDefinitions != null)
+        {
+            <div class="card border-danger">
+                <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                    <InteractiveTableComponent TItem="TItem"
+                                             Items="@Items"
+                                             ColumnDefinitions="@ColumnDefinitions"
+                                             AllowMultipleSelection="true"
+                                             EnableRowSelection="true"
+                                             EnableRowClick="true"
+                                             SelectedItems="@_selectedItems"
+                                             OnSelectionChanged="@HandleSelectionChanged"
+                                             ShowRowNumbers="true"
+                                             ShowActions="false"
+                                             IsStriped="true"
+                                             IsHoverable="true"
+                                             IsBordered="true"
+                                             CssClass="mb-0" />
+                </div>
+            </div>
+        }
+    </BodyContent>
+
+</BaseModalComponent>
+
+@code {
+    // ===== 參數定義 =====
+
+    /// <summary>Modal 是否顯示</summary>
+    [Parameter] public bool IsVisible { get; set; }
+
+    /// <summary>Modal 顯示狀態變更事件</summary>
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    /// <summary>Modal 標題（預設：確認批次刪除）</summary>
+    [Parameter] public string Title { get; set; } = "確認批次刪除";
+
+    /// <summary>來源資料清單（通常傳入 indexComponent.FilteredItems）</summary>
+    [Parameter] public List<TItem>? Items { get; set; }
+
+    /// <summary>表格欄位定義（使用 InteractiveColumnDefinition，ColumnType 用 Display）</summary>
+    [Parameter] public List<InteractiveColumnDefinition>? ColumnDefinitions { get; set; }
+
+    /// <summary>是否正在刪除中（顯示 Loading 並禁用按鈕）</summary>
+    [Parameter] public bool IsDeleting { get; set; }
+
+    /// <summary>確認刪除事件，回傳使用者選取的項目清單</summary>
+    [Parameter] public EventCallback<List<TItem>> OnConfirmDelete { get; set; }
+
+    /// <summary>取消事件</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+
+    private HashSet<TItem> _selectedItems = new();
+    private int SelectedCount => _selectedItems.Count;
+    private bool _lastVisible;
+
+    // ===== 生命週期 =====
+
+    protected override void OnParametersSet()
+    {
+        // Modal 每次開啟時重置選取狀態
+        if (IsVisible && !_lastVisible)
+        {
+            _selectedItems = new HashSet<TItem>();
+        }
+        _lastVisible = IsVisible;
+    }
+
+    // ===== 事件處理 =====
+
+    private Task HandleSelectionChanged(HashSet<TItem> items)
+    {
+        _selectedItems = items;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleConfirmDelete()
+    {
+        if (OnConfirmDelete.HasDelegate && !IsDeleting && SelectedCount > 0)
+        {
+            await OnConfirmDelete.InvokeAsync(_selectedItems.ToList());
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        if (!IsDeleting && OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+}
