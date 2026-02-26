@@ -1,0 +1,160 @@
+@* 員工證照編輯組件 - 用於教育訓練 Tab 中 *@
+@inject IEmployeeLicenseService EmployeeLicenseService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="EmployeeLicense"
+                          TService="IEmployeeLicenseService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@EmployeeLicenseId"
+                          Service="@EmployeeLicenseService"
+                          EntityName="證照紀錄"
+                          EntityNamePlural="證照紀錄"
+                          ModalTitle="@(EmployeeLicenseId.HasValue ? "編輯證照紀錄" : "新增證照紀錄")"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadLicenseData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(EmployeeLicenseId.HasValue ? "證照紀錄更新成功" : "證照紀錄新增成功")"
+                          SaveFailureMessage="證照紀錄儲存失敗"
+                          RequiredPermission="Employee.Read"
+                          OnEntitySaved="@OnEmployeeLicenseSaved"
+                          OnCancel="@OnCancel" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? EmployeeLicenseId { get; set; }
+    [Parameter] public int? PrefilledEmployeeId { get; set; }
+    [Parameter] public EventCallback<EmployeeLicense> OnEmployeeLicenseSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private GenericEditModalComponent<EmployeeLicense, IEmployeeLicenseService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private bool isDataLoaded = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task<EmployeeLicense?> LoadLicenseData()
+    {
+        try
+        {
+            if (!EmployeeLicenseId.HasValue)
+            {
+                var newLicense = new EmployeeLicense
+                {
+                    IssuedDate = DateTime.Today,
+                    AlertDays = 30,
+                    Status = EntityStatus.Active
+                };
+
+                if (PrefilledEmployeeId.HasValue)
+                    newLicense.EmployeeId = PrefilledEmployeeId.Value;
+
+                return newLicense;
+            }
+
+            return await EmployeeLicenseService.GetByIdAsync(EmployeeLicenseId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入證照紀錄時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(EmployeeLicense.LicenseName),
+                    Label = "證照名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入證照名稱",
+                    IsRequired = true,
+                    MaxLength = 100,
+                    HelpText = "證照或資格認證的完整名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeLicense.LicenseNumber),
+                    Label = "證照字號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入證照字號",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "證照上的字號或編號（選填）"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeLicense.IssuingAuthority),
+                    Label = "發照機關",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入發照機關名稱",
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "核發證照的政府機關或認證單位（選填）"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeLicense.IssuedDate),
+                    Label = "取得日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "取得或通過認證的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeLicense.ExpiryDate),
+                    Label = "到期日",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "證照到期日（永久有效則留空）"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeLicense.AlertDays),
+                    Label = "提醒天數",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "到期前幾天開始標示警告（預設 30 天）"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<EmployeeLicense>()
+            };
+
+            formSections = FormSectionHelper<EmployeeLicense>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    l => l.LicenseName,
+                    l => l.LicenseNumber,
+                    l => l.IssuingAuthority,
+                    l => l.IssuedDate,
+                    l => l.ExpiryDate,
+                    l => l.AlertDays)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    l => l.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化證照表單欄位時發生錯誤");
+        }
+    }
+}

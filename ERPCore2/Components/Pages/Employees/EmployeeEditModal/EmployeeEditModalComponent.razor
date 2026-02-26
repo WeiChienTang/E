@@ -48,9 +48,8 @@
     <CustomActionButtons>
         @if (_hasAccountPermission && EmployeeId.HasValue)
         {
-            <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                    Text="帳號管理"
-                                   IconClass="bi bi-person-lock"
                                    OnClick="@(() => _showAccountModal = true)"
                                    Title="管理此員工的系統帳號與權限" />
         }
@@ -118,6 +117,7 @@
     // Tab 元件參考（透過 @ref 呼叫公開方法）
     private EmployeeVehicleTab? vehicleTab;
     private EmployeeToolTab? toolTab;
+    private EmployeeTrainingTab? trainingTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -129,6 +129,11 @@
     private RenderFragment CreateToolTabContent() => __builder =>
     {
         <EmployeeToolTab @ref="toolTab" EmployeeId="@EmployeeId" />
+    };
+
+    private RenderFragment CreateTrainingTabContent() => __builder =>
+    {
+        <EmployeeTrainingTab @ref="trainingTab" EmployeeId="@EmployeeId" />
     };
 
     // ===== 生命週期 =====
@@ -208,6 +213,7 @@
             {
                 vehicleTab?.Clear();
                 toolTab?.Clear();
+                trainingTab?.Clear();
 
                 return new Employee
                 {
@@ -244,11 +250,13 @@
             {
                 if (vehicleTab != null) await vehicleTab.LoadAsync(loadedEntityId);
                 if (toolTab != null) await toolTab.LoadAsync(loadedEntityId);
+                if (trainingTab != null) await trainingTab.LoadAsync(loadedEntityId);
             }
             else
             {
                 vehicleTab?.Clear();
                 toolTab?.Clear();
+                trainingTab?.Clear();
             }
             StateHasChanged();
         }
@@ -309,6 +317,7 @@
             {
                 if (vehicleTab != null) await vehicleTab.ReloadAsync(editModalComponent.Entity.Id);
                 if (toolTab != null) await toolTab.LoadAsync(editModalComponent.Entity.Id);
+                if (trainingTab != null) await trainingTab.LoadAsync(editModalComponent.Entity.Id);
                 await OnEmployeeSaved.InvokeAsync(editModalComponent.Entity);
             }
         }
@@ -373,6 +382,7 @@
                 .GroupIntoTab("員工資料", "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData)
                 .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())
                 .GroupIntoCustomTab("個人工具", "bi-tools", CreateToolTabContent())
+                .GroupIntoCustomTab("教育訓練", "bi-mortarboard", CreateTrainingTabContent())
                 .BuildAll();
 
             formSections = layout.FieldSections;

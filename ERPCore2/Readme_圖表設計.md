@@ -93,17 +93,17 @@ AppDbContext（Customers / Employees / PaymentMethods）
 
 | 路徑 | 說明 |
 |------|------|
-| `Models/Charts/ChartDataItem.cs` | 通用圖表資料點 `ChartDataItem` |
+| `Models/Charts/ChartDataItem.cs` | 通用圖表資料點 `ChartDataItem` + Drill-down 明細 `ChartDetailItem` |
 | `Models/Charts/ChartIds.cs` | 各模組圖表 ID 常數 |
 | `Models/Charts/ChartDefinition.cs` | `ChartDefinition` 模型 + `ChartCategory` 常數 + `ChartSeriesTypeInfo` |
 | `Data/Charts/ChartRegistry.cs` | 全域圖表登記表 |
-| `Components/Shared/Chart/GenericChartModalComponent.razor` | 通用圖表 Modal（含圖表類型切換） |
+| `Components/Shared/Chart/GenericChartModalComponent.razor` | 通用圖表 Modal（含圖表類型切換、Drill-down 明細面板） |
 
 ### 客戶模組
 
 | 路徑 | 說明 |
 |------|------|
-| `Services/Customers/ICustomerChartService.cs` | 6 個查詢方法定義 |
+| `Services/Customers/ICustomerChartService.cs` | 6 個圖表查詢 + 4 個 Drill-down 明細查詢方法定義 |
 | `Services/Customers/CustomerChartService.cs` | EF Core 查詢實作 |
 | `Components/Pages/Customers/CustomerChartModalComponent.razor` | 薄包裝器（摘要卡片 + 呼叫 GenericChartModalComponent） |
 | `Data/ServiceRegistration.cs` | DI 容器中的 Service 註冊 |
@@ -132,18 +132,36 @@ AppDbContext（Customers / Employees / PaymentMethods）
 ```razor
 @using ApexCharts                          ← 只在這裡
 @using ERPCore2.Data.Charts
+@using ERPCore2.Models.Charts
+@using ERPCore2.Components.Shared.Table
 @inject IServiceProvider ServiceProvider
 ```
 
 模組包裝器（`CustomerChartModalComponent.razor`）頂端：
 ```razor
-@using ERPCore2.Models.Charts              ← 已由 _Imports.razor 全域引入，可省略
 @using ERPCore2.Services.Customers
 @inject ICustomerChartService ChartService
 ```
 
 > `_Imports.razor` 已全域加入 `@using ERPCore2.Models.Charts` 與 `@using ERPCore2.Components.Shared.Chart`，
 > 模組包裝器不需再重複引入這兩個 namespace。
+
+### ApexChart 參數必須使用穩定物件參考（critical）
+
+`ApexChart` 的 `Options` 與 `OnDataPointSelection` 若每次 re-render 傳入**新物件**，
+`ApexChart` 會偵測到參數改變 → 呼叫 `chart.updateOptions()` 重新初始化 JS → **事件監聽器失效** → 後續點擊無反應。
+
+`GenericChartModalComponent` 透過兩個快取字典解決此問題：
+
+```csharp
+// Options 快取：SeriesType → 對應選項物件（初始化一次後不再重建）
+private readonly Dictionary<SeriesType, ApexChartOptions<ChartDataItem>> _optionsCache = new();
+
+// Callback 快取：ChartId → 穩定的 EventCallback 實例（LoadDataAsync 時建立一次）
+private readonly Dictionary<string, EventCallback<SelectedData<ChartDataItem>>> _callbackCache = new();
+```
+
+**務必使用 `GetCachedOptions(selectedType)` 而非每次建立新的 Options 物件。**
 
 ### DbContext 取得方式
 
@@ -174,6 +192,14 @@ public class ChartDataItem
     public decimal Value { get; set; }                  // 數值
 }
 
+// Drill-down 明細項目（點擊圖表區塊後顯示的清單）
+public class ChartDetailItem
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;   // 顯示名稱
+    public string? SubLabel { get; set; }               // 代碼（如客戶代碼）
+}
+
 // 客戶模組專用摘要卡片資料（不通用）
 public class CustomerChartSummary
 {
@@ -185,7 +211,7 @@ public class CustomerChartSummary
 }
 ```
 
-> `ChartDataItem` 為跨模組共用，所有模組的 Chart Service 均回傳 `List<ChartDataItem>`。
+> `ChartDataItem` 與 `ChartDetailItem` 為跨模組共用，所有模組的 Chart Service 均回傳這兩個型別。
 > 摘要模型（如 `CustomerChartSummary`）為各模組自行定義，放在 `Models/Charts/` 中。
 
 ---
@@ -199,14 +225,24 @@ public class CustomerChartSummary
 ```csharp
 public interface ICustomerChartService
 {
-    Task<List<ChartDataItem>> GetCustomersByAccountManagerAsync();   // 業務負責人
-    Task<List<ChartDataItem>> GetCustomersByPaymentMethodAsync();    // 付款方式
-    Task<List<ChartDataItem>> GetCustomersByMonthAsync(int months);  // 每月趨勢
-    Task<List<ChartDataItem>> GetCustomersByActiveStatusAsync();     // 啟用狀態
-    Task<List<ChartDataItem>> GetCustomersByCreditLimitRangeAsync(); // 信用額度
-    Task<CustomerChartSummary> GetSummaryAsync();                    // 摘要（可選）
+    // 圖表資料
+    Task<List<ChartDataItem>> GetCustomersByAccountManagerAsync();
+    Task<List<ChartDataItem>> GetCustomersByPaymentMethodAsync();
+    Task<List<ChartDataItem>> GetCustomersByMonthAsync(int months = 12);
+    Task<List<ChartDataItem>> GetCustomersByActiveStatusAsync();
+    Task<List<ChartDataItem>> GetCustomersByCreditLimitRangeAsync();
+    Task<CustomerChartSummary> GetSummaryAsync();
+
+    // Drill-down 明細查詢（對應各圖表 DetailFetcher）
+    Task<List<ChartDetailItem>> GetCustomerDetailsByAccountManagerAsync(string label);
+    Task<List<ChartDetailItem>> GetCustomerDetailsByPaymentMethodAsync(string label);
+    Task<List<ChartDetailItem>> GetCustomerDetailsByStatusAsync(string label);
+    Task<List<ChartDetailItem>> GetCustomerDetailsByCreditLimitRangeAsync(string label);
 }
 ```
+
+> `label` 參數為使用者點擊的圖表區塊標籤，與 `ChartDataItem.Label` 一致。
+> 月趨勢圖（`GetCustomersByMonthAsync`）不需要 Drill-down，無對應明細方法。
 
 ### JOIN 查詢模式（左外連接）
 
@@ -256,17 +292,18 @@ for (int i = months - 1; i >= 0; i--)
 ```csharp
 public class ChartDefinition
 {
-    public string ChartId { get; set; }                               // 唯一 ID（如 "CU001"）
-    public string Title { get; set; }                                 // 頁籤標題
-    public string Category { get; set; }                              // ChartCategory 常數
-    public int SortOrder { get; set; }                                // 頁籤排序
-    public SeriesType DefaultSeriesType { get; set; }                 // 預設圖表類型
-    public List<SeriesType> AllowedSeriesTypes { get; set; }          // 使用者可切換的類型
-    public Func<IServiceProvider, Task<List<ChartDataItem>>> DataFetcher { get; set; }  // 資料來源
+    public string ChartId { get; set; }                                // 唯一 ID（如 "CU001"）
+    public string Title { get; set; }                                  // 頁籤標題
+    public string Category { get; set; }                               // ChartCategory 常數
+    public int SortOrder { get; set; }                                 // 頁籤排序
+    public SeriesType DefaultSeriesType { get; set; }                  // 預設圖表類型
+    public List<SeriesType> AllowedSeriesTypes { get; set; }           // 使用者可切換的類型
+    public Func<IServiceProvider, Task<List<ChartDataItem>>> DataFetcher { get; set; }               // 圖表資料來源（必填）
+    public Func<IServiceProvider, string, Task<List<ChartDetailItem>>>? DetailFetcher { get; set; }  // Drill-down 明細（選填）
 }
 ```
 
-### 登記範例（客戶圖表）
+### 登記範例（含 Drill-down）
 
 ```csharp
 _definitions.Add(new ChartDefinition
@@ -277,7 +314,21 @@ _definitions.Add(new ChartDefinition
     SortOrder          = 1,
     DefaultSeriesType  = SeriesType.Donut,
     AllowedSeriesTypes = new() { SeriesType.Donut, SeriesType.Pie, SeriesType.Bar, SeriesType.Treemap, SeriesType.PolarArea },
-    DataFetcher        = sp => sp.GetRequiredService<ICustomerChartService>().GetCustomersByAccountManagerAsync()
+    DataFetcher        = sp => sp.GetRequiredService<ICustomerChartService>().GetCustomersByAccountManagerAsync(),
+    DetailFetcher      = (sp, label) => sp.GetRequiredService<ICustomerChartService>().GetCustomerDetailsByAccountManagerAsync(label)
+});
+
+// 不需要 Drill-down 的圖表，省略 DetailFetcher
+_definitions.Add(new ChartDefinition
+{
+    ChartId            = ChartIds.CustomerMonthlyTrend,
+    Title              = "每月新增趨勢",
+    Category           = ChartCategory.Customer,
+    SortOrder          = 3,
+    DefaultSeriesType  = SeriesType.Line,
+    AllowedSeriesTypes = new() { SeriesType.Line, SeriesType.Area },
+    DataFetcher        = sp => sp.GetRequiredService<ICustomerChartService>().GetCustomersByMonthAsync()
+    // DetailFetcher 省略 → 不顯示點擊提示，不支援 Drill-down
 });
 ```
 
@@ -299,13 +350,13 @@ _definitions.Add(new ChartDefinition
 
 ### 現有客戶圖表 ID
 
-| ID | 常數 | 標題 | 預設類型 |
-|----|------|------|---------|
-| CU001 | `ChartIds.CustomerByAccountManager` | 依業務負責人分布 | Donut |
-| CU002 | `ChartIds.CustomerByPaymentMethod` | 依付款方式分布 | Bar |
-| CU003 | `ChartIds.CustomerMonthlyTrend` | 每月新增趨勢 | Line |
-| CU004 | `ChartIds.CustomerByStatus` | 啟用/停用狀態 | Pie |
-| CU005 | `ChartIds.CustomerByCreditLimit` | 信用額度分布 | Bar |
+| ID | 常數 | 標題 | 預設類型 | Drill-down |
+|----|------|------|---------|-----------|
+| CU001 | `ChartIds.CustomerByAccountManager` | 依業務負責人分布 | Donut | ✅ |
+| CU002 | `ChartIds.CustomerByPaymentMethod` | 依付款方式分布 | Bar | ✅ |
+| CU003 | `ChartIds.CustomerMonthlyTrend` | 每月新增趨勢 | Line | ❌ |
+| CU004 | `ChartIds.CustomerByStatus` | 啟用/停用狀態 | Pie | ✅ |
+| CU005 | `ChartIds.CustomerByCreditLimit` | 信用額度分布 | Bar | ✅ |
 
 ---
 
@@ -367,13 +418,18 @@ _definitions.Add(new ChartDefinition
 }
 ```
 
+### Drill-down 行為
+
+`GenericChartModalComponent` 內建 Drill-down 功能，無需模組包裝器做任何額外設定：
+
+- **有 `DetailFetcher`**：圖表下方顯示「點擊圖表區塊可查看明細」提示；點擊後載入明細並以 `InteractiveTableComponent` 呈現（代碼 + 名稱兩欄）
+- **無 `DetailFetcher`**：點擊圖表不觸發任何動作
+- 明細面板有 X 關閉鈕；切換頁籤或切換圖表類型時自動關閉
+- 快速連續點擊不同區塊時，以 `_detailLoadSeq` 防止非同步競爭，確保只呈現最後一次點擊的結果
+
 ### 圖表類型切換機制
 
-`GenericChartModalComponent` 內部維護：
-```csharp
-private Dictionary<string, SeriesType> _selectedTypes; // chartId → 目前選擇的 SeriesType
-```
-
+`GenericChartModalComponent` 內部維護每個圖表的當前 SeriesType。
 切換時用 `@key` 強制重新建立 ApexChart 組件（清除舊資料、重新渲染）：
 ```razor
 <ApexChart @key="@($"{chart.ChartId}_{selectedType}")"
@@ -391,11 +447,12 @@ private Dictionary<string, SeriesType> _selectedTypes; // chartId → 目前選�
 
 <ApexChart TItem="ChartDataItem"
            Title="圖表標題"
-           Options="@options">
+           Options="@GetCachedOptions(selectedType)"
+           OnDataPointSelection="@(_callbackCache.GetValueOrDefault(chart.ChartId))">
     <ApexPointSeries TItem="ChartDataItem"
                      Items="@data"
                      Name="系列名稱"
-                     SeriesType="SeriesType.Donut"
+                     SeriesType="@selectedType"
                      XValue="@(e => e.Label)"
                      YValue="@(e => (decimal?)e.Value)" />
 </ApexChart>
@@ -403,9 +460,13 @@ private Dictionary<string, SeriesType> _selectedTypes; // chartId → 目前選�
 
 > `YValue` 必須回傳 `decimal?`（可為 null）
 
-### GetDefaultOptions 內建設定
+> **重要**：`Options` 必須傳入快取物件（`GetCachedOptions`），`OnDataPointSelection` 必須傳入快取的 `EventCallback`（`_callbackCache`）。
+> 若每次 render 傳入新物件，ApexChart 會重新初始化 JS 導致事件監聽器失效，後續點擊完全無反應。
 
-`GenericChartModalComponent` 的 `GetDefaultOptions(SeriesType)` 方法依圖表類型自動套用合適設定：
+### BuildDefaultOptions 內建設定
+
+`GenericChartModalComponent` 的 `BuildDefaultOptions(SeriesType)` 依圖表類型自動套用合適設定，
+結果被快取於 `_optionsCache`，透過 `GetCachedOptions(type)` 取得：
 
 | SeriesType | 自動套用設定 |
 |-----------|------------|
@@ -484,6 +545,9 @@ public void OpenCustomerCharts()
 ```csharp
 // ICustomerChartService.cs
 Task<List<ChartDataItem>> GetCustomersByRegionAsync();
+
+// 若需要 Drill-down，一併新增明細方法
+Task<List<ChartDetailItem>> GetCustomerDetailsByRegionAsync(string label);
 ```
 
 ### (2) 在 Service 實作查詢
@@ -494,6 +558,13 @@ public async Task<List<ChartDataItem>> GetCustomersByRegionAsync()
 {
     using var context = await _factory.CreateDbContextAsync();
     // ... EF Core 查詢，回傳 List<ChartDataItem>
+}
+
+public async Task<List<ChartDetailItem>> GetCustomerDetailsByRegionAsync(string label)
+{
+    using var context = await _factory.CreateDbContextAsync();
+    // ... 依 label 篩選，回傳 List<ChartDetailItem>
+    // ChartDetailItem.SubLabel = 客戶代碼，ChartDetailItem.Name = 客戶名稱
 }
 ```
 
@@ -514,7 +585,9 @@ _definitions.Add(new ChartDefinition
     SortOrder          = 6,
     DefaultSeriesType  = SeriesType.Bar,
     AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Pie, SeriesType.Donut, SeriesType.Treemap },
-    DataFetcher        = sp => sp.GetRequiredService<ICustomerChartService>().GetCustomersByRegionAsync()
+    DataFetcher        = sp => sp.GetRequiredService<ICustomerChartService>().GetCustomersByRegionAsync(),
+    DetailFetcher      = (sp, label) => sp.GetRequiredService<ICustomerChartService>().GetCustomerDetailsByRegionAsync(label)
+    // 若不需要 Drill-down，省略 DetailFetcher 即可
 });
 ```
 
@@ -533,7 +606,7 @@ Services/Suppliers/ISupplierChartService.cs
 Services/Suppliers/SupplierChartService.cs
 ```
 
-回傳型別統一為 `List<ChartDataItem>`，無需建立新的資料模型。
+圖表資料方法回傳 `List<ChartDataItem>`；Drill-down 明細方法回傳 `List<ChartDetailItem>`，無需建立新的資料模型。
 
 ### 2. 在 ServiceRegistration.cs 註冊
 
@@ -560,7 +633,8 @@ _definitions.Add(new ChartDefinition
     SortOrder          = 1,
     DefaultSeriesType  = SeriesType.Donut,
     AllowedSeriesTypes = new() { SeriesType.Donut, SeriesType.Pie, SeriesType.Bar },
-    DataFetcher        = sp => sp.GetRequiredService<ISupplierChartService>().GetSuppliersByCategoryAsync()
+    DataFetcher        = sp => sp.GetRequiredService<ISupplierChartService>().GetSuppliersByCategoryAsync(),
+    DetailFetcher      = (sp, label) => sp.GetRequiredService<ISupplierChartService>().GetSupplierDetailsByCategoryAsync(label)
 });
 ```
 

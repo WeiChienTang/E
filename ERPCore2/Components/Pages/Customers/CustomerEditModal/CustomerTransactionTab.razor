@@ -1,0 +1,37 @@
+@* 客戶交易紀錄 Tab - 自包含元件，主組件透過 @ref 協調 *@
+
+<CustomerTransactionTable CustomerId="@_customerId" />
+
+@code {
+    /// <summary>目前客戶 ID（供初始載入與參數直接綁定時使用）</summary>
+    [Parameter] public int? CustomerId { get; set; }
+
+    // ===== 內部狀態 =====
+    private int? _customerId;
+
+    // ===== 生命週期 =====
+
+    protected override void OnParametersSet()
+    {
+        // 透過參數同步 — 確保初始開啟 Modal 時 (LoadAllData 路徑) 也能正確載入
+        // 導航切換時則由主組件透過 LoadAsync 明確控制
+        _customerId = CustomerId;
+    }
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    /// <summary>載入指定客戶的交易紀錄（導航切換時使用）</summary>
+    public Task LoadAsync(int customerId)
+    {
+        _customerId = customerId;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>清除交易紀錄（切換至新增模式時使用）</summary>
+    public void Clear()
+    {
+        _customerId = null;
+        StateHasChanged();
+    }
+}

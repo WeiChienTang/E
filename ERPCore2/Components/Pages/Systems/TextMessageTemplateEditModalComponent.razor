@@ -271,120 +271,101 @@
         {
             new()
             {
-                Title = "問候語（第一段）",
-                TitleCssClass = "text-primary fw-bold",
+                Title = "",
                 Order = 1,
-                Content = CreateHeaderTextContent()
-            },
-            new()
-            {
-                Title = "商品明細（第二段）",
-                TitleCssClass = "text-primary fw-bold",
-                Order = 2,
-                Content = CreateDetailFormatContent()
-            },
-            new()
-            {
-                Title = "結語（第三段）",
-                TitleCssClass = "text-primary fw-bold",
-                Order = 3,
-                Content = CreateFooterTextContent()
+                Content = CreateMainContent()
             },
             new()
             {
                 Title = "",
-                Order = 4,
+                Order = 2,
                 Content = CreatePreviewContent()
             }
         };
     }
 
     /// <summary>
-    /// 建立問候語區塊（第一段）
+    /// 三欄並排：問候語（第一段）| 商品明細（第二段）| 結語（第三段），下方顯示支援變數
     /// </summary>
-    private RenderFragment CreateHeaderTextContent() => __builder =>
+    private RenderFragment CreateMainContent() => __builder =>
     {
-        <div class="mb-3">
-            <textarea class="form-control" rows="4" 
-                      placeholder="請輸入問候語..."
-                      @bind="headerTextValue" 
-                      @bind:event="oninput" />
-            <div class="form-text">
-                <i class="bi bi-code-square me-1"></i>
-                <strong>支援變數：</strong>
-                <code>{supplierName}</code> 供應商、
-                <code>{orderCode}</code> 單號、
-                <code>{orderDate}</code> 日期、
-                <code>{companyName}</code> 本公司
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-bold">問候語（第一段）</label>
+                <textarea class="form-control" rows="6"
+                          placeholder="請輸入問候語..."
+                          @bind="headerTextValue"
+                          @bind:event="oninput" />
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-bold">商品明細（第二段）</label>
+                <div class="row row-cols-2 g-1 mt-1">
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showProductCode"
+                                   @bind="detailFormatConfig.ShowProductCode" />
+                            <label class="form-check-label" for="showProductCode">編號</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showProductName"
+                                   @bind="detailFormatConfig.ShowProductName" />
+                            <label class="form-check-label" for="showProductName">品名</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showQuantity"
+                                   @bind="detailFormatConfig.ShowQuantity" />
+                            <label class="form-check-label" for="showQuantity">數量</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showUnit"
+                                   @bind="detailFormatConfig.ShowUnit" />
+                            <label class="form-check-label" for="showUnit">單位</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showUnitPrice"
+                                   @bind="detailFormatConfig.ShowUnitPrice" />
+                            <label class="form-check-label" for="showUnitPrice">單價</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showSubtotal"
+                                   @bind="detailFormatConfig.ShowSubtotal" />
+                            <label class="form-check-label" for="showSubtotal">小計</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showRemark"
+                                   @bind="detailFormatConfig.ShowRemark" />
+                            <label class="form-check-label" for="showRemark">備註</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-bold">結語（第三段）</label>
+                <textarea class="form-control" rows="6"
+                          placeholder="請輸入結語..."
+                          @bind="footerTextValue"
+                          @bind:event="oninput" />
             </div>
         </div>
-    };
-
-    /// <summary>
-    /// 建立明細格式設定區塊
-    /// </summary>
-    private RenderFragment CreateDetailFormatContent() => __builder =>
-    {
-        <div class="d-flex flex-wrap align-items-center gap-3">
-            <span class="text-muted small">
-                <i class="bi bi-info-circle me-1"></i>勾選要顯示的欄位：
-            </span>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="showProductCode"
-                       @bind="detailFormatConfig.ShowProductCode" />
-                <label class="form-check-label" for="showProductCode">編號</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="showProductName"
-                       @bind="detailFormatConfig.ShowProductName" />
-                <label class="form-check-label" for="showProductName">品名</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="showQuantity"
-                       @bind="detailFormatConfig.ShowQuantity" />
-                <label class="form-check-label" for="showQuantity">數量</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="showUnit"
-                       @bind="detailFormatConfig.ShowUnit" />
-                <label class="form-check-label" for="showUnit">單位</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="showUnitPrice"
-                       @bind="detailFormatConfig.ShowUnitPrice" />
-                <label class="form-check-label" for="showUnitPrice">單價</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="showSubtotal"
-                       @bind="detailFormatConfig.ShowSubtotal" />
-                <label class="form-check-label" for="showSubtotal">小計</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="showRemark"
-                       @bind="detailFormatConfig.ShowRemark" />
-                <label class="form-check-label" for="showRemark">備註</label>
-            </div>
-        </div>
-    };
-
-    /// <summary>
-    /// 建立結語區塊（第三段）
-    /// </summary>
-    private RenderFragment CreateFooterTextContent() => __builder =>
-    {
-        <div class="mb-3">
-            <textarea class="form-control" rows="4" 
-                      placeholder="請輸入結語..."
-                      @bind="footerTextValue" 
-                      @bind:event="oninput" />
-            <div class="form-text">
-                <i class="bi bi-code-square me-1"></i>
-                <strong>支援變數：</strong>
-                <code>{supplierName}</code> 供應商、
-                <code>{orderCode}</code> 單號、
-                <code>{orderDate}</code> 日期、
-                <code>{companyName}</code> 本公司
-            </div>
+        <div class="form-text mt-2">
+            <i class="bi bi-code-square me-1"></i>
+            <strong>支援變數：</strong>
+            <code>{supplierName}</code> 供應商、
+            <code>{orderCode}</code> 單號、
+            <code>{orderDate}</code> 日期、
+            <code>{companyName}</code> 本公司
         </div>
     };
 

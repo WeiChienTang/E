@@ -70,7 +70,11 @@
     
     // 批次列印 Modal 相關狀態
     private bool showBatchPrintModal = false;
-    
+
+    // 從 URL 直接開啟指定單據的 Edit Modal（由 CustomerTransactionTable 導航時使用）
+    [Parameter, SupplyParameterFromQuery(Name = "editId")]
+    public int? EditId { get; set; }
+
     // Modal 處理器
     private ModalHandler<Quotation, GenericIndexPageComponent<Quotation, IQuotationService>> modalHandler = default!;
     
@@ -85,6 +89,17 @@
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && EditId.HasValue)
+        {
+            editingQuotationId = EditId.Value;
+            showEditModal = true;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
 
     protected override async Task OnInitializedAsync()
     {

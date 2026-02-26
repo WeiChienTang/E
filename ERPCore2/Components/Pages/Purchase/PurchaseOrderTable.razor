@@ -4,6 +4,7 @@
 @using ERPCore2.Models.Enums
 @inject IProductService ProductService
 @inject IPurchaseOrderDetailService PurchaseOrderDetailService
+@inject IProductSupplierService ProductSupplierService
 @inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
@@ -121,6 +122,9 @@ else
 
     private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
     private int? _previousSelectedSupplierId = null;
+
+    // ===== 廠商已知商品（供應商品目錄）=====
+    private HashSet<int> _supplierKnownProductIds = new();
     
     // ===== 資料載入狀態控制 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
@@ -143,25 +147,46 @@ else
     {
         // 初始化追蹤變數
         _previousSelectedSupplierId = SelectedSupplierId;
-        
+
         // 修正：如果父元件正在載入中，跳過資料載入
         // 🔥 重要：此時不設定 _previousDataVersion，讓 OnParametersSetAsync 能夠偵測到變化
         if (IsParentLoading)
         {
             return;
         }
-        
+
         // 只有在成功載入後才設定 _previousDataVersion
         _previousDataVersion = DataVersion;
-        
+
+        // 載入廠商已知商品（供應商品目錄）
+        if (SelectedSupplierId.HasValue && SelectedSupplierId.Value > 0)
+            await LoadSupplierKnownProductsAsync(SelectedSupplierId.Value);
+
         // 修正 3：首次掛載時載入資料
         // 導航時因為移除了 @key，元件不會重建，OnInitializedAsync 只執行一次
         // 後續導航由 OnParametersSetAsync + DataVersion 變更來處理
-        
+
         await LoadExistingDetailsAsync();
-        
+
         // 檢查是否有歷史採購記錄
         await CheckLastPurchaseRecordAsync();
+    }
+
+    /// <summary>
+    /// 載入廠商已知商品 ID（供應商品目錄），用於下拉選單標示 ★
+    /// </summary>
+    private async Task LoadSupplierKnownProductsAsync(int supplierId)
+    {
+        try
+        {
+            var bindings = await ProductSupplierService.GetBySupplierIdAsync(supplierId);
+            _supplierKnownProductIds = bindings.Select(b => b.ProductId).ToHashSet();
+        }
+        catch
+        {
+            // 非關鍵功能：載入失敗不影響採購作業，只是不顯示 ★ 標示
+            _supplierKnownProductIds = new HashSet<int>();
+        }
     }
 
     // 防止重入 flag
@@ -203,18 +228,23 @@ else
             // 只有在 DataVersion 沒變的情況下，才檢查 supplierChanged
             // 這主要用於使用者在同一筆記錄內手動更換廠商的情況
             bool supplierChanged = _previousSelectedSupplierId != SelectedSupplierId;
-            
+
             if (supplierChanged)
             {
                 _previousSelectedSupplierId = SelectedSupplierId;
-                
+
                 _isLoadingDetails = true;
                 try
                 {
+                    // 切換廠商時重載已知商品目錄
+                    _supplierKnownProductIds.Clear();
+                    if (SelectedSupplierId.HasValue && SelectedSupplierId.Value > 0)
+                        await LoadSupplierKnownProductsAsync(SelectedSupplierId.Value);
+
                     // 如果更換廠商，需要清空現有選項並重新載入
                     ProductItems.Clear();
                     await LoadExistingDetailsAsync();
-                    
+
                     // 檢查是否有歷史採購記錄
                     await CheckLastPurchaseRecordAsync();
                 }
@@ -271,7 +301,8 @@ else
             ItemDisplayFormatter = (item) =>
             {
                 var product = (Product)item;
-                return $"[{product.Code}] {product.Name}";
+                var prefix = _supplierKnownProductIds.Contains(product.Id) ? "★ " : "";
+                return $"{prefix}[{product.Code}] {product.Name}";
             },
             IsDisabledFunc = item =>
             {
@@ -790,12 +821,12 @@ else
         
         if (string.IsNullOrWhiteSpace(searchValue))
         {
-            // 空白搜尋：顯示前20筆
+            // 空白搜尋：顯示前20筆（已知商品在前）
             item.FilteredProducts = availableProducts.Take(20).ToList();
         }
         else
         {
-            // 篩選符合的商品（編號或名稱包含搜尋字串）
+            // 篩選符合的商品（編號或名稱包含搜尋字串），已知商品仍排在前
             item.FilteredProducts = availableProducts
                 .Where(p => (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
                            (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
@@ -915,7 +946,7 @@ else
     }
 
     /// <summary>
-    /// 取得可用商品列表（根據廠商過濾，且只顯示外購商品）
+    /// 取得可用商品列表（廠商已知商品排前，其餘依商品編號排序）
     /// </summary>
     private List<Product> GetAvailableProducts()
     {
@@ -923,8 +954,11 @@ else
         {
             return new List<Product>();
         }
-        
-        return Products.ToList();
+
+        return Products
+            .OrderByDescending(p => _supplierKnownProductIds.Contains(p.Id))
+            .ThenBy(p => p.Code)
+            .ToList();
     }
     
     /// <summary>

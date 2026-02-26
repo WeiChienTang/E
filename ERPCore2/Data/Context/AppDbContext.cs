@@ -25,6 +25,8 @@ namespace ERPCore2.Data.Context
       public DbSet<Bank> Banks { get; set; }            
       public DbSet<Employee> Employees { get; set; }
       public DbSet<EmployeeTool> EmployeeTools { get; set; }
+      public DbSet<EmployeeLicense> EmployeeLicenses { get; set; }
+      public DbSet<EmployeeTrainingRecord> EmployeeTrainingRecords { get; set; }
       public DbSet<EmployeePosition> EmployeePositions { get; set; }
       public DbSet<Department> Departments { get; set; }
       public DbSet<Role> Roles { get; set; }

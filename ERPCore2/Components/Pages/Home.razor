@@ -192,11 +192,12 @@
 
 </div>
 
-@* 新增項目選擇 Modal（雙 Tab：頁面連結 / 快速功能） *@
+@* 新增項目選擇 Modal（三個 Tab：頁面連結 / 快速功能 / 圖表介面） *@
 <DashboardWidgetPickerModal IsVisible="@showWidgetPicker"
                             IsVisibleChanged="@((bool v) => showWidgetPicker = v)"
                             AvailableShortcutWidgets="@availableShortcutWidgets"
                             AvailableQuickActionWidgets="@availableQuickActionWidgets"
+                            AvailableChartWidgets="@availableChartWidgets"
                             ExistingWidgetKeys="@currentPickerExistingKeys"
                             OnConfirm="@HandleAddWidgets" />
 
@@ -298,6 +299,7 @@
     private bool showWidgetPicker = false;
     private List<NavigationItem> availableShortcutWidgets = new();
     private List<NavigationItem> availableQuickActionWidgets = new();
+    private List<NavigationItem> availableChartWidgets = new();
     private HashSet<string> currentPickerExistingKeys = new();
     private int currentPickerPanelId = 0;
 
@@ -634,9 +636,17 @@
         {
             currentPickerPanelId = panelId;
             
-            // 同時載入兩種類型的可用項目
-            availableShortcutWidgets = await DashboardService.GetAvailableWidgetsAsync(currentEmployeeId, false);
-            availableQuickActionWidgets = await DashboardService.GetAvailableWidgetsAsync(currentEmployeeId, true);
+            // 同時載入三種類型的可用項目
+            var loadTasks = new[]
+            {
+                DashboardService.GetAvailableWidgetsAsync(currentEmployeeId, false),
+                DashboardService.GetAvailableWidgetsAsync(currentEmployeeId, true),
+                DashboardService.GetAvailableChartWidgetsAsync(currentEmployeeId)
+            };
+            await Task.WhenAll(loadTasks);
+            availableShortcutWidgets = loadTasks[0].Result;
+            availableQuickActionWidgets = loadTasks[1].Result;
+            availableChartWidgets = loadTasks[2].Result;
             currentPickerExistingKeys = await DashboardService.GetPanelExistingKeysAsync(panelId);
             
             showWidgetPicker = true;

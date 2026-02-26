@@ -1,0 +1,491 @@
+@* 員工教育訓練 Tab - 包含受訓紀錄與證照管理兩個區段 *@
+@inject IEmployeeTrainingRecordService EmployeeTrainingRecordService
+@inject IEmployeeLicenseService EmployeeLicenseService
+@inject INotificationService NotificationService
+
+@* ===== 受訓紀錄區段 ===== *@
+<div class="training-section mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        <h6 class="mb-0 fw-semibold text-secondary">
+            <i class="bi bi-journal-text me-1"></i>受訓紀錄
+        </h6>
+        <GenericButtonComponent Text="新增受訓紀錄"
+                               Variant="ButtonVariant.DarkBlue"
+                               Size="ButtonSize.Small"
+                               OnClick="@HandleAddTrainingRecord"
+                               Title="新增一筆受訓紀錄" />
+    </div>
+
+    <InteractiveTableComponent TItem="EmployeeTrainingRecord"
+                              Items="@trainingRecords"
+                              ColumnDefinitions="@GetTrainingColumnDefinitions()"
+                              ShowHeader="true"
+                              ShowRowNumbers="true"
+                              IsStriped="true"
+                              IsHoverable="true"
+                              IsBordered="true"
+                              IsReadOnly="true"
+                              ShowBuiltInActions="true"
+                              ShowBuiltInDeleteButton="false"
+                              EnableAutoEmptyRow="false"
+                              EmptyMessage="尚無受訓紀錄"
+                              CustomActionsTemplate="@GetTrainingActionsTemplate()"
+                              ActionsColumnWidth="80px" />
+</div>
+
+@* ===== 證照管理區段 ===== *@
+<div class="license-section">
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        <h6 class="mb-0 fw-semibold text-secondary">
+            <i class="bi bi-patch-check me-1"></i>證照管理
+        </h6>
+        <GenericButtonComponent Text="新增證照"
+                               Variant="ButtonVariant.DarkBlue"
+                               Size="ButtonSize.Small"
+                               OnClick="@HandleAddLicense"
+                               Title="新增一筆證照紀錄" />
+    </div>
+
+    <InteractiveTableComponent TItem="EmployeeLicense"
+                              Items="@licenses"
+                              ColumnDefinitions="@GetLicenseColumnDefinitions()"
+                              ShowHeader="true"
+                              ShowRowNumbers="true"
+                              IsStriped="true"
+                              IsHoverable="true"
+                              IsBordered="true"
+                              IsReadOnly="true"
+                              ShowBuiltInActions="true"
+                              ShowBuiltInDeleteButton="false"
+                              EnableAutoEmptyRow="false"
+                              EmptyMessage="尚無證照紀錄"
+                              CustomActionsTemplate="@GetLicenseActionsTemplate()"
+                              ActionsColumnWidth="80px" />
+</div>
+
+@* ===== 受訓紀錄 Modal ===== *@
+<EmployeeTrainingRecordEditModalComponent IsVisible="@isTrainingModalVisible"
+                                         IsVisibleChanged="@HandleTrainingModalVisibilityChanged"
+                                         EmployeeTrainingRecordId="@editingTrainingRecordId"
+                                         PrefilledEmployeeId="@EmployeeId"
+                                         OnEmployeeTrainingRecordSaved="@OnTrainingRecordSaved"
+                                         OnCancel="@HandleTrainingModalCancel" />
+
+@* ===== 受訓紀錄刪除確認 ===== *@
+<GenericConfirmModalComponent IsVisible="@showDeleteTrainingModal"
+                              IsVisibleChanged="@((bool v) => showDeleteTrainingModal = v)"
+                              Title="刪除受訓紀錄"
+                              Icon="bi-trash"
+                              Message="確定要刪除此筆受訓紀錄嗎？"
+                              ConfirmButtonText="確認刪除"
+                              CancelButtonText="取消"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@HandleConfirmDeleteTrainingRecord"
+                              OnCancel="@(() => showDeleteTrainingModal = false)" />
+
+@* ===== 證照 Modal ===== *@
+<EmployeeLicenseEditModalComponent IsVisible="@isLicenseModalVisible"
+                                   IsVisibleChanged="@HandleLicenseModalVisibilityChanged"
+                                   EmployeeLicenseId="@editingLicenseId"
+                                   PrefilledEmployeeId="@EmployeeId"
+                                   OnEmployeeLicenseSaved="@OnLicenseSaved"
+                                   OnCancel="@HandleLicenseModalCancel" />
+
+@* ===== 證照刪除確認 ===== *@
+<GenericConfirmModalComponent IsVisible="@showDeleteLicenseModal"
+                              IsVisibleChanged="@((bool v) => showDeleteLicenseModal = v)"
+                              Title="刪除證照紀錄"
+                              Icon="bi-trash"
+                              Message="確定要刪除此筆證照紀錄嗎？"
+                              ConfirmButtonText="確認刪除"
+                              CancelButtonText="取消"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@HandleConfirmDeleteLicense"
+                              OnCancel="@(() => showDeleteLicenseModal = false)" />
+
+@code {
+    [Parameter] public int? EmployeeId { get; set; }
+
+    // ===== 內部狀態 =====
+    private List<EmployeeTrainingRecord> trainingRecords = new();
+    private List<EmployeeLicense> licenses = new();
+
+    // 受訓紀錄 Modal 狀態
+    private bool isTrainingModalVisible = false;
+    private int? editingTrainingRecordId = null;
+    private bool showDeleteTrainingModal = false;
+    private EmployeeTrainingRecord? deletingTrainingRecord = null;
+
+    // 證照 Modal 狀態
+    private bool isLicenseModalVisible = false;
+    private int? editingLicenseId = null;
+    private bool showDeleteLicenseModal = false;
+    private EmployeeLicense? deletingLicense = null;
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    /// <summary>載入指定員工的教育訓練資料</summary>
+    public async Task LoadAsync(int employeeId)
+    {
+        trainingRecords = await EmployeeTrainingRecordService.GetByEmployeeAsync(employeeId);
+        licenses = await EmployeeLicenseService.GetByEmployeeAsync(employeeId);
+        StateHasChanged();
+    }
+
+    /// <summary>清除資料（切換至新增模式時使用）</summary>
+    public void Clear()
+    {
+        trainingRecords = new();
+        licenses = new();
+        StateHasChanged();
+    }
+
+    // ===== 受訓紀錄 Modal 處理 =====
+
+    private void HandleAddTrainingRecord()
+    {
+        editingTrainingRecordId = null;
+        isTrainingModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleEditTrainingRecord(EmployeeTrainingRecord record)
+    {
+        editingTrainingRecordId = record.Id;
+        isTrainingModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleDeleteTrainingRecordRequest(EmployeeTrainingRecord record)
+    {
+        deletingTrainingRecord = record;
+        showDeleteTrainingModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleConfirmDeleteTrainingRecord()
+    {
+        if (deletingTrainingRecord == null) return;
+
+        try
+        {
+            var result = await EmployeeTrainingRecordService.DeleteAsync(deletingTrainingRecord.Id);
+            if (result.IsSuccess)
+            {
+                trainingRecords.RemoveAll(r => r.Id == deletingTrainingRecord.Id);
+                await NotificationService.ShowSuccessAsync("受訓紀錄已刪除");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"刪除失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除受訓紀錄時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            deletingTrainingRecord = null;
+            showDeleteTrainingModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnTrainingRecordSaved(EmployeeTrainingRecord savedRecord)
+    {
+        var existingIndex = trainingRecords.FindIndex(r => r.Id == savedRecord.Id);
+        if (existingIndex >= 0)
+            trainingRecords[existingIndex] = savedRecord;
+        else
+            trainingRecords.Insert(0, savedRecord);
+
+        isTrainingModalVisible = false;
+        StateHasChanged();
+    }
+
+    private void HandleTrainingModalVisibilityChanged(bool isVisible)
+    {
+        isTrainingModalVisible = isVisible;
+        StateHasChanged();
+    }
+
+    private void HandleTrainingModalCancel()
+    {
+        isTrainingModalVisible = false;
+        StateHasChanged();
+    }
+
+    // ===== 證照 Modal 處理 =====
+
+    private void HandleAddLicense()
+    {
+        editingLicenseId = null;
+        isLicenseModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleEditLicense(EmployeeLicense license)
+    {
+        editingLicenseId = license.Id;
+        isLicenseModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleDeleteLicenseRequest(EmployeeLicense license)
+    {
+        deletingLicense = license;
+        showDeleteLicenseModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleConfirmDeleteLicense()
+    {
+        if (deletingLicense == null) return;
+
+        try
+        {
+            var result = await EmployeeLicenseService.DeleteAsync(deletingLicense.Id);
+            if (result.IsSuccess)
+            {
+                licenses.RemoveAll(l => l.Id == deletingLicense.Id);
+                await NotificationService.ShowSuccessAsync("證照紀錄已刪除");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"刪除失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除證照紀錄時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            deletingLicense = null;
+            showDeleteLicenseModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnLicenseSaved(EmployeeLicense savedLicense)
+    {
+        var existingIndex = licenses.FindIndex(l => l.Id == savedLicense.Id);
+        if (existingIndex >= 0)
+            licenses[existingIndex] = savedLicense;
+        else
+            licenses.Insert(0, savedLicense);
+
+        isLicenseModalVisible = false;
+        StateHasChanged();
+    }
+
+    private void HandleLicenseModalVisibilityChanged(bool isVisible)
+    {
+        isLicenseModalVisible = isVisible;
+        StateHasChanged();
+    }
+
+    private void HandleLicenseModalCancel()
+    {
+        isLicenseModalVisible = false;
+        StateHasChanged();
+    }
+
+    // ===== 欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetTrainingColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = "課程名稱",
+                PropertyName = nameof(EmployeeTrainingRecord.CourseName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "160px"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "受訓日期",
+                PropertyName = nameof(EmployeeTrainingRecord.TrainingDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "105px",
+                DisplayFormatter = item =>
+                {
+                    if (item is EmployeeTrainingRecord r)
+                        return r.TrainingDate.ToString("yyyy-MM-dd");
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "完成日期",
+                PropertyName = nameof(EmployeeTrainingRecord.CompletedDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "105px",
+                DisplayFormatter = item =>
+                {
+                    if (item is EmployeeTrainingRecord r && r.CompletedDate.HasValue)
+                        return r.CompletedDate.Value.ToString("yyyy-MM-dd");
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "時數",
+                PropertyName = nameof(EmployeeTrainingRecord.TrainingHours),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "65px",
+                DisplayFormatter = item =>
+                {
+                    if (item is EmployeeTrainingRecord r && r.TrainingHours.HasValue)
+                        return r.TrainingHours.Value.ToString("0.#");
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "訓練機構",
+                PropertyName = nameof(EmployeeTrainingRecord.TrainingOrganization),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "130px",
+                NullDisplayText = "-"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "結果",
+                PropertyName = nameof(EmployeeTrainingRecord.Result),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px",
+                NullDisplayText = "-"
+            }
+        };
+    }
+
+    private List<InteractiveColumnDefinition> GetLicenseColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = "證照名稱",
+                PropertyName = nameof(EmployeeLicense.LicenseName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "160px"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "證照字號",
+                PropertyName = nameof(EmployeeLicense.LicenseNumber),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                NullDisplayText = "-"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "取得日期",
+                PropertyName = nameof(EmployeeLicense.IssuedDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "105px",
+                DisplayFormatter = item =>
+                {
+                    if (item is EmployeeLicense l)
+                        return l.IssuedDate.ToString("yyyy-MM-dd");
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "到期日",
+                PropertyName = nameof(EmployeeLicense.ExpiryDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "105px",
+                DisplayFormatter = item =>
+                {
+                    if (item is EmployeeLicense l)
+                    {
+                        if (!l.ExpiryDate.HasValue)
+                            return "永久有效";
+                        return l.ExpiryDate.Value.ToString("yyyy-MM-dd");
+                    }
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "狀態",
+                PropertyName = nameof(EmployeeLicense.ExpiryDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px",
+                DisplayFormatter = item =>
+                {
+                    if (item is EmployeeLicense l)
+                        return GetLicenseStatusText(l);
+                    return "-";
+                }
+            }
+        };
+    }
+
+    private RenderFragment<EmployeeTrainingRecord>? GetTrainingActionsTemplate()
+    {
+        return record => __builder =>
+        {
+            <div class="d-flex gap-1">
+                <GenericButtonComponent IconClass="bi bi-pencil-square text-white"
+                                      Variant="ButtonVariant.DarkBlue"
+                                      Size="ButtonSize.Large"
+                                      OnClick="@(() => HandleEditTrainingRecord(record))"
+                                      Title="編輯此筆紀錄"
+                                      CssClass="btn-square" />
+                <GenericButtonComponent IconClass="bi bi-trash text-white"
+                                      Variant="ButtonVariant.Red"
+                                      Size="ButtonSize.Large"
+                                      OnClick="@(() => HandleDeleteTrainingRecordRequest(record))"
+                                      Title="刪除此筆紀錄"
+                                      CssClass="btn-square" />
+            </div>
+        };
+    }
+
+    private RenderFragment<EmployeeLicense>? GetLicenseActionsTemplate()
+    {
+        return license => __builder =>
+        {
+            <div class="d-flex gap-1">
+                <GenericButtonComponent IconClass="bi bi-pencil-square text-white"
+                                      Variant="ButtonVariant.DarkBlue"
+                                      Size="ButtonSize.Large"
+                                      OnClick="@(() => HandleEditLicense(license))"
+                                      Title="編輯此筆紀錄"
+                                      CssClass="btn-square" />
+                <GenericButtonComponent IconClass="bi bi-trash text-white"
+                                      Variant="ButtonVariant.Red"
+                                      Size="ButtonSize.Large"
+                                      OnClick="@(() => HandleDeleteLicenseRequest(license))"
+                                      Title="刪除此筆紀錄"
+                                      CssClass="btn-square" />
+            </div>
+        };
+    }
+
+    // ===== 輔助方法 =====
+
+    private static string GetLicenseStatusText(EmployeeLicense license)
+    {
+        if (!license.ExpiryDate.HasValue)
+            return "有效";
+
+        var today = DateTime.Today;
+        var daysUntilExpiry = (license.ExpiryDate.Value.Date - today).Days;
+
+        if (daysUntilExpiry < 0)
+            return "已到期";
+        if (daysUntilExpiry <= license.AlertDays)
+            return $"即將到期";
+        return "有效";
+    }
+}

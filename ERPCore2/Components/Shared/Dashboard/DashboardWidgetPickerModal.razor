@@ -65,6 +65,18 @@
                         @RenderWidgetGrid(FilteredQuickActionWidgets)
                     </div>
                 }
+
+                @* 圖表介面搜尋結果 *@
+                @if (FilteredChartWidgets.Any())
+                {
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">
+                            <i class="bi bi-bar-chart-fill me-1"></i>圖表介面
+                            <span class="badge bg-primary ms-1">@FilteredChartWidgets.Count</span>
+                        </h6>
+                        @RenderWidgetGrid(FilteredChartWidgets)
+                    </div>
+                }
             }
         }
         else
@@ -93,16 +105,33 @@
                         }
                     </button>
                 </li>
+                <li class="nav-item">
+                    <button class="nav-link @(activeTab == "chart" ? "active tab-active" : "tab-inactive")"
+                            type="button"
+                            @onclick='@(() => activeTab = "chart")'>
+                        <i class="bi bi-bar-chart-fill me-1"></i>圖表介面
+                        @if (AvailableChartWidgets.Any())
+                        {
+                            <span class="badge bg-secondary ms-1">@AvailableChartWidgets.Count</span>
+                        }
+                    </button>
+                </li>
             </ul>
 
             @* Tab 內容 *@
-            var currentWidgets = activeTab == "quickaction" ? AvailableQuickActionWidgets : AvailableShortcutWidgets;
+            var currentWidgets = activeTab == "quickaction" ? AvailableQuickActionWidgets
+                               : activeTab == "chart"       ? AvailableChartWidgets
+                               : AvailableShortcutWidgets;
+
+            var emptyLabel = activeTab == "quickaction" ? "快速功能"
+                           : activeTab == "chart"       ? "圖表介面"
+                           : "頁面連結";
 
             @if (currentWidgets == null || !currentWidgets.Any())
             {
                 <div class="text-center py-4 text-muted">
                     <i class="bi bi-emoji-neutral fs-1"></i>
-                    <p class="mt-2">目前沒有可新增的@(activeTab == "quickaction" ? "快速功能" : "頁面連結")</p>
+                    <p class="mt-2">目前沒有可新增的@emptyLabel</p>
                 </div>
             }
             else
@@ -123,9 +152,11 @@
                                 var capturedItemKey = itemKey;
                                 var iconClass = widget.ItemType == NavigationItemType.QuickAction
                                     ? "bi bi-wrench-adjustable"
-                                    : widget.IconClass?.Contains("printer") == true
-                                        ? "bi bi-printer-fill"
-                                        : "bi bi-window";
+                                    : widget.IsChartWidget
+                                        ? (widget.IconClass ?? "bi bi-bar-chart-fill")
+                                        : widget.IconClass?.Contains("printer") == true
+                                            ? "bi bi-printer-fill"
+                                            : "bi bi-window";
 
                                 <div class="col-lg-2 col-md-4 col-6">
                                     <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"
@@ -198,6 +229,12 @@
     public List<NavigationItem> AvailableQuickActionWidgets { get; set; } = new();
 
     /// <summary>
+    /// 可選的圖表介面項目清單（IsChartWidget = true 的 Action 類型）
+    /// </summary>
+    [Parameter]
+    public List<NavigationItem> AvailableChartWidgets { get; set; } = new();
+
+    /// <summary>
     /// 已存在於面板的導航項目識別鍵集合
     /// </summary>
     [Parameter]
@@ -231,10 +268,15 @@
     private List<NavigationItem> FilteredQuickActionWidgets => FilterWidgets(AvailableQuickActionWidgets);
 
     /// <summary>
+    /// 篩選後的圖表介面項目
+    /// </summary>
+    private List<NavigationItem> FilteredChartWidgets => FilterWidgets(AvailableChartWidgets);
+
+    /// <summary>
     /// 所有篩選後的項目（合併）
     /// </summary>
-    private List<NavigationItem> FilteredAllWidgets => 
-        FilteredShortcutWidgets.Concat(FilteredQuickActionWidgets).ToList();
+    private List<NavigationItem> FilteredAllWidgets =>
+        FilteredShortcutWidgets.Concat(FilteredQuickActionWidgets).Concat(FilteredChartWidgets).ToList();
 
     /// <summary>
     /// 篩選項目的共用方法
@@ -270,14 +312,17 @@
         // 當 Modal 開啟時重置狀態
         if (IsVisible)
         {
-            // 如果快速功能 Tab 有項目而頁面連結沒有，預設選快速功能 Tab
-            if (!AvailableShortcutWidgets.Any() && AvailableQuickActionWidgets.Any())
+            if (AvailableShortcutWidgets.Any())
+            {
+                activeTab = "shortcut";
+            }
+            else if (AvailableQuickActionWidgets.Any())
             {
                 activeTab = "quickaction";
             }
-            else if (AvailableShortcutWidgets.Any())
+            else if (AvailableChartWidgets.Any())
             {
-                activeTab = "shortcut";
+                activeTab = "chart";
             }
         }
     }

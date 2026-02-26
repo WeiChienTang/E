@@ -1,5 +1,7 @@
 using ERPCore2.Components.Shared.UI.Form;
+using ERPCore2.Components.Shared.UI.Badge;
 using ERPCore2.Data.Entities;
+using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 using ERPCore2.Components.Shared.Modal;
@@ -72,6 +74,49 @@ namespace ERPCore2.FieldConfiguration
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.TaxNumber), c => c.TaxNumber, allowNull: true)
+                        }
+                    },
+                    {
+                        nameof(Customer.CustomerStatus),
+                        new FieldDefinition<Customer>
+                        {
+                            PropertyName = nameof(Customer.CustomerStatus),
+                            DisplayName = "客戶狀態",
+                            TableOrder = 5,
+                            FilterType = SearchFilterType.Select,
+                            FilterPlaceholder = "選擇狀態",
+                            Options = new List<SelectOption>
+                            {
+                                new() { Value = "",                                             Text = "全部" },
+                                new() { Value = ((int)CustomerStatus.Active).ToString(),      Text = "正常往來" },
+                                new() { Value = ((int)CustomerStatus.Inactive).ToString(),    Text = "停用" },
+                                new() { Value = ((int)CustomerStatus.Blacklisted).ToString(), Text = "黑名單" }
+                            },
+                            FilterFunction = (model, query) =>
+                            {
+                                var val = model.GetFilterValue(nameof(Customer.CustomerStatus))?.ToString();
+                                if (!string.IsNullOrWhiteSpace(val) && int.TryParse(val, out var intVal))
+                                {
+                                    var status = (CustomerStatus)intVal;
+                                    query = query.Where(c => c.CustomerStatus == status);
+                                }
+                                return query;
+                            },
+                            CustomTemplate = item => builder =>
+                            {
+                                var customer = (Customer)item;
+                                var (cssClass, text) = customer.CustomerStatus switch
+                                {
+                                    CustomerStatus.Active      => ("bg-success", "正常往來"),
+                                    CustomerStatus.Inactive    => ("bg-secondary", "停用"),
+                                    CustomerStatus.Blacklisted => ("bg-danger", "黑名單"),
+                                    _                          => ("bg-secondary", "未知")
+                                };
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", $"badge text-white {cssClass}");
+                                builder.AddContent(2, text);
+                                builder.CloseElement();
+                            }
                         }
                     }
                 };

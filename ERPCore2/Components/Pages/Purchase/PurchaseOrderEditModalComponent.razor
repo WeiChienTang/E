@@ -14,6 +14,7 @@
 @inject ITextMessageTemplateService TextMessageTemplateService
 @inject IPurchaseOrderReportService PurchaseOrderReportService
 @inject IPrinterConfigurationService PrinterConfigurationService
+@inject IProductSupplierService ProductSupplierService
 @inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -844,6 +845,10 @@
             // 儲存明細
             await SavePurchaseOrderDetails(result.Data.Id);
 
+            // 自動同步供應商商品目錄（方案C：從採購歷史自動維護）
+            if (purchaseOrder.SupplierId > 0)
+                await SyncProductSuppliersAsync(purchaseOrder.SupplierId, purchaseOrder.OrderDate);
+
             return true;
         }
         catch (Exception ex)
@@ -912,6 +917,51 @@
         }
     }
     
+    // ===== 供應商商品目錄自動同步（方案C）=====
+
+    /// <summary>
+    /// 儲存採購單後，自動將本次採購的商品同步至廠商供應目錄
+    /// - 若商品已在目錄中：更新最近採購價格與日期
+    /// - 若商品不在目錄中：自動新增綁定記錄
+    /// 為非關鍵操作，失敗時只顯示警告，不影響採購單儲存結果
+    /// </summary>
+    private async Task SyncProductSuppliersAsync(int supplierId, DateTime orderDate)
+    {
+        try
+        {
+            var validDetails = purchaseOrderDetails
+                .Where(d => d.ProductId > 0)
+                .ToList();
+
+            foreach (var detail in validDetails)
+            {
+                bool exists = await ProductSupplierService.IsBindingExistsAsync(detail.ProductId, supplierId);
+
+                if (!exists)
+                {
+                    await ProductSupplierService.CreateAsync(new ProductSupplier
+                    {
+                        ProductId = detail.ProductId,
+                        SupplierId = supplierId,
+                        LastPurchasePrice = detail.UnitPrice > 0 ? detail.UnitPrice : null,
+                        LastPurchaseDate = orderDate,
+                        Priority = 999,
+                        Status = EntityStatus.Active
+                    });
+                }
+                else if (detail.UnitPrice > 0)
+                {
+                    await ProductSupplierService.UpdateLastPurchaseInfoAsync(
+                        detail.ProductId, supplierId, detail.UnitPrice, orderDate);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = NotificationService.ShowWarningAsync($"同步供應商品目錄時發生非嚴重錯誤：{ex.Message}");
+        }
+    }
+
     // ===== 審核相關方法 =====
     
     /// <summary>

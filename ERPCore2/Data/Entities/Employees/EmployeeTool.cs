@@ -36,9 +36,5 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "歸還日期")]
         public DateTime? ReturnedDate { get; set; }
 
-        /// <summary>備註</summary>
-        [MaxLength(500, ErrorMessage = "備註不可超過500個字元")]
-        [Display(Name = "備註")]
-        public string? Remarks { get; set; }
     }
 }

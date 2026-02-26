@@ -112,21 +112,18 @@
                     entity => builder =>
                     {
                         var emp = (Employee)entity;
-                        builder.OpenElement(0, "button");
-                        builder.AddAttribute(1, "type", "button");
-                        builder.AddAttribute(2, "class", "btn btn-sm btn-outline-secondary");
-                        builder.AddAttribute(3, "onclick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, () =>
+                        builder.OpenComponent<GenericButtonComponent>(0);
+                        builder.AddComponentParameter(1, "Text", "帳號管理");
+                        builder.AddComponentParameter(2, "Variant", ButtonVariant.DarkBlue);
+                        builder.AddComponentParameter(3, "Size", ButtonSize.Small);
+                        builder.AddComponentParameter(5, "StopPropagation", true);
+                        builder.AddComponentParameter(6, "OnClick", EventCallback.Factory.Create(this, () =>
                         {
                             accountManagementEmployeeId = emp.Id;
                             showAccountModal = true;
                             StateHasChanged();
                         }));
-                        builder.AddEventStopPropagationAttribute(4, "onclick", true);
-                        builder.OpenElement(5, "i");
-                        builder.AddAttribute(6, "class", "bi bi-person-lock me-1");
-                        builder.CloseElement();
-                        builder.AddContent(7, "帳號管理");
-                        builder.CloseElement();
+                        builder.CloseComponent();
                     },
                     "text-center"
                 ));

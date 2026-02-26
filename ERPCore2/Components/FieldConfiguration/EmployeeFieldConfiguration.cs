@@ -8,6 +8,8 @@ using ERPCore2.Components.Shared.Modal;
 using ERPCore2.Components.Shared.Table;
 using ERPCore2.Components.Shared.Page;
 using ERPCore2.Components.Shared.Statistics;
+using ERPCore2.Components.Shared.UI.Badge;
+using ERPCore2.Models.Enums;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
@@ -147,11 +149,11 @@ namespace ERPCore2.FieldConfiguration
                             CustomTemplate = item => builder =>
                             {
                                 var employee = (Employee)item;
-                                builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", "badge text-white");
-                                builder.AddAttribute(2, "style", employee.IsSystemUser ? "background-color: #28a745;" : "background-color: #dc3545;");
-                                builder.AddContent(3, employee.IsSystemUser ? "有權限" : "無權限");
-                                builder.CloseElement();
+                                builder.OpenComponent<GenericStatusBadgeComponent>(0);
+                                builder.AddAttribute(1, "Status", employee.IsSystemUser ? EntityStatus.Active : EntityStatus.Inactive);
+                                builder.AddAttribute(2, "CustomText", employee.IsSystemUser ? "有權限" : "無權限");
+                                builder.AddAttribute(3, "Size", GenericStatusBadgeComponent.BadgeSize.Large);
+                                builder.CloseComponent();
                             }
                         }
                     },

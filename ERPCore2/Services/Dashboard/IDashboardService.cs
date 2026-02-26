@@ -58,6 +58,12 @@ namespace ERPCore2.Services
         Task<List<NavigationItem>> GetAvailableWidgetsAsync(int employeeId, bool isQuickAction);
 
         /// <summary>
+        /// 取得員工有權限使用的圖表介面項目（用於「新增捷徑」選擇畫面的「圖表介面」Tab）
+        /// </summary>
+        /// <param name="employeeId">員工ID</param>
+        Task<List<NavigationItem>> GetAvailableChartWidgetsAsync(int employeeId);
+
+        /// <summary>
         /// 取得面板內已存在的項目識別鍵（用於排除已加入的項目）
         /// </summary>
         Task<HashSet<string>> GetPanelExistingKeysAsync(int panelId);

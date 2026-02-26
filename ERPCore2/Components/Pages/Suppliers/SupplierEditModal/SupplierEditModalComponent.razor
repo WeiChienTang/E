@@ -101,12 +101,18 @@
 
     // Tab 元件參考（透過 @ref 呼叫公開方法）
     private SupplierVehicleTab? vehicleTab;
+    private SupplierProductTab? supplierProductTab;
 
     // ===== Tab 內容 RenderFragment =====
 
     private RenderFragment CreateVehicleTabContent() => __builder =>
     {
         <SupplierVehicleTab @ref="vehicleTab" SupplierId="@SupplierId" />
+    };
+
+    private RenderFragment CreateSupplierProductTabContent() => __builder =>
+    {
+        <SupplierProductTab @ref="supplierProductTab" SupplierId="@SupplierId" />
     };
 
     // ===== 生命週期 =====
@@ -154,11 +160,13 @@
         {
             if (loadedEntityId > 0)
             {
-                if (vehicleTab != null) await vehicleTab.LoadAsync(loadedEntityId);
+                if (vehicleTab != null)         await vehicleTab.LoadAsync(loadedEntityId);
+                if (supplierProductTab != null) await supplierProductTab.LoadAsync(loadedEntityId);
             }
             else
             {
                 vehicleTab?.Clear();
+                supplierProductTab?.Clear();
             }
             StateHasChanged();
         }
@@ -192,6 +200,7 @@
             if (!SupplierId.HasValue)
             {
                 vehicleTab?.Clear();
+                supplierProductTab?.Clear();
 
                 var newSupplier = new Supplier
                 {
@@ -480,6 +489,7 @@
                     s => s.Remarks)
                 .GroupIntoTab("廠商資料", "bi-shop", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo)
                 .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())
+                .GroupIntoCustomTab("供應商品", "bi-box-seam", CreateSupplierProductTabContent())
                 .BuildAll();
 
             formSections = layout.FieldSections;

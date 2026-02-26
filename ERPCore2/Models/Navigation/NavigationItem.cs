@@ -86,6 +86,13 @@ namespace ERPCore2.Models.Navigation
         /// </summary>
         public bool IsDivider { get; set; } = false;
 
+        // ===== 圖表介面支援（可選，設定後此項目會出現在首頁儀表板的「圖表介面」Tab） =====
+
+        /// <summary>
+        /// 是否為圖表介面項目（設定後會出現在首頁儀表板的「圖表介面」Tab，並從「頁面連結」Tab 移除）
+        /// </summary>
+        public bool IsChartWidget { get; set; } = false;
+
         // ===== QuickAction 支援（可選，設定後此項目可作為首頁快速功能） =====
 
         /// <summary>

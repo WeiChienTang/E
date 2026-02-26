@@ -1,5 +1,7 @@
 @using ApexCharts
 @using ERPCore2.Data.Charts
+@using ERPCore2.Models.Charts
+@using ERPCore2.Components.Shared.Table
 @inject IServiceProvider ServiceProvider
 
 <BaseModalComponent IsVisible="@IsVisible"
@@ -37,7 +39,7 @@
                         var chart = _charts[i];
                         <li class="nav-item">
                             <button class="nav-link @(_activeChartIndex == idx ? "active" : "")"
-                                    @onclick="() => _activeChartIndex = idx">
+                                    @onclick="() => SetActiveChart(idx)">
                                 @chart.Title
                             </button>
                         </li>
@@ -77,13 +79,14 @@
                         }
 
                         @* 圖表本體 *@
-                        <div style="min-height: 360px;">
+                        <div style="height: 280px;">
                             @if (data.Count > 0)
                             {
                                 <ApexChart @key="@($"{chart.ChartId}_{selectedType}")"
                                            TItem="ChartDataItem"
                                            Title="@chart.Title"
-                                           Options="@GetDefaultOptions(selectedType)">
+                                           Options="@GetCachedOptions(selectedType)"
+                                           OnDataPointSelection="@(_callbackCache.GetValueOrDefault(chart.ChartId))">
                                     <ApexPointSeries TItem="ChartDataItem"
                                                      Items="@data"
                                                      Name="@chart.Title"
@@ -97,6 +100,58 @@
                                 <div class="text-center text-muted py-5">尚無資料</div>
                             }
                         </div>
+
+                        @* 點擊提示（有 DetailFetcher、無已展開明細時顯示） *@
+                        @if (chart.DetailFetcher != null && _detailChartId != chart.ChartId && data.Count > 0)
+                        {
+                            <div class="text-end mt-1">
+                                <small class="text-muted">
+                                    <i class="bi bi-hand-index me-1"></i>點擊圖表區塊可查看明細
+                                </small>
+                            </div>
+                        }
+
+                        @* Drill-down 明細面板 *@
+                        @if (chart.DetailFetcher != null && _detailChartId == chart.ChartId && _detailLabel != null)
+                        {
+                            <div class="mt-3 border rounded p-3 bg-light">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>
+                                        <i class="bi bi-list-ul me-1 text-primary"></i>
+                                        <strong>@_detailLabel</strong>
+                                        @if (!_detailLoading)
+                                        {
+                                            <span class="text-muted ms-1">（共 @(_detailItems?.Count ?? 0) 筆）</span>
+                                        }
+                                    </span>
+                                    <button type="button" class="btn-close" title="關閉" @onclick="CloseDetail"></button>
+                                </div>
+
+                                @if (_detailLoading)
+                                {
+                                    <div class="d-flex align-items-center text-muted py-2">
+                                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                        <span>載入明細中...</span>
+                                    </div>
+                                }
+                                else if (_detailItems == null || _detailItems.Count == 0)
+                                {
+                                    <div class="text-muted text-center py-2">無資料</div>
+                                }
+                                else
+                                {
+                                    <div style="max-height: 180px; overflow-y: auto;">
+                                        <InteractiveTableComponent TItem="ChartDetailItem"
+                                                                   Items="@_detailItems"
+                                                                   ColumnDefinitions="@(chart.DetailColumns ?? _detailColumns)"
+                                                                   ShowRowNumbers="true"
+                                                                   IsReadOnly="true"
+                                                                   ShowActions="false"
+                                                                   EmptyMessage="無資料" />
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
                 }
             }
@@ -119,15 +174,95 @@
     private int _activeChartIndex = 0;
     private bool _isLoading = true;
 
+    // 快取 Options 與 Callback，確保每次 re-render 傳入 ApexChart 的物件參考不變
+    // (若物件參考改變，ApexChart 會呼叫 chart.updateOptions() 重新初始化，導致 JS 事件失效)
+    private readonly Dictionary<SeriesType, ApexChartOptions<ChartDataItem>> _optionsCache = new();
+    private readonly Dictionary<string, EventCallback<SelectedData<ChartDataItem>>> _callbackCache = new();
+
+    // Drill-down state
+    private string? _detailChartId;
+    private string? _detailLabel;
+    private List<ChartDetailItem>? _detailItems;
+    private bool _detailLoading = false;
+    private int _detailLoadSeq = 0; // 防止非同步競爭
+
+    private readonly List<InteractiveColumnDefinition> _detailColumns = new()
+    {
+        new() { Title = "代碼", PropertyName = "SubLabel", ColumnType = InteractiveColumnType.Display, Width = "110px" },
+        new() { Title = "名稱", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display }
+    };
+
+    private void SetActiveChart(int idx)
+    {
+        _activeChartIndex = idx;
+        CloseDetail();
+    }
+
     private void SwitchType(string chartId, SeriesType type)
     {
         _selectedTypes[chartId] = type;
+        if (_detailChartId == chartId)
+            CloseDetail();
+    }
+
+    private void CloseDetail()
+    {
+        _detailChartId = null;
+        _detailLabel = null;
+        _detailItems = null;
+    }
+
+    private async Task HandleDataPointSelectionAsync(SelectedData<ChartDataItem> data, ChartDefinition chart)
+    {
+        if (chart.DetailFetcher == null) return;
+
+        // DataPointIndex 在 SelectedData<T> 頂層（不在 IDataPoint 介面上）
+        // 用它從已載入的圖表資料查出被點擊的項目標籤，比 Items 可靠
+        // (ApexCharts 在取消選取舊項目時 Items 可能帶舊資料)
+        var chartData = _data.TryGetValue(chart.ChartId, out var d) ? d : new();
+        var idx = data.DataPointIndex;
+        var label = (idx >= 0 && idx < chartData.Count)
+            ? chartData[idx].Label
+            : data.DataPoint.Items.FirstOrDefault()?.Label ?? string.Empty;
+
+        if (string.IsNullOrEmpty(label)) return;
+
+        // 不依賴 IsSelected（Blazor re-render 後 ApexCharts 內部選取狀態可能不準確）
+        // 直接依 DataPointIndex 決定要顯示哪個區塊的資料
+        var seq = ++_detailLoadSeq;
+        _detailChartId = chart.ChartId;
+        _detailLabel = label;
+        _detailItems = null;
+        _detailLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var items = await chart.DetailFetcher(ServiceProvider, label);
+            if (_detailLoadSeq != seq) return; // 已被更新的點擊取代
+            _detailItems = items;
+        }
+        catch (Exception ex)
+        {
+            if (_detailLoadSeq != seq) return;
+            System.Diagnostics.Debug.WriteLine($"[DrillDown] 載入明細錯誤: {ex.Message}");
+            _detailItems = new();
+        }
+        finally
+        {
+            if (_detailLoadSeq == seq)
+            {
+                _detailLoading = false;
+                StateHasChanged();
+            }
+        }
     }
 
     private async Task LoadDataAsync()
     {
         _isLoading = true;
         _activeChartIndex = 0;
+        CloseDetail();
         StateHasChanged();
 
         try
@@ -137,11 +272,20 @@
 
             _data.Clear();
             _selectedTypes.Clear();
+            _callbackCache.Clear();
             foreach (var c in _charts)
+            {
                 _selectedTypes[c.ChartId] = c.DefaultSeriesType;
+                var chartRef = c;
+                _callbackCache[c.ChartId] = EventCallback.Factory.Create<SelectedData<ChartDataItem>>(
+                    this, async (e) => await HandleDataPointSelectionAsync(e, chartRef));
+            }
 
             if (OnDataLoading.HasDelegate)
-                await OnDataLoading.InvokeAsync();
+            {
+                try { await OnDataLoading.InvokeAsync(); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[GenericChartModal] OnDataLoading 錯誤: {ex.Message}"); }
+            }
 
             await Task.WhenAll(_charts.Select(LoadChartDataAsync));
         }
@@ -162,58 +306,79 @@
         {
             _data[chart.ChartId] = await chart.DataFetcher(ServiceProvider);
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[Chart:{chart.ChartId}] 載入失敗: {ex.GetType().Name}: {ex.Message}");
             _data[chart.ChartId] = new();
         }
     }
 
-    private ApexChartOptions<ChartDataItem> GetDefaultOptions(SeriesType type) => type switch
+    private ApexChartOptions<ChartDataItem> GetCachedOptions(SeriesType type)
+    {
+        if (!_optionsCache.TryGetValue(type, out var opts))
+        {
+            opts = BuildDefaultOptions(type);
+            _optionsCache[type] = opts;
+        }
+        return opts;
+    }
+
+    private ApexChartOptions<ChartDataItem> BuildDefaultOptions(SeriesType type) => type switch
     {
         SeriesType.Donut => new()
         {
+            Chart = new Chart { Height = "100%" },
             PlotOptions = new PlotOptions { Pie = new PlotOptionsPie { Donut = new PlotOptionsDonut { Size = "65%" } } },
             Legend = new Legend { Position = LegendPosition.Bottom }
         },
         SeriesType.Pie => new()
         {
+            Chart = new Chart { Height = "100%" },
             Legend = new Legend { Position = LegendPosition.Bottom }
         },
         SeriesType.RadialBar => new()
         {
+            Chart = new Chart { Height = "100%" },
             PlotOptions = new PlotOptions { RadialBar = new PlotOptionsRadialBar { } },
             Legend = new Legend { Position = LegendPosition.Bottom }
         },
         SeriesType.Line => new()
         {
+            Chart = new Chart { Height = "100%" },
             Stroke = new Stroke { Curve = Curve.Smooth, Width = new List<int> { 3 } },
             Markers = new Markers { Size = new List<double> { 5 } },
             Legend = new Legend { Show = false }
         },
         SeriesType.Area => new()
         {
+            Chart = new Chart { Height = "100%" },
             Stroke = new Stroke { Curve = Curve.Smooth, Width = new List<int> { 2 } },
             Legend = new Legend { Show = false }
         },
         SeriesType.Bar => new()
         {
+            Chart = new Chart { Height = "100%" },
             PlotOptions = new PlotOptions { Bar = new PlotOptionsBar { Horizontal = false, ColumnWidth = "55%" } },
             Legend = new Legend { Show = false }
         },
         SeriesType.Treemap => new()
         {
+            Chart = new Chart { Height = "100%" },
             Legend = new Legend { Show = false }
         },
         SeriesType.PolarArea => new()
         {
+            Chart = new Chart { Height = "100%" },
             Legend = new Legend { Position = LegendPosition.Bottom }
         },
         SeriesType.Radar => new()
         {
+            Chart = new Chart { Height = "100%" },
             Legend = new Legend { Show = false }
         },
         _ => new()
         {
+            Chart = new Chart { Height = "100%" },
             Legend = new Legend { Show = false }
         }
     };

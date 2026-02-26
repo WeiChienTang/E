@@ -37,12 +37,6 @@
             </div>
         }
     </div>
-    <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                           Text="儲存模組設定"
-                           OnClick="HandleSaveModulesAsync"
-                           IsDisabled="@(isModuleSaving || IsDisabled)"
-                           IsLoading="@isModuleSaving"
-                           Title="儲存功能模組啟用狀態" />
 </div>
 
 @code {
@@ -70,10 +64,8 @@
         }
     }
 
-    private async Task HandleSaveModulesAsync()
+    public async Task SaveAsync()
     {
-        if (isModuleSaving) return;
-
         try
         {
             isModuleSaving = true;
@@ -82,13 +74,9 @@
             var createdBy = await GetCurrentUserAsync();
             var result = await CompanyModuleService.UpdateModulesAsync(companyModules, createdBy);
 
-            if (result.IsSuccess)
+            if (!result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync("模組設定已儲存");
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
+                await NotificationService.ShowErrorAsync($"儲存模組設定失敗：{result.ErrorMessage}");
             }
         }
         catch (Exception ex)

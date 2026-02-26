@@ -220,23 +220,26 @@ public static class NavigationConfig
                         NameKey = "Nav.CustomerVisits",
                         Description = "管理客戶拜訪與聯繫紀錄",
                         Route = "/customer-visits",
-                        IconClass = "bi bi-caret-right-fill",
+                        IconClass = "",
                         Category = "客戶關係管理",
                         RequiredPermission = "Customer.Read",
                         SearchKeywords = new List<string> { "客戶拜訪", "拜訪紀錄", "customer visit", "聯繫紀錄" },
                         QuickActionId = "NewCustomerVisit",
                         QuickActionName = "新增拜訪紀錄"
                     },
-                    NavigationActionHelper.CreateActionItem(
-                        name: "客戶圖表",
-                        description: "依多維度查看客戶統計分析圖表",
-                        iconClass: "bi bi-bar-chart-fill",
-                        actionId: "OpenCustomerCharts",
-                        category: "客戶關係管理",
-                        requiredPermission: "Customer.Read",
-                        searchKeywords: new List<string> { "客戶圖表", "客戶分析", "統計分析", "customer chart", "analytics" },
-                        nameKey: "Nav.CustomerCharts"
-                    ),
+                    new NavigationItem
+                    {
+                        Name = "客戶圖表",
+                        NameKey = "Nav.CustomerCharts",
+                        Description = "依多維度查看客戶統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenCustomerCharts",
+                        Category = "客戶關係管理",
+                        RequiredPermission = "Customer.Read",
+                        SearchKeywords = new List<string> { "客戶圖表", "客戶分析", "統計分析", "customer chart", "analytics" },
+                        IsChartWidget = true
+                    },
 
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
@@ -1122,11 +1125,12 @@ public static class NavigationConfig
     public static List<NavigationItem> GetDashboardWidgetItems()
     {
         var shortcutItems = GetFlattenedNavigationItems()
-            .Where(item => 
+            .Where(item =>
                 !item.IsDivider &&
                 !item.IsParent &&
+                !item.IsChartWidget &&
                 !string.IsNullOrEmpty(item.Name) &&
-                (item.ItemType == NavigationItemType.Action || 
+                (item.ItemType == NavigationItemType.Action ||
                  (!string.IsNullOrEmpty(item.Route) && item.Route != "/" && item.Route != "#")))
             .ToList();
 
@@ -1139,17 +1143,31 @@ public static class NavigationConfig
     }
 
     /// <summary>
-    /// 取得可作為頁面連結捷徑的導航項目（Route + Action 類型）
+    /// 取得可作為頁面連結捷徑的導航項目（Route + Action 類型，不含圖表介面項目）
     /// </summary>
     public static List<NavigationItem> GetShortcutWidgetItems()
     {
         return GetFlattenedNavigationItems()
-            .Where(item => 
+            .Where(item =>
                 !item.IsDivider &&
                 !item.IsParent &&
+                !item.IsChartWidget &&
                 !string.IsNullOrEmpty(item.Name) &&
-                (item.ItemType == NavigationItemType.Action || 
+                (item.ItemType == NavigationItemType.Action ||
                  (!string.IsNullOrEmpty(item.Route) && item.Route != "/" && item.Route != "#")))
+            .ToList();
+    }
+
+    /// <summary>
+    /// 取得可作為圖表介面捷徑的導航項目（IsChartWidget = true 的 Action 類型）
+    /// </summary>
+    public static List<NavigationItem> GetChartWidgetItems()
+    {
+        return GetFlattenedNavigationItems()
+            .Where(item =>
+                item.IsChartWidget &&
+                item.ItemType == NavigationItemType.Action &&
+                !string.IsNullOrEmpty(item.Name))
             .ToList();
     }
 

@@ -51,6 +51,10 @@ namespace ERPCore2.Data
 
             // 員工工具配給服務
             services.AddScoped<IEmployeeToolService, EmployeeToolService>();
+
+            // 員工教育訓練與證照服務
+            services.AddScoped<IEmployeeLicenseService, EmployeeLicenseService>();
+            services.AddScoped<IEmployeeTrainingRecordService, EmployeeTrainingRecordService>();
             services.AddScoped<ERPCore2.Services.Customers.ICustomerChartService, ERPCore2.Services.Customers.CustomerChartService>();
 
             services.AddScoped<IPaymentMethodService, PaymentMethodService>();

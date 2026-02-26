@@ -242,6 +242,19 @@
                             OnConfirm="@HandleRejectConfirm"
                             OnCancel="@HandleRejectCancel" />
 
+@* 未儲存修改確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@_showUnsavedChangesModal"
+                              IsVisibleChanged="@((bool v) => _showUnsavedChangesModal = v)"
+                              Title="確認關閉"
+                              Icon="bi-exclamation-triangle"
+                              Message="此單有修改，確定要關閉嗎？"
+                              ConfirmButtonText="確定關閉"
+                              CancelButtonText="繼續編輯"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                              OnConfirm="HandleUnsavedChangesConfirm"
+                              OnCancel="HandleUnsavedChangesCancel" />
+
 @* 內建報表預覽 Modal（當有設定 ReportService 時自動啟用） *@
 @if (ReportService != null)
 {
@@ -336,6 +349,11 @@
     [Parameter] public bool ShowPreviewButton { get; set; } = false;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
     [Parameter] public bool ShowReturnToLastButton { get; set; } = true;
+
+    /// <summary>
+    /// 關閉 Modal 時，若有未儲存的修改，是否彈出確認對話框（預設為 true）
+    /// </summary>
+    [Parameter] public bool ShowUnsavedChangesWarning { get; set; } = true;
     [Parameter] public string ReturnToLastButtonText { get; set; } = "返回編輯";
     
     /// <summary>
@@ -498,6 +516,7 @@
     public bool IsLoading { get; private set; } = false;
     private bool IsSubmitting { get; set; } = false;
     private string ErrorMessage { get; set; } = string.Empty;
+    private bool _isDirty = false;
     private int? _lastId = null;
     private bool _lastVisible = false;
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
@@ -514,6 +533,10 @@
     // 駁回確認 Modal
     private RejectConfirmModalComponent? _rejectConfirmModal;
     private bool _isRejectConfirmModalVisible = false;
+
+    // 未儲存修改確認 Modal
+    private bool _showUnsavedChangesModal = false;
+    private TaskCompletionSource<bool>? _unsavedChangesConfirmTcs;
     
     // ===== 內建列印狀態 =====
     private bool _showReportPreviewModal = false;
@@ -739,6 +762,7 @@
         finally
         {
             IsLoading = false;
+            _isDirty = false;
             StateHasChanged();
             _loadingSemaphore.Release();
         }
@@ -901,6 +925,7 @@
             
             if (success)
             {
+                _isDirty = false;
                 await ShowSuccessMessage(SaveSuccessMessage);
                 
                 //  關鍵修復：檢測從新增模式轉為編輯模式
@@ -1009,11 +1034,21 @@
     {
         try
         {
+            if (_isDirty && ShowUnsavedChangesWarning)
+            {
+                _unsavedChangesConfirmTcs = new TaskCompletionSource<bool>();
+                _showUnsavedChangesModal = true;
+                StateHasChanged();
+                var confirmed = await _unsavedChangesConfirmTcs.Task;
+                if (!confirmed)
+                    return;
+            }
+
             if (OnCancel.HasDelegate)
             {
                 await OnCancel.InvokeAsync();
             }
-            
+
             await CloseModal();
         }
         catch (Exception ex)
@@ -1236,7 +1271,20 @@
         StateHasChanged();
         return Task.CompletedTask;
     }
-    
+
+    // ===== 未儲存修改確認 =====
+
+    private void HandleUnsavedChangesConfirm()
+    {
+        _showUnsavedChangesModal = false;
+        _unsavedChangesConfirmTcs?.TrySetResult(true);
+    }
+
+    private void HandleUnsavedChangesCancel()
+    {
+        _showUnsavedChangesModal = false;
+        _unsavedChangesConfirmTcs?.TrySetResult(false);
+    }
 
 
     private async Task CloseModal()
@@ -1350,6 +1398,7 @@
         IsLoading = false;
         IsSubmitting = false;
         ErrorMessage = string.Empty;
+        _isDirty = false;
         Entity = new();
         editContext = new EditContext(Entity);
         
@@ -1691,6 +1740,8 @@
     
     private async Task HandleFieldChanged((string PropertyName, object? Value) fieldChange)
     {
+        _isDirty = true;
+
         // 檢查是否是 AutoComplete 欄位，如果是則更新按鈕
         var field = FormFields?.FirstOrDefault(f => f.PropertyName == fieldChange.PropertyName);
         if (field != null && 

@@ -1,5 +1,6 @@
 @* 可重用的客戶拜訪紀錄編輯組件 - 用於客戶 EditModal 的 Tab 頁籤中 *@
 @inject ICustomerVisitService CustomerVisitService
+@inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
@@ -30,6 +31,14 @@
                           OnEntitySaved="@OnCustomerVisitSaved"
                           OnCancel="@OnCancel" />
 
+@* 客戶編輯 Modal *@
+<CustomerEditModalComponent @ref="customerEditModal"
+                           IsVisible="@customerModalManager.IsModalVisible"
+                           IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
+                           CustomerId="@customerModalManager.SelectedEntityId"
+                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
+                           OnCancel="@customerModalManager.HandleModalCancelAsync" />
+
 @* 員工編輯 Modal *@
 <EmployeeEditModalComponent @ref="employeeEditModal"
                            IsVisible="@employeeModalManager.IsModalVisible"
@@ -56,10 +65,15 @@
     private AutoCompleteConfig? autoCompleteConfig;
 
     // 選項資料
+    private List<Customer> availableCustomers = new();
     private List<Employee> availableEmployees = new();
 
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
+
+    // 客戶編輯 Modal
+    private CustomerEditModalComponent? customerEditModal;
+    private RelatedEntityModalManager<Customer> customerModalManager = default!;
 
     // 員工編輯 Modal
     private EmployeeEditModalComponent? employeeEditModal;
@@ -78,9 +92,11 @@
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
+                .AddManager<Customer>(nameof(CustomerVisit.CustomerId), "客戶")
                 .AddManager<Employee>(nameof(CustomerVisit.EmployeeId), "員工")
                 .Build();
 
+            customerModalManager = modalManagers.Get<Customer>(nameof(CustomerVisit.CustomerId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(CustomerVisit.EmployeeId));
         }
         catch (Exception)
@@ -137,6 +153,18 @@
         {
             formFields = new List<FormFieldDefinition>
             {
+                new()
+                {
+                    PropertyName = nameof(CustomerVisit.CustomerId),
+                    Label = "客戶",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇客戶",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "此次拜訪的客戶",
+                    IsVisible = !PrefilledCustomerId.HasValue,
+                    ActionButtons = await GetCustomerActionButtonsAsync()
+                },
                 new()
                 {
                     PropertyName = nameof(CustomerVisit.VisitDate),
@@ -223,6 +251,7 @@
 
             formSections = FormSectionHelper<CustomerVisit>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
+                    v => v.CustomerId,
                     v => v.VisitDate,
                     v => v.VisitType,
                     v => v.EmployeeId,
@@ -245,18 +274,31 @@
     {
         try
         {
+            availableCustomers = await CustomerService.GetAllAsync();
+
             var allEmployees = await EmployeeService.GetAllAsync();
             availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
 
             autoCompleteConfig = new AutoCompleteConfigBuilder<CustomerVisit>()
+                .AddField(nameof(CustomerVisit.CustomerId), "CompanyName", availableCustomers)
                 .AddField(nameof(CustomerVisit.EmployeeId), "Name", availableEmployees)
                 .Build();
         }
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("載入拜訪紀錄編輯相關資料時發生錯誤");
+            availableCustomers = new List<Customer>();
             availableEmployees = new List<Employee>();
         }
+    }
+
+    private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            customerModalManager,
+            nameof(CustomerVisit.CustomerId)
+        );
     }
 
     private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()

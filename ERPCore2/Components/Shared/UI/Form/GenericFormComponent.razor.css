@@ -445,7 +445,7 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.25rem 0.75rem;
-    font-size: 0.875rem;
+    font-size: 1rem;
     font-weight: 500;
     color: #6c757d;
     background-color: #f8f9fa;
@@ -478,7 +478,7 @@
 
 /* Tab 按鈕圖示 */
 .form-tab-btn i {
-    font-size: 0.8rem;
+    font-size: 1rem;
 }
 
 /* Tab 內容區域 */
@@ -498,7 +498,7 @@
 
     .form-tab-btn {
         padding: 0.3rem 0.6rem;
-        font-size: 0.8rem;
+        font-size: 0.9rem;
     }
 
     .form-tab-content {

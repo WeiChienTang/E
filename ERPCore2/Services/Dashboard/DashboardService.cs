@@ -348,6 +348,29 @@ namespace ERPCore2.Services
         }
 
         /// <inheritdoc/>
+        public async Task<List<NavigationItem>> GetAvailableChartWidgetsAsync(int employeeId)
+        {
+            try
+            {
+                var allWidgets = NavigationConfig.GetChartWidgetItems();
+                var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
+
+                return allWidgets.Where(item =>
+                    string.IsNullOrEmpty(item.RequiredPermission) ||
+                    permissionCodes.Contains(item.RequiredPermission)
+                ).ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableChartWidgetsAsync), GetType(), _logger, new
+                {
+                    EmployeeId = employeeId
+                });
+                return new List<NavigationItem>();
+            }
+        }
+
+        /// <inheritdoc/>
         public async Task<HashSet<string>> GetPanelExistingKeysAsync(int panelId)
         {
             try

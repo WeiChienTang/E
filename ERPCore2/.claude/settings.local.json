@@ -57,7 +57,16 @@
       "Bash(git stash)",
       "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Employees\\\\EmployeeEditModalComponent.razor\" -Force)",
       "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Employees\\\\EmployeeToolTable.razor\" -Force)",
-      "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Employees\\\\EmployeeToolEditModalComponent.razor\" -Force)"
+      "Bash(Remove-Item \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Employees\\\\EmployeeToolEditModalComponent.razor\" -Force)",
+      "Bash(git checkout -- \"Migrations/20260225104641_AddCustomerVisit.cs\" \"Migrations/20260225104641_AddCustomerVisit.Designer.cs\" \"Migrations/AppDbContextModelSnapshot.cs\")",
+      "Bash(cat \"c:/Users/cses3/source/repos/ERPCore2/ERPCore2/Migrations/\"*AddCustomerStatus2.cs)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/apexcharts/Blazor-ApexCharts/master/src/Blazor-ApexCharts/Models/DataPoints/IDataPoint.cs\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/apexcharts/Blazor-ApexCharts/master/src/Blazor-ApexCharts/Models/DataPoints/DataPoint.cs\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/apexcharts/Blazor-ApexCharts/master/src/Blazor-ApexCharts/Models/SelectedData.cs\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/apexcharts/Blazor-ApexCharts/master/src/Blazor-ApexCharts/Models/DataPoints/ReturnData.cs\")",
+      "Bash(sqlcmd -S \".\\\\SQLEXPRESS\" -d \"ERPCore2\" -Q \"SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId DESC\" -E)",
+      "Bash(sqlcmd -S \".\\\\SQLEXPRESS\" -d \"ERPCore2\" -E -Q \"DELETE FROM __EFMigrationsHistory WHERE MigrationId LIKE ''20260226150330%''\")",
+      "Bash(sqlcmd -S \".\\\\SQLEXPRESS\" -d \"ERPCore2\" -E -Q \"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME IN \\(''EmployeeLicenses'', ''EmployeeTrainingRecords''\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

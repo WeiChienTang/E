@@ -90,7 +90,10 @@ namespace ERPCore2.Data.Entities
         
         [Display(Name = "業務負責人")]
         public int? EmployeeId { get; set; }
-        
+
+        [Display(Name = "客戶狀態")]
+        public CustomerStatus CustomerStatus { get; set; } = CustomerStatus.Active;
+
         // 聯絡資訊請使用 IContactService 取得 (OwnerType = "Customer", OwnerId = this.Id)
         // 地址資訊請使用 IAddressService 取得
     }

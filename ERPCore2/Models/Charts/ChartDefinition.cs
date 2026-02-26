@@ -1,4 +1,5 @@
 using ApexCharts;
+using ERPCore2.Components.Shared.Table;
 
 namespace ERPCore2.Models.Charts;
 
@@ -14,6 +15,12 @@ public class ChartDefinition
 
     /// <summary>資料取得委派，由 IServiceProvider 解析服務</summary>
     public Func<IServiceProvider, Task<List<ChartDataItem>>> DataFetcher { get; set; } = null!;
+
+    /// <summary>Drill-down 明細查詢委派（可選）；傳入被點擊的 Label，回傳對應明細清單</summary>
+    public Func<IServiceProvider, string, Task<List<ChartDetailItem>>>? DetailFetcher { get; set; }
+
+    /// <summary>Drill-down 明細表格欄位定義（可選）；若未設定則使用預設欄位（代碼 + 名稱）</summary>
+    public List<InteractiveColumnDefinition>? DetailColumns { get; set; }
 }
 
 /// <summary>圖表分類常數</summary>

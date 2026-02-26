@@ -98,6 +98,7 @@
 
     // Tab 子元件參考
     private SubAccountSettingsTab? subAccountTab;
+    private ModuleManagementTab? moduleManagementTab;
 
     // Tab 與權限
     private bool isSuperAdmin = false;
@@ -129,7 +130,8 @@
 
     private RenderFragment CreateModuleManagementTabContent() => __builder =>
     {
-        <ModuleManagementTab IsDisabled="@(isSaving || isLoading)" />
+        <ModuleManagementTab @ref="moduleManagementTab"
+                             IsDisabled="@(isSaving || isLoading)" />
     };
 
     // ===== 生命週期方法 =====
@@ -248,11 +250,17 @@
 
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync("系統參數已成功儲存！");
                 if (result.Data != null)
                 {
                     systemParameter = result.Data;
                 }
+
+                if (isSuperAdmin && moduleManagementTab != null)
+                {
+                    await moduleManagementTab.SaveAsync();
+                }
+
+                await NotificationService.ShowSuccessAsync("系統參數已成功儲存！");
             }
             else
             {

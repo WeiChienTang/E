@@ -1,6 +1,7 @@
 @* 可重用的客戶編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
+@using ERPCore2.Models.Enums
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
 @inject IPaymentMethodService PaymentMethodService
@@ -118,6 +119,7 @@
     // Tab 元件參考（透過 @ref 呼叫公開方法）
     private CustomerVehicleTab? vehicleTab;
     private CustomerVisitTab? visitTab;
+    private CustomerTransactionTab? transactionTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -133,7 +135,7 @@
 
     private RenderFragment CreateTransactionTabContent() => __builder =>
     {
-        <CustomerTransactionTable CustomerId="@CustomerId" />
+        <CustomerTransactionTab @ref="transactionTab" CustomerId="@CustomerId" />
     };
 
     // ===== 生命週期 =====
@@ -183,13 +185,15 @@
         {
             if (loadedEntityId > 0)
             {
-                if (vehicleTab != null) await vehicleTab.LoadAsync(loadedEntityId);
-                if (visitTab != null)   await visitTab.LoadAsync(loadedEntityId);
+                if (vehicleTab != null)      await vehicleTab.LoadAsync(loadedEntityId);
+                if (visitTab != null)        await visitTab.LoadAsync(loadedEntityId);
+                if (transactionTab != null)  await transactionTab.LoadAsync(loadedEntityId);
             }
             else
             {
                 vehicleTab?.Clear();
                 visitTab?.Clear();
+                transactionTab?.Clear();
             }
             StateHasChanged();
         }
@@ -221,6 +225,7 @@
             {
                 vehicleTab?.Clear();
                 visitTab?.Clear();
+                transactionTab?.Clear();
 
                 return new Customer
                 {
@@ -453,6 +458,20 @@
                     HelpText = "負責此客戶的業務人員",
                     ActionButtons = await GetEmployeeActionButtonsAsync()
                 },
+                new()
+                {
+                    PropertyName = nameof(Customer.CustomerStatus),
+                    Label = "客戶狀態",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "客戶目前的往來狀態",
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = ((int)CustomerStatus.Active).ToString(),      Text = "正常往來" },
+                        new() { Value = ((int)CustomerStatus.Inactive).ToString(),    Text = "停用" },
+                        new() { Value = ((int)CustomerStatus.Blacklisted).ToString(), Text = "黑名單" }
+                    }
+                },
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(Customer.CompanyContactPhone),
@@ -492,6 +511,7 @@
                     c => c.CurrentBalance)
                 .AddToSection(FormSectionNames.OtherInfo,
                     c => c.EmployeeId,
+                    c => c.CustomerStatus,
                     c => c.Remarks)
                 .GroupIntoTab("客戶資料", "bi-building", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo)
                 .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())

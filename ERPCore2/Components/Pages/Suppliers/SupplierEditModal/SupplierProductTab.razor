@@ -1,0 +1,200 @@
+@* 廠商供應商品 Tab - 自包含元件，主組件透過 @ref 協調 *@
+@inject IProductSupplierService ProductSupplierService
+@inject INotificationService NotificationService
+
+@if (_isLoading)
+{
+    <div class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">載入中...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        <small class="text-muted">共 <strong>@_productSuppliers.Count</strong> 項商品</small>
+        <small class="text-muted fst-italic">
+            <i class="bi bi-info-circle me-1"></i>採購單儲存時自動同步，★ 表示常用廠商
+        </small>
+    </div>
+
+    <InteractiveTableComponent TItem="ProductSupplier"
+                               Items="@_productSuppliers"
+                               ColumnDefinitions="@GetColumnDefinitions()"
+                               ShowHeader="true"
+                               ShowRowNumbers="true"
+                               IsStriped="true"
+                               IsHoverable="true"
+                               IsBordered="true"
+                               ShowBuiltInActions="true"
+                               ShowBuiltInDeleteButton="true"
+                               DeleteButtonVariant="ButtonVariant.Red"
+                               DeleteButtonTitle="從供應目錄移除"
+                               OnItemDelete="@HandleDeleteItem"
+                               EmptyMessage="尚無供應商品，採購單儲存後將自動建立" />
+}
+
+@* 刪除確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@_showDeleteModal"
+                              IsVisibleChanged="@((bool v) => _showDeleteModal = v)"
+                              Title="移除供應商品"
+                              Icon="bi-trash"
+                              Message="@($"確定要將「{_deletingItem?.Product?.Name ?? "此商品"}」從廠商供應目錄中移除嗎？")"
+                              ConfirmButtonText="確認移除"
+                              CancelButtonText="取消"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@HandleConfirmDelete"
+                              OnCancel="@(() => _showDeleteModal = false)" />
+
+@code {
+    [Parameter] public int? SupplierId { get; set; }
+
+    private List<ProductSupplier> _productSuppliers = new();
+    private bool _isLoading = false;
+    private bool _showDeleteModal = false;
+    private ProductSupplier? _deletingItem = null;
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    public async Task LoadAsync(int supplierId)
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _productSuppliers = await ProductSupplierService.GetBySupplierIdAsync(supplierId);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入供應商品時發生錯誤：{ex.Message}");
+            _productSuppliers = new();
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Clear()
+    {
+        _productSuppliers = new();
+        StateHasChanged();
+    }
+
+    // ===== 欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "商品編號",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                DisplayFormatter = item => item is ProductSupplier ps0 ? ps0.Product?.Code ?? "-" : "-"
+            },
+            new()
+            {
+                Title = "商品名稱",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                DisplayFormatter = item => item is ProductSupplier ps1 ? ps1.Product?.Name ?? "-" : "-"
+            },
+            new()
+            {
+                Title = "供應商料號",
+                PropertyName = nameof(ProductSupplier.SupplierProductCode),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px",
+                NullDisplayText = "-"
+            },
+            new()
+            {
+                Title = "最近採購價",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                TextAlign = "right",
+                DisplayFormatter = item =>
+                {
+                    if (item is not ProductSupplier ps) return "-";
+                    return ps.LastPurchasePrice.HasValue
+                        ? ps.LastPurchasePrice.Value.ToString("N0")
+                        : "-";
+                }
+            },
+            new()
+            {
+                Title = "最近採購日",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                DisplayFormatter = item =>
+                {
+                    if (item is not ProductSupplier ps) return "-";
+                    return ps.LastPurchaseDate.HasValue
+                        ? ps.LastPurchaseDate.Value.ToString("yyyy/MM/dd")
+                        : "-";
+                }
+            },
+            new()
+            {
+                Title = "常用",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "55px",
+                TextAlign = "center",
+                DisplayFormatter = item =>
+                {
+                    if (item is not ProductSupplier ps) return "";
+                    return ps.IsPreferred ? "<span class=\"text-warning fw-bold\" title=\"常用廠商\">★</span>" : "";
+                }
+            }
+        };
+    }
+
+    // ===== 刪除處理 =====
+
+    private async Task HandleDeleteItem(ProductSupplier item)
+    {
+        _deletingItem = item;
+        _showDeleteModal = true;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleConfirmDelete()
+    {
+        if (_deletingItem == null) return;
+
+        try
+        {
+            var result = await ProductSupplierService.DeleteAsync(_deletingItem.Id);
+            if (result.IsSuccess)
+            {
+                _productSuppliers.RemoveAll(ps => ps.Id == _deletingItem.Id);
+                await NotificationService.ShowSuccessAsync("已從供應目錄中移除");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"移除失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"移除時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            _deletingItem = null;
+            _showDeleteModal = false;
+            StateHasChanged();
+        }
+    }
+}
