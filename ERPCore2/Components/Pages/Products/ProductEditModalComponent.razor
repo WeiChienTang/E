@@ -16,6 +16,9 @@
 @inject IProductDetailReportService ProductDetailReportService
 @inject ActionButtonHelper ActionButtonHelper
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
+@inject ICompanyModuleService CompanyModuleService
+@inject INavigationPermissionService NavigationPermissionService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="Product" 
                           TService="IProductService"
@@ -24,13 +27,14 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@ProductId"
                           Service="@ProductService"
-                          EntityName="商品"
-                          EntityNamePlural="商品"
-                          ModalTitle="@(ProductId.HasValue ? "編輯商品" : "新增商品")"
+                          EntityName="@L["Entity.Product"]"
+                          EntityNamePlural="@L["Entity.Product"]"
+                          ModalTitle="@(ProductId.HasValue ? L["Message.EditTitle", L["Entity.Product"]].ToString() : L["Message.CreateTitle", L["Entity.Product"]].ToString())"
                           Size="GenericEditModalComponent<Product, IProductService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
@@ -38,18 +42,18 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadProductData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(ProductId.HasValue ? "編輯商品成功" : "新增商品成功")"
-                          SaveFailureMessage="商品儲存失敗"
+                          SaveSuccessMessage="@(ProductId.HasValue ? L["Message.UpdateSuccess", L["Entity.Product"]].ToString() : L["Message.CreateSuccess", L["Entity.Product"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Product"]]"
                           RequiredPermission="Product.Read"
                           OnEntitySaved="@OnProductSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
-                          PrintButtonText="列印"
+                          PrintButtonText="@L["Button.Print"]"
                           ReportService="@ProductDetailReportService"
                           ReportId="@ReportIds.ProductDetail"
-                          ReportPreviewTitle="商品詳細資料預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Product"]]"
                           GetReportDocumentName="@(e => $"商品-{e.Code}")"
                           CustomActionButtons="@CustomActionButtons" />
 
@@ -110,6 +114,15 @@
     private GenericEditModalComponent<Product, IProductService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+
+    // Tab 元件參考
+    private ProductAccountingTab? accountingTab;
+
+    private RenderFragment CreateAccountingTabContent() => __builder =>
+    {
+        <ProductAccountingTab @ref="accountingTab" />
+    };
     
     // 標誌變數，用於追蹤是否需要在實體載入後刷新欄位
     private bool _entityLoadedButFieldsNotRefreshed = false;
@@ -220,6 +233,11 @@
         {
             _hasCheckedEntityLoad = true;
             await RefreshFormFieldsAfterEntityLoadAsync();
+
+            if (loadedEntityId > 0)
+                if (accountingTab != null) await accountingTab.LoadAsync(loadedEntityId);
+            else
+                accountingTab?.Clear();
         }
         catch (Exception ex)
         {
@@ -340,9 +358,9 @@
             new()
             {
                 PropertyName = nameof(Product.Code),
-                Label = "商品編號",
+                Label = L["Field.ProductCode"],
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入商品編號",
+                Placeholder = L["Placeholder.PleaseInput", L["Field.ProductCode"]],
                 IsRequired = true,
                 MaxLength = 50,
                 HelpText = "商品的唯一識別碼"
@@ -350,9 +368,9 @@
             new FormFieldDefinition()
             {
                 PropertyName = nameof(Product.Barcode),
-                Label = "條碼編號",
+                Label = L["Field.Barcode"],
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入條碼編號",
+                Placeholder = L["Placeholder.PleaseInput", L["Field.Barcode"]],
                 IsRequired = true,
                 MaxLength = 50,
                 HelpText = "商品的條碼編號",
@@ -361,9 +379,9 @@
             new()
             {
                 PropertyName = nameof(Product.Name),
-                Label = "商品名稱",
+                Label = L["Field.ProductName"],
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入商品名稱",
+                Placeholder = L["Placeholder.PleaseInput", L["Field.ProductName"]],
                 IsRequired = true,
                 MaxLength = 100,
                 HelpText = "商品的完整名稱"
@@ -372,9 +390,9 @@
             new()
             {
                 PropertyName = nameof(Product.ProductCategoryId),
-                Label = "類型",
+                Label = L["Field.Type"],
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇商品類型",
+                Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.Type"]],
                 IsRequired = true,
                 MinSearchLength = 0,
                 HelpText = "輸入類型名稱進行搜尋，或直接選擇",
@@ -383,9 +401,9 @@
             new()
             {
                 PropertyName = nameof(Product.SizeId),
-                Label = "尺寸",
+                Label = L["Entity.Size"],
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇尺寸",
+                Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Size"]],
                 IsRequired = false,
                 MinSearchLength = 0,
                 HelpText = "輸入尺寸名稱進行搜尋，或直接選擇",
@@ -394,9 +412,9 @@
             new()
             {
                 PropertyName = nameof(Product.UnitId),
-                Label = "採購單位",
+                Label = L["Field.PurchaseUnit"],
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇採購計量單位",
+                Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.PurchaseUnit"]],
                 IsRequired = true,
                 MinSearchLength = 0,
                 HelpText = "商品的採購計量單位（例如：包、箱、公斤）",
@@ -405,9 +423,9 @@
             new()
             {
                 PropertyName = nameof(Product.ProductionUnitId),
-                Label = "製程單位",
+                Label = L["Field.ProductionUnit"],
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇製程/庫存單位",
+                Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.ProductionUnit"]],
                 IsRequired = false,
                 MinSearchLength = 0,
                 HelpText = "生產製造或庫存使用的單位（若與商品單位相同則無需填寫，系統預設為商品單位）",
@@ -429,9 +447,9 @@
             new FormFieldDefinition()
             {
                 PropertyName = nameof(Product.TaxRate),
-                Label = "稅率%",
+                Label = L["Field.TaxRate"],
                 FieldType = FormFieldType.Number,
-                Placeholder = "請輸入稅率",
+                Placeholder = L["Placeholder.PleaseInput", L["Field.TaxRate"]],
                 IsRequired = true,
                 HelpText = "商品的稅率，介於0到100之間，預設值來自系統參數",
                 Min = 0,
@@ -451,9 +469,9 @@
             new()
             {
                 PropertyName = nameof(Product.Specification),
-                Label = "規格說明",
+                Label = L["Field.Specification"],
                 FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入規格說明",
+                Placeholder = L["Placeholder.PleaseInput", L["Field.Specification"]],
                 IsRequired = false,
                 MaxLength = 100,
                 HelpText = "商品的規格說明資訊"
@@ -462,7 +480,12 @@
             FormFieldConfigurationHelper.CreateRemarksField<Product>()
         };
 
-        formSections = FormSectionHelper<Product>.Create()
+        // 模組狀態（停用時隱藏對應 Tab）
+        var isAccountingEnabled = await CompanyModuleService.IsModuleEnabledAsync("Accounting");
+        if (!isAccountingEnabled)
+            isAccountingEnabled = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+
+        var builder = FormSectionHelper<Product>.Create()
             .AddToSection(FormSectionNames.BasicInfo,
                 p => p.Code,
                 p => p.Barcode,
@@ -476,9 +499,16 @@
                 p => p.ProductCategoryId,
                 p => p.SizeId,
                 p => p.Specification)
-            .AddToSection(FormSectionNames.AdditionalInfo,                
+            .AddToSection(FormSectionNames.AdditionalInfo,
                 p => p.Remarks)
-            .Build();
+            .GroupIntoTab("商品資料", "bi-box-seam", FormSectionNames.BasicInfo, FormSectionNames.CategoryAndSpecification, FormSectionNames.AdditionalInfo);
+
+        if (isAccountingEnabled)
+            builder = builder.GroupIntoCustomTab("會計資訊", "bi-calculator", CreateAccountingTabContent());
+
+        var layout = builder.BuildAll();
+        formSections = layout.FieldSections;
+        tabDefinitions = layout.TabDefinitions;
     }
 
 

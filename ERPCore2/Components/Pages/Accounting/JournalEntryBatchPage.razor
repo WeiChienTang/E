@@ -1,10 +1,24 @@
 @page "/journal-entry-batch"
+@attribute [Authorize]
 @inject IJournalEntryAutoGenerationService AutoGenerationService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICompanyModuleService CompanyModuleService
+@inject INavigationPermissionService NavigationPermissionService
 @rendermode InteractiveServer
 
 <PageTitle>批次轉傳票</PageTitle>
+
+@if (!_isModuleEnabled)
+{
+    <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 60vh;">
+        <i class="bi bi-lock-fill text-secondary" style="font-size: 4rem;"></i>
+        <h4 class="mt-3 text-secondary">此功能未開放</h4>
+        <p class="text-muted">您的系統目前未啟用此功能模組，請聯絡系統管理員。</p>
+    </div>
+}
+else
+{
 
 <div class="container-fluid">
     @* 日期範圍篩選器 *@
@@ -327,7 +341,12 @@
     </div>
 </div>
 
+} @* end else (module enabled) *@
+
 @code {
+    // 模組狀態
+    private bool _isModuleEnabled = true;
+
     // 資料
     private List<PurchaseReceiving> purchaseReceivings = new();
     private List<PurchaseReturn> purchaseReturns = new();
@@ -356,6 +375,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // 公司層級模組檢查（只有 IsSuperAdmin 可繞過）
+        var isEnabled = await CompanyModuleService.IsModuleEnabledAsync("Accounting");
+        if (!isEnabled)
+        {
+            _isModuleEnabled = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+        }
+
+        if (!_isModuleEnabled) return;
+
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         currentUser = authState.User.Identity?.Name ?? "System";
         await LoadAllAsync();

@@ -680,6 +680,45 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<List<SalesDelivery>> GetBySalesReturnIdAsync(int salesReturnId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var deliveryDetailIds = await context.SalesReturnDetails
+                    .Where(d => d.SalesReturnId == salesReturnId &&
+                                d.SalesDeliveryDetailId.HasValue)
+                    .Select(d => d.SalesDeliveryDetailId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                var deliveryIds = await context.SalesDeliveryDetails
+                    .Where(sdd => deliveryDetailIds.Contains(sdd.Id))
+                    .Select(sdd => sdd.SalesDeliveryId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.SalesDeliveries
+                    .Include(sd => sd.Customer)
+                    .Include(sd => sd.Employee)
+                    .Where(sd => deliveryIds.Contains(sd.Id))
+                    .OrderByDescending(sd => sd.DeliveryDate)
+                    .ThenBy(sd => sd.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesReturnIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetBySalesReturnIdAsync),
+                    ServiceType = GetType().Name,
+                    SalesReturnId = salesReturnId
+                });
+                return new List<SalesDelivery>();
+            }
+        }
+
         #endregion
     }
 }

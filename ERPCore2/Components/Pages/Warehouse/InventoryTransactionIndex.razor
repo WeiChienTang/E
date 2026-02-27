@@ -3,6 +3,7 @@
 @inject IWarehouseService WarehouseService
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <PageTitle>庫存異動記錄</PageTitle>
@@ -13,7 +14,7 @@
                           EntityBasePath="/inventoryTransactions"
                           PageTitle="庫存異動記錄"
                           PageSubtitle="查詢與管理所有庫存異動歷史記錄"
-                          EntityName="庫存異動記錄"
+                          EntityName="@L["Entity.InventoryTransaction"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

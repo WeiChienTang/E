@@ -21,6 +21,9 @@ public class ChartDefinition
 
     /// <summary>Drill-down 明細表格欄位定義（可選）；若未設定則使用預設欄位（代碼 + 名稱）</summary>
     public List<InteractiveColumnDefinition>? DetailColumns { get; set; }
+
+    /// <summary>是否為金額圖表（true 時 Y 軸與工具提示顯示千分位格式）</summary>
+    public bool IsMoneyChart { get; set; } = false;
 }
 
 /// <summary>圖表分類常數</summary>

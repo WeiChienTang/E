@@ -8,17 +8,18 @@
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IEmployeeService EmployeeService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="ReportPrintConfiguration" 
+<GenericEditModalComponent TEntity="ReportPrintConfiguration"
                           TService="IReportPrintConfigurationService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@ReportPrintConfigurationId"
                           Service="@ReportPrintConfigurationService"
-                          EntityName="報表列印配置"
-                          EntityNamePlural="報表列印配置"
-                          ModalTitle="@(ReportPrintConfigurationId.HasValue ? "編輯報表列印配置" : "新增報表列印配置")"
+                          EntityName="@L["Entity.ReportPrintConfiguration"]"
+                          EntityNamePlural="@L["Entity.ReportPrintConfiguration"]"
+                          ModalTitle="@(ReportPrintConfigurationId.HasValue ? L["Message.EditTitle", L["Entity.ReportPrintConfiguration"]].ToString() : L["Message.CreateTitle", L["Entity.ReportPrintConfiguration"]].ToString())"
                           Size="GenericEditModalComponent<ReportPrintConfiguration, IReportPrintConfigurationService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -29,8 +30,8 @@
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           DataLoader="@LoadReportPrintConfigurationData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(ReportPrintConfigurationId.HasValue ? "報表列印配置更新成功" : "報表列印配置新增成功")"
-                          SaveFailureMessage="報表列印配置儲存失敗"
+                          SaveSuccessMessage="@(ReportPrintConfigurationId.HasValue ? L["Message.UpdateSuccess", L["Entity.ReportPrintConfiguration"]].ToString() : L["Message.CreateSuccess", L["Entity.ReportPrintConfiguration"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ReportPrintConfiguration"]]"
                           RequiredPermission="ReportPrintConfiguration.Read"
                           OnEntitySaved="@OnReportPrintConfigurationSaved"
                           OnCancel="@OnCancel"
@@ -217,19 +218,19 @@
                 new()
                 {
                     PropertyName = nameof(ReportPrintConfiguration.Code),
-                    Label = "編號",
+                    Label = L["Field.Code"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Code"]],
                     IsRequired = true,
                     HelpText = "報表列印配置的唯一識別編號,新增時系統會自動產生,也可手動修改"
                 },
                 new()
                 {
                     PropertyName = nameof(ReportPrintConfiguration.ReportId),
-                    Label = "報表",
+                    Label = L["Field.ReportName"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
-                    Placeholder = "請選擇報表",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.ReportName"]],
                     HelpText = "選擇要設定列印配置的報表",
                     Options = reportOptions,
                     IsReadOnly = true  // Seed 時已建立，不允許修改
@@ -237,31 +238,31 @@
                 new()
                 {
                     PropertyName = nameof(ReportPrintConfiguration.ReportName),
-                    Label = "報表名稱",
+                    Label = L["Field.ReportName"],
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
                     IsReadOnly = true,
-                    Placeholder = "選擇報表後自動填入",
+                    Placeholder = L["Placeholder.AutoFill"],
                     HelpText = "報表的顯示名稱（由系統自動填入）"
                 },
                 // 列印設定區段
                 new()
                 {
                     PropertyName = nameof(ReportPrintConfiguration.PrinterConfigurationId),
-                    Label = "印表機",
+                    Label = L["Field.Printer"],
                     FieldType = FormFieldType.AutoComplete,
                     IsRequired = true,
-                    Placeholder = "請輸入或選擇印表機設定",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.Printer"]],
                     MinSearchLength = 0,
                     HelpText = "輸入印表機名稱進行搜尋，或直接選擇"
                 },
                 new()
                 {
                     PropertyName = nameof(ReportPrintConfiguration.PaperSettingId),
-                    Label = "紙張",
+                    Label = L["Field.Paper"],
                     FieldType = FormFieldType.AutoComplete,
                     IsRequired = true,
-                    Placeholder = "請輸入或選擇紙張設定",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.Paper"]],
                     MinSearchLength = 0,
                     HelpText = "輸入紙張名稱進行搜尋，或直接選擇"
                 },
@@ -269,10 +270,10 @@
                 new()
                 {
                     PropertyName = nameof(ReportPrintConfiguration.Remarks),
-                    Label = "備註",
+                    Label = L["Label.Remarks"],
                     FieldType = FormFieldType.TextArea,
                     IsRequired = false,
-                    Placeholder = "請輸入備註（可選）",
+                    Placeholder = L["Placeholder.Remarks"],
                     HelpText = "選填的備註說明",
                     Rows = 2,
                     ContainerCssClass = "col-12"
@@ -285,7 +286,7 @@
                 formFields.Add(new()
                 {
                     PropertyName = nameof(ReportPrintConfiguration.Status),
-                    Label = "狀態",
+                    Label = L["Field.Status"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = EntityStatusHelper.GetEntityStatusOptions(),

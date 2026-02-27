@@ -3,6 +3,7 @@
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Helpers
 @using ERPCore2.Models.Enums
+@inject IStringLocalizer<SharedResource> L
 @inject IProductService ProductService
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
@@ -28,7 +29,8 @@ else
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
-                                      TItem="ReceivingItem" 
+                                      TItem="ReceivingItem"
+                                      OnDataChanged="@NotifyChange"
                                       Items="@ReceivingItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
@@ -347,7 +349,7 @@ else
         // 1. 商品編號/名稱 - 觸發欄位
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "商品編號/名稱",
+            Title = L["Column.ProductCodeName"],
             PropertyName = "ProductSearchValue",
             EmptyCheckPropertyName = "SelectedProduct",
             TriggerEmptyRowOnFilled = true,  // 選擇後自動新增空行
@@ -401,7 +403,7 @@ else
         // 2. 採購數量（唯讀）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "採購量",
+            Title = L["Column.PurchaseQuantity"],
             PropertyName = "OrderQuantity",
             ColumnType = InteractiveColumnType.Display,
             Width = "100px",
@@ -412,7 +414,7 @@ else
         // 3. 入庫數量
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "入庫量",
+            Title = L["Column.ReceivedQuantity"],
             PropertyName = "ReceivedQuantity",
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
@@ -433,7 +435,7 @@ else
         // 4. 已退數量（唯讀，顯示累計退貨數量）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "已退量",
+            Title = L["Column.AlreadyReturnedQuantity"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "100px",
@@ -465,7 +467,7 @@ else
         // 5. 單價
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "單價",
+            Title = L["Column.UnitPrice"],
             PropertyName = "UnitPrice",
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
@@ -486,7 +488,7 @@ else
         // 6. 稅率%
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "稅率%",
+            Title = L["Field.TaxRate"],
             PropertyName = "TaxRate",
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
@@ -510,7 +512,7 @@ else
         // 7. 小計（計算欄位）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "小計",
+            Title = L["Column.Subtotal"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
@@ -525,7 +527,7 @@ else
         // 8. 倉庫
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "倉庫",
+            Title = L["Entity.Warehouse"],
             PropertyName = "WarehouseId",
             ColumnType = InteractiveColumnType.Select,
             Width = "120px",
@@ -551,7 +553,7 @@ else
         // 9. 庫位
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "庫位",
+            Title = L["Column.Location"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
@@ -591,7 +593,7 @@ else
         // 10. 備註 - 使用 Custom 類型，確保有下一步時仍可編輯（參考 PurchaseOrderTable.razor）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "備註",
+            Title = L["Label.Remarks"],
             PropertyName = "Remarks",
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",

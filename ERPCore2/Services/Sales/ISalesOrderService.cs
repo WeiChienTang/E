@@ -63,5 +63,15 @@ namespace ERPCore2.Services
         /// <param name="salesOrderId">銷貨訂單ID</param>
         /// <returns>庫存檢查結果</returns>
         Task<OrderInventoryCheckResult?> GetOrderInventoryCheckAsync(int salesOrderId);
+
+        /// <summary>
+        /// 依報價單 ID 取得轉換而來的銷貨訂單（跨訂單明細查詢）
+        /// </summary>
+        Task<List<SalesOrder>> GetByQuotationIdAsync(int quotationId);
+
+        /// <summary>
+        /// 依銷貨出貨單 ID 取得來源銷貨訂單（跨出貨明細查詢）
+        /// </summary>
+        Task<List<SalesOrder>> GetBySalesDeliveryIdAsync(int salesDeliveryId);
     }
 }

@@ -247,31 +247,33 @@ public class CustomerChartService : ICustomerChartService
 
     // ===== 金錢數據圖表 =====
 
-    /// <summary>客戶銷售金額排行 Top N（依含稅總額）</summary>
+    /// <summary>客戶出貨金額排行 Top N（依含稅出貨總額，使用出貨單）</summary>
     public async Task<List<ChartDataItem>> GetTopCustomersBySalesAmountAsync(int top = 10)
     {
         using var context = await _factory.CreateDbContextAsync();
 
-        // Group key 不能含字串插補（EF Core 無法翻譯），改為分開欄位後記憶體格式化
-        var result = await (
-            from so in context.SalesOrders
-            where so.Status != EntityStatus.Deleted
-            join c in context.Customers on so.CustomerId equals c.Id
-            group so by new { c.Id, c.CompanyName, c.Code } into g
-            select new { g.Key.Id, g.Key.CompanyName, g.Key.Code, Total = g.Sum(o => o.TotalAmount + o.SalesTaxAmount) }
-        )
-        .OrderByDescending(x => x.Total)
-        .Take(top)
-        .ToListAsync();
+        // 先取出必要欄位，再於記憶體中分組加總，避免 EF Core 對 GroupBy+Sum(算術) 的翻譯問題
+        // 使用出貨單（SalesDeliveries）而非訂單，因出貨才產生應收帳款
+        var rows = await (
+            from sd in context.SalesDeliveries
+            where sd.Status != EntityStatus.Deleted
+            join c in context.Customers on sd.CustomerId equals c.Id
+            select new { c.Id, c.CompanyName, c.Code, sd.TotalAmount, sd.TaxAmount }
+        ).ToListAsync();
 
-        return result.Select(x => new ChartDataItem
-        {
-            Label = x.CompanyName ?? x.Code ?? $"ID:{x.Id}",
-            Value = x.Total
-        }).ToList();
+        return rows
+            .GroupBy(x => new { x.Id, x.CompanyName, x.Code })
+            .Select(g => new ChartDataItem
+            {
+                Label = g.Key.CompanyName ?? g.Key.Code ?? $"ID:{g.Key.Id}",
+                Value = g.Sum(x => x.TotalAmount + x.TaxAmount)
+            })
+            .OrderByDescending(x => x.Value)
+            .Take(top)
+            .ToList();
     }
 
-    /// <summary>每月銷售收入趨勢（含稅，近 N 個月）</summary>
+    /// <summary>每月銷售收入趨勢（含稅，近 N 個月，依出貨日期）</summary>
     public async Task<List<ChartDataItem>> GetMonthlySalesTrendAsync(int months = 12)
     {
         using var context = await _factory.CreateDbContextAsync();
@@ -279,15 +281,15 @@ public class CustomerChartService : ICustomerChartService
         var now = DateTime.Now;
         var startDate = new DateTime(now.AddMonths(-(months - 1)).Year, now.AddMonths(-(months - 1)).Month, 1);
 
-        // 先取出必要欄位，再於記憶體中分組加總，避免 EF Core 對 GroupBy+Sum(算術) 的翻譯問題
-        var rows = await context.SalesOrders
-            .Where(so => so.Status != EntityStatus.Deleted && so.OrderDate >= startDate)
-            .Select(so => new { so.OrderDate, so.TotalAmount, so.SalesTaxAmount })
+        // 使用出貨單（SalesDeliveries）而非訂單，因出貨才產生實際銷售收入與應收帳款
+        var rows = await context.SalesDeliveries
+            .Where(sd => sd.Status != EntityStatus.Deleted && sd.DeliveryDate >= startDate)
+            .Select(sd => new { sd.DeliveryDate, sd.TotalAmount, sd.TaxAmount })
             .ToListAsync();
 
         var grouped = rows
-            .GroupBy(x => new { x.OrderDate.Year, x.OrderDate.Month })
-            .ToDictionary(g => (g.Key.Year, g.Key.Month), g => g.Sum(x => x.TotalAmount + x.SalesTaxAmount));
+            .GroupBy(x => new { x.DeliveryDate.Year, x.DeliveryDate.Month })
+            .ToDictionary(g => (g.Key.Year, g.Key.Month), g => g.Sum(x => x.TotalAmount + x.TaxAmount));
 
         var result = new List<ChartDataItem>();
         for (int i = months - 1; i >= 0; i--)
@@ -339,45 +341,47 @@ public class CustomerChartService : ICustomerChartService
     {
         using var context = await _factory.CreateDbContextAsync();
 
-        var result = await (
+        // 先取出必要欄位，再於記憶體中分組加總，避免 EF Core 對 GroupBy+Sum(算術) 的翻譯問題
+        var rows = await (
             from sr in context.SalesReturns
             where sr.Status != EntityStatus.Deleted
             join c in context.Customers on sr.CustomerId equals c.Id
-            group sr by new { c.Id, c.CompanyName, c.Code } into g
-            select new { g.Key.Id, g.Key.CompanyName, g.Key.Code, Total = g.Sum(r => r.TotalReturnAmount + r.ReturnTaxAmount) }
-        )
-        .OrderByDescending(x => x.Total)
-        .Take(top)
-        .ToListAsync();
+            select new { c.Id, c.CompanyName, c.Code, sr.TotalReturnAmount, sr.ReturnTaxAmount }
+        ).ToListAsync();
 
-        return result.Select(x => new ChartDataItem
-        {
-            Label = x.CompanyName ?? x.Code ?? $"ID:{x.Id}",
-            Value = x.Total
-        }).ToList();
+        return rows
+            .GroupBy(x => new { x.Id, x.CompanyName, x.Code })
+            .Select(g => new ChartDataItem
+            {
+                Label = g.Key.CompanyName ?? g.Key.Code ?? $"ID:{g.Key.Id}",
+                Value = g.Sum(x => x.TotalReturnAmount + x.ReturnTaxAmount)
+            })
+            .OrderByDescending(x => x.Value)
+            .Take(top)
+            .ToList();
     }
 
     // ===== 金錢數據 Drill-down 明細 =====
 
-    /// <summary>點擊銷售排行客戶 → 顯示該客戶的訂單明細（最近 20 筆）</summary>
+    /// <summary>點擊銷售排行客戶 → 顯示該客戶的出貨明細（最近 20 筆）</summary>
     public async Task<List<ChartDetailItem>> GetTopCustomerSalesOrderDetailsAsync(string customerLabel)
     {
         using var context = await _factory.CreateDbContextAsync();
 
-        // WHERE 條件不能使用字串插補，改為先比 CompanyName，若為 null 再比 Code
+        // 使用出貨單（SalesDeliveries）與主圖表一致；先比 CompanyName，若為 null 再比 Code
         var raw = await (
-            from so in context.SalesOrders
-            where so.Status != EntityStatus.Deleted
-            join c in context.Customers on so.CustomerId equals c.Id
+            from sd in context.SalesDeliveries
+            where sd.Status != EntityStatus.Deleted
+            join c in context.Customers on sd.CustomerId equals c.Id
             where c.CompanyName == customerLabel || (c.CompanyName == null && c.Code == customerLabel)
-            orderby so.OrderDate descending
-            select new { so.Id, so.OrderDate, Amount = so.TotalAmount + so.SalesTaxAmount }
+            orderby sd.DeliveryDate descending
+            select new { sd.Id, sd.DeliveryDate, Amount = sd.TotalAmount + sd.TaxAmount }
         ).Take(20).ToListAsync();
 
         return raw.Select(x => new ChartDetailItem
         {
             Id       = x.Id,
-            Name     = x.OrderDate.ToString("yyyy/MM/dd"),
+            Name     = x.DeliveryDate.ToString("yyyy/MM/dd"),
             SubLabel = $"NT${x.Amount:N0}"
         }).ToList();
     }

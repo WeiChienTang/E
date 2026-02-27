@@ -1,25 +1,26 @@
 @* 可重用的職位編輯組件 - 可在任何頁面中嵌入 *@
 @inject IEmployeePositionService EmployeePositionService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="EmployeePosition" 
+<GenericEditModalComponent TEntity="EmployeePosition"
                           TService="IEmployeePositionService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@EmployeePositionId"
                           Service="@EmployeePositionService"
-                          EntityName="職位"
-                          EntityNamePlural="職位"
-                          ModalTitle="@(EmployeePositionId.HasValue ? "編輯職位" : "新增職位")"
+                          EntityName="@L["Entity.EmployeePosition"]"
+                          EntityNamePlural="@L["Entity.EmployeePosition"]"
+                          ModalTitle="@(EmployeePositionId.HasValue ? L["Message.EditTitle", L["Entity.EmployeePosition"]].ToString() : L["Message.CreateTitle", L["Entity.EmployeePosition"]].ToString())"
                           Size="GenericEditModalComponent<EmployeePosition, IEmployeePositionService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadEmployeePositionData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(EmployeePositionId.HasValue ? "職位更新成功" : "職位新增成功")"
-                          SaveFailureMessage="職位儲存失敗"
+                          SaveSuccessMessage="@(EmployeePositionId.HasValue ? L["Message.UpdateSuccess", L["Entity.EmployeePosition"]].ToString() : L["Message.CreateSuccess", L["Entity.EmployeePosition"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeePosition"]]"
                           RequiredPermission="EmployeePosition.Read"
                           OnEntitySaved="@OnEmployeePositionSaved"
                           OnCancel="@OnCancel" />
@@ -62,18 +63,18 @@
                 new()
                 {
                     PropertyName = nameof(EmployeePosition.Code),
-                    Label = "職位編號",
+                    Label = L["Field.PositionCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入職位編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PositionCode"]],
                     IsRequired = true,
                     HelpText = "職位的唯一識別編號，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
                     PropertyName = nameof(EmployeePosition.Name),
-                    Label = "職位名稱",
+                    Label = L["Field.PositionName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入職位名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PositionName"]],
                     IsRequired = true,
                     HelpText = "職位的正式名稱，將顯示在系統各處"
                 },

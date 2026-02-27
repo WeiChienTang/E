@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericIndexPageComponent TEntity="PrinterConfiguration" 
                       TService="IPrinterConfigurationService"
@@ -9,7 +10,7 @@
                       EntityBasePath="/printerCconfigurations"
                       PageTitle="印表機設定"
                       PageSubtitle="管理系統中的印表機連接設定"
-                      EntityName="印表機設定"
+                      EntityName="@L["Entity.PrinterConfiguration"]"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"

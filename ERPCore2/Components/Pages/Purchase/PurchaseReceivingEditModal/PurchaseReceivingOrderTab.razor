@@ -1,0 +1,83 @@
+@* 採購進貨 → 來源採購訂單 Tab（唯讀） *@
+@inject IPurchaseOrderService PurchaseOrderService
+
+@if (_receivingId <= 0)
+{
+    <div class="text-muted py-4 px-2">
+        <i class="bi bi-info-circle me-2"></i>請先儲存進貨單，再查看來源採購訂單。
+    </div>
+}
+else if (_isLoading)
+{
+    <div class="text-muted py-4 px-2">
+        <i class="bi bi-hourglass-split me-2"></i>載入中...
+    </div>
+}
+else if (!_orders.Any())
+{
+    <div class="text-muted py-4 px-2">
+        <i class="bi bi-inbox me-2"></i>此進貨單無相關採購訂單。
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>訂單單號</th>
+                    <th>訂購日期</th>
+                    <th>廠商</th>
+                    <th class="text-end">訂單金額（含稅）</th>
+                    <th style="width:60px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in _orders)
+                {
+                    <tr>
+                        <td class="font-monospace small">@order.Code</td>
+                        <td>@order.OrderDate.ToString("yyyy-MM-dd")</td>
+                        <td>@(order.Supplier?.CompanyName ?? "—")</td>
+                        <td class="text-end">@order.PurchaseTotalAmountIncludingTax.ToString("N0")</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    title="開啟採購訂單"
+                                    @onclick="@(() => OnOpenOrder.InvokeAsync(order.Id))">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    /// <summary>點擊採購訂單時觸發，傳入 PurchaseOrderId</summary>
+    [Parameter] public EventCallback<int> OnOpenOrder { get; set; }
+
+    private int _receivingId;
+    private bool _isLoading;
+    private List<PurchaseOrder> _orders = new();
+
+    public async Task LoadAsync(int receivingId)
+    {
+        _receivingId = receivingId;
+        _isLoading = true;
+        StateHasChanged();
+
+        _orders = await PurchaseOrderService.GetByPurchaseReceivingIdAsync(receivingId);
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    public void Clear()
+    {
+        _receivingId = 0;
+        _orders = new();
+        StateHasChanged();
+    }
+}

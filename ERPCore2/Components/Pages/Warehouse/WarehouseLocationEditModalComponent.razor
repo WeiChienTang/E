@@ -3,17 +3,18 @@
 @inject IWarehouseService WarehouseService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="WarehouseLocation" 
+<GenericEditModalComponent TEntity="WarehouseLocation"
                           TService="IWarehouseLocationService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@WarehouseLocationId"
                           Service="@WarehouseLocationService"
-                          EntityName="倉庫內位置"
-                          EntityNamePlural="倉庫內位置"
-                          ModalTitle="@(WarehouseLocationId.HasValue ? "編輯倉庫內位置" : "新增倉庫內位置")"
+                          EntityName="@L["Entity.WarehouseLocation"]"
+                          EntityNamePlural="@L["Entity.WarehouseLocation"]"
+                          ModalTitle="@(WarehouseLocationId.HasValue ? L["Message.EditTitle", L["Entity.WarehouseLocation"]].ToString() : L["Message.CreateTitle", L["Entity.WarehouseLocation"]].ToString())"
                           Size="GenericEditModalComponent<WarehouseLocation, IWarehouseLocationService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -24,8 +25,8 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadWarehouseLocationData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(WarehouseLocationId.HasValue ? "倉庫內位置更新成功" : "倉庫內位置新增成功")"
-                          SaveFailureMessage="倉庫內位置儲存失敗"
+                          SaveSuccessMessage="@(WarehouseLocationId.HasValue ? L["Message.UpdateSuccess", L["Entity.WarehouseLocation"]].ToString() : L["Message.CreateSuccess", L["Entity.WarehouseLocation"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WarehouseLocation"]]"
                           RequiredPermission="WarehouseLocation.Read"
                           OnEntitySaved="@OnWarehouseLocationSaved"
                           OnCancel="@OnCancel" />
@@ -131,9 +132,9 @@
                 new()
                 {
                     PropertyName = nameof(WarehouseLocation.Code),
-                    Label = "庫位編號",
+                    Label = L["Field.LocationCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入庫位編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.LocationCode"]],
                     IsRequired = true,
                     MaxLength = 20,
                     HelpText = "庫位的唯一識別編號，新增時系統會自動產生，也可手動修改"
@@ -141,9 +142,9 @@
                 new()
                 {
                     PropertyName = nameof(WarehouseLocation.Name),
-                    Label = "庫位名稱",
+                    Label = L["Field.LocationName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入庫位名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.LocationName"]],
                     IsRequired = true,
                     MaxLength = 50,
                     HelpText = "庫位的唯一名稱，用於識別不同庫位"
@@ -151,9 +152,9 @@
                 new()
                 {
                     PropertyName = nameof(WarehouseLocation.WarehouseId),
-                    Label = "所屬倉庫",
+                    Label = L["Entity.Warehouse"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇倉庫",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Warehouse"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入倉庫名稱進行搜尋，或直接選擇",
@@ -162,9 +163,9 @@
                 new()
                 {
                     PropertyName = nameof(WarehouseLocation.Zone),
-                    Label = "區域",
+                    Label = L["Field.Zone"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入區域編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Zone"]],
                     IsRequired = false,
                     MaxLength = 10,
                     HelpText = "庫位所在區域（如：A區、B區等）"
@@ -172,9 +173,9 @@
                 new()
                 {
                     PropertyName = nameof(WarehouseLocation.Aisle),
-                    Label = "排號",
+                    Label = L["Field.Row"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入排號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Row"]],
                     IsRequired = false,
                     MaxLength = 10,
                     HelpText = "庫位所在排號（如：01、02、03等）"
@@ -182,9 +183,9 @@
                 new()
                 {
                     PropertyName = nameof(WarehouseLocation.Level),
-                    Label = "層號",
+                    Label = L["Field.Level"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入層號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Level"]],
                     IsRequired = false,
                     MaxLength = 10,
                     HelpText = "庫位所在層號（如：1F、2F、3F等）"
@@ -192,9 +193,9 @@
                 new()
                 {
                     PropertyName = nameof(WarehouseLocation.Position),
-                    Label = "位號",
+                    Label = L["Field.Position"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入位號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Position"]],
                     IsRequired = false,
                     MaxLength = 10,
                     HelpText = "庫位具體位置號碼（如：A、B、C等）"
@@ -202,9 +203,9 @@
                 new()
                 {
                     PropertyName = nameof(WarehouseLocation.MaxCapacity),
-                    Label = "最大容量",
+                    Label = L["Field.MaxCapacity"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入最大容量",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.MaxCapacity"]],
                     IsRequired = false,
                     HelpText = "此庫位可容納的最大數量（選填）",                    
                 },

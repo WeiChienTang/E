@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using ERPCore2.Helpers;
 using ERPCore2.Models.Reports.FilterCriteria;
 
 namespace ERPCore2.Models.Reports.FilterTemplates;
@@ -20,10 +21,12 @@ public static class FilterTemplateRegistry
     {
         if (_isInitialized) return;
 
+        ConsoleHelper.WriteDebug("[FilterTemplateRegistry] Initialize 開始");
         lock (_initLock)
         {
             if (_isInitialized) return;
 
+        ConsoleHelper.WriteDebug("[FilterTemplateRegistry] 進入 lock，開始註冊報表配置...");
         // ==================== 客戶報表 ====================
 
         // 客戶對帳單（含期初餘額、出貨/退貨/收款明細、期末餘額）
@@ -135,6 +138,26 @@ public static class FilterTemplateRegistry
             GetDocumentName = criteria =>
             {
                 return $"客戶詳細資料-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
+        // AR007 - 客戶拜訪報告（依客戶與拜訪日期篩選拜訪記錄）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.CustomerVisitReport,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(CustomerVisitReportCriteria),
+            ReportServiceType = null,  // TODO: 待實作 ICustomerVisitReportService
+            PreviewTitle = "拜訪報告預覽",
+            FilterTitle = "拜訪報告篩選條件",
+            IconClass = "bi-journal-check",
+            GetDocumentName = criteria =>
+            {
+                var c = (CustomerVisitReportCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"拜訪報告-{dateRange}";
             }
         });
 
@@ -730,6 +753,7 @@ public static class FilterTemplateRegistry
         });
 
             _isInitialized = true;
+            ConsoleHelper.WriteDebug($"[FilterTemplateRegistry] Initialize 完成，共 {_configs.Count} 個報表配置");
         }
     }
 

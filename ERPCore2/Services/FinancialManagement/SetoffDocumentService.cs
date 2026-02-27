@@ -638,5 +638,149 @@ namespace ERPCore2.Services
 
             return count;
         }
+
+        public async Task<List<SetoffDocument>> GetByPurchaseReceivingIdAsync(int purchaseReceivingId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var receivingDetailIds = await context.PurchaseReceivingDetails
+                    .Where(prd => prd.PurchaseReceivingId == purchaseReceivingId)
+                    .Select(prd => prd.Id)
+                    .ToListAsync();
+
+                var documentIds = await context.SetoffProductDetails
+                    .Where(spd => spd.SourceDetailType == SetoffDetailType.PurchaseReceivingDetail &&
+                                  receivingDetailIds.Contains(spd.SourceDetailId))
+                    .Select(spd => spd.SetoffDocumentId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.SetoffDocuments
+                    .Where(sd => documentIds.Contains(sd.Id))
+                    .OrderByDescending(sd => sd.CreatedAt)
+                    .ThenBy(sd => sd.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPurchaseReceivingIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByPurchaseReceivingIdAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReceivingId = purchaseReceivingId
+                });
+                return new List<SetoffDocument>();
+            }
+        }
+
+        public async Task<List<SetoffDocument>> GetByPurchaseReturnIdAsync(int purchaseReturnId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var returnDetailIds = await context.PurchaseReturnDetails
+                    .Where(prd => prd.PurchaseReturnId == purchaseReturnId)
+                    .Select(prd => prd.Id)
+                    .ToListAsync();
+
+                var documentIds = await context.SetoffProductDetails
+                    .Where(spd => spd.SourceDetailType == SetoffDetailType.PurchaseReturnDetail &&
+                                  returnDetailIds.Contains(spd.SourceDetailId))
+                    .Select(spd => spd.SetoffDocumentId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.SetoffDocuments
+                    .Where(sd => documentIds.Contains(sd.Id))
+                    .OrderByDescending(sd => sd.CreatedAt)
+                    .ThenBy(sd => sd.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPurchaseReturnIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByPurchaseReturnIdAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReturnId = purchaseReturnId
+                });
+                return new List<SetoffDocument>();
+            }
+        }
+
+        public async Task<List<SetoffDocument>> GetBySalesDeliveryIdAsync(int salesDeliveryId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var deliveryDetailIds = await context.SalesDeliveryDetails
+                    .Where(sdd => sdd.SalesDeliveryId == salesDeliveryId)
+                    .Select(sdd => sdd.Id)
+                    .ToListAsync();
+
+                var documentIds = await context.SetoffProductDetails
+                    .Where(spd => spd.SourceDetailType == SetoffDetailType.SalesDeliveryDetail &&
+                                  deliveryDetailIds.Contains(spd.SourceDetailId))
+                    .Select(spd => spd.SetoffDocumentId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.SetoffDocuments
+                    .Where(sd => documentIds.Contains(sd.Id))
+                    .OrderByDescending(sd => sd.CreatedAt)
+                    .ThenBy(sd => sd.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesDeliveryIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetBySalesDeliveryIdAsync),
+                    ServiceType = GetType().Name,
+                    SalesDeliveryId = salesDeliveryId
+                });
+                return new List<SetoffDocument>();
+            }
+        }
+
+        public async Task<List<SetoffDocument>> GetBySalesReturnIdAsync(int salesReturnId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var returnDetailIds = await context.SalesReturnDetails
+                    .Where(srd => srd.SalesReturnId == salesReturnId)
+                    .Select(srd => srd.Id)
+                    .ToListAsync();
+
+                var documentIds = await context.SetoffProductDetails
+                    .Where(spd => spd.SourceDetailType == SetoffDetailType.SalesReturnDetail &&
+                                  returnDetailIds.Contains(spd.SourceDetailId))
+                    .Select(spd => spd.SetoffDocumentId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.SetoffDocuments
+                    .Where(sd => documentIds.Contains(sd.Id))
+                    .OrderByDescending(sd => sd.CreatedAt)
+                    .ThenBy(sd => sd.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesReturnIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetBySalesReturnIdAsync),
+                    ServiceType = GetType().Name,
+                    SalesReturnId = salesReturnId
+                });
+                return new List<SetoffDocument>();
+            }
+        }
     }
 }

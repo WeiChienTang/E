@@ -7,6 +7,7 @@
 @inject IWarehouseLocationService WarehouseLocationService
 @inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @if (!SelectedWarehouseId.HasValue || SelectedWarehouseId.Value <= 0)
 {
@@ -21,6 +22,7 @@ else
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
                                   TItem="StockTakingDetailItem"
+                                  OnDataChanged="@NotifyDetailsChanged"
                                   Items="@DetailItems"
                                   ColumnDefinitions="@GetColumnDefinitions()"
                                   IsReadOnly="@IsReadOnly"
@@ -316,7 +318,7 @@ else
         // 商品選擇欄位
         columns.Add(new()
         {
-            Title = "商品編號/名稱",
+            Title = L["Column.ProductCodeName"],
             PropertyName = "ProductSearchValue",
             EmptyCheckPropertyName = "SelectedProduct",
             TriggerEmptyRowOnFilled = true,
@@ -389,7 +391,7 @@ else
         // 庫位選擇欄位
         columns.Add(new()
         {
-            Title = "庫位",
+            Title = L["Column.Location"],
             PropertyName = "SelectedWarehouseLocationId",
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
@@ -442,7 +444,7 @@ else
         // 系統庫存欄位（唯讀）
         columns.Add(new()
         {
-            Title = "庫存",
+            Title = L["Column.CurrentStock"],
             PropertyName = "SystemStock",
             ColumnType = InteractiveColumnType.Custom,
             Width = "80px",
@@ -458,7 +460,7 @@ else
         // 實盤數量欄位（可編輯）
         columns.Add(new()
         {
-            Title = "實盤數量",
+            Title = L["Column.StockTakingQuantity"],
             PropertyName = "ActualStock",
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
@@ -480,7 +482,7 @@ else
         // 差異數量欄位（計算欄位）
         columns.Add(new()
         {
-            Title = "差異",
+            Title = L["Field.DifferenceQuantity"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "80px",
@@ -506,7 +508,7 @@ else
         // 單位成本欄位
         columns.Add(new()
         {
-            Title = "單位成本",
+            Title = L["Column.UnitCost"],
             PropertyName = "UnitCost",
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
@@ -528,7 +530,7 @@ else
         // 盤盈盤虧欄位（計算欄位）
         columns.Add(new()
         {
-            Title = "盤盈盤虧",
+            Title = L["Field.InventoryResult"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
@@ -554,7 +556,7 @@ else
         // 盤點狀態欄位
         columns.Add(new()
         {
-            Title = "狀態",
+            Title = L["Field.Status"],
             PropertyName = "DetailStatus",
             ColumnType = InteractiveColumnType.Custom,
             Width = "80px",
@@ -570,7 +572,7 @@ else
         // 備註欄位
         columns.Add(new()
         {
-            Title = "備註",
+            Title = L["Label.Remarks"],
             PropertyName = "DetailRemarks",
             ColumnType = InteractiveColumnType.Input,
             Width = "200px",

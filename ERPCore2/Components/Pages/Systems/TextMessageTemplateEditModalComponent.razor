@@ -2,17 +2,18 @@
 @using System.Text.Json
 @inject ITextMessageTemplateService TextMessageTemplateService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="TextMessageTemplate" 
+<GenericEditModalComponent TEntity="TextMessageTemplate"
                           TService="ITextMessageTemplateService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@TextMessageTemplateId"
                           Service="@TextMessageTemplateService"
-                          EntityName="訊息範本"
-                          EntityNamePlural="訊息範本"
-                          ModalTitle="採購單訊息設定"
+                          EntityName="@L["Entity.TextMessageTemplate"]"
+                          EntityNamePlural="@L["Entity.TextMessageTemplate"]"
+                          ModalTitle="@L["Label.PurchaseOrderMessageSetting"]"
                           Size="GenericEditModalComponent<TextMessageTemplate, ITextMessageTemplateService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"

@@ -9,6 +9,7 @@
 @inject INotificationService NotificationService
 @inject IFormattedPrintService FormattedPrintService
 @inject IExcelExportService ExcelExportService
+@inject IPdfExportService PdfExportService
 @inject IJSRuntime JSRuntime
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject IPrinterConfigurationService PrinterConfigurationService
@@ -33,20 +34,30 @@
         <div class="w-100 d-flex flex-wrap align-items-center px-2 modal-buttons-container">
             @* 右側：操作按鈕 *@
             <div class="d-flex gap-2 ms-auto">
-                <GenericButtonComponent Text="匯出Excel" 
-                                      Variant="ButtonVariant.Green" 
-                                      OnClick="HandleExportExcel" 
-                                      IsDisabled="@(IsLoading || IsPrinting || IsExporting || FormattedDocument == null)" />
-                
-                <GenericButtonComponent Text="列印" 
-                                      Variant="ButtonVariant.Blue" 
-                                      OnClick="HandlePrint" 
-                                      IsDisabled="@(IsLoading || IsPrinting || string.IsNullOrEmpty(_printerName))" />
-                
-                <GenericButtonComponent Text="取消" 
-                                      Variant="ButtonVariant.Red" 
-                                      OnClick="HandleCancel" 
-                                      IsDisabled="@(IsLoading || IsPrinting)" />
+                <GenericButtonComponent Text="匯出Excel"
+                                      Variant="ButtonVariant.Green"
+                                      OnClick="HandleExportExcel"
+                                      IsDisabled="@(IsLoading || IsPrinting || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
+
+                <GenericButtonComponent Text="下載PDF"
+                                      Variant="ButtonVariant.Orange"
+                                      OnClick="HandleExportPdf"
+                                      IsDisabled="@(IsLoading || IsPrinting || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
+
+                <GenericButtonComponent Text="本機列印"
+                                      Variant="ButtonVariant.Cyan"
+                                      OnClick="HandleBrowserPrint"
+                                      IsDisabled="@(IsLoading || IsPrinting || _isGeneratingPdf || PreviewImages == null || !PreviewImages.Any())" />
+
+                <GenericButtonComponent Text="列印"
+                                      Variant="ButtonVariant.Blue"
+                                      OnClick="HandlePrint"
+                                      IsDisabled="@(IsLoading || IsPrinting || _isGeneratingPdf || string.IsNullOrEmpty(_printerName))" />
+
+                <GenericButtonComponent Text="取消"
+                                      Variant="ButtonVariant.Red"
+                                      OnClick="HandleCancel"
+                                      IsDisabled="@(IsLoading || IsPrinting || _isGeneratingPdf)" />
             </div>
         </div>
     </HeaderButtons>
@@ -220,8 +231,8 @@
                             {
                                 <div class="page-preview-container mb-3">
                                     <div class="page-number-badge">第 @(index + 1) 頁</div>
-                                    <img src="data:image/png;base64,@Convert.ToBase64String(imageData)" 
-                                         class="formatted-page-preview" 
+                                    <img src="data:image/png;base64,@Convert.ToBase64String(imageData)"
+                                         class="formatted-page-preview"
                                          alt="預覽第 @(index + 1) 頁" />
                                 </div>
                             }
@@ -237,6 +248,23 @@
                         </div>
                     }
                 </div>
+
+                @* 匯出進度條 Overlay *@
+                @if (_showExportProgress)
+                {
+                    <div class="export-progress-overlay">
+                        <div class="export-progress-card">
+                            <div class="export-progress-message">@_exportProgressMessage</div>
+                            <div class="progress export-progress-bar" role="progressbar"
+                                 aria-valuenow="@_exportProgressValue" aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated @_exportProgressColorClass"
+                                     style="width: @(_exportProgressValue)%">
+                                    @_exportProgressValue%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
         }
     </BodyContent>
@@ -308,7 +336,14 @@
     private bool IsLoading { get; set; } = false;
     private bool IsPrinting { get; set; } = false;
     private bool IsExporting { get; set; } = false;
+    private bool _isGeneratingPdf = false;
     private string LoadingMessage { get; set; } = "載入中...";
+
+    // 匯出進度條
+    private bool _showExportProgress = false;
+    private int _exportProgressValue = 0;
+    private string _exportProgressMessage = "";
+    private string _exportProgressColorClass = "bg-warning";
     
     // 印表機相關
     private string? _printerName = null;
@@ -370,7 +405,19 @@
             IsLoading = true;
             LoadingMessage = "載入列印配置...";
             StateHasChanged();
-            
+
+            // 重設所有選擇狀態，避免殘留上次開啟時的值
+            _selectedPrinterConfigurationId = 0;
+            _printerConfigurationId = null;
+            _printerName = null;
+            _selectedPaperSettingId = 0;
+            _paperSettingId = null;
+            _selectedPaper = null;
+            _marginTop = 0.3m;
+            _marginBottom = 0.3m;
+            _marginLeft = 0.8m;
+            _marginRight = 0.8m;
+
             // 載入所有印表機和紙張選項
             var printerTask = PrinterConfigurationService.GetAllAsync();
             var paperTask = PaperSettingService.GetAllAsync();
@@ -579,8 +626,21 @@
         }
     }
     
+    // ===== 匯出進度條 =====
+
+    /// <summary>
+    /// 更新匯出進度條，並讓 UI 刷新後再繼續
+    /// </summary>
+    private async Task SetExportProgress(int value, string message)
+    {
+        _exportProgressValue = value;
+        _exportProgressMessage = message;
+        StateHasChanged();
+        await Task.Delay(10);
+    }
+
     // ===== 事件處理 =====
-    
+
     /// <summary>
     /// 處理列印按鈕點擊
     /// 使用格式化列印服務
@@ -658,32 +718,30 @@
     {
         if (IsExporting || FormattedDocument == null)
             return;
-        
+
         try
         {
             IsExporting = true;
-            StateHasChanged();
-            
-            // 使用 ExcelExportService 轉換為 Excel
+            _showExportProgress = true;
+            _exportProgressColorClass = "bg-success";
+            await SetExportProgress(10, "正在產生 Excel...");
+
             var excelBytes = await ExcelExportService.ExportToExcelAsync(FormattedDocument);
-            
-            // 設定檔案名稱
+
+            await SetExportProgress(75, "正在下載...");
+
             var fileName = $"{FormattedDocument.DocumentName}.xlsx";
-            
-            // 轉換為 Base64 並觸發下載
             var base64 = Convert.ToBase64String(excelBytes);
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            
             var success = await JSRuntime.InvokeAsync<bool>("downloadFileFromBase64", fileName, base64, contentType);
-            
+
+            await SetExportProgress(100, success ? "下載完成！" : "下載失敗");
+            await Task.Delay(500);
+
             if (success)
-            {
                 await NotificationService.ShowSuccessAsync($"已下載 Excel 檔案：{fileName}");
-            }
             else
-            {
                 await NotificationService.ShowErrorAsync("下載 Excel 檔案失敗");
-            }
         }
         catch (Exception ex)
         {
@@ -692,10 +750,98 @@
         finally
         {
             IsExporting = false;
+            _showExportProgress = false;
             StateHasChanged();
         }
     }
     
+    /// <summary>
+    /// 處理下載PDF按鈕點擊
+    /// 重新以高解析度（150 DPI）渲染報表，再透過 PuppeteerSharp 產生 PDF 並下載
+    /// </summary>
+    private async Task HandleExportPdf()
+    {
+        if (_isGeneratingPdf || FormattedDocument == null)
+            return;
+
+        try
+        {
+            _isGeneratingPdf = true;
+            _showExportProgress = true;
+            _exportProgressColorClass = "bg-warning";
+            await SetExportProgress(5, "準備中...");
+
+            // 以 150 DPI 重新渲染以獲得更佳列印品質
+            await SetExportProgress(15, "正在渲染頁面...");
+            List<byte[]> pdfImages;
+            if (_selectedPaper != null)
+            {
+                pdfImages = FormattedPrintService.RenderToImages(FormattedDocument, _selectedPaper, dpi: 150);
+            }
+            else
+            {
+                // A4 @ 150 DPI：21cm × 150/2.54 ≈ 1240px，29.7cm × 150/2.54 ≈ 1754px
+                pdfImages = FormattedPrintService.RenderToImages(FormattedDocument, 1240, 1754, 150);
+            }
+
+            await SetExportProgress(60, "正在產生 PDF...");
+
+            var widthCm = _selectedPaper != null ? (double)_selectedPaper.Width : 21.0;
+            var heightCm = _selectedPaper != null ? (double)_selectedPaper.Height : 29.7;
+
+            var pdfBytes = await PdfExportService.ExportToPdfAsync(pdfImages, widthCm, heightCm);
+
+            await SetExportProgress(85, "正在下載...");
+
+            var fileName = $"{FormattedDocument.DocumentName}.pdf";
+            var base64 = Convert.ToBase64String(pdfBytes);
+            var success = await JSRuntime.InvokeAsync<bool>("downloadFileFromBase64", fileName, base64, "application/pdf");
+
+            await SetExportProgress(100, success ? "下載完成！" : "下載失敗");
+            await Task.Delay(800);
+
+            if (success)
+                await NotificationService.ShowSuccessAsync($"已下載 PDF 檔案：{fileName}");
+            else
+                await NotificationService.ShowErrorAsync("下載 PDF 檔案失敗");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"產生 PDF 時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            _isGeneratingPdf = false;
+            _showExportProgress = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理本機列印按鈕點擊
+    /// 將預覽圖片傳送到瀏覽器，透過 window.print() 開啟本機列印對話框
+    /// 適合外地工作者使用本機或 VPN 連線的印表機
+    /// </summary>
+    private async Task HandleBrowserPrint()
+    {
+        if (PreviewImages == null || !PreviewImages.Any())
+            return;
+
+        var base64Images = PreviewImages.Select(img => Convert.ToBase64String(img)).ToArray();
+        var widthCm = _selectedPaper != null ? (double)_selectedPaper.Width : 21.0;
+        var heightCm = _selectedPaper != null ? (double)_selectedPaper.Height : 29.7;
+
+        var success = await JSRuntime.InvokeAsync<bool>(
+            "browserPrintImages",
+            base64Images,
+            DocumentName,
+            widthCm,
+            heightCm);
+
+        if (!success)
+            await NotificationService.ShowWarningAsync("無法開啟列印視窗，請確認瀏覽器未封鎖彈出視窗");
+    }
+
     /// <summary>
     /// 處理取消按鈕點擊
     /// </summary>

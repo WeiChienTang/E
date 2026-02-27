@@ -19,6 +19,7 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject ISalesDeliveryReportService SalesDeliveryReportService
 @inject ERPCore2.Data.Context.AppDbContext DbContext
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="SalesDelivery" 
                           TService="ISalesDeliveryService"
@@ -27,9 +28,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@SalesDeliveryId"
                           Service="@SalesDeliveryService"
-                          EntityName="出貨單"
-                          EntityNamePlural="出貨單"
-                          ModalTitle="@(SalesDeliveryId.HasValue ? "編輯出貨單" : "新增出貨單")"
+                          EntityName="@L["Entity.SalesDelivery"]"
+                          EntityNamePlural="@L["Entity.SalesDelivery"]"
+                          ModalTitle="@(SalesDeliveryId.HasValue ? L["Message.EditTitle", L["Entity.SalesDelivery"]].ToString() : L["Message.CreateTitle", L["Entity.SalesDelivery"]].ToString())"
                           Size="GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -42,8 +43,8 @@
                           UseGenericSave="true"
                           CustomValidator="@ValidateSalesDeliveryDetailsAsync"
                           AfterSave="@SaveSalesDeliveryDetailsAsync"
-                          SaveSuccessMessage="@(SalesDeliveryId.HasValue ? "出貨單更新成功" : "出貨單新增成功")"
-                          SaveFailureMessage="出貨單儲存失敗"
+                          SaveSuccessMessage="@(SalesDeliveryId.HasValue ? L["Message.UpdateSuccess", L["Entity.SalesDelivery"]].ToString() : L["Message.CreateSuccess", L["Entity.SalesDelivery"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SalesDelivery"]]"
                           RequiredPermission="SalesDelivery.Read"
                           OnEntitySaved="@OnSalesDeliverySaved"
                           OnCancel="@OnCancel"
@@ -51,13 +52,13 @@
                           OnTaxMethodChanged="@(() => HandleDeliveryDetailsChanged(salesDeliveryDetails))"
                           GetStatusMessage="@GetSalesDeliveryStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          CustomModules="@GetCustomModules()"
+                          TabDefinitions="@tabDefinitions"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
-                          PrintButtonText="列印"
+                          PrintButtonText="@L["Button.Print"]"
                           ReportService="@SalesDeliveryReportService"
                           ReportId="@ReportIds.SalesDelivery"
-                          ReportPreviewTitle="出貨單預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.SalesDelivery"]]"
                           GetReportDocumentName="@(e => $"出貨單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded">
 </GenericEditModalComponent>
@@ -94,6 +95,13 @@
                                  OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
                                  OnCancel="@(() => showSetoffDocumentModal = false)" />
 
+@* 銷售訂單編輯 Modal（由 OrderTab 開啟） *@
+<SalesOrderEditModalComponent @ref="salesOrderEditModal"
+                              IsVisible="@showSalesOrderModal"
+                              IsVisibleChanged="@((bool visible) => showSalesOrderModal = visible)"
+                              SalesOrderId="@selectedSalesOrderId"
+                              OnCancel="@(() => showSalesOrderModal = false)" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -110,6 +118,17 @@
     private GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+
+    // ===== 關聯文件 Tabs =====
+    private SalesDeliveryReturnTab? returnTab;
+    private SalesDeliverySetoffTab? setoffTab;
+    private SalesDeliveryOrderTab? orderTab;
+
+    // ===== 銷售訂單 Modal（由 OrderTab 開啟） =====
+    private SalesOrderEditModalComponent? salesOrderEditModal;
+    private bool showSalesOrderModal = false;
+    private int? selectedSalesOrderId = null;
     
     // 原始資料集合（用於 AutoComplete）
     private List<Customer> availableCustomers = new();
@@ -495,9 +514,9 @@
                 new()
                 {
                     PropertyName = nameof(SalesDelivery.Code),
-                    Label = "出貨單號",
+                    Label = L["Field.SalesDeliveryCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入出貨單號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.SalesDeliveryCode"]],
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "出貨單的唯一編號，新增時系統會自動產生，也可手動修改"
@@ -505,9 +524,9 @@
                 new()
                 {
                     PropertyName = nameof(SalesDelivery.CustomerId),
-                    Label = "客戶",
+                    Label = L["Entity.Customer"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇客戶",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Customer"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
@@ -517,9 +536,9 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = "FilterProductId", // 篩選用的虛擬欄位，不儲存至資料庫
-                    Label = "商品",
+                    Label = L["Entity.Product"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇要篩選的商品（可選）",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇商品後，點擊載入只會載入該商品的訂單明細。此欄位不會儲存。",
@@ -529,9 +548,9 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = "FilterSalesOrderId", // 篩選用的虛擬欄位，不儲存至資料庫
-                    Label = "訂單",
+                    Label = L["Entity.SalesOrder"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇訂單單號",
+                    Placeholder = L["Placeholder.PleaseSelect", L["Entity.SalesOrder"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇特定訂單進行篩選，或留空顯示所有訂單明細。此欄位不會儲存。",
@@ -541,9 +560,9 @@
                 new()
                 {
                     PropertyName = nameof(SalesDelivery.EmployeeId),
-                    Label = "業務員",
+                    Label = L["Field.SalesPerson"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇業務員",
+                    Placeholder = L["Placeholder.PleaseSelect", L["Field.SalesPerson"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇負責此出貨的業務員",
@@ -552,7 +571,7 @@
                 new()
                 {
                     PropertyName = nameof(SalesDelivery.DeliveryDate),
-                    Label = "出貨日期",
+                    Label = L["Field.SalesDeliveryDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "出貨日期",
@@ -561,7 +580,7 @@
                 new()
                 {
                     PropertyName = nameof(SalesDelivery.TaxCalculationMethod),
-                    Label = "稅別",
+                    Label = L["Field.TaxType"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = taxCalculationMethodOptions,
@@ -571,7 +590,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesDelivery.TotalAmount),
-                    Label = "金額",
+                    Label = L["Field.Amount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
@@ -581,7 +600,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesDelivery.DiscountAmount),
-                    Label = "折扣",
+                    Label = L["Field.Discount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
@@ -591,7 +610,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesDelivery.TaxAmount),
-                    Label = "稅額",
+                    Label = L["Field.TaxAmount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
@@ -601,7 +620,7 @@
                 new()
                 {
                     PropertyName = nameof(SalesDelivery.TotalAmountWithTax),
-                    Label = "總額",
+                    Label = L["Field.TotalAmount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
@@ -612,7 +631,7 @@
             };
 
 
-            formSections = FormSectionHelper<SalesDelivery>.Create()
+            var layout = FormSectionHelper<SalesDelivery>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     sd => sd.Code,
                     sd => sd.CustomerId,
@@ -628,7 +647,16 @@
                 .AddToSection(FormSectionNames.OtherInfo,
                     sd => sd.DeliveryAddress,
                     sd => sd.Remarks)
-                .Build();
+                .GroupIntoTab("出貨資料", "bi-file-earmark-text",
+                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
+                    FormSectionNames.AmountInfo, FormSectionNames.OtherInfo)
+                .GroupIntoCustomTab("出貨明細", "bi-list-ul", CreateDeliveryDetailManagerContent())
+                .GroupIntoCustomTab("退回記錄", "bi-arrow-return-left", CreateReturnTabContent())
+                .GroupIntoCustomTab("沖款記錄", "bi-cash-coin", CreateSetoffTabContent())
+                .GroupIntoCustomTab("來源訂單", "bi-file-earmark-arrow-up", CreateOrderTabContent())
+                .BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
             
             // 重置篩選狀態
             filterProductId = null;
@@ -693,6 +721,18 @@
         try
         {
             UpdateFilterFieldsState();
+            if (loadedEntityId > 0)
+            {
+                if (returnTab != null) await returnTab.LoadAsync(loadedEntityId);
+                if (setoffTab != null) await setoffTab.LoadAsync(loadedEntityId);
+                if (orderTab != null) await orderTab.LoadAsync(loadedEntityId);
+            }
+            else
+            {
+                returnTab?.Clear();
+                setoffTab?.Clear();
+                orderTab?.Clear();
+            }
             StateHasChanged();
         }
         catch (Exception ex)
@@ -942,6 +982,7 @@
     /// </summary>
     private Task HandleDeliveryDetailsChanged(List<SalesDeliveryDetail> details)
     {
+        editModalComponent?.MarkDirty();
         salesDeliveryDetails = details;
 
         if (editModalComponent?.Entity != null)
@@ -1078,14 +1119,6 @@
     }
 
     /// <summary>
-    /// 配置自訂模組
-    /// </summary>
-    private List<GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.CustomModule> GetCustomModules()
-    {
-        return CustomModuleHelper.CreateSingle(editModalComponent, CreateDeliveryDetailManagerContent());
-    }
-
-    /// <summary>
     /// 創建出貨明細管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateDeliveryDetailManagerContent() => __builder =>
@@ -1129,6 +1162,45 @@
         </DetailSectionWrapper>
     };
     
+    private RenderFragment CreateReturnTabContent() => __builder =>
+    {
+        <SalesDeliveryReturnTab @ref="returnTab"
+                                OnOpenReturn="@HandleOpenReturnFromTab" />
+    };
+
+    private RenderFragment CreateSetoffTabContent() => __builder =>
+    {
+        <SalesDeliverySetoffTab @ref="setoffTab"
+                                OnOpenSetoff="@HandleOpenSetoffFromTab" />
+    };
+
+    private RenderFragment CreateOrderTabContent() => __builder =>
+    {
+        <SalesDeliveryOrderTab @ref="orderTab"
+                               OnOpenOrder="@HandleOpenOrderFromTab" />
+    };
+
+    private void HandleOpenReturnFromTab(int returnId)
+    {
+        selectedSalesReturnId = returnId;
+        showSalesReturnModal = true;
+        StateHasChanged();
+    }
+
+    private void HandleOpenSetoffFromTab(int setoffId)
+    {
+        selectedSetoffDocumentId = setoffId;
+        showSetoffDocumentModal = true;
+        StateHasChanged();
+    }
+
+    private void HandleOpenOrderFromTab(int orderId)
+    {
+        selectedSalesOrderId = orderId;
+        showSalesOrderModal = true;
+        StateHasChanged();
+    }
+
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）- 作為屬性以確保正確的渲染時機
     /// </summary>
@@ -1139,11 +1211,11 @@
             @* 轉退貨按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
             @if (canCreateReturn)
             {
-                <GenericButtonComponent Text="轉退貨"
+                <GenericButtonComponent Text="@L["Button.ConvertToSalesReturn"]"
                                       Variant="ButtonVariant.Red"
                                       Size="ButtonSize.Small"
                                       OnClick="HandleCreateReturnFromDelivery" />
-                <GenericButtonComponent Text="轉沖款"
+                <GenericButtonComponent Text="@L["Button.ConvertToSetoff"]"
                                       Variant="ButtonVariant.Green"
                                       Size="ButtonSize.Small"
                                       OnClick="HandleCreateSetoffFromDelivery" />

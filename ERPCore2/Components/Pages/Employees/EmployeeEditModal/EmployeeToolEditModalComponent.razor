@@ -1,6 +1,7 @@
 @* 可重用的員工工具配給紀錄編輯組件 - 用於員工 EditModal 的 Tab 頁籤中 *@
 @inject IEmployeeToolService EmployeeToolService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="EmployeeTool"
                           TService="IEmployeeToolService"
@@ -9,16 +10,16 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@EmployeeToolId"
                           Service="@EmployeeToolService"
-                          EntityName="工具配給紀錄"
-                          EntityNamePlural="工具配給紀錄"
-                          ModalTitle="@(EmployeeToolId.HasValue ? "編輯工具配給紀錄" : "新增工具配給紀錄")"
+                          EntityName="@L["Entity.EmployeeTool"]"
+                          EntityNamePlural="@L["Entity.EmployeeTool"]"
+                          ModalTitle="@(EmployeeToolId.HasValue ? L["Message.EditTitle", L["Entity.EmployeeTool"]].ToString() : L["Message.CreateTitle", L["Entity.EmployeeTool"]].ToString())"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadToolData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(EmployeeToolId.HasValue ? "工具配給紀錄更新成功" : "工具配給紀錄新增成功")"
-                          SaveFailureMessage="工具配給紀錄儲存失敗"
+                          SaveSuccessMessage="@(EmployeeToolId.HasValue ? L["Message.UpdateSuccess", L["Entity.EmployeeTool"]].ToString() : L["Message.CreateSuccess", L["Entity.EmployeeTool"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeeTool"]]"
                           RequiredPermission="Employee.Read"
                           OnEntitySaved="@OnEmployeeToolSaved"
                           OnCancel="@OnCancel" />
@@ -89,9 +90,9 @@
                 new()
                 {
                     PropertyName = nameof(EmployeeTool.ToolName),
-                    Label = "工具名稱",
+                    Label = L["Field.ToolName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入工具名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ToolName"]],
                     IsRequired = true,
                     MaxLength = 50,
                     HelpText = "配給工具的名稱"
@@ -99,9 +100,9 @@
                 new()
                 {
                     PropertyName = nameof(EmployeeTool.ToolCode),
-                    Label = "序號/型號",
+                    Label = L["Field.SerialModel"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入工具序號或型號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.SerialModel"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "工具的序號、型號或識別碼（選填）"
@@ -109,7 +110,7 @@
                 new()
                 {
                     PropertyName = nameof(EmployeeTool.AssignedDate),
-                    Label = "配給日期",
+                    Label = L["Field.AssignDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "公司將工具配給員工的日期"
@@ -117,7 +118,7 @@
                 new()
                 {
                     PropertyName = nameof(EmployeeTool.ReturnedDate),
-                    Label = "歸還日期",
+                    Label = L["Field.ReturnDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "員工歸還工具的日期（未歸還則留空）"

@@ -19,17 +19,18 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ERPCore2.Data.Context.AppDbContext DbContext
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="PurchaseOrder" 
+<GenericEditModalComponent TEntity="PurchaseOrder"
                           TService="IPurchaseOrderService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@PurchaseOrderId"
                           Service="@PurchaseOrderService"
-                          EntityName="採購單"
-                          EntityNamePlural="採購單"
-                          ModalTitle="@(PurchaseOrderId.HasValue ? "編輯採購單" : "新增採購單")"
+                          EntityName="@L["Entity.PurchaseOrder"]"
+                          EntityNamePlural="@L["Entity.PurchaseOrder"]"
+                          ModalTitle="@(PurchaseOrderId.HasValue ? L["Message.EditTitle", L["Entity.PurchaseOrder"]].ToString() : L["Message.CreateTitle", L["Entity.PurchaseOrder"]].ToString())"
                           Size="GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -41,19 +42,19 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadPurchaseOrderData"
                           SaveHandler="@SavePurchaseOrderWrapper"
-                          SaveSuccessMessage="@(PurchaseOrderId.HasValue ? "採購單更新成功" : "採購單新增成功")"
-                          SaveFailureMessage="採購單儲存失敗"
+                          SaveSuccessMessage="@(PurchaseOrderId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseOrder"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseOrder"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseOrder"]]"
                           RequiredPermission="PurchaseOrder.Read"
                           OnEntitySaved="@OnPurchaseOrderSaved"
                           OnCancel="@OnCancel"
                           OnTaxMethodChanged="@(() => HandleDetailsChanged(purchaseOrderDetails))"
                           CustomValidator="@ValidatePurchaseOrderDetailsAsync"
-                          CustomModules="@GetCustomModules()"
+                          TabDefinitions="@tabDefinitions"
                           ShowPrintButton = "true"
-                          PrintButtonText="列印"
+                          PrintButtonText="@L["Button.Print"]"
                           ReportService="@PurchaseOrderReportService"
                           ReportId="@ReportIds.PurchaseOrder"
-                          ReportPreviewTitle="採購單預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.PurchaseOrder"]]"
                           GetReportDocumentName="@(e => $"採購單-{e.Code}")"
                           ShowApprovalSection="@ShouldShowApprovalSection()"
                           ApprovalPermission="PurchaseOrder.Approve"
@@ -84,6 +85,13 @@
                                      OnPurchaseReceivingSaved="@HandlePurchaseReceivingSaved"
                                      OnCancel="@(() => showPurchaseReceivingModal = false)" />
 
+@* 進貨退出編輯 Modal（從退回記錄 Tab 開啟） *@
+<PurchaseReturnEditModalComponent @ref="purchaseReturnEditModal"
+                                 IsVisible="@showPurchaseReturnModal"
+                                 IsVisibleChanged="@((bool visible) => showPurchaseReturnModal = visible)"
+                                 PurchaseReturnId="@selectedPurchaseReturnId"
+                                 OnCancel="@(() => showPurchaseReturnModal = false)" />
+
 @* 訊息範本設定 Modal *@
 <TextMessageTemplateEditModalComponent IsVisible="@showTemplateSettingModal"
                                        IsVisibleChanged="@((bool visible) => showTemplateSettingModal = visible)"
@@ -103,6 +111,7 @@
     private GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -128,6 +137,15 @@
     private PurchaseReceivingEditModalComponent? purchaseReceivingEditModal;
     private bool showPurchaseReceivingModal = false;
     private int? selectedPurchaseReceivingId = null;
+
+    // ===== Tab 元件參考 =====
+    private PurchaseOrderReceivingTab? receivingTab;
+    private PurchaseOrderReturnTab? returnTab;
+
+    // ===== 退回單 Modal（從退回記錄 Tab 開啟） =====
+    private PurchaseReturnEditModalComponent? purchaseReturnEditModal;
+    private bool showPurchaseReturnModal = false;
+    private int? selectedPurchaseReturnId = null;
     
     // 下拉選單選項
     private List<SelectOption> taxCalculationMethodOptions = new();
@@ -349,9 +367,9 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.Code),
-                    Label = "採購單號",
+                    Label = L["Field.PurchaseOrderCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入採購單號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PurchaseOrderCode"]],
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "採購單的唯一編號，新增時系統會自動產生，也可手動修改",
@@ -360,9 +378,9 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.SupplierId),
-                    Label = "廠商",
+                    Label = L["Entity.Supplier"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇廠商",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Supplier"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
@@ -372,9 +390,9 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.CompanyId),
-                    Label = "採購公司",
+                    Label = L["Field.PurchasingCompany"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇採購公司",
+                    Placeholder = L["Placeholder.PleaseSelect", L["Field.PurchasingCompany"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "選擇進行此次採購的公司",
@@ -383,7 +401,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseOrder.PurchasePersonnel),
-                    Label = "採購員",
+                    Label = L["Field.Purchaser"],
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
                     HelpText = "負責此次採購的員工姓名",                    
@@ -391,7 +409,7 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.OrderDate),
-                    Label = "採購日",
+                    Label = L["Field.PurchaseDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "採購單建立日期",
@@ -400,7 +418,7 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
-                    Label = "交貨日",
+                    Label = L["Field.DeliveryDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "預計廠商交貨的日期(預設為採購日後7天)",
@@ -409,7 +427,7 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.TaxCalculationMethod),
-                    Label = "稅別",
+                    Label = L["Field.TaxType"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = taxCalculationMethodOptions,
@@ -419,7 +437,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseOrder.TotalAmount),
-                    Label = "金額",
+                    Label = L["Field.Amount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "採購單的總金額，根據明細自動計算",
@@ -429,7 +447,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseOrder.PurchaseTaxAmount),
-                    Label = "稅額",
+                    Label = L["Field.TaxAmount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "採購單的稅額，根據明細自動計算",
@@ -439,7 +457,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseOrder.PurchaseTotalAmountIncludingTax),
-                    Label = "總額",
+                    Label = L["Field.TotalAmount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "採購單的含稅總金額，根據明細自動計算",
@@ -450,9 +468,9 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseOrder.RejectReason),
-                    Label = "駁回原因",
+                    Label = L["Field.RejectionReason"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入駁回原因",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.RejectionReason"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "其他需要記錄的駁回原因",
@@ -466,13 +484,13 @@
                 ),
             };
 
-            formSections = FormSectionHelper<PurchaseOrder>.Create()
+            var layout = FormSectionHelper<PurchaseOrder>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     po => po.Code,
                     po => po.SupplierId,
                     po => po.CompanyId,
                     po => po.OrderDate,
-                    po => po.ExpectedDeliveryDate)                    
+                    po => po.ExpectedDeliveryDate)
                 .AddToSection(FormSectionNames.AmountInfo,
                     po => po.TaxCalculationMethod,
                     po => po.TotalAmount,
@@ -480,7 +498,14 @@
                     po => po.PurchaseTotalAmountIncludingTax)
                 .AddToSection(FormSectionNames.AdditionalInfo,
                     po => po.Remarks)
-                .Build();
+                .GroupIntoTab("訂單資料", "bi-file-earmark-text",
+                    FormSectionNames.BasicInfo, FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
+                .GroupIntoCustomTab("訂單明細", "bi-list-ul", CreateProductManagerContent())
+                .GroupIntoCustomTab("進貨記錄", "bi-box-arrow-in-down", CreateReceivingTabContent())
+                .GroupIntoCustomTab("退回記錄", "bi-arrow-return-left", CreateReturnTabContent())
+                .BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
         }
         catch (Exception ex)
         {
@@ -494,14 +519,6 @@
     }
 
     // ===== AutoComplete 配置方法 =====
-    
-    /// <summary>
-    /// 配置自訂模組
-    /// </summary>
-    private List<GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule> GetCustomModules()
-    {
-        return CustomModuleHelper.CreateSingle(editModalComponent, CreateProductManagerContent());
-    }
 
     /// <summary>
     /// 創建商品管理器內容的 RenderFragment
@@ -574,8 +591,37 @@
         }
     };
     
+    /// <summary>進貨記錄 Tab 內容</summary>
+    private RenderFragment CreateReceivingTabContent() => __builder =>
+    {
+        <PurchaseOrderReceivingTab @ref="receivingTab"
+                                   OnOpenReceiving="@HandleOpenReceivingFromTab" />
+    };
+
+    /// <summary>退回記錄 Tab 內容</summary>
+    private RenderFragment CreateReturnTabContent() => __builder =>
+    {
+        <PurchaseOrderReturnTab @ref="returnTab"
+                                OnOpenReturn="@HandleOpenReturnFromTab" />
+    };
+
+    private void HandleOpenReceivingFromTab(int id)
+    {
+        selectedPurchaseReceivingId = id;
+        showPurchaseReceivingModal = true;
+        StateHasChanged();
+    }
+
+    private void HandleOpenReturnFromTab(int id)
+    {
+        selectedPurchaseReturnId = id;
+        showPurchaseReturnModal = true;
+        StateHasChanged();
+    }
+
     // ===== ActionButton 產生方法 =====
-    
+
+
     /// <summary>
     /// 產生廠商操作按鈕 - 使用統一 Helper
     /// </summary>
@@ -658,11 +704,23 @@
         {
             canCreateReceiving = true;
             canCopyMessage = true;
+
+            if (loadedEntityId > 0)
+            {
+                if (receivingTab != null) await receivingTab.LoadAsync(loadedEntityId);
+                if (returnTab != null) await returnTab.LoadAsync(loadedEntityId);
+            }
+            else
+            {
+                receivingTab?.Clear();
+                returnTab?.Clear();
+            }
+
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(),
                 additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
             await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
         }
@@ -723,6 +781,7 @@
     {
         try
         {
+            editModalComponent?.MarkDirty();
             purchaseOrderDetails = details ?? new List<PurchaseOrderDetail>();            
             
             // 更新主檔的總金額、稅額、含稅總額
@@ -1109,13 +1168,13 @@
     private RenderFragment? GetCustomActionButtons() => __builder =>
     {
         @* 轉進貨單按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
-        <GenericButtonComponent Text="轉進貨" 
+        <GenericButtonComponent Text="@L["Button.ConvertToReceiving"]"
                               Variant="ButtonVariant.Green" 
                               OnClick="HandleCreateReceivingFromOrder" />
         
         @* 複製訊息按鈕 - 使用按鈕群組包含設定圖示 *@
         <div class="btn-group me-2" role="group">
-            <GenericButtonComponent Text="複製訊息" 
+            <GenericButtonComponent Text="@L["Button.CopyMessage"]"
                                   Variant="ButtonVariant.Blue" 
                                   IsDisabled="@(!canCopyMessage)"
                                   OnClick="HandleCopyMessage" />

@@ -1,6 +1,7 @@
 @page "/banks"
 @inject IBankService BankService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @rendermode InteractiveServer
 
@@ -15,7 +16,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="銀行"
+                        EntityName="@L["Entity.Bank"]"
                         GetEntityDisplayName="@(bank => bank.BankName)"
                         RequiredPermission="Bank.Read"
                         RequiredModule="FinancialManagement"

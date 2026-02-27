@@ -1,25 +1,26 @@
 @* 可重用的貨幣編輯組件 - 可在任何頁面中嵌入 *@
 @inject ICurrencyService CurrencyService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="Currency" 
+<GenericEditModalComponent TEntity="Currency"
                           TService="ICurrencyService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@CurrencyId"
                           Service="@CurrencyService"
-                          EntityName="貨幣"
-                          EntityNamePlural="貨幣"
-                          ModalTitle="@(CurrencyId.HasValue ? "編輯貨幣" : "新增貨幣")"
+                          EntityName="@L["Entity.Currency"]"
+                          EntityNamePlural="@L["Entity.Currency"]"
+                          ModalTitle="@(CurrencyId.HasValue ? L["Message.EditTitle", L["Entity.Currency"]].ToString() : L["Message.CreateTitle", L["Entity.Currency"]].ToString())"
                           Size="GenericEditModalComponent<Currency, ICurrencyService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadCurrencyData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(CurrencyId.HasValue ? "貨幣更新成功" : "貨幣新增成功")"
-                          SaveFailureMessage="貨幣儲存失敗"
+                          SaveSuccessMessage="@(CurrencyId.HasValue ? L["Message.UpdateSuccess", L["Entity.Currency"]].ToString() : L["Message.CreateSuccess", L["Entity.Currency"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Currency"]]"
                           RequiredPermission="Currency.Read"
                           OnEntitySaved="@OnCurrencySaved"
                           OnCancel="@OnCancel" />
@@ -61,34 +62,34 @@
                 new()
                 {
                     PropertyName = nameof(Currency.Code),
-                    Label = "貨幣編號",
+                    Label = L["Field.CurrencyCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入貨幣編號 (例如: TWD, USD, JPY)",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CurrencyCode"]],
                     IsRequired = true,
                     HelpText = "貨幣的唯一識別編號，建議使用 ISO 4217 標準編號"
                 },
                 new()
                 {
                     PropertyName = nameof(Currency.Name),
-                    Label = "貨幣名稱",
+                    Label = L["Field.CurrencyName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入貨幣名稱 (例如: 新台幣, 美元, 日圓)",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CurrencyName"]],
                     IsRequired = true,
                     HelpText = "貨幣的正式名稱，將顯示在系統各處"
                 },
                 new()
                 {
                     PropertyName = nameof(Currency.Symbol),
-                    Label = "符號",
+                    Label = L["Field.CurrencySymbol"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入貨幣符號 (例如: NT$, $, ¥)",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CurrencySymbol"]],
                     IsRequired = false,
                     HelpText = "貨幣的符號表示，用於金額顯示"
                 },
                 new()
                 {
                     PropertyName = nameof(Currency.IsBaseCurrency),
-                    Label = "是否為本位幣",
+                    Label = L["Field.IsBaseCurrency"],
                     FieldType = FormFieldType.Checkbox,
                     IsRequired = false,
                     HelpText = "標記此貨幣是否為系統的基準貨幣 (本位幣)"
@@ -96,9 +97,9 @@
                 new()
                 {
                     PropertyName = nameof(Currency.ExchangeRate),
-                    Label = "匯率",
+                    Label = L["Field.ExchangeRate"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入匯率",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ExchangeRate"]],
                     IsRequired = true,
                     HelpText = "相對於本位幣的匯率 (例如: 1 USD = 30.5 TWD 時，USD 的匯率為 30.5)",
                     Step = 0.0001m,

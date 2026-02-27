@@ -12,6 +12,7 @@
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IBOMReportService BOMReportService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="ProductComposition" 
                           TService="IProductCompositionService"
@@ -20,9 +21,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@CompositionId"
                           Service="@ProductCompositionService"
-                          EntityName="商品物料清單"
-                          EntityNamePlural="商品物料清單"
-                          ModalTitle="@(CompositionId.HasValue ? "編輯商品物料清單" : "新增商品物料清單")"
+                          EntityName="@L["Entity.ProductComposition"]"
+                          EntityNamePlural="@L["Entity.ProductComposition"]"
+                          ModalTitle="@(CompositionId.HasValue ? L["Message.EditTitle", L["Entity.ProductComposition"]].ToString() : L["Message.CreateTitle", L["Entity.ProductComposition"]].ToString())"
                           Size="GenericEditModalComponent<ProductComposition, IProductCompositionService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -34,16 +35,16 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadCompositionData"
                           SaveHandler="@SaveCompositionWithDetails"
-                          SaveSuccessMessage="@(CompositionId.HasValue ? "商品物料清單更新成功" : "商品物料清單新增成功")"
-                          SaveFailureMessage="商品物料清單儲存失敗"
+                          SaveSuccessMessage="@(CompositionId.HasValue ? L["Message.UpdateSuccess", L["Entity.ProductComposition"]].ToString() : L["Message.CreateSuccess", L["Entity.ProductComposition"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductComposition"]]"
                           RequiredPermission="ProductComposition.Read"
                           OnEntitySaved="@OnCompositionSaved"
                           OnCancel="@OnCancel"
 ShowPrintButton="true"
-                          PrintButtonText="列印"
+                          PrintButtonText="@L["Button.Print"]"
                           ReportService="@BOMReportService"
                           ReportId="@ReportIds.BOMReport"
-                          ReportPreviewTitle="物料清單預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.BOM"]]"
                           GetReportDocumentName="@(e => $"物料清單-{e.Code}")"
                           CustomModules="@GetCustomModules()" />
 
@@ -311,18 +312,18 @@ ShowPrintButton="true"
                 new()
                 {
                     PropertyName = nameof(ProductComposition.Code),
-                    Label = "合成編號",
+                    Label = L["Field.CompositionCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入合成編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CompositionCode"]],
                     IsRequired = false,
                     HelpText = "合成的唯一識別編號，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
                     PropertyName = nameof(ProductComposition.ParentProductId),
-                    Label = "商品",
+                    Label = L["Entity.Product"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇商品",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "此物料清單所屬的商品（建立後無法變更）"
@@ -330,9 +331,9 @@ ShowPrintButton="true"
                 new()
                 {
                     PropertyName = nameof(ProductComposition.CompositionCategoryId),
-                    Label = "清單類型",
+                    Label = L["Field.CompositionType"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇清單類型",
+                    Placeholder = L["Placeholder.PleaseSelect", L["Field.CompositionType"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇組合該商品的清單類型"
@@ -340,9 +341,9 @@ ShowPrintButton="true"
                 new()
                 {
                     PropertyName = nameof(ProductComposition.CustomerId),
-                    Label = "客戶",
+                    Label = L["Entity.Customer"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇客戶",
+                    Placeholder = L["Placeholder.PleaseSelect", L["Entity.Customer"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇此合成的客戶(選填)",
@@ -351,9 +352,9 @@ ShowPrintButton="true"
                 new()
                 {
                     PropertyName = nameof(ProductComposition.CreatedByEmployeeId),
-                    Label = "製表員",
+                    Label = L["Field.CompositionCreator"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇製表員",
+                    Placeholder = L["Placeholder.PleaseSelect", L["Field.CompositionCreator"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇建立此合成的員工(選填)",
@@ -362,9 +363,9 @@ ShowPrintButton="true"
                 new()
                 {
                     PropertyName = nameof(ProductComposition.Specification),
-                    Label = "規格",
+                    Label = L["Field.Spec"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入規格",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Spec"]],
                     IsRequired = false,
                     HelpText = "商品物料清單的規格說明",
                     ContainerCssClass = "col-6"
@@ -437,6 +438,7 @@ ShowPrintButton="true"
     // ===== 明細變更處理 =====
     private void HandleDetailsChanged(List<ProductCompositionDetail> details)
     {
+        editModalComponent?.MarkDirty();
         compositionDetails = details;
         StateHasChanged();
     }

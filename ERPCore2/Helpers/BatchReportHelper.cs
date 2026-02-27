@@ -48,8 +48,6 @@ public static class BatchReportHelper
                 return BatchPreviewResult.Failure(message);
             }
 
-            logger?.LogInformation("開始批次產生預覽，共 {Count} 張{EntityName}", entityList.Count, entityDisplayName);
-
             var allImages = new List<byte[]>();
             FormattedDocument? mergedDocument = null;
             int successCount = 0;

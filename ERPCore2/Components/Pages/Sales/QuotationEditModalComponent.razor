@@ -19,6 +19,7 @@
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ERPCore2.Data.Context.AppDbContext DbContext
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="Quotation" 
                           TService="IQuotationService"
@@ -27,9 +28,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@QuotationId"
                           Service="@QuotationService"
-                          EntityName="報價單"
-                          EntityNamePlural="報價單"
-                          ModalTitle="@(QuotationId.HasValue ? "編輯報價單" : "新增報價單")"
+                          EntityName="@L["Entity.Quotation"]"
+                          EntityNamePlural="@L["Entity.Quotation"]"
+                          ModalTitle="@(QuotationId.HasValue ? L["Message.EditTitle", L["Entity.Quotation"]].ToString() : L["Message.CreateTitle", L["Entity.Quotation"]].ToString())"
                           Size="GenericEditModalComponent<Quotation, IQuotationService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -41,19 +42,19 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadQuotationData"
                           SaveHandler="@SaveQuotationWithDetails"
-                          SaveSuccessMessage="@(QuotationId.HasValue ? "報價單更新成功" : "報價單新增成功")"
-                          SaveFailureMessage="報價單儲存失敗"
+                          SaveSuccessMessage="@(QuotationId.HasValue ? L["Message.UpdateSuccess", L["Entity.Quotation"]].ToString() : L["Message.CreateSuccess", L["Entity.Quotation"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Quotation"]]"
                           RequiredPermission="Quotation.Read"
                           OnEntitySaved="@OnQuotationSaved"
                           OnCancel="@OnCancel"
                           OnTaxMethodChanged="@(() => HandleQuotationDetailsChanged(quotationDetails))"
-                          CustomModules="@GetCustomModules()"
+                          TabDefinitions="@tabDefinitions"
                           CustomActionButtons="@GetCustomActionButtons()"
                           FormHeaderContent="@GetWarningMessage()"
                           ShowPrintButton="true"
                           ReportService="@QuotationReportService"
                           ReportId="@ReportIds.Quotation"
-                          ReportPreviewTitle="報價單預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Quotation"]]"
                           GetReportDocumentName="@(e => $"報價單-{e.Code}")"
                           ShowApprovalSection="@ShouldShowApprovalSection()"
                           ApprovalPermission="Quotation.Approve"
@@ -108,6 +109,10 @@
     private GenericEditModalComponent<Quotation, IQuotationService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+
+    // ===== 關聯文件 Tabs =====
+    private QuotationOrderTab? orderTab;
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -392,9 +397,9 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.Code),
-                    Label = "報價單號",
+                    Label = L["Field.QuotationCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入報價單號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.QuotationCode"]],
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "報價單的唯一識別編號，新增時系統會自動產生，也可手動修改",
@@ -403,9 +408,9 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.CustomerId),
-                    Label = "客戶",
+                    Label = L["Entity.Customer"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇客戶",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Customer"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
@@ -415,9 +420,9 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.CompanyId),
-                    Label = "公司",
+                    Label = L["Entity.Company"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇公司",
+                    Placeholder = L["Placeholder.PleaseSelect", L["Entity.Company"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "選擇進行此次報價的公司",
@@ -426,9 +431,9 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.EmployeeId),
-                    Label = "製表者",
+                    Label = L["Field.QuotationCreator"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇製表者",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.QuotationCreator"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "輸入製表者姓名進行搜尋，或直接選擇",
@@ -438,7 +443,7 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.QuotationDate),
-                    Label = "報價日期",
+                    Label = L["Field.QuotationDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "報價單的建立日期",
@@ -447,7 +452,7 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.TaxCalculationMethod),
-                    Label = "稅別",
+                    Label = L["Field.TaxType"],
                     FieldType = FormFieldType.Select,
                     Options = taxCalculationMethodOptions,
                     IsRequired = true,
@@ -457,9 +462,9 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.PaymentTerms),
-                    Label = "付款條件",
+                    Label = L["Field.PaymentTerms"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入付款條件",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PaymentTerms"]],
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "例如：貨到付款、月結30天等",
@@ -468,9 +473,9 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.DeliveryTerms),
-                    Label = "交貨條件",
+                    Label = L["Field.DeliveryTerms"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入交貨條件",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.DeliveryTerms"]],
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "例如：工廠交貨、送貨到府等",
@@ -479,7 +484,7 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.SubtotalBeforeDiscount),
-                    Label = "金額",
+                    Label = L["Field.Amount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true, // 折扣前金額始終為唯讀
@@ -489,7 +494,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(Quotation.DiscountAmount),
-                    Label = "折扣",
+                    Label = L["Field.Discount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true, // 折扣金額始終為唯讀
@@ -499,7 +504,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(Quotation.QuotationTaxAmount),
-                    Label = "稅額",
+                    Label = L["Field.TaxAmount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
@@ -509,7 +514,7 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.TotalAmount),
-                    Label = "總額",
+                    Label = L["Field.TotalAmount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
@@ -519,9 +524,9 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(Quotation.ProjectName),
-                    Label = "工程名稱",
+                    Label = L["Field.ProjectName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入工程名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ProjectName"]],
                     IsRequired = false,
                     MaxLength = 20,
                     HelpText = "報價所屬的工程名稱",
@@ -534,7 +539,7 @@
                 )
             };
 
-            formSections = FormSectionHelper<Quotation>.Create()
+            var layout = FormSectionHelper<Quotation>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     q => q.Code,
                     q => q.CustomerId,
@@ -552,7 +557,14 @@
                     q => q.PaymentTerms,
                     q => q.DeliveryTerms)
                 .AddCustomFields(FormSectionNames.OtherInfo, "Remarks")
-                .Build();
+                .GroupIntoTab("報價資料", "bi-file-earmark-text",
+                    FormSectionNames.BasicInfo, FormSectionNames.AmountInfo,
+                    FormSectionNames.TradingTerms, FormSectionNames.OtherInfo)
+                .GroupIntoCustomTab("報價明細", "bi-list-ul", CreateQuotationDetailManagerContent())
+                .GroupIntoCustomTab("轉換訂單", "bi-arrow-right-circle", CreateOrderTabContent())
+                .BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
         }
         catch (Exception)
         {
@@ -830,14 +842,6 @@
     }
 
     /// <summary>
-    /// 配置自訂模組
-    /// </summary>
-    private List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule> GetCustomModules()
-    {
-        return CustomModuleHelper.CreateSingle(editModalComponent, CreateQuotationDetailManagerContent());
-    }
-
-    /// <summary>
     /// 創建報價單明細管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateQuotationDetailManagerContent() => __builder =>
@@ -881,6 +885,7 @@
     {
         try
         {
+            editModalComponent?.MarkDirty();
             quotationDetails = details;
 
             if (editModalComponent?.Entity != null)
@@ -1050,6 +1055,19 @@
                                   Message="@EditModalMessages.UndeletableDetailsWarning"/>
     };
     
+    private RenderFragment CreateOrderTabContent() => __builder =>
+    {
+        <QuotationOrderTab @ref="orderTab"
+                           OnOpenOrder="@HandleOpenOrderFromTab" />
+    };
+
+    private void HandleOpenOrderFromTab(int orderId)
+    {
+        selectedSalesOrderId = orderId;
+        showSalesOrderModal = true;
+        StateHasChanged();
+    }
+
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）- 作為屬性以確保正確的渲染時機
     /// </summary>
@@ -1078,7 +1096,7 @@
             @* 轉銷貨訂單按鈕 - 報價單已儲存即可顯示 *@
             @if (shouldShowButton)
             {
-                <GenericButtonComponent Text="轉訂單"
+                <GenericButtonComponent Text="@L["Button.ConvertToOrder"]"
                                       Variant="ButtonVariant.Green"
                                       Size="ButtonSize.Small"
                                       CssClass="me-2"
@@ -1383,15 +1401,21 @@
     {
         try
         {
-            // 方案 A + D：
-            // - 明細已由 DataLoader (LoadQuotationData) 載入完成
-            // - Table 組件會自動偵測 ExistingDetails 參數變化並重新載入
-            // - 只需觸發 StateHasChanged() 讓 Table 收到新的參數
+            // 明細已由 DataLoader (LoadQuotationData) 載入完成
+            // Table 組件會自動偵測 ExistingDetails 參數變化並重新載入
+            if (loadedEntityId > 0)
+            {
+                if (orderTab != null) await orderTab.LoadAsync(loadedEntityId);
+            }
+            else
+            {
+                orderTab?.Clear();
+            }
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(),
                 additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
             await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
         }

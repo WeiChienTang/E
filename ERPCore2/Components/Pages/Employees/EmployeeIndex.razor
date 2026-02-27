@@ -7,6 +7,7 @@
 @inject INavigationPermissionService NavigationPermissionService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericIndexPageComponent TEntity="Employee" 
                         TService="IEmployeeService"
@@ -19,7 +20,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         DataLoader="@LoadEmployeesAsync"
                         FilterApplier="@ApplyEmployeeFilters"
-                        EntityName="員工"
+                        EntityName="@L["Entity.Employee"]"
                         GetEntityDisplayName="@(employee => employee.Name?.Trim() ?? "")"
                         RequiredPermission="Employee.Read"
                         RequiredModule="Employees"

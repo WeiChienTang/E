@@ -1,6 +1,7 @@
 @page "/roles"
 @inject IRoleService RoleService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Role" 
@@ -9,7 +10,7 @@
                           EntityBasePath="/roles"
                           PageTitle="權限組設定"
                           PageSubtitle="管理系統權限組與權限設定"
-                          EntityName="權限組"
+                          EntityName="@L["Entity.Role"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

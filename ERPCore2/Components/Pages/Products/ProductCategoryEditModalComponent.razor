@@ -1,25 +1,26 @@
 @* 可重用的商品類型編輯組件 - 可在任何頁面中嵌入 *@
 @inject IProductCategoryService ProductCategoryService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="ProductCategory" 
+<GenericEditModalComponent TEntity="ProductCategory"
                           TService="IProductCategoryService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@ProductCategoryId"
                           Service="@ProductCategoryService"
-                          EntityName="商品類型"
-                          EntityNamePlural="商品類型"
-                          ModalTitle="@(ProductCategoryId.HasValue ? "編輯商品類型" : "新增商品類型")"
+                          EntityName="@L["Entity.ProductCategory"]"
+                          EntityNamePlural="@L["Entity.ProductCategory"]"
+                          ModalTitle="@(ProductCategoryId.HasValue ? L["Message.EditTitle", L["Entity.ProductCategory"]].ToString() : L["Message.CreateTitle", L["Entity.ProductCategory"]].ToString())"
                           Size="GenericEditModalComponent<ProductCategory, IProductCategoryService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadProductCategoryData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(ProductCategoryId.HasValue ? "商品類型更新成功" : "商品類型新增成功")"
-                          SaveFailureMessage="商品類型儲存失敗"
+                          SaveSuccessMessage="@(ProductCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.ProductCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.ProductCategory"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductCategory"]]"
                           RequiredPermission="ProductCategory.Read"
                           OnEntitySaved="@OnProductCategorySaved"
                           OnCancel="@OnCancel" />
@@ -59,9 +60,9 @@
             new()
             {
                 PropertyName = nameof(ProductCategory.Code),
-                Label = "分類編號",
+                Label = L["Field.CategoryCode"],
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入分類編號",
+                Placeholder = L["Placeholder.PleaseInput", L["Field.CategoryCode"]],
                 IsRequired = false,
                 MaxLength = 50,
                 HelpText = "商品分類的唯一編號，新增時系統會自動產生，也可手動修改"
@@ -69,9 +70,9 @@
             new()
             {
                 PropertyName = nameof(ProductCategory.Name),
-                Label = "分類名稱",
+                Label = L["Field.CategoryName"],
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入分類名稱",
+                Placeholder = L["Placeholder.PleaseInput", L["Field.CategoryName"]],
                 IsRequired = true,
                 MaxLength = 50,
                 HelpText = "商品分類的名稱，用於區分不同的商品類型"
@@ -79,7 +80,7 @@
             new FormFieldDefinition()
             {
                 PropertyName = nameof(ProductCategory.IsSaleable),
-                Label = "是否販售",
+                Label = L["Field.ForSale"],
                 FieldType = FormFieldType.Checkbox,
                 IsRequired = false,
                 HelpText = "指示此商品分類下的商品是否可供銷售"

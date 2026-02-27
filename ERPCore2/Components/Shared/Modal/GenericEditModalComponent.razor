@@ -2,11 +2,13 @@
 @attribute [Authorize]
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @using System.Reflection
 @using ERPCore2.Helpers
 @using ERPCore2.Helpers.EditModal
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
+@using Microsoft.Extensions.Localization
 @typeparam TEntity where TEntity : BaseEntity, new()
 @typeparam TService
 
@@ -23,7 +25,7 @@
 <PagePermissionCheck RequiredPermission="@requiredPermission">
 
 <BaseModalComponent IsVisible="@IsVisible"
-                   IsVisibleChanged="@IsVisibleChanged"
+                   IsVisibleChanged="@HandleBaseModalVisibleChanged"
                    Title="@GetModalTitle()"
                    Icon="@GetModalIcon()"
                    Size="@ConvertToBaseModalSize(Size)"
@@ -67,14 +69,14 @@
                 {
                     <PermissionCheck Permission="@ApprovalPermission">
                         <div class="d-flex gap-2 me-3">
-                            <GenericButtonComponent Text="通過" 
-                                                  Variant="ButtonVariant.Green" 
-                                                  OnClick="HandleApprove" 
+                            <GenericButtonComponent Text="@L["Button.Approve"]"
+                                                  Variant="ButtonVariant.Green"
+                                                  OnClick="HandleApprove"
                                                   IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
                                                   IsLoading="@IsApproving" />
-                            <GenericButtonComponent Text="駁回" 
-                                                  Variant="ButtonVariant.Red" 
-                                                  OnClick="OpenRejectConfirmModal" 
+                            <GenericButtonComponent Text="@L["Button.Reject"]"
+                                                  Variant="ButtonVariant.Red"
+                                                  OnClick="OpenRejectConfirmModal"
                                                   IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
                                                   IsLoading="@IsRejecting" />
                         </div>
@@ -96,11 +98,11 @@
                 @* 新增按鈕（只在編輯模式顯示） *@
                 @if (ShowAddButton && Entity != null && Entity.Id > 0)
                 {
-                    <GenericButtonComponent Text="新增" 
-                                          Variant="ButtonVariant.DarkBlue" 
-                                          OnClick="HandleAddClick" 
+                    <GenericButtonComponent Text="@L["Button.Add"]"
+                                          Variant="ButtonVariant.DarkBlue"
+                                          OnClick="HandleAddClick"
                                           IsDisabled="@(IsSubmitting || IsLoading)"
-                                          Title="新增資料" />
+                                          Title="@L["Button.Add"]" />
                 }
                 
                 @* 返回編輯按鈕（只在新增模式且有最後一筆記錄時顯示） *@
@@ -117,13 +119,13 @@
                 @* 目前此功能存在很大的問題，詳情可以看 Readme_上下筆失敗測試，為將來如果要繼續測試可以嘗試修改*@
                 @if (EnableNavigation && Entity != null && Entity.Id > 0)
                 {
-                    <GenericButtonComponent Text="上筆" 
-                                          Variant="ButtonVariant.Green" 
+                    <GenericButtonComponent Text="@L["Button.Prev"]"
+                                          Variant="ButtonVariant.Green"
                                           OnClick="HandlePrevious"
                                           IsDisabled="@(IsSubmitting || IsLoading)"
                                           Title="@GetPreviousButtonTitle()" />
-                    
-                    <GenericButtonComponent Text="下筆" 
+
+                    <GenericButtonComponent Text="@L["Button.Next"]"
                                           Variant="ButtonVariant.Green"
                                           OnClick="HandleNext"
                                           IsDisabled="@(IsSubmitting || IsLoading)"
@@ -148,18 +150,18 @@
 
                 @if (ShowRefreshButton && Entity != null && Entity.Id > 0)
                 {
-                    <GenericButtonComponent Text="重整" 
-                                          Variant="ButtonVariant.Green" 
-                                          OnClick="HandleRefresh" 
+                    <GenericButtonComponent Text="@L["Button.Refresh"]"
+                                          Variant="ButtonVariant.Green"
+                                          OnClick="HandleRefresh"
                                           IsDisabled="@(IsSubmitting || IsLoading)"
-                                          Title="重新載入資料" />
+                                          Title="@L["Button.Refresh"]" />
                 }
-                
+
                 @if (ShowDeleteButton && Entity != null && Entity.Id > 0 && IsEntityDeletable(Entity))
                 {
-                    <GenericButtonComponent Text="刪除" 
-                                          Variant="ButtonVariant.Red" 
-                                          OnClick="DeleteEntityAsync" 
+                    <GenericButtonComponent Text="@L["Button.Delete"]"
+                                          Variant="ButtonVariant.Red"
+                                          OnClick="DeleteEntityAsync"
                                           IsDisabled="@(IsSubmitting || IsLoading)" />
                 }
                 
@@ -238,22 +240,32 @@
 <RejectConfirmModalComponent @ref="_rejectConfirmModal"
                             IsVisible="@_isRejectConfirmModalVisible"
                             IsVisibleChanged="@((bool value) => _isRejectConfirmModalVisible = value)"
-                            Title="確認駁回"
+                            Title="@L["Modal.ConfirmReject"]"
                             OnConfirm="@HandleRejectConfirm"
                             OnCancel="@HandleRejectCancel" />
 
 @* 未儲存修改確認 Modal *@
-<GenericConfirmModalComponent IsVisible="@_showUnsavedChangesModal"
-                              IsVisibleChanged="@((bool v) => _showUnsavedChangesModal = v)"
-                              Title="確認關閉"
-                              Icon="bi-exclamation-triangle"
-                              Message="此單有修改，確定要關閉嗎？"
-                              ConfirmButtonText="確定關閉"
-                              CancelButtonText="繼續編輯"
-                              ConfirmButtonVariant="ButtonVariant.Red"
-                              HeaderColor="BaseModalComponent.HeaderVariant.Warning"
-                              OnConfirm="HandleUnsavedChangesConfirm"
-                              OnCancel="HandleUnsavedChangesCancel" />
+<BaseModalComponent IsVisible="@_showUnsavedChangesModal"
+                   IsVisibleChanged="@((bool v) => _showUnsavedChangesModal = v)"
+                   Title="@L["Modal.ConfirmClose"]"
+                   Icon="bi-exclamation-triangle"
+                   Size="BaseModalComponent.ModalSize.Default"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="true"
+                   ShowCloseButton="false"
+                   OnClose="HandleUnsavedChangesCancel">
+    <HeaderButtons>
+        <GenericButtonComponent Text="@L["Modal.ConfirmLeave"]"    Variant="ButtonVariant.Red"      OnClick="HandleUnsavedChangesLeave"       Title="@L["Modal.ConfirmLeave"]" />
+        <GenericButtonComponent Text="@L["Modal.SaveAndClose"]"    Variant="ButtonVariant.DarkBlue" OnClick="HandleUnsavedChangesSaveAndClose" Title="@L["Modal.SaveAndClose"]" />
+        <GenericButtonComponent Text="@L["Modal.ContinueEditing"]" Variant="ButtonVariant.Green"    OnClick="HandleUnsavedChangesCancel"      Title="@L["Modal.ContinueEditing"]" />
+    </HeaderButtons>
+    <BodyContent>
+        <div class="text-center py-4">
+            <p class="fs-6 mb-0 text-muted">@L["Modal.UnsavedChanges"]</p>
+        </div>
+    </BodyContent>
+</BaseModalComponent>
 
 @* 內建報表預覽 Modal（當有設定 ReportService 時自動啟用） *@
 @if (ReportService != null)
@@ -535,8 +547,11 @@
     private bool _isRejectConfirmModalVisible = false;
 
     // 未儲存修改確認 Modal
+    // result: 0=繼續編輯(cancel), 1=確定離開(leave), 2=儲存關閉(saveAndClose)
     private bool _showUnsavedChangesModal = false;
-    private TaskCompletionSource<bool>? _unsavedChangesConfirmTcs;
+    private TaskCompletionSource<int>? _unsavedChangesConfirmTcs;
+    private bool _cancelledByUser = false;   // 使用者選擇「繼續編輯」或「儲存關閉」，需阻擋 BaseModal 的 IsVisibleChanged(false)
+    private bool _forceCloseOnNextSave = false; // 儲存關閉：儲存成功後強制關閉
     
     // ===== 內建列印狀態 =====
     private bool _showReportPreviewModal = false;
@@ -999,8 +1014,8 @@
                     await OnSaveSuccess.InvokeAsync();
                 }
 
-                // 根據 CloseOnSave 參數決定是否關閉 Modal
-                if (CloseOnSave)
+                // 根據 CloseOnSave 參數或「儲存關閉」動作決定是否關閉 Modal
+                if (CloseOnSave || _forceCloseOnNextSave)
                 {
                     await CloseModal();
                 }
@@ -1025,23 +1040,34 @@
         }
         finally
         {
+            _forceCloseOnNextSave = false;
             IsSubmitting = false;
             StateHasChanged();
         }
     }
-    
+
     private async Task HandleCancel()
     {
         try
         {
             if (_isDirty && ShowUnsavedChangesWarning)
             {
-                _unsavedChangesConfirmTcs = new TaskCompletionSource<bool>();
+                _unsavedChangesConfirmTcs = new TaskCompletionSource<int>();
                 _showUnsavedChangesModal = true;
                 StateHasChanged();
-                var confirmed = await _unsavedChangesConfirmTcs.Task;
-                if (!confirmed)
-                    return;
+                var result = await _unsavedChangesConfirmTcs.Task;
+                switch (result)
+                {
+                    case 0: // 繼續編輯
+                        _cancelledByUser = true;
+                        return;
+                    case 2: // 儲存關閉：儲存成功則關閉，失敗則留在 modal
+                        _forceCloseOnNextSave = true;
+                        _cancelledByUser = true; // 阻擋 BaseModal 的 IsVisibleChanged(false)；由 HandleBaseModalVisibleChanged 重置
+                        await HandleSave();
+                        return;
+                    // case 1: 確定離開，繼續執行關閉流程
+                }
             }
 
             if (OnCancel.HasDelegate)
@@ -1274,16 +1300,22 @@
 
     // ===== 未儲存修改確認 =====
 
-    private void HandleUnsavedChangesConfirm()
+    private void HandleUnsavedChangesLeave()
     {
         _showUnsavedChangesModal = false;
-        _unsavedChangesConfirmTcs?.TrySetResult(true);
+        _unsavedChangesConfirmTcs?.TrySetResult(1);
+    }
+
+    private void HandleUnsavedChangesSaveAndClose()
+    {
+        _showUnsavedChangesModal = false;
+        _unsavedChangesConfirmTcs?.TrySetResult(2);
     }
 
     private void HandleUnsavedChangesCancel()
     {
         _showUnsavedChangesModal = false;
-        _unsavedChangesConfirmTcs?.TrySetResult(false);
+        _unsavedChangesConfirmTcs?.TrySetResult(0);
     }
 
 
@@ -1296,6 +1328,25 @@
     private async Task SetVisible(bool visible)
     {
         if (IsVisible != visible)
+        {
+            await IsVisibleChanged.InvokeAsync(visible);
+        }
+    }
+
+    /// <summary>
+    /// 攔截 BaseModalComponent 發出的 IsVisibleChanged 事件。
+    /// 當未儲存修改確認 Modal 正在顯示時，阻擋 BaseModalComponent 直接關閉視窗，
+    /// 等待使用者在確認 Modal 做出決定。
+    /// </summary>
+    private async Task HandleBaseModalVisibleChanged(bool visible)
+    {
+        if (!visible && _cancelledByUser)
+        {
+            // 使用者選擇「繼續編輯」，抑制 BaseModal 發出的 IsVisibleChanged(false)
+            _cancelledByUser = false;
+            return;
+        }
+        if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(visible);
         }
@@ -1737,7 +1788,15 @@
     }
     
     // ===== 欄位變更處理 =====
-    
+
+    /// <summary>
+    /// 供子組件呼叫，標記表單有未儲存變更（例如：明細表格內容異動）
+    /// </summary>
+    public void MarkDirty()
+    {
+        _isDirty = true;
+    }
+
     private async Task HandleFieldChanged((string PropertyName, object? Value) fieldChange)
     {
         _isDirty = true;

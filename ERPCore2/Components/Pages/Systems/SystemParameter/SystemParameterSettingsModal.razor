@@ -8,6 +8,7 @@
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@IsVisibleChanged"
@@ -23,23 +24,23 @@
                     OnClose="@HandleClose">
     <HeaderButtons>
         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                               Text="確定"
+                               Text="@L["Button.Confirm"]"
                                OnClick="HandleSaveAsync"
                                IsDisabled="@(isSaving || isLoading)"
                                IsLoading="@isSaving"
                                Title="儲存系統參數設定" />
         <GenericButtonComponent Variant="ButtonVariant.Green"
-                               Text="重整"
+                               Text="@L["Button.Refresh"]"
                                OnClick="ReloadData"
                                IsDisabled="@(isSaving || isLoading)"
                                Title="重整資料" />
         <GenericButtonComponent Variant="ButtonVariant.Orange"
-                               Text="恢復預設"
+                               Text="@L["Button.ResetToDefault"]"
                                OnClick="HandleResetToDefault"
                                IsDisabled="@(isSaving || isLoading)"
                                Title="將所有參數恢復為出廠預設值" />
         <GenericButtonComponent Variant="ButtonVariant.Red"
-                               Text="取消"
+                               Text="@L["Button.Cancel"]"
                                OnClick="HandleClose"
                                Title="關閉" />
     </HeaderButtons>
@@ -140,8 +141,8 @@
     {
         tabDefinitions = new List<FormTabDefinition>
         {
-            new() { Label = "稅務設定", Icon = "bi bi-cash-stack", SectionNames = new(), CustomContent = CreateTaxTabContent() },
-            new() { Label = "子科目設定", Icon = "bi bi-diagram-3", SectionNames = new(), CustomContent = CreateSubAccountTabContent() },
+            new() { Label = L["Section.TaxSettings"], Icon = "bi bi-cash-stack", SectionNames = new(), CustomContent = CreateTaxTabContent() },
+            new() { Label = L["Tab.SubAccountSettings"], Icon = "bi bi-diagram-3", SectionNames = new(), CustomContent = CreateSubAccountTabContent() },
             // 安全憑證 Tab 暫時停用（HTTPS 自簽憑證方案未完成，詳見 README_HTTPS憑證設計(失敗).md）
             // new() { Label = "安全憑證", Icon = "bi bi-shield-lock", SectionNames = new(), CustomContent = CreateCertificateTabContent() },
         };
@@ -163,7 +164,7 @@
         {
             tabDefinitions.Add(new FormTabDefinition
             {
-                Label = "模組管理",
+                Label = L["Tab.ModuleManagement"],
                 Icon = "bi bi-toggles",
                 SectionNames = new(),
                 CustomContent = CreateModuleManagementTabContent()

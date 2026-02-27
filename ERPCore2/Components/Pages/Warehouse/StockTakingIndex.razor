@@ -3,6 +3,7 @@
 @inject IWarehouseService WarehouseService
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @inject IJSRuntime JSRuntime
 
 @using ERPCore2.Models
@@ -24,7 +25,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          EntityName="盤點單"
+                          EntityName="@L["Entity.StockTaking"]"
                           GetEntityDisplayName="@(st => st.TakingNumber ?? "未命名")"
                           RequiredPermission="StockTaking.Read"
                           RequiredModule="Warehouse"

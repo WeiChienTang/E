@@ -1,0 +1,83 @@
+@* 銷貨訂單 → 出貨記錄 Tab（唯讀） *@
+@inject ISalesDeliveryService SalesDeliveryService
+
+@if (_orderId <= 0)
+{
+    <div class="text-muted py-4 px-2">
+        <i class="bi bi-info-circle me-2"></i>請先儲存訂單，再查看出貨記錄。
+    </div>
+}
+else if (_isLoading)
+{
+    <div class="text-muted py-4 px-2">
+        <i class="bi bi-hourglass-split me-2"></i>載入中...
+    </div>
+}
+else if (!_deliveries.Any())
+{
+    <div class="text-muted py-4 px-2">
+        <i class="bi bi-inbox me-2"></i>此訂單無相關出貨記錄。
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>出貨單號</th>
+                    <th>出貨日期</th>
+                    <th>客戶</th>
+                    <th class="text-end">金額（含稅）</th>
+                    <th style="width:60px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var delivery in _deliveries)
+                {
+                    <tr>
+                        <td class="font-monospace small">@delivery.Code</td>
+                        <td>@delivery.DeliveryDate.ToString("yyyy-MM-dd")</td>
+                        <td>@(delivery.Customer?.CompanyName ?? "—")</td>
+                        <td class="text-end">@delivery.TotalAmountWithTax.ToString("N0")</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    title="開啟出貨單"
+                                    @onclick="@(() => OnOpenDelivery.InvokeAsync(delivery.Id))">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    /// <summary>點擊出貨單時觸發，傳入 SalesDeliveryId</summary>
+    [Parameter] public EventCallback<int> OnOpenDelivery { get; set; }
+
+    private int _orderId;
+    private bool _isLoading;
+    private List<SalesDelivery> _deliveries = new();
+
+    public async Task LoadAsync(int orderId)
+    {
+        _orderId = orderId;
+        _isLoading = true;
+        StateHasChanged();
+
+        _deliveries = await SalesDeliveryService.GetBySalesOrderIdAsync(orderId);
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    public void Clear()
+    {
+        _orderId = 0;
+        _deliveries = new();
+        StateHasChanged();
+    }
+}

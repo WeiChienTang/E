@@ -1,3 +1,4 @@
+using ERPCore2.Helpers;
 using ERPCore2.Models.Reports.FilterTemplates;
 
 namespace ERPCore2.Components.Shared.Report;
@@ -17,16 +18,20 @@ public static class FilterTemplateInitializer
     public static void Initialize()
     {
         if (_isInitialized) return;
-        
+
+        ConsoleHelper.WriteDebug("[FilterTemplateInitializer] Initialize 開始");
         lock (_initLock)
         {
             if (_isInitialized) return;
-            
+
             // 初始化 FilterTemplateRegistry（所有配置已集中定義在該類別中）
+            ConsoleHelper.WriteDebug("[FilterTemplateInitializer] 進入 lock，呼叫 FilterTemplateRegistry.Initialize...");
             FilterTemplateRegistry.Initialize();
-            
+            ConsoleHelper.WriteDebug("[FilterTemplateInitializer] FilterTemplateRegistry.Initialize 完成");
+
             _isInitialized = true;
         }
+        ConsoleHelper.WriteDebug("[FilterTemplateInitializer] Initialize 完成");
     }
     
     /// <summary>

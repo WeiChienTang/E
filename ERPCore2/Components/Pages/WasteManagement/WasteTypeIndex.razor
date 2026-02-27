@@ -1,6 +1,7 @@
 @page "/waste-types"
 @inject IWasteTypeService WasteTypeService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="WasteType"
@@ -9,7 +10,7 @@
                           EntityBasePath="/waste-types"
                           PageTitle="廢料類型維護"
                           PageSubtitle="管理廢料類型分類資料"
-                          EntityName="廢料類型"
+                          EntityName="@L["Entity.WasteType"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

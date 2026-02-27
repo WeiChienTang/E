@@ -3,6 +3,7 @@
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Helpers
 @using ERPCore2.Models.Enums
+@inject IStringLocalizer<SharedResource> L
 @inject IProductService ProductService
 @inject IProductCompositionService ProductCompositionService
 @inject IQuotationDetailService QuotationDetailService
@@ -27,7 +28,8 @@ else
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
-                                      TItem="QuotationItem" 
+                                      TItem="QuotationItem"
+                                      OnDataChanged="@NotifyDetailsChanged"
                                       Items="@QuotationItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"                                      
@@ -387,7 +389,7 @@ else
         // 商品選擇欄位 - 觸發欄位（第一個欄位預設為觸發欄位）
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "商品編號/名稱", 
+            Title = L["Column.ProductCodeName"],
             PropertyName = "ProductSearchValue",
             EmptyCheckPropertyName = "SelectedProduct",  // 檢查 SelectedProduct 物件
             TriggerEmptyRowOnFilled = true,  // 選擇商品後自動新增空行
@@ -446,7 +448,7 @@ else
         // 製程單位欄位 - 唯讀顯示
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "單位", 
+            Title = L["Entity.Unit"],
             Tooltip = "商品的製程單位（由商品設定決定）",
             PropertyName = "ProductionUnitName",
             ColumnType = InteractiveColumnType.Display,
@@ -458,7 +460,7 @@ else
         // 數量欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "數量", 
+            Title = L["Column.Quantity"],
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
@@ -489,7 +491,7 @@ else
         // 單價欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "單價", 
+            Title = L["Column.UnitPrice"],
             PropertyName = "UnitPrice",
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
@@ -520,7 +522,7 @@ else
         // 折扣欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "折扣(%)", 
+            Title = L["Column.DiscountPercent"],
             PropertyName = "DiscountPercentage",
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
@@ -552,7 +554,7 @@ else
         // 稅率欄位
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "稅率(%)",
+            Title = L["Field.TaxRate"],
             PropertyName = "TaxRate",
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
@@ -584,7 +586,7 @@ else
         // 小計欄位
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "小計",
+            Title = L["Column.Subtotal"],
             Tooltip = GetSubtotalTooltip(),
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
@@ -601,7 +603,7 @@ else
         // 規格說明欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "規格說明", 
+            Title = L["Column.Specification"],
             PropertyName = "Specification",
             ColumnType = InteractiveColumnType.Input,
             Width = "200px",
@@ -630,7 +632,7 @@ else
         // 備註欄位 - 即使已轉銷貨也可編輯（用於記錄執行狀況）
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "備註", 
+            Title = L["Label.Remarks"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",

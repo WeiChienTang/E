@@ -7,17 +7,18 @@
 @inject INotificationService NotificationService
 @inject IVehicleMaintenanceReportService VehicleMaintenanceReportService
 @inject ActionButtonHelper ActionButtonHelper
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="VehicleMaintenance" 
+<GenericEditModalComponent TEntity="VehicleMaintenance"
                           TService="IVehicleMaintenanceService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@VehicleMaintenanceId"
                           Service="@VehicleMaintenanceService"
-                          EntityName="保養紀錄"
-                          EntityNamePlural="保養紀錄"
-                          ModalTitle="@(VehicleMaintenanceId.HasValue ? "編輯保養紀錄" : "新增保養紀錄")"
+                          EntityName="@L["Entity.VehicleMaintenance"]"
+                          EntityNamePlural="@L["Entity.VehicleMaintenance"]"
+                          ModalTitle="@(VehicleMaintenanceId.HasValue ? L["Message.EditTitle", L["Entity.VehicleMaintenance"]].ToString() : L["Message.CreateTitle", L["Entity.VehicleMaintenance"]].ToString())"
                           Size="GenericEditModalComponent<VehicleMaintenance, IVehicleMaintenanceService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -29,17 +30,17 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadMaintenanceData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(VehicleMaintenanceId.HasValue ? "保養紀錄更新成功" : "保養紀錄新增成功")"
-                          SaveFailureMessage="保養紀錄儲存失敗"
+                          SaveSuccessMessage="@(VehicleMaintenanceId.HasValue ? L["Message.UpdateSuccess", L["Entity.VehicleMaintenance"]].ToString() : L["Message.CreateSuccess", L["Entity.VehicleMaintenance"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.VehicleMaintenance"]]"
                           RequiredPermission="VehicleMaintenance.Read"
                           OnEntitySaved="@OnVehicleMaintenanceSaved"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
-                          PrintButtonText="列印"
+                          PrintButtonText="@L["Button.Print"]"
                           ReportService="@VehicleMaintenanceReportService"
                           ReportId="@ReportIds.VehicleMaintenance"
-                          ReportPreviewTitle="保養紀錄預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.VehicleMaintenance"]]"
                           GetReportDocumentName="@(e => $"保養紀錄-{e.Code}")" />
 
 @* 車輛編輯 Modal *@
@@ -175,9 +176,9 @@
                 new()
                 {
                     PropertyName = nameof(VehicleMaintenance.Code),
-                    Label = "保養編號",
+                    Label = L["Field.MaintenanceCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入保養編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.MaintenanceCode"]],
                     IsRequired = true,
                     MaxLength = 50,
                     HelpText = "保養紀錄的唯一識別編號"
@@ -185,9 +186,9 @@
                 new()
                 {
                     PropertyName = nameof(VehicleMaintenance.VehicleId),
-                    Label = "所屬車輛",
+                    Label = L["Field.MaintenanceVehicle"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇車輛",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Vehicle"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "選擇需要保養的車輛",
@@ -196,7 +197,7 @@
                 new()
                 {
                     PropertyName = nameof(VehicleMaintenance.MaintenanceType),
-                    Label = "保養類型",
+                    Label = L["Field.MaintenanceType"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     HelpText = "保養的類型（定期保養、維修、換機油等）",
@@ -212,7 +213,7 @@
                 new()
                 {
                     PropertyName = nameof(VehicleMaintenance.MaintenanceDate),
-                    Label = "保養日期",
+                    Label = L["Field.MaintenanceDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "進行保養的日期"
@@ -220,18 +221,18 @@
                 new()
                 {
                     PropertyName = nameof(VehicleMaintenance.MileageAtMaintenance),
-                    Label = "里程數(公里)",
+                    Label = L["Field.MileageAtMaintenance"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入保養時的里程數",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.MileageAtMaintenance"]],
                     IsRequired = false,
                     HelpText = "進行保養時車輛的里程數"
                 },
                 new()
                 {
                     PropertyName = nameof(VehicleMaintenance.Description),
-                    Label = "保養描述",
+                    Label = L["Field.MaintenanceDescription"],
                     FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入保養描述",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.MaintenanceDescription"]],
                     IsRequired = false,
                     MaxLength = 500,
                     HelpText = "詳細記錄此次保養做了哪些項目"
@@ -239,18 +240,18 @@
                 new()
                 {
                     PropertyName = nameof(VehicleMaintenance.Cost),
-                    Label = "費用",
+                    Label = L["Field.MaintenanceFee"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入費用",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.MaintenanceFee"]],
                     IsRequired = false,
                     HelpText = "此次保養的費用金額"
                 },
                 new()
                 {
                     PropertyName = nameof(VehicleMaintenance.ServiceProvider),
-                    Label = "維修廠",
+                    Label = L["Field.GarageName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入維修廠名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.GarageName"]],
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "進行保養的維修廠或服務商"
@@ -258,7 +259,7 @@
                 new()
                 {
                     PropertyName = nameof(VehicleMaintenance.NextMaintenanceDate),
-                    Label = "下次保養",
+                    Label = L["Field.NextMaintenanceDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "預計下次保養的日期"
@@ -266,9 +267,9 @@
                 new()
                 {
                     PropertyName = nameof(VehicleMaintenance.EmployeeId),
-                    Label = "經手人",
+                    Label = L["Field.MaintenanceHandler"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇經手人",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.MaintenanceHandler"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "負責此次保養的經手人",

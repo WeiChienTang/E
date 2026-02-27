@@ -2,6 +2,7 @@
 
 @using ERPCore2.Helpers
 @using ERPCore2.Models.Enums
+@inject IStringLocalizer<SharedResource> L
 @inject IProductService ProductService
 @inject IPurchaseOrderDetailService PurchaseOrderDetailService
 @inject IProductSupplierService ProductSupplierService
@@ -29,7 +30,8 @@ else
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">        
             <InteractiveTableComponent @ref="tableComponent"
-                                      TItem="ProductItem" 
+                                      TItem="ProductItem"
+                                      OnDataChanged="@NotifyDetailsChanged"
                                       Items="@ProductItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
@@ -286,7 +288,7 @@ else
         //  商品選擇欄位 - 觸發欄位（第一個欄位預設為觸發欄位）
         columns.Add(new() 
         { 
-            Title = "商品編號/名稱", 
+            Title = L["Column.ProductCodeName"],
             PropertyName = "ProductSearchValue",
             EmptyCheckPropertyName = "SelectedProduct",  // 檢查 SelectedProduct 物件
             TriggerEmptyRowOnFilled = true,  // 選擇商品後自動新增空行
@@ -355,7 +357,7 @@ else
         // 數量欄位
         columns.Add(new() 
         { 
-            Title = "數量", 
+            Title = L["Column.Quantity"],
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
@@ -381,7 +383,7 @@ else
         // 單位欄位 (唯讀 - 顯示商品的單位名稱)
         columns.Add(new() 
         { 
-            Title = "單位", 
+            Title = L["Entity.Unit"],
             PropertyName = "UnitName",
             ColumnType = InteractiveColumnType.Display,
             Width = "60px",
@@ -392,7 +394,7 @@ else
         // 入庫量欄位 (只讀)
         columns.Add(new() 
         { 
-            Title = "已入庫", 
+            Title = L["Column.InboundQuantity"],
             PropertyName = "ReceivedQuantity",
             ColumnType = InteractiveColumnType.Display,
             Width = "80px",
@@ -404,7 +406,7 @@ else
         // 單價欄位
         columns.Add(new() 
         { 
-            Title = "單價", 
+            Title = L["Column.UnitPrice"],
             PropertyName = "Price",
             ColumnType = InteractiveColumnType.Number,  // 預設顯示千分位
             Width = "120px",
@@ -430,7 +432,7 @@ else
         // 稅率欄位（可編輯）
         columns.Add(new()
         {
-            Title = "稅率%",
+            Title = L["Field.TaxRate"],
             PropertyName = "TaxRate",
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
@@ -460,7 +462,7 @@ else
         // 小計欄位（根據稅率算法顯示）
         columns.Add(new()
         {
-            Title = "小計",
+            Title = L["Column.Subtotal"],
             Tooltip = GetSubtotalTooltip(),
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
@@ -477,7 +479,7 @@ else
         // 完成進貨欄位
         columns.Add(new() 
         { 
-            Title = "結案", 
+            Title = L["Column.IsClosed"],
             PropertyName = "IsReceivingCompleted",
             ColumnType = InteractiveColumnType.Checkbox,
             Width = "60px",
@@ -508,7 +510,7 @@ else
         // 備註欄位 - 核准後仍可編輯（用於記錄執行狀況）
         columns.Add(new() 
         { 
-            Title = "備註", 
+            Title = L["Label.Remarks"],
             PropertyName = "Remarks",
             ColumnType = InteractiveColumnType.Custom,
             Width = "300px",

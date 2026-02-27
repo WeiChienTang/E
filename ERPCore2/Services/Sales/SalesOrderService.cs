@@ -1016,6 +1016,83 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<List<SalesOrder>> GetByQuotationIdAsync(int quotationId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var quotationDetailIds = await context.QuotationDetails
+                    .Where(qd => qd.QuotationId == quotationId)
+                    .Select(qd => qd.Id)
+                    .ToListAsync();
+
+                var orderIds = await context.SalesOrderDetails
+                    .Where(sod => sod.QuotationDetailId.HasValue &&
+                                  quotationDetailIds.Contains(sod.QuotationDetailId.Value))
+                    .Select(sod => sod.SalesOrderId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.SalesOrders
+                    .Include(so => so.Customer)
+                    .Include(so => so.Employee)
+                    .Where(so => orderIds.Contains(so.Id))
+                    .OrderByDescending(so => so.OrderDate)
+                    .ThenBy(so => so.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByQuotationIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByQuotationIdAsync),
+                    ServiceType = GetType().Name,
+                    QuotationId = quotationId
+                });
+                return new List<SalesOrder>();
+            }
+        }
+
+        public async Task<List<SalesOrder>> GetBySalesDeliveryIdAsync(int salesDeliveryId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var orderDetailIds = await context.SalesDeliveryDetails
+                    .Where(sdd => sdd.SalesDeliveryId == salesDeliveryId &&
+                                  sdd.SalesOrderDetailId.HasValue)
+                    .Select(sdd => sdd.SalesOrderDetailId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                var orderIds = await context.SalesOrderDetails
+                    .Where(sod => orderDetailIds.Contains(sod.Id))
+                    .Select(sod => sod.SalesOrderId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.SalesOrders
+                    .Include(so => so.Customer)
+                    .Include(so => so.Employee)
+                    .Where(so => orderIds.Contains(so.Id))
+                    .OrderByDescending(so => so.OrderDate)
+                    .ThenBy(so => so.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesDeliveryIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetBySalesDeliveryIdAsync),
+                    ServiceType = GetType().Name,
+                    SalesDeliveryId = salesDeliveryId
+                });
+                return new List<SalesOrder>();
+            }
+        }
+
         #endregion
     }
 }

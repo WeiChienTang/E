@@ -1,0 +1,104 @@
+@page "/purchase/returnReasons"
+@inject IPurchaseReturnReasonService PurchaseReturnReasonService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+@rendermode InteractiveServer
+
+@using ERPCore2.Helpers.FieldConfiguration
+
+<GenericIndexPageComponent TEntity="PurchaseReturnReason"
+                          TService="IPurchaseReturnReasonService"
+                          Service="@PurchaseReturnReasonService"
+                          EntityBasePath="/purchase/returnReasons"
+                          PageTitle="進貨退出原因管理"
+                          PageSubtitle="管理進貨退出原因資料"
+                          EntityName="@L["Entity.PurchaseReturnReason"]"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadPurchaseReturnReasonsAsync"
+                          FilterApplier="@ApplyPurchaseReturnReasonFilters"
+                          GetEntityDisplayName="@(reason => reason.Name)"
+                          RequiredPermission="PurchaseReturnReason.Read"
+                          RequiredModule="Purchase"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+@* 退出原因編輯 Modal *@
+<PurchaseReturnReasonEditModalComponent IsVisible="@showEditModal"
+                                       IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                       PurchaseReturnReasonId="@editingPurchaseReturnReasonId"
+                                       OnPurchaseReturnReasonSaved="@modalHandler.OnEntitySavedAsync"
+                                       OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<PurchaseReturnReason, IPurchaseReturnReasonService> indexComponent = default!;
+
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingPurchaseReturnReasonId = null;
+
+    // Modal 處理器
+    private ModalHandler<PurchaseReturnReason, GenericIndexPageComponent<PurchaseReturnReason, IPurchaseReturnReasonService>> modalHandler = default!;
+
+    // 欄位配置
+    private PurchaseReturnReasonFieldConfiguration fieldConfiguration = default!;
+
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<PurchaseReturnReason, GenericIndexPageComponent<PurchaseReturnReason, IPurchaseReturnReasonService>>(
+                id => editingPurchaseReturnReasonId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            // 建立欄位配置
+            fieldConfiguration = new PurchaseReturnReasonFieldConfiguration(NotificationService);
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化進貨退出原因頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化進貨退出原因頁面失敗");
+        }
+    }
+
+    /// <summary>
+    /// 初始化麵包屑導航
+    /// </summary>
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("採購管理", "退出原因管理", "#", NotificationService, GetType());
+
+    /// <summary>
+    /// 載入進貨退出原因資料
+    /// </summary>
+    private Task<List<PurchaseReturnReason>> LoadPurchaseReturnReasonsAsync() =>
+        DataLoaderHelper.LoadAsync(() => PurchaseReturnReasonService.GetAllAsync(), "進貨退出原因", NotificationService, GetType());
+
+    /// <summary>
+    /// 應用進貨退出原因篩選器
+    /// </summary>
+    private IQueryable<PurchaseReturnReason> ApplyPurchaseReturnReasonFilters(SearchFilterModel searchModel, IQueryable<PurchaseReturnReason> query)
+    {
+        if (fieldConfiguration == null)
+        {
+            return query.OrderBy(r => r.Name);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPurchaseReturnReasonFilters), GetType());
+    }
+}

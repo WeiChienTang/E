@@ -1,0 +1,94 @@
+@* 銷貨退回 → 沖款記錄 Tab（唯讀） *@
+@inject ISetoffDocumentService SetoffDocumentService
+
+@if (_returnId <= 0)
+{
+    <div class="text-muted py-4 px-2">
+        <i class="bi bi-info-circle me-2"></i>請先儲存退回單，再查看沖款記錄。
+    </div>
+}
+else if (_isLoading)
+{
+    <div class="text-muted py-4 px-2">
+        <i class="bi bi-hourglass-split me-2"></i>載入中...
+    </div>
+}
+else if (!_setoffs.Any())
+{
+    <div class="text-muted py-4 px-2">
+        <i class="bi bi-inbox me-2"></i>此退回單無相關沖款記錄。
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>沖款單號</th>
+                    <th>沖款日期</th>
+                    <th class="text-end">本次沖款金額</th>
+                    <th class="text-end">本次收款金額</th>
+                    <th>已過帳</th>
+                    <th style="width:60px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var setoff in _setoffs)
+                {
+                    <tr>
+                        <td class="font-monospace small">@setoff.Code</td>
+                        <td>@setoff.SetoffDate.ToString("yyyy-MM-dd")</td>
+                        <td class="text-end">@setoff.CurrentSetoffAmount.ToString("N0")</td>
+                        <td class="text-end">@setoff.TotalCollectionAmount.ToString("N0")</td>
+                        <td>
+                            @if (setoff.IsJournalized)
+                            {
+                                <span class="text-success small"><i class="bi bi-check-circle me-1"></i>是</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small"><i class="bi bi-dash-circle me-1"></i>否</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    title="開啟沖款單"
+                                    @onclick="@(() => OnOpenSetoff.InvokeAsync(setoff.Id))">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    /// <summary>點擊沖款單時觸發，傳入 SetoffDocumentId</summary>
+    [Parameter] public EventCallback<int> OnOpenSetoff { get; set; }
+
+    private int _returnId;
+    private bool _isLoading;
+    private List<SetoffDocument> _setoffs = new();
+
+    public async Task LoadAsync(int returnId)
+    {
+        _returnId = returnId;
+        _isLoading = true;
+        StateHasChanged();
+
+        _setoffs = await SetoffDocumentService.GetBySalesReturnIdAsync(returnId);
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    public void Clear()
+    {
+        _returnId = 0;
+        _setoffs = new();
+        StateHasChanged();
+    }
+}

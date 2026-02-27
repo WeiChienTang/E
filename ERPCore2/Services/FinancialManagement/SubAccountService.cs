@@ -48,6 +48,24 @@ namespace ERPCore2.Services
                     && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable));
         }
 
+        public async Task<List<AccountItem>> GetAllSubAccountsForCustomerAsync(int customerId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.AccountItems
+                .AsNoTracking()
+                .Where(a => a.LinkedCustomerId == customerId)
+                .ToListAsync();
+        }
+
+        public async Task<List<AccountItem>> GetAllSubAccountsForSupplierAsync(int supplierId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.AccountItems
+                .AsNoTracking()
+                .Where(a => a.LinkedSupplierId == supplierId)
+                .ToListAsync();
+        }
+
         public async Task<AccountItem?> GetSubAccountForProductAsync(int productId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();

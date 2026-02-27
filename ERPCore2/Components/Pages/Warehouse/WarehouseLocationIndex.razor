@@ -3,6 +3,7 @@
 @inject IWarehouseService WarehouseService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericIndexPageComponent TEntity="WarehouseLocation" 
                         TService="IWarehouseLocationService"
@@ -10,7 +11,7 @@
                         EntityBasePath="/warehouseLocations"
                         PageTitle="倉庫內位置管理"
                         PageSubtitle="管理所有倉庫內位置資料與基本資訊"
-                        EntityName="倉庫內位置"
+                        EntityName="@L["Entity.WarehouseLocation"]"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"

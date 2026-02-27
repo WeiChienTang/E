@@ -7,6 +7,7 @@
 @inject ISalesDeliveryService SalesDeliveryService
 @inject ISalesReturnService SalesReturnService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @using ERPCore2.Components.Shared.UI
 
 @if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
@@ -25,7 +26,8 @@ else
     @* 本次沖款明細編輯 - 直接顯示所有未結清明細 *@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent TItem="SetoffProductDetailItem" 
+            <InteractiveTableComponent TItem="SetoffProductDetailItem"
+                                      OnDataChanged="@NotifyDetailsChanged"
                                       Items="@SetoffItems"
                                       ColumnDefinitions="@GetSetoffColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
@@ -543,7 +545,7 @@ else
         {
             new()
             {
-                Title = "來源單號",
+                Title = L["Column.SourceDocNumber"],
                 Tooltip = "原始銷售或進貨單據的單號",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
@@ -556,7 +558,7 @@ else
             },
             new()
             {
-                Title = "商品編號/名稱",
+                Title = L["Column.ProductCodeName"],
                 Tooltip = "顯示商品的編號與名稱",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
@@ -569,7 +571,7 @@ else
             },
             new()
             {
-                Title = "應收/付金額",
+                Title = L["Column.ReceivablePayable"],
                 Tooltip = "來源單據的原始應收或應付金額（退貨單顯示為負數）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
@@ -587,7 +589,7 @@ else
             },
             new()
             {
-                Title = "未沖款餘額",
+                Title = L["Column.UnsetoffBalance"],
                 Tooltip = "尚未沖銷的餘額金額（編輯模式下會動態調整）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
@@ -628,7 +630,7 @@ else
             },
             new()
             {
-                Title = "本次沖款",
+                Title = L["Column.CurrentSetoff"],
                 Tooltip = "本次要沖銷的金額（不可超過未沖款餘額）💡 雙擊可快速填入未沖款餘額",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
@@ -657,7 +659,7 @@ else
         {
             columns.Add(new InteractiveColumnDefinition
             {
-                Title = "本次折讓",
+                Title = L["Column.CurrentAllowance"],
                 Tooltip = "本次給予的折讓金額（不計入實際收付款）💡 雙擊可快速填入未沖款餘額",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
@@ -684,7 +686,7 @@ else
 
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "小計",
+            Title = L["Column.Subtotal"],
             Tooltip = "本次沖款 + 本次折讓的總計金額",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
@@ -705,7 +707,7 @@ else
 
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "備註",
+            Title = L["Label.Remarks"],
             Tooltip = "備註說明",
             PropertyName = nameof(SetoffProductDetailItem.Remarks),
             ColumnType = InteractiveColumnType.Input,

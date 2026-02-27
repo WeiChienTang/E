@@ -20,6 +20,12 @@ namespace ERPCore2.Services
         /// <summary>取得商品對應的存貨子科目（若不存在則回傳 null）</summary>
         Task<AccountItem?> GetSubAccountForProductAsync(int productId);
 
+        /// <summary>取得客戶所有連結子科目（含四種類型），供會計資訊 Tab 顯示用</summary>
+        Task<List<AccountItem>> GetAllSubAccountsForCustomerAsync(int customerId);
+
+        /// <summary>取得廠商所有連結子科目（含四種類型），供會計資訊 Tab 顯示用</summary>
+        Task<List<AccountItem>> GetAllSubAccountsForSupplierAsync(int supplierId);
+
         // ===== 建立（若已存在則直接回傳）=====
 
         /// <summary>

@@ -32,19 +32,18 @@
             @* 頁籤導覽 *@
             @if (_charts.Count > 0)
             {
-                <ul class="nav nav-tabs mb-3">
+                <div class="chart-tab-btn-group">
                     @for (int i = 0; i < _charts.Count; i++)
                     {
                         var idx = i;
                         var chart = _charts[i];
-                        <li class="nav-item">
-                            <button class="nav-link @(_activeChartIndex == idx ? "active" : "")"
-                                    @onclick="() => SetActiveChart(idx)">
-                                @chart.Title
-                            </button>
-                        </li>
+                        <button type="button"
+                                class="chart-tab-btn @(_activeChartIndex == idx ? "active" : "")"
+                                @onclick="() => SetActiveChart(idx)">
+                            @chart.Title
+                        </button>
                     }
-                </ul>
+                </div>
 
                 @* 圖表區域 *@
                 @for (int i = 0; i < _charts.Count; i++)
@@ -85,7 +84,7 @@
                                 <ApexChart @key="@($"{chart.ChartId}_{selectedType}")"
                                            TItem="ChartDataItem"
                                            Title="@chart.Title"
-                                           Options="@GetCachedOptions(selectedType)"
+                                           Options="@GetCachedOptions(chart, selectedType)"
                                            OnDataPointSelection="@(_callbackCache.GetValueOrDefault(chart.ChartId))">
                                     <ApexPointSeries TItem="ChartDataItem"
                                                      Items="@data"
@@ -176,7 +175,8 @@
 
     // 快取 Options 與 Callback，確保每次 re-render 傳入 ApexChart 的物件參考不變
     // (若物件參考改變，ApexChart 會呼叫 chart.updateOptions() 重新初始化，導致 JS 事件失效)
-    private readonly Dictionary<SeriesType, ApexChartOptions<ChartDataItem>> _optionsCache = new();
+    // Key 格式："{chartId}_{seriesType}"，金額圖與非金額圖各自快取，避免共用同一物件
+    private readonly Dictionary<string, ApexChartOptions<ChartDataItem>> _optionsCache = new();
     private readonly Dictionary<string, EventCallback<SelectedData<ChartDataItem>>> _callbackCache = new();
 
     // Drill-down state
@@ -313,17 +313,30 @@
         }
     }
 
-    private ApexChartOptions<ChartDataItem> GetCachedOptions(SeriesType type)
+    private ApexChartOptions<ChartDataItem> GetCachedOptions(ChartDefinition chart, SeriesType type)
     {
-        if (!_optionsCache.TryGetValue(type, out var opts))
+        var key = $"{chart.ChartId}_{(int)type}";
+        if (!_optionsCache.TryGetValue(key, out var opts))
         {
-            opts = BuildDefaultOptions(type);
-            _optionsCache[type] = opts;
+            opts = BuildDefaultOptions(type, chart.IsMoneyChart);
+            _optionsCache[key] = opts;
         }
         return opts;
     }
 
-    private ApexChartOptions<ChartDataItem> BuildDefaultOptions(SeriesType type) => type switch
+    // 金額圖表使用的 Y 軸千分位 Formatter（JavaScript function string）
+    private static readonly List<YAxis> _moneyYAxis = new()
+    {
+        new YAxis
+        {
+            Labels = new YAxisLabels
+            {
+                Formatter = "function(val) { return val == null ? '' : Number(val).toLocaleString(); }"
+            }
+        }
+    };
+
+    private ApexChartOptions<ChartDataItem> BuildDefaultOptions(SeriesType type, bool isMoneyChart = false) => type switch
     {
         SeriesType.Donut => new()
         {
@@ -347,19 +360,22 @@
             Chart = new Chart { Height = "100%" },
             Stroke = new Stroke { Curve = Curve.Smooth, Width = new List<int> { 3 } },
             Markers = new Markers { Size = new List<double> { 5 } },
-            Legend = new Legend { Show = false }
+            Legend = new Legend { Show = false },
+            Yaxis = isMoneyChart ? _moneyYAxis : null
         },
         SeriesType.Area => new()
         {
             Chart = new Chart { Height = "100%" },
             Stroke = new Stroke { Curve = Curve.Smooth, Width = new List<int> { 2 } },
-            Legend = new Legend { Show = false }
+            Legend = new Legend { Show = false },
+            Yaxis = isMoneyChart ? _moneyYAxis : null
         },
         SeriesType.Bar => new()
         {
             Chart = new Chart { Height = "100%" },
             PlotOptions = new PlotOptions { Bar = new PlotOptionsBar { Horizontal = false, ColumnWidth = "55%" } },
-            Legend = new Legend { Show = false }
+            Legend = new Legend { Show = false },
+            Yaxis = isMoneyChart ? _moneyYAxis : null
         },
         SeriesType.Treemap => new()
         {

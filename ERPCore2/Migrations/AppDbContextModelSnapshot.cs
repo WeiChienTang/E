@@ -3697,6 +3697,9 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("ReturnDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("ReturnReasonId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("ReturnTaxAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -3724,6 +3727,8 @@ namespace ERPCore2.Migrations
                     b.HasIndex("Code")
                         .IsUnique()
                         .HasFilter("[Code] IS NOT NULL");
+
+                    b.HasIndex("ReturnReasonId");
 
                     b.HasIndex("SupplierId", "ReturnDate");
 
@@ -3815,6 +3820,49 @@ namespace ERPCore2.Migrations
                     b.HasIndex("PurchaseReturnId", "ProductId");
 
                     b.ToTable("PurchaseReturnDetails");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReturnReason", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PurchaseReturnReasons");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Quotation", b =>
@@ -7299,11 +7347,17 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReturn", b =>
                 {
+                    b.HasOne("ERPCore2.Data.Entities.PurchaseReturnReason", "ReturnReason")
+                        .WithMany("PurchaseReturns")
+                        .HasForeignKey("ReturnReasonId");
+
                     b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ReturnReason");
 
                     b.Navigation("Supplier");
                 });
@@ -8136,6 +8190,11 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReturn", b =>
                 {
                     b.Navigation("PurchaseReturnDetails");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseReturnReason", b =>
+                {
+                    b.Navigation("PurchaseReturns");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Quotation", b =>

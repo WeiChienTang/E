@@ -1,7 +1,7 @@
 # EditModal 設計
 
 ## 更新日期
-2026-02-19
+2026-02-27
 
 ---
 
@@ -655,6 +655,56 @@ private void HandleVehicleModalCancel()
 @* ❌ 避免：不必要的 OnRelatedSavedWrapper 方法 *@
 ```
 
+### 13. Table 明細 + DirtyCheck 整合
+
+當 EditModal 包含 Table 明細（如訂單明細、出貨明細）時，明細的變更**不會**自動觸發主表單的 `_isDirty`，必須手動呼叫 `MarkDirty()`。
+
+**規則：`HandleDetailsChanged` 的第一行永遠是 `editModalComponent?.MarkDirty()`**
+
+```csharp
+// ✅ 正確
+private async Task HandleDetailsChanged(List<MyDetail> details)
+{
+    editModalComponent?.MarkDirty();   // 必須第一行
+    myDetails = details;
+    // ...計算總金額等後續邏輯
+}
+
+// ❌ 錯誤：忘記 MarkDirty，使用者修改明細後關閉不會警告
+private async Task HandleDetailsChanged(List<MyDetail> details)
+{
+    myDetails = details;
+    // ...
+}
+```
+
+**Table 元件端：綁定 `OnDataChanged`**
+
+`InteractiveTableComponent` 提供 `OnDataChanged` 參數，作為所有儲存格編輯的通用安全網（涵蓋無 `OnInputChanged` 的欄位）：
+
+```razor
+@* ✅ 在 Table 元件的 <InteractiveTableComponent> 加入 OnDataChanged *@
+<InteractiveTableComponent TItem="MyItem"
+                           OnDataChanged="@NotifyDetailsChanged"
+                           Items="@MyItems"
+                           ... />
+```
+
+`OnDataChanged` 的觸發時機：任何儲存格輸入、下拉選取、勾選、刪除、搜尋選取、鍵盤 Enter 選取、拖放排序。
+
+> **注意**：`OnDataChanged` 綁定的方法名稱依各 Table 不同，常見命名為 `NotifyDetailsChanged`、`NotifyChange`、`SyncToDetails`、`NotifyItemsChanged`，請確認方法存在，否則會**編譯錯誤**。
+
+**完整呼叫鏈路**：
+
+```
+使用者編輯 Table 儲存格
+    → InteractiveTableComponent.OnDataChanged
+    → Table.NotifyDetailsChanged()
+    → EditModal.HandleDetailsChanged()
+    → editModalComponent?.MarkDirty()
+    → _isDirty = true → 關閉時顯示警告 ✅
+```
+
 ---
 
 ## 常用表單欄位 Helper
@@ -674,24 +724,35 @@ FormFieldConfigurationHelper.CreateStatusField<YourEntity>()
 
 ## 開發檢查清單
 
-- [ ] 使用 `GenericEditModalComponent<TEntity, TService>`
+### 基本結構
+- [ ] 使用 `GenericEditModalComponent<TEntity, TService>`，並宣告 `@ref="editModalComponent"`
 - [ ] 使用 `@bind-Id` 綁定 ID
 - [ ] `FormFields="@formFields"` 直接綁定（不使用 `GetFormFields()` wrapper）
 - [ ] `ModalManagers="@modalManagers?.AsDictionary()"` 直接綁定（不使用 `GetModalManagers()` wrapper）
 - [ ] 使用 `OnEntitySaved="@OnYourEntitySaved"` 直接綁定（不寫 `HandleSaveSuccess` wrapper）
 - [ ] 使用 `OnCancel="@OnCancel"` 直接傳遞（不寫 `HandleCancel` wrapper）
 - [ ] 關聯 Modal 使用 `OnXxxSaved="@xxxModalManager.OnSavedAsync"` 直接綁定
+
+### 資料載入
 - [ ] 實作 Lazy Loading（`OnParametersSetAsync` + `isDataLoaded`）
 - [ ] 不在 `OnInitializedAsync` 中載入資料
 - [ ] 不設定 `AdditionalDataLoader` 參數（避免重複載入）
+- [ ] 若無需預先載入下拉選項，省略 `LoadAdditionalDataAsync`
+- [ ] 若無需在上下筆切換時重載資料，省略 `OnEntityLoaded` 及 `HandleEntityLoaded`
+
+### Helper 使用
 - [ ] 使用 `ModalManagerInitHelper` 管理關聯實體
 - [ ] 使用 `AutoCompleteConfigBuilder` 建立 AutoComplete 配置
 - [ ] 使用 `FormSectionHelper` 定義區段（需要 Tab 時用 `.BuildAll()`）
 - [ ] 使用 `ActionButtonHelper` 產生欄位按鈕（不在 `OnFieldValueChanged` 中手動更新）
 - [ ] 使用 `EntityCodeGenerationHelper` 自動產生編號
-- [ ] 若無需在上下筆切換時重載資料，省略 `OnEntityLoaded` 及 `HandleEntityLoaded`
-- [ ] 若無需預先載入下拉選項，省略 `LoadAdditionalDataAsync`
 - [ ] `OnFieldChanged` 僅在有非 ActionButton 的自訂邏輯時才綁定
+
+### Table 明細（含 Table 的 EditModal 必須檢查）
+- [ ] `HandleDetailsChanged`（或同等回呼）的**第一行**是 `editModalComponent?.MarkDirty()`
+- [ ] Table 元件的 `<InteractiveTableComponent>` 已綁定 `OnDataChanged="@NotifyDetailsChanged"`（或對應的通知方法）
+- [ ] `OnDataChanged` 綁定的方法名稱存在於 Table 元件中（不存在會編譯錯誤）
+- [ ] `<TableComponent>` 的 `OnDetailsChanged="@HandleDetailsChanged"` 在 EditModal 中有設定
 
 ---
 
@@ -700,4 +761,4 @@ FormFieldConfigurationHelper.CreateStatusField<YourEntity>()
 - [README_完整頁面設計總綱.md](README_完整頁面設計總綱.md) - 總綱
 - [README_FormField表單欄位設計.md](README_FormField表單欄位設計.md) - 表單欄位詳細設計
 - [README_Index頁面設計.md](README_Index頁面設計.md) - Index 頁面設計
-- [Readme_Edit重構說明.md] 
+- [Readme_DirtyCheck_EditModal與Table修改規範.md](../../Readme_DirtyCheck_EditModal與Table修改規範.md) - DirtyCheck 機制與修改規範

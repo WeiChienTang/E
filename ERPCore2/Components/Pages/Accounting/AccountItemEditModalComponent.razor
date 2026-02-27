@@ -1,6 +1,7 @@
 @* 可重用的會計科目編輯組件 - 可在任何頁面中嵌入 *@
 @inject IAccountItemService AccountItemService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="AccountItem"
                           TService="IAccountItemService"
@@ -9,17 +10,17 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@AccountItemId"
                           Service="@AccountItemService"
-                          EntityName="會計科目"
-                          EntityNamePlural="會計科目"
-                          ModalTitle="@(AccountItemId.HasValue ? "編輯會計科目" : "新增會計科目")"
+                          EntityName="@L["Entity.AccountItem"]"
+                          EntityNamePlural="@L["Entity.AccountItem"]"
+                          ModalTitle="@(AccountItemId.HasValue ? L["Message.EditTitle", L["Entity.AccountItem"]].ToString() : L["Message.CreateTitle", L["Entity.AccountItem"]].ToString())"
                           Size="GenericEditModalComponent<AccountItem, IAccountItemService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadAccountItemData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(AccountItemId.HasValue ? "會計科目更新成功" : "會計科目新增成功")"
-                          SaveFailureMessage="會計科目儲存失敗"
+                          SaveSuccessMessage="@(AccountItemId.HasValue ? L["Message.UpdateSuccess", L["Entity.AccountItem"]].ToString() : L["Message.CreateSuccess", L["Entity.AccountItem"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.AccountItem"]]"
                           RequiredPermission="AccountItem.Read"
                           OnEntitySaved="@OnAccountItemSaved"
                           OnCancel="@OnCancel" />
@@ -97,27 +98,27 @@
                 new()
                 {
                     PropertyName = nameof(AccountItem.Code),
-                    Label = "科目代碼",
+                    Label = L["Field.AccountCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入科目代碼",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.AccountCode"]],
                     IsRequired = true,
                     HelpText = "科目的唯一識別代碼，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
                     PropertyName = nameof(AccountItem.Name),
-                    Label = "科目名稱",
+                    Label = L["Field.AccountName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入科目名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.AccountName"]],
                     IsRequired = true,
                     HelpText = "會計科目的中文名稱"
                 },
                 new()
                 {
                     PropertyName = nameof(AccountItem.EnglishName),
-                    Label = "英文名稱",
+                    Label = L["Field.EnglishName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入英文名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.EnglishName"]],
                     IsRequired = false,
                     HelpText = "會計科目的英文名稱"
                 },
@@ -126,7 +127,7 @@
                 new()
                 {
                     PropertyName = nameof(AccountItem.AccountType),
-                    Label = "科目大類",
+                    Label = L["Field.AccountCategory"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     HelpText = "科目所屬的會計大類",
@@ -145,7 +146,7 @@
                 new()
                 {
                     PropertyName = nameof(AccountItem.Direction),
-                    Label = "借貸方向",
+                    Label = L["Field.DebitCreditDirection"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     HelpText = "借方：資產、成本、費用類；貸方：負債、權益、收入類",
@@ -158,7 +159,7 @@
                 new()
                 {
                     PropertyName = nameof(AccountItem.AccountLevel),
-                    Label = "科目層級",
+                    Label = L["Field.AccountLevel"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     HelpText = "1=大分類、2=子分類、3=中分類、4=明細科目",
@@ -173,7 +174,7 @@
                 new()
                 {
                     PropertyName = nameof(AccountItem.ParentId),
-                    Label = "上層科目",
+                    Label = L["Field.ParentAccount"],
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
                     HelpText = "選擇此科目的上層（父）科目，第1層科目不需選擇",
@@ -182,7 +183,7 @@
                 new()
                 {
                     PropertyName = nameof(AccountItem.IsDetailAccount),
-                    Label = "是否為明細科目",
+                    Label = L["Field.IsDetailAccount"],
                     FieldType = FormFieldType.Checkbox,
                     IsRequired = false,
                     HelpText = "僅明細科目可用於記帳分錄"
@@ -190,7 +191,7 @@
                 new()
                 {
                     PropertyName = nameof(AccountItem.SortOrder),
-                    Label = "排序順序",
+                    Label = L["Field.SortOrder"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "控制同層級科目的顯示順序",
@@ -202,9 +203,9 @@
                 new()
                 {
                     PropertyName = nameof(AccountItem.Description),
-                    Label = "科目說明",
+                    Label = L["Field.AccountDescription"],
                     FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入科目說明",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.AccountDescription"]],
                     IsRequired = false,
                     Rows = 3,
                     ContainerCssClass = "col-12"
@@ -212,9 +213,9 @@
                 new()
                 {
                     PropertyName = nameof(AccountItem.EnglishDescription),
-                    Label = "英文說明",
+                    Label = L["Field.AccountDescriptionEn"],
                     FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入英文說明",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.AccountDescriptionEn"]],
                     IsRequired = false,
                     Rows = 3,
                     ContainerCssClass = "col-12"

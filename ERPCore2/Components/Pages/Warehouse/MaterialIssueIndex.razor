@@ -3,6 +3,7 @@
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @using ERPCore2.Models
 @using ERPCore2.FieldConfiguration
@@ -22,7 +23,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="領料單"
+                        EntityName="@L["Entity.MaterialIssue"]"
                         GetEntityDisplayName="@(issue => issue.Code ?? "未命名")"
                         RequiredPermission="MaterialIssue.Read"
                         RequiredModule="Warehouse"

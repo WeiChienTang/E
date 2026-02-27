@@ -2,6 +2,7 @@
 @inject IJournalEntryService JournalEntryService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericIndexPageComponent TEntity="JournalEntry"
                           TService="IJournalEntryService"
@@ -9,7 +10,7 @@
                           EntityBasePath="/journal-entries"
                           PageTitle="傳票管理"
                           PageSubtitle="管理會計傳票與分錄明細"
-                          EntityName="傳票"
+                          EntityName="@L["Entity.JournalEntry"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -17,7 +18,7 @@
                           FilterApplier="@ApplyFilters"
                           GetEntityDisplayName="@(je => $"{je.Code} {je.Description}")"
                           RequiredPermission="JournalEntry.Read"
-                          RequiredModule="FinancialManagement"
+                          RequiredModule="Accounting"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />

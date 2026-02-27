@@ -98,11 +98,12 @@ public static class ChartRegistry
             SortOrder          = 6,
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Treemap },
+            IsMoneyChart       = true,
             DataFetcher        = sp => sp.GetRequiredService<ICustomerChartService>().GetTopCustomersBySalesAmountAsync(),
             DetailFetcher      = (sp, label) => sp.GetRequiredService<ICustomerChartService>().GetTopCustomerSalesOrderDetailsAsync(label),
             DetailColumns      = new()
             {
-                new() { Title = "訂單日期", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },
+                new() { Title = "出貨日期", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },
                 new() { Title = "含稅金額", PropertyName = "SubLabel", ColumnType = InteractiveColumnType.Display, Width = "130px", TextAlign = "right" }
             }
         });
@@ -115,6 +116,7 @@ public static class ChartRegistry
             SortOrder          = 7,
             DefaultSeriesType  = SeriesType.Area,
             AllowedSeriesTypes = new() { SeriesType.Area, SeriesType.Line },
+            IsMoneyChart       = true,
             DataFetcher        = sp => sp.GetRequiredService<ICustomerChartService>().GetMonthlySalesTrendAsync()
             // 月趨勢圖不支援 drill-down
         });
@@ -127,6 +129,7 @@ public static class ChartRegistry
             SortOrder          = 8,
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Pie, SeriesType.Donut },
+            IsMoneyChart       = true,
             DataFetcher        = sp => sp.GetRequiredService<ICustomerChartService>().GetCustomersByCurrentBalanceRangeAsync(),
             DetailFetcher      = (sp, label) => sp.GetRequiredService<ICustomerChartService>().GetCustomersByCurrentBalanceRangeDetailsAsync(label),
             DetailColumns      = new()
@@ -144,6 +147,7 @@ public static class ChartRegistry
             SortOrder          = 9,
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Treemap },
+            IsMoneyChart       = true,
             DataFetcher        = sp => sp.GetRequiredService<ICustomerChartService>().GetTopCustomersByReturnAmountAsync(),
             DetailFetcher      = (sp, label) => sp.GetRequiredService<ICustomerChartService>().GetTopCustomerReturnDetailsAsync(label),
             DetailColumns      = new()

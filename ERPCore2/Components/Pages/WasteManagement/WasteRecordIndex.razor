@@ -1,6 +1,7 @@
 @page "/waste-records"
 @inject IWasteRecordService WasteRecordService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="WasteRecord"
@@ -9,7 +10,7 @@
                           EntityBasePath="/waste-records"
                           PageTitle="廢料記錄"
                           PageSubtitle="管理廢料收料記錄"
-                          EntityName="廢料記錄"
+                          EntityName="@L["Entity.WasteRecord"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

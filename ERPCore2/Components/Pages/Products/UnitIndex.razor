@@ -1,6 +1,7 @@
 @page "/units"
 @inject IUnitService UnitService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Unit" 
@@ -9,7 +10,7 @@
                           EntityBasePath="/units"
                           PageTitle="單位維護"
                           PageSubtitle="管理所有計量單位資料與轉換關係"
-                          EntityName="單位"
+                          EntityName="@L["Entity.Unit"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

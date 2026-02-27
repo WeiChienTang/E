@@ -6,6 +6,7 @@
 @inject IWarehouseLocationService WarehouseLocationService
 @inject IInventoryStockDetailService InventoryStockDetailService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -13,7 +14,8 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
-                                      TItem="StockDetailItem" 
+                                      TItem="StockDetailItem"
+                                      OnDataChanged="@NotifyDetailsChanged"
                                       Items="@StockDetailItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       ShowHeader="true"
@@ -127,7 +129,7 @@
         // 倉庫選擇欄位
         columns.Add(new() 
         { 
-            Title = "倉庫", 
+            Title = L["Entity.Warehouse"],
             PropertyName = "SelectedWarehouseId",
             ColumnType = InteractiveColumnType.Select,
             TriggerEmptyRowOnFilled = true,
@@ -144,7 +146,7 @@
         // 庫位選擇欄位
         columns.Add(new() 
         { 
-            Title = "庫位", 
+            Title = L["Column.Location"],
             PropertyName = "SelectedWarehouseLocationId",
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
@@ -167,15 +169,19 @@
             }
         });
 
-        // 現有庫存欄位
-        columns.Add(new() 
-        { 
-            Title = "現有庫存", 
+        // 現有庫存欄位（已存在的明細行唯讀，須透過盤點/進出貨流程修改）
+        columns.Add(new()
+        {
+            Title = L["Column.CurrentStock"],
             PropertyName = "CurrentStock",
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             CellCssClass = "text-end",
             MinValue = 0,
+            IsDisabledFunc = item => ((StockDetailItem)item).ExistingDetailEntity != null,
+            TooltipFunc = item => ((StockDetailItem)item).ExistingDetailEntity != null
+                ? "現有庫存量須透過盤點調整、進貨或出貨等流程修改"
+                : null,
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
                 var (item, valueString) = args;
@@ -188,7 +194,7 @@
         {
             columns.Add(new() 
             { 
-                Title = "平均成本", 
+                Title = L["Column.AverageCost"],
                 PropertyName = "AverageCost",
                 ColumnType = InteractiveColumnType.Number,
                 Width = "120px",
@@ -205,7 +211,7 @@
         // 最低庫存警戒線欄位
         columns.Add(new() 
         { 
-            Title = "最低警戒線", 
+            Title = L["Column.MinAlertLevel"],
             PropertyName = "MinStockLevel",
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
@@ -221,7 +227,7 @@
         // 最高庫存警戒線欄位
         columns.Add(new() 
         { 
-            Title = "最高警戒線", 
+            Title = L["Column.MaxAlertLevel"],
             PropertyName = "MaxStockLevel",
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
@@ -237,7 +243,7 @@
 // 備註欄位
         columns.Add(new() 
         { 
-            Title = "備註", 
+            Title = L["Label.Remarks"],
             PropertyName = "Remarks",
             ColumnType = InteractiveColumnType.Input,
             Width = "200px",

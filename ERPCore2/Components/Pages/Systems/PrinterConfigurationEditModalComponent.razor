@@ -3,25 +3,26 @@
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject IPrinterTestService PrinterTestService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="PrinterConfiguration" 
+<GenericEditModalComponent TEntity="PrinterConfiguration"
                           TService="IPrinterConfigurationService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@PrinterConfigurationId"
                           Service="@PrinterConfigurationService"
-                          EntityName="印表機設定"
-                          EntityNamePlural="印表機設定"
-                          ModalTitle="@(PrinterConfigurationId.HasValue ? "編輯印表機設定" : "新增印表機設定")"
+                          EntityName="@L["Entity.PrinterConfiguration"]"
+                          EntityNamePlural="@L["Entity.PrinterConfiguration"]"
+                          ModalTitle="@(PrinterConfigurationId.HasValue ? L["Message.EditTitle", L["Entity.PrinterConfiguration"]].ToString() : L["Message.CreateTitle", L["Entity.PrinterConfiguration"]].ToString())"
                           Size="GenericEditModalComponent<PrinterConfiguration, IPrinterConfigurationService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadPrinterConfigurationData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(PrinterConfigurationId.HasValue ? "印表機設定更新成功" : "印表機設定新增成功")"
-                          SaveFailureMessage="印表機設定儲存失敗"
+                          SaveSuccessMessage="@(PrinterConfigurationId.HasValue ? L["Message.UpdateSuccess", L["Entity.PrinterConfiguration"]].ToString() : L["Message.CreateSuccess", L["Entity.PrinterConfiguration"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PrinterConfiguration"]]"
                           RequiredPermission="PrinterConfiguration.Read"
                           OnEntitySaved="@OnPrinterConfigurationSaved"
                           OnCancel="@OnCancel"
@@ -123,45 +124,45 @@
                 new()
                 {
                     PropertyName = nameof(PrinterConfiguration.Code),
-                    Label = "印表機編號",
+                    Label = L["Field.PrinterCode"],
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
                     MaxLength = 50,
                     Order = 0,
-                    Placeholder = "請輸入印表機編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PrinterCode"]],
                     HelpText = "印表機的唯一識別編號，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
                     PropertyName = nameof(PrinterConfiguration.Name),
-                    Label = "系統印表機名稱",
+                    Label = L["Field.PrinterName"],
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
                     MaxLength = 100,
                     Order = 1,
-                    Placeholder = "請點選「查詢印表機」選取",
+                    Placeholder = L["Placeholder.ClickToQueryPrinter"],
                     HelpText = "請使用「查詢印表機」按鈕選取已安裝的印表機，此名稱必須與系統印表機名稱完全一致"
                 },
                 new()
                 {
                     PropertyName = nameof(PrinterConfiguration.UsbPort),
-                    Label = "連接埠",
+                    Label = L["Field.PrinterPort"],
                     FieldType = FormFieldType.Text,
                     IsRequired = false,
                     MaxLength = 50,
                     Order = 2,
-                    Placeholder = "自動填入",
+                    Placeholder = L["Placeholder.AutoFill"],
                     HelpText = "選取印表機時自動填入，僅供參考識別用途"
                 },
                 new()
                 {
                     PropertyName = nameof(PrinterConfiguration.IpAddress),
-                    Label = "IP位址",
+                    Label = L["Field.PrinterIpAddress"],
                     FieldType = FormFieldType.Text,
                     IsRequired = false,
                     MaxLength = 50,
                     Order = 3,
-                    Placeholder = "請輸入IP位址",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PrinterIpAddress"]],
                     HelpText = "網路印表機的IP位址，若USB連接埠無效則自動使用此設定"
                 },
 
@@ -197,11 +198,11 @@
     private RenderFragment? CustomActionButtons => __builder =>
     {
         @* 查詢已安裝印表機按鈕 *@
-        <GenericButtonComponent Text="查詢印表機" 
+        <GenericButtonComponent Text="@L["Button.QueryPrinter"]"
                               Variant="ButtonVariant.Blue"
                               OnClick="@HandleOpenInstalledPrinterModal"/>
         @* 測試列印按鈕 *@
-        <GenericButtonComponent Text="測試列印" 
+        <GenericButtonComponent Text="@L["Button.TestPrint"]"
                               Variant="ButtonVariant.Green"
                               OnClick="@HandleTestPrint"/>
     };

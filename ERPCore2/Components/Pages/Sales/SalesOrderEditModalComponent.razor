@@ -18,6 +18,7 @@
 @inject ISalesOrderReportService SalesOrderReportService
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IDbContextFactory<AppDbContext> DbContextFactory
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="SalesOrder" 
                           TService="ISalesOrderService"
@@ -26,9 +27,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@SalesOrderId"
                           Service="@SalesOrderService"
-                          EntityName="訂單"
-                          EntityNamePlural="訂單"
-                          ModalTitle="@(SalesOrderId.HasValue ? "編輯訂單" : "新增訂單")"
+                          EntityName="@L["Entity.SalesOrder"]"
+                          EntityNamePlural="@L["Entity.SalesOrder"]"
+                          ModalTitle="@(SalesOrderId.HasValue ? L["Message.EditTitle", L["Entity.SalesOrder"]].ToString() : L["Message.CreateTitle", L["Entity.SalesOrder"]].ToString())"
                           Size="GenericEditModalComponent<SalesOrder, ISalesOrderService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -40,8 +41,8 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadSalesOrderData"
                           SaveHandler="@SaveSalesOrderWithDetails"
-                          SaveSuccessMessage="@(SalesOrderId.HasValue ? "訂單更新成功" : "訂單新增成功")"
-                          SaveFailureMessage="訂單儲存失敗"
+                          SaveSuccessMessage="@(SalesOrderId.HasValue ? L["Message.UpdateSuccess", L["Entity.SalesOrder"]].ToString() : L["Message.CreateSuccess", L["Entity.SalesOrder"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SalesOrder"]]"
                           RequiredPermission="SalesOrder.Read"
                           OnEntitySaved="@OnSalesOrderSaved"
                           OnCancel="@OnCancel"
@@ -49,12 +50,12 @@
                           OnTaxMethodChanged="@(() => HandleDetailsChanged(salesOrderDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          CustomModules="@GetCustomModules()"
+                          TabDefinitions="@tabDefinitions"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@SalesOrderReportService"
                           ReportId="@ReportIds.SalesOrder"
-                          ReportPreviewTitle="銷貨單預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.SalesDeliveryDoc"]]"
                           GetReportDocumentName="@(e => $"銷貨單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded">
 </GenericEditModalComponent>
@@ -107,6 +108,13 @@
                                  OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
                                  OnCancel="@(() => showSetoffDocumentModal = false)" />
 
+@* 報價單編輯 Modal（由 QuotationTab 開啟） *@
+<QuotationEditModalComponent @ref="quotationEditModal"
+                             IsVisible="@showQuotationModal"
+                             IsVisibleChanged="@((bool visible) => showQuotationModal = visible)"
+                             QuotationId="@selectedQuotationId"
+                             OnCancel="@(() => showQuotationModal = false)" />
+
 @* 生產排程編輯 Modal *@
 <ProductionScheduleEditModalComponent @ref="productionScheduleEditModal"
                                      IsVisible="@showProductionScheduleModal"
@@ -138,6 +146,17 @@
     private GenericEditModalComponent<SalesOrder, ISalesOrderService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+
+    // ===== 關聯文件 Tabs =====
+    private SalesOrderDeliveryTab? deliveryTab;
+    private SalesOrderReturnTab? returnTab;
+    private SalesOrderQuotationTab? quotationTab;
+
+    // ===== 報價單 Modal（由 QuotationTab 開啟） =====
+    private QuotationEditModalComponent? quotationEditModal;
+    private bool showQuotationModal = false;
+    private int? selectedQuotationId = null;
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -448,9 +467,9 @@
                 new()
                 {
                     PropertyName = nameof(SalesOrder.Code),
-                    Label = "銷貨單號",
+                    Label = L["Field.SalesOrderCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入銷貨單號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.SalesOrderCode"]],
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "訂單的唯一編號，新增時系統會自動產生，也可手動修改",
@@ -459,9 +478,9 @@
                 new()
                 {
                     PropertyName = nameof(SalesOrder.CustomerId),
-                    Label = "客戶",
+                    Label = L["Entity.Customer"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇客戶",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Customer"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
@@ -471,9 +490,9 @@
                 new()
                 {
                     PropertyName = "FilterProductId", // 篩選用的虛擬欄位，不儲存至資料庫
-                    Label = "商品",
+                    Label = L["Entity.Product"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇商品",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇特定商品進行篩選，或留空顯示所有商品。此欄位不會儲存。",
@@ -483,9 +502,9 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = "FilterQuotationId", // 篩選用的虛擬欄位，不儲存至資料庫
-                    Label = "報價單",
+                    Label = L["Entity.Quotation"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇報價單",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Quotation"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇特定報價單進行篩選，或留空顯示所有報價單。此欄位不會儲存。",
@@ -495,9 +514,9 @@
                 new()
                 {
                     PropertyName = nameof(SalesOrder.CompanyId),
-                    Label = "公司",
+                    Label = L["Entity.Company"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇公司",
+                    Placeholder = L["Placeholder.PleaseSelect", L["Entity.Company"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "選擇進行此次銷貨的公司",
@@ -507,9 +526,9 @@
                 new()
                 {
                     PropertyName = nameof(SalesOrder.EmployeeId),
-                    Label = "業務員",
+                    Label = L["Field.SalesPerson"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇業務員",
+                    Placeholder = L["Placeholder.PleaseSelect", L["Field.SalesPerson"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇負責此訂單的業務員",
@@ -519,7 +538,7 @@
                 new()
                 {
                     PropertyName = nameof(SalesOrder.OrderDate),
-                    Label = "訂單日期",
+                    Label = L["Field.SalesOrderDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "訂單建立日期",
@@ -528,7 +547,7 @@
                 new()
                 {
                     PropertyName = nameof(SalesOrder.TaxCalculationMethod),
-                    Label = "稅別",
+                    Label = L["Field.TaxType"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = taxCalculationMethodOptions,
@@ -538,7 +557,7 @@
                 new()
                 {
                     PropertyName = nameof(SalesOrder.ExpectedDeliveryDate),
-                    Label = "預交日",
+                    Label = L["Field.ExpectedDeliveryDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "預計出貨給客戶的日期",
@@ -548,7 +567,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesOrder.TotalAmount),
-                    Label = "金額",
+                    Label = L["Field.Amount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "銷貨單的總金額，根據明細自動計算（明細的數量 × 單價總和）",
@@ -558,7 +577,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesOrder.DiscountAmount),
-                    Label = "折扣",
+                    Label = L["Field.Discount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "銷貨單的折扣金額，根據明細自動計算 = (數量 × 單價 × 折扣%)",
@@ -568,7 +587,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesOrder.SalesTaxAmount),
-                    Label = "稅額",
+                    Label = L["Field.TaxAmount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "銷貨單的稅額，根據金額和稅率自動計算 = (折扣後金額 × 稅率%)",
@@ -578,7 +597,7 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesOrder.TotalAmountWithTax),
-                    Label = "總額",
+                    Label = L["Field.TotalAmount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "銷貨單的含稅總金額，根據明細自動計算（金額 - 折扣 + 稅額）",
@@ -588,9 +607,9 @@
                 new()
                 {
                     PropertyName = nameof(SalesOrder.PaymentTerms),
-                    Label = "付款條件",
+                    Label = L["Field.PaymentTerms"],
                     FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入付款條件",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PaymentTerms"]],
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "與客戶約定的付款方式和期限",
@@ -599,9 +618,9 @@
                 new()
                 {
                     PropertyName = nameof(SalesOrder.DeliveryTerms),
-                    Label = "交貨條件",
+                    Label = L["Field.DeliveryTerms"],
                     FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入交貨條件",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.DeliveryTerms"]],
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "與客戶約定的交貨方式和條件",
@@ -614,7 +633,7 @@
                 ),
             };
 
-            formSections = FormSectionHelper<SalesOrder>.Create()
+            var layout = FormSectionHelper<SalesOrder>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     so => so.Code,
                     so => so.CustomerId,
@@ -633,13 +652,22 @@
                     so => so.PaymentTerms,
                     so => so.DeliveryTerms,
                     so => so.Remarks)
-                .Build();
+                .GroupIntoTab("訂單資料", "bi-file-earmark-text",
+                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
+                    FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
+                .GroupIntoCustomTab("訂單明細", "bi-list-ul", CreateProductManagerContent())
+                .GroupIntoCustomTab("出貨記錄", "bi-truck", CreateDeliveryTabContent())
+                .GroupIntoCustomTab("退回記錄", "bi-arrow-return-left", CreateReturnTabContent())
+                .GroupIntoCustomTab("來源報價", "bi-file-earmark-arrow-up", CreateQuotationTabContent())
+                .BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
         }
         catch (Exception ex)
         {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFieldsAsync), GetType(), 
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFieldsAsync), GetType(),
                 additionalData: "訂單編輯Modal表單欄位初始化失敗");
-            
+
             // 設定安全的預設值
             formFields = new List<FormFieldDefinition>();
             formSections = new Dictionary<string, string>();
@@ -647,14 +675,6 @@
     }
 
     // ===== AutoComplete 配置方法 =====
-
-    /// <summary>
-    /// 配置自訂模組
-    /// </summary>
-    private List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule> GetCustomModules()
-    {
-        return CustomModuleHelper.CreateSingle(editModalComponent, CreateProductManagerContent());
-    }
 
     /// <summary>
     /// 創建商品管理器內容的 RenderFragment
@@ -860,11 +880,22 @@
 
     // ===== 銷貨明細管理方法 =====
     
-    private Task HandleEntityLoaded(int loadedEntityId)
+    private async Task HandleEntityLoaded(int loadedEntityId)
     {
         UpdateFilterFieldsState();
+        if (loadedEntityId > 0)
+        {
+            if (deliveryTab != null) await deliveryTab.LoadAsync(loadedEntityId);
+            if (returnTab != null) await returnTab.LoadAsync(loadedEntityId);
+            if (quotationTab != null) await quotationTab.LoadAsync(loadedEntityId);
+        }
+        else
+        {
+            deliveryTab?.Clear();
+            returnTab?.Clear();
+            quotationTab?.Clear();
+        }
         StateHasChanged();
-        return Task.CompletedTask;
     }
     
     /// <summary>
@@ -906,6 +937,7 @@
     {
         try
         {
+            editModalComponent?.MarkDirty();
             salesOrderDetails = details ?? new List<SalesOrderDetail>();
 
             if (editModalComponent?.Entity != null)
@@ -1055,6 +1087,45 @@
     private string GetFilterProductName()
         => EntityDisplayHelper.GetDisplayValue(filterProductId, products, p => p.Name) ?? string.Empty;
 
+    private RenderFragment CreateDeliveryTabContent() => __builder =>
+    {
+        <SalesOrderDeliveryTab @ref="deliveryTab"
+                               OnOpenDelivery="@HandleOpenDeliveryFromTab" />
+    };
+
+    private RenderFragment CreateReturnTabContent() => __builder =>
+    {
+        <SalesOrderReturnTab @ref="returnTab"
+                             OnOpenReturn="@HandleOpenReturnFromTab" />
+    };
+
+    private RenderFragment CreateQuotationTabContent() => __builder =>
+    {
+        <SalesOrderQuotationTab @ref="quotationTab"
+                                OnOpenQuotation="@HandleOpenQuotationFromTab" />
+    };
+
+    private void HandleOpenDeliveryFromTab(int deliveryId)
+    {
+        selectedSalesDeliveryId = deliveryId;
+        showSalesDeliveryModal = true;
+        StateHasChanged();
+    }
+
+    private void HandleOpenReturnFromTab(int returnId)
+    {
+        selectedSalesReturnId = returnId;
+        showSalesReturnModal = true;
+        StateHasChanged();
+    }
+
+    private void HandleOpenQuotationFromTab(int quotationId)
+    {
+        selectedQuotationId = quotationId;
+        showQuotationModal = true;
+        StateHasChanged();
+    }
+
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）
     /// </summary>
@@ -1065,33 +1136,33 @@
             SalesOrderId.HasValue)
         {
             
-            <GenericButtonComponent Text="轉銷貨" 
+            <GenericButtonComponent Text="@L["Button.ConvertToDelivery"]"
                                   Variant="ButtonVariant.Green" 
                                   OnClick="HandleCreateDeliveryFromOrder" />
             
             @* 批次排程管理按鈕 *@
-            <GenericButtonComponent Text="排程管理" 
+            <GenericButtonComponent Text="@L["Button.ScheduleManagement"]"
                                   Variant="ButtonVariant.Yellow"
                                   OnClick="HandleBatchTransferToSchedule" />
 
             @* 庫存檢視按鈕 - 有不足時顯示警告樣式 *@
             @if (isInventoryCheckLoading)
             {
-                <GenericButtonComponent Text="檢查中..." 
+                <GenericButtonComponent Text="@L["Label.Loading"]"
                                       Variant="ButtonVariant.Gray" 
                                       Icon="bi bi-hourglass-split"
                                       IsDisabled="true" />
             }
             else if (hasInventoryShortage)
             {
-                <GenericButtonComponent Text="⚠️ 查庫存" 
+                <GenericButtonComponent Text="@($"⚠️ {L["Button.CheckInventory"]}")"
                                       Variant="ButtonVariant.Yellow" 
                                       Icon="bi bi-exclamation-triangle-fill"
                                       OnClick="HandleShowInventoryCheck" />
             }
             else
             {
-                <GenericButtonComponent Text="查庫存" 
+                <GenericButtonComponent Text="@L["Button.CheckInventory"]"
                                       Variant="ButtonVariant.Blue" 
                                       Icon="bi bi-box-seam"
                                       OnClick="HandleShowInventoryCheck" />

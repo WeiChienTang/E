@@ -2,6 +2,7 @@
 @inject IProductCategoryService ProductCategoryService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericIndexPageComponent TEntity="ProductCategory" 
                         TService="IProductCategoryService"
@@ -14,7 +15,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="商品類型"
+                        EntityName="@L["Entity.ProductCategory"]"
                         GetEntityDisplayName="@(category => category.Name)"
                         RequiredPermission="ProductCategory.Read"
                         RequiredModule="Products"

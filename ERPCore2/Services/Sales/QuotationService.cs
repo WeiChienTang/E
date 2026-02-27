@@ -477,6 +477,48 @@ namespace ERPCore2.Services
         #region 批次列印查詢
 
         /// <summary>
+        /// 依銷貨訂單 ID 取得來源報價單（跨訂單明細查詢）
+        /// </summary>
+        public async Task<List<Quotation>> GetBySalesOrderIdAsync(int salesOrderId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // SalesOrderDetail.QuotationDetailId → QuotationDetail.QuotationId → Quotation
+                var quotationDetailIds = await context.SalesOrderDetails
+                    .Where(d => d.SalesOrderId == salesOrderId && d.QuotationDetailId.HasValue)
+                    .Select(d => d.QuotationDetailId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                if (!quotationDetailIds.Any())
+                    return new List<Quotation>();
+
+                var quotationIds = await context.QuotationDetails
+                    .Where(d => quotationDetailIds.Contains(d.Id))
+                    .Select(d => d.QuotationId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.Quotations
+                    .Include(q => q.Customer)
+                    .Where(q => quotationIds.Contains(q.Id))
+                    .OrderByDescending(q => q.QuotationDate)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesOrderIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetBySalesOrderIdAsync),
+                    SalesOrderId = salesOrderId
+                });
+                return new List<Quotation>();
+            }
+        }
+
+        /// <summary>
         /// 根據批次列印條件查詢報價單（批次列印專用）
         /// </summary>
         public async Task<List<Quotation>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria)

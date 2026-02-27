@@ -60,5 +60,25 @@ namespace ERPCore2.Services
         /// <param name="sourceDetailType">來源明細類型（null 表示全部）</param>
         /// <returns>重建結果</returns>
         Task<ServiceResult> RebuildCacheAsync(SetoffDetailType? sourceDetailType = null);
+
+        /// <summary>
+        /// 依採購進貨單 ID 取得相關沖款單（透過進貨明細反查）
+        /// </summary>
+        Task<List<SetoffDocument>> GetByPurchaseReceivingIdAsync(int purchaseReceivingId);
+
+        /// <summary>
+        /// 依採購退回單 ID 取得相關沖款單（透過退回明細反查）
+        /// </summary>
+        Task<List<SetoffDocument>> GetByPurchaseReturnIdAsync(int purchaseReturnId);
+
+        /// <summary>
+        /// 依銷貨出貨單 ID 取得相關沖款單（透過出貨明細反查）
+        /// </summary>
+        Task<List<SetoffDocument>> GetBySalesDeliveryIdAsync(int salesDeliveryId);
+
+        /// <summary>
+        /// 依銷貨退回單 ID 取得相關沖款單（透過退回明細反查）
+        /// </summary>
+        Task<List<SetoffDocument>> GetBySalesReturnIdAsync(int salesReturnId);
     }
 }

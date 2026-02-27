@@ -1,25 +1,26 @@
 @* 可重用的權限組編輯組件 - 可在任何頁面中嵌入 *@
 @inject IRoleService RoleService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="Role" 
+<GenericEditModalComponent TEntity="Role"
                           TService="IRoleService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@RoleId"
                           Service="@RoleService"
-                          EntityName="權限組"
-                          EntityNamePlural="權限組"
-                          ModalTitle="@(RoleId.HasValue ? "編輯權限組" : "新增權限組")"
+                          EntityName="@L["Entity.Role"]"
+                          EntityNamePlural="@L["Entity.Role"]"
+                          ModalTitle="@(RoleId.HasValue ? L["Message.EditTitle", L["Entity.Role"]].ToString() : L["Message.CreateTitle", L["Entity.Role"]].ToString())"
                           Size="GenericEditModalComponent<Role, IRoleService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadRoleData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(RoleId.HasValue ? "權限組更新成功" : "權限組新增成功")"
-                          SaveFailureMessage="權限組儲存失敗"
+                          SaveSuccessMessage="@(RoleId.HasValue ? L["Message.UpdateSuccess", L["Entity.Role"]].ToString() : L["Message.CreateSuccess", L["Entity.Role"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Role"]]"
                           RequiredPermission="Role.Read"
                           OnEntitySaved="@OnRoleSaved"
                           OnCancel="@OnCancel" />
@@ -60,9 +61,9 @@
                 new()
                 {
                     PropertyName = nameof(Role.Code),
-                    Label = "權限組編號",
+                    Label = L["Field.RoleCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入權限組編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.RoleCode"]],
                     IsRequired = true,
                     MaxLength = 20,
                     HelpText = "權限組的唯一編號，用於區別不同的系統權限群組，新增時系統會自動產生，也可手動修改，最多20個字元"
@@ -70,9 +71,9 @@
                 new()
                 {
                     PropertyName = nameof(Role.Name),
-                    Label = "權限組名稱",
+                    Label = L["Field.RoleName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入權限組名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.RoleName"]],
                     IsRequired = true,
                     MaxLength = 50,
                     HelpText = "權限組的唯一名稱，用於區別不同的系統權限群組，最多50個字元"

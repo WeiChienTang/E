@@ -7,6 +7,7 @@
 @inject IWarehouseService WarehouseService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="SalesDelivery"
@@ -15,7 +16,7 @@
                           EntityBasePath="/sales-deliveries"
                           PageTitle="銷貨單管理"
                           PageSubtitle="管理所有銷貨單資料與明細資訊"
-                          EntityName="銷貨單"
+                          EntityName="@L["Entity.SalesDeliveryDoc"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

@@ -3,6 +3,7 @@
 @inject IProductService ProductService
 @inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @using ERPCore2.Data.Entities
 @using ERPCore2.Helpers
@@ -36,6 +37,7 @@
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
                                      TItem="DetailItem"
+                                     OnDataChanged="@SyncToDetails"
                                      Items="@DetailItems"
                                      ColumnDefinitions="@GetColumnDefinitions()"
                                      IsReadOnly="@IsReadOnly"
@@ -223,7 +225,7 @@
         // 商品欄位 - 使用 SearchableSelect
         columns.Add(new()
         {
-            Title = "商品",
+            Title = L["Entity.Product"],
             PropertyName = "ProductId",
             EmptyCheckPropertyName = "SelectedProduct",
             TriggerEmptyRowOnFilled = true,
@@ -278,7 +280,7 @@
         // 倉庫 - 庫位欄位（合併顯示）
         columns.Add(new()
         {
-            Title = "倉庫 - 庫位",
+            Title = L["Column.MaterialIssueWL"],
             PropertyName = "InventoryStockDetailId",
             ColumnType = InteractiveColumnType.Custom,
             Width = "200px",
@@ -308,7 +310,7 @@
         // 可用庫存欄位
         columns.Add(new()
         {
-            Title = "可用庫存",
+            Title = L["Column.AvailableInventory"],
             PropertyName = "AvailableStock",
             ColumnType = InteractiveColumnType.Display,
             Width = "100px",
@@ -326,7 +328,7 @@
         // 領貨數量欄位
         columns.Add(new()
         {
-            Title = "領貨數量",
+            Title = L["Column.IssuedQuantity"],
             PropertyName = "IssueQuantity",
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",

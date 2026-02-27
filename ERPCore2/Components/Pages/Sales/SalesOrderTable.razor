@@ -3,6 +3,7 @@
 @using ERPCore2.Models
 @using ERPCore2.Models.Enums
 @using ERPCore2.Helpers
+@inject IStringLocalizer<SharedResource> L
 @inject IProductService ProductService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
@@ -51,7 +52,8 @@ else
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
-                                      TItem="SalesItem" 
+                                      TItem="SalesItem"
+                                      OnDataChanged="@NotifyDetailsChanged"
                                       Items="GetFilteredSalesItems()"
                                       ColumnDefinitions="GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"                                      
@@ -1259,7 +1261,7 @@ else
         // 商品選擇欄位 - 使用 SearchableSelect 類型（支援報價單明細和一般商品）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "商品編號/名稱",
+            Title = L["Column.ProductCodeName"],
             PropertyName = "ProductSearchValue",
             EmptyCheckPropertyName = "SelectedProduct",
             TriggerEmptyRowOnFilled = true,
@@ -1322,7 +1324,7 @@ else
         // 訂單數量欄位 - 使用 CanDeleteItem 統一檢查（出貨、排程、退貨、收款）
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "訂單數量", 
+            Title = L["Column.OrderQuantity"],
             PropertyName = nameof(SalesItem.OrderQuantity),
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
@@ -1350,7 +1352,7 @@ else
         // 銷貨數量欄位（已出貨數量）- 唯讀顯示
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "銷貨數量",
+            Title = L["Column.SalesQuantity"],
             PropertyName = nameof(SalesItem.DeliveredQuantity),
             ColumnType = InteractiveColumnType.Display,
             Width = "100px",
@@ -1363,7 +1365,7 @@ else
         // 單價欄位 - 使用 CanDeleteItem 統一檢查（出貨、排程、退貨、收款）
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "單價", 
+            Title = L["Column.UnitPrice"],
             PropertyName = nameof(SalesItem.UnitPrice),
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
@@ -1391,7 +1393,7 @@ else
         // 折扣欄位 - 使用 CanDeleteItem 統一檢查（出貨、排程、退貨、收款）
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "折扣%", 
+            Title = L["Column.DiscountPercent"],
             PropertyName = nameof(SalesItem.DiscountPercentage),
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
@@ -1420,7 +1422,7 @@ else
         // 稅率欄位 - 使用 CanDeleteItem 統一檢查（出貨、排程、退貨、收款），免稅模式單獨判斷
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "稅率%", 
+            Title = L["Field.TaxRate"],
             PropertyName = nameof(SalesItem.TaxRate),
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
@@ -1457,7 +1459,7 @@ else
         // 小計欄位（根據稅別計算）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "小計",
+            Title = L["Column.Subtotal"],
             Tooltip = GetSubtotalTooltip(),
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
@@ -1474,7 +1476,7 @@ else
         // 備註欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "備註", 
+            Title = L["Label.Remarks"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",

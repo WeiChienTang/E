@@ -22,7 +22,8 @@
     <Routes @rendermode="InteractiveServer" />
     
     <script src="@Assets["lib/bootstrap/dist/js/bootstrap.bundle.min.js"]"></script>
-    <script src="@Assets["js/blazor-error-handler.js"]"></script>
+    @* 暫時停用以診斷連線問題 - 診斷完成後再開啟 *@
+    @* <script src="@Assets["js/blazor-error-handler.js"]"></script> *@
     <script src="@Assets["js/bootstrap-helpers.js"]"></script>
     <script src="@Assets["js/toast.js"]"></script>
     <script src="@Assets["js/clipboard-helper.js"]"></script>
@@ -37,11 +38,41 @@
     <script src="@Assets["js/file-download-helper.js"]"></script>
     <script src="@Assets["js/culture-helper.js"]"></script>
 
-    @* JsBarcode CDN - 用於條碼生成 *@
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    @* JsBarcode CDN - 用於條碼生成（defer 避免阻塞 blazor.web.js 載入）*@
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" defer></script>
     <script src="@Assets["js/barcode-generator.js"]"></script>
     
     <script src="_framework/blazor.web.js"></script>
+
+    @* ── 診斷用全域導航追蹤（偵錯完成後移除） ── *@
+    <script>
+        (function () {
+            console.log('[App] 頁面載入，URL:', location.href);
+
+            // 攔截 history.pushState（Blazor enhanced navigation 使用此方式改 URL）
+            const _origPushState = history.pushState;
+            history.pushState = function (state, title, url) {
+                console.log('[Nav] pushState →', url);
+                return _origPushState.apply(history, arguments);
+            };
+            window.addEventListener('popstate', function () {
+                console.log('[Nav] popstate，URL:', location.href);
+            });
+
+            // Blazor Enhanced Navigation 事件
+            document.addEventListener('enhancednavigationstart', function (e) {
+                console.log('[Nav] Enhanced START →', e.detail?.url ?? '(unknown)', '| 當前:', location.href);
+            });
+            document.addEventListener('enhancednavigationend', function (e) {
+                console.log('[Nav] Enhanced END，URL:', location.href);
+            });
+
+            // Blazor Circuit 連線狀態（blazor.web.js 載入後才有 Blazor 物件）
+            document.addEventListener('DOMContentLoaded', function () {
+                console.log('[App] DOMContentLoaded，URL:', location.href);
+            });
+        })();
+    </script>
 </body>
 
 </html>

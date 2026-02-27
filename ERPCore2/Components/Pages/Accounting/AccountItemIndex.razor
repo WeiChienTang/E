@@ -2,6 +2,7 @@
 @inject IAccountItemService AccountItemService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericIndexPageComponent TEntity="AccountItem"
                           TService="IAccountItemService"
@@ -9,7 +10,7 @@
                           EntityBasePath="/account-items"
                           PageTitle="會計科目管理"
                           PageSubtitle="管理標準會計科目表（Chart of Accounts）"
-                          EntityName="會計科目"
+                          EntityName="@L["Entity.AccountItem"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -17,7 +18,7 @@
                           FilterApplier="@ApplyFilters"
                           GetEntityDisplayName="@(a => $"{a.Code} {a.Name}")"
                           RequiredPermission="AccountItem.Read"
-                          RequiredModule="FinancialManagement"
+                          RequiredModule="Accounting"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           ShowBatchDeleteButton="true"

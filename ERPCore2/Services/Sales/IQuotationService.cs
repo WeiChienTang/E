@@ -56,6 +56,11 @@ namespace ERPCore2.Services
         Task<List<Quotation>> GetApprovedUnconvertedQuotationsAsync();
 
         /// <summary>
+        /// 依銷貨訂單 ID 取得來源報價單（跨訂單明細查詢）
+        /// </summary>
+        Task<List<Quotation>> GetBySalesOrderIdAsync(int salesOrderId);
+
+        /// <summary>
         /// 根據批次列印條件查詢報價單
         /// </summary>
         /// <param name="criteria">批次列印篩選條件</param>

@@ -15,15 +15,18 @@ namespace ERPCore2.Services
     {
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly IPermissionService _permissionService;
+        private readonly ICompanyModuleService _companyModuleService;
         private readonly ILogger<DashboardService> _logger;
 
         public DashboardService(
             IDbContextFactory<AppDbContext> contextFactory,
             IPermissionService permissionService,
+            ICompanyModuleService companyModuleService,
             ILogger<DashboardService> logger)
         {
             _contextFactory = contextFactory;
             _permissionService = permissionService;
+            _companyModuleService = companyModuleService;
             _logger = logger;
         }
 
@@ -58,6 +61,9 @@ namespace ERPCore2.Services
                 // 取得員工權限
                 var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
 
+                // 取得已啟用模組清單（SuperAdmin 不受模組限制）
+                var enabledModuleKeys = await GetEnabledModuleKeysAsync(employeeId);
+
                 // 組裝結果
                 var result = new List<DashboardPanelWithItems>();
                 foreach (var panel in panels)
@@ -73,9 +79,17 @@ namespace ERPCore2.Services
                         var navItem = NavigationConfig.GetNavigationItemByKey(config.NavigationItemKey);
                         if (navItem == null) continue;
 
-                        // 檢查權限
-                        if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
-                            !permissionCodes.Contains(navItem.RequiredPermission))
+                        // 檢查權限（IsSuperAdmin 即 enabledModuleKeys == null 者跳過所有檢查）
+                        if (enabledModuleKeys != null &&
+                            !string.IsNullOrEmpty(navItem.RequiredPermission) &&
+                            !permissionCodes.Contains(navItem.RequiredPermission) &&
+                            !permissionCodes.Contains("System.Admin"))
+                            continue;
+
+                        // 檢查模組是否啟用（enabledModuleKeys 為 null 表示 IsSuperAdmin 跳過檢查）
+                        if (enabledModuleKeys != null &&
+                            !string.IsNullOrEmpty(navItem.ModuleKey) &&
+                            !enabledModuleKeys.Contains(navItem.ModuleKey))
                             continue;
 
                         panelWithItems.Items.Add(new DashboardConfigWithNavItem
@@ -326,12 +340,15 @@ namespace ERPCore2.Services
                     ? NavigationConfig.GetQuickActionWidgetItems()
                     : NavigationConfig.GetShortcutWidgetItems();
 
-                // 過濾有權限的項目
+                // 過濾有權限且模組已啟用的項目
                 var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
+                var enabledModuleKeys = await GetEnabledModuleKeysAsync(employeeId);
 
                 var availableWidgets = allWidgets.Where(item =>
-                    string.IsNullOrEmpty(item.RequiredPermission) ||
-                    permissionCodes.Contains(item.RequiredPermission)
+                    // 權限檢查（IsSuperAdmin 即 enabledModuleKeys == null，或 System.Admin 可跳過用戶層級權限檢查）
+                    (enabledModuleKeys == null || string.IsNullOrEmpty(item.RequiredPermission) || permissionCodes.Contains(item.RequiredPermission) || permissionCodes.Contains("System.Admin")) &&
+                    // 模組檢查（enabledModuleKeys 為 null 表示 IsSuperAdmin 跳過）
+                    (enabledModuleKeys == null || string.IsNullOrEmpty(item.ModuleKey) || enabledModuleKeys.Contains(item.ModuleKey))
                 ).ToList();
 
                 return availableWidgets;
@@ -354,10 +371,13 @@ namespace ERPCore2.Services
             {
                 var allWidgets = NavigationConfig.GetChartWidgetItems();
                 var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
+                var enabledModuleKeys = await GetEnabledModuleKeysAsync(employeeId);
 
                 return allWidgets.Where(item =>
-                    string.IsNullOrEmpty(item.RequiredPermission) ||
-                    permissionCodes.Contains(item.RequiredPermission)
+                    // 權限檢查（IsSuperAdmin 即 enabledModuleKeys == null，或 System.Admin 可跳過用戶層級權限檢查）
+                    (enabledModuleKeys == null || string.IsNullOrEmpty(item.RequiredPermission) || permissionCodes.Contains(item.RequiredPermission) || permissionCodes.Contains("System.Admin")) &&
+                    // 模組檢查（enabledModuleKeys 為 null 表示 IsSuperAdmin 跳過）
+                    (enabledModuleKeys == null || string.IsNullOrEmpty(item.ModuleKey) || enabledModuleKeys.Contains(item.ModuleKey))
                 ).ToList();
             }
             catch (Exception ex)
@@ -417,6 +437,7 @@ namespace ERPCore2.Services
 
                 // 取得員工權限
                 var permissionCodes = await GetEmployeePermissionCodesAsync(panel.EmployeeId);
+                var enabledModuleKeys = await GetEnabledModuleKeysAsync(panel.EmployeeId);
 
                 // 取得目前最大排序值
                 var maxSortOrder = await context.EmployeeDashboardConfigs
@@ -435,8 +456,17 @@ namespace ERPCore2.Services
                     if (navItem == null)
                         continue;
 
-                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
-                        !permissionCodes.Contains(navItem.RequiredPermission))
+                    // 權限檢查（IsSuperAdmin 即 enabledModuleKeys == null，或 System.Admin 可跳過用戶層級權限檢查）
+                    if (enabledModuleKeys != null &&
+                        !string.IsNullOrEmpty(navItem.RequiredPermission) &&
+                        !permissionCodes.Contains(navItem.RequiredPermission) &&
+                        !permissionCodes.Contains("System.Admin"))
+                        continue;
+
+                    // 模組檢查（enabledModuleKeys 為 null 表示 IsSuperAdmin 跳過）
+                    if (enabledModuleKeys != null &&
+                        !string.IsNullOrEmpty(navItem.ModuleKey) &&
+                        !enabledModuleKeys.Contains(navItem.ModuleKey))
                         continue;
 
                     sortOrder += 10;
@@ -549,6 +579,7 @@ namespace ERPCore2.Services
 
                 // 取得員工權限
                 var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
+                var enabledModuleKeys = await GetEnabledModuleKeysAsync(employeeId);
 
                 var result = new List<DashboardPanelWithItems>();
 
@@ -581,8 +612,17 @@ namespace ERPCore2.Services
                         var navItem = NavigationConfig.GetNavigationItemByKey(key);
                         if (navItem == null) continue;
 
-                        if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
-                            !permissionCodes.Contains(navItem.RequiredPermission))
+                        // 權限檢查（IsSuperAdmin 即 enabledModuleKeys == null，或 System.Admin 可跳過用戶層級權限檢查）
+                        if (enabledModuleKeys != null &&
+                            !string.IsNullOrEmpty(navItem.RequiredPermission) &&
+                            !permissionCodes.Contains(navItem.RequiredPermission) &&
+                            !permissionCodes.Contains("System.Admin"))
+                            continue;
+
+                        // 模組檢查（enabledModuleKeys 為 null 表示 IsSuperAdmin 跳過）
+                        if (enabledModuleKeys != null &&
+                            !string.IsNullOrEmpty(navItem.ModuleKey) &&
+                            !enabledModuleKeys.Contains(navItem.ModuleKey))
                             continue;
 
                         sortOrder += 10;
@@ -656,6 +696,7 @@ namespace ERPCore2.Services
 
                 // 取得員工權限
                 var permissionCodes = await GetEmployeePermissionCodesAsync(panel.EmployeeId);
+                var enabledModuleKeys = await GetEnabledModuleKeysAsync(panel.EmployeeId);
 
                 // 重新建立預設項目
                 var sortOrder = 0;
@@ -664,8 +705,17 @@ namespace ERPCore2.Services
                     var navItem = NavigationConfig.GetNavigationItemByKey(key);
                     if (navItem == null) continue;
 
-                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
-                        !permissionCodes.Contains(navItem.RequiredPermission))
+                    // 權限檢查（IsSuperAdmin 即 enabledModuleKeys == null，或 System.Admin 可跳過用戶層級權限檢查）
+                    if (enabledModuleKeys != null &&
+                        !string.IsNullOrEmpty(navItem.RequiredPermission) &&
+                        !permissionCodes.Contains(navItem.RequiredPermission) &&
+                        !permissionCodes.Contains("System.Admin"))
+                        continue;
+
+                    // 模組檢查（enabledModuleKeys 為 null 表示 IsSuperAdmin 跳過）
+                    if (enabledModuleKeys != null &&
+                        !string.IsNullOrEmpty(navItem.ModuleKey) &&
+                        !enabledModuleKeys.Contains(navItem.ModuleKey))
                         continue;
 
                     sortOrder += 10;
@@ -748,6 +798,30 @@ namespace ERPCore2.Services
             var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
             var codes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
             return codes.ToHashSet();
+        }
+
+        /// <summary>
+        /// 取得已啟用模組識別鍵集合。
+        /// 只有 IsSuperAdmin=true 的帳號繞過模組限制，回傳 null 表示跳過模組檢查。
+        /// System.Admin 權限持有者仍受公司層級模組限制。
+        /// </summary>
+        private async Task<HashSet<string>?> GetEnabledModuleKeysAsync(int employeeId)
+        {
+            // 查詢員工的 IsSuperAdmin 狀態（僅此身分繞過公司模組限制）
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var isSuperAdmin = await context.Employees
+                .Where(e => e.Id == employeeId)
+                .Select(e => e.IsSuperAdmin)
+                .FirstOrDefaultAsync();
+
+            if (isSuperAdmin)
+                return null;  // null 表示跳過所有模組檢查
+
+            var allModules = await _companyModuleService.GetAllAsync();
+            return allModules
+                .Where(m => m.IsEnabled)
+                .Select(m => m.ModuleKey)
+                .ToHashSet();
         }
 
         #endregion

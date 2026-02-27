@@ -214,18 +214,25 @@ public static class NavigationConfig
                         QuickActionId = "NewCustomer",
                         QuickActionName = "新增客戶"
                     },
+                    // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
-                        Name = "拜訪紀錄",
-                        NameKey = "Nav.CustomerVisits",
-                        Description = "管理客戶拜訪與聯繫紀錄",
-                        Route = "/customer-visits",
-                        IconClass = "",
-                        Category = "客戶關係管理",
-                        RequiredPermission = "Customer.Read",
-                        SearchKeywords = new List<string> { "客戶拜訪", "拜訪紀錄", "customer visit", "聯繫紀錄" },
-                        QuickActionId = "NewCustomerVisit",
-                        QuickActionName = "新增拜訪紀錄"
+                        IsDivider = true
+                    },
+                    NavigationActionHelper.CreateActionItem(
+                        name: "客戶報表集",
+                        description: "查看和列印所有客戶相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenCustomerReportIndex",
+                        category: "客戶關係管理",
+                        requiredPermission: "Customer.Read",
+                        searchKeywords: new List<string> { "客戶報表", "客戶報表集", "customer report", "應收帳款" },
+                        nameKey: "Nav.CustomerReportIndex"
+                    ),
+                    // 分隔線 - 區分報表與圖表
+                    new NavigationItem
+                    {
+                        IsDivider = true
                     },
                     new NavigationItem
                     {
@@ -240,23 +247,6 @@ public static class NavigationConfig
                         SearchKeywords = new List<string> { "客戶圖表", "客戶分析", "統計分析", "customer chart", "analytics" },
                         IsChartWidget = true
                     },
-
-                    // 分隔線 - 區分資料維護與報表
-                    new NavigationItem
-                    {
-                        IsDivider = true
-                    },
-                    
-                    NavigationActionHelper.CreateActionItem(
-                        name: "客戶報表集",
-                        description: "查看和列印所有客戶相關報表",
-                        iconClass: "bi bi-printer-fill",
-                        actionId: "OpenCustomerReportIndex",
-                        category: "客戶關係管理",
-                        requiredPermission: "Customer.Read",
-                        searchKeywords: new List<string> { "客戶報表", "客戶報表集", "customer report", "應收帳款" },
-                        nameKey: "Nav.CustomerReportIndex"
-                    ),
                 }
             },
 
@@ -552,7 +542,20 @@ public static class NavigationConfig
                         QuickActionId = "NewPurchaseReturn",
                         QuickActionName = "新增進貨退出單"
                     },
-                    
+                    new NavigationItem
+                    {
+                        Name = "退出原因",
+                        NameKey = "Nav.PurchaseReturnReasons",
+                        Description = "管理進貨退出原因分類",
+                        Route = "/purchase/returnReasons",
+                        IconClass = "",
+                        Category = "採購管理",
+                        RequiredPermission = "PurchaseReturnReason.Read",
+                        SearchKeywords = new List<string> { "退出原因", "退貨原因", "進退原因", "purchase return reason" },
+                        QuickActionId = "NewPurchaseReturnReason",
+                        QuickActionName = "新增進貨退出原因"
+                    },
+
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
@@ -1110,6 +1113,11 @@ public static class NavigationConfig
                     {
                         child.Category = item.Category;
                     }
+                    // 確保子項目繼承父項目的模組鍵（報表、圖表等子項目屬於同一模組）
+                    if (string.IsNullOrEmpty(child.ModuleKey) && !string.IsNullOrEmpty(item.ModuleKey))
+                    {
+                        child.ModuleKey = item.ModuleKey;
+                    }
                     result.Add(child);
                 }
             }
@@ -1196,6 +1204,7 @@ public static class NavigationConfig
                 ActionId = item.QuickActionId,
                 IconClass = item.QuickActionIconClass ?? "bi bi-plus-circle-fill",
                 Category = item.Category,
+                ModuleKey = item.ModuleKey,
                 RequiredPermission = item.RequiredPermission,
                 SearchKeywords = new List<string>
                 {
@@ -1244,7 +1253,8 @@ public static class NavigationConfig
         if (string.IsNullOrEmpty(key))
             return null;
 
-        var allItems = GetDashboardWidgetItems();
+        // 合併一般捷徑項目與圖表介面項目（圖表介面被 GetDashboardWidgetItems 排除，需額外加入）
+        var allItems = GetDashboardWidgetItems().Concat(GetChartWidgetItems()).ToList();
 
         // QuickAction 類型
         if (key.StartsWith("QuickAction:"))

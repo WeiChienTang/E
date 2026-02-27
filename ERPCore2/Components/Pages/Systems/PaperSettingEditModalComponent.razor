@@ -1,25 +1,26 @@
 @* 可重用的紙張設定編輯組件 - 可在任何頁面中嵌入 *@
 @inject IPaperSettingService PaperSettingService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="PaperSetting" 
+<GenericEditModalComponent TEntity="PaperSetting"
                           TService="IPaperSettingService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@PaperSettingId"
                           Service="@PaperSettingService"
-                          EntityName="紙張設定"
-                          EntityNamePlural="紙張設定"
-                          ModalTitle="@(PaperSettingId.HasValue ? "編輯紙張設定" : "新增紙張設定")"
+                          EntityName="@L["Entity.PaperSetting"]"
+                          EntityNamePlural="@L["Entity.PaperSetting"]"
+                          ModalTitle="@(PaperSettingId.HasValue ? L["Message.EditTitle", L["Entity.PaperSetting"]].ToString() : L["Message.CreateTitle", L["Entity.PaperSetting"]].ToString())"
                           Size="GenericEditModalComponent<PaperSetting, IPaperSettingService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadPaperSettingData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(PaperSettingId.HasValue ? "紙張設定更新成功" : "紙張設定新增成功")"
-                          SaveFailureMessage="紙張設定儲存失敗"
+                          SaveSuccessMessage="@(PaperSettingId.HasValue ? L["Message.UpdateSuccess", L["Entity.PaperSetting"]].ToString() : L["Message.CreateSuccess", L["Entity.PaperSetting"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PaperSetting"]]"
                           RequiredPermission="PaperSetting.Read"
                           OnEntitySaved="@OnPaperSettingSaved"
                           OnCancel="@OnCancel"
@@ -72,18 +73,18 @@
                 new()
                 {
                     PropertyName = nameof(PaperSetting.Code),
-                    Label = "紙張編號",
+                    Label = L["Field.PaperCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入紙張編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PaperCode"]],
                     IsRequired = true,
                     HelpText = "紙張的唯一識別編號，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
                     PropertyName = nameof(PaperSetting.Name),
-                    Label = "紙張名稱",
+                    Label = L["Field.Paper"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入紙張名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Paper"]],
                     IsRequired = true,
                     HelpText = "紙張的正式名稱，例如：A4、A3、Letter 等"
                 },
@@ -91,60 +92,60 @@
                 new()
                 {
                     PropertyName = nameof(PaperSetting.Width),
-                    Label = "寬度 (cm)",
+                    Label = L["Field.PaperWidth"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入紙張寬度",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PaperWidth"]],
                     IsRequired = true,
                     HelpText = "紙張寬度，單位為厘米 (cm)，例如 A4 為 21.0cm",
                 },
                 new()
                 {
                     PropertyName = nameof(PaperSetting.Height),
-                    Label = "高度 (cm)",
+                    Label = L["Field.PaperHeight"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入紙張高度",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PaperHeight"]],
                     IsRequired = true,
                     HelpText = "紙張高度，單位為厘米 (cm)，例如 A4 為 29.7cm",
                 },
                 new()
                 {
                     PropertyName = nameof(PaperSetting.TopMargin),
-                    Label = "上邊距 (cm)",
+                    Label = L["Field.PaperTopMargin"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入上邊距",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PaperTopMargin"]],
                     IsRequired = false,
                     HelpText = "紙張上邊距，單位為厘米 (cm)",
                 },
                 new()
                 {
                     PropertyName = nameof(PaperSetting.BottomMargin),
-                    Label = "下邊距 (cm)",
+                    Label = L["Field.PaperBottomMargin"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入下邊距",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PaperBottomMargin"]],
                     IsRequired = false,
                     HelpText = "紙張下邊距，單位為厘米 (cm)",
                 },
                 new()
                 {
                     PropertyName = nameof(PaperSetting.LeftMargin),
-                    Label = "左邊距 (cm)",
+                    Label = L["Field.PaperLeftMargin"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入左邊距",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PaperLeftMargin"]],
                     IsRequired = false,
                     HelpText = "紙張左邊距，單位為厘米 (cm)",
                 },
                 new()
                 {
                     PropertyName = nameof(PaperSetting.RightMargin),
-                    Label = "右邊距 (cm)",
+                    Label = L["Field.PaperRightMargin"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入右邊距",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PaperRightMargin"]],
                     IsRequired = false,
                     HelpText = "紙張右邊距，單位為厘米 (cm)",
                 },
                 FormFieldConfigurationHelper.CreateRemarksField<PaperSetting>(
-                    label: "備註",
-                    placeholder: "請輸入備註",
+                    label: L["Label.Remarks"],
+                    placeholder: L["Placeholder.Remarks"],
                     helpText: "其他需要補充的資訊",
                     rows: 2,
                     containerCssClass: "col-12"
@@ -180,7 +181,7 @@
     private RenderFragment? CustomActionButtons => __builder =>
     {
         @* 查詢紙張按鈕 *@
-        <GenericButtonComponent Text="查詢紙張" 
+        <GenericButtonComponent Text="@L["Button.QueryPaper"]"
                               Icon="bi bi-search"
                               Variant="ButtonVariant.Blue"
                               OnClick="@HandleOpenExistingPaperModal"

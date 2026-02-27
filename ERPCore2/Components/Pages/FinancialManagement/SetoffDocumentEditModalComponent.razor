@@ -10,6 +10,7 @@
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
 @inject ISetoffDocumentReportService SetoffDocumentReportService
+@inject IStringLocalizer<SharedResource> L
 @using ERPCore2.Models.Reports
 
 <GenericEditModalComponent TEntity="SetoffDocument" 
@@ -19,9 +20,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@SetoffDocumentId"
                           Service="@SetoffDocumentService"
-                          EntityName="沖款單"
-                          EntityNamePlural="沖款單"
-                          ModalTitle="@(SetoffDocumentId.HasValue ? "編輯沖款單" : "新增沖款單")"
+                          EntityName="@L["Entity.SetoffDocument"]"
+                          EntityNamePlural="@L["Entity.SetoffDocument"]"
+                          ModalTitle="@(SetoffDocumentId.HasValue ? L["Message.EditTitle", L["Entity.SetoffDocument"]].ToString() : L["Message.CreateTitle", L["Entity.SetoffDocument"]].ToString())"
                           Size="GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -32,8 +33,8 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           DataLoader="@LoadSetoffDocumentData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(SetoffDocumentId.HasValue ? "沖款單更新成功" : "沖款單新增成功")"
-                          SaveFailureMessage="沖款單儲存失敗"
+                          SaveSuccessMessage="@(SetoffDocumentId.HasValue ? L["Message.UpdateSuccess", L["Entity.SetoffDocument"]].ToString() : L["Message.CreateSuccess", L["Entity.SetoffDocument"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SetoffDocument"]]"
                           RequiredPermission="SetoffDocument.Read"
                           CustomValidator="@ValidateBeforeSave"
                           AfterSave="@SaveSetoffDocumentDetailsAsync"
@@ -635,8 +636,9 @@
     /// </remarks>
     private void HandleProductDetailsChanged(List<SetoffProductDetail> details)
     {
+        editModalComponent?.MarkDirty();
         setoffProductDetails = details;
-        
+
         // 更新總金額
         if (editModalComponent?.Entity != null)
         {
@@ -962,9 +964,9 @@
                 new()
                 {
                     PropertyName = nameof(SetoffDocument.Code),
-                    Label = "沖款單號",
+                    Label = L["Field.SetoffCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入沖款單號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.SetoffCode"]],
                     IsRequired = true,
                     MaxLength = 50,
                     HelpText = "沖款單的唯一識別號碼，新增時系統會自動產生，也可手動修改"
@@ -978,9 +980,9 @@
                 formFields.Add(new()
                 {
                     PropertyName = "CustomerId",
-                    Label = "客戶",
+                    Label = L["Entity.Customer"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇客戶",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Customer"]],
                     MinSearchLength = 0,
                     IsRequired = true,
                     HelpText = "選擇應收帳款的客戶"
@@ -992,9 +994,9 @@
                 formFields.Add(new()
                 {
                     PropertyName = "SupplierId",
-                    Label = "廠商",
+                    Label = L["Entity.Supplier"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇廠商",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Supplier"]],
                     MinSearchLength = 0,
                     IsRequired = true,
                     HelpText = "選擇應付帳款的廠商"
@@ -1007,7 +1009,7 @@
                 new()
                 {
                     PropertyName = nameof(SetoffDocument.SetoffDate),
-                    Label = "沖款日期",
+                    Label = L["Field.SetoffDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "沖款單的建立日期"
@@ -1015,7 +1017,7 @@
                 new()
                 {
                     PropertyName = nameof(SetoffDocument.CompanyId),
-                    Label = "公司",
+                    Label = L["Entity.Company"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = companies.Count == 1 ? companies.First().CompanyName : "請輸入或選擇公司",
                     MinSearchLength = 0, // 允許空白搜尋以顯示所有選項（當只有一筆時會自動顯示）
@@ -1025,7 +1027,7 @@
                 new()
                 {
                     PropertyName = "FilterStartDate",
-                    Label = "起始日期",
+                    Label = L["Field.StartDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "篩選該日期之後的銷貨、銷貨退回、入庫、入庫退出單據"
@@ -1033,7 +1035,7 @@
                 new()
                 {
                     PropertyName = "FilterEndDate",
-                    Label = "結束日期",
+                    Label = L["Field.EndDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "篩選該日期之前的銷貨、銷貨退回、入庫、入庫退出單據"
@@ -1055,7 +1057,7 @@
                     PropertyName = nameof(SetoffDocument.TotalSetoffAmount),
                     Label = $"本期{receivableOrPayableLabel}",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "系統自動計算",
+                    Placeholder = L["Placeholder.AutoCalculated"],
                     IsRequired = false,
                     IsReadOnly = true,
                     HelpText = "沖款單的總金額",
@@ -1065,7 +1067,7 @@
                     PropertyName = nameof(SetoffDocument.TotalCollectionAmount),
                     Label = $"本期{receivedOrPaidLabel}",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "系統自動計算",
+                    Placeholder = L["Placeholder.AutoCalculated"],
                     IsRequired = false,
                     IsReadOnly = true,
                     HelpText = $"實際{receivedOrPaidLabel.Substring(1)}的款項總額",
@@ -1073,9 +1075,9 @@
                 new()
                 {
                     PropertyName = nameof(SetoffDocument.CurrentSetoffAmount),
-                    Label = "本期沖銷",
+                    Label = L["Field.CurrentWriteOff"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "系統自動計算",
+                    Placeholder = L["Placeholder.AutoCalculated"],
                     IsRequired = false,
                     IsReadOnly = true,
                     HelpText = "本次沖款單所沖銷的金額",
@@ -1083,9 +1085,9 @@
                 new()
                 {
                     PropertyName = nameof(SetoffDocument.TotalAllowanceAmount),
-                    Label = "本期折讓",
+                    Label = L["Field.CurrentDiscount"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "系統自動計算",
+                    Placeholder = L["Placeholder.AutoCalculated"],
                     IsRequired = false,
                     IsReadOnly = true,
                     HelpText = "折讓抵銷的總額",
@@ -1095,7 +1097,7 @@
                     PropertyName = nameof(SetoffDocument.CurrentPrepaymentAmount),
                     Label = $"本期{prepaymentLabel}",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "系統自動計算",
+                    Placeholder = L["Placeholder.AutoCalculated"],
                     IsRequired = false,
                     IsReadOnly = true,
                     HelpText = $"本次{prepaymentLabel}的總額",
@@ -1105,7 +1107,7 @@
                     PropertyName = nameof(SetoffDocument.PrepaymentSetoffAmount),
                     Label = prepaymentSetoffLabel,
                     FieldType = FormFieldType.Number,
-                    Placeholder = "系統自動計算",
+                    Placeholder = L["Placeholder.AutoCalculated"],
                     IsRequired = false,
                     IsReadOnly = true,
                     HelpText = $"{prepaymentSetoffLabel}的總額",

@@ -3,6 +3,7 @@
 @using ERPCore2.Helpers
 @using ERPCore2.Models.Enums
 @using ERPCore2.Models
+@inject IStringLocalizer<SharedResource> L
 @inject IProductService ProductService
 @inject ISalesOrderService SalesOrderService
 @inject ISalesDeliveryDetailService SalesDeliveryDetailService
@@ -30,6 +31,7 @@ else
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
                                       TItem="DeliveryItem"
+                                      OnDataChanged="@NotifyDetailsChanged"
                                       Items="@DeliveryItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       ShowHeader="true"
@@ -393,7 +395,7 @@ else
         // 商品選擇欄位 - 使用 SearchableSelect 類型（支援訂單明細和一般商品）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "商品編號/名稱",
+            Title = L["Column.ProductCodeName"],
             PropertyName = "ProductSearchValue",
             EmptyCheckPropertyName = "SelectedProduct",
             TriggerEmptyRowOnFilled = true,
@@ -457,7 +459,7 @@ else
         columns.Add(new InteractiveColumnDefinition
         {
             PropertyName = nameof(DeliveryItem.DeliveryQuantity),
-            Title = "銷貨量",
+            Title = L["Column.DeliveryQuantity"],
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             MinValue = 0,
@@ -482,7 +484,7 @@ else
         // 已退數量（唯讀，顯示累計退貨數量）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "已退數",
+            Title = L["Column.AlreadyReturnedCount"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "80px",
@@ -516,7 +518,7 @@ else
         columns.Add(new InteractiveColumnDefinition
         {
             PropertyName = nameof(DeliveryItem.UnitPrice),
-            Title = "單價",
+            Title = L["Column.UnitPrice"],
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
             MinValue = 0,
@@ -541,7 +543,7 @@ else
         // 折扣欄位 - 使用 CanDeleteItem 統一檢查（退貨、沖款）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "折扣%",
+            Title = L["Column.DiscountPercent"],
             PropertyName = nameof(DeliveryItem.DiscountPercentage),
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
@@ -569,7 +571,7 @@ else
         columns.Add(new InteractiveColumnDefinition
         {
             PropertyName = nameof(DeliveryItem.TaxRate),
-            Title = "稅率%",
+            Title = L["Field.TaxRate"],
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
             MinValue = 0,
@@ -603,7 +605,7 @@ else
         // 小計欄位（唯讀，根據稅別計算）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "小計",
+            Title = L["Column.Subtotal"],
             Tooltip = GetSubtotalTooltip(),
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
@@ -620,7 +622,7 @@ else
         // 倉庫 - 庫位選擇欄位（合併顯示，僅顯示有庫存的位置）
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "倉庫/庫位", 
+            Title = L["Column.WarehouseAndLocation"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "300px",
@@ -680,7 +682,7 @@ else
         // 庫存量欄位 (只讀顯示，不儲存到資料庫)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "庫存量", 
+            Title = L["Column.AvailableStock"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "80px",
@@ -720,7 +722,7 @@ else
         columns.Add(new InteractiveColumnDefinition
         {
             PropertyName = nameof(DeliveryItem.Remarks),
-            Title = "備註",
+            Title = L["Label.Remarks"],
             ColumnType = InteractiveColumnType.Input,
             Width = "200px",
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,

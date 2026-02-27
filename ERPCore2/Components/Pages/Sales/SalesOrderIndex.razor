@@ -5,6 +5,7 @@
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="SalesOrder" 
@@ -13,7 +14,7 @@
                       EntityBasePath="/sales-orders"
                       PageTitle="銷貨管理"
                       PageSubtitle="管理所有訂單資料與明細資訊"
-                      EntityName="訂單"
+                      EntityName="@L["Entity.SalesOrder"]"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"

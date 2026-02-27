@@ -2,6 +2,7 @@
 
 @inject IPermissionManagementService PermissionService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @rendermode InteractiveServer
 
@@ -11,7 +12,7 @@
                           EntityBasePath="/permissions"
                           PageTitle="權限明細管理"
                           PageSubtitle="管理系統功能權限明細設定"
-                          EntityName="權限明細"
+                          EntityName="@L["Entity.Permission"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

@@ -70,6 +70,27 @@
   <data name="Button.Print" xml:space="preserve">
     <value>印刷</value>
   </data>
+  <data name="Button.Approve" xml:space="preserve">
+    <value>承認</value>
+  </data>
+  <data name="Button.Reject" xml:space="preserve">
+    <value>却下</value>
+  </data>
+  <data name="Button.Prev" xml:space="preserve">
+    <value>前のレコード</value>
+  </data>
+  <data name="Button.Next" xml:space="preserve">
+    <value>次のレコード</value>
+  </data>
+  <data name="Button.Refresh" xml:space="preserve">
+    <value>再読み込み</value>
+  </data>
+  <data name="Button.Preview" xml:space="preserve">
+    <value>プレビュー</value>
+  </data>
+  <data name="Button.ReturnToLast" xml:space="preserve">
+    <value>最後のレコードに戻る</value>
+  </data>
 
   <!-- ===== Labels ===== -->
   <data name="Label.Loading" xml:space="preserve">
@@ -98,6 +119,52 @@
   </data>
   <data name="Label.All" xml:space="preserve">
     <value>すべて</value>
+  </data>
+  <data name="Label.Actions" xml:space="preserve">
+    <value>操作</value>
+  </data>
+  <data name="Label.Remarks" xml:space="preserve">
+    <value>備考</value>
+  </data>
+  <data name="Label.CreatedAt" xml:space="preserve">
+    <value>作成日</value>
+  </data>
+  <data name="Label.SelectAll" xml:space="preserve">
+    <value>全選択/全解除</value>
+  </data>
+  <data name="Label.SelectItem" xml:space="preserve">
+    <value>このアイテムを選択</value>
+  </data>
+  <data name="Label.KeepOneEmptyRow" xml:space="preserve">
+    <value>少なくとも1行の空行を残してください</value>
+  </data>
+
+  <!-- ===== Modal ===== -->
+  <data name="Modal.ConfirmReject" xml:space="preserve">
+    <value>却下の確認</value>
+  </data>
+  <data name="Modal.ConfirmClose" xml:space="preserve">
+    <value>閉じる確認</value>
+  </data>
+  <data name="Modal.ConfirmLeave" xml:space="preserve">
+    <value>離開する</value>
+  </data>
+  <data name="Modal.SaveAndClose" xml:space="preserve">
+    <value>保存して閉じる</value>
+  </data>
+  <data name="Modal.ContinueEditing" xml:space="preserve">
+    <value>編集を続ける</value>
+  </data>
+  <data name="Modal.UnsavedChanges" xml:space="preserve">
+    <value>この伝票には変更があります。操作を選択してください</value>
+  </data>
+
+  <!-- ===== Module ===== -->
+  <data name="Module.NotAvailable" xml:space="preserve">
+    <value>この機能は利用できません</value>
+  </data>
+  <data name="Module.DisabledMessage" xml:space="preserve">
+    <value>お使いのシステムでこの機能モジュールが有効になっていません。システム管理者にお問い合わせください。</value>
   </data>
 
   <!-- ===== Messages ===== -->
@@ -224,6 +291,9 @@
   </data>
 
   <!-- ===== Placeholders ===== -->
+  <data name="Placeholder.Remarks" xml:space="preserve">
+    <value>備考キーワードを入力...</value>
+  </data>
   <data name="Placeholder.Name" xml:space="preserve">
     <value>名前を入力</value>
   </data>
@@ -289,6 +359,9 @@
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>顧客グラフ</value>
   </data>
+  <data name="Nav.CustomerVisitReport" xml:space="preserve">
+    <value>訪問レポート</value>
+  </data>
   <data name="Nav.CustomerReportIndex" xml:space="preserve">
     <value>顧客レポート</value>
   </data>
@@ -351,6 +424,9 @@
   </data>
   <data name="Nav.PurchaseReturns" xml:space="preserve">
     <value>購買返品</value>
+  </data>
+  <data name="Nav.PurchaseReturnReasons" xml:space="preserve">
+    <value>返品理由</value>
   </data>
   <data name="Nav.PurchaseReportIndex" xml:space="preserve">
     <value>購買レポート</value>
@@ -505,6 +581,7 @@
   <data name="Report.CustomerTransaction" xml:space="preserve"><value>得意先取引明細</value></data>
   <data name="Report.CustomerRoster" xml:space="preserve"><value>得意先一覧表</value></data>
   <data name="Report.CustomerDetail" xml:space="preserve"><value>得意先詳細</value></data>
+  <data name="Report.CustomerVisitReport" xml:space="preserve"><value>訪問レポート</value></data>
   <data name="Report.SupplierStatement" xml:space="preserve"><value>仕入先照合書</value></data>
   <data name="Report.SupplierPurchaseAnalysis" xml:space="preserve"><value>仕入先仕入分析</value></data>
   <data name="Report.SupplierRoster" xml:space="preserve"><value>仕入先一覧表</value></data>
@@ -538,4 +615,187 @@
   <data name="Report.GeneralLedger" xml:space="preserve"><value>总分类帐</value></data>
   <data name="Report.SubsidiaryLedger" xml:space="preserve"><value>明細元帳</value></data>
   <data name="Report.DetailAccountBalance" xml:space="preserve"><value>勘定科目殘高表</value></data>
+  <data name="Label.DocumentPreview" xml:space="preserve"><value>{0}プレビュー</value></data>
+  <data name="Message.EditTitle" xml:space="preserve"><value>{0}の編集</value></data>
+  <data name="Message.CreateTitle" xml:space="preserve"><value>{0}の作成</value></data>
+  <data name="Message.UpdateSuccess" xml:space="preserve"><value>{0}を更新しました</value></data>
+  <data name="Message.CreateSuccess" xml:space="preserve"><value>{0}を作成しました</value></data>
+  <data name="Message.SaveFailure" xml:space="preserve"><value>{0}の保存に失敗しました</value></data>
+  <data name="Message.ViewReadOnly" xml:space="preserve"><value>{0}の参照（読取専用）</value></data>
+  <data name="Entity.PurchaseOrder" xml:space="preserve"><value>発注書</value></data>
+  <data name="Entity.PurchaseReceiving" xml:space="preserve"><value>入荷</value></data>
+  <data name="Entity.PurchaseReceivingDoc" xml:space="preserve"><value>入荷書</value></data>
+  <data name="Entity.PurchaseReturn" xml:space="preserve"><value>仕入返品</value></data>
+  <data name="Entity.PurchaseReturnDoc" xml:space="preserve"><value>仕入返品伝票</value></data>
+  <data name="Entity.PurchaseReturnReason" xml:space="preserve"><value>返品理由</value></data>
+  <data name="Entity.Quotation" xml:space="preserve"><value>見積書</value></data>
+  <data name="Entity.SalesOrder" xml:space="preserve"><value>受注書</value></data>
+  <data name="Entity.SalesDelivery" xml:space="preserve"><value>出荷書</value></data>
+  <data name="Entity.SalesDeliveryDoc" xml:space="preserve"><value>出荷書</value></data>
+  <data name="Entity.SalesReturn" xml:space="preserve"><value>売上返品</value></data>
+  <data name="Entity.SalesReturnDoc" xml:space="preserve"><value>売上返品伝票</value></data>
+  <data name="Entity.SalesReturnReason" xml:space="preserve"><value>返品理由</value></data>
+  <data name="Entity.Customer" xml:space="preserve"><value>得意先</value></data>
+  <data name="Entity.CustomerVisit" xml:space="preserve"><value>訪問記録</value></data>
+  <data name="Entity.Supplier" xml:space="preserve"><value>仕入先</value></data>
+  <data name="Entity.Product" xml:space="preserve"><value>商品</value></data>
+  <data name="Entity.ProductCategory" xml:space="preserve"><value>商品カテゴリ</value></data>
+  <data name="Entity.ProductComposition" xml:space="preserve"><value>部品表</value></data>
+  <data name="Entity.BOM" xml:space="preserve"><value>部品表</value></data>
+  <data name="Entity.CompositionCategory" xml:space="preserve"><value>部品表カテゴリ</value></data>
+  <data name="Entity.Unit" xml:space="preserve"><value>単位</value></data>
+  <data name="Entity.Size" xml:space="preserve"><value>サイズ</value></data>
+  <data name="Entity.Material" xml:space="preserve"><value>素材</value></data>
+  <data name="Entity.ProductionSchedule" xml:space="preserve"><value>生産スケジュール</value></data>
+  <data name="Entity.ProductionScheduleReport" xml:space="preserve"><value>生産スケジュール表</value></data>
+  <data name="Entity.Employee" xml:space="preserve"><value>従業員</value></data>
+  <data name="Entity.Department" xml:space="preserve"><value>部門</value></data>
+  <data name="Entity.EmployeePosition" xml:space="preserve"><value>役職</value></data>
+  <data name="Entity.EmployeeTrainingRecord" xml:space="preserve"><value>研修記録</value></data>
+  <data name="Entity.EmployeeLicense" xml:space="preserve"><value>資格記録</value></data>
+  <data name="Entity.EmployeeTool" xml:space="preserve"><value>工具貸出記録</value></data>
+  <data name="Entity.Role" xml:space="preserve"><value>権限グループ</value></data>
+  <data name="Entity.Permission" xml:space="preserve"><value>権限詳細</value></data>
+  <data name="Entity.TrainingRecord" xml:space="preserve"><value>研修記録</value></data>
+  <data name="Entity.LicenseRecord" xml:space="preserve"><value>ライセンス記録</value></data>
+  <data name="Entity.ToolRecord" xml:space="preserve"><value>工具配給記録</value></data>
+  <data name="Entity.Warehouse" xml:space="preserve"><value>倉庫</value></data>
+  <data name="Entity.WarehouseLocation" xml:space="preserve"><value>倉庫内棚</value></data>
+  <data name="Entity.InventoryStock" xml:space="preserve"><value>在庫</value></data>
+  <data name="Entity.InventoryTransaction" xml:space="preserve"><value>在庫異動記録</value></data>
+  <data name="Entity.MaterialIssue" xml:space="preserve"><value>出庫伝票</value></data>
+  <data name="Entity.StockTaking" xml:space="preserve"><value>棚卸表</value></data>
+  <data name="Entity.StockTakingReport" xml:space="preserve"><value>棚卸差異表</value></data>
+  <data name="Entity.Bank" xml:space="preserve"><value>銀行</value></data>
+  <data name="Entity.Currency" xml:space="preserve"><value>通貨</value></data>
+  <data name="Entity.PaymentMethod" xml:space="preserve"><value>支払方法</value></data>
+  <data name="Entity.SetoffDocument" xml:space="preserve"><value>相殺伝票</value></data>
+  <data name="Entity.AccountItem" xml:space="preserve"><value>勘定科目</value></data>
+  <data name="Entity.JournalEntry" xml:space="preserve"><value>仕訳伝票</value></data>
+  <data name="Entity.Vehicle" xml:space="preserve"><value>車両</value></data>
+  <data name="Entity.VehicleType" xml:space="preserve"><value>車種</value></data>
+  <data name="Entity.VehicleMaintenance" xml:space="preserve"><value>メンテナンス記録</value></data>
+  <data name="Entity.WasteRecord" xml:space="preserve"><value>廃材記録</value></data>
+  <data name="Entity.WasteType" xml:space="preserve"><value>廃材種別</value></data>
+  <data name="Entity.Company" xml:space="preserve"><value>会社</value></data>
+  <data name="Entity.PaperSetting" xml:space="preserve"><value>用紙設定</value></data>
+  <data name="Entity.PrinterConfiguration" xml:space="preserve"><value>プリンター設定</value></data>
+  <data name="Entity.ReportPrintConfiguration" xml:space="preserve"><value>レポート印刷設定</value></data>
+  <data name="Entity.TextMessageTemplate" xml:space="preserve"><value>メッセージテンプレート</value></data>
+  <data name="Label.PurchaseOrderMessageSetting" xml:space="preserve"><value>発注メッセージ設定</value></data>
+  <data name="Entity.ErrorLog" xml:space="preserve"><value>エラーログ</value></data>
+  <data name="Button.ConvertToReceiving" xml:space="preserve"><value>入荷へ変換</value></data>
+  <data name="Button.ConvertToReturn" xml:space="preserve"><value>返品へ変換</value></data>
+  <data name="Button.ConvertToSalesReturn" xml:space="preserve"><value>売上返品へ変換</value></data>
+  <data name="Button.ConvertToSetoff" xml:space="preserve"><value>相殺へ変換</value></data>
+  <data name="Button.ConvertToDelivery" xml:space="preserve"><value>出荷へ変換</value></data>
+  <data name="Button.ConvertToOrder" xml:space="preserve"><value>受注へ変換</value></data>
+  <data name="Button.CopyMessage" xml:space="preserve"><value>メッセージをコピー</value></data>
+  <data name="Button.CheckInventory" xml:space="preserve"><value>在庫確認</value></data>
+  <data name="Button.ScheduleManagement" xml:space="preserve"><value>スケジュール管理</value></data>
+  <data name="Button.CopyToSupplier" xml:space="preserve"><value>仕入先にコピー</value></data>
+  <data name="Button.CopyToCustomer" xml:space="preserve"><value>得意先にコピー</value></data>
+  <data name="Button.AccountManagement" xml:space="preserve"><value>アカウント管理</value></data>
+  <data name="Button.ViewBOM" xml:space="preserve"><value>部品表を参照</value></data>
+  <data name="Button.CreateBOM" xml:space="preserve"><value>部品表を作成</value></data>
+  <data name="Button.Post" xml:space="preserve"><value>転記</value></data>
+  <data name="Button.WriteOff" xml:space="preserve"><value>消込</value></data>
+  <data name="Button.ConvertToAdjustment" xml:space="preserve"><value>調整へ変換</value></data>
+  <data name="Button.Reselect" xml:space="preserve"><value>選択し直す</value></data>
+  <data name="Button.LoadData" xml:space="preserve"><value>読込</value></data>
+  <data name="Button.ClearData" xml:space="preserve"><value>クリア</value></data>
+  <data name="Button.ContinueAdd" xml:space="preserve"><value>続けて追加</value></data>
+  <data name="Button.CreateSubAccount" xml:space="preserve"><value>補助科目を作成</value></data>
+  <data name="Button.ComponentIssue" xml:space="preserve"><value>部品出庫</value></data>
+  <data name="Button.StartProduction" xml:space="preserve"><value>生産開始</value></data>
+  <data name="Button.ProductionComplete" xml:space="preserve"><value>完成登録</value></data>
+  <data name="Button.QueryPrinter" xml:space="preserve"><value>プリンター照会</value></data>
+  <data name="Button.TestPrint" xml:space="preserve"><value>テスト印刷</value></data>
+  <data name="Button.PreviewLogo" xml:space="preserve"><value>ロゴプレビュー</value></data>
+  <data name="Button.QueryPaper" xml:space="preserve"><value>用紙照会</value></data>
+
+  <!-- ===== Placeholder format strings ===== -->
+  <data name="Placeholder.PleaseInput" xml:space="preserve"><value>{0}を入力してください</value></data>
+  <data name="Placeholder.PleaseSelect" xml:space="preserve"><value>{0}を選択してください</value></data>
+  <data name="Placeholder.PleaseInputOrSelect" xml:space="preserve"><value>{0}を入力または選択してください</value></data>
+  <data name="Placeholder.AutoGenerated" xml:space="preserve"><value>自動生成</value></data>
+  <data name="Placeholder.AutoGeneratedLeaveBlank" xml:space="preserve"><value>空欄で自動生成</value></data>
+  <data name="Placeholder.AutoFill" xml:space="preserve"><value>自動入力</value></data>
+  <data name="Placeholder.AutoCalculated" xml:space="preserve"><value>自動計算</value></data>
+
+  <!-- ===== Generic field labels ===== -->
+  <data name="Field.Code" xml:space="preserve"><value>コード</value></data>
+  <data name="Field.Name" xml:space="preserve"><value>名称</value></data>
+  <data name="Field.EnglishName" xml:space="preserve"><value>英語名</value></data>
+  <data name="Field.Status" xml:space="preserve"><value>ステータス</value></data>
+  <data name="Field.TaxType" xml:space="preserve"><value>税種</value></data>
+  <data name="Field.Amount" xml:space="preserve"><value>金額</value></data>
+  <data name="Field.TaxAmount" xml:space="preserve"><value>税額</value></data>
+  <data name="Field.TotalAmount" xml:space="preserve"><value>合計</value></data>
+  <data name="Field.Discount" xml:space="preserve"><value>割引</value></data>
+  <data name="Field.PaymentTerms" xml:space="preserve"><value>支払条件</value></data>
+  <data name="Field.DeliveryTerms" xml:space="preserve"><value>納期条件</value></data>
+  <data name="Field.SalesPerson" xml:space="preserve"><value>営業担当</value></data>
+  <data name="Field.ContactPerson" xml:space="preserve"><value>担当者</value></data>
+  <data name="Field.ContactPhone" xml:space="preserve"><value>連絡先電話</value></data>
+  <data name="Field.MobilePhone" xml:space="preserve"><value>携帯電話</value></data>
+  <data name="Field.Fax" xml:space="preserve"><value>FAX</value></data>
+  <data name="Field.Email" xml:space="preserve"><value>メールアドレス</value></data>
+  <data name="Field.Website" xml:space="preserve"><value>ウェブサイト</value></data>
+  <data name="Field.Address" xml:space="preserve"><value>住所</value></data>
+  <data name="Field.ContactAddress" xml:space="preserve"><value>連絡先住所</value></data>
+  <data name="Field.TaxNumber" xml:space="preserve"><value>統一番号</value></data>
+  <data name="Field.ResponsiblePerson" xml:space="preserve"><value>責任者</value></data>
+  <data name="Field.JobTitle" xml:space="preserve"><value>役職</value></data>
+  <data name="Field.RejectionReason" xml:space="preserve"><value>却下理由</value></data>
+  <data name="Field.Phone" xml:space="preserve"><value>電話</value></data>
+  <data name="Field.TaxRate" xml:space="preserve"><value>税率%</value></data>
+  <data name="Field.ShippingAddress" xml:space="preserve"><value>配送先住所</value></data>
+  <data name="Field.PurchaseOrderCode" xml:space="preserve"><value>発注番号</value></data>
+  <data name="Field.PurchasingCompany" xml:space="preserve"><value>購買会社</value></data>
+  <data name="Field.Purchaser" xml:space="preserve"><value>購買担当</value></data>
+  <data name="Field.PurchaseDate" xml:space="preserve"><value>発注日</value></data>
+  <data name="Field.DeliveryDate" xml:space="preserve"><value>納期</value></data>
+  <data name="Field.PurchaseReceivingCode" xml:space="preserve"><value>入荷番号</value></data>
+  <data name="Field.ReceiptDate" xml:space="preserve"><value>入荷日</value></data>
+  <data name="Field.PurchaseReturnCode" xml:space="preserve"><value>返品番号</value></data>
+  <data name="Field.PurchaseReturnDate" xml:space="preserve"><value>返品日</value></data>
+  <data name="Field.ReasonCode" xml:space="preserve"><value>理由コード</value></data>
+  <data name="Field.ReasonName" xml:space="preserve"><value>理由名称</value></data>
+  <data name="Field.SalesOrderCode" xml:space="preserve"><value>受注番号</value></data>
+  <data name="Field.SalesOrderDate" xml:space="preserve"><value>受注日</value></data>
+  <data name="Field.ExpectedDeliveryDate" xml:space="preserve"><value>予定納期</value></data>
+  <data name="Field.QuotationCode" xml:space="preserve"><value>見積番号</value></data>
+  <data name="Field.QuotationDate" xml:space="preserve"><value>見積日</value></data>
+  <data name="Field.QuotationCreator" xml:space="preserve"><value>作成者</value></data>
+  <data name="Field.ProjectName" xml:space="preserve"><value>工事名</value></data>
+  <data name="Field.SalesDeliveryCode" xml:space="preserve"><value>出荷番号</value></data>
+  <data name="Field.SalesDeliveryDate" xml:space="preserve"><value>出荷日</value></data>
+  <data name="Field.SalesReturnCode" xml:space="preserve"><value>返品番号</value></data>
+  <data name="Field.SalesReturnDate" xml:space="preserve"><value>返品日</value></data>
+  <data name="Column.ProductCodeName" xml:space="preserve"><value>商品コード/名称</value></data>
+  <data name="Column.Quantity" xml:space="preserve"><value>数量</value></data>
+  <data name="Column.InboundQuantity" xml:space="preserve"><value>入庫済</value></data>
+  <data name="Column.UnitPrice" xml:space="preserve"><value>単価</value></data>
+  <data name="Column.Subtotal" xml:space="preserve"><value>小計</value></data>
+  <data name="Column.IsClosed" xml:space="preserve"><value>完了</value></data>
+  <data name="Column.PurchaseQuantity" xml:space="preserve"><value>発注量</value></data>
+  <data name="Column.ReceivedQuantity" xml:space="preserve"><value>入庫量</value></data>
+  <data name="Column.AlreadyReturnedQuantity" xml:space="preserve"><value>返品済</value></data>
+  <data name="Column.Location" xml:space="preserve"><value>ロケーション</value></data>
+  <data name="Column.PurchaseReceivingQuantity" xml:space="preserve"><value>入荷量</value></data>
+  <data name="Column.ReturnQuantity" xml:space="preserve"><value>返品数量</value></data>
+  <data name="Column.OrderQuantity" xml:space="preserve"><value>注文数量</value></data>
+  <data name="Column.SalesQuantity" xml:space="preserve"><value>売上数量</value></data>
+  <data name="Column.DiscountPercent" xml:space="preserve"><value>割引%</value></data>
+  <data name="Column.Specification" xml:space="preserve"><value>規格</value></data>
+  <data name="Column.WarehouseAndLocation" xml:space="preserve"><value>倉庫/ロケーション</value></data>
+  <data name="Column.AvailableStock" xml:space="preserve"><value>在庫量</value></data>
+  <data name="Column.DeliveryQuantity" xml:space="preserve"><value>出荷量</value></data>
+  <data name="Column.AlreadyReturnedCount" xml:space="preserve"><value>返品済</value></data>
+  <data name="Column.OriginalQuantity" xml:space="preserve"><value>元の数量</value></data>
+  <data name="Column.ReturnUnitPrice" xml:space="preserve"><value>返品単価</value></data>
+  <data name="Column.OriginalDiscount" xml:space="preserve"><value>当初割引(%)</value></data>
+  <data name="Column.SalesReturnQuantity" xml:space="preserve"><value>返品数量</value></data>
+  <data name="Column.MaterialCodeName" xml:space="preserve"><value>材料コード/名称</value></data>
 </root>

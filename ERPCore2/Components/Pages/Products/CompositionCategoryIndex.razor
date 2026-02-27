@@ -1,6 +1,7 @@
 @page "/composition-categories"
 @inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @rendermode InteractiveServer
 
@@ -15,7 +16,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="物料清單類型"
+                        EntityName="@L["Entity.CompositionCategory"]"
                         GetEntityDisplayName="@(category => category.Name)"
                         RequiredPermission="CompositionCategory.Read"
                         RequiredModule="ProductionManagement"

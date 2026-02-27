@@ -9,6 +9,9 @@
 @inject ICustomerRosterReportService CustomerRosterReportService
 @inject ICustomerDetailReportService CustomerDetailReportService
 @inject ActionButtonHelper ActionButtonHelper
+@inject ICompanyModuleService CompanyModuleService
+@inject INavigationPermissionService NavigationPermissionService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="Customer"
                           TService="ICustomerService"
@@ -17,9 +20,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@CustomerId"
                           Service="@CustomerService"
-                          EntityName="客戶"
-                          EntityNamePlural="客戶"
-                          ModalTitle="@(CustomerId.HasValue ? "編輯客戶" : "新增客戶")"
+                          EntityName="@L["Entity.Customer"]"
+                          EntityNamePlural="@L["Entity.Customer"]"
+                          ModalTitle="@(CustomerId.HasValue ? L["Message.EditTitle", L["Entity.Customer"]].ToString() : L["Message.CreateTitle", L["Entity.Customer"]].ToString())"
                           Size="GenericEditModalComponent<Customer, ICustomerService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -32,17 +35,17 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadCustomerData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(CustomerId.HasValue ? "客戶更新成功" : "客戶新增成功")"
-                          SaveFailureMessage="客戶儲存失敗"
+                          SaveSuccessMessage="@(CustomerId.HasValue ? L["Message.UpdateSuccess", L["Entity.Customer"]].ToString() : L["Message.CreateSuccess", L["Entity.Customer"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Customer"]]"
                           RequiredPermission="Customer.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
-                          PrintButtonText="列印"
+                          PrintButtonText="@L["Button.Print"]"
                           ReportService="@CustomerDetailReportService"
                           ReportId="@ReportIds.CustomerDetail"
-                          ReportPreviewTitle="客戶詳細資料預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Customer"]]"
                           GetReportDocumentName="@(e => $"客戶-{e.Code}")"
                           CustomActionButtons="@GetCustomActionButtons()" />
 
@@ -120,12 +123,18 @@
     private CustomerVehicleTab? vehicleTab;
     private CustomerVisitTab? visitTab;
     private CustomerTransactionTab? transactionTab;
+    private CustomerAccountingTab? accountingTab;
 
     // ===== Tab 內容 RenderFragment =====
 
     private RenderFragment CreateVehicleTabContent() => __builder =>
     {
         <CustomerVehicleTab @ref="vehicleTab" CustomerId="@CustomerId" />
+    };
+
+    private RenderFragment CreateAccountingTabContent() => __builder =>
+    {
+        <CustomerAccountingTab @ref="accountingTab" />
     };
 
     private RenderFragment CreateVisitTabContent() => __builder =>
@@ -188,12 +197,14 @@
                 if (vehicleTab != null)      await vehicleTab.LoadAsync(loadedEntityId);
                 if (visitTab != null)        await visitTab.LoadAsync(loadedEntityId);
                 if (transactionTab != null)  await transactionTab.LoadAsync(loadedEntityId);
+                if (accountingTab != null)   await accountingTab.LoadAsync(loadedEntityId);
             }
             else
             {
                 vehicleTab?.Clear();
                 visitTab?.Clear();
                 transactionTab?.Clear();
+                accountingTab?.Clear();
             }
             StateHasChanged();
         }
@@ -275,9 +286,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.Code),
-                    Label = "客戶編號",
+                    Label = L["Field.CustomerCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入客戶編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CustomerCode"]],
                     IsRequired = true,
                     MaxLength = 20,
                     HelpText = "客戶的唯一識別編號，新增時系統會自動產生，也可手動修改"
@@ -285,9 +296,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.CompanyName),
-                    Label = "公司名稱",
+                    Label = L["Field.CompanyName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CompanyName"]],
                     IsRequired = false,
                     MaxLength = 20,
                     HelpText = "客戶的完整公司名稱（公司名稱、負責人或聯絡人至少需填寫一項）"
@@ -295,9 +306,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.ContactPerson),
-                    Label = "聯絡人",
+                    Label = L["Field.ContactPerson"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入聯絡人姓名",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ContactPerson"]],
                     IsRequired = false,
                     MaxLength = 10,
                     HelpText = "主要聯絡人姓名（公司名稱、負責人或聯絡人至少需填寫一項）"
@@ -305,9 +316,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.TaxNumber),
-                    Label = "統一編號",
+                    Label = L["Field.TaxNumber"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入統一編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.TaxNumber"]],
                     IsRequired = false,
                     MaxLength = 8,
                     HelpText = "公司統一編號（8位數字）"
@@ -315,9 +326,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.ResponsiblePerson),
-                    Label = "負責人",
+                    Label = L["Field.ResponsiblePerson"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入負責人姓名",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ResponsiblePerson"]],
                     IsRequired = false,
                     MaxLength = 10,
                     HelpText = "公司負責人姓名（公司名稱、負責人或聯絡人至少需填寫一項）"
@@ -325,9 +336,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.JobTitle),
-                    Label = "職稱",
+                    Label = L["Field.JobTitle"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入職稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.JobTitle"]],
                     IsRequired = false,
                     MaxLength = 10,
                     HelpText = "聯絡人職稱"
@@ -335,9 +346,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.ContactPhone),
-                    Label = "聯絡電話",
+                    Label = L["Field.ContactPhone"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入聯絡電話",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ContactPhone"]],
                     IsRequired = false,
                     MaxLength = 20,
                     HelpText = "聯絡人或是公司聯絡電話"
@@ -345,7 +356,7 @@
                 new()
                 {
                     PropertyName = nameof(Customer.MobilePhone),
-                    Label = "行動電話",
+                    Label = L["Field.MobilePhone"],
                     FieldType = FormFieldType.MobilePhone,
                     Placeholder = "0912-345-678",
                     HelpText = "聯絡人行動電話（10碼，以09開頭）"
@@ -353,9 +364,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.Fax),
-                    Label = "傳真",
+                    Label = L["Field.Fax"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入傳真號碼",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Fax"]],
                     IsRequired = false,
                     MaxLength = 20,
                     HelpText = "公司傳真號碼"
@@ -363,9 +374,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.Email),
-                    Label = "信箱",
+                    Label = L["Field.Email"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入電子郵件",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Email"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "聯絡人電子郵件地址"
@@ -373,9 +384,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.Website),
-                    Label = "公司網址",
+                    Label = L["Field.Website"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司網址",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Website"]],
                     IsRequired = false,
                     MaxLength = 50,
                     ContainerCssClass = "col-4",
@@ -384,9 +395,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.ContactAddress),
-                    Label = "聯絡地址",
+                    Label = L["Field.ContactAddress"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入聯絡地址",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ContactAddress"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "公司聯絡地址",
@@ -395,9 +406,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.ShippingAddress),
-                    Label = "貨運地址",
+                    Label = L["Field.ShippingAddress"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入貨運地址",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ShippingAddress"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "貨物運送地址",
@@ -407,9 +418,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.PaymentMethodId),
-                    Label = "付款方式",
+                    Label = L["Entity.PaymentMethod"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇付款方式",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.PaymentMethod"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "客戶的付款方式（例如：現金、支票、匯款等）",
@@ -418,9 +429,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.PaymentTerms),
-                    Label = "付款條件",
+                    Label = L["Field.PaymentTerms"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入付款條件",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PaymentTerms"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "付款條件說明（例如：月結30天、貨到付款等）"
@@ -428,9 +439,9 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(Customer.PaymentDate),
-                    Label = "收款日",
+                    Label = L["Field.CollectionDay"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "收款日1-30，30 表示每月最後一天",
+                    Placeholder = L["Placeholder.CollectionDayHint"],
                     IsRequired = false,
                     Min = 0,
                     Max = 30,
@@ -439,9 +450,9 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(Customer.InvoiceTitle),
-                    Label = "發票抬頭",
+                    Label = L["Field.InvoiceTitle"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入發票抬頭",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.InvoiceTitle"]],
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "開立發票時使用的抬頭名稱",
@@ -450,9 +461,9 @@
                 new()
                 {
                     PropertyName = nameof(Customer.EmployeeId),
-                    Label = "業務負責人",
+                    Label = L["Field.SalesManager"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇業務負責人",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.SalesManager"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "負責此客戶的業務人員",
@@ -461,7 +472,7 @@
                 new()
                 {
                     PropertyName = nameof(Customer.CustomerStatus),
-                    Label = "客戶狀態",
+                    Label = L["Field.CustomerStatus"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     HelpText = "客戶目前的往來狀態",
@@ -475,9 +486,9 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(Customer.CompanyContactPhone),
-                    Label = "聯絡電話",
+                    Label = L["Field.ContactPhone"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入聯絡電話",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ContactPhone"]],
                     IsRequired = false,
                     MaxLength = 20,
                     HelpText = "負責人或是公司聯絡電話"
@@ -485,7 +496,22 @@
                 FormFieldConfigurationHelper.CreateRemarksField<Customer>()
             };
 
-            var layout = FormSectionHelper<Customer>.Create()
+            // 模組狀態（停用時隱藏對應 Tab）
+            bool? isSuperAdmin = null;
+            var isVehiclesEnabled = await CompanyModuleService.IsModuleEnabledAsync("Vehicles");
+            if (!isVehiclesEnabled)
+            {
+                isSuperAdmin ??= await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+                isVehiclesEnabled = isSuperAdmin.Value;
+            }
+            var isAccountingEnabled = await CompanyModuleService.IsModuleEnabledAsync("Accounting");
+            if (!isAccountingEnabled)
+            {
+                isSuperAdmin ??= await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+                isAccountingEnabled = isSuperAdmin.Value;
+            }
+
+            var builder = FormSectionHelper<Customer>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     c => c.Code,
                     c => c.CompanyName,
@@ -513,8 +539,15 @@
                     c => c.EmployeeId,
                     c => c.CustomerStatus,
                     c => c.Remarks)
-                .GroupIntoTab("客戶資料", "bi-building", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo)
-                .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())
+                .GroupIntoTab("客戶資料", "bi-building", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo);
+
+            if (isVehiclesEnabled)
+                builder = builder.GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent());
+
+            if (isAccountingEnabled)
+                builder = builder.GroupIntoCustomTab("會計資訊", "bi-calculator", CreateAccountingTabContent());
+
+            var layout = builder
                 .GroupIntoCustomTab("拜訪紀錄", "bi-journal-text", CreateVisitTabContent())
                 .GroupIntoCustomTab("交易紀錄", "bi-receipt", CreateTransactionTabContent())
                 .BuildAll();

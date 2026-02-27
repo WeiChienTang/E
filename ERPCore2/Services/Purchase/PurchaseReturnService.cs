@@ -1284,6 +1284,49 @@ namespace ERPCore2.Services
                 return ServiceResult.Failure("確認退回單過程發生錯誤");
             }
         }
+
+        public async Task<List<PurchaseReturn>> GetByPurchaseOrderIdAsync(int purchaseOrderId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var orderDetailIds = await context.PurchaseOrderDetails
+                    .Where(pod => pod.PurchaseOrderId == purchaseOrderId)
+                    .Select(pod => pod.Id)
+                    .ToListAsync();
+
+                var receivingDetailIds = await context.PurchaseReceivingDetails
+                    .Where(prd => prd.PurchaseOrderDetailId.HasValue &&
+                                  orderDetailIds.Contains(prd.PurchaseOrderDetailId.Value))
+                    .Select(prd => prd.Id)
+                    .ToListAsync();
+
+                var returnIds = await context.PurchaseReturnDetails
+                    .Where(d => d.PurchaseReceivingDetailId.HasValue &&
+                                receivingDetailIds.Contains(d.PurchaseReceivingDetailId.Value))
+                    .Select(d => d.PurchaseReturnId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.PurchaseReturns
+                    .Include(pr => pr.Supplier)
+                    .Where(pr => returnIds.Contains(pr.Id))
+                    .OrderByDescending(pr => pr.ReturnDate)
+                    .ThenBy(pr => pr.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPurchaseOrderIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByPurchaseOrderIdAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseOrderId = purchaseOrderId
+                });
+                return new List<PurchaseReturn>();
+            }
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 @page "/paymentMethods"
 @inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @rendermode InteractiveServer
 
@@ -15,7 +16,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="付款方式"
+                        EntityName="@L["Entity.PaymentMethod"]"
                         GetEntityDisplayName="@(pm => pm.Name)"
                         RequiredPermission="PaymentMethod.Read"
                         RequiredModule="FinancialManagement"

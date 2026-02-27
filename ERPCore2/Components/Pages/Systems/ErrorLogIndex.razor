@@ -2,6 +2,7 @@
 @inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @using ERPCore2.FieldConfiguration
 
 <GenericIndexPageComponent TEntity="ErrorLog" 
@@ -10,7 +11,7 @@
                       EntityBasePath="/error-logs"
                       PageTitle="錯誤記錄"
                       PageSubtitle="系統錯誤記錄查詢與監控"
-                      EntityName="錯誤記錄"
+                      EntityName="@L["Entity.ErrorLog"]"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"

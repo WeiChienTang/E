@@ -82,6 +82,19 @@ public static class ReportRegistry
                 SortOrder = 6,
                 IsEnabled = true
             },
+            new ReportDefinition
+            {
+                Id = ReportIds.CustomerVisitReport,
+                Name = "拜訪報告",
+                NameKey = "Report.CustomerVisitReport",
+                Description = "列印客戶拜訪記錄報告，含拜訪日期、客戶、拜訪人員、拜訪目的及結果摘要",
+                IconClass = "bi bi-journal-check",
+                Category = ReportCategory.Customer,
+                RequiredPermission = "Customer.Read",
+                ActionId = "OpenCustomerVisitReport",
+                SortOrder = 7,
+                IsEnabled = true
+            },
 
             // ==================== 廠商報表 ====================
             new ReportDefinition

@@ -58,6 +58,7 @@ namespace ERPCore2.Data.Context
       public DbSet<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; }
       public DbSet<PurchaseReturn> PurchaseReturns { get; set; }
       public DbSet<PurchaseReturnDetail> PurchaseReturnDetails { get; set; }
+      public DbSet<PurchaseReturnReason> PurchaseReturnReasons { get; set; }
       public DbSet<SalesOrder> SalesOrders { get; set; }
       public DbSet<SalesOrderDetail> SalesOrderDetails { get; set; }
       public DbSet<SalesDelivery> SalesDeliveries { get; set; }

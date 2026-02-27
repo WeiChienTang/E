@@ -10,17 +10,18 @@
 @inject INotificationService NotificationService
 @inject IVehicleListReportService VehicleListReportService
 @inject ActionButtonHelper ActionButtonHelper
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="Vehicle" 
+<GenericEditModalComponent TEntity="Vehicle"
                           TService="IVehicleService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@VehicleId"
                           Service="@VehicleService"
-                          EntityName="車輛"
-                          EntityNamePlural="車輛"
-                          ModalTitle="@(VehicleId.HasValue ? "編輯車輛" : "新增車輛")"
+                          EntityName="@L["Entity.Vehicle"]"
+                          EntityNamePlural="@L["Entity.Vehicle"]"
+                          ModalTitle="@(VehicleId.HasValue ? L["Message.EditTitle", L["Entity.Vehicle"]].ToString() : L["Message.CreateTitle", L["Entity.Vehicle"]].ToString())"
                           Size="GenericEditModalComponent<Vehicle, IVehicleService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -32,17 +33,17 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadVehicleData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(VehicleId.HasValue ? "車輛更新成功" : "車輛新增成功")"
-                          SaveFailureMessage="車輛儲存失敗"
+                          SaveSuccessMessage="@(VehicleId.HasValue ? L["Message.UpdateSuccess", L["Entity.Vehicle"]].ToString() : L["Message.CreateSuccess", L["Entity.Vehicle"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Vehicle"]]"
                           RequiredPermission="Vehicle.Read"
                           OnEntitySaved="@OnVehicleSaved"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
-                          PrintButtonText="列印"
+                          PrintButtonText="@L["Button.Print"]"
                           ReportService="@VehicleListReportService"
                           ReportId="@ReportIds.VehicleList"
-                          ReportPreviewTitle="車輛資料預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Vehicle"]]"
                           GetReportDocumentName="@(e => $"車輛-{e.LicensePlate}")" />
 
 @* 車型編輯 Modal *@
@@ -218,9 +219,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.Code),
-                    Label = "車輛編號",
+                    Label = L["Field.VehicleCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入車輛編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.VehicleCode"]],
                     IsRequired = true,
                     MaxLength = 50,
                     HelpText = "車輛的唯一識別編號，新增時系統會自動產生"
@@ -228,9 +229,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.LicensePlate),
-                    Label = "車牌號碼",
+                    Label = L["Field.LicensePlate"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入車牌號碼",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.LicensePlate"]],
                     IsRequired = true,
                     MaxLength = 20,
                     HelpText = "車輛的法定車牌號碼"
@@ -238,9 +239,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.VehicleName),
-                    Label = "車輛名稱",
+                    Label = L["Field.VehicleName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入車輛名稱（如：3.5噸冷藏車）",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.VehicleName"]],
                     IsRequired = true,
                     MaxLength = 100,
                     HelpText = "方便辨識用途的車輛描述名稱"
@@ -248,7 +249,7 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.OwnershipType),
-                    Label = "歸屬類型",
+                    Label = L["Field.VehicleOwnershipType"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     HelpText = "車輛歸屬於公司或客戶",
@@ -264,9 +265,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.VehicleTypeId),
-                    Label = "車型",
+                    Label = L["Entity.VehicleType"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇車型",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.VehicleType"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "車輛的類型分類",
@@ -275,9 +276,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.Brand),
-                    Label = "廠牌",
+                    Label = L["Field.Brand"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入廠牌（如：Toyota）",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Brand"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "車輛的製造廠牌"
@@ -285,9 +286,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.Model),
-                    Label = "車款型號",
+                    Label = L["Field.ModelNumber"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入車款型號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ModelNumber"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "車輛的具體型號"
@@ -295,9 +296,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.ManufactureYear),
-                    Label = "出廠年份",
+                    Label = L["Field.ManufactureYear"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入出廠年份",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ManufactureYear"]],
                     IsRequired = false,
                     HelpText = "車輛的出廠年份",
                     UseThousandsSeparator = false
@@ -305,9 +306,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.Color),
-                    Label = "車身顏色",
+                    Label = L["Field.BodyColor"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入車身顏色",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BodyColor"]],
                     IsRequired = false,
                     MaxLength = 20,
                     HelpText = "車輛的外觀顏色"
@@ -315,7 +316,7 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.FuelType),
-                    Label = "燃料類型",
+                    Label = L["Field.FuelType"],
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
                     HelpText = "車輛使用的燃料類型",
@@ -331,27 +332,27 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.LoadCapacity),
-                    Label = "乘載量(公噸)",
+                    Label = L["Field.LoadCapacity"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入乘載量",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.LoadCapacity"]],
                     IsRequired = false,
                     HelpText = "車輛最大載重能力（單位：公噸）"
                 },
                 new()
                 {
                     PropertyName = nameof(Vehicle.Mileage),
-                    Label = "里程數",
+                    Label = L["Field.Mileage"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入里程數",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Mileage"]],
                     IsRequired = false,
                     HelpText = "車輛目前的累計里程數"
                 },
                 new()
                 {
                     PropertyName = nameof(Vehicle.EngineNumber),
-                    Label = "引擎號碼",
+                    Label = L["Field.EngineNumber"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入引擎號碼",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.EngineNumber"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "引擎的序號"
@@ -359,9 +360,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.ChassisNumber),
-                    Label = "車身號碼(VIN)",
+                    Label = L["Field.VIN"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入車身號碼",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.VIN"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "車輛識別號碼（Vehicle Identification Number）"
@@ -369,7 +370,7 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.PurchaseDate),
-                    Label = "購入日期",
+                    Label = L["Field.VehiclePurchaseDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "車輛的購買日期"
@@ -377,18 +378,18 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.PurchasePrice),
-                    Label = "購入金額",
+                    Label = L["Field.VehiclePurchasePrice"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入購入金額",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.VehiclePurchasePrice"]],
                     IsRequired = false,
                     HelpText = "車輛的購入價格"
                 },
                 new()
                 {
                     PropertyName = nameof(Vehicle.InsuranceCompany),
-                    Label = "保險公司",
+                    Label = L["Field.InsuranceCompany"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入保險公司名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.InsuranceCompany"]],
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "車輛投保的保險公司"
@@ -396,9 +397,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.InsurancePolicyNumber),
-                    Label = "保險單號",
+                    Label = L["Field.InsurancePolicyNumber"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入保險單號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.InsurancePolicyNumber"]],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "保險單的單號"
@@ -406,7 +407,7 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.InsuranceExpiryDate),
-                    Label = "保險到期日",
+                    Label = L["Field.InsuranceExpiryDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "保險的到期日期"
@@ -414,7 +415,7 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.InspectionExpiryDate),
-                    Label = "驗車到期日",
+                    Label = L["Field.VehicleInspectionExpiryDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "下次驗車的到期日"
@@ -422,7 +423,7 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.LastMaintenanceDate),
-                    Label = "最近保養日",
+                    Label = L["Field.LastMaintenanceDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "最近一次保養的日期"
@@ -430,18 +431,18 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.NextMaintenanceMileage),
-                    Label = "下次保養里程",
+                    Label = L["Field.NextMaintenanceMileage"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入下次保養里程",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.NextMaintenanceMileage"]],
                     IsRequired = false,
                     HelpText = "下次需要保養時的里程數"
                 },
                 new()
                 {
                     PropertyName = nameof(Vehicle.EmployeeId),
-                    Label = "司機",
+                    Label = L["Field.Driver"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇負責人",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.Driver"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "負責此車輛的員工或主要駕駛人",
@@ -450,9 +451,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.CustomerId),
-                    Label = "所屬客戶",
+                    Label = L["Field.AssociatedCustomer"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇所屬客戶",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.AssociatedCustomer"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "車輛所屬的客戶（歸屬類型為「客戶」時填寫）",
@@ -461,9 +462,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.SupplierId),
-                    Label = "所屬廠商",
+                    Label = L["Field.AssociatedSupplier"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇所屬廠商",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.AssociatedSupplier"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "車輛所屬的廠商",
@@ -472,9 +473,9 @@
                 new()
                 {
                     PropertyName = nameof(Vehicle.CompanyId),
-                    Label = "所屬公司",
+                    Label = L["Field.AssociatedCompany"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇所屬公司",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.AssociatedCompany"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "車輛所屬的公司"

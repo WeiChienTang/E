@@ -21,6 +21,19 @@ else if (ItemType == NavigationItemType.Action)
         @Text
     </button>
 }
+else if (ForceLoad)
+{
+    @* ForceLoad 使用 button 而非 <a>，避免 Blazor 攔截連結點擊觸發 RemoteNavigationManager *@
+    @* 造成頁面卸載時 JS Interop 回呼未完成的 TaskCanceledException *@
+    <button type="button" class="nav-dropdown-item dropdown-item btn-link @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")"
+            @onclick="HandleForcedLoadClickAsync">
+        @if (!string.IsNullOrEmpty(IconClass))
+        {
+            <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
+        }
+        @Text
+    </button>
+}
 else
 {
     <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" href="@Url" @onclick="OnDropdownItemClick">
@@ -71,6 +84,11 @@ else
     [Parameter] public string? ActionId { get; set; }
 
     /// <summary>
+    /// 強制完整頁面載入（用於非 Blazor 路由，如 /auth/signout）
+    /// </summary>
+    [Parameter] public bool ForceLoad { get; set; } = false;
+
+    /// <summary>
     /// 此菜單項目需要的權限（可選）
     /// </summary>
     [Parameter] public string? RequiredPermission { get; set; }
@@ -119,6 +137,30 @@ else
     {
         // 這裡可以添加任何需要的邏輯
         // JavaScript 會自動處理手機模式下的選單隱藏
+    }
+
+    /// <summary>
+    /// 處理 ForceLoad 連結的點擊事件
+    /// 使用 JS location.assign 直接導航，繞過 Blazor 的導航攔截機制
+    /// 並捕捉頁面卸載時預期的 TaskCanceledException / JSDisconnectedException
+    /// </summary>
+    private async Task HandleForcedLoadClickAsync()
+    {
+        if (!string.IsNullOrEmpty(Url))
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("location.assign", Url);
+            }
+            catch (TaskCanceledException)
+            {
+                // 預期：頁面正在卸載，電路斷開前 JS 回呼尚未返回
+            }
+            catch (JSDisconnectedException)
+            {
+                // 預期：SignalR 電路已斷開
+            }
+        }
     }
     
     /// <summary>

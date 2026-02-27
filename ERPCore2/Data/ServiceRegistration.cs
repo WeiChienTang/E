@@ -24,8 +24,14 @@ namespace ERPCore2.Data
             // Database Configuration - 使用 DbContextFactory 註冊
             services.AddDbContextFactory<AppDbContext>(options =>
                 options.UseSqlServer(connectionString,
-                    sqlServerOptions => sqlServerOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
-                .ConfigureWarnings(warnings => 
+                    sqlServerOptions => sqlServerOptions
+                        .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                        .CommandTimeout(10)  // 10 秒命令逾時，避免 DB 不穩定時卡住 30 秒（預設值）
+                        .EnableRetryOnFailure(
+                            maxRetryCount: 1,
+                            maxRetryDelay: TimeSpan.FromSeconds(2),
+                            errorNumbersToAdd: new[] { 233 }))  // 233 = Shared Memory pipe broken（最多重試 1 次，避免延長載入時間）
+                .ConfigureWarnings(warnings =>
                     warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.SqlServerEventId.SavepointsDisabledBecauseOfMARS)));
             
             //  加入記憶體快取服務 (權限快取、參考資料快取使用)
@@ -111,6 +117,7 @@ namespace ERPCore2.Data
             services.AddScoped<IPurchaseReceivingDetailService, PurchaseReceivingDetailService>();
             services.AddScoped<IPurchaseReturnService, PurchaseReturnService>();
             services.AddScoped<IPurchaseReturnDetailService, PurchaseReturnDetailService>();
+            services.AddScoped<IPurchaseReturnReasonService, PurchaseReturnReasonService>();
 
             // 銷貨相關服務
             services.AddScoped<IQuotationService, QuotationService>();
@@ -226,6 +233,8 @@ namespace ERPCore2.Data
             }
             // Excel 匯出服務（跨平台）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IExcelExportService, ExcelExportService>();
+            // PDF 匯出服務（跨平台，使用 PuppeteerSharp）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPdfExportService, PdfExportService>();
             // 使用採購單報表服務
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseOrderReportService, PurchaseOrderReportService>();
             // 進貨單（入庫單）報表服務

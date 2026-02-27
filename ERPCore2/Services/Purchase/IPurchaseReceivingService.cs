@@ -83,5 +83,10 @@ namespace ERPCore2.Services
         /// <param name="criteria">批次列印篩選條件</param>
         /// <returns>符合條件的進貨單列表</returns>
         Task<List<PurchaseReceiving>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria);
+
+        /// <summary>
+        /// 依採購退回單 ID 取得原始進貨單（跨退回明細查詢）
+        /// </summary>
+        Task<List<PurchaseReceiving>> GetByPurchaseReturnIdAsync(int purchaseReturnId);
     }
 }

@@ -3,6 +3,7 @@
 @inject IProductService ProductService
 @inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @rendermode InteractiveServer
 
@@ -17,7 +18,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="商品物料清單"
+                        EntityName="@L["Entity.ProductComposition"]"
                         GetEntityDisplayName="@(comp => comp.Code ?? $"物料清單{comp.Id}")"
                         RequiredPermission="ProductComposition.Read"
                         RequiredModule="ProductionManagement"

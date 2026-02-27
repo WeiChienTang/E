@@ -1,0 +1,133 @@
+@* 廠商會計資訊 Tab — 顯示應付帳款等四種子科目，並可立即建立 *@
+@using ERPCore2.Models.Enums
+@inject ISubAccountService SubAccountService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
+
+@if (_supplierId <= 0)
+{
+    <div class="text-muted py-3 px-2">
+        <i class="bi bi-info-circle me-2"></i>請先儲存廠商資料，再查看會計子科目。
+    </div>
+}
+else if (_isLoading)
+{
+    <div class="text-muted py-3 px-2">
+        <i class="bi bi-hourglass-split me-2"></i>載入中...
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-3">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:160px">子科目類型</th>
+                    <th style="width:140px">科目代碼</th>
+                    <th>科目名稱</th>
+                    <th style="width:90px">狀態</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _rows)
+                {
+                    <tr>
+                        <td>@row.Label</td>
+                        <td class="font-monospace small">@(row.Item?.Code ?? "—")</td>
+                        <td class="small">@(row.Item?.Name ?? "—")</td>
+                        <td>
+                            @if (row.Item != null)
+                            {
+                                <span class="text-success small"><i class="bi bi-check-circle me-1"></i>已建立</span>
+                            }
+                            else
+                            {
+                                <span class="text-warning small"><i class="bi bi-exclamation-circle me-1"></i>未建立</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (_rows.Any(r => r.Item == null))
+    {
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                               Text="建立子科目"
+                               OnClick="HandleCreateAsync"
+                               IsLoading="@_isCreating"
+                               IsDisabled="@_isCreating"
+                               Title="為此廠商建立所有缺少的子科目" />
+    }
+}
+
+@code {
+    private int _supplierId;
+    private bool _isLoading;
+    private bool _isCreating;
+    private List<(string Label, AccountItem? Item)> _rows = new();
+
+    public async Task LoadAsync(int supplierId)
+    {
+        _supplierId = supplierId;
+        await RefreshAsync();
+        StateHasChanged();
+    }
+
+    public void Clear()
+    {
+        _supplierId = 0;
+        _rows = new();
+        StateHasChanged();
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (_supplierId <= 0) return;
+
+        _isLoading = true;
+        StateHasChanged();
+
+        var all = await SubAccountService.GetAllSubAccountsForSupplierAsync(_supplierId);
+
+        AccountItem? Find(SubAccountLinkType type) =>
+            all.FirstOrDefault(a =>
+                a.SubAccountLinkType == type ||
+                (type == SubAccountLinkType.ReceivablePayable && a.SubAccountLinkType == null));
+
+        _rows = new()
+        {
+            ("應付帳款", Find(SubAccountLinkType.ReceivablePayable)),
+            ("應付票據", Find(SubAccountLinkType.NoteReceivablePayable)),
+            ("進貨退出", Find(SubAccountLinkType.SalesPurchaseReturn)),
+            ("預付款項", Find(SubAccountLinkType.AdvanceReceiptPayment)),
+        };
+
+        _isLoading = false;
+    }
+
+    private async Task HandleCreateAsync()
+    {
+        try
+        {
+            _isCreating = true;
+            StateHasChanged();
+
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var createdBy = authState.User.Identity?.Name ?? "system";
+
+            await SubAccountService.GetOrCreateSupplierSubAccountAsync(_supplierId, createdBy);
+            await RefreshAsync();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("建立子科目時發生錯誤");
+        }
+        finally
+        {
+            _isCreating = false;
+            StateHasChanged();
+        }
+    }
+}

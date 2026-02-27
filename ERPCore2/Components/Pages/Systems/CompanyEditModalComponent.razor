@@ -3,25 +3,26 @@
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IWebHostEnvironment WebHostEnvironment
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="Company" 
+<GenericEditModalComponent TEntity="Company"
                           TService="ICompanyService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@CompanyId"
                           Service="@CompanyService"
-                          EntityName="公司"
-                          EntityNamePlural="公司"
-                          ModalTitle="@(CompanyId.HasValue ? "編輯公司" : "新增公司")"
+                          EntityName="@L["Entity.Company"]"
+                          EntityNamePlural="@L["Entity.Company"]"
+                          ModalTitle="@(CompanyId.HasValue ? L["Message.EditTitle", L["Entity.Company"]].ToString() : L["Message.CreateTitle", L["Entity.Company"]].ToString())"
                           Size="GenericEditModalComponent<Company, ICompanyService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadCompanyData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(CompanyId.HasValue ? "公司更新成功" : "公司新增成功")"
-                          SaveFailureMessage="公司儲存失敗"
+                          SaveSuccessMessage="@(CompanyId.HasValue ? L["Message.UpdateSuccess", L["Entity.Company"]].ToString() : L["Message.CreateSuccess", L["Entity.Company"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Company"]]"
                           RequiredPermission="Company.Read"
                           OnEntitySaved="@OnCompanySaved"
                           OnCancel="@OnCancel"
@@ -77,9 +78,9 @@
                 new()
                 {
                     PropertyName = nameof(Company.Code),
-                    Label = "公司編號",
+                    Label = L["Field.Code"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Code"]],
                     IsRequired = true,
                     MaxLength = 25,
                     HelpText = "公司的唯一識別編號，新增時系統會自動產生，也可手動修改"
@@ -87,9 +88,9 @@
                 new()
                 {
                     PropertyName = nameof(Company.CompanyName),
-                    Label = "公司名稱",
+                    Label = L["Field.CompanyName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CompanyName"]],
                     IsRequired = true,
                     MaxLength = 20,
                     HelpText = "公司的正式名稱，將顯示在系統各處"
@@ -97,70 +98,70 @@
                 new()
                 {
                     PropertyName = nameof(Company.CompanyNameEn),
-                    Label = "英文名稱",
+                    Label = L["Field.EnglishName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司英文名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.EnglishName"]],
                     MaxLength = 50,
                     HelpText = "公司的英文名稱"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.ShortName),
-                    Label = "公司簡稱",
+                    Label = L["Field.ShortName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司簡稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ShortName"]],
                     MaxLength = 20,
                     HelpText = "公司的簡稱"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.ShortNameEn),
-                    Label = "英文簡稱",
+                    Label = L["Field.ShortNameEn"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司英文簡稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ShortNameEn"]],
                     MaxLength = 50,
                     HelpText = "公司的英文簡稱"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.TaxId),
-                    Label = "統一編號",
+                    Label = L["Field.TaxNumber"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入統一編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.TaxNumber"]],
                     MaxLength = 8,
                     HelpText = "8位數字的統一編號"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.InvoiceTitle),
-                    Label = "發票抬頭",
+                    Label = L["Field.InvoiceTitle"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入發票抬頭",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.InvoiceTitle"]],
                     MaxLength = 50,
                     HelpText = "發票抬頭（如與公司名稱不同時使用）"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.EstablishedDate),
-                    Label = "成立日期",
+                    Label = L["Field.EstablishedDate"],
                     FieldType = FormFieldType.Date,
-                    Placeholder = "請選擇成立日期",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.EstablishedDate"]],
                     HelpText = "公司成立日期"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.CapitalAmount),
-                    Label = "資本額",
+                    Label = L["Field.CapitalAmount"],
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入資本額",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CapitalAmount"]],
                     HelpText = "公司資本額"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.Representative),
-                    Label = "負責人",
+                    Label = L["Field.ResponsiblePerson"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入負責人姓名",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ResponsiblePerson"]],
                     MaxLength = 10,
                     HelpText = "公司的法定代表人"
                 },
@@ -168,45 +169,45 @@
                 new()
                 {
                     PropertyName = nameof(Company.Address),
-                    Label = "公司地址",
+                    Label = L["Field.CompanyAddress"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司地址",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CompanyAddress"]],
                     MaxLength = 50,
                     HelpText = "公司的註冊地址"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.Phone),
-                    Label = "公司電話",
+                    Label = L["Field.Phone"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司電話",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Phone"]],
                     MaxLength = 20,
                     HelpText = "公司的聯絡電話"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.Fax),
-                    Label = "公司傳真",
+                    Label = L["Field.Fax"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司傳真",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Fax"]],
                     MaxLength = 20,
                     HelpText = "公司的傳真號碼"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.Email),
-                    Label = "公司Email",
+                    Label = L["Field.Email"],
                     FieldType = FormFieldType.Email,
-                    Placeholder = "請輸入公司Email",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Email"]],
                     MaxLength = 100,
                     HelpText = "公司的官方電子郵件地址"
                 },
                 new()
                 {
                     PropertyName = nameof(Company.Website),
-                    Label = "公司網站",
+                    Label = L["Field.Website"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司網站",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Website"]],
                     MaxLength = 100,
                     HelpText = "公司的官方網站網址",
                     ActionButtons = await GetWebsiteActionButtonsAsync()
@@ -214,9 +215,9 @@
                 new()
                 {
                     PropertyName = nameof(Company.Description),
-                    Label = "公司簡介",
+                    Label = L["Field.CompanyDescription"],
                     FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入公司簡介",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CompanyDescription"]],
                     MaxLength = 120,
                     HelpText = "公司的簡要說明",
                     ContainerCssClass = "col-12"
@@ -224,7 +225,7 @@
                 new()
                 {
                     PropertyName = nameof(Company.Status),
-                    Label = "狀態",
+                    Label = L["Field.Status"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = EntityStatusHelper.GetEntityStatusOptions(),
@@ -233,7 +234,7 @@
                 new()
                 {
                     PropertyName = nameof(Company.IsDefault),
-                    Label = "預設公司",
+                    Label = L["Field.IsDefaultCompany"],
                     FieldType = FormFieldType.Checkbox,
                     HelpText = "勾選後此公司將顯示於首頁標題"
                 },
@@ -291,7 +292,7 @@
                 
                 @if (!string.IsNullOrEmpty(editModalComponent.Entity.LogoPath))
                 {
-                    <GenericButtonComponent Text="預覽 LOGO"
+                    <GenericButtonComponent Text="@L["Button.PreviewLogo"]"
                                           Variant="ButtonVariant.DarkBlue"
                                           Size="ButtonSize.Small"
                                           OnClick="PreviewLogo" />

@@ -2,7 +2,9 @@
 @using System.Reflection
 @using System.Web
 @using ERPCore2.Helpers
+@using Microsoft.Extensions.Localization
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 @typeparam TItem
 
 <div class="table-responsive table-container-hover interactive-table-container">
@@ -20,12 +22,12 @@
                         <th scope="col" class="text-center" style="width: @SelectColumnWidth;">
                             @if (AllowMultipleSelection)
                             {
-                                <input type="checkbox" 
+                                <input type="checkbox"
                                        id="@_selectAllCheckboxId"
                                        class="form-check-input"
                                        checked="@IsAllSelected"
                                        @onchange="HandleSelectAllChanged"
-                                       title="全選/取消全選" />
+                                       title="@L["Label.SelectAll"]" />
                             }
                         </th>
                     }
@@ -54,11 +56,11 @@
                     }
                     @if (ShowActions && ActionsTemplate != null)
                     {
-                        <th scope="col" class="text-center table-actions-column" style="@GetActionsColumnStyle()">@ActionsHeader</th>
+                        <th scope="col" class="text-center table-actions-column" style="@GetActionsColumnStyle()">@(string.IsNullOrEmpty(ActionsHeader) ? L["Label.Actions"].ToString() : ActionsHeader)</th>
                     }
                     @if (ShowBuiltInActions)
                     {
-                        <th scope="col" class="text-center table-actions-column" style="@GetActionsColumnStyle()">@ActionsHeader</th>
+                        <th scope="col" class="text-center table-actions-column" style="@GetActionsColumnStyle()">@(string.IsNullOrEmpty(ActionsHeader) ? L["Label.Actions"].ToString() : ActionsHeader)</th>
                     }
                 </tr>
             </thead>
@@ -99,11 +101,11 @@
                                 @{ var isSelectable = IsItemSelectable?.Invoke(item) ?? true; }
                                 @if (isSelectable)
                                 {
-                                    <input type="checkbox" 
+                                    <input type="checkbox"
                                            class="form-check-input"
                                            checked="@IsItemSelected(item)"
                                            @onchange="e => HandleItemSelectionChanged(item, (bool?)e.Value ?? false)"
-                                           title="選取此項目" />
+                                           title="@L["Label.SelectItem"]" />
                                 }
                                 else if (UnselectableTemplate != null)
                                 {
@@ -492,7 +494,7 @@
     [Parameter] public bool IsReadOnly { get; set; } = false;
     [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public string EmptyMessage { get; set; } = "沒有找到資料";
-    [Parameter] public string ActionsHeader { get; set; } = "操作";
+    [Parameter] public string ActionsHeader { get; set; } = "";
     [Parameter] public string ActionsColumnWidth { get; set; } = "auto"; // 操作欄位寬度參數：可設定固定值(如"120px")、百分比(如"10%")，或"auto"自動計算
     
     // 行互動設定
@@ -523,7 +525,7 @@
     [Parameter] public string DeleteButtonIcon { get; set; } = "bi bi-trash text-white";
     [Parameter] public ButtonVariant DeleteButtonVariant { get; set; } = ButtonVariant.Red;
     [Parameter] public ButtonSize DeleteButtonSize { get; set; } = ButtonSize.Large;
-    [Parameter] public string DeleteButtonTitle { get; set; } = "刪除";
+    [Parameter] public string DeleteButtonTitle { get; set; } = "";
     [Parameter] public Func<TItem, bool>? IsDeleteDisabled { get; set; }
     [Parameter] public EventCallback<TItem> OnItemDelete { get; set; }
     [Parameter] public RenderFragment<TItem>? CustomActionsTemplate { get; set; }
@@ -539,6 +541,9 @@
     [Parameter] public EventCallback<DragDropEventArgs<TItem>> OnItemDropped { get; set; }  // 項目被放置事件（跨表格）
     [Parameter] public EventCallback<(int oldIndex, int newIndex)> OnRowReordered { get; set; } // 行重新排序事件（同表格）
     [Parameter] public RenderFragment? DropZoneEmptyTemplate { get; set; }             // 空放置區域的自訂模板
+
+    // 資料變更通知（任何儲存格編輯、刪除、拖放後觸發，供父元件做 dirty 標記用）
+    [Parameter] public EventCallback OnDataChanged { get; set; }
     #endregion
 
     #region 私有欄位
@@ -1415,7 +1420,9 @@
         {
             await column.OnInputChanged.Value.InvokeAsync((item!, value));
         }
-        
+
+        if (OnDataChanged.HasDelegate) await OnDataChanged.InvokeAsync();
+
         //  新邏輯：如果這個欄位設定為觸發欄位，優先使用欄位級別的觸發
         if (EnableAutoEmptyRow && column.TriggerEmptyRowOnFilled)
         {
@@ -1502,7 +1509,9 @@
         {
             await column.OnSelectionChanged.Value.InvokeAsync((item!, value));
         }
-        
+
+        if (OnDataChanged.HasDelegate) await OnDataChanged.InvokeAsync();
+
         //  如果這個欄位設定為觸發欄位，優先使用欄位級別的觸發
         if (EnableAutoEmptyRow && column.TriggerEmptyRowOnFilled)
         {
@@ -1536,7 +1545,9 @@
         {
             await column.OnCheckboxChanged.Value.InvokeAsync((item!, isChecked));
         }
-        
+
+        if (OnDataChanged.HasDelegate) await OnDataChanged.InvokeAsync();
+
         //  只有當這一行從空變非空時，才檢查是否需要新增空行
         if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
         {
@@ -1586,7 +1597,7 @@
                                            IconClass="@DeleteButtonIcon"
                                            Size="@DeleteButtonSize"
                                            IsDisabled="@isDeleteDisabled"
-                                           Title="@(isDeleteDisabled && EnableAutoEmptyRow && IsRowEmpty(item) ? "至少需要保留一個空行" : DeleteButtonTitle)"
+                                           Title="@(isDeleteDisabled && EnableAutoEmptyRow && IsRowEmpty(item) ? L["Label.KeepOneEmptyRow"].ToString() : (string.IsNullOrEmpty(DeleteButtonTitle) ? L["Button.Delete"].ToString() : DeleteButtonTitle))"
                                            OnClick="async () => await HandleBuiltInDelete(item)"
                                            StopPropagation="true"
                                            CssClass="btn-square" />
@@ -1600,7 +1611,8 @@
         if (OnItemDelete.HasDelegate)
         {
             await OnItemDelete.InvokeAsync(item);
-            
+            if (OnDataChanged.HasDelegate) await OnDataChanged.InvokeAsync();
+
             // 自動空行管理：確保刪除後還有空行
             EnsureOneEmptyRow();
         }
@@ -1667,16 +1679,18 @@
                         await column.OnItemSelected.Value.InvokeAsync((item!, selectedItem));
                     }
                     
+                    if (OnDataChanged.HasDelegate) await OnDataChanged.InvokeAsync();
+
                     // 關閉下拉選單
                     column.SetShowDropdown(item!, false);
                     column.SetSelectedIndex(item!, -1);
-                    
+
                     //  只有當這一行從空變非空時，才檢查是否需要新增空行
                     if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
                     {
                         AutoAddEmptyRowIfNeeded();
                     }
-                    
+
                     StateHasChanged();
                 }
                 break;
@@ -1799,16 +1813,18 @@
             await column.OnItemSelected.Value.InvokeAsync((item!, selectedItem));
         }
         
+        if (OnDataChanged.HasDelegate) await OnDataChanged.InvokeAsync();
+
         //  只有當這一行從空變非空時，才檢查是否需要新增空行
         if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
         {
             AutoAddEmptyRowIfNeeded();
         }
-        
+
         // 🔧 修正：點擊選擇項目後需要觸發 UI 更新，確保商品名稱等資料正確渲染
         StateHasChanged();
     }
-    
+
     private async Task HandleSearchableSelectItemMouseEnter(InteractiveColumnDefinition column, TItem item, int index)
     {
         // 優先使用 Action 委託（來自 SearchableSelectHelper）
@@ -2020,13 +2036,15 @@
             await OnItemDropped.InvokeAsync(args);
         }
         
+        if (OnDataChanged.HasDelegate) await OnDataChanged.InvokeAsync();
+
         // 清除狀態
         DragDropState.EndDrag();
         _dragOverIndex = null;
         _isDragOver = false;
-        
+
         StateHasChanged();
     }
-    
+
     #endregion
 }

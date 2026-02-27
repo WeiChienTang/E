@@ -5,6 +5,7 @@
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @implements IDisposable
 
 <GenericIndexPageComponent TEntity="SetoffDocument" 
@@ -12,7 +13,7 @@
                       Service="@SetoffDocumentService"
                       EntityBasePath="/setoffDocuments"
                       PageTitle="@PageTitle"
-                      EntityName="沖款單"
+                      EntityName="@L["Entity.SetoffDocument"]"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
                       DataLoader="@LoadSetoffDocumentsAsync"

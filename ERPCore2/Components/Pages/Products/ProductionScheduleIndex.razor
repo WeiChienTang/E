@@ -3,6 +3,7 @@
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @using ERPCore2.FieldConfiguration
 
 @rendermode InteractiveServer
@@ -18,7 +19,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="生產排程"
+                        EntityName="@L["Entity.ProductionSchedule"]"
                         GetEntityDisplayName="@(schedule => schedule.Code)"
                         RequiredPermission="ProductionSchedule.Read"
                         RequiredModule="ProductionManagement"

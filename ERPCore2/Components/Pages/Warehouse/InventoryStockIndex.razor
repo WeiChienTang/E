@@ -6,6 +6,7 @@
 @inject IWarehouseLocationService WarehouseLocationService
 @inject IProductionScheduleItemService ProductionScheduleItemService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @using ERPCore2.Components.Pages.Warehouse
 @using ERPCore2.Models
@@ -22,7 +23,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="庫存"
+                        EntityName="@L["Entity.InventoryStock"]"
                         GetEntityDisplayName="@(stock => $"{GetProductName(stock.ProductId)}")"
                         RequiredPermission="InventoryStock.Read"
                         RequiredModule="Warehouse"

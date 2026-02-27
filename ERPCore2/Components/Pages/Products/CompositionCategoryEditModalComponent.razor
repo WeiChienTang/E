@@ -1,25 +1,26 @@
 @* 可重用的物料清單類型編輯組件 - 可在任何頁面中嵌入 *@
 @inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="CompositionCategory" 
+<GenericEditModalComponent TEntity="CompositionCategory"
                           TService="ICompositionCategoryService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@CompositionCategoryId"
                           Service="@CompositionCategoryService"
-                          EntityName="物料清單類型"
-                          EntityNamePlural="物料清單類型"
-                          ModalTitle="@(CompositionCategoryId.HasValue ? "編輯物料清單類型" : "新增物料清單類型")"
+                          EntityName="@L["Entity.CompositionCategory"]"
+                          EntityNamePlural="@L["Entity.CompositionCategory"]"
+                          ModalTitle="@(CompositionCategoryId.HasValue ? L["Message.EditTitle", L["Entity.CompositionCategory"]].ToString() : L["Message.CreateTitle", L["Entity.CompositionCategory"]].ToString())"
                           Size="GenericEditModalComponent<CompositionCategory, ICompositionCategoryService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadCompositionCategoryData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(CompositionCategoryId.HasValue ? "物料清單類型更新成功" : "物料清單類型新增成功")"
-                          SaveFailureMessage="物料清單類型儲存失敗"
+                          SaveSuccessMessage="@(CompositionCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.CompositionCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.CompositionCategory"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.CompositionCategory"]]"
                           RequiredPermission="CompositionCategory.Read"
                           OnEntitySaved="@OnCompositionCategorySaved"
                           OnCancel="@OnCancel" />
@@ -63,9 +64,9 @@
                 new FormFieldDefinition
                 {
                     PropertyName = nameof(CompositionCategory.Code),
-                    Label = "類型編號",
+                    Label = L["Field.TypeCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入物料清單類型編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.TypeCode"]],
                     IsRequired = true,
                     HelpText = "物料清單類型的唯一編號，例如：STD、ALT、SIM、CUST，系統會自動產生，也可手動修改"
                 },
@@ -73,9 +74,9 @@
                 new()
                 {
                     PropertyName = nameof(CompositionCategory.Name),
-                    Label = "類型名稱",
+                    Label = L["Field.TypeName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入物料清單類型名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.TypeName"]],
                     IsRequired = true,
                     HelpText = "物料清單類型的名稱，例如：標準配方、替代配方、簡化配方、客製配方"
                 },

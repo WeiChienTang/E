@@ -31,21 +31,26 @@ namespace ERPCore2.Controllers
             if (Request.Form.ContainsKey("rememberMe"))
             {
                 var formValues = Request.Form["rememberMe"];
-                
+
                 // 如果表單中包含 "true" 值，強制設定 rememberMe 為 true
                 if (formValues.Contains("true"))
                 {
                     rememberMe = true;
                 }
             }
-            
+
+            ConsoleHelper.WriteDebug($"[AuthController.SignIn] 開始，account={account}, rememberMe={rememberMe}");
+
             try
             {
                 // 驗證用戶
+                ConsoleHelper.WriteDebug("[AuthController.SignIn] 呼叫 LoginAsync...");
                 var result = await _authService.LoginAsync(account, password);
-                
+                ConsoleHelper.WriteDebug($"[AuthController.SignIn] LoginAsync 完成，IsSuccess={result.IsSuccess}");
+
                 if (!result.IsSuccess)
                 {
+                    ConsoleHelper.WriteDebug($"[AuthController.SignIn] 登入失敗：{result.ErrorMessage}，重新導向回登入頁");
                     // 登入失敗，重新導向回登入頁面並帶上錯誤訊息
                     var loginUrl = "/auth/login";
                     if (!string.IsNullOrEmpty(returnUrl))
@@ -57,6 +62,7 @@ namespace ERPCore2.Controllers
                 }
 
                 var employee = result.Data!;
+                ConsoleHelper.WriteDebug($"[AuthController.SignIn] 登入成功，EmployeeId={employee.Id}");
 
                 // 建立 Claims
                 var claims = new List<Claim>
@@ -76,23 +82,26 @@ namespace ERPCore2.Controllers
                 var authProperties = new AuthenticationProperties
                 {
                     IsPersistent = rememberMe,
-                    ExpiresUtc = rememberMe 
-                        ? DateTimeOffset.UtcNow.AddDays(30) 
+                    ExpiresUtc = rememberMe
+                        ? DateTimeOffset.UtcNow.AddDays(30)
                         : DateTimeOffset.UtcNow.AddHours(8),
                     IssuedUtc = DateTimeOffset.UtcNow
                 };
 
-                // 執行登入
+                // 執行登入（寫入 Cookie）
+                ConsoleHelper.WriteDebug("[AuthController.SignIn] 呼叫 SignInAsync（寫入 Cookie）...");
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
+                ConsoleHelper.WriteDebug("[AuthController.SignIn] SignInAsync 完成");
 
-                // 更新最後登入時間
-                await _authService.UpdateLastLoginAsync(employee.Id);
+                // 注意：UpdateLastLoginAsync 已在 LoginAsync 內部呼叫過，此處不重複呼叫
 
                 // 依員工語言偏好寫入 culture cookie，使下次請求套用正確語言
+                ConsoleHelper.WriteDebug("[AuthController.SignIn] 呼叫 GetByEmployeeIdAsync（讀取語言偏好）...");
                 var preference = await _employeePreferenceService.GetByEmployeeIdAsync(employee.Id);
+                ConsoleHelper.WriteDebug($"[AuthController.SignIn] GetByEmployeeIdAsync 完成，Language={preference.Language}");
                 var cultureCode = CultureHelper.ToCultureCode(preference.Language);
                 var cookieValue = CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(cultureCode));
                 Response.Cookies.Append(
@@ -101,10 +110,12 @@ namespace ERPCore2.Controllers
                     new CookieOptions { MaxAge = TimeSpan.FromDays(365), Path = "/" });
 
                 // 導向目標頁面
+                ConsoleHelper.WriteDebug($"[AuthController.SignIn] 重新導向到 {returnUrl ?? "/"}");
                 return LocalRedirect(returnUrl ?? "/");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                ConsoleHelper.WriteError($"[AuthController.SignIn] 例外：{ex.GetType().Name} - {ex.Message}");
                 // 發生錯誤，重新導向回登入頁面
                 var loginUrl = "/auth/login";
                 if (!string.IsNullOrEmpty(returnUrl))

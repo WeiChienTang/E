@@ -27,13 +27,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         {
             if (await context.SalesReturnReasons.AnyAsync()) return;
 
-            var (createdAt1, createdBy) = SeedDataHelper.GetSystemCreateInfo(30);
+            var (createdAt1, _) = SeedDataHelper.GetSystemCreateInfo(30);
             var (createdAt2, _) = SeedDataHelper.GetSystemCreateInfo(25);
             var (createdAt3, _) = SeedDataHelper.GetSystemCreateInfo(20);
             var (createdAt4, _) = SeedDataHelper.GetSystemCreateInfo(15);
             var (createdAt5, _) = SeedDataHelper.GetSystemCreateInfo(10);
             var (createdAt6, _) = SeedDataHelper.GetSystemCreateInfo(5);
-            var (createdAt7, _) = SeedDataHelper.GetSystemCreateInfo(1);
 
             var reasons = new[]
             {
@@ -43,8 +42,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "品質不良",
                     Remarks = "商品品質不符合標準或有瑕疵",
                     Status = EntityStatus.Active,
-                    CreatedAt = createdAt1,
-                    CreatedBy = createdBy
+                    CreatedAt = createdAt1
                 },
                 new EntitySalesReturnReason
                 {
@@ -52,8 +50,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "規格不符",
                     Remarks = "商品規格與訂單要求不符",
                     Status = EntityStatus.Active,
-                    CreatedAt = createdAt2,
-                    CreatedBy = createdBy
+                    CreatedAt = createdAt2
                 },
                 new EntitySalesReturnReason
                 {
@@ -61,8 +58,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "數量錯誤",
                     Remarks = "出貨數量與訂單不符",
                     Status = EntityStatus.Active,
-                    CreatedAt = createdAt3,
-                    CreatedBy = createdBy
+                    CreatedAt = createdAt3
                 },
                 new EntitySalesReturnReason
                 {
@@ -70,8 +66,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "客戶要求",
                     Remarks = "客戶主動要求退貨",
                     Status = EntityStatus.Active,
-                    CreatedAt = createdAt4,
-                    CreatedBy = createdBy
+                    CreatedAt = createdAt4
                 },
                 new EntitySalesReturnReason
                 {
@@ -79,8 +74,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "過期商品",
                     Remarks = "商品已過有效期限",
                     Status = EntityStatus.Active,
-                    CreatedAt = createdAt5,
-                    CreatedBy = createdBy
+                    CreatedAt = createdAt5
                 },
                 new EntitySalesReturnReason
                 {
@@ -88,8 +82,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "運送損壞",
                     Remarks = "運送過程中造成的損壞",
                     Status = EntityStatus.Active,
-                    CreatedAt = createdAt6,
-                    CreatedBy = createdBy
+                    CreatedAt = createdAt6
                 },
             };
 

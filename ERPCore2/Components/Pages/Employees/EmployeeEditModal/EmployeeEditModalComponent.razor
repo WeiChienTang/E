@@ -10,8 +10,10 @@
 @inject IEmployeePositionService EmployeePositionService
 @inject INotificationService NotificationService
 @inject INavigationPermissionService NavigationPermissionService
+@inject ICompanyModuleService CompanyModuleService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IEmployeeDetailReportService EmployeeDetailReportService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="Employee"
                           TService="IEmployeeService"
@@ -20,9 +22,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@EmployeeId"
                           Service="@EmployeeService"
-                          EntityName="員工"
-                          EntityNamePlural="員工"
-                          ModalTitle="@(EmployeeId.HasValue ? "編輯員工" : "新增員工")"
+                          EntityName="@L["Entity.Employee"]"
+                          EntityNamePlural="@L["Entity.Employee"]"
+                          ModalTitle="@(EmployeeId.HasValue ? L["Message.EditTitle", L["Entity.Employee"]].ToString() : L["Message.CreateTitle", L["Entity.Employee"]].ToString())"
                           Size="GenericEditModalComponent<Employee, IEmployeeService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -40,16 +42,16 @@
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
-                          PrintButtonText="列印"
+                          PrintButtonText="@L["Button.Print"]"
                           ReportService="@EmployeeDetailReportService"
                           ReportId="@ReportIds.EmployeeDetail"
-                          ReportPreviewTitle="員工資料預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Employee"]]"
                           GetReportDocumentName="@(e => $"員工-{e.Code}-{e.Name}")">
     <CustomActionButtons>
         @if (_hasAccountPermission && EmployeeId.HasValue)
         {
             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                   Text="帳號管理"
+                                   Text="@L["Button.AccountManagement"]"
                                    OnClick="@(() => _showAccountModal = true)"
                                    Title="管理此員工的系統帳號與權限" />
         }
@@ -343,35 +345,40 @@
             formFields = new List<FormFieldDefinition>
             {
                 // 基本資訊區段
-                new() { PropertyName = nameof(Employee.Code), Label = "員工編號", FieldType = FormFieldType.Text, Placeholder = "請輸入員工編號", IsRequired = true, MaxLength = 20, HelpText = "員工的唯一識別編號，新增時系統會自動產生，也可手動修改" },
-                new() { PropertyName = nameof(Employee.Name), Label = "姓名", FieldType = FormFieldType.Text, Placeholder = "請輸入姓名", IsRequired = true, MaxLength = 10, HelpText = "員工的名字" },
+                new() { PropertyName = nameof(Employee.Code), Label = L["Field.EmployeeCode"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EmployeeCode"]], IsRequired = true, MaxLength = 20, HelpText = "員工的唯一識別編號，新增時系統會自動產生，也可手動修改" },
+                new() { PropertyName = nameof(Employee.Name), Label = L["Field.FullName"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.FullName"]], IsRequired = true, MaxLength = 10, HelpText = "員工的名字" },
                 new()
                 {
-                    PropertyName = nameof(Employee.Gender), Label = "性別", FieldType = FormFieldType.Select, HelpText = "員工性別",
+                    PropertyName = nameof(Employee.Gender), Label = L["Field.Gender"], FieldType = FormFieldType.Select, HelpText = "員工性別",
                     Options = Enum.GetValues<Gender>().Select(g => new SelectOption { Text = GetGenderDisplayName(g), Value = ((int)g).ToString() }).ToList()
                 },
-                new() { PropertyName = nameof(Employee.BirthDate), Label = "生日", FieldType = FormFieldType.Date, Placeholder = "請選擇生日", HelpText = "員工出生日期" },
-                new() { PropertyName = nameof(Employee.IdNumber), Label = "身分證字號", FieldType = FormFieldType.Text, Placeholder = "請輸入身分證字號", MaxLength = 10, HelpText = "員工身分證字號" },
+                new() { PropertyName = nameof(Employee.BirthDate), Label = L["Field.Birthday"], FieldType = FormFieldType.Date, Placeholder = L["Placeholder.PleaseSelect", L["Field.Birthday"]], HelpText = "員工出生日期" },
+                new() { PropertyName = nameof(Employee.IdNumber), Label = L["Field.IdNumber"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.IdNumber"]], MaxLength = 10, HelpText = "員工身分證字號" },
                 // 聯絡資訊區段
-                new() { PropertyName = nameof(Employee.Mobile), Label = "手機號碼", FieldType = FormFieldType.MobilePhone, Placeholder = "0912-345-678", HelpText = "員工個人手機號碼（10碼，以09開頭）" },
-                new() { PropertyName = nameof(Employee.Email), Label = "電子郵件", FieldType = FormFieldType.Text, Placeholder = "請輸入Email", MaxLength = 50, HelpText = "員工電子郵件地址" },
-                new() { PropertyName = nameof(Employee.EmergencyContact), Label = "緊急聯絡人", FieldType = FormFieldType.Text, Placeholder = "請輸入緊急聯絡人姓名", MaxLength = 10, HelpText = "緊急狀況時的聯絡人" },
-                new() { PropertyName = nameof(Employee.EmergencyPhone), Label = "緊急聯絡電話", FieldType = FormFieldType.Text, Placeholder = "請輸入緊急聯絡電話", MaxLength = 20, HelpText = "緊急聯絡人電話號碼" },
+                new() { PropertyName = nameof(Employee.Mobile), Label = L["Field.PhoneNumber"], FieldType = FormFieldType.MobilePhone, Placeholder = "0912-345-678", HelpText = "員工個人手機號碼（10碼，以09開頭）" },
+                new() { PropertyName = nameof(Employee.Email), Label = L["Field.Email"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.Email"]], MaxLength = 50, HelpText = "員工電子郵件地址" },
+                new() { PropertyName = nameof(Employee.EmergencyContact), Label = L["Field.EmergencyContact"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EmergencyContact"]], MaxLength = 10, HelpText = "緊急狀況時的聯絡人" },
+                new() { PropertyName = nameof(Employee.EmergencyPhone), Label = L["Field.EmergencyPhone"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EmergencyPhone"]], MaxLength = 20, HelpText = "緊急聯絡人電話號碼" },
                 // 組織架構區段
-                new() { PropertyName = nameof(Employee.DepartmentId), Label = "部門", FieldType = FormFieldType.AutoComplete, Placeholder = "請輸入或選擇部門", MinSearchLength = 0, HelpText = "輸入部門名稱進行搜尋，或直接選擇", ActionButtons = await GetDepartmentActionButtonsAsync() },
-                new() { PropertyName = nameof(Employee.EmployeePositionId), Label = "職位", FieldType = FormFieldType.AutoComplete, Placeholder = "請輸入或選擇職位", MinSearchLength = 0, HelpText = "輸入職位名稱進行搜尋，或直接選擇", ActionButtons = await GetPositionActionButtonsAsync() },
+                new() { PropertyName = nameof(Employee.DepartmentId), Label = L["Entity.Department"], FieldType = FormFieldType.AutoComplete, Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Department"]], MinSearchLength = 0, HelpText = "輸入部門名稱進行搜尋，或直接選擇", ActionButtons = await GetDepartmentActionButtonsAsync() },
+                new() { PropertyName = nameof(Employee.EmployeePositionId), Label = L["Entity.EmployeePosition"], FieldType = FormFieldType.AutoComplete, Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.EmployeePosition"]], MinSearchLength = 0, HelpText = "輸入職位名稱進行搜尋，或直接選擇", ActionButtons = await GetPositionActionButtonsAsync() },
                 // 任職資訊區段
-                new() { PropertyName = nameof(Employee.HireDate), Label = "到職日期", FieldType = FormFieldType.Date, Placeholder = "請選擇到職日期", HelpText = "員工正式到職的日期" },
-                new() { PropertyName = nameof(Employee.ResignationDate), Label = "離職日期", FieldType = FormFieldType.Date, Placeholder = "請選擇離職日期", HelpText = "員工離職日期（在職者免填）" },
+                new() { PropertyName = nameof(Employee.HireDate), Label = L["Field.HireDate"], FieldType = FormFieldType.Date, Placeholder = L["Placeholder.PleaseSelect", L["Field.HireDate"]], HelpText = "員工正式到職的日期" },
+                new() { PropertyName = nameof(Employee.ResignationDate), Label = L["Field.ResignDate"], FieldType = FormFieldType.Date, Placeholder = L["Placeholder.PleaseSelect", L["Field.ResignDate"]], HelpText = "員工離職日期（在職者免填）" },
                 new()
                 {
-                    PropertyName = nameof(Employee.EmploymentStatus), Label = "在職狀態", FieldType = FormFieldType.Select, HelpText = "員工目前的在職狀態",
+                    PropertyName = nameof(Employee.EmploymentStatus), Label = L["Field.EmploymentStatus"], FieldType = FormFieldType.Select, HelpText = "員工目前的在職狀態",
                     Options = Enum.GetValues<EmployeeStatus>().Select(es => new SelectOption { Text = GetEmployeeStatusDisplayName(es), Value = ((int)es).ToString() }).ToList()
                 },
                 FormFieldConfigurationHelper.CreateRemarksField<Employee>()
             };
 
-            var layout = FormSectionHelper<Employee>.Create()
+            // 車輛模組狀態（停用時隱藏車輛 Tab）
+            var isVehiclesEnabled = await CompanyModuleService.IsModuleEnabledAsync("Vehicles");
+            if (!isVehiclesEnabled)
+                isVehiclesEnabled = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+
+            var builder = FormSectionHelper<Employee>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     e => e.Code, e => e.Name, e => e.Gender, e => e.BirthDate, e => e.IdNumber,
                     e => e.Mobile, e => e.Email, e => e.EmergencyContact, e => e.EmergencyPhone)
@@ -379,8 +386,12 @@
                     e => e.DepartmentId, e => e.EmployeePositionId, e => e.HireDate, e => e.ResignationDate, e => e.EmploymentStatus)
                 .AddToSection(FormSectionNames.AdditionalData,
                     e => e.Remarks)
-                .GroupIntoTab("員工資料", "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData)
-                .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())
+                .GroupIntoTab("員工資料", "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData);
+
+            if (isVehiclesEnabled)
+                builder = builder.GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent());
+
+            var layout = builder
                 .GroupIntoCustomTab("個人工具", "bi-tools", CreateToolTabContent())
                 .GroupIntoCustomTab("教育訓練", "bi-mortarboard", CreateTrainingTabContent())
                 .BuildAll();

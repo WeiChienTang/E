@@ -196,6 +196,33 @@ namespace ERPCore2.Services
             }
         }
 
+        protected override async Task<ServiceResult> CanDeleteAsync(AccountItem entity)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                bool hasJournalLines = await context.JournalEntryLines
+                    .AnyAsync(l => l.AccountItemId == entity.Id);
+
+                if (hasJournalLines)
+                    return ServiceResult.Failure("無法刪除此科目，因為已有傳票明細正在使用");
+
+                bool hasChildren = await context.AccountItems
+                    .AnyAsync(a => a.ParentId == entity.Id);
+
+                if (hasChildren)
+                    return ServiceResult.Failure("無法刪除此科目，因為有子科目存在");
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { EntityId = entity.Id });
+                return ServiceResult.Failure("檢查刪除條件時發生錯誤");
+            }
+        }
+
         public override async Task<ServiceResult> ValidateAsync(AccountItem entity)
         {
             try

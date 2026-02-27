@@ -1,6 +1,7 @@
 @page "/suppliers"
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Supplier" 
@@ -9,7 +10,7 @@
                           EntityBasePath="/suppliers"                          
                           PageTitle="廠商維護"
                           PageSubtitle="管理所有廠商資料與聯絡資訊"
-                          EntityName="廠商"
+                          EntityName="@L["Entity.Supplier"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

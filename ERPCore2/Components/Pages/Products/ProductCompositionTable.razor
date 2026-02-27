@@ -4,6 +4,7 @@
 @inject IProductService ProductService
 @inject IUnitService UnitService
 @inject IProductCategoryService ProductCategoryService
+@inject IStringLocalizer<SharedResource> L
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
 
@@ -27,7 +28,8 @@
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-        <InteractiveTableComponent TItem="CompositionItem" 
+        <InteractiveTableComponent TItem="CompositionItem"
+                                  OnDataChanged="@NotifyItemsChanged"
                                   Items="@CompositionItems"
                                   ColumnDefinitions="@GetColumnDefinitions()"
                                   IsReadOnly="@IsReadOnly"
@@ -188,7 +190,7 @@
             // 材料商品選擇欄位 - 使用 SearchableSelect
             new() 
             { 
-                Title = "材料編號/名稱", 
+                Title = L["Column.MaterialCodeName"],
                 Tooltip = "搜尋並選擇材料（輸入編號或名稱）",
                 PropertyName = nameof(CompositionItem.ProductSearchValue),
                 EmptyCheckPropertyName = nameof(CompositionItem.SelectedProduct),
@@ -246,7 +248,7 @@
             // 製程單位 - 唯讀顯示
             new() 
             { 
-                Title = "製程單位", 
+                Title = L["Column.ProductionUnit"],
                 Tooltip = "材料的製程單位（由商品設定決定）",
                 PropertyName = "ProductionUnitName",
                 ColumnType = InteractiveColumnType.Display,
@@ -258,7 +260,7 @@
             // 所需數量 - 數字輸入
             new() 
             { 
-                Title = "所需數量", 
+                Title = L["Column.RequiredQuantity"],
                 Tooltip = "輸入此材料所需的數量",
                 PropertyName = nameof(CompositionItem.Quantity),
                 ColumnType = InteractiveColumnType.Number,

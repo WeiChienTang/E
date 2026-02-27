@@ -4,6 +4,7 @@
 @inject IWarehouseService WarehouseService
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @using ERPCore2.Components.Shared.UI.Form
 @using ERPCore2.Models.Enums
 @using ERPCore2.Data.Entities
@@ -16,9 +17,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@InventoryTransactionId"
                           Service="@InventoryTransactionService"
-                          EntityName="庫存異動記錄"
-                          EntityNamePlural="庫存異動記錄"
-                          ModalTitle="檢視庫存異動記錄 (唯讀)"
+                          EntityName="@L["Entity.InventoryTransaction"]"
+                          EntityNamePlural="@L["Entity.InventoryTransaction"]"
+                          ModalTitle="@L["Message.ViewReadOnly", L["Entity.InventoryTransaction"]]"
                           Size="GenericEditModalComponent<InventoryTransaction, IInventoryTransactionService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -213,7 +214,7 @@
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.TransactionNumber),
-                    Label = "異動單號",
+                    Label = L["Field.TransactionCode"],
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
                     IsReadOnly = true
@@ -221,7 +222,7 @@
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.TransactionType),
-                    Label = "異動類型",
+                    Label = L["Field.TransactionType"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = GetTransactionTypeOptions(),
@@ -230,7 +231,7 @@
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.TransactionDate),
-                    Label = "異動日期",
+                    Label = L["Field.TransactionDate"],
                     FieldType = FormFieldType.DateTime,
                     IsRequired = true,
                     IsReadOnly = true
@@ -238,7 +239,7 @@
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.WarehouseId),
-                    Label = "倉庫",
+                    Label = L["Entity.Warehouse"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = warehouses.Select(w => new SelectOption 
@@ -253,7 +254,7 @@
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.SourceDocumentType),
-                    Label = "來源單據類型",
+                    Label = L["Field.SourceDocumentType"],
                     FieldType = FormFieldType.Text,
                     IsRequired = false,
                     IsReadOnly = true
@@ -261,7 +262,7 @@
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.SourceDocumentId),
-                    Label = "來源單據ID",
+                    Label = L["Field.SourceDocumentId"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true
@@ -271,7 +272,7 @@
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.TotalQuantity),
-                    Label = "總數量",
+                    Label = L["Field.TotalQuantity"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true
@@ -279,7 +280,7 @@
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.TotalAmount),
-                    Label = "總金額",
+                    Label = L["Field.TotalAmountFull"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true
@@ -289,7 +290,7 @@
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.EmployeeId),
-                    Label = "操作人員",
+                    Label = L["Field.Operator"],
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
                     Options = employees.Select(e => new SelectOption 

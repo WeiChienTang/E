@@ -6,6 +6,7 @@
 @inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Quotation" 
@@ -14,7 +15,7 @@
                       EntityBasePath="/quotations"
                       PageTitle="報價管理"
                       PageSubtitle="管理所有報價單資料與明細資訊"
-                      EntityName="報價單"
+                      EntityName="@L["Entity.Quotation"]"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
@@ -44,7 +45,7 @@
                             IsVisible="@showBatchApprovalModal"
                             IsVisibleChanged="@((bool visible) => showBatchApprovalModal = visible)"
                             Title="報價單批次審核"
-                            EntityName="報價單"
+                            EntityName="@L["Entity.Quotation"]"
                             LoadPendingItems="@LoadPendingQuotationsAsync"
                             OnApproveItem="@ApproveSingleQuotationAsync"
                             OnApproveAll="@ApproveAllQuotationsAsync"

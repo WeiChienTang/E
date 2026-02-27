@@ -20,8 +20,6 @@
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    UseWhiteCloseButton="true"
                    BodyCssClass="p-4"
-                   IsLoading="@isLoading"
-                   LoadingMessage="@loadingMessage"
                    OnClose="@HandleCancel">
     
     <HeaderButtons>
@@ -42,26 +40,45 @@
     </HeaderButtons>
     
     <BodyContent>
-        @if (filterConfig == null)
-        {
-            <div class="alert alert-warning">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                找不到報表 ID「@ReportId」的篩選配置
-            </div>
-        }
-        else if (filterConfig.GetFilterTemplateType() != typeof(object))
-        {
-            <DynamicComponent Type="@filterConfig.GetFilterTemplateType()" 
-                             @ref="dynamicComponentRef"
-                             Parameters="@GetTemplateParameters()" />
-        }
-        else
-        {
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                此報表尚未配置篩選模板
-            </div>
-        }
+        <div class="filter-body-wrapper">
+            @if (filterConfig == null)
+            {
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    找不到報表 ID「@ReportId」的篩選配置
+                </div>
+            }
+            else if (filterConfig.GetFilterTemplateType() != typeof(object))
+            {
+                <DynamicComponent Type="@filterConfig.GetFilterTemplateType()"
+                                 @ref="dynamicComponentRef"
+                                 Parameters="@GetTemplateParameters()" />
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    此報表尚未配置篩選模板
+                </div>
+            }
+
+            @* 預覽產生進度條 Overlay *@
+            @if (_showPreviewProgress)
+            {
+                <div class="filter-progress-overlay">
+                    <div class="filter-progress-card">
+                        <div class="filter-progress-message">@_previewProgressMessage</div>
+                        <div class="progress filter-progress-bar" role="progressbar"
+                             aria-valuenow="@_previewProgressValue" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                                 style="width: @(_previewProgressValue)%">
+                                @_previewProgressValue%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
     </BodyContent>
     
 </BaseModalComponent>
@@ -119,8 +136,12 @@
     private ReportPreviewModalComponent? reportPreviewModal;
     
     private bool isLoading = false;
-    private string loadingMessage = "處理中...";
     private bool showPreview = false;
+
+    // 預覽產生進度條
+    private bool _showPreviewProgress = false;
+    private int _previewProgressValue = 0;
+    private string _previewProgressMessage = "";
     
     private List<byte[]>? previewImages;
     private FormattedDocument? formattedDocument;
@@ -192,8 +213,18 @@
         return parameters;
     }
     
+    // ===== 預覽進度條 =====
+
+    private async Task SetPreviewProgress(int value, string message)
+    {
+        _previewProgressValue = value;
+        _previewProgressMessage = message;
+        StateHasChanged();
+        await Task.Delay(10);
+    }
+
     // ===== 事件處理方法 =====
-    
+
     private async Task HandleVisibilityChanged(bool visible)
     {
         if (!visible)
@@ -234,9 +265,9 @@
             }
             
             isLoading = true;
-            loadingMessage = "正在產生報表...";
-            StateHasChanged();
-            
+            _showPreviewProgress = true;
+            await SetPreviewProgress(10, "正在準備篩選條件...");
+
             // 產生文件名稱
             documentName = filterConfig?.GetDocumentName?.Invoke(criteria) 
                           ?? $"報表-{DateTime.Now:yyyyMMddHHmmss}";
@@ -264,31 +295,35 @@
                 if (typedRenderMethod != null)
                 {
                     // 使用具體類型的 RenderBatchToImagesAsync 方法
-                    loadingMessage = "正在產生預覽圖片...";
-                    StateHasChanged();
-                    
+                    await SetPreviewProgress(30, "正在產生報表...");
+
                     var task = (Task<BatchPreviewResult>)typedRenderMethod.Invoke(reportService, new object[] { criteria })!;
                     var result = await task;
-                    
+
                     if (!result.IsSuccess)
                     {
                         await NotificationService.ShowWarningAsync(result.ErrorMessage ?? "產生預覽失敗");
                         return;
                     }
-                    
+
+                    await SetPreviewProgress(90, "正在準備預覽...");
+
                     // 設定預覽資料
                     previewImages = result.PreviewImages;
                     formattedDocument = result.MergedDocument;
-                    
+
                     // 保存報表服務和具體類型的 Criteria（紙張變更時用）
                     currentReportService = reportService;
                     currentBatchCriteria = null;
                     currentTypedCriteria = criteria;
-                    
+
+                    await SetPreviewProgress(100, "完成！");
+                    await Task.Delay(400);
+
                     // 關閉篩選 Modal，開啟預覽 Modal
                     await IsVisibleChanged.InvokeAsync(false);
                     showPreview = true;
-                    
+
                     await NotificationService.ShowSuccessAsync($"已產生 {result.DocumentCount} 筆資料的預覽，共 {result.TotalPages} 頁");
                 }
                 else
@@ -314,30 +349,34 @@
                         new[] { typeof(BatchPrintCriteria) });
                     if (renderMethod != null)
                     {
-                        loadingMessage = "正在產生預覽圖片...";
-                        StateHasChanged();
-                        
+                        await SetPreviewProgress(30, "正在產生報表...");
+
                         var task = (Task<BatchPreviewResult>)renderMethod.Invoke(reportService, new object[] { batchCriteria })!;
                         var result = await task;
-                        
+
                         if (!result.IsSuccess)
                         {
                             await NotificationService.ShowWarningAsync(result.ErrorMessage ?? "產生預覽失敗");
                             return;
                         }
-                        
+
+                        await SetPreviewProgress(90, "正在準備預覽...");
+
                         // 設定預覽資料
                         previewImages = result.PreviewImages;
                         formattedDocument = result.MergedDocument;
-                        
+
                         // 保存報表服務和篩選條件，用於紙張變更時重新產生預覽
                         currentReportService = reportService;
                         currentBatchCriteria = batchCriteria;
-                        
+
+                        await SetPreviewProgress(100, "完成！");
+                        await Task.Delay(400);
+
                         // 關閉篩選 Modal，開啟預覽 Modal
                         await IsVisibleChanged.InvokeAsync(false);
                         showPreview = true;
-                        
+
                         await NotificationService.ShowSuccessAsync($"已產生 {result.DocumentCount} 筆單據的預覽，共 {result.TotalPages} 頁");
                     }
                     else
@@ -363,6 +402,7 @@
         finally
         {
             isLoading = false;
+            _showPreviewProgress = false;
             StateHasChanged();
         }
     }
@@ -403,13 +443,13 @@
         try
         {
             if (currentReportService == null) return;
-            
+
             // 必須有 BatchPrintCriteria 或 TypedCriteria 其中一個
             if (currentBatchCriteria == null && currentTypedCriteria == null) return;
-            
+
             isLoading = true;
-            loadingMessage = "正在更新預覽...";
-            StateHasChanged();
+            _showPreviewProgress = true;
+            await SetPreviewProgress(10, "正在更新紙張設定...");
             
             BatchPreviewResult? result = null;
             
@@ -432,6 +472,7 @@
                 
                 if (typedRenderMethod != null)
                 {
+                    await SetPreviewProgress(30, "正在重新渲染...");
                     var task = (Task<BatchPreviewResult>)typedRenderMethod.Invoke(currentReportService, new object[] { currentTypedCriteria })!;
                     result = await task;
                 }
@@ -440,7 +481,7 @@
             {
                 // 使用標準 BatchPrintCriteria
                 currentBatchCriteria.PaperSetting = paperSetting;
-                
+
                 // 更新 FormattedDocument 的紙張尺寸
                 if (formattedDocument != null)
                 {
@@ -451,20 +492,23 @@
                     formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
                     formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
                 }
-                
+
                 // 呼叫批次預覽方法
-                var renderMethod = currentReportService.GetType().GetMethod("RenderBatchToImagesAsync", 
+                var renderMethod = currentReportService.GetType().GetMethod("RenderBatchToImagesAsync",
                     new[] { typeof(BatchPrintCriteria) });
                 if (renderMethod != null)
                 {
+                    await SetPreviewProgress(30, "正在重新渲染...");
                     var task = (Task<BatchPreviewResult>)renderMethod.Invoke(currentReportService, new object[] { currentBatchCriteria })!;
                     result = await task;
                 }
             }
-            
+
             // 更新預覽圖片
             if (result != null && result.IsSuccess)
             {
+                await SetPreviewProgress(100, "更新完成！");
+                await Task.Delay(300);
                 previewImages = result.PreviewImages;
                 formattedDocument = result.MergedDocument;
             }
@@ -476,6 +520,7 @@
         finally
         {
             isLoading = false;
+            _showPreviewProgress = false;
             StateHasChanged();
         }
     }

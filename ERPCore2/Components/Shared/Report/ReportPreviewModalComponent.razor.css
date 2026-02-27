@@ -11,6 +11,7 @@
     height: calc(100vh - 210px); /* 配合 BaseModalComponent 的 modal-body max-height */
     min-height: 300px;
     overflow: hidden; /* 防止整體佈局產生滾動條 */
+    position: relative; /* 供 export-progress-overlay 定位使用 */
 }
 
 /* 左側設定面板 */
@@ -309,12 +310,59 @@
         padding: 0.5rem 0;
         gap: 1rem;
     }
-    
+
     .page-preview-container {
         max-width: calc(100vw - 2rem);
     }
-    
+
     .formatted-page-preview {
         max-width: 100%;
     }
+}
+
+/* ===== 匯出進度條 Overlay ===== */
+
+.export-progress-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.export-progress-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem 3rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    min-width: 360px;
+    text-align: center;
+}
+
+.export-progress-message {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+.export-progress-bar {
+    height: 28px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.export-progress-bar .progress-bar {
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.4s ease;
 }

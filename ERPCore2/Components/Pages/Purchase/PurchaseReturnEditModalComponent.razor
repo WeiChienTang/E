@@ -8,6 +8,7 @@
 @inject ISupplierService SupplierService
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IProductService ProductService
+@inject IPurchaseReturnReasonService PurchaseReturnReasonService
 @inject INotificationService NotificationService
 @inject ISystemParameterService SystemParameterService
 @inject ISetoffDocumentService SetoffDocumentService
@@ -16,6 +17,7 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject ERPCore2.Data.Context.AppDbContext DbContext
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="PurchaseReturn" 
                           TService="IPurchaseReturnService"
@@ -24,9 +26,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@PurchaseReturnId"
                           Service="@PurchaseReturnService"
-                          EntityName="進貨退出"
-                          EntityNamePlural="進貨退出"
-                          ModalTitle="@(PurchaseReturnId.HasValue ? "編輯進貨退出" : "新增進貨退出")"
+                          EntityName="@L["Entity.PurchaseReturn"]"
+                          EntityNamePlural="@L["Entity.PurchaseReturn"]"
+                          ModalTitle="@(PurchaseReturnId.HasValue ? L["Message.EditTitle", L["Entity.PurchaseReturn"]].ToString() : L["Message.CreateTitle", L["Entity.PurchaseReturn"]].ToString())"
                           Size="GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -39,8 +41,8 @@
                           UseGenericSave="false"
                           CustomValidator="@ValidatePurchaseReturnDetailsAsync"
                           SaveHandler="@SavePurchaseReturnWithDetails"
-                          SaveSuccessMessage="@(PurchaseReturnId.HasValue ? "進貨退出更新成功" : "進貨退出新增成功")"
-                          SaveFailureMessage="進貨退出儲存失敗"
+                          SaveSuccessMessage="@(PurchaseReturnId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseReturn"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseReturn"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseReturn"]]"
                           RequiredPermission="PurchaseReturn.Read"
                           OnEntitySaved="@OnPurchaseReturnSaved"
                           OnCancel="@OnCancel"
@@ -48,12 +50,12 @@
                           OnTaxMethodChanged="@(() => HandleReturnDetailsChanged(purchaseReturnDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          CustomModules="@GetCustomModules()"
+                          TabDefinitions="@tabDefinitions"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@PurchaseReturnReportService"
                           ReportId="PO003"
-                          ReportPreviewTitle="進貨退出單預覽"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.PurchaseReturnDoc"]]"
                           GetReportDocumentName="@(e => $"進貨退出單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
@@ -64,6 +66,13 @@
                                  SetoffDocumentId="@selectedSetoffDocumentId"
                                  OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
                                  OnCancel="@(() => showSetoffDocumentModal = false)" />
+
+@* 進貨單編輯 Modal（從原始進貨 Tab 開啟） *@
+<PurchaseReceivingEditModalComponent @ref="purchaseReceivingEditModal"
+                                     IsVisible="@showPurchaseReceivingModal"
+                                     IsVisibleChanged="@((bool visible) => showPurchaseReceivingModal = visible)"
+                                     PurchaseReceivingId="@selectedPurchaseReceivingId"
+                                     OnCancel="@(() => showPurchaseReceivingModal = false)" />
 
 @code {
     // 參數
@@ -83,6 +92,7 @@
     // 表單欄位和區塊
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
 
     // 相關資料
     private List<Supplier> suppliers = new();
@@ -91,6 +101,7 @@
     
     // 下拉選單選項
     private List<SelectOption> taxCalculationMethodOptions = new();
+    private List<PurchaseReturnReason> returnReasons = new();
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -116,6 +127,18 @@
         try
         {
             UpdateFilterFieldsState();
+
+            if (loadedEntityId > 0)
+            {
+                if (receivingTab != null) await receivingTab.LoadAsync(loadedEntityId);
+                if (setoffTab != null) await setoffTab.LoadAsync(loadedEntityId);
+            }
+            else
+            {
+                receivingTab?.Clear();
+                setoffTab?.Clear();
+            }
+
             StateHasChanged();
         }
         catch (Exception ex)
@@ -130,6 +153,15 @@
     private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
     private bool showSetoffDocumentModal = false;
     private int? selectedSetoffDocumentId = null;
+
+    // ===== Tab 元件參考 =====
+    private PurchaseReturnReceivingTab? receivingTab;
+    private PurchaseReturnSetoffTab? setoffTab;
+
+    // ===== 進貨單 Modal（從原始進貨 Tab 開啟） =====
+    private PurchaseReceivingEditModalComponent? purchaseReceivingEditModal;
+    private bool showPurchaseReceivingModal = false;
+    private int? selectedPurchaseReceivingId = null;
     
     // ===== 系統參數 - 稅率快取（避免重複查詢資料庫） =====
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
@@ -327,7 +359,8 @@
             await Task.WhenAll(
                 LoadSuppliersAsync(),
                 LoadPurchaseReceivingsAsync(),
-                LoadProductsAsync()
+                LoadProductsAsync(),
+                LoadReturnReasonsAsync()
             );
             
             // 一次性載入系統稅率（避免每次計算都查詢資料庫）
@@ -366,6 +399,18 @@
         }
     }
 
+    private async Task LoadReturnReasonsAsync()
+    {
+        try
+        {
+            returnReasons = await PurchaseReturnReasonService.GetActiveReasonsAsync();
+        }
+        catch (Exception)
+        {
+            returnReasons = new List<PurchaseReturnReason>();
+        }
+    }
+
     private async Task LoadProductsAsync()
     {
         try
@@ -399,9 +444,9 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReturn.Code),
-                    Label = "退回單號",
+                    Label = L["Field.PurchaseReturnCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入退回單號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PurchaseReturnCode"]],
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "系統自動生成的唯一退回單號，也可手動修改",
@@ -410,9 +455,9 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReturn.SupplierId),
-                    Label = "廠商",
+                    Label = L["Entity.Supplier"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇廠商",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Supplier"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
@@ -421,9 +466,9 @@
                 new()
                 {
                     PropertyName = "FilterProductId", // 篩選用的虛擬欄位，不儲存至資料庫
-                    Label = "商品",
+                    Label = L["Entity.Product"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇商品",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇特定商品進行篩選，或留空顯示所有商品。此欄位不會儲存。",
@@ -433,9 +478,9 @@
                 new()
                 {
                     PropertyName = "FilterPurchaseReceivingId", // 篩選用的虛擬欄位，不儲存至資料庫
-                    Label = "進貨單",
+                    Label = L["Entity.PurchaseReceivingDoc"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇進貨單",
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.PurchaseReceivingDoc"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇特定進貨單進行篩選，或留空顯示所有進貨單。此欄位不會儲存。",
@@ -445,15 +490,30 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReturn.ReturnDate),
-                    Label = "退回日期",
+                    Label = L["Field.PurchaseReturnDate"],
                     FieldType = FormFieldType.Date,
                     HelpText = "請選擇退回日期",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
+                    PropertyName = nameof(PurchaseReturn.ReturnReasonId),
+                    Label = L["Entity.PurchaseReturnReason"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = new List<SelectOption>()
+                        .Concat(returnReasons.Select(r => new SelectOption
+                        {
+                            Text = r.Name,
+                            Value = r.Id.ToString()
+                        })).ToList(),
+                    HelpText = "選擇性填寫退出原因",
+                    IsReadOnly = hasUndeletableDetails
+                },
+                new()
+                {
                     PropertyName = nameof(PurchaseReturn.TotalReturnAmount),
-                    Label = "金額",
+                    Label = L["Field.Amount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
@@ -463,7 +523,7 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReturn.ReturnTaxAmount),
-                    Label = "稅額",
+                    Label = L["Field.TaxAmount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
@@ -473,7 +533,7 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReturn.TotalReturnAmountWithTax),
-                    Label = "總額",
+                    Label = L["Field.TotalAmount"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
@@ -485,11 +545,12 @@
                 ),
             };
 
-            formSections = FormSectionHelper<PurchaseReturn>.Create()
+            var layout = FormSectionHelper<PurchaseReturn>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.Code,
                     pr => pr.SupplierId,
-                    pr => pr.ReturnDate)
+                    pr => pr.ReturnDate,
+                    pr => pr.ReturnReasonId)
                 .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId", "FilterPurchaseReceivingId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     pr => pr.TotalReturnAmount,
@@ -497,7 +558,15 @@
                     pr => pr.TotalReturnAmountWithTax)
                 .AddToSection(FormSectionNames.AdditionalInfo,
                     pr => pr.Remarks)
-                .Build();
+                .GroupIntoTab("退回資料", "bi-file-earmark-text",
+                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
+                    FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
+                .GroupIntoCustomTab("退回明細", "bi-list-ul", CreateReturnDetailManagerContent())
+                .GroupIntoCustomTab("原始進貨", "bi-box-arrow-in-down", CreateReceivingTabContent())
+                .GroupIntoCustomTab("沖款記錄", "bi-cash-coin", CreateSetoffTabContent())
+                .BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
             
             // 關鍵：如果實體已經載入且有廠商ID，立即更新商品和進貨單選項
             if (editModalComponent?.Entity?.SupplierId > 0)
@@ -548,6 +617,7 @@
             {
                 nameof(PurchaseReturn.Code),
                 nameof(PurchaseReturn.ReturnDate),
+                nameof(PurchaseReturn.ReturnReasonId),
                 nameof(BaseEntity.Remarks),
                 nameof(PurchaseReturn.SupplierId)
             },
@@ -858,7 +928,7 @@
         @* 轉沖款按鈕 - 只在進貨退出已儲存時顯示 *@
         @if (editModalComponent?.Entity != null && PurchaseReturnId.HasValue)
         {
-            <GenericButtonComponent Text="轉沖款" 
+            <GenericButtonComponent Text="@L["Button.ConvertToSetoff"]"
                                   Variant="ButtonVariant.Green" 
                                   OnClick="HandleCreateSetoffFromReturn" />
         }
@@ -992,14 +1062,6 @@
     // ===== 輔助方法 =====
 
     /// <summary>
-    /// 配置自訂模組
-    /// </summary>
-    private List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule> GetCustomModules()
-    {
-        return CustomModuleHelper.CreateSingle(editModalComponent, CreateReturnDetailManagerContent(), cssClass: "mt-4");
-    }
-
-    /// <summary>
     /// 創建退貨明細管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateReturnDetailManagerContent() => __builder =>
@@ -1026,6 +1088,44 @@
                                  OnOpenRelatedDocument="@HandleOpenRelatedDocument" />
         </DetailSectionWrapper>
     };
+
+    /// <summary>
+    /// 原始進貨 Tab 內容
+    /// </summary>
+    private RenderFragment CreateReceivingTabContent() => __builder =>
+    {
+        <PurchaseReturnReceivingTab @ref="receivingTab"
+                                    OnOpenReceiving="@HandleOpenPurchaseReceiving" />
+    };
+
+    /// <summary>
+    /// 沖款記錄 Tab 內容
+    /// </summary>
+    private RenderFragment CreateSetoffTabContent() => __builder =>
+    {
+        <PurchaseReturnSetoffTab @ref="setoffTab"
+                                 OnOpenSetoff="@HandleOpenSetoffFromTab" />
+    };
+
+    /// <summary>
+    /// 從原始進貨 Tab 開啟進貨單
+    /// </summary>
+    private void HandleOpenPurchaseReceiving(int id)
+    {
+        selectedPurchaseReceivingId = id;
+        showPurchaseReceivingModal = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 從沖款記錄 Tab 開啟沖款單
+    /// </summary>
+    private void HandleOpenSetoffFromTab(int id)
+    {
+        selectedSetoffDocumentId = id;
+        showSetoffDocumentModal = true;
+        StateHasChanged();
+    }
 
     /// <summary>
     /// 處理退貨明細變更

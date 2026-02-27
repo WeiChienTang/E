@@ -63,6 +63,11 @@ namespace ERPCore2.Services
         /// <param name="checkApproval">是否檢查審核狀態（true=只載入已審核，false=不檢查審核）</param>
         Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool includeCompleted, bool checkApproval = true);
         Task<List<PurchaseOrder>> GetIncompleteOrdersBySupplierAsync(int supplierId);
+
+        /// <summary>
+        /// 依採購進貨單 ID 取得來源採購訂單（跨進貨明細查詢）
+        /// </summary>
+        Task<List<PurchaseOrder>> GetByPurchaseReceivingIdAsync(int purchaseReceivingId);
         
         // 稅額計算
         /// <summary>

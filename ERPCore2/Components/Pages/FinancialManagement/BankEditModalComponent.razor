@@ -1,25 +1,26 @@
 @* 可重用的銀行編輯組件 - 可在任何頁面中嵌入 *@
 @inject IBankService BankService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="Bank" 
+<GenericEditModalComponent TEntity="Bank"
                           TService="IBankService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@BankId"
                           Service="@BankService"
-                          EntityName="銀行"
-                          EntityNamePlural="銀行"
-                          ModalTitle="@(BankId.HasValue ? "編輯銀行" : "新增銀行")"
+                          EntityName="@L["Entity.Bank"]"
+                          EntityNamePlural="@L["Entity.Bank"]"
+                          ModalTitle="@(BankId.HasValue ? L["Message.EditTitle", L["Entity.Bank"]].ToString() : L["Message.CreateTitle", L["Entity.Bank"]].ToString())"
                           Size="GenericEditModalComponent<Bank, IBankService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadBankData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(BankId.HasValue ? "銀行更新成功" : "銀行新增成功")"
-                          SaveFailureMessage="銀行儲存失敗"
+                          SaveSuccessMessage="@(BankId.HasValue ? L["Message.UpdateSuccess", L["Entity.Bank"]].ToString() : L["Message.CreateSuccess", L["Entity.Bank"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Bank"]]"
                           RequiredPermission="Bank.Read"
                           OnEntitySaved="@OnBankSaved"
                           OnCancel="@OnCancel" />
@@ -60,9 +61,9 @@
                 new ()
                 {
                     PropertyName = nameof(Bank.Code),
-                    Label = "銀行編號",
+                    Label = L["Field.BankCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入銀行編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankCode"]],
                     IsRequired = true,
                     HelpText = "銀行的唯一識別編號，新增時系統會自動產生，也可手動修改"
                 },
@@ -70,27 +71,27 @@
                 new()
                 {
                     PropertyName = nameof(Bank.BankName),
-                    Label = "銀行名稱",
+                    Label = L["Field.BankName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入銀行名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankName"]],
                     IsRequired = true,
                     HelpText = "銀行的正式中文名稱"
                 },
                 new()
                 {
                     PropertyName = nameof(Bank.BankNameEn),
-                    Label = "英文名稱",
+                    Label = L["Field.EnglishName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入英文名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.EnglishName"]],
                     IsRequired = false,
                     HelpText = "銀行的英文名稱"
                 },
                 new()
                 {
                     PropertyName = nameof(Bank.SwiftCode),
-                    Label = "SWIFT編號",
+                    Label = L["Field.SwiftCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入SWIFT編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.SwiftCode"]],
                     IsRequired = false,
                     HelpText = "國際銀行匯款使用的SWIFT編號"
                 },
@@ -99,27 +100,27 @@
                 new()
                 {
                     PropertyName = nameof(Bank.Phone),
-                    Label = "電話",
+                    Label = L["Field.Phone"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入電話號碼",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Phone"]],
                     IsRequired = false,
                     HelpText = "銀行的聯絡電話"
                 },
                 new()
                 {
                     PropertyName = nameof(Bank.Fax),
-                    Label = "傳真",
+                    Label = L["Field.Fax"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入傳真號碼",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Fax"]],
                     IsRequired = false,
                     HelpText = "銀行的傳真號碼"
                 },
                 new()
                 {
                     PropertyName = nameof(Bank.Address),
-                    Label = "地址",
+                    Label = L["Field.Address"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入地址",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Address"]],
                     IsRequired = false,
                     HelpText = "銀行的地址",
                     ContainerCssClass = "col-6"

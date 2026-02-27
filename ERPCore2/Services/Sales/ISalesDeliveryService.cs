@@ -45,6 +45,11 @@ namespace ERPCore2.Services
         /// 使用原始單號搭配 OperationType=Adjust
         /// </summary>
         Task<ServiceResult> UpdateInventoryByDifferenceAsync(int id, int updatedBy = 0);
+
+        /// <summary>
+        /// 依銷貨退回單 ID 取得原始出貨單（跨退回明細查詢）
+        /// </summary>
+        Task<List<SalesDelivery>> GetBySalesReturnIdAsync(int salesReturnId);
     }
 
     /// <summary>

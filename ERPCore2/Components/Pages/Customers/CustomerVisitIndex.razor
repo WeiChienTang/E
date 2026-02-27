@@ -1,6 +1,7 @@
 @page "/customer-visits"
 @inject ICustomerVisitService CustomerVisitService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="CustomerVisit"
@@ -9,7 +10,7 @@
                           EntityBasePath="/customer-visits"
                           PageTitle="拜訪紀錄維護"
                           PageSubtitle="管理客戶拜訪與聯繫紀錄"
-                          EntityName="拜訪紀錄"
+                          EntityName="@L["Entity.CustomerVisit"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

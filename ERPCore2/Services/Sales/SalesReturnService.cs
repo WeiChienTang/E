@@ -1257,6 +1257,51 @@ namespace ERPCore2.Services
                 return ServiceResult.Failure("確認退回單過程發生錯誤");
             }
         }
+
+        public async Task<List<SalesReturn>> GetBySalesOrderIdAsync(int salesOrderId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var orderDetailIds = await context.SalesOrderDetails
+                    .Where(sod => sod.SalesOrderId == salesOrderId)
+                    .Select(sod => sod.Id)
+                    .ToListAsync();
+
+                var deliveryDetailIds = await context.SalesDeliveryDetails
+                    .Where(sdd => sdd.SalesOrderDetailId.HasValue &&
+                                  orderDetailIds.Contains(sdd.SalesOrderDetailId.Value))
+                    .Select(sdd => sdd.Id)
+                    .ToListAsync();
+
+                var returnIds = await context.SalesReturnDetails
+                    .Where(d => d.SalesDeliveryDetailId.HasValue &&
+                                deliveryDetailIds.Contains(d.SalesDeliveryDetailId.Value))
+                    .Select(d => d.SalesReturnId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.SalesReturns
+                    .Include(sr => sr.Customer)
+                    .Include(sr => sr.Employee)
+                    .Include(sr => sr.ReturnReason)
+                    .Where(sr => returnIds.Contains(sr.Id))
+                    .OrderByDescending(sr => sr.ReturnDate)
+                    .ThenBy(sr => sr.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesOrderIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetBySalesOrderIdAsync),
+                    ServiceType = GetType().Name,
+                    SalesOrderId = salesOrderId
+                });
+                return new List<SalesReturn>();
+            }
+        }
     }
 }
 

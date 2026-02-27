@@ -3,6 +3,7 @@
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Models.Enums
 @using ERPCore2.Helpers
+@inject IStringLocalizer<SharedResource> L
 @inject ISalesDeliveryDetailService SalesDeliveryDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject INotificationService NotificationService
@@ -28,7 +29,8 @@ else
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
-                                      TItem="ReturnItem" 
+                                      TItem="ReturnItem"
+                                      OnDataChanged="@NotifyDetailsChanged"
                                       Items="@ReturnItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"                                      
@@ -472,7 +474,7 @@ else
         // 出貨明細選擇欄位 - 使用 SearchableSelect 類型（只顯示有銷貨的商品）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "商品編號/名稱",
+            Title = L["Column.ProductCodeName"],
             PropertyName = "DeliveryDetailSearchValue",
             EmptyCheckPropertyName = "SelectedDeliveryDetail",  //  檢查物件屬性是否為空
             TriggerEmptyRowOnFilled = true,  //  選擇後自動新增空行
@@ -533,7 +535,7 @@ else
         // 原始銷售數量欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "原始數量", 
+            Title = L["Column.OriginalQuantity"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
@@ -551,7 +553,7 @@ else
         // 退貨數量欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "退貨數量", 
+            Title = L["Column.SalesReturnQuantity"],
             PropertyName = nameof(ReturnItem.ReturnQuantity),
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
@@ -579,7 +581,7 @@ else
         // 單價欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "退貨單價", 
+            Title = L["Column.ReturnUnitPrice"],
             PropertyName = nameof(ReturnItem.OriginalUnitPrice),
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
@@ -590,7 +592,7 @@ else
         // 折扣欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "當初折扣(%)", 
+            Title = L["Column.OriginalDiscount"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "100px",
@@ -609,7 +611,7 @@ else
         // 稅率欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "稅率(%)", 
+            Title = L["Field.TaxRate"],
             PropertyName = nameof(ReturnItem.TaxRate),
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
@@ -639,7 +641,7 @@ else
         // 小計欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "小計", 
+            Title = L["Column.Subtotal"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
@@ -659,7 +661,7 @@ else
         // 備註欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "備註", 
+            Title = L["Label.Remarks"],
             PropertyName = nameof(ReturnItem.Remarks),
             ColumnType = InteractiveColumnType.Input,
             Width = "150px",

@@ -1,6 +1,7 @@
 @page "/vehicle-maintenances"
 @inject IVehicleMaintenanceService VehicleMaintenanceService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="VehicleMaintenance" 
@@ -9,7 +10,7 @@
                           EntityBasePath="/vehicle-maintenances"
                           PageTitle="保養紀錄維護"
                           PageSubtitle="管理車輛保養與維修紀錄"
-                          EntityName="保養紀錄"
+                          EntityName="@L["Entity.VehicleMaintenance"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

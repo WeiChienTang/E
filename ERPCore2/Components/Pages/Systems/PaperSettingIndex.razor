@@ -2,6 +2,7 @@
 @inject IPaperSettingService PaperSettingService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericIndexPageComponent TEntity="PaperSetting" 
                       TService="IPaperSettingService"
@@ -9,7 +10,7 @@
                       EntityBasePath="/paper-settings"
                       PageTitle="紙張設定"
                       PageSubtitle="管理列印用紙張規格與設定"
-                      EntityName="紙張設定"
+                      EntityName="@L["Entity.PaperSetting"]"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"

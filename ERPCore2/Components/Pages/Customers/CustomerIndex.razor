@@ -2,6 +2,7 @@
 @inject ICustomerService CustomerService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericIndexPageComponent TEntity="Customer" 
                       TService="ICustomerService"
@@ -9,7 +10,7 @@
                       EntityBasePath="/customers"
                       PageTitle="客戶維護"
                       PageSubtitle="管理所有客戶資料與聯絡資訊"
-                      EntityName="客戶"
+                      EntityName="@L["Entity.Customer"]"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"

@@ -1,6 +1,7 @@
 @* 員工受訓紀錄編輯組件 - 用於教育訓練 Tab 中 *@
 @inject IEmployeeTrainingRecordService EmployeeTrainingRecordService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="EmployeeTrainingRecord"
                           TService="IEmployeeTrainingRecordService"
@@ -9,16 +10,16 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@EmployeeTrainingRecordId"
                           Service="@EmployeeTrainingRecordService"
-                          EntityName="受訓紀錄"
-                          EntityNamePlural="受訓紀錄"
-                          ModalTitle="@(EmployeeTrainingRecordId.HasValue ? "編輯受訓紀錄" : "新增受訓紀錄")"
+                          EntityName="@L["Entity.EmployeeTrainingRecord"]"
+                          EntityNamePlural="@L["Entity.EmployeeTrainingRecord"]"
+                          ModalTitle="@(EmployeeTrainingRecordId.HasValue ? L["Message.EditTitle", L["Entity.EmployeeTrainingRecord"]].ToString() : L["Message.CreateTitle", L["Entity.EmployeeTrainingRecord"]].ToString())"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadTrainingRecordData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(EmployeeTrainingRecordId.HasValue ? "受訓紀錄更新成功" : "受訓紀錄新增成功")"
-                          SaveFailureMessage="受訓紀錄儲存失敗"
+                          SaveSuccessMessage="@(EmployeeTrainingRecordId.HasValue ? L["Message.UpdateSuccess", L["Entity.EmployeeTrainingRecord"]].ToString() : L["Message.CreateSuccess", L["Entity.EmployeeTrainingRecord"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeeTrainingRecord"]]"
                           RequiredPermission="Employee.Read"
                           OnEntitySaved="@OnEmployeeTrainingRecordSaved"
                           OnCancel="@OnCancel" />
@@ -85,9 +86,9 @@
                 new()
                 {
                     PropertyName = nameof(EmployeeTrainingRecord.CourseName),
-                    Label = "課程名稱",
+                    Label = L["Field.CourseName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入課程名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CourseName"]],
                     IsRequired = true,
                     MaxLength = 100,
                     HelpText = "訓練課程的完整名稱"
@@ -95,7 +96,7 @@
                 new()
                 {
                     PropertyName = nameof(EmployeeTrainingRecord.TrainingDate),
-                    Label = "受訓日期",
+                    Label = L["Field.TrainingDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "開始受訓的日期"
@@ -103,7 +104,7 @@
                 new()
                 {
                     PropertyName = nameof(EmployeeTrainingRecord.CompletedDate),
-                    Label = "完成日期",
+                    Label = L["Field.CompletionDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "完成或結業的日期（選填）"
@@ -111,7 +112,7 @@
                 new()
                 {
                     PropertyName = nameof(EmployeeTrainingRecord.TrainingHours),
-                    Label = "訓練時數",
+                    Label = L["Field.TrainingHours"],
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "訓練總時數（小時，選填）"
@@ -119,9 +120,9 @@
                 new()
                 {
                     PropertyName = nameof(EmployeeTrainingRecord.TrainingOrganization),
-                    Label = "訓練機構",
+                    Label = L["Field.TrainingOrganization"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入訓練機構名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.TrainingOrganization"]],
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "提供訓練的機構或單位（選填）"
@@ -129,9 +130,9 @@
                 new()
                 {
                     PropertyName = nameof(EmployeeTrainingRecord.Result),
-                    Label = "結果/成績",
+                    Label = L["Field.TrainingResult"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "例：通過、合格、85分",
+                    Placeholder = L["Placeholder.TrainingResultExample"],
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "訓練結果或成績（選填）"

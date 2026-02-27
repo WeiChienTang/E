@@ -3,17 +3,18 @@
 
 @inject IPermissionManagementService PermissionService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="Permission" 
+<GenericEditModalComponent TEntity="Permission"
                           TService="IPermissionManagementService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@PermissionId"
                           Service="@PermissionService"
-                          EntityName="權限明細"
-                          EntityNamePlural="權限明細"
-                          ModalTitle="@(PermissionId.HasValue ? "編輯權限明細" : "新增權限明細")"
+                          EntityName="@L["Entity.Permission"]"
+                          EntityNamePlural="@L["Entity.Permission"]"
+                          ModalTitle="@(PermissionId.HasValue ? L["Message.EditTitle", L["Entity.Permission"]].ToString() : L["Message.CreateTitle", L["Entity.Permission"]].ToString())"
                           Size="GenericEditModalComponent<Permission, IPermissionManagementService>.ModalSize.Desktop"
                           UseGenericForm="true"                          
                           FormFields="@formFields"
@@ -21,8 +22,8 @@
                           DataLoader="@LoadPermissionData"
                           UseGenericSave="false"                          
                           SaveHandler="@SavePermission"
-                          SaveSuccessMessage="@(PermissionId.HasValue ? "權限明細更新成功" : "權限明細新增成功")"
-                          SaveFailureMessage="權限明細儲存失敗"
+                          SaveSuccessMessage="@(PermissionId.HasValue ? L["Message.UpdateSuccess", L["Entity.Permission"]].ToString() : L["Message.CreateSuccess", L["Entity.Permission"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Permission"]]"
                           RequiredPermission="Permission.Read"
                           OnEntitySaved="@OnPermissionSaved"
                           OnCancel="@OnCancel"
@@ -143,9 +144,9 @@
                 new()
                 {
                     PropertyName = nameof(Permission.Code),
-                    Label = "權限明細編號",
+                    Label = L["Field.PermissionCode"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入權限明細編號",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PermissionCode"]],
                     IsRequired = true,
                     MaxLength = 50,
                     HelpText = "權限明細編號（例如：Customer.Read、Product.Create）"
@@ -154,9 +155,9 @@
                 new()
                 {
                     PropertyName = nameof(Permission.Name),
-                    Label = "權限明細名稱",
+                    Label = L["Field.PermissionName"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入權限明細名稱",
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PermissionName"]],
                     IsRequired = true,
                     MaxLength = 100,
                     HelpText = "權限明細的中文顯示名稱，例如：客戶查看、訂單新增"
@@ -164,28 +165,28 @@
                 new()
                 {
                     PropertyName = nameof(selectedAction),
-                    Label = "權限明細動作",
+                    Label = L["Field.PermissionAction"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = Enum.GetValues<PermissionAction>()
-                        .Select(e => new SelectOption 
-                        { 
-                            Value = ((int)e).ToString(), 
-                            Text = GetPermissionActionDisplayName(e) 
+                        .Select(e => new SelectOption
+                        {
+                            Value = ((int)e).ToString(),
+                            Text = GetPermissionActionDisplayName(e)
                         }).ToList(),
                     HelpText = "選擇權限明細動作類型"
                 },
                 new()
                 {
                     PropertyName = nameof(Permission.Level),
-                    Label = "權限級別",
+                    Label = L["Field.PermissionLevel"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = Enum.GetValues<PermissionLevel>()
-                        .Select(e => new SelectOption 
-                        { 
-                            Value = ((int)e).ToString(), 
-                            Text = GetPermissionLevelDisplayName(e) 
+                        .Select(e => new SelectOption
+                        {
+                            Value = ((int)e).ToString(),
+                            Text = GetPermissionLevelDisplayName(e)
                         }).ToList(),
                     HelpText = "一般權限：可授予一般員工；敏感權限：需要更高權限者授予"
                 },

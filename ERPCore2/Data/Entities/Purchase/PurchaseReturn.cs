@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers.EditModal;
 
+// 使用別名來避免命名衝突
+using EntityPurchaseReturnReason = ERPCore2.Data.Entities.PurchaseReturnReason;
+
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
@@ -51,8 +54,13 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Supplier))]
         public int SupplierId { get; set; }
 
+        [Display(Name = "退出原因")]
+        [ForeignKey(nameof(ReturnReason))]
+        public int? ReturnReasonId { get; set; }
+
         // Navigation Properties
         public Supplier Supplier { get; set; } = null!;
+        public EntityPurchaseReturnReason? ReturnReason { get; set; }
         public ICollection<PurchaseReturnDetail> PurchaseReturnDetails { get; set; } = new List<PurchaseReturnDetail>();
     }
 }

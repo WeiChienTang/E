@@ -16,6 +16,11 @@ namespace ERPCore2.Services
         Task<List<PurchaseReturn>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria);
 
         Task<List<PurchaseReturn>> GetByPurchaseReceivingIdAsync(int purchaseReceivingId);
+
+        /// <summary>
+        /// 依採購訂單 ID 取得相關的所有退回單（跨進貨明細查詢）
+        /// </summary>
+        Task<List<PurchaseReturn>> GetByPurchaseOrderIdAsync(int purchaseOrderId);
         Task<PurchaseReturn?> GetWithDetailsAsync(int id);
         
         /// <summary>

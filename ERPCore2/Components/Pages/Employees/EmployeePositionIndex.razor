@@ -1,6 +1,7 @@
 @page "/employee-positions"
 @inject IEmployeePositionService EmployeePositionService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @rendermode InteractiveServer
 
@@ -15,7 +16,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="職位設定"
+                        EntityName="@L["Entity.EmployeePosition"]"
                         GetEntityDisplayName="@(position => position.Name)"
                         RequiredPermission="EmployeePosition.Read"
                         RequiredModule="Employees"

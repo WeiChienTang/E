@@ -1074,6 +1074,44 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<List<PurchaseOrder>> GetByPurchaseReceivingIdAsync(int purchaseReceivingId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var orderDetailIds = await context.PurchaseReceivingDetails
+                    .Where(prd => prd.PurchaseReceivingId == purchaseReceivingId &&
+                                  prd.PurchaseOrderDetailId.HasValue)
+                    .Select(prd => prd.PurchaseOrderDetailId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                var orderIds = await context.PurchaseOrderDetails
+                    .Where(pod => orderDetailIds.Contains(pod.Id))
+                    .Select(pod => pod.PurchaseOrderId)
+                    .Distinct()
+                    .ToListAsync();
+
+                return await context.PurchaseOrders
+                    .Include(po => po.Supplier)
+                    .Where(po => orderIds.Contains(po.Id))
+                    .OrderByDescending(po => po.OrderDate)
+                    .ThenBy(po => po.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPurchaseReceivingIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByPurchaseReceivingIdAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReceivingId = purchaseReceivingId
+                });
+                return new List<PurchaseOrder>();
+            }
+        }
+
         #endregion
 
     }

@@ -2,6 +2,7 @@
 @inject ICompanyService CompanyService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericIndexPageComponent TEntity="Company" 
                       TService="ICompanyService"
@@ -9,7 +10,7 @@
                       EntityBasePath="/companies"
                       PageTitle="公司設定"
                       PageSubtitle="管理公司基本資料與設定"
-                      EntityName="公司"
+                      EntityName="@L["Entity.Company"]"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"

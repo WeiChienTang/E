@@ -1,6 +1,7 @@
 @* 可重用的車輛列表面板 - 用於在各主檔 EditModal 的 Tab 頁籤中顯示車輛資訊 *@
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
+@inject IStringLocalizer<SharedResource> L
 
 <div class="vehicle-table-panel">
     @* 工具列 *@
@@ -68,21 +69,21 @@
         {
             new InteractiveColumnDefinition
             {
-                Title = "車牌號碼",
+                Title = L["Column.VehicleLicensePlate"],
                 PropertyName = nameof(Vehicle.LicensePlate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px"
             },
             new InteractiveColumnDefinition
             {
-                Title = "車輛名稱",
+                Title = L["Column.VehicleName"],
                 PropertyName = nameof(Vehicle.VehicleName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px"
             },
             new InteractiveColumnDefinition
             {
-                Title = "車型",
+                Title = L["Column.VehicleTypeLabel"],
                 PropertyName = nameof(Vehicle.VehicleTypeId),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px",
@@ -95,7 +96,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "品牌",
+                Title = L["Column.VehicleBrand"],
                 PropertyName = nameof(Vehicle.Brand),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px",
@@ -103,7 +104,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "型號",
+                Title = L["Column.VehicleModel"],
                 PropertyName = nameof(Vehicle.Model),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px",

@@ -9,6 +9,7 @@
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="PurchaseReturn" 
@@ -17,7 +18,7 @@
                           EntityBasePath="/purchase/returns"
                           PageTitle="進貨退出管理"
                           PageSubtitle="管理所有進貨退出單資料與退款狀態"
-                          EntityName="進貨退出單"
+                          EntityName="@L["Entity.PurchaseReturnDoc"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

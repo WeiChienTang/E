@@ -1,6 +1,7 @@
 @page "/vehicles"
 @inject IVehicleService VehicleService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Vehicle" 
@@ -9,7 +10,7 @@
                           EntityBasePath="/vehicles"
                           PageTitle="車輛維護"
                           PageSubtitle="管理公司與客戶車輛資料"
-                          EntityName="車輛"
+                          EntityName="@L["Entity.Vehicle"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

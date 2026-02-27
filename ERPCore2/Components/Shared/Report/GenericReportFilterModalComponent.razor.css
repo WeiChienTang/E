@@ -1,0 +1,53 @@
+/* 篩選表單 body wrapper - 需要 position: relative 供 overlay 定位 */
+.filter-body-wrapper {
+    position: relative;
+    min-height: 100px;
+}
+
+/* ===== 預覽產生進度條 Overlay ===== */
+
+.filter-progress-overlay {
+    position: absolute;
+    top: -1rem;    /* 補回 BodyCssClass="p-4" 的 padding */
+    left: -1.5rem;
+    right: -1.5rem;
+    bottom: -1rem;
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    border-radius: 4px;
+}
+
+.filter-progress-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem 3rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    min-width: 360px;
+    text-align: center;
+}
+
+.filter-progress-message {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+.filter-progress-bar {
+    height: 28px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.filter-progress-bar .progress-bar {
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.4s ease;
+}

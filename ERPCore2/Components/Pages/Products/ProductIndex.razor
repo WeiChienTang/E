@@ -5,6 +5,7 @@
 @inject ISizeService SizeService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericIndexPageComponent TEntity="Product" 
                           TService="IProductService"
@@ -12,7 +13,7 @@
                           EntityBasePath="/products"
                           PageTitle="商品維護"                          
                           PageSubtitle="管理所有商品資料與庫存資訊"
-                          EntityName="商品"
+                          EntityName="@L["Entity.Product"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

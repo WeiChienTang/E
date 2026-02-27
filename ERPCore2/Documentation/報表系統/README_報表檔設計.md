@@ -1,7 +1,7 @@
 # 報表檔案架構說明
 
 ## 更新日期
-2026-02-10
+2026-02-27
 
 ---
 
@@ -28,10 +28,12 @@ Services/Reports/
 ├── Interfaces/
 │   ├── IFormattedPrintService.cs           # 格式化列印介面
 │   ├── IExcelExportService.cs              # Excel 匯出介面
+│   ├── IPdfExportService.cs                # PDF 匯出介面
 │   ├── IEntityReportService.cs             # 報表服務泛型介面 + BatchPreviewResult
 │   └── IPurchaseOrderReportService.cs      # 報表服務介面（範本）
 ├── FormattedPrintService.cs                # 格式化列印服務實作
 ├── ExcelExportService.cs                   # Excel 匯出服務實作
+├── PdfExportService.cs                     # PDF 匯出服務實作（使用 PuppeteerSharp）
 ├── PurchaseOrderReportService.cs           # 報表服務實作（範本）
 └── ...
 
@@ -180,6 +182,86 @@ public interface IFormattedPrintService
 ```xml
 <PackageReference Include="ClosedXML" Version="0.105.0" />
 ```
+
+---
+
+## PDF 匯出服務（PdfExportService）
+
+位置：`Services/Reports/PdfExportService.cs`
+
+使用 **PuppeteerSharp** 將高解析度預覽圖片（150 DPI）組合為 PDF 檔案，再觸發瀏覽器下載。
+
+### 流程
+
+1. `ReportPreviewModalComponent` 呼叫 `FormattedPrintService.RenderToImages(document, paper, dpi: 150)` 重新渲染高品質圖片
+2. 呼叫 `PdfExportService.ExportToPdfAsync(images, widthCm, heightCm)` 產生 PDF bytes
+3. 透過 `downloadFileFromBase64` JS 函式觸發瀏覽器下載
+
+### 介面定義
+
+```csharp
+public interface IPdfExportService
+{
+    Task<byte[]> ExportToPdfAsync(List<byte[]> pageImages, double widthCm, double heightCm);
+}
+```
+
+---
+
+## ReportPreviewModalComponent 匯出行為
+
+位置：`Components/Shared/Report/ReportPreviewModalComponent.razor`
+
+預覽 Modal 的「下載 PDF」與「匯出 Excel」按鈕均使用**進度條 Overlay**提供視覺回饋，取代舊版的全域 Loading 遮罩。
+
+### 進度條設計
+
+進度條以半透明白色 Overlay 覆蓋整個 `.report-modal-layout`，中央顯示白色卡片：
+
+```
+┌─────────────────────────────────────┐
+│  正在渲染頁面...                      │
+│  ████████████░░░░░░░░  60%          │  ← 橘色（PDF）/ 綠色（Excel）
+└─────────────────────────────────────┘
+```
+
+### PDF 下載進度階段
+
+| 階段 | 進度 | 訊息 |
+|------|------|------|
+| 初始化 | 5% | 準備中... |
+| 高解析度渲染前 | 15% | 正在渲染頁面... |
+| PDF 產生中 | 60% | 正在產生 PDF... |
+| 下載中 | 85% | 正在下載... |
+| 完成（800ms 後自動關閉）| 100% | 下載完成！ |
+
+> 進度條顏色：`bg-warning`（橘色，對應「下載PDF」按鈕顏色）
+
+### Excel 下載進度階段
+
+| 階段 | 進度 | 訊息 |
+|------|------|------|
+| 產生 Excel 中 | 10% | 正在產生 Excel... |
+| 下載中 | 75% | 正在下載... |
+| 完成（500ms 後自動關閉）| 100% | 下載完成！ |
+
+> 進度條顏色：`bg-success`（綠色，對應「匯出Excel」按鈕顏色）
+
+### 實作說明
+
+進度條透過 `SetExportProgress(value, message)` helper 更新，每次呼叫都會 `StateHasChanged()` + `await Task.Delay(10)` 確保 UI 刷新後再執行下一步：
+
+```csharp
+private async Task SetExportProgress(int value, string message)
+{
+    _exportProgressValue = value;
+    _exportProgressMessage = message;
+    StateHasChanged();
+    await Task.Delay(10);
+}
+```
+
+> **注意**：`RenderToImages` 為同步方法，執行期間 UI 無法更新。因此 15% → 60% 的跳躍發生在同步渲染完成後。
 
 ---
 

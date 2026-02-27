@@ -70,6 +70,27 @@
   <data name="Button.Print" xml:space="preserve">
     <value>I-print</value>
   </data>
+  <data name="Button.Approve" xml:space="preserve">
+    <value>Aprubahan</value>
+  </data>
+  <data name="Button.Reject" xml:space="preserve">
+    <value>Tanggihan</value>
+  </data>
+  <data name="Button.Prev" xml:space="preserve">
+    <value>Nakaraan</value>
+  </data>
+  <data name="Button.Next" xml:space="preserve">
+    <value>Susunod</value>
+  </data>
+  <data name="Button.Refresh" xml:space="preserve">
+    <value>I-refresh</value>
+  </data>
+  <data name="Button.Preview" xml:space="preserve">
+    <value>I-preview</value>
+  </data>
+  <data name="Button.ReturnToLast" xml:space="preserve">
+    <value>Bumalik sa Huli</value>
+  </data>
 
   <!-- ===== Labels ===== -->
   <data name="Label.Loading" xml:space="preserve">
@@ -98,6 +119,52 @@
   </data>
   <data name="Label.All" xml:space="preserve">
     <value>Lahat</value>
+  </data>
+  <data name="Label.Actions" xml:space="preserve">
+    <value>Aksyon</value>
+  </data>
+  <data name="Label.Remarks" xml:space="preserve">
+    <value>Mga Tala</value>
+  </data>
+  <data name="Label.CreatedAt" xml:space="preserve">
+    <value>Petsa ng Paglikha</value>
+  </data>
+  <data name="Label.SelectAll" xml:space="preserve">
+    <value>Piliin Lahat / Alisin Lahat</value>
+  </data>
+  <data name="Label.SelectItem" xml:space="preserve">
+    <value>Piliin ang item na ito</value>
+  </data>
+  <data name="Label.KeepOneEmptyRow" xml:space="preserve">
+    <value>Kailangang panatilihin ang hindi bababa sa isang blangkong hilera</value>
+  </data>
+
+  <!-- ===== Modal ===== -->
+  <data name="Modal.ConfirmReject" xml:space="preserve">
+    <value>Kumpirmahin ang Pagtanggi</value>
+  </data>
+  <data name="Modal.ConfirmClose" xml:space="preserve">
+    <value>Kumpirmahin ang Pagsasara</value>
+  </data>
+  <data name="Modal.ConfirmLeave" xml:space="preserve">
+    <value>Umalis</value>
+  </data>
+  <data name="Modal.SaveAndClose" xml:space="preserve">
+    <value>I-save at Isara</value>
+  </data>
+  <data name="Modal.ContinueEditing" xml:space="preserve">
+    <value>Ipagpatuloy ang Pag-edit</value>
+  </data>
+  <data name="Modal.UnsavedChanges" xml:space="preserve">
+    <value>May mga pagbabago sa rekord na ito, mangyaring pumili ng aksyon</value>
+  </data>
+
+  <!-- ===== Module ===== -->
+  <data name="Module.NotAvailable" xml:space="preserve">
+    <value>Hindi available ang feature na ito</value>
+  </data>
+  <data name="Module.DisabledMessage" xml:space="preserve">
+    <value>Hindi pinagana ang module na ito sa inyong sistema. Makipag-ugnayan sa system administrator.</value>
   </data>
 
   <!-- ===== Messages ===== -->
@@ -224,6 +291,9 @@
   </data>
 
   <!-- ===== Placeholders ===== -->
+  <data name="Placeholder.Remarks" xml:space="preserve">
+    <value>Ilagay ang mga keyword ng tala...</value>
+  </data>
   <data name="Placeholder.Name" xml:space="preserve">
     <value>Ilagay ang pangalan</value>
   </data>
@@ -289,6 +359,9 @@
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>Tsart ng Customer</value>
   </data>
+  <data name="Nav.CustomerVisitReport" xml:space="preserve">
+    <value>Ulat ng Pagbisita</value>
+  </data>
   <data name="Nav.CustomerReportIndex" xml:space="preserve">
     <value>Mga Ulat ng Customer</value>
   </data>
@@ -351,6 +424,9 @@
   </data>
   <data name="Nav.PurchaseReturns" xml:space="preserve">
     <value>Mga Purchase Return</value>
+  </data>
+  <data name="Nav.PurchaseReturnReasons" xml:space="preserve">
+    <value>Mga Dahilan ng Pagbabalik</value>
   </data>
   <data name="Nav.PurchaseReportIndex" xml:space="preserve">
     <value>Mga Ulat ng Pagbili</value>
@@ -505,6 +581,7 @@
   <data name="Report.CustomerTransaction" xml:space="preserve"><value>Detalye ng Transaksyon ng Customer</value></data>
   <data name="Report.CustomerRoster" xml:space="preserve"><value>Listahan ng Customer</value></data>
   <data name="Report.CustomerDetail" xml:space="preserve"><value>Detalye ng Customer</value></data>
+  <data name="Report.CustomerVisitReport" xml:space="preserve"><value>Ulat ng Pagbisita</value></data>
   <data name="Report.SupplierStatement" xml:space="preserve"><value>Pahayag ng Supplier</value></data>
   <data name="Report.SupplierPurchaseAnalysis" xml:space="preserve"><value>Pagsusuri ng Pagbili ng Supplier</value></data>
   <data name="Report.SupplierRoster" xml:space="preserve"><value>Listahan ng Supplier</value></data>
@@ -538,4 +615,187 @@
   <data name="Report.GeneralLedger" xml:space="preserve"><value>General Ledger</value></data>
   <data name="Report.SubsidiaryLedger" xml:space="preserve"><value>Subsidiary Ledger</value></data>
   <data name="Report.DetailAccountBalance" xml:space="preserve"><value>Account Balance Summary</value></data>
+  <data name="Label.DocumentPreview" xml:space="preserve"><value>Preview ng {0}</value></data>
+  <data name="Message.EditTitle" xml:space="preserve"><value>I-edit ang {0}</value></data>
+  <data name="Message.CreateTitle" xml:space="preserve"><value>Lumikha ng {0}</value></data>
+  <data name="Message.UpdateSuccess" xml:space="preserve"><value>Matagumpay na na-update ang {0}</value></data>
+  <data name="Message.CreateSuccess" xml:space="preserve"><value>Matagumpay na nagawa ang {0}</value></data>
+  <data name="Message.SaveFailure" xml:space="preserve"><value>Nabigo ang pag-save ng {0}</value></data>
+  <data name="Message.ViewReadOnly" xml:space="preserve"><value>Tingnan ang {0} (Basahin lamang)</value></data>
+  <data name="Entity.PurchaseOrder" xml:space="preserve"><value>Purchase Order</value></data>
+  <data name="Entity.PurchaseReceiving" xml:space="preserve"><value>Goods Receipt</value></data>
+  <data name="Entity.PurchaseReceivingDoc" xml:space="preserve"><value>Goods Receipt</value></data>
+  <data name="Entity.PurchaseReturn" xml:space="preserve"><value>Purchase Return</value></data>
+  <data name="Entity.PurchaseReturnDoc" xml:space="preserve"><value>Purchase Return</value></data>
+  <data name="Entity.PurchaseReturnReason" xml:space="preserve"><value>Dahilan ng Pagbabalik</value></data>
+  <data name="Entity.Quotation" xml:space="preserve"><value>Quotation</value></data>
+  <data name="Entity.SalesOrder" xml:space="preserve"><value>Sales Order</value></data>
+  <data name="Entity.SalesDelivery" xml:space="preserve"><value>Delivery Note</value></data>
+  <data name="Entity.SalesDeliveryDoc" xml:space="preserve"><value>Delivery Note</value></data>
+  <data name="Entity.SalesReturn" xml:space="preserve"><value>Sales Return</value></data>
+  <data name="Entity.SalesReturnDoc" xml:space="preserve"><value>Sales Return</value></data>
+  <data name="Entity.SalesReturnReason" xml:space="preserve"><value>Dahilan ng Pagbabalik</value></data>
+  <data name="Entity.Customer" xml:space="preserve"><value>Kliyente</value></data>
+  <data name="Entity.CustomerVisit" xml:space="preserve"><value>Pagbisita sa Kliyente</value></data>
+  <data name="Entity.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Entity.Product" xml:space="preserve"><value>Produkto</value></data>
+  <data name="Entity.ProductCategory" xml:space="preserve"><value>Kategorya ng Produkto</value></data>
+  <data name="Entity.ProductComposition" xml:space="preserve"><value>Bill of Materials</value></data>
+  <data name="Entity.BOM" xml:space="preserve"><value>BOM</value></data>
+  <data name="Entity.CompositionCategory" xml:space="preserve"><value>Kategorya ng BOM</value></data>
+  <data name="Entity.Unit" xml:space="preserve"><value>Yunit</value></data>
+  <data name="Entity.Size" xml:space="preserve"><value>Sukat</value></data>
+  <data name="Entity.Material" xml:space="preserve"><value>Materyales</value></data>
+  <data name="Entity.ProductionSchedule" xml:space="preserve"><value>Production Schedule</value></data>
+  <data name="Entity.ProductionScheduleReport" xml:space="preserve"><value>Production Schedule Report</value></data>
+  <data name="Entity.Employee" xml:space="preserve"><value>Empleyado</value></data>
+  <data name="Entity.Department" xml:space="preserve"><value>Departamento</value></data>
+  <data name="Entity.EmployeePosition" xml:space="preserve"><value>Posisyon</value></data>
+  <data name="Entity.EmployeeTrainingRecord" xml:space="preserve"><value>Training Record</value></data>
+  <data name="Entity.EmployeeLicense" xml:space="preserve"><value>License Record</value></data>
+  <data name="Entity.EmployeeTool" xml:space="preserve"><value>Tool Assignment Record</value></data>
+  <data name="Entity.Role" xml:space="preserve"><value>Role</value></data>
+  <data name="Entity.Permission" xml:space="preserve"><value>Pahintulot</value></data>
+  <data name="Entity.TrainingRecord" xml:space="preserve"><value>Talaan ng Pagsasanay</value></data>
+  <data name="Entity.LicenseRecord" xml:space="preserve"><value>Lisensya</value></data>
+  <data name="Entity.ToolRecord" xml:space="preserve"><value>Pagtatalaga ng Kagamitan</value></data>
+  <data name="Entity.Warehouse" xml:space="preserve"><value>Bodega</value></data>
+  <data name="Entity.WarehouseLocation" xml:space="preserve"><value>Lokasyon ng Bodega</value></data>
+  <data name="Entity.InventoryStock" xml:space="preserve"><value>Imbentaryo</value></data>
+  <data name="Entity.InventoryTransaction" xml:space="preserve"><value>Transaksyon ng Imbentaryo</value></data>
+  <data name="Entity.MaterialIssue" xml:space="preserve"><value>Material Issue</value></data>
+  <data name="Entity.StockTaking" xml:space="preserve"><value>Stock Taking</value></data>
+  <data name="Entity.StockTakingReport" xml:space="preserve"><value>Stock Variance Report</value></data>
+  <data name="Entity.Bank" xml:space="preserve"><value>Bangko</value></data>
+  <data name="Entity.Currency" xml:space="preserve"><value>Pera</value></data>
+  <data name="Entity.PaymentMethod" xml:space="preserve"><value>Paraan ng Pagbabayad</value></data>
+  <data name="Entity.SetoffDocument" xml:space="preserve"><value>Setoff Document</value></data>
+  <data name="Entity.AccountItem" xml:space="preserve"><value>Account Item</value></data>
+  <data name="Entity.JournalEntry" xml:space="preserve"><value>Journal Entry</value></data>
+  <data name="Entity.Vehicle" xml:space="preserve"><value>Sasakyan</value></data>
+  <data name="Entity.VehicleType" xml:space="preserve"><value>Uri ng Sasakyan</value></data>
+  <data name="Entity.VehicleMaintenance" xml:space="preserve"><value>Talaan ng Maintenance</value></data>
+  <data name="Entity.WasteRecord" xml:space="preserve"><value>Talaan ng Basura</value></data>
+  <data name="Entity.WasteType" xml:space="preserve"><value>Uri ng Basura</value></data>
+  <data name="Entity.Company" xml:space="preserve"><value>Kumpanya</value></data>
+  <data name="Entity.PaperSetting" xml:space="preserve"><value>Paper Setting</value></data>
+  <data name="Entity.PrinterConfiguration" xml:space="preserve"><value>Printer Configuration</value></data>
+  <data name="Entity.ReportPrintConfiguration" xml:space="preserve"><value>Report Print Configuration</value></data>
+  <data name="Entity.TextMessageTemplate" xml:space="preserve"><value>Template ng Mensahe</value></data>
+  <data name="Label.PurchaseOrderMessageSetting" xml:space="preserve"><value>Purchase Order Message Settings</value></data>
+  <data name="Entity.ErrorLog" xml:space="preserve"><value>Error Log</value></data>
+  <data name="Button.ConvertToReceiving" xml:space="preserve"><value>I-convert sa Goods Receipt</value></data>
+  <data name="Button.ConvertToReturn" xml:space="preserve"><value>I-convert sa Return</value></data>
+  <data name="Button.ConvertToSalesReturn" xml:space="preserve"><value>I-convert sa Sales Return</value></data>
+  <data name="Button.ConvertToSetoff" xml:space="preserve"><value>I-convert sa Setoff</value></data>
+  <data name="Button.ConvertToDelivery" xml:space="preserve"><value>I-convert sa Delivery</value></data>
+  <data name="Button.ConvertToOrder" xml:space="preserve"><value>I-convert sa Order</value></data>
+  <data name="Button.CopyMessage" xml:space="preserve"><value>Kopyahin ang Mensahe</value></data>
+  <data name="Button.CheckInventory" xml:space="preserve"><value>Suriin ang Imbentaryo</value></data>
+  <data name="Button.ScheduleManagement" xml:space="preserve"><value>Pamamahala ng Schedule</value></data>
+  <data name="Button.CopyToSupplier" xml:space="preserve"><value>Kopyahin sa Supplier</value></data>
+  <data name="Button.CopyToCustomer" xml:space="preserve"><value>Kopyahin sa Kliyente</value></data>
+  <data name="Button.AccountManagement" xml:space="preserve"><value>Pamamahala ng Account</value></data>
+  <data name="Button.ViewBOM" xml:space="preserve"><value>Tingnan ang BOM</value></data>
+  <data name="Button.CreateBOM" xml:space="preserve"><value>Lumikha ng BOM</value></data>
+  <data name="Button.Post" xml:space="preserve"><value>I-post</value></data>
+  <data name="Button.WriteOff" xml:space="preserve"><value>Write Off</value></data>
+  <data name="Button.ConvertToAdjustment" xml:space="preserve"><value>I-convert sa Adjustment</value></data>
+  <data name="Button.Reselect" xml:space="preserve"><value>Pumili muli</value></data>
+  <data name="Button.LoadData" xml:space="preserve"><value>I-load</value></data>
+  <data name="Button.ClearData" xml:space="preserve"><value>I-clear</value></data>
+  <data name="Button.ContinueAdd" xml:space="preserve"><value>Magpatuloy sa Pagdaragdag</value></data>
+  <data name="Button.CreateSubAccount" xml:space="preserve"><value>Lumikha ng Sub-Account</value></data>
+  <data name="Button.ComponentIssue" xml:space="preserve"><value>Component Issue</value></data>
+  <data name="Button.StartProduction" xml:space="preserve"><value>Simulan ang Produksyon</value></data>
+  <data name="Button.ProductionComplete" xml:space="preserve"><value>Tapos na ang Produksyon</value></data>
+  <data name="Button.QueryPrinter" xml:space="preserve"><value>Query Printer</value></data>
+  <data name="Button.TestPrint" xml:space="preserve"><value>Test Print</value></data>
+  <data name="Button.PreviewLogo" xml:space="preserve"><value>Preview LOGO</value></data>
+  <data name="Button.QueryPaper" xml:space="preserve"><value>Query Paper</value></data>
+
+  <!-- ===== Placeholder format strings ===== -->
+  <data name="Placeholder.PleaseInput" xml:space="preserve"><value>Ilagay ang {0}</value></data>
+  <data name="Placeholder.PleaseSelect" xml:space="preserve"><value>Pumili ng {0}</value></data>
+  <data name="Placeholder.PleaseInputOrSelect" xml:space="preserve"><value>Ilagay o pumili ng {0}</value></data>
+  <data name="Placeholder.AutoGenerated" xml:space="preserve"><value>Awtomatikong nabuo</value></data>
+  <data name="Placeholder.AutoGeneratedLeaveBlank" xml:space="preserve"><value>Iwanang blangko para awtomatikong mabuo</value></data>
+  <data name="Placeholder.AutoFill" xml:space="preserve"><value>Awtomatikong napuno</value></data>
+  <data name="Placeholder.AutoCalculated" xml:space="preserve"><value>Awtomatikong kinakalkula</value></data>
+
+  <!-- ===== Generic field labels ===== -->
+  <data name="Field.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Field.Name" xml:space="preserve"><value>Pangalan</value></data>
+  <data name="Field.EnglishName" xml:space="preserve"><value>English Name</value></data>
+  <data name="Field.Status" xml:space="preserve"><value>Katayuan</value></data>
+  <data name="Field.TaxType" xml:space="preserve"><value>Uri ng Buwis</value></data>
+  <data name="Field.Amount" xml:space="preserve"><value>Halaga</value></data>
+  <data name="Field.TaxAmount" xml:space="preserve"><value>Halaga ng Buwis</value></data>
+  <data name="Field.TotalAmount" xml:space="preserve"><value>Kabuuan</value></data>
+  <data name="Field.Discount" xml:space="preserve"><value>Diskwento</value></data>
+  <data name="Field.PaymentTerms" xml:space="preserve"><value>Mga Tuntunin sa Pagbabayad</value></data>
+  <data name="Field.DeliveryTerms" xml:space="preserve"><value>Mga Tuntunin sa Paghahatid</value></data>
+  <data name="Field.SalesPerson" xml:space="preserve"><value>Nagbebenta</value></data>
+  <data name="Field.ContactPerson" xml:space="preserve"><value>Taong Makipag-ugnayan</value></data>
+  <data name="Field.ContactPhone" xml:space="preserve"><value>Numero ng Telepono</value></data>
+  <data name="Field.MobilePhone" xml:space="preserve"><value>Numero ng Cellphone</value></data>
+  <data name="Field.Fax" xml:space="preserve"><value>Fax</value></data>
+  <data name="Field.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Field.Website" xml:space="preserve"><value>Website</value></data>
+  <data name="Field.Address" xml:space="preserve"><value>Address</value></data>
+  <data name="Field.ContactAddress" xml:space="preserve"><value>Address ng Pakikipag-ugnayan</value></data>
+  <data name="Field.TaxNumber" xml:space="preserve"><value>Tax ID Number</value></data>
+  <data name="Field.ResponsiblePerson" xml:space="preserve"><value>Taong Responsable</value></data>
+  <data name="Field.JobTitle" xml:space="preserve"><value>Titulo sa Trabaho</value></data>
+  <data name="Field.RejectionReason" xml:space="preserve"><value>Dahilan ng Pagtanggi</value></data>
+  <data name="Field.Phone" xml:space="preserve"><value>Telepono</value></data>
+  <data name="Field.TaxRate" xml:space="preserve"><value>Tax Rate%</value></data>
+  <data name="Field.ShippingAddress" xml:space="preserve"><value>Address ng Pagpapadala</value></data>
+  <data name="Field.PurchaseOrderCode" xml:space="preserve"><value>PO Number</value></data>
+  <data name="Field.PurchasingCompany" xml:space="preserve"><value>Purchasing Company</value></data>
+  <data name="Field.Purchaser" xml:space="preserve"><value>Purchaser</value></data>
+  <data name="Field.PurchaseDate" xml:space="preserve"><value>Purchase Date</value></data>
+  <data name="Field.DeliveryDate" xml:space="preserve"><value>Delivery Date</value></data>
+  <data name="Field.PurchaseReceivingCode" xml:space="preserve"><value>GR Number</value></data>
+  <data name="Field.ReceiptDate" xml:space="preserve"><value>Receipt Date</value></data>
+  <data name="Field.PurchaseReturnCode" xml:space="preserve"><value>Return Number</value></data>
+  <data name="Field.PurchaseReturnDate" xml:space="preserve"><value>Return Date</value></data>
+  <data name="Field.ReasonCode" xml:space="preserve"><value>Reason Code</value></data>
+  <data name="Field.ReasonName" xml:space="preserve"><value>Reason Name</value></data>
+  <data name="Field.SalesOrderCode" xml:space="preserve"><value>Sales Order Number</value></data>
+  <data name="Field.SalesOrderDate" xml:space="preserve"><value>Order Date</value></data>
+  <data name="Field.ExpectedDeliveryDate" xml:space="preserve"><value>Expected Delivery Date</value></data>
+  <data name="Field.QuotationCode" xml:space="preserve"><value>Quotation Number</value></data>
+  <data name="Field.QuotationDate" xml:space="preserve"><value>Quotation Date</value></data>
+  <data name="Field.QuotationCreator" xml:space="preserve"><value>Created By</value></data>
+  <data name="Field.ProjectName" xml:space="preserve"><value>Project Name</value></data>
+  <data name="Field.SalesDeliveryCode" xml:space="preserve"><value>Delivery Note Number</value></data>
+  <data name="Field.SalesDeliveryDate" xml:space="preserve"><value>Delivery Date</value></data>
+  <data name="Field.SalesReturnCode" xml:space="preserve"><value>Return Number</value></data>
+  <data name="Field.SalesReturnDate" xml:space="preserve"><value>Return Date</value></data>
+  <data name="Column.ProductCodeName" xml:space="preserve"><value>Product Code/Name</value></data>
+  <data name="Column.Quantity" xml:space="preserve"><value>Dami</value></data>
+  <data name="Column.InboundQuantity" xml:space="preserve"><value>Natanggap</value></data>
+  <data name="Column.UnitPrice" xml:space="preserve"><value>Presyo sa Bawat Yunit</value></data>
+  <data name="Column.Subtotal" xml:space="preserve"><value>Subtotal</value></data>
+  <data name="Column.IsClosed" xml:space="preserve"><value>Sarado</value></data>
+  <data name="Column.PurchaseQuantity" xml:space="preserve"><value>Order Qty</value></data>
+  <data name="Column.ReceivedQuantity" xml:space="preserve"><value>Natanggap na Dami</value></data>
+  <data name="Column.AlreadyReturnedQuantity" xml:space="preserve"><value>Naibalik</value></data>
+  <data name="Column.Location" xml:space="preserve"><value>Lokasyon</value></data>
+  <data name="Column.PurchaseReceivingQuantity" xml:space="preserve"><value>GR Qty</value></data>
+  <data name="Column.ReturnQuantity" xml:space="preserve"><value>Return Qty</value></data>
+  <data name="Column.OrderQuantity" xml:space="preserve"><value>Order Qty</value></data>
+  <data name="Column.SalesQuantity" xml:space="preserve"><value>Sales Qty</value></data>
+  <data name="Column.DiscountPercent" xml:space="preserve"><value>Diskwento%</value></data>
+  <data name="Column.Specification" xml:space="preserve"><value>Espesipikasyon</value></data>
+  <data name="Column.WarehouseAndLocation" xml:space="preserve"><value>Bodega/Lokasyon</value></data>
+  <data name="Column.AvailableStock" xml:space="preserve"><value>Dami ng Stock</value></data>
+  <data name="Column.DeliveryQuantity" xml:space="preserve"><value>Naihatid na Dami</value></data>
+  <data name="Column.AlreadyReturnedCount" xml:space="preserve"><value>Naibalik</value></data>
+  <data name="Column.OriginalQuantity" xml:space="preserve"><value>Orihinal na Dami</value></data>
+  <data name="Column.ReturnUnitPrice" xml:space="preserve"><value>Presyo ng Pagbabalik</value></data>
+  <data name="Column.OriginalDiscount" xml:space="preserve"><value>Orihinal na Diskwento(%)</value></data>
+  <data name="Column.SalesReturnQuantity" xml:space="preserve"><value>Return Qty</value></data>
+  <data name="Column.MaterialCodeName" xml:space="preserve"><value>Material Code/Name</value></data>
 </root>

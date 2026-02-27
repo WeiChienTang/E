@@ -1,7 +1,7 @@
 # 報表系統設計總綱
 
 ## 更新日期
-2026-02-21
+2026-02-27
 
 ---
 
@@ -173,6 +173,16 @@ Components/
 ---
 
 ## ✅ 已實作項目
+
+### 匯出服務
+
+| 服務 | 說明 | 狀態 |
+|------|------|------|
+| FormattedPrintService | GDI+ 渲染 + 印表機列印（Windows 專屬） | ✅ 完成 |
+| ExcelExportService | ClosedXML 轉 .xlsx，跨平台 | ✅ 完成 |
+| PdfExportService | PuppeteerSharp 將高解析度圖片合併為 PDF | ✅ 完成 |
+
+> 「下載 PDF」與「匯出 Excel」按鈕均以**進度條 Overlay** 取代全域 Loading 遮罩，詳見 [README_報表檔設計.md](README_報表檔設計.md)。
 
 ### 報表服務
 

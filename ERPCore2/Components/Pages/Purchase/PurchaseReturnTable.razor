@@ -1,5 +1,6 @@
 @* 採購退回明細管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
+@inject IStringLocalizer<SharedResource> L
 @inject IProductService ProductService
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
@@ -23,7 +24,8 @@ else
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
-                                      TItem="ReturnItem" 
+                                      TItem="ReturnItem"
+                                      OnDataChanged="@NotifyDetailsChanged"
                                       Items="@ReturnItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       EnableAutoEmptyRow="true"
@@ -603,7 +605,7 @@ else
         // 進貨明細選擇欄位 - 使用 SearchableSelect 類型
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "商品編號/名稱", 
+            Title = L["Column.ProductCodeName"],
             PropertyName = "ReceivingDetailSearchValue",
             EmptyCheckPropertyName = "SelectedReceivingDetail",
             TriggerEmptyRowOnFilled = true,
@@ -663,7 +665,7 @@ else
         // 原始進貨數量欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "進貨量", 
+            Title = L["Column.PurchaseReceivingQuantity"],
             PropertyName = nameof(ReturnItem.OriginalQuantity),
             ColumnType = InteractiveColumnType.Display,
             Width = "120px",
@@ -675,7 +677,7 @@ else
         // 退回數量欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "退回數量", 
+            Title = L["Column.ReturnQuantity"],
             PropertyName = nameof(ReturnItem.ReturnQuantity),
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
@@ -703,7 +705,7 @@ else
         // 單價欄位 (只讀顯示) - 使用智能小數點顯示
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "單價", 
+            Title = L["Column.UnitPrice"],
             PropertyName = nameof(ReturnItem.OriginalUnitPrice),
             ColumnType = InteractiveColumnType.Display,
             Width = "100px",
@@ -716,7 +718,7 @@ else
         // 稅率欄位（可編輯）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "稅率%",
+            Title = L["Field.TaxRate"],
             PropertyName = nameof(ReturnItem.TaxRate),
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
@@ -745,7 +747,7 @@ else
         // 小計欄位（根據稅別計算）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "小計",
+            Title = L["Column.Subtotal"],
             Tooltip = GetSubtotalTooltip(),
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
@@ -762,7 +764,7 @@ else
         // 備註欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "備註", 
+            Title = L["Label.Remarks"],
             PropertyName = nameof(ReturnItem.Remarks),
             ColumnType = InteractiveColumnType.Input,
             Width = "150px",

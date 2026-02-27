@@ -1,6 +1,7 @@
 @page "/departments"
 @inject IDepartmentService DepartmentService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @rendermode InteractiveServer
 
@@ -15,7 +16,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="部門"
+                        EntityName="@L["Entity.Department"]"
                         GetEntityDisplayName="@(dept => dept.Name)"
                         RequiredPermission="Department.Read"
                         RequiredModule="Employees"

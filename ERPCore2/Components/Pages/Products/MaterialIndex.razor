@@ -2,6 +2,7 @@
 
 @inject IMaterialService MaterialService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @rendermode InteractiveServer
 
@@ -16,7 +17,7 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadMaterialsAsync"
                           FilterApplier="@ApplyMaterialFilters"
-                          EntityName="材質"
+                          EntityName="@L["Entity.Material"]"
                           GetEntityDisplayName="@(material => material.Name)"
                           RequiredPermission="Material.Read"
                           RequiredModule="ProductionManagement"

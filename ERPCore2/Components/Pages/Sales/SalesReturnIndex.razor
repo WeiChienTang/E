@@ -8,6 +8,7 @@
 @inject ICustomerService CustomerService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="SalesReturn" 
@@ -16,7 +17,7 @@
                           EntityBasePath="/salesReturns"
                           PageTitle="退貨管理"
                           PageSubtitle="管理所有退貨單資料與退貨狀態"
-                          EntityName="退貨單"
+                          EntityName="@L["Entity.SalesReturnDoc"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"

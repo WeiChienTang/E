@@ -1,25 +1,26 @@
 @* 可重用的尺寸編輯組件 - 可在任何頁面中嵌入 *@
 @inject ISizeService SizeService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="Size" 
+<GenericEditModalComponent TEntity="Size"
                           TService="ISizeService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@SizeId"
                           Service="@SizeService"
-                          EntityName="尺寸"
-                          EntityNamePlural="尺寸"
-                          ModalTitle="@(SizeId.HasValue ? "編輯尺寸" : "新增尺寸")"
+                          EntityName="@L["Entity.Size"]"
+                          EntityNamePlural="@L["Entity.Size"]"
+                          ModalTitle="@(SizeId.HasValue ? L["Message.EditTitle", L["Entity.Size"]].ToString() : L["Message.CreateTitle", L["Entity.Size"]].ToString())"
                           Size="GenericEditModalComponent<Size, ISizeService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadSizeData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(SizeId.HasValue ? "尺寸更新成功" : "尺寸新增成功")"
-                          SaveFailureMessage="尺寸儲存失敗"
+                          SaveSuccessMessage="@(SizeId.HasValue ? L["Message.UpdateSuccess", L["Entity.Size"]].ToString() : L["Message.CreateSuccess", L["Entity.Size"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Size"]]"
                           RequiredPermission="Size.Read"
                           OnEntitySaved="@OnSizeSaved"
                           OnCancel="@OnCancel" />
@@ -58,9 +59,9 @@
             new()
             {
                 PropertyName = nameof(Size.Code),
-                Label = "尺寸編號",
+                Label = L["Field.SizeCode"],
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入尺寸編號",
+                Placeholder = L["Placeholder.PleaseInput", L["Field.SizeCode"]],
                 IsRequired = true,
                 MaxLength = 50,
                 HelpText = "唯一識別此尺寸的編號，最多50個字元"
@@ -68,9 +69,9 @@
             new()
             {
                 PropertyName = nameof(Size.Name),
-                Label = "尺寸名稱",
+                Label = L["Field.SizeName"],
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入尺寸名稱",
+                Placeholder = L["Placeholder.PleaseInput", L["Field.SizeName"]],
                 IsRequired = true,
                 MaxLength = 50,
                 HelpText = "顯示用的尺寸名稱，最多50個字元"
