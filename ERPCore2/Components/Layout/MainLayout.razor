@@ -6,12 +6,15 @@
 @using ERPCore2.Services
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models
+@using ERPCore2.Data.Navigation
+@using ERPCore2.Models.Navigation
 @using Microsoft.JSInterop
 @inherits LayoutComponentBase
 @inject IJSRuntime JSRuntime
 @inject INavigationPermissionService NavigationPermissionService
 @inject INavigationSearchService NavigationSearchService
 @inject IReportSearchService ReportSearchService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 
@@ -99,12 +102,31 @@
                                   IsVisibleChanged="@((bool visible) => showPersonalPreference = visible)" />
 
 @* 快速功能表（右下角浮動按鈕） *@
-<QuickActionMenu @rendermode="InteractiveServer" 
+<QuickActionMenu @rendermode="InteractiveServer"
                 OnPageSearchClick="@OpenPageSearch"
                 OnReportSearchClick="@OpenReportSearch"
                 OnShortcutKeysClick="@OpenShortcutKeys" />
 
+@* 模組停用提示 Modal（圖表、報表觸發被停用模組時顯示） *@
+<BaseModalComponent IsVisible="@_showModuleDisabledModal"
+                    IsVisibleChanged="@((bool v) => _showModuleDisabledModal = v)"
+                    Title="@L["Module.NotAvailable"]"
+                    Icon="bi bi-lock-fill"
+                    Size="BaseModalComponent.ModalSize.Default"
+                    UseWhiteCloseButton="false">
+    <BodyContent>
+        <div class="d-flex flex-column align-items-center justify-content-center py-4">
+            <i class="bi bi-lock-fill text-secondary" style="font-size: 4rem;"></i>
+            <h5 class="mt-3 text-secondary">@L["Module.NotAvailable"]</h5>
+            <p class="text-muted text-center mb-0">@L["Module.DisabledMessage"]</p>
+        </div>
+    </BodyContent>
+</BaseModalComponent>
+
 @code {
+    // 模組停用提示 Modal 狀態
+    private bool _showModuleDisabledModal = false;
+
     // 頁面搜尋 Modal 參考
     private GenericSearchModalComponent? pageSearchModal;
     private bool showPageSearch = false;
@@ -142,27 +164,45 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // 初始化報表篩選模板註冊表
+        ConsoleHelper.WriteDebug("[MainLayout] OnInitializedAsync 開始");
+
+        // 初始化報表篩選模板註冊表（純記憶體操作，SSR / Circuit 皆需要）
+        ConsoleHelper.WriteDebug("[MainLayout] 呼叫 FilterTemplateInitializer.EnsureInitialized...");
         FilterTemplateInitializer.EnsureInitialized();
-        
+        ConsoleHelper.WriteDebug("[MainLayout] FilterTemplateInitializer.EnsureInitialized 完成");
+
+        // SSR 預渲染：跳過 DB 查詢與 ActionRegistry 初始化，等 Circuit 連線後再執行
+        if (!RendererInfo.IsInteractive)
+        {
+            ConsoleHelper.WriteDebug("[MainLayout] SSR 預渲染，跳過 DB 初始化");
+            return;
+        }
+
         try
         {
             // 預先載入當前使用者的所有權限到快取
+            ConsoleHelper.WriteDebug("[MainLayout] 呼叫 GetCurrentEmployeeIdAsync...");
             var employeeId = await NavigationPermissionService.GetCurrentEmployeeIdAsync();
+            ConsoleHelper.WriteDebug($"[MainLayout] GetCurrentEmployeeIdAsync 完成，EmployeeId={employeeId}");
             if (employeeId > 0)
             {
                 // 這會觸發一次資料庫查詢，並將結果快取
+                ConsoleHelper.WriteDebug("[MainLayout] 呼叫 GetAllEmployeePermissionsAsync...");
                 _ = await NavigationPermissionService.GetAllEmployeePermissionsAsync(employeeId);
+                ConsoleHelper.WriteDebug("[MainLayout] GetAllEmployeePermissionsAsync 完成");
             }
         }
-        catch
+        catch (Exception ex)
         {
+            ConsoleHelper.WriteError($"[MainLayout] 預載權限失敗：{ex.Message}");
             // 忽略預載錯誤，不影響主要功能
         }
-        
+
         // 初始化 Action 註冊表
+        ConsoleHelper.WriteDebug("[MainLayout] 初始化 ActionRegistry...");
         actionRegistry = NavigationActionHelper.CreateRegistry();
-        
+        ConsoleHelper.WriteDebug("[MainLayout] ActionRegistry 初始化完成");
+
         // 註册所有 Action 處理器
         actionRegistry.Register("OpenAccountsReceivableReport", OpenAccountsReceivableReport);
         actionRegistry.Register("OpenRolePermissionManagement", OpenRolePermissionManagement);
@@ -181,6 +221,7 @@
         actionRegistry.Register("OpenVehicleReportIndex", OpenVehicleReportIndex);
         actionRegistry.Register("OpenWasteReportIndex", OpenWasteReportIndex);
         // actionRegistry.Register("OpenAnotherModal", OpenAnotherModal);
+        ConsoleHelper.WriteDebug("[MainLayout] OnInitializedAsync 完成");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -548,11 +589,35 @@
     
     /// <summary>
     /// 處理導航動作觸發
+    /// 執行前檢查所屬模組是否啟用（SuperAdmin 自動繞過）
     /// </summary>
-    private void HandleNavigationAction(string actionId)
+    private async void HandleNavigationAction(string actionId)
     {
-        // 使用 ActionHandlerRegistry 執行 Action
-        actionRegistry?.Execute(actionId);
+        try
+        {
+            // 從扁平化導航清單中找到對應的 Action 項目
+            var navItem = NavigationConfig.GetFlattenedNavigationItems()
+                .FirstOrDefault(item => item.ItemType == NavigationItemType.Action && item.ActionId == actionId);
+
+            // 若有 ModuleKey，檢查模組是否啟用（CanAccessModuleAsync 內部已處理 SuperAdmin 繞過）
+            if (!string.IsNullOrEmpty(navItem?.ModuleKey))
+            {
+                var canAccess = await NavigationPermissionService.CanAccessModuleAsync(navItem.ModuleKey);
+                if (!canAccess)
+                {
+                    _showModuleDisabledModal = true;
+                    StateHasChanged();
+                    return;
+                }
+            }
+
+            // 使用 ActionHandlerRegistry 執行 Action
+            actionRegistry?.Execute(actionId);
+        }
+        catch
+        {
+            // 忽略執行失敗，避免影響 UI
+        }
     }
 
     /// <summary>
