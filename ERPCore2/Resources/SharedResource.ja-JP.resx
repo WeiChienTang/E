@@ -268,10 +268,6 @@
   <data name="Preference.ThemeDark" xml:space="preserve">
     <value>ダーク</value>
   </data>
-  <data name="Preference.ThemeSystem" xml:space="preserve">
-    <value>システム設定</value>
-  </data>
-
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>アカウントは管理者が設定するため、変更できません</value>
@@ -1309,4 +1305,73 @@
 
   <!-- ===== Field keys - Account/Inventory extra ===== -->
   <data name="Field.AccountType" xml:space="preserve"><value>科目大分類</value></data>
+
+  <!-- ===== Button keys - Report/Print actions ===== -->
+  <data name="Button.BarcodePrint" xml:space="preserve"><value>バーコード印刷</value></data>
+  <data name="Button.BatchPrint" xml:space="preserve"><value>帳票印刷</value></data>
+  <data name="Button.ImportSchedule" xml:space="preserve"><value>スケジュール入庫</value></data>
+  <data name="Button.BatchDelete" xml:space="preserve"><value>一括削除</value></data>
+  <data name="Button.ExportExcel" xml:space="preserve"><value>Excel出力</value></data>
+  <data name="Button.ExportPdf" xml:space="preserve"><value>PDF出力</value></data>
+  <data name="Button.DownloadPdf" xml:space="preserve"><value>PDFダウンロード</value></data>
+  <data name="Button.BrowserPrint" xml:space="preserve"><value>ブラウザ印刷</value></data>
+
+  <!-- ===== Report UI keys ===== -->
+  <data name="Report.PreviewPrint" xml:space="preserve"><value>プレビュー印刷</value></data>
+  <data name="Report.FilterTitle" xml:space="preserve"><value>帳票フィルター</value></data>
+  <data name="Report.FilterConfigNotFound" xml:space="preserve"><value>帳票ID「{0}」のフィルター設定が見つかりません</value></data>
+  <data name="Report.FilterTemplateNotConfigured" xml:space="preserve"><value>この帳票にはフィルターテンプレートが設定されていません</value></data>
+  <data name="Report.PrintSettings" xml:space="preserve"><value>印刷設定</value></data>
+  <data name="Report.PrinterLabel" xml:space="preserve"><value>プリンター</value></data>
+  <data name="Report.PaperLabel" xml:space="preserve"><value>用紙</value></data>
+  <data name="Report.ZoomLabel" xml:space="preserve"><value>拡大縮小</value></data>
+  <data name="Report.MarginLabel" xml:space="preserve"><value>余白 (cm)</value></data>
+  <data name="Report.CopiesLabel" xml:space="preserve"><value>部数</value></data>
+  <data name="Report.PagesLabel" xml:space="preserve"><value>ページ数</value></data>
+  <data name="Report.PageNum" xml:space="preserve"><value>{0}ページ目</value></data>
+  <data name="Report.NoContent" xml:space="preserve"><value>帳票内容なし</value></data>
+  <data name="Report.SelectPrinterWarning" xml:space="preserve"><value>最初にプリンターを選択してください</value></data>
+  <data name="Report.Printing" xml:space="preserve"><value>印刷中...</value></data>
+  <data name="Report.SendingToPrinter" xml:space="preserve"><value>プリンターに送信中...</value></data>
+
+  <!-- ===== Label keys - Margin directions ===== -->
+  <data name="Label.MarginTop" xml:space="preserve"><value>上</value></data>
+  <data name="Label.MarginBottom" xml:space="preserve"><value>下</value></data>
+  <data name="Label.MarginLeft" xml:space="preserve"><value>左</value></data>
+  <data name="Label.MarginRight" xml:space="preserve"><value>右</value></data>
+
+  <!-- ===== Document Management (文書管理) ===== -->
+  <data name="Nav.DocumentGroup" xml:space="preserve"><value>文書管理</value></data>
+  <data name="Nav.Documents" xml:space="preserve"><value>文書一覧</value></data>
+  <data name="Nav.DocumentCategories" xml:space="preserve"><value>文書分類</value></data>
+  <data name="Entity.Document" xml:space="preserve"><value>文書</value></data>
+  <data name="Entity.DocumentCategory" xml:space="preserve"><value>文書分類</value></data>
+  <data name="Field.DocumentTitle" xml:space="preserve"><value>文書タイトル</value></data>
+  <data name="Field.DocumentCategory" xml:space="preserve"><value>文書分類</value></data>
+  <data name="Field.DocumentSource" xml:space="preserve"><value>ソース種別</value></data>
+  <data name="Field.DefaultAccessLevel" xml:space="preserve"><value>デフォルトアクセスレベル</value></data>
+  <data name="Field.AccessLevel" xml:space="preserve"><value>アクセスレベル</value></data>
+  <data name="Field.IssuedBy" xml:space="preserve"><value>発行元</value></data>
+  <data name="Field.IssuedDate" xml:space="preserve"><value>発行日</value></data>
+  <data name="Field.FileSize" xml:space="preserve"><value>ファイルサイズ</value></data>
+  <data name="Field.FileName" xml:space="preserve"><value>元のファイル名</value></data>
+  <data name="Label.DocumentSource.Government" xml:space="preserve"><value>政府・法規</value></data>
+  <data name="Label.DocumentSource.Vendor" xml:space="preserve"><value>仕入先</value></data>
+  <data name="Label.DocumentSource.Customer" xml:space="preserve"><value>顧客</value></data>
+  <data name="Label.DocumentSource.Internal" xml:space="preserve"><value>社内</value></data>
+  <data name="Label.DocumentSource.Other" xml:space="preserve"><value>その他</value></data>
+  <data name="Label.DocumentAccessLevel.Normal" xml:space="preserve"><value>一般</value></data>
+  <data name="Label.DocumentAccessLevel.Sensitive" xml:space="preserve"><value>機密</value></data>
+  <data name="Button.DownloadFile" xml:space="preserve"><value>ダウンロード</value></data>
+  <data name="Button.UploadFile" xml:space="preserve"><value>アップロード</value></data>
+  <data name="Message.NoDocuments" xml:space="preserve"><value>文書がありません</value></data>
+  <data name="Message.FileRequired" xml:space="preserve"><value>ファイルをアップロードしてください</value></data>
+
+  <!-- ===== Field keys - Common entity references ===== -->
+  <data name="Field.Customer" xml:space="preserve"><value>顧客</value></data>
+  <data name="Field.Supplier" xml:space="preserve"><value>仕入先</value></data>
+  <data name="Field.Vehicle" xml:space="preserve"><value>車両</value></data>
+  <data name="Field.VehicleType" xml:space="preserve"><value>車種</value></data>
+  <data name="Field.WasteType" xml:space="preserve"><value>廃棄物種類</value></data>
+  <data name="Field.ReturnReason" xml:space="preserve"><value>返品理由</value></data>
 </root>

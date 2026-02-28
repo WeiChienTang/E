@@ -1,0 +1,125 @@
+@* 檔案分類編輯組件 *@
+@inject IDocumentCategoryService DocumentCategoryService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="DocumentCategory"
+                          TService="IDocumentCategoryService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@DocumentCategoryId"
+                          Service="@DocumentCategoryService"
+                          EntityName="@L["Entity.DocumentCategory"]"
+                          EntityNamePlural="@L["Entity.DocumentCategory"]"
+                          ModalTitle="@(DocumentCategoryId.HasValue ? L["Message.EditTitle", L["Entity.DocumentCategory"]].ToString() : L["Message.CreateTitle", L["Entity.DocumentCategory"]].ToString())"
+                          Size="GenericEditModalComponent<DocumentCategory, IDocumentCategoryService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(DocumentCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.DocumentCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.DocumentCategory"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.DocumentCategory"]]"
+                          RequiredPermission="Document.Manage"
+                          OnEntitySaved="@OnDocumentCategorySaved"
+                          OnCancel="@OnCancel" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? DocumentCategoryId { get; set; }
+    [Parameter] public EventCallback<DocumentCategory> OnDocumentCategorySaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<DocumentCategory, IDocumentCategoryService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+            InitializeFormFields();
+    }
+
+    private Task<DocumentCategory?> LoadData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<DocumentCategory, IDocumentCategoryService>(
+            DocumentCategoryId, DocumentCategoryService, NotificationService, "檔案分類", "DCAT", PrefilledValues,
+            c => c.Name = string.Empty);
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(DocumentCategory.Code),
+                    Label = L["Field.Code"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Code"]],
+                    IsRequired = false,
+                    HelpText = "分類的唯一識別編號，新增時系統會自動產生"
+                },
+                new()
+                {
+                    PropertyName = nameof(DocumentCategory.Name),
+                    Label = L["Field.CategoryName"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CategoryName"]],
+                    IsRequired = true,
+                    HelpText = "分類名稱，例如：政府公文、廠商合約"
+                },
+                new()
+                {
+                    PropertyName = nameof(DocumentCategory.Source),
+                    Label = L["Field.DocumentSource"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = "1", Text = L["Label.DocumentSource.Government"] },
+                        new() { Value = "2", Text = L["Label.DocumentSource.Vendor"] },
+                        new() { Value = "3", Text = L["Label.DocumentSource.Customer"] },
+                        new() { Value = "4", Text = L["Label.DocumentSource.Internal"] },
+                        new() { Value = "99", Text = L["Label.DocumentSource.Other"] }
+                    },
+                    HelpText = "文件的來源分類"
+                },
+                new()
+                {
+                    PropertyName = nameof(DocumentCategory.DefaultAccessLevel),
+                    Label = L["Field.DefaultAccessLevel"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = "1", Text = L["Label.DocumentAccessLevel.Normal"] },
+                        new() { Value = "2", Text = L["Label.DocumentAccessLevel.Sensitive"] }
+                    },
+                    HelpText = "此分類下文件的預設存取層級"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<DocumentCategory>()
+            };
+
+            formSections = FormSectionHelper<DocumentCategory>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    c => c.Code,
+                    c => c.Name,
+                    c => c.Source,
+                    c => c.DefaultAccessLevel)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    c => c.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
+}

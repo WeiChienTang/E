@@ -6,6 +6,7 @@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Helpers
 @using ERPCore2.Models.Reports
+@inject Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> L
 @inject INotificationService NotificationService
 @inject IFormattedPrintService FormattedPrintService
 @inject IExcelExportService ExcelExportService
@@ -34,27 +35,27 @@
         <div class="w-100 d-flex flex-wrap align-items-center px-2 modal-buttons-container">
             @* 右側：操作按鈕 *@
             <div class="d-flex gap-2 ms-auto">
-                <GenericButtonComponent Text="匯出Excel"
+                <GenericButtonComponent Text="@L["Button.ExportExcel"]"
                                       Variant="ButtonVariant.Green"
                                       OnClick="HandleExportExcel"
                                       IsDisabled="@(IsLoading || IsPrinting || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
 
-                <GenericButtonComponent Text="下載PDF"
+                <GenericButtonComponent Text="@L["Button.DownloadPdf"]"
                                       Variant="ButtonVariant.Orange"
                                       OnClick="HandleExportPdf"
                                       IsDisabled="@(IsLoading || IsPrinting || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
 
-                <GenericButtonComponent Text="本機列印"
+                <GenericButtonComponent Text="@L["Button.BrowserPrint"]"
                                       Variant="ButtonVariant.Cyan"
                                       OnClick="HandleBrowserPrint"
                                       IsDisabled="@(IsLoading || IsPrinting || _isGeneratingPdf || PreviewImages == null || !PreviewImages.Any())" />
 
-                <GenericButtonComponent Text="列印"
+                <GenericButtonComponent Text="@L["Button.Print"]"
                                       Variant="ButtonVariant.Blue"
                                       OnClick="HandlePrint"
                                       IsDisabled="@(IsLoading || IsPrinting || _isGeneratingPdf || string.IsNullOrEmpty(_printerName))" />
 
-                <GenericButtonComponent Text="取消"
+                <GenericButtonComponent Text="@L["Button.Cancel"]"
                                       Variant="ButtonVariant.Red"
                                       OnClick="HandleCancel"
                                       IsDisabled="@(IsLoading || IsPrinting || _isGeneratingPdf)" />
@@ -67,9 +68,9 @@
         {
             <div class="d-flex justify-content-center align-items-center py-5">
                 <div class="spinner-border text-primary me-3" role="status">
-                    <span class="visually-hidden">列印中...</span>
+                    <span class="visually-hidden">@L["Report.Printing"]</span>
                 </div>
-                <span class="fs-5">正在發送到印表機...</span>
+                <span class="fs-5">@L["Report.SendingToPrinter"]</span>
             </div>
         }
         else
@@ -79,13 +80,13 @@
                 @* 左側：列印設定區域 *@
                 <div class="print-settings-panel">
                     <h6 class="settings-section-title">
-                        <i class="fas fa-cog me-2"></i>列印設定
+                        <i class="fas fa-cog me-2"></i>@L["Report.PrintSettings"]
                     </h6>
                     
                     @* 印表機選擇 *@
                     <div class="setting-item-row">
                         <label class="setting-label-inline">
-                            <i class="fas fa-print me-1"></i>印表機
+                            <i class="fas fa-print me-1"></i>@L["Report.PrinterLabel"]
                         </label>
                         <select class="form-select form-select-sm setting-input" 
                                 @bind="_selectedPrinterConfigurationId" 
@@ -101,14 +102,14 @@
                     @if (string.IsNullOrEmpty(_printerName))
                     {
                         <small class="text-warning">
-                            <i class="fas fa-exclamation-triangle me-1"></i>請選擇印表機
+                            <i class="fas fa-exclamation-triangle me-1"></i>@L["Report.SelectPrinterWarning"]
                         </small>
                     }
                     
                     @* 紙張選擇 *@
                     <div class="setting-item-row">
                         <label class="setting-label-inline">
-                            <i class="fas fa-file me-1"></i>紙張
+                            <i class="fas fa-file me-1"></i>@L["Report.PaperLabel"]
                         </label>
                         <select class="form-select form-select-sm setting-input" 
                                 @bind="_selectedPaperSettingId"
@@ -125,7 +126,7 @@
                     @* 預覽縮放 *@
                     <div class="setting-item-row">
                         <label class="setting-label-inline">
-                            <i class="fas fa-search-plus me-1"></i>縮放
+                            <i class="fas fa-search-plus me-1"></i>@L["Report.ZoomLabel"]
                         </label>
                         <div class="d-flex align-items-center gap-1 setting-input">
                             <button type="button" class="btn btn-sm btn-outline-secondary"
@@ -143,50 +144,50 @@
                     @* 邊距設定 *@
                     <div class="margin-settings-group mt-2">
                         <label class="setting-label-inline mb-1">
-                            <i class="fas fa-border-style me-1"></i>邊距 (cm)
+                            <i class="fas fa-border-style me-1"></i>@L["Report.MarginLabel"]
                         </label>
                         <div class="margin-inputs-grid">
                             <div class="margin-input-item">
-                                <label class="margin-label">上</label>
-                                <input type="number" 
-                                       class="form-control form-control-sm margin-input" 
-                                       @bind="_marginTop" 
+                                <label class="margin-label">@L["Label.MarginTop"]</label>
+                                <input type="number"
+                                       class="form-control form-control-sm margin-input"
+                                       @bind="_marginTop"
                                        @bind:after="OnMarginChanged"
                                        step="0.1"
-                                       min="0" 
+                                       min="0"
                                        max="10"
                                        disabled="@(IsLoading || _selectedPaper == null)" />
                             </div>
                             <div class="margin-input-item">
-                                <label class="margin-label">下</label>
-                                <input type="number" 
-                                       class="form-control form-control-sm margin-input" 
-                                       @bind="_marginBottom" 
+                                <label class="margin-label">@L["Label.MarginBottom"]</label>
+                                <input type="number"
+                                       class="form-control form-control-sm margin-input"
+                                       @bind="_marginBottom"
                                        @bind:after="OnMarginChanged"
                                        step="0.1"
-                                       min="0" 
+                                       min="0"
                                        max="10"
                                        disabled="@(IsLoading || _selectedPaper == null)" />
                             </div>
                             <div class="margin-input-item">
-                                <label class="margin-label">左</label>
-                                <input type="number" 
-                                       class="form-control form-control-sm margin-input" 
-                                       @bind="_marginLeft" 
+                                <label class="margin-label">@L["Label.MarginLeft"]</label>
+                                <input type="number"
+                                       class="form-control form-control-sm margin-input"
+                                       @bind="_marginLeft"
                                        @bind:after="OnMarginChanged"
                                        step="0.1"
-                                       min="0" 
+                                       min="0"
                                        max="10"
                                        disabled="@(IsLoading || _selectedPaper == null)" />
                             </div>
                             <div class="margin-input-item">
-                                <label class="margin-label">右</label>
-                                <input type="number" 
-                                       class="form-control form-control-sm margin-input" 
-                                       @bind="_marginRight" 
+                                <label class="margin-label">@L["Label.MarginRight"]</label>
+                                <input type="number"
+                                       class="form-control form-control-sm margin-input"
+                                       @bind="_marginRight"
                                        @bind:after="OnMarginChanged"
                                        step="0.1"
-                                       min="0" 
+                                       min="0"
                                        max="10"
                                        disabled="@(IsLoading || _selectedPaper == null)" />
                             </div>
@@ -200,7 +201,7 @@
                     @* 列印份數 *@
                     <div class="setting-item-row">
                         <label class="setting-label-inline">
-                            <i class="fas fa-copy me-1"></i>份數
+                            <i class="fas fa-copy me-1"></i>@L["Report.CopiesLabel"]
                         </label>
                         <input type="number" 
                                class="form-control form-control-sm setting-input-small" 
@@ -213,10 +214,10 @@
                     @* 頁數顯示 *@
                     <div class="setting-item-row">
                         <label class="setting-label-inline">
-                            <i class="fas fa-file-alt me-1"></i>頁數
+                            <i class="fas fa-file-alt me-1"></i>@L["Report.PagesLabel"]
                         </label>
                         <div class="form-control form-control-sm bg-light text-center setting-input-small">
-                            @_estimatedPages 頁
+                            @string.Format(L["Report.PageNum"], _estimatedPages)
                         </div>
                     </div>
                 </div>
@@ -230,10 +231,10 @@
                             @foreach (var (imageData, index) in PreviewImages.Select((img, i) => (img, i)))
                             {
                                 <div class="page-preview-container mb-3">
-                                    <div class="page-number-badge">第 @(index + 1) 頁</div>
+                                    <div class="page-number-badge">@string.Format(L["Report.PageNum"], index + 1)</div>
                                     <img src="data:image/png;base64,@Convert.ToBase64String(imageData)"
                                          class="formatted-page-preview"
-                                         alt="預覽第 @(index + 1) 頁" />
+                                         alt="@string.Format(L["Report.PageNum"], index + 1)" />
                                 </div>
                             }
                         </div>
@@ -243,7 +244,7 @@
                         <div class="d-flex justify-content-center align-items-center py-5 text-muted h-100">
                             <div class="text-center">
                                 <i class="fas fa-file-alt fa-3x mb-3"></i>
-                                <div class="fs-5">無報表內容</div>
+                                <div class="fs-5">@L["Report.NoContent"]</div>
                             </div>
                         </div>
                     }
@@ -653,7 +654,7 @@
         
         if (string.IsNullOrEmpty(_printerName))
         {
-            await NotificationService.ShowWarningAsync("請先選擇印表機");
+            await NotificationService.ShowWarningAsync(L["Report.SelectPrinterWarning"]);
             return;
         }
         

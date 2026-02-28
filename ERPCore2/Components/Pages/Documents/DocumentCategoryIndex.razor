@@ -1,0 +1,79 @@
+@page "/document-categories"
+@inject IDocumentCategoryService DocumentCategoryService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="DocumentCategory"
+                        TService="IDocumentCategoryService"
+                        Service="@DocumentCategoryService"
+                        EntityBasePath="/document-categories"
+                        PageTitle="檔案分類"
+                        PageSubtitle="管理文件分類與來源設定"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="@L["Entity.DocumentCategory"]"
+                        GetEntityDisplayName="@(c => c.Name)"
+                        RequiredPermission="Document.Manage"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
+                        @ref="indexComponent"/>
+
+<DocumentCategoryEditModalComponent IsVisible="@showEditModal"
+                                   IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                   DocumentCategoryId="@editingId"
+                                   OnDocumentCategorySaved="@modalHandler.OnEntitySavedAsync"
+                                   OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<DocumentCategory, IDocumentCategoryService> indexComponent = default!;
+    private bool showEditModal = false;
+    private int? editingId = null;
+    private ModalHandler<DocumentCategory, GenericIndexPageComponent<DocumentCategory, IDocumentCategoryService>> modalHandler = default!;
+    private DocumentCategoryFieldConfiguration fieldConfiguration = default!;
+    private List<BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<DocumentCategory, GenericIndexPageComponent<DocumentCategory, IDocumentCategoryService>>(
+                id => editingId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new DocumentCategoryFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化檔案分類頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化檔案分類頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("檔案管理", "檔案分類", null, NotificationService, GetType());
+
+    private async Task<List<DocumentCategory>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(DocumentCategoryService.GetAllAsync, "檔案分類", NotificationService, GetType());
+
+    private IQueryable<DocumentCategory> ApplyFilters(SearchFilterModel searchModel, IQueryable<DocumentCategory> query)
+    {
+        if (fieldConfiguration == null)
+            return query.OrderBy(c => c.Name);
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyFilters), GetType());
+    }
+}

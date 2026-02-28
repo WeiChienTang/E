@@ -289,10 +289,6 @@
   <data name="Preference.ThemeDark" xml:space="preserve">
     <value>深色</value>
   </data>
-  <data name="Preference.ThemeSystem" xml:space="preserve">
-    <value>系統設定</value>
-  </data>
-
   <!-- ===== 員工帳號 ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>帳號由管理員設定，無法自行修改</value>
@@ -1327,4 +1323,75 @@
 
   <!-- ===== Field keys - Account/Inventory extra ===== -->
   <data name="Field.AccountType" xml:space="preserve"><value>科目大類</value></data>
+
+  <!-- ===== Button keys - Report/Print actions ===== -->
+  <data name="Button.BarcodePrint" xml:space="preserve"><value>條碼列印</value></data>
+  <data name="Button.BatchPrint" xml:space="preserve"><value>報表列印</value></data>
+  <data name="Button.ImportSchedule" xml:space="preserve"><value>排程入庫</value></data>
+  <data name="Button.BatchDelete" xml:space="preserve"><value>批次刪除</value></data>
+  <data name="Button.ExportExcel" xml:space="preserve"><value>匯出Excel</value></data>
+  <data name="Button.ExportPdf" xml:space="preserve"><value>匯出PDF</value></data>
+  <data name="Button.DownloadPdf" xml:space="preserve"><value>下載PDF</value></data>
+  <data name="Button.BrowserPrint" xml:space="preserve"><value>本機列印</value></data>
+
+  <!-- ===== Report UI keys ===== -->
+  <data name="Report.PreviewPrint" xml:space="preserve"><value>預覽列印</value></data>
+  <data name="Report.FilterTitle" xml:space="preserve"><value>報表篩選條件</value></data>
+  <data name="Report.FilterConfigNotFound" xml:space="preserve"><value>找不到報表 ID「{0}」的篩選配置</value></data>
+  <data name="Report.FilterTemplateNotConfigured" xml:space="preserve"><value>此報表尚未配置篩選模板</value></data>
+  <data name="Report.PrintSettings" xml:space="preserve"><value>列印設定</value></data>
+  <data name="Report.PrinterLabel" xml:space="preserve"><value>印表機</value></data>
+  <data name="Report.PaperLabel" xml:space="preserve"><value>紙張</value></data>
+  <data name="Report.ZoomLabel" xml:space="preserve"><value>縮放</value></data>
+  <data name="Report.MarginLabel" xml:space="preserve"><value>邊距 (cm)</value></data>
+  <data name="Report.CopiesLabel" xml:space="preserve"><value>份數</value></data>
+  <data name="Report.PagesLabel" xml:space="preserve"><value>頁數</value></data>
+  <data name="Report.PageNum" xml:space="preserve"><value>第 {0} 頁</value></data>
+  <data name="Report.NoContent" xml:space="preserve"><value>無報表內容</value></data>
+  <data name="Report.SelectPrinterWarning" xml:space="preserve"><value>請先選擇印表機</value></data>
+  <data name="Report.Printing" xml:space="preserve"><value>列印中...</value></data>
+  <data name="Report.SendingToPrinter" xml:space="preserve"><value>正在發送到印表機...</value></data>
+
+  <!-- ===== Label keys - Margin directions ===== -->
+  <data name="Label.MarginTop" xml:space="preserve"><value>上</value></data>
+  <data name="Label.MarginBottom" xml:space="preserve"><value>下</value></data>
+  <data name="Label.MarginLeft" xml:space="preserve"><value>左</value></data>
+  <data name="Label.MarginRight" xml:space="preserve"><value>右</value></data>
+
+  <!-- ===== Document Management (檔案存留) ===== -->
+  <data name="Nav.DocumentGroup" xml:space="preserve"><value>檔案管理</value></data>
+  <data name="Nav.Documents" xml:space="preserve"><value>檔案列表</value></data>
+  <data name="Nav.DocumentCategories" xml:space="preserve"><value>檔案分類</value></data>
+  <data name="Entity.Document" xml:space="preserve"><value>文件</value></data>
+  <data name="Entity.DocumentCategory" xml:space="preserve"><value>檔案分類</value></data>
+  <data name="Field.DocumentTitle" xml:space="preserve"><value>文件標題</value></data>
+  <data name="Field.DocumentCategory" xml:space="preserve"><value>檔案分類</value></data>
+  <data name="Field.CategoryName" xml:space="preserve"><value>分類名稱</value></data>
+  <data name="Field.DocumentSource" xml:space="preserve"><value>來源類型</value></data>
+  <data name="Field.DefaultAccessLevel" xml:space="preserve"><value>預設存取層級</value></data>
+  <data name="Field.AccessLevel" xml:space="preserve"><value>存取層級</value></data>
+  <data name="Field.IssuedBy" xml:space="preserve"><value>發文機關/來源</value></data>
+  <data name="Field.IssuedDate" xml:space="preserve"><value>發文日期</value></data>
+  <data name="Field.ExpiryDate" xml:space="preserve"><value>有效期限</value></data>
+  <data name="Field.FileSize" xml:space="preserve"><value>檔案大小</value></data>
+  <data name="Field.FileName" xml:space="preserve"><value>原始檔案名稱</value></data>
+  <data name="Label.DocumentSource.Government" xml:space="preserve"><value>政府/法規</value></data>
+  <data name="Label.DocumentSource.Vendor" xml:space="preserve"><value>廠商</value></data>
+  <data name="Label.DocumentSource.Customer" xml:space="preserve"><value>客戶</value></data>
+  <data name="Label.DocumentSource.Internal" xml:space="preserve"><value>內部文件</value></data>
+  <data name="Label.DocumentSource.Other" xml:space="preserve"><value>其他</value></data>
+  <data name="Label.DocumentAccessLevel.Normal" xml:space="preserve"><value>一般</value></data>
+  <data name="Label.DocumentAccessLevel.Sensitive" xml:space="preserve"><value>敏感</value></data>
+  <data name="Button.DownloadFile" xml:space="preserve"><value>下載檔案</value></data>
+  <data name="Button.UploadFile" xml:space="preserve"><value>上傳檔案</value></data>
+  <data name="Message.NoDocuments" xml:space="preserve"><value>尚無文件</value></data>
+  <data name="Message.FileRequired" xml:space="preserve"><value>請上傳檔案</value></data>
+
+  <!-- ===== Field keys - Common entity references ===== -->
+  <data name="Field.Customer" xml:space="preserve"><value>客戶</value></data>
+  <data name="Field.Supplier" xml:space="preserve"><value>廠商</value></data>
+  <data name="Field.Vehicle" xml:space="preserve"><value>車輛</value></data>
+  <data name="Field.VehicleType" xml:space="preserve"><value>車型</value></data>
+  <data name="Field.WasteType" xml:space="preserve"><value>廢料類型</value></data>
+  <data name="Field.ReturnReason" xml:space="preserve"><value>退貨原因</value></data>
 </root>

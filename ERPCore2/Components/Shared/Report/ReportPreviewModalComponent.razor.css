@@ -366,3 +366,47 @@
     justify-content: center;
     transition: width 0.4s ease;
 }
+
+/* ===== 深色模式覆寫 ===== */
+
+[data-bs-theme=dark] .print-settings-panel {
+    background-color: var(--bg-primary);
+    border-right-color: var(--border-color);
+}
+
+[data-bs-theme=dark] .print-settings-panel.border-bottom {
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-bs-theme=dark] .settings-section-title {
+    color: var(--text-primary);
+}
+
+[data-bs-theme=dark] .setting-label-inline {
+    color: var(--text-secondary);
+}
+
+[data-bs-theme=dark] .margin-settings-group {
+    background-color: var(--bg-tertiary);
+}
+
+[data-bs-theme=dark] .margin-label {
+    color: var(--text-secondary);
+}
+
+[data-bs-theme=dark] .formatted-page-preview {
+    border-color: var(--border-color);
+}
+
+[data-bs-theme=dark] .export-progress-overlay {
+    background: rgba(0, 0, 0, 0.75);
+}
+
+[data-bs-theme=dark] .export-progress-card {
+    background: var(--bg-primary);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+[data-bs-theme=dark] .export-progress-message {
+    color: var(--text-primary);
+}

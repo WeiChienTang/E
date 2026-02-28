@@ -1,0 +1,80 @@
+@page "/documents"
+@inject IDocumentService DocumentService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+@inject NavigationManager Navigation
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="Document"
+                        TService="IDocumentService"
+                        Service="@DocumentService"
+                        EntityBasePath="/documents"
+                        PageTitle="檔案存留"
+                        PageSubtitle="管理與存取各類保存文件"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="@L["Entity.Document"]"
+                        GetEntityDisplayName="@(d => d.Title)"
+                        RequiredPermission="Document.Read"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
+                        @ref="indexComponent"/>
+
+<DocumentEditModalComponent IsVisible="@showEditModal"
+                           IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                           DocumentId="@editingId"
+                           OnDocumentSaved="@modalHandler.OnEntitySavedAsync"
+                           OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<Document, IDocumentService> indexComponent = default!;
+    private bool showEditModal = false;
+    private int? editingId = null;
+    private ModalHandler<Document, GenericIndexPageComponent<Document, IDocumentService>> modalHandler = default!;
+    private DocumentFieldConfiguration fieldConfiguration = default!;
+    private List<BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<Document, GenericIndexPageComponent<Document, IDocumentService>>(
+                id => editingId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new DocumentFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化檔案存留頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化檔案存留頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("檔案管理", "檔案列表", null, NotificationService, GetType());
+
+    private async Task<List<Document>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(DocumentService.GetAllAsync, "檔案", NotificationService, GetType());
+
+    private IQueryable<Document> ApplyFilters(SearchFilterModel searchModel, IQueryable<Document> query)
+    {
+        if (fieldConfiguration == null)
+            return query.OrderByDescending(d => d.CreatedAt);
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyFilters), GetType());
+    }
+}

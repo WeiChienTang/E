@@ -1,0 +1,14 @@
+/* 篩選列背景 */
+.tx-filter-bar {
+    background-color: var(--bg-secondary);
+}
+
+/* 統計摘要列背景 */
+.tx-stats-bar {
+    background-color: var(--bg-primary);
+}
+
+/* 淨銷售額儲存格背景 */
+.tx-net-sales-cell {
+    background-color: var(--bg-secondary);
+}

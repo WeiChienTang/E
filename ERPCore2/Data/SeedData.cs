@@ -141,16 +141,19 @@ namespace ERPCore2.Data
                     new ReportPrintConfigurationSeeder(),  // 報表列印配置（在紙張設定之後）
                     new VehicleTypeSeeder(),               // 車輛類型（車型基礎資料）
                     new AccountItemSeeder(),               // 會計科目表（商業會計項目表 112 年度）
+                    new DocumentCategorySeeder(),          // 檔案分類（政府公文、廠商合約等）
                 };
             }
 
             return new List<IDataSeeder>
             {
-                new SystemParameterSeeder(),    
+                new SystemParameterSeeder(),
                 new CompanyModuleSeeder(),              // 公司模組（從 NavigationConfig 自動衍生）
+                new PermissionSeeder(),
                 new RoleSeeder(),
                 new RolePermissionSeeder(),
                 new PaymentMethodSeeder(),
+                new DocumentCategorySeeder(),           // 檔案分類
             };
         }
     }

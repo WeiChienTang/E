@@ -59,7 +59,7 @@
     private EmployeePreference employeePreference = new();
     private UILanguage _originalLanguage = UILanguage.ZhTW;   // 記錄載入時的語言，用於判斷是否需要 reload
     private ContentZoom _originalZoom = ContentZoom.Medium;    // 記錄載入時的縮放，用於判斷是否需要套用
-    private AppTheme _originalTheme = AppTheme.System;         // 記錄載入時的主題，用於判斷是否需要套用
+    private AppTheme _originalTheme = AppTheme.Light;         // 記錄載入時的主題，用於判斷是否需要套用
 
     // 個人資料
     private Employee? currentEmployee = null;
@@ -248,7 +248,7 @@
         employeePreference = new();
         _originalLanguage = UILanguage.ZhTW;
         _originalZoom = ContentZoom.Medium;
-        _originalTheme = AppTheme.System;
+        _originalTheme = AppTheme.Light;
         newPassword = string.Empty;
         confirmPassword = string.Empty;
 

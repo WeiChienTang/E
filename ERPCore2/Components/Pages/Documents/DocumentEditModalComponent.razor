@@ -1,0 +1,274 @@
+@* 檔案存留編輯組件 *@
+@inject IDocumentService DocumentService
+@inject IDocumentCategoryService DocumentCategoryService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+@inject IWebHostEnvironment Environment
+
+<GenericEditModalComponent TEntity="Document"
+                          TService="IDocumentService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@DocumentId"
+                          Service="@DocumentService"
+                          EntityName="@L["Entity.Document"]"
+                          EntityNamePlural="@L["Entity.Document"]"
+                          ModalTitle="@(DocumentId.HasValue ? L["Message.EditTitle", L["Entity.Document"]].ToString() : L["Message.CreateTitle", L["Entity.Document"]].ToString())"
+                          Size="GenericEditModalComponent<Document, IDocumentService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadData"
+                          SaveHandler="@HandleSaveAsync"
+                          SaveSuccessMessage="@(DocumentId.HasValue ? L["Message.UpdateSuccess", L["Entity.Document"]].ToString() : L["Message.CreateSuccess", L["Entity.Document"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Document"]]"
+                          RequiredPermission="Document.Read"
+                          OnEntitySaved="@OnDocumentSaved"
+                          OnCancel="@OnCancel">
+    <CustomFormContent>
+        @* 檔案上傳區域 *@
+        <div class="col-12 mt-2">
+            <label class="form-label fw-semibold">
+                @L["Button.UploadFile"]
+                @if (!DocumentId.HasValue)
+                {
+                    <span class="text-danger ms-1">*</span>
+                }
+            </label>
+            <InputFile OnChange="@HandleFileSelected"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                       class="form-control" />
+            @if (!string.IsNullOrEmpty(uploadError))
+            {
+                <div class="text-danger small mt-1">@uploadError</div>
+            }
+            @if (selectedFile != null)
+            {
+                <div class="text-success small mt-1">
+                    已選擇：@selectedFile.Name (@FileUploadHelper.GetFileSizeString(selectedFile.Size))
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(currentFileName))
+            {
+                <div class="text-muted small mt-1">
+                    目前檔案：@currentFileName
+                </div>
+            }
+            <div class="form-text">支援格式：PDF、Word、Excel、圖片（最大 20MB）</div>
+        </div>
+    </CustomFormContent>
+</GenericEditModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? DocumentId { get; set; }
+    [Parameter] public EventCallback<Document> OnDocumentSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<Document, IDocumentService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // 檔案上傳狀態
+    private IBrowserFile? selectedFile = null;
+    private string? uploadError = null;
+    private string? currentFileName = null;
+
+    // 下拉選項
+    private List<SelectOption> categoryOptions = new();
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+            _ = InitializeAsync();
+    }
+
+    private async Task InitializeAsync()
+    {
+        try
+        {
+            selectedFile = null;
+            uploadError = null;
+            currentFileName = null;
+
+            // 載入分類選項
+            var categories = await DocumentCategoryService.GetAllAsync();
+            categoryOptions = categories
+                .Where(c => c.Status == EntityStatus.Active)
+                .OrderBy(c => c.Name)
+                .Select(c => new SelectOption { Value = c.Id.ToString(), Text = c.Name })
+                .ToList();
+
+            InitializeFormFields();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeAsync), GetType(), additionalData: "初始化文件表單失敗");
+        }
+    }
+
+    private async Task<Document?> LoadData()
+    {
+        var doc = await EditDataLoaderHelper.LoadOrCreateAsync<Document, IDocumentService>(
+            DocumentId, DocumentService, NotificationService, "文件", "DOC", PrefilledValues,
+            d => d.Title = string.Empty);
+
+        if (doc != null && doc.Id > 0)
+            currentFileName = doc.FileName;
+
+        return doc;
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        uploadError = null;
+    }
+
+    private async Task<bool> HandleSaveAsync(Document entity)
+    {
+        try
+        {
+            // 新增時必須有檔案
+            if (entity.Id == 0 && selectedFile == null)
+            {
+                uploadError = L["Message.FileRequired"];
+                return false;
+            }
+
+            // 如果有選擇新檔案，先上傳
+            if (selectedFile != null)
+            {
+                var oldPath = entity.FilePath;
+                var (success, message, filePath, mimeType) = await FileUploadHelper.UploadDocumentAsync(
+                    selectedFile, Environment, entity.Id > 0 ? oldPath : null);
+
+                if (!success)
+                {
+                    uploadError = message;
+                    return false;
+                }
+
+                entity.FilePath = filePath!;
+                entity.FileName = selectedFile.Name;
+                entity.FileSize = selectedFile.Size;
+                entity.MimeType = mimeType;
+            }
+
+            // 儲存實體
+            ServiceResult result;
+            if (entity.Id == 0)
+                result = await DocumentService.CreateAsync(entity);
+            else
+                result = await DocumentService.UpdateAsync(entity);
+
+            return result.IsSuccess;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveAsync), GetType(), additionalData: "儲存文件失敗");
+            return false;
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Document.Code),
+                    Label = L["Field.Code"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Code"]],
+                    IsRequired = false,
+                    HelpText = "文件的唯一識別編號，新增時系統會自動產生"
+                },
+                new()
+                {
+                    PropertyName = nameof(Document.Title),
+                    Label = L["Field.DocumentTitle"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.DocumentTitle"]],
+                    IsRequired = true,
+                    HelpText = "文件的顯示標題"
+                },
+                new()
+                {
+                    PropertyName = nameof(Document.DocumentCategoryId),
+                    Label = L["Field.DocumentCategory"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = categoryOptions,
+                    HelpText = "選擇文件所屬的分類"
+                },
+                new()
+                {
+                    PropertyName = nameof(Document.AccessLevel),
+                    Label = L["Field.AccessLevel"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = "", Text = "使用分類預設" },
+                        new() { Value = "1", Text = L["Label.DocumentAccessLevel.Normal"] },
+                        new() { Value = "2", Text = L["Label.DocumentAccessLevel.Sensitive"] }
+                    },
+                    HelpText = "若不設定，則使用所屬分類的預設層級"
+                },
+                new()
+                {
+                    PropertyName = nameof(Document.IssuedBy),
+                    Label = L["Field.IssuedBy"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.IssuedBy"]],
+                    IsRequired = false,
+                    HelpText = "文件的發文機關或來源單位名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(Document.IssuedDate),
+                    Label = L["Field.IssuedDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "文件的發文日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Document.ExpiryDate),
+                    Label = L["Field.ExpiryDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "文件的有效期限（若有）"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<Document>()
+            };
+
+            formSections = FormSectionHelper<Document>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    d => d.Code,
+                    d => d.Title,
+                    d => d.DocumentCategoryId,
+                    d => d.AccessLevel)
+                .AddToSection("DocumentInfo",
+                    d => d.IssuedBy,
+                    d => d.IssuedDate,
+                    d => d.ExpiryDate)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    d => d.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
+}

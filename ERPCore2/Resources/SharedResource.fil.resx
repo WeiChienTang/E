@@ -268,10 +268,6 @@
   <data name="Preference.ThemeDark" xml:space="preserve">
     <value>Madilim</value>
   </data>
-  <data name="Preference.ThemeSystem" xml:space="preserve">
-    <value>Sistema</value>
-  </data>
-
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>Itinakda ng administrator ang account at hindi maaaring baguhin</value>
@@ -1309,4 +1305,73 @@
 
   <!-- ===== Field keys - Account/Inventory extra ===== -->
   <data name="Field.AccountType" xml:space="preserve"><value>Uri ng Account</value></data>
+
+  <!-- ===== Button keys - Report/Print actions ===== -->
+  <data name="Button.BarcodePrint" xml:space="preserve"><value>Barcode Print</value></data>
+  <data name="Button.BatchPrint" xml:space="preserve"><value>Batch Print</value></data>
+  <data name="Button.ImportSchedule" xml:space="preserve"><value>Schedule Import</value></data>
+  <data name="Button.BatchDelete" xml:space="preserve"><value>Batch Delete</value></data>
+  <data name="Button.ExportExcel" xml:space="preserve"><value>I-export sa Excel</value></data>
+  <data name="Button.ExportPdf" xml:space="preserve"><value>I-export sa PDF</value></data>
+  <data name="Button.DownloadPdf" xml:space="preserve"><value>I-download ang PDF</value></data>
+  <data name="Button.BrowserPrint" xml:space="preserve"><value>Browser Print</value></data>
+
+  <!-- ===== Report UI keys ===== -->
+  <data name="Report.PreviewPrint" xml:space="preserve"><value>Preview Print</value></data>
+  <data name="Report.FilterTitle" xml:space="preserve"><value>Filter ng Ulat</value></data>
+  <data name="Report.FilterConfigNotFound" xml:space="preserve"><value>Hindi mahanap ang filter configuration para sa report ID "{0}"</value></data>
+  <data name="Report.FilterTemplateNotConfigured" xml:space="preserve"><value>Walang naka-configure na filter template para sa ulat na ito</value></data>
+  <data name="Report.PrintSettings" xml:space="preserve"><value>Mga Setting ng Print</value></data>
+  <data name="Report.PrinterLabel" xml:space="preserve"><value>Printer</value></data>
+  <data name="Report.PaperLabel" xml:space="preserve"><value>Papel</value></data>
+  <data name="Report.ZoomLabel" xml:space="preserve"><value>Zoom</value></data>
+  <data name="Report.MarginLabel" xml:space="preserve"><value>Margin (cm)</value></data>
+  <data name="Report.CopiesLabel" xml:space="preserve"><value>Kopya</value></data>
+  <data name="Report.PagesLabel" xml:space="preserve"><value>Pahina</value></data>
+  <data name="Report.PageNum" xml:space="preserve"><value>Pahina {0}</value></data>
+  <data name="Report.NoContent" xml:space="preserve"><value>Walang Nilalaman ng Ulat</value></data>
+  <data name="Report.SelectPrinterWarning" xml:space="preserve"><value>Pumili muna ng printer</value></data>
+  <data name="Report.Printing" xml:space="preserve"><value>Nagpi-print...</value></data>
+  <data name="Report.SendingToPrinter" xml:space="preserve"><value>Nagpapadala sa printer...</value></data>
+
+  <!-- ===== Label keys - Margin directions ===== -->
+  <data name="Label.MarginTop" xml:space="preserve"><value>Itaas</value></data>
+  <data name="Label.MarginBottom" xml:space="preserve"><value>Ibaba</value></data>
+  <data name="Label.MarginLeft" xml:space="preserve"><value>Kaliwa</value></data>
+  <data name="Label.MarginRight" xml:space="preserve"><value>Kanan</value></data>
+
+  <!-- ===== Document Management (Pamamahala ng Dokumento) ===== -->
+  <data name="Nav.DocumentGroup" xml:space="preserve"><value>Mga Dokumento</value></data>
+  <data name="Nav.Documents" xml:space="preserve"><value>Listahan ng Dokumento</value></data>
+  <data name="Nav.DocumentCategories" xml:space="preserve"><value>Kategorya ng Dokumento</value></data>
+  <data name="Entity.Document" xml:space="preserve"><value>Dokumento</value></data>
+  <data name="Entity.DocumentCategory" xml:space="preserve"><value>Kategorya ng Dokumento</value></data>
+  <data name="Field.DocumentTitle" xml:space="preserve"><value>Pamagat ng Dokumento</value></data>
+  <data name="Field.DocumentCategory" xml:space="preserve"><value>Kategorya ng Dokumento</value></data>
+  <data name="Field.DocumentSource" xml:space="preserve"><value>Uri ng Pinagmulan</value></data>
+  <data name="Field.DefaultAccessLevel" xml:space="preserve"><value>Default na Antas ng Access</value></data>
+  <data name="Field.AccessLevel" xml:space="preserve"><value>Antas ng Access</value></data>
+  <data name="Field.IssuedBy" xml:space="preserve"><value>Inilabas ng</value></data>
+  <data name="Field.IssuedDate" xml:space="preserve"><value>Petsa ng Pagpapalabas</value></data>
+  <data name="Field.FileSize" xml:space="preserve"><value>Laki ng File</value></data>
+  <data name="Field.FileName" xml:space="preserve"><value>Orihinal na Pangalan ng File</value></data>
+  <data name="Label.DocumentSource.Government" xml:space="preserve"><value>Gobyerno / Regulasyon</value></data>
+  <data name="Label.DocumentSource.Vendor" xml:space="preserve"><value>Vendor</value></data>
+  <data name="Label.DocumentSource.Customer" xml:space="preserve"><value>Customer</value></data>
+  <data name="Label.DocumentSource.Internal" xml:space="preserve"><value>Panloob</value></data>
+  <data name="Label.DocumentSource.Other" xml:space="preserve"><value>Iba pa</value></data>
+  <data name="Label.DocumentAccessLevel.Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Label.DocumentAccessLevel.Sensitive" xml:space="preserve"><value>Sensitibo</value></data>
+  <data name="Button.DownloadFile" xml:space="preserve"><value>I-download ang File</value></data>
+  <data name="Button.UploadFile" xml:space="preserve"><value>Mag-upload ng File</value></data>
+  <data name="Message.NoDocuments" xml:space="preserve"><value>Walang dokumento</value></data>
+  <data name="Message.FileRequired" xml:space="preserve"><value>Mangyaring mag-upload ng file</value></data>
+
+  <!-- ===== Field keys - Common entity references ===== -->
+  <data name="Field.Customer" xml:space="preserve"><value>Customer</value></data>
+  <data name="Field.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Field.Vehicle" xml:space="preserve"><value>Sasakyan</value></data>
+  <data name="Field.VehicleType" xml:space="preserve"><value>Uri ng Sasakyan</value></data>
+  <data name="Field.WasteType" xml:space="preserve"><value>Uri ng Basura</value></data>
+  <data name="Field.ReturnReason" xml:space="preserve"><value>Dahilan ng Pagbabalik</value></data>
 </root>

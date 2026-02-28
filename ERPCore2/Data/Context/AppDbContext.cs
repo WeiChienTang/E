@@ -109,6 +109,8 @@ namespace ERPCore2.Data.Context
       public DbSet<JournalEntry> JournalEntries { get; set; }
       public DbSet<JournalEntryLine> JournalEntryLines { get; set; }
       public DbSet<CompanyModule> CompanyModules { get; set; }
+      public DbSet<DocumentCategory> DocumentCategories { get; set; }
+      public DbSet<Document> Documents { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1367,6 +1369,15 @@ namespace ERPCore2.Data.Context
 
                         // 金額精度
                         entity.Property(e => e.Amount).HasPrecision(18, 2);
+                  });
+
+                  // 檔案分類關聯
+                  modelBuilder.Entity<Document>(entity =>
+                  {
+                        entity.HasOne(d => d.DocumentCategory)
+                              .WithMany(c => c.Documents)
+                              .HasForeignKey(d => d.DocumentCategoryId)
+                              .OnDelete(DeleteBehavior.Restrict);
                   });
 
             }

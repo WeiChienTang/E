@@ -27,6 +27,49 @@ public static class NavigationConfig
                 Category = "基礎功能",
                 SearchKeywords = new List<string> { "首頁", "主頁", "主畫面", "home", "dashboard", "總覽" }
             },
+            
+            // ==================== 檔案管理 ====================
+            new NavigationItem
+            {
+                Name = "檔案管理",
+                NameKey = "Nav.DocumentGroup",
+                Description = "管理與存取各類保存文件",
+                Route = "#",
+                IconClass = "bi bi-folder-fill",
+                Category = "檔案管理",
+                IsParent = true,
+                MenuKey = "document_management",
+                SearchKeywords = new List<string> { "檔案管理", "文件管理", "document", "file" },
+                Children = new List<NavigationItem>
+                {
+                    new NavigationItem
+                    {
+                        Name = "檔案列表",
+                        NameKey = "Nav.Documents",
+                        Description = "瀏覽與管理保存的各類文件",
+                        Route = "/documents",
+                        IconClass = "",
+                        Category = "檔案管理",
+                        RequiredPermission = "Document.Read",
+                        SearchKeywords = new List<string> { "檔案列表", "文件列表", "文件管理", "document" },
+                        QuickActionId = "NewDocument",
+                        QuickActionName = "新增文件"
+                    },
+                    new NavigationItem
+                    {
+                        Name = "檔案分類",
+                        NameKey = "Nav.DocumentCategories",
+                        Description = "管理文件分類與來源設定",
+                        Route = "/document-categories",
+                        IconClass = "",
+                        Category = "檔案管理",
+                        RequiredPermission = "Document.Manage",
+                        SearchKeywords = new List<string> { "檔案分類", "文件分類", "document category" },
+                        QuickActionId = "NewDocumentCategory",
+                        QuickActionName = "新增分類"
+                    }
+                }
+            },
 
             // ==================== 人力資源管理 ====================
             new NavigationItem
@@ -1073,7 +1116,7 @@ public static class NavigationConfig
                         QuickActionName = "新增報表設定"
                     }
                 }
-            }
+            },
         };
     }
 

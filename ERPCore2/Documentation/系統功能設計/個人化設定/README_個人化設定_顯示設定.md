@@ -9,7 +9,7 @@
 
 讓每位使用者可以獨立設定：
 
-1. **主題顏色**（AppTheme）：三種模式（亮色跟隨 OS / 深色 / 系統預設亮色）
+1. **主題顏色**（AppTheme）：兩種模式（淺色 Bootstrap 預設亮色 / 深色）
 2. **字型縮放**（ContentZoom）：6 個縮放級別（75% ~ 150%）
 
 兩者均儲存至 DB（`EmployeePreference`），跨裝置同步，並在頁面重新載入前透過 cookie + inline script 無閃爍套用。
@@ -24,19 +24,15 @@
 // Data/Entities/Employees/EmployeePreference.cs
 public enum AppTheme
 {
-    Light  = 1,   // 跟隨作業系統（OS 亮→亮，OS 暗→暗）
-    Dark   = 2,   // 強制深色
-    System = 3    // 強制亮色（Bootstrap 預設，即原始設計樣式）
+    Light = 1,   // 強制亮色（Bootstrap 預設）
+    Dark  = 2    // 強制深色
 }
 ```
 
 | Enum 值 | 使用者標籤 | 行為 | cookie 值 |
 |---------|-----------|------|-----------|
-| Light = 1 | 亮色 | 跟隨 OS 主題（prefers-color-scheme） | `system` |
+| Light = 1 | 淺色 | 強制 `data-bs-theme=light`（Bootstrap 預設亮色） | `light` |
 | Dark = 2 | 深色 | 強制 `data-bs-theme=dark` | `dark` |
-| System = 3 | 系統設定 | 強制 `data-bs-theme=light`（Bootstrap 原始樣式） | `light` |
-
-> ⚠️ 注意：cookie 值與 enum 名稱不完全對應（Light→`system`，System→`light`）。這是設計決策。
 
 ---
 
@@ -45,7 +41,7 @@ public enum AppTheme
 ```
 [DB] EmployeePreference.Theme (AppTheme enum)       ← 使用者偏好持久化
     ↓ 儲存時 / 登入後
-[Cookie] ERPCore2.Theme = 'system'|'dark'|'light'   ← 跨請求快取（無用戶識別）
+[Cookie] ERPCore2.Theme = 'light'|'dark'            ← 跨請求快取（無用戶識別）
     ↓ 頁面載入時（SSR 階段）
 [App.razor inline script] 讀取 cookie → 設定 html[data-bs-theme]   ← 防止 flash
     ↓ Circuit 連線後
@@ -60,21 +56,19 @@ public enum AppTheme
 // wwwroot/js/theme-helper.js
 
 var themeEnumMap = {
-    1: 'system',  // Light  → 跟隨 OS
-    2: 'dark',    // Dark   → 強制深色
-    3: 'light'    // System → 強制亮色
+    1: 'light',  // Light → 強制亮色
+    2: 'dark'    // Dark  → 強制深色
 };
 
+// 將主題值套用到 html[data-bs-theme]
+function applyThemeValue(themeValue) {
+    document.documentElement.setAttribute('data-bs-theme', themeValue);
+}
+
 window.setAppTheme = function (enumValue) {
-    var themeValue = themeEnumMap[enumValue] || 'system';
+    var themeValue = themeEnumMap[enumValue] || 'light';
     document.cookie = 'ERPCore2.Theme=' + themeValue + ';path=/;max-age=31536000';
     applyThemeValue(themeValue);
-
-    // 若 themeValue === 'system'，監聽 OS 主題變更事件以即時跟隨
-    if (themeValue === 'system') {
-        window._themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        window._themeMediaQuery.addEventListener('change', window._themeChangeHandler);
-    }
 };
 ```
 
@@ -82,21 +76,19 @@ window.setAppTheme = function (enumValue) {
 
 ### 防止 Flash（App.razor inline script）
 
-頁面 SSR 階段，Blazor circuit 未連線，無法呼叫 JS。為避免閃爍，在 `<head>` 加入同步 inline script：
+頁面 SSR 階段，Blazor circuit 未連線，無法呼叫 JS。為避免閃爍，在 `<head>` 加入同步 inline script，主題與字型縮放在同一個 IIFE 中處理：
 
 ```html
 <!-- Components/App.razor — <head> 內 -->
 <script>
     (function () {
+        // 主題：讀取 cookie 並設定 data-bs-theme 屬性
         var themeMatch = document.cookie.match(/ERPCore2\.Theme=([^;]+)/);
-        var theme = themeMatch ? decodeURIComponent(themeMatch[1]) : 'system';
-        if (theme === 'system') {
-            var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            document.documentElement.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
-        } else {
-            document.documentElement.setAttribute('data-bs-theme', theme);
-        }
-        // 字型縮放也在此同時套用 ...
+        var theme = themeMatch ? decodeURIComponent(themeMatch[1]) : 'light';
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        // 字型縮放：讀取 cookie 並設定 CSS variable
+        var zoomMatch = document.cookie.match(/ERPCore2\.ContentZoom=([^;]+)/);
+        if (zoomMatch) document.documentElement.style.setProperty('--content-zoom', decodeURIComponent(zoomMatch[1]));
     })();
 </script>
 ```
@@ -227,7 +219,7 @@ HandleSave()（PersonalPreferenceModalComponent）
 | `wwwroot/css/app.css` | `html { font-size: var(--content-zoom, 1rem); }` |
 | `wwwroot/js/theme-helper.js` | `setAppTheme(enumValue)` — enum → cookie → data-bs-theme |
 | `wwwroot/js/content-zoom-helper.js` | `setContentZoom(enumValue)` — enum → rem → cookie → CSS var |
-| `Components/App.razor` | `<head>` 內 inline script（防止 flash：主題 + 縮放） |
+| `Components/App.razor` | `<head>` 內 inline script（防止 flash：主題 + 縮放同一 IIFE） |
 | `Components/Layout/MainLayout.razor` | `OnAfterRenderAsync` 強制套用當前用戶的設定（跨用戶修正） |
 | `Components/Pages/Employees/PersonalPreference/DisplayTab.razor` | 顯示設定 Tab UI |
 | `Components/Pages/Employees/PersonalPreference/PersonalPreferenceModalComponent.razor` | HandleSave 觸發 JS |
@@ -238,7 +230,7 @@ HandleSave()（PersonalPreferenceModalComponent）
 
 1. **Cookie 無用戶識別**：兩個 cookie 均為純瀏覽器層級。跨用戶修正依賴 `MainLayout.OnAfterRenderAsync` 的 DB 查詢。
 2. **JS 需在 circuit 連線後呼叫**：`setAppTheme` / `setContentZoom` 不可在 SSR 階段呼叫（JSInterop 例外）。
-3. **theme enum 值 ≠ cookie 值**：Light(1)→`'system'`，System(3)→`'light'`。不要混淆。
+3. **未知 enum 值 fallback 至 `'light'`**：`themeEnumMap[enumValue] || 'light'`，不會套用深色。
 4. **新增主題或縮放級別**：需同時更新 C# enum 與 JS 的 `themeEnumMap` / `contentZoomMap`。
 5. **禁止移除 MainLayout 的套用邏輯**：移除後，同台電腦切換帳號將導致設定被前一用戶污染。
 

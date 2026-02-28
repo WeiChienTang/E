@@ -20,7 +20,7 @@
 else
 {
     @* 篩選列 *@
-    <div class="d-flex align-items-center gap-3 mb-2 p-2 bg-light rounded border">
+    <div class="d-flex align-items-center gap-3 mb-2 p-2 rounded border tx-filter-bar">
         <span class="text-muted small fw-semibold me-1">顯示：</span>
         <div class="form-check form-check-inline mb-0">
             <input class="form-check-input" type="checkbox" id="chk-delivery"
@@ -75,10 +75,10 @@ else
     @* 統計摘要（基於全部資料，不受篩選影響） *@
     @if (_allTransactions.Any())
     {
-        <div class="d-flex align-items-stretch gap-0 border rounded mt-2 overflow-hidden bg-white">
+        <div class="d-flex align-items-stretch gap-0 border rounded mt-2 overflow-hidden tx-stats-bar">
 
             @* 淨銷售額 - 主要指標 *@
-            <div class="d-flex flex-column align-items-center justify-content-center px-3 py-2 border-end bg-light">
+            <div class="d-flex flex-column align-items-center justify-content-center px-3 py-2 border-end tx-net-sales-cell">
                 <span class="text-muted">淨銷售額</span>
                 <span class="fw-bold fs-5 @(NetSales >= 0 ? "text-success" : "text-danger")">
                     @NumberFormatHelper.FormatSmartTrim(NetSales, useThousandsSeparator: true)

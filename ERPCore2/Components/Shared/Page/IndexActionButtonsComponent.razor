@@ -1,17 +1,18 @@
 @* Index 頁面動作按鈕組件 - 統一管理新增和重新整理按鈕 *@
+@inject Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> L
 <div class="d-flex gap-2">
     @if (ShowAddButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Text="新增" 
-                               OnClick="HandleAddClick" IsDisabled="@(IsLoading || IsAddDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnAdd)" Title="新增"/>
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Text="@L["Button.Add"]"
+                               OnClick="HandleAddClick" IsDisabled="@(IsLoading || IsAddDisabled)"
+                               IsLoading="@(IsLoading && LoadingOnAdd)" Title="@L["Button.Add"]"/>
     }
 
     @if (ShowBarcodePrintButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Text="條碼列印" 
-                               OnClick="HandleBarcodePrintClick" IsDisabled="@(IsLoading || IsBarcodePrintDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnBarcodePrint)" Title="條碼列印"/>
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Text="@L["Button.BarcodePrint"]"
+                               OnClick="HandleBarcodePrintClick" IsDisabled="@(IsLoading || IsBarcodePrintDisabled)"
+                               IsLoading="@(IsLoading && LoadingOnBarcodePrint)" Title="@L["Button.BarcodePrint"]"/>
     }
 
     @if (ShowBatchApprovalButton)
@@ -24,44 +25,44 @@
 
     @if (ShowBatchPrintButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Blue" Text="報表列印" 
-                               OnClick="HandleBatchPrintClick" IsDisabled="@(IsLoading || IsBatchPrintDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="報表列印"/>
+        <GenericButtonComponent Variant="ButtonVariant.Blue" Text="@L["Button.BatchPrint"]"
+                               OnClick="HandleBatchPrintClick" IsDisabled="@(IsLoading || IsBatchPrintDisabled)"
+                               IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="@L["Button.BatchPrint"]"/>
     }
 
     @if (ShowImportScheduleButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Blue" Text="排程入庫"
+        <GenericButtonComponent Variant="ButtonVariant.Blue" Text="@L["Button.ImportSchedule"]"
                                OnClick="HandleImportScheduleClick" IsDisabled="@(IsLoading || IsImportScheduleDisabled)"
-                               IsLoading="@(IsLoading && LoadingOnImportSchedule)" Title="排程入庫"/>
+                               IsLoading="@(IsLoading && LoadingOnImportSchedule)" Title="@L["Button.ImportSchedule"]"/>
     }
 
     @if (ShowBatchDeleteButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Red" Text="批次刪除"
+        <GenericButtonComponent Variant="ButtonVariant.Red" Text="@L["Button.BatchDelete"]"
                                OnClick="HandleBatchDeleteClick" IsDisabled="@(IsLoading || IsBatchDeleteDisabled)"
-                               IsLoading="@(IsLoading && LoadingOnBatchDelete)" Title="批次刪除"/>
+                               IsLoading="@(IsLoading && LoadingOnBatchDelete)" Title="@L["Button.BatchDelete"]"/>
     }
 
     @if (ShowRefreshButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Green" Text="重整" 
-                               OnClick="HandleRefreshClick" IsDisabled="@(IsLoading || IsRefreshDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnRefresh)" Title="重整"/>
+        <GenericButtonComponent Variant="ButtonVariant.Green" Text="@L["Button.Refresh"]"
+                               OnClick="HandleRefreshClick" IsDisabled="@(IsLoading || IsRefreshDisabled)"
+                               IsLoading="@(IsLoading && LoadingOnRefresh)" Title="@L["Button.Refresh"]"/>
     }
 
     @if (ShowExportExcelButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Gray" Text="匯出Excel" 
-                               OnClick="HandleExportExcelClick" IsDisabled="@(IsLoading || IsExportExcelDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnExportExcel)" Title="匯出Excel"/>
+        <GenericButtonComponent Variant="ButtonVariant.Gray" Text="@L["Button.ExportExcel"]"
+                               OnClick="HandleExportExcelClick" IsDisabled="@(IsLoading || IsExportExcelDisabled)"
+                               IsLoading="@(IsLoading && LoadingOnExportExcel)" Title="@L["Button.ExportExcel"]"/>
     }
 
     @if (ShowExportPdfButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Gray" Text="匯出PDF" 
-                               OnClick="HandleExportPdfClick" IsDisabled="@(IsLoading || IsExportPdfDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnExportPdf)" Title="匯出PDF"/>
+        <GenericButtonComponent Variant="ButtonVariant.Gray" Text="@L["Button.ExportPdf"]"
+                               OnClick="HandleExportPdfClick" IsDisabled="@(IsLoading || IsExportPdfDisabled)"
+                               IsLoading="@(IsLoading && LoadingOnExportPdf)" Title="@L["Button.ExportPdf"]"/>
     }
 
     @* 允許添加自訂按鈕 *@

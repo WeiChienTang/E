@@ -11,6 +11,7 @@
 @using ERPCore2.Components.Shared.Report.FilterTemplates
 @inject INotificationService NotificationService
 @inject IServiceProvider ServiceProvider
+@inject Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@HandleVisibilityChanged"
@@ -24,18 +25,18 @@
     
     <HeaderButtons>
         <div class="d-flex gap-2">
-            <GenericButtonComponent Variant="ButtonVariant.Green" 
+            <GenericButtonComponent Variant="ButtonVariant.Green"
                                   Size="ButtonSize.Small"
-                                  Text="預覽列印" 
+                                  Text="@L["Report.PreviewPrint"]"
                                   OnClick="HandleConfirmAsync"
                                   IsDisabled="@isLoading"
-                                  Title="確認篩選條件並預覽報表" />
-            <GenericButtonComponent Variant="ButtonVariant.Red" 
+                                  Title="@L["Report.PreviewPrint"]" />
+            <GenericButtonComponent Variant="ButtonVariant.Red"
                                   Size="ButtonSize.Small"
-                                  Text="取消" 
+                                  Text="@L["Button.Cancel"]"
                                   OnClick="HandleCancel"
                                   IsDisabled="@isLoading"
-                                  Title="取消並關閉" />
+                                  Title="@L["Button.Cancel"]" />
         </div>
     </HeaderButtons>
     
@@ -45,7 +46,7 @@
             {
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    找不到報表 ID「@ReportId」的篩選配置
+                    @string.Format(L["Report.FilterConfigNotFound"], ReportId)
                 </div>
             }
             else if (filterConfig.GetFilterTemplateType() != typeof(object))
@@ -58,7 +59,7 @@
             {
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    此報表尚未配置篩選模板
+                    @L["Report.FilterTemplateNotConfigured"]
                 </div>
             }
 
@@ -191,7 +192,7 @@
     
     private string GetTitle()
     {
-        return filterConfig?.FilterTitle ?? "報表篩選條件";
+        return filterConfig?.FilterTitle ?? L["Report.FilterTitle"];
     }
     
     private string GetIcon()

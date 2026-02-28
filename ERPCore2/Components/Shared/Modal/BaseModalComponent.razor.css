@@ -249,6 +249,7 @@
     align-items: center;
     justify-content: flex-end;
     gap: 0.5rem;
+    background-color: var(--bg-secondary);
 }
 
 /* 手機版：允許換行 + 水平捲動 */

@@ -298,6 +298,10 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IDetailAccountBalanceReportService, DetailAccountBalanceReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
+
+            // 檔案存留服務
+            services.AddScoped<IDocumentCategoryService, DocumentCategoryService>();
+            services.AddScoped<IDocumentService, DocumentService>();
         }
 
         /// <summary>

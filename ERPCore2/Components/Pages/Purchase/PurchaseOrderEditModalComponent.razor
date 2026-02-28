@@ -49,7 +49,7 @@
                           OnCancel="@OnCancel"
                           OnTaxMethodChanged="@(() => HandleDetailsChanged(purchaseOrderDetails))"
                           CustomValidator="@ValidatePurchaseOrderDetailsAsync"
-                          TabDefinitions="@tabDefinitions"
+                          CustomModules="@GetCustomModules()"
                           ShowPrintButton = "true"
                           PrintButtonText="@L["Button.Print"]"
                           ReportService="@PurchaseOrderReportService"
@@ -62,8 +62,7 @@
                           OnRejectWithReason="@HandlePurchaseOrderRejectWithReason"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomActionButtons="@GetCustomActionButtons()"
-                          OnEntityLoaded="@HandleEntityLoaded"
-                          AdditionalSections="@CreateRelatedSections()">
+                          OnEntityLoaded="@HandleEntityLoaded">
 </GenericEditModalComponent>
 
 @* 廠商編輯 Modal *@
@@ -118,7 +117,6 @@
     private GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    private List<FormTabDefinition>? tabDefinitions;
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -491,7 +489,7 @@
                 ),
             };
 
-            var layout = FormSectionHelper<PurchaseOrder>.Create()
+            formSections = FormSectionHelper<PurchaseOrder>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     po => po.Code,
                     po => po.SupplierId,
@@ -505,12 +503,7 @@
                     po => po.PurchaseTotalAmountIncludingTax)
                 .AddToSection(FormSectionNames.AdditionalInfo,
                     po => po.Remarks)
-                .GroupIntoTab(L["Tab.OrderData"].ToString(), "bi-file-earmark-text",
-                    FormSectionNames.BasicInfo, FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
-                .GroupIntoCustomTab(L["Tab.OrderDetail"].ToString(), "bi-list-ul", CreateProductManagerContent())
-                .BuildAll();
-            formSections = layout.FieldSections;
-            tabDefinitions = layout.TabDefinitions;
+                .Build();
         }
         catch (Exception ex)
         {
@@ -596,6 +589,34 @@
         }
     };
     
+    /// <summary>
+    /// 配置自訂模組（採購明細表格）
+    /// </summary>
+    private List<GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            if (editModalComponent == null)
+            {
+                return new List<GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule>();
+            }
+
+            return new List<GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule>
+            {
+                new GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule
+                {
+                    Title = "",
+                    Content = CreateProductManagerContent(),
+                    Order = 1
+                }
+            };
+        }
+        catch
+        {
+            return new List<GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule>();
+        }
+    }
+
     /// <summary>相關單據 Additional Sections 內容</summary>
     private RenderFragment CreateRelatedSections() => __builder =>
     {

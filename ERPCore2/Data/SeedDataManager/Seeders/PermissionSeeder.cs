@@ -123,7 +123,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 會計
                 new Permission { Code = "AccountItem.Read", Name = "檢視會計科目", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視會計科目與相關設定" },
                 new Permission { Code = "JournalEntry.Read", Name = "檢視傳票", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視會計傳票與分錄明細" },
-            
+
+                // 檔案存留
+                new Permission { Code = "Document.Read", Name = "瀏覽文件", Level = PermissionLevel.Normal, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "瀏覽與下載一般存取層級的文件" },
+                new Permission { Code = "Document.Sensitive", Name = "瀏覽敏感文件", Level = PermissionLevel.Sensitive, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "瀏覽與下載敏感存取層級的文件" },
+                new Permission { Code = "Document.Manage", Name = "管理文件", Level = PermissionLevel.Sensitive, Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "上傳、編輯、刪除文件及管理檔案分類" },
+
             };
 
             var toAdd = permissions.Where(p => !existingCodes.Contains(p.Code)).ToArray();

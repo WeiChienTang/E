@@ -6,6 +6,7 @@ using ERPCore2.Components.Shared.Modal;
 using ERPCore2.Components.Shared.Table;
 using ERPCore2.Components.Shared.Page;
 using ERPCore2.Components.Shared.Statistics;
+using Microsoft.Extensions.Localization;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
@@ -25,13 +26,17 @@ namespace ERPCore2.FieldConfiguration
         /// <param name="readOnly">是否為唯讀欄位，預設為 false</param>
         /// <returns>配置好的 FormFieldDefinition</returns>
         public static FormFieldDefinition CreateRemarksField<TEntity>(
-            string label = "備註",
-            string placeholder = "請輸入備註",
-            string helpText = "",
+            string? label = null,
+            string? placeholder = null,
+            string? helpText = null,
             int rows = 2,
             string containerCssClass = "col-12",
-            bool readOnly = false) where TEntity : BaseEntity
+            bool readOnly = false,
+            IStringLocalizer<ERPCore2.SharedResource>? l = null) where TEntity : BaseEntity
         {
+            label ??= l?["Label.Remarks"].ToString() ?? "備註";
+            placeholder ??= l?["Placeholder.Remarks"].ToString() ?? "請輸入備註";
+            helpText ??= "";
             // 統一使用 100 字元限制，但保持 500 位元組的資料庫限制
             return new FormFieldDefinition
             {

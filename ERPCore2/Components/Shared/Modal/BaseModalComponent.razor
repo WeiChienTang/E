@@ -48,7 +48,7 @@
                 @* ===== Modal Actions (按鈕區) ===== *@
                 @if (HeaderButtons != null)
                 {
-                    <div class="modal-action-bar border-bottom px-3 py-2 bg-light mb-2">
+                    <div class="modal-action-bar border-bottom px-3 py-2 mb-2">
                         @HeaderButtons
                     </div>
                 }
@@ -90,7 +90,7 @@
                 @* ===== Modal Footer (Custom Content) ===== *@
                 @if (ShowFooter && FooterContent != null)
                 {
-                    <div class="modal-footer border-top bg-light">
+                    <div class="modal-footer border-top">
                         @FooterContent
                     </div>
                 }
@@ -98,7 +98,7 @@
                 @* ===== Modal Metadata (Audit Info) ===== *@
                 @if (ShowFooter && AuditInfo != null)
                 {
-                    <div class="modal-metadata border-top bg-light px-3 py-2">
+                    <div class="modal-metadata border-top px-3 py-2">
                         <div class="text-muted small d-flex flex-wrap gap-3">
                             @if (AuditInfo.CreatedAt.HasValue)
                             {
