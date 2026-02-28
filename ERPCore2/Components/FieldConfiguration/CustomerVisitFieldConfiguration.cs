@@ -32,8 +32,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<CustomerVisit>
                         {
                             PropertyName = nameof(CustomerVisit.VisitDate),
-                            DisplayName = "拜訪日期",
-                            FilterPlaceholder = "選擇拜訪日期",
+                            DisplayName = Dn("Field.VisitDate", "拜訪日期"),
+                            FilterPlaceholder = Fp("Field.VisitDate", "選擇拜訪日期"),
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 1,
@@ -48,8 +48,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Customer.CompanyName",
                             FilterPropertyName = nameof(CustomerVisit.CustomerId),
-                            DisplayName = "客戶",
-                            FilterPlaceholder = "輸入客戶名稱搜尋",
+                            DisplayName = Dn("Field.Customer", "客戶"),
+                            FilterPlaceholder = Fp("Field.Customer", "輸入客戶名稱搜尋"),
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
@@ -61,7 +61,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<CustomerVisit>
                         {
                             PropertyName = nameof(CustomerVisit.VisitType),
-                            DisplayName = "拜訪方式",
+                            DisplayName = Dn("Field.VisitMethod", "拜訪方式"),
                             ShowInFilter = false,
                             TableOrder = 3,
                             CustomTemplate = item =>
@@ -87,8 +87,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Employee.Name",
                             FilterPropertyName = nameof(CustomerVisit.EmployeeId),
-                            DisplayName = "業務人員",
-                            FilterPlaceholder = "選擇業務人員",
+                            DisplayName = Dn("Field.SalesPerson", "業務人員"),
+                            FilterPlaceholder = Fp("Field.SalesPerson", "選擇業務人員"),
                             TableOrder = 4,
                             FilterOrder = 3,
                             NullDisplayText = "-",
@@ -101,8 +101,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<CustomerVisit>
                         {
                             PropertyName = nameof(CustomerVisit.Purpose),
-                            DisplayName = "拜訪目的",
-                            FilterPlaceholder = "輸入拜訪目的搜尋",
+                            DisplayName = Dn("Field.VisitPurpose", "拜訪目的"),
+                            FilterPlaceholder = Fp("Field.VisitPurpose", "輸入拜訪目的搜尋"),
                             TableOrder = 5,
                             FilterOrder = 4,
                             NullDisplayText = "-",
@@ -115,7 +115,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<CustomerVisit>
                         {
                             PropertyName = nameof(CustomerVisit.Result),
-                            DisplayName = "結果摘要",
+                            DisplayName = Dn("Field.VisitResult", "結果摘要"),
                             ShowInFilter = false,
                             TableOrder = 6,
                             NullDisplayText = "-",

@@ -32,8 +32,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteType>
                         {
                             PropertyName = nameof(WasteType.Code),
-                            DisplayName = "廢料類型編號",
-                            FilterPlaceholder = "輸入編號搜尋",
+                            DisplayName = Dn("Field.WasteTypeCode", "廢料類型編號"),
+                            FilterPlaceholder = Fp("Field.WasteTypeCode", "輸入編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -45,8 +45,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteType>
                         {
                             PropertyName = nameof(WasteType.Name),
-                            DisplayName = "廢料類型名稱",
-                            FilterPlaceholder = "輸入名稱搜尋",
+                            DisplayName = Dn("Field.WasteTypeName", "廢料類型名稱"),
+                            FilterPlaceholder = Fp("Field.WasteTypeName", "輸入名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(WasteType.Name), wt => wt.Name)
@@ -57,8 +57,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteType>
                         {
                             PropertyName = nameof(WasteType.Unit),
-                            DisplayName = "計量單位",
-                            FilterPlaceholder = "輸入單位搜尋",
+                            DisplayName = Dn("Field.MeasurementUnit", "計量單位"),
+                            FilterPlaceholder = Fp("Field.MeasurementUnit", "輸入單位搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(WasteType.Unit), wt => wt.Unit, allowNull: true)
@@ -69,8 +69,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteType>
                         {
                             PropertyName = nameof(WasteType.Description),
-                            DisplayName = "描述",
-                            FilterPlaceholder = "輸入描述搜尋",
+                            DisplayName = Dn("Field.Description", "描述"),
+                            FilterPlaceholder = Fp("Field.Description", "輸入描述搜尋"),
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(WasteType.Description), wt => wt.Description, allowNull: true)

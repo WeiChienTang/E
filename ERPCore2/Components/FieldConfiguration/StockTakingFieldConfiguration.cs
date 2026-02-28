@@ -42,8 +42,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.TakingNumber),
-                            DisplayName = "盤點單號",
-                            FilterPlaceholder = "輸入盤點單號搜尋",
+                            DisplayName = Dn("Field.StockTakingCode", "盤點單號"),
+                            FilterPlaceholder = Fp("Field.StockTakingCode", "輸入盤點單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(StockTaking.TakingNumber), st => st.TakingNumber)
@@ -54,7 +54,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.TakingDate),
-                            DisplayName = "盤點日期",
+                            DisplayName = Dn("Field.StockTakingDate", "盤點日期"),
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 2,
@@ -68,7 +68,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Warehouse.Name",
                             FilterPropertyName = nameof(StockTaking.WarehouseId),
-                            DisplayName = "倉庫",
+                            DisplayName = Dn("Field.Warehouse", "倉庫"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             Options = _warehouses.Select(w => new SelectOption
@@ -85,7 +85,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.TakingType),
-                            DisplayName = "盤點類型",
+                            DisplayName = Dn("Field.StockTakingType", "盤點類型"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
                             Options = GetTakingTypeOptions(),
@@ -98,7 +98,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.TotalItems),
-                            DisplayName = "盤點項目數",
+                            DisplayName = Dn("Field.TotalItems", "盤點項目數"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 6,
                             ShowInFilter = false,
@@ -116,7 +116,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.CompletedItems),
-                            DisplayName = "已盤點數",
+                            DisplayName = Dn("Field.CompletedItems", "已盤點數"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 7,
                             ShowInFilter = false,
@@ -134,7 +134,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.DifferenceItems),
-                            DisplayName = "差異項目數",
+                            DisplayName = Dn("Field.DifferenceItems", "差異項目數"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 8,
                             ShowInFilter = false,
@@ -152,7 +152,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.DifferenceAmount),
-                            DisplayName = "盤盈盤虧",
+                            DisplayName = Dn("Field.DifferenceAmount", "盤盈盤虧"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 9,
                             ShowInFilter = false,
@@ -179,7 +179,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.CompletionRate),
-                            DisplayName = "完成率(%)",
+                            DisplayName = Dn("Field.CompletionRate", "完成率(%)"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 10,
                         }
@@ -189,8 +189,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.Remarks),
-                            DisplayName = "備註",
-                            FilterPlaceholder = "輸入備註搜尋",
+                            DisplayName = Dn("Field.Remarks", "備註"),
+                            FilterPlaceholder = Fp("Field.Remarks", "輸入備註搜尋"),
                             TableOrder = 11,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(StockTaking.Remarks), st => st.Remarks, allowNull: true)

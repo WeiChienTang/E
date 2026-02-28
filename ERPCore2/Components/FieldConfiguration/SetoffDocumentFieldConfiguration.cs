@@ -34,8 +34,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SetoffDocument>
                         {
                             PropertyName = nameof(SetoffDocument.Code),
-                            DisplayName = "沖款單號",
-                            FilterPlaceholder = "輸入沖款單號搜尋",
+                            DisplayName = Dn("Field.SetoffCode", "沖款單號"),
+                            FilterPlaceholder = Fp("Field.SetoffCode", "輸入沖款單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SetoffDocument.Code), s => s.Code)
@@ -46,7 +46,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SetoffDocument>
                         {
                             PropertyName = nameof(SetoffDocument.SetoffDate),
-                            DisplayName = "沖款日期",
+                            DisplayName = Dn("Field.SetoffDate", "沖款日期"),
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 3,
                             CustomTemplate = (context) => builder =>
@@ -66,8 +66,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SetoffDocument>
                         {
                             PropertyName = nameof(SetoffDocument.RelatedPartyName),
-                            DisplayName = "關聯方名稱",
-                            FilterPlaceholder = "輸入客戶或供應商名稱搜尋",
+                            DisplayName = Dn("Field.RelatedPartyName", "關聯方名稱"),
+                            FilterPlaceholder = Fp("Field.RelatedPartyName", "輸入客戶或供應商名稱搜尋"),
                             TableOrder = 4,
                             ShowInFilter = false, // NotMapped 屬性無法在資料庫查詢中篩選
                             CustomTemplate = (context) => builder =>
@@ -87,7 +87,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Company.CompanyName", // 用於表格顯示
                             FilterPropertyName = nameof(SetoffDocument.CompanyId), // 用於篩選器
-                            DisplayName = "公司",
+                            DisplayName = Dn("Field.Company", "公司"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
                             Options = _companies.Select(c => new SelectOption 

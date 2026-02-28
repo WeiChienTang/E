@@ -92,6 +92,7 @@
             
             // 建立欄位配置
             fieldConfiguration = new PurchaseReceivingFieldConfiguration(purchaseOrders, warehouses, NotificationService);
+            fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }

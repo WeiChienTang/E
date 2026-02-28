@@ -111,7 +111,8 @@
             
             // 建立欄位配置（在載入公司資料後，並傳遞 NotificationService）
             fieldConfiguration = new SetoffDocumentFieldConfiguration(companies, NotificationService);
-            
+            fieldConfiguration.SetLocalizer(L);
+
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();

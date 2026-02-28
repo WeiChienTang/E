@@ -94,3 +94,110 @@
   --detail-tab-hover-bg: var(--bg-tertiary);      /* hover 背景 */
   --detail-tab-shadow: var(--shadow-lg);          /* 標籤頁容器陰影 */
 }
+
+/* ===== 深色模式覆寫（GitHub Dark 調色盤）===== */
+[data-bs-theme=dark] {
+  /* 主要色彩 */
+  --primary-blue: #58a6ff;
+  --primary-blue-hover: #388bfd;
+  --primary-blue-alt: #1c2d3e;
+  --primary-dark-gray: #c9d1d9;
+  /* --primary-white 保持 #FFFFFF（繼承自 :root），因為用於深色側邊欄 / 表頭上的文字顏色 */
+  --primary-light-gray: #21262d;
+
+  /* 文字色彩 */
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-secondary-hover: #c9d1d9;
+  --text-light: #6e7681;
+
+  /* 邊框和分隔線 */
+  --border-color: #30363d;
+  --border-light: #21262d;
+
+  /* 背景色彩 */
+  --bg-primary: #161b22;
+  --bg-secondary: #0d1117;
+  --bg-tertiary: #21262d;
+
+  /* 表格 hover 色彩 */
+  --table-hover-bg: #2d2a00;
+  --table-hover-bg-striped: #3a3500;
+  --table-hover-text: #e3b341;
+
+  /* 警告框背景色 */
+  --alert-success-bg: rgba(46, 160, 67, 0.15);
+  --alert-warning-bg: rgba(210, 153, 34, 0.15);
+  --alert-danger-bg: rgba(248, 81, 73, 0.15);
+  --alert-info-bg: rgba(88, 166, 255, 0.15);
+
+  /* 陰影（深色模式增加不透明度以保持可見性） */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -2px rgb(0 0 0 / 0.3);
+
+  /* RGB 分量值 */
+  --primary-blue-rgb: 88, 166, 255;
+  --text-secondary-rgb: 139, 148, 158;
+  --success-color-rgb: 46, 160, 67;
+  --warning-color-rgb: 210, 153, 34;
+  --danger-color-rgb: 248, 81, 73;
+  --info-color-rgb: 88, 166, 255;
+
+  /* warning 深色文字（暗色模式下 warning 用淺色）*/
+  --warning-text-dark: #e3b341;
+  --warning-text-hover: #d29922;
+
+  /* 標籤頁色彩 - Detail Tabs */
+  --detail-tab-active-border: #e3b341;
+
+  /* focus */
+  --focus-shadow-primary: 0 0 0 0.2rem rgba(88, 166, 255, 0.35);
+
+  /* Bootstrap 分頁元件 — 覆寫以使用 GitHub Dark 調色盤 */
+  --bs-pagination-color: var(--primary-blue);
+  --bs-pagination-bg: var(--bg-secondary);
+  --bs-pagination-border-color: var(--border-color);
+  --bs-pagination-hover-color: var(--primary-blue);
+  --bs-pagination-hover-bg: var(--bg-tertiary);
+  --bs-pagination-hover-border-color: var(--border-color);
+  --bs-pagination-focus-color: var(--primary-blue);
+  --bs-pagination-focus-bg: var(--bg-tertiary);
+  --bs-pagination-active-color: #ffffff;
+  --bs-pagination-active-bg: var(--primary-blue);
+  --bs-pagination-active-border-color: var(--primary-blue);
+  --bs-pagination-disabled-color: var(--text-secondary);
+  --bs-pagination-disabled-bg: var(--bg-tertiary);
+  --bs-pagination-disabled-border-color: var(--border-color);
+
+  /* Bootstrap 下拉選單 — 覆寫以使用 GitHub Dark 調色盤 */
+  --bs-dropdown-bg: var(--bg-primary);
+  --bs-dropdown-color: var(--text-primary);
+  --bs-dropdown-link-color: var(--text-primary);
+  --bs-dropdown-link-hover-color: var(--text-primary);
+  --bs-dropdown-link-hover-bg: var(--bg-tertiary);
+  --bs-dropdown-link-active-color: #ffffff;
+  --bs-dropdown-link-active-bg: var(--primary-blue);
+  --bs-dropdown-divider-bg: var(--border-color);
+  --bs-dropdown-border-color: var(--border-color);
+  --bs-dropdown-item-color: var(--text-primary);
+
+  /* Bootstrap 表格 — 覆寫以使用 GitHub Dark 調色盤 */
+  --bs-table-color: var(--text-primary);
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(--border-color);
+  --bs-table-striped-color: var(--text-primary);
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.03);
+  --bs-table-hover-color: var(--text-primary);
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.05);
+
+  /* Bootstrap form 元件 — 覆寫以使用 GitHub Dark 調色盤 */
+  --bs-body-color: var(--text-primary);
+  --bs-body-bg: var(--bg-primary);
+  --bs-border-color: var(--border-color);
+  --bs-secondary-bg: var(--bg-tertiary);
+  --bs-tertiary-bg: var(--bg-secondary);
+  --bs-link-color: var(--primary-blue);
+  --bs-link-hover-color: var(--primary-blue-hover);
+}

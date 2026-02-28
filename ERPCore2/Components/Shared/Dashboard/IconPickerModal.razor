@@ -1,9 +1,11 @@
 @using ERPCore2.Data.Navigation
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> L
 
 @* 面板圖示選擇 Modal *@
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@IsVisibleChanged"
-                    Title="選擇面板圖示"
+                    Title="@L["Dashboard.SelectIcon"]"
                     Icon="bi-palette-fill"
                     Size="BaseModalComponent.ModalSize.ExtraLarge"
                     HeaderColor="BaseModalComponent.HeaderVariant.Primary"
@@ -13,14 +15,14 @@
                     OnClose="@HandleCancel">
     <HeaderButtons>
         <GenericButtonComponent Variant="ButtonVariant.Blue"
-                               Text="確定"
+                               Text="@L["Button.Confirm"]"
                                OnClick="HandleConfirm"
                                IsDisabled="@string.IsNullOrEmpty(selectedIconClass)"
-                               Title="套用選取的圖示" />
+                               Title="@L["Dashboard.ApplyIcon"]" />
         <GenericButtonComponent Variant="ButtonVariant.Red"
-                               Text="取消"
+                               Text="@L["Button.Cancel"]"
                                OnClick="HandleCancel"
-                               Title="取消" />
+                               Title="@L["Button.Cancel"]" />
     </HeaderButtons>
     <BodyContent>
         @* 預覽區域 *@
@@ -28,7 +30,7 @@
             <div class="d-flex align-items-center justify-content-center p-3 bg-light rounded">
                 <i class="@(string.IsNullOrEmpty(selectedIconClass) ? (CurrentIcon ?? "bi bi-grid-fill") : selectedIconClass) fs-1 me-3"></i>
                 <div>
-                    <div class="small text-muted">目前選擇</div>
+                    <div class="small text-muted">@L["Dashboard.CurrentSelection"]</div>
                     <div class="fw-bold">@GetSelectedIconDisplayName()</div>
                 </div>
             </div>
@@ -178,7 +180,7 @@
     {
         var iconClass = string.IsNullOrEmpty(selectedIconClass) ? CurrentIcon : selectedIconClass;
         var icon = DashboardDefaults.AvailableIcons.FirstOrDefault(i => i.IconClass == iconClass);
-        return icon?.DisplayName ?? "未選擇";
+        return icon?.DisplayName ?? L["Dashboard.NotSelected"].ToString();
     }
 
     /// <summary>

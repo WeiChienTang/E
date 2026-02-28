@@ -34,8 +34,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ErrorLog>
                         {
                             PropertyName = nameof(ErrorLog.ErrorId),
-                            DisplayName = "錯誤ID",
-                            FilterPlaceholder = "輸入錯誤ID搜尋",
+                            DisplayName = Dn("Field.ErrorId", "錯誤ID"),
+                            FilterPlaceholder = Fp("Field.ErrorId", "輸入錯誤ID搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ErrorLog.ErrorId), e => e.ErrorId)
@@ -46,7 +46,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ErrorLog>
                         {
                             PropertyName = nameof(ErrorLog.Level),
-                            DisplayName = "錯誤等級",
+                            DisplayName = Dn("Field.ErrorLevel", "錯誤等級"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
                             Options = GetErrorLevelOptions(),
@@ -58,7 +58,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ErrorLog>
                         {
                             PropertyName = nameof(ErrorLog.Source),
-                            DisplayName = "錯誤來源",
+                            DisplayName = Dn("Field.ErrorSource", "錯誤來源"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             Options = GetErrorSourceOptions(),
@@ -70,8 +70,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ErrorLog>
                         {
                             PropertyName = nameof(ErrorLog.Category),
-                            DisplayName = "錯誤分類",
-                            FilterPlaceholder = "輸入錯誤分類搜尋",
+                            DisplayName = Dn("Field.ErrorCategory", "錯誤分類"),
+                            FilterPlaceholder = Fp("Field.ErrorCategory", "輸入錯誤分類搜尋"),
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ErrorLog.Category), e => e.Category)
@@ -82,8 +82,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ErrorLog>
                         {
                             PropertyName = nameof(ErrorLog.Message),
-                            DisplayName = "錯誤訊息",
-                            FilterPlaceholder = "輸入錯誤訊息搜尋",
+                            DisplayName = Dn("Field.ErrorMessage", "錯誤訊息"),
+                            FilterPlaceholder = Fp("Field.ErrorMessage", "輸入錯誤訊息搜尋"),
                             TableOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ErrorLog.Message), e => e.Message)
@@ -94,8 +94,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ErrorLog>
                         {
                             PropertyName = nameof(ErrorLog.Module),
-                            DisplayName = "模組",
-                            FilterPlaceholder = "輸入模組名稱搜尋",
+                            DisplayName = Dn("Field.ErrorModule", "模組"),
+                            FilterPlaceholder = Fp("Field.ErrorModule", "輸入模組名稱搜尋"),
                             TableOrder = 6,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ErrorLog.Module), e => e.Module, allowNull: true)
@@ -106,7 +106,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ErrorLog>
                         {
                             PropertyName = nameof(ErrorLog.OccurredAt),
-                            DisplayName = "發生時間",
+                            DisplayName = Dn("Field.OccurredAt", "發生時間"),
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 7,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
@@ -118,7 +118,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ErrorLog>
                         {
                             PropertyName = nameof(ErrorLog.IsResolved),
-                            DisplayName = "已解決",
+                            DisplayName = Dn("Field.IsResolved", "已解決"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 8,
                             Options = new List<SelectOption>
@@ -135,8 +135,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ErrorLog>
                         {
                             PropertyName = nameof(ErrorLog.UserId),
-                            DisplayName = "使用者",
-                            FilterPlaceholder = "輸入使用者ID搜尋",
+                            DisplayName = Dn("Field.UserId", "使用者"),
+                            FilterPlaceholder = Fp("Field.UserId", "輸入使用者ID搜尋"),
                             TableOrder = 9,
                             ShowInTable = false, // 預設不在表格中顯示
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -148,8 +148,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ErrorLog>
                         {
                             PropertyName = nameof(ErrorLog.RequestPath),
-                            DisplayName = "請求路徑",
-                            FilterPlaceholder = "輸入請求路徑搜尋",
+                            DisplayName = Dn("Field.RequestPath", "請求路徑"),
+                            FilterPlaceholder = Fp("Field.RequestPath", "輸入請求路徑搜尋"),
                             TableOrder = 10,
                             ShowInTable = false, // 預設不在表格中顯示
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

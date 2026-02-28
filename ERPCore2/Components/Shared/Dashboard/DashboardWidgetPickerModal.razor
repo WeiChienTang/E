@@ -1,10 +1,12 @@
 @using ERPCore2.Models.Navigation
 @using ERPCore2.Data.Navigation
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> L
 
 @* 新增項目選擇 Modal（雙 Tab：頁面連結 / 快速功能） *@
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@IsVisibleChanged"
-                    Title="新增捷徑項目"
+                    Title="@L["Dashboard.AddShortcutTitle"]"
                     Icon="bi-grid-3x3-gap-fill"
                     Size="BaseModalComponent.ModalSize.Desktop"
                     HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
@@ -14,20 +16,20 @@
                     OnClose="@HandleCancel">
     <HeaderButtons>
         <GenericButtonComponent Variant="ButtonVariant.Blue"
-                               Text="確定"
+                               Text="@L["Button.Confirm"]"
                                OnClick="HandleConfirm"
                                IsDisabled="@(!selectedItemKeys.Any())"
-                               Title="新增選取的項目" />
+                               Title="@L["Dashboard.AddShortcutTitle"]" />
         <GenericButtonComponent Variant="ButtonVariant.Red"
-                               Text="取消"
+                               Text="@L["Button.Cancel"]"
                                OnClick="HandleCancel"
-                               Title="取消" />
+                               Title="@L["Button.Cancel"]" />
     </HeaderButtons>
     <BodyContent>
         @* 搜尋框 *@
         <div class="mb-3">
             <SearchInputComponent @bind-Value="searchKeyword"
-                                  Placeholder="搜尋名稱、描述或分類..." />
+                                  Placeholder="@L["Placeholder.SearchWidgets"]" />
         </div>
 
         @if (IsSearchMode)
@@ -37,7 +39,7 @@
             {
                 <div class="text-center py-4 text-muted">
                     <i class="bi bi-search fs-1"></i>
-                    <p class="mt-2">找不到符合「@searchKeyword」的項目</p>
+                    <p class="mt-2">@L["Dashboard.NoMatchFound", searchKeyword]</p>
                 </div>
             }
             else
@@ -47,7 +49,7 @@
                 {
                     <div class="mb-3">
                         <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">
-                            <i class="bi bi-link-45deg me-1"></i>頁面連結
+                            <i class="bi bi-link-45deg me-1"></i>@L["Tab.PageShortcut"]
                             <span class="badge bg-primary ms-1">@FilteredShortcutWidgets.Count</span>
                         </h6>
                         @RenderWidgetGrid(FilteredShortcutWidgets)
@@ -59,7 +61,7 @@
                 {
                     <div class="mb-3">
                         <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">
-                            <i class="bi bi-wrench-adjustable me-1"></i>快速功能
+                            <i class="bi bi-wrench-adjustable me-1"></i>@L["Tab.QuickAction"]
                             <span class="badge bg-primary ms-1">@FilteredQuickActionWidgets.Count</span>
                         </h6>
                         @RenderWidgetGrid(FilteredQuickActionWidgets)
@@ -71,7 +73,7 @@
                 {
                     <div class="mb-3">
                         <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">
-                            <i class="bi bi-bar-chart-fill me-1"></i>圖表介面
+                            <i class="bi bi-bar-chart-fill me-1"></i>@L["Tab.ChartView"]
                             <span class="badge bg-primary ms-1">@FilteredChartWidgets.Count</span>
                         </h6>
                         @RenderWidgetGrid(FilteredChartWidgets)
@@ -87,7 +89,7 @@
                     <button class="nav-link @(activeTab == "shortcut" ? "active tab-active" : "tab-inactive")"
                             type="button"
                             @onclick='@(() => activeTab = "shortcut")'>
-                        <i class="bi bi-window me-1"></i>頁面連結
+                        <i class="bi bi-window me-1"></i>@L["Tab.PageShortcut"]
                         @if (AvailableShortcutWidgets.Any())
                         {
                             <span class="badge bg-secondary ms-1">@AvailableShortcutWidgets.Count</span>
@@ -98,7 +100,7 @@
                     <button class="nav-link @(activeTab == "quickaction" ? "active tab-active" : "tab-inactive")"
                             type="button"
                             @onclick='@(() => activeTab = "quickaction")'>
-                        <i class="bi bi-wrench-adjustable me-1"></i>快速功能
+                        <i class="bi bi-wrench-adjustable me-1"></i>@L["Tab.QuickAction"]
                         @if (AvailableQuickActionWidgets.Any())
                         {
                             <span class="badge bg-secondary ms-1">@AvailableQuickActionWidgets.Count</span>
@@ -109,7 +111,7 @@
                     <button class="nav-link @(activeTab == "chart" ? "active tab-active" : "tab-inactive")"
                             type="button"
                             @onclick='@(() => activeTab = "chart")'>
-                        <i class="bi bi-bar-chart-fill me-1"></i>圖表介面
+                        <i class="bi bi-bar-chart-fill me-1"></i>@L["Tab.ChartView"]
                         @if (AvailableChartWidgets.Any())
                         {
                             <span class="badge bg-secondary ms-1">@AvailableChartWidgets.Count</span>
@@ -123,15 +125,15 @@
                                : activeTab == "chart"       ? AvailableChartWidgets
                                : AvailableShortcutWidgets;
 
-            var emptyLabel = activeTab == "quickaction" ? "快速功能"
-                           : activeTab == "chart"       ? "圖表介面"
-                           : "頁面連結";
+            var emptyLabel = activeTab == "quickaction" ? L["Tab.QuickAction"].ToString()
+                           : activeTab == "chart"       ? L["Tab.ChartView"].ToString()
+                           : L["Tab.PageShortcut"].ToString();
 
             @if (currentWidgets == null || !currentWidgets.Any())
             {
                 <div class="text-center py-4 text-muted">
                     <i class="bi bi-emoji-neutral fs-1"></i>
-                    <p class="mt-2">目前沒有可新增的@emptyLabel</p>
+                    <p class="mt-2">@L["Dashboard.NoItems", emptyLabel]</p>
                 </div>
             }
             else

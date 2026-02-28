@@ -85,7 +85,9 @@
       "Bash(cmd /c \"tasklist | findstr ERPCore\")",
       "Bash(cmd /c \"wmic process where ProcessId=82672 get Name,CommandLine 2>&1\")",
       "Bash(powershell -Command \"Get-Process -Id 82672 -ErrorAction SilentlyContinue | Select-Object Name, Id, Path\")",
-      "Bash(powershell -Command \"Stop-Process -Id 82672 -Force; Write-Host ''PID 82672 已終止''\")"
+      "Bash(powershell -Command \"Stop-Process -Id 82672 -Force; Write-Host ''PID 82672 已終止''\")",
+      "Bash(tasklist)",
+      "Bash(git restore \"Components/Pages/Purchase/PurchaseOrderEditModal/PurchaseOrderReceivingTab.razor\" \"Components/Pages/Purchase/PurchaseOrderEditModal/PurchaseOrderReturnTab.razor\" \"Components/Pages/Purchase/PurchaseReceivingEditModal/PurchaseReceivingReturnTab.razor\" \"Components/Pages/Purchase/PurchaseReceivingEditModal/PurchaseReceivingSetoffTab.razor\" \"Components/Pages/Purchase/PurchaseReceivingEditModal/PurchaseReceivingOrderTab.razor\" \"Components/Pages/Purchase/PurchaseReturnEditModal/PurchaseReturnReceivingTab.razor\" \"Components/Pages/Purchase/PurchaseReturnEditModal/PurchaseReturnSetoffTab.razor\" \"Components/Pages/Sales/QuotationEditModal/QuotationOrderTab.razor\" \"Components/Pages/Sales/SalesOrderEditModal/SalesOrderDeliveryTab.razor\" \"Components/Pages/Sales/SalesOrderEditModal/SalesOrderReturnTab.razor\" \"Components/Pages/Sales/SalesOrderEditModal/SalesOrderQuotationTab.razor\" \"Components/Pages/Sales/SalesDeliveryEditModal/SalesDeliveryReturnTab.razor\" \"Components/Pages/Sales/SalesDeliveryEditModal/SalesDeliverySetoffTab.razor\" \"Components/Pages/Sales/SalesDeliveryEditModal/SalesDeliveryOrderTab.razor\" \"Components/Pages/Sales/SalesReturnEditModal/SalesReturnDeliveryTab.razor\" \"Components/Pages/Sales/SalesReturnEditModal/SalesReturnSetoffTab.razor\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

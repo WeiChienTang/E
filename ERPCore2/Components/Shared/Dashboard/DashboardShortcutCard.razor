@@ -1,5 +1,7 @@
 @using ERPCore2.Models.Navigation
 @using ERPCore2.Data.Navigation
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> L
 
 <div class="shortcut-card @(IsEditMode ? "edit-mode" : "")"
      @onclick="HandleClick"
@@ -7,7 +9,7 @@
 
     @if (IsEditMode)
     {
-        <button class="btn-remove" @onclick="HandleRemove" @onclick:stopPropagation="true" title="移除捷徑">
+        <button class="btn-remove" @onclick="HandleRemove" @onclick:stopPropagation="true" title="@L["Dashboard.RemoveShortcut"]">
             <i class="bi bi-x-lg"></i>
         </button>
     }

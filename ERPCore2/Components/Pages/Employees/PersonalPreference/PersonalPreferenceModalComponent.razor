@@ -55,10 +55,11 @@
     private bool isLoading = false;
     private int? currentEmployeeId = null;
 
-    // 語言偏好 + 字型縮放
+    // 語言偏好 + 字型縮放 + 主題
     private EmployeePreference employeePreference = new();
     private UILanguage _originalLanguage = UILanguage.ZhTW;   // 記錄載入時的語言，用於判斷是否需要 reload
     private ContentZoom _originalZoom = ContentZoom.Medium;    // 記錄載入時的縮放，用於判斷是否需要套用
+    private AppTheme _originalTheme = AppTheme.System;         // 記錄載入時的主題，用於判斷是否需要套用
 
     // 個人資料
     private Employee? currentEmployee = null;
@@ -128,6 +129,7 @@
                 employeePreference = await EmployeePreferenceService.GetByEmployeeIdAsync(currentEmployeeId.Value);
                 _originalLanguage = employeePreference.Language;
                 _originalZoom = employeePreference.Zoom;
+                _originalTheme = employeePreference.Theme;
 
                 // 載入員工個人資料
                 currentEmployee = await EmployeeService.GetByIdAsync(currentEmployeeId.Value);
@@ -205,6 +207,13 @@
                 _originalZoom = employeePreference.Zoom;
             }
 
+            // 主題若有變更，即時套用（寫 cookie + 更新 data-bs-theme，不需 reload）
+            if (employeePreference.Theme != _originalTheme)
+            {
+                await JSRuntime.InvokeVoidAsync("setAppTheme", (int)employeePreference.Theme);
+                _originalTheme = employeePreference.Theme;
+            }
+
             // 語言若與目前 UI 文化不同，寫入 cookie 並重新載入頁面以套用新語言
             var newCultureCode = ERPCore2.Helpers.CultureHelper.ToCultureCode(employeePreference.Language);
             if (newCultureCode != System.Globalization.CultureInfo.CurrentUICulture.Name)
@@ -239,6 +248,7 @@
         employeePreference = new();
         _originalLanguage = UILanguage.ZhTW;
         _originalZoom = ContentZoom.Medium;
+        _originalTheme = AppTheme.System;
         newPassword = string.Empty;
         confirmPassword = string.Empty;
 

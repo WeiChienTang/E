@@ -57,6 +57,7 @@
             await InitializeBreadcrumbsAsync();
 
             fieldConfiguration = new VehicleMaintenanceFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
 
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();

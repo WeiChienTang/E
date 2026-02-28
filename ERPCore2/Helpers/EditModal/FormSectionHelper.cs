@@ -214,68 +214,68 @@ namespace ERPCore2.Helpers.EditModal
     }
 
     /// <summary>
-    /// 常用區段名稱常數 - 提供統一的區段命名
+    /// 常用區段名稱常數 - 提供統一的區段命名（值為資源鍵，透過 IStringLocalizer 翻譯）
     /// </summary>
     public static class FormSectionNames
     {
         /// <summary>基本資訊</summary>
-        public const string BasicInfo = "基本資訊";
+        public const string BasicInfo = "Section.BasicInfo";
 
         /// <summary>篩選條件（虛擬欄位，不儲存至資料庫，僅用於篩選下方明細 Table）</summary>
-        public const string FilterConditions = "篩選條件";
+        public const string FilterConditions = "Section.FilterConditions";
 
         /// <summary>聯絡資訊</summary>
-        public const string ContactInfo = "聯絡資訊";
+        public const string ContactInfo = "Section.ContactInfo";
 
         /// <summary>聯絡人資訊</summary>
-        public const string ContactPersonInfo = "聯絡人資訊";
+        public const string ContactPersonInfo = "Section.ContactPersonInfo";
 
         /// <summary>金額資訊</summary>
-        public const string AmountInfo = "金額資訊";
+        public const string AmountInfo = "Section.AmountInfo";
 
         /// <summary>金額資訊(系統自動計算)</summary>
-        public const string AmountInfoAutoCalculated = "金額資訊(系統自動計算)";
+        public const string AmountInfoAutoCalculated = "Section.AmountInfoAutoCalculated";
 
         /// <summary>付款資訊</summary>
-        public const string PaymentInfo = "付款資訊";
+        public const string PaymentInfo = "Section.PaymentInfo";
 
         /// <summary>額外資料</summary>
-        public const string AdditionalData = "額外資料";
+        public const string AdditionalData = "Section.AdditionalData";
 
         /// <summary>額外資訊</summary>
-        public const string AdditionalInfo = "額外資訊";
+        public const string AdditionalInfo = "Section.AdditionalInfo";
 
         /// <summary>其他資訊</summary>
-        public const string OtherInfo = "其他資訊";
+        public const string OtherInfo = "Section.OtherInfo";
 
         /// <summary>組織架構</summary>
-        public const string OrganizationStructure = "組織架構";
+        public const string OrganizationStructure = "Section.OrganizationStructure";
 
         /// <summary>任職資訊</summary>
-        public const string EmploymentInfo = "任職資訊";
+        public const string EmploymentInfo = "Section.EmploymentInfo";
 
         /// <summary>公司資料</summary>
-        public const string CompanyData = "公司資料";
+        public const string CompanyData = "Section.CompanyData";
 
         /// <summary>帳號資訊</summary>
-        public const string AccountInfo = "帳號資訊";
+        public const string AccountInfo = "Section.AccountInfo";
 
         /// <summary>業務資訊</summary>
-        public const string SalesInfo = "業務資訊";
+        public const string SalesInfo = "Section.SalesInfo";
 
         /// <summary>交易條件</summary>
-        public const string TradingTerms = "交易條件";
+        public const string TradingTerms = "Section.TradingTerms";
 
         /// <summary>單位設定</summary>
-        public const string UnitSettings = "單位設定";
+        public const string UnitSettings = "Section.UnitSettings";
 
         /// <summary>分類與規格</summary>
-        public const string CategoryAndSpecification = "分類與規格";
+        public const string CategoryAndSpecification = "Section.CategoryAndSpecification";
 
         /// <summary>財務與備註</summary>
-        public const string FinanceAndRemarks = "財務與備註";
+        public const string FinanceAndRemarks = "Section.FinanceAndRemarks";
 
         /// <summary>配給裝備</summary>
-        public const string EquipmentAssignment = "配給裝備";
+        public const string EquipmentAssignment = "Section.EquipmentAssignment";
     }
 }

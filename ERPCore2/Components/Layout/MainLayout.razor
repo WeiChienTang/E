@@ -221,17 +221,18 @@
     {
         if (firstRender)
         {
-            // 強制套用當前用戶的字型縮放偏好，覆寫可能殘留的上一個用戶 cookie
+            // 強制套用當前用戶的顯示偏好（字型縮放 + 主題），覆寫可能殘留的上一個用戶 cookie
             if (_currentEmployeeId > 0)
             {
                 try
                 {
                     var preference = await EmployeePreferenceService.GetByEmployeeIdAsync(_currentEmployeeId);
                     await JSRuntime.InvokeVoidAsync("setContentZoom", (int)preference.Zoom);
+                    await JSRuntime.InvokeVoidAsync("setAppTheme", (int)preference.Theme);
                 }
                 catch
                 {
-                    // 忽略套用縮放失敗，不影響主要功能
+                    // 忽略套用偏好失敗，不影響主要功能
                 }
             }
 

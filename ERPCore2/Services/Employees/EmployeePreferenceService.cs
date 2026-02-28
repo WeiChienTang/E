@@ -58,6 +58,7 @@ namespace ERPCore2.Services
                 {
                     existing.Language = preference.Language;
                     existing.Zoom = preference.Zoom;
+                    existing.Theme = preference.Theme;
                     existing.UpdatedAt = DateTime.Now;
                 }
 

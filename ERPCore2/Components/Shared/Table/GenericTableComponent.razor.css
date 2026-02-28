@@ -67,8 +67,8 @@
 /* 表格列邊框樣式 - 組件專用 */
 .table-with-column-borders th,
 .table-with-column-borders td {
-    border-left: 1px solid #dee2e6;
-    border-right: 1px solid #dee2e6;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
 }
 
 .table-with-column-borders th:first-child,
@@ -117,9 +117,9 @@
 .table-container-hover {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     border-radius: 0.375rem;
-    background: white;
+    background: var(--bg-primary);
     padding: 0;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--border-color);
     width: 100%; /* 確保容器寬度不超過父元素 */
     max-width: 100%; /* 防止溢出 */
     overflow-x: auto; /* 內容超出時顯示水平滾動條 */
@@ -213,7 +213,7 @@
         max-width: 80px;
         position: sticky; /* 固定在右側 */
         right: 0;
-        background-color: white; /* 確保背景不透明 */
+        background-color: var(--bg-primary); /* 確保背景不透明 */
         z-index: 1; /* 確保在其他列之上 */
         box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1); /* 添加陰影效果 */
     }
@@ -292,7 +292,7 @@
 
 /* 空資料狀態樣式 */
 .text-light-custom {
-    color: #6c757d !important;
+    color: var(--text-secondary) !important;
 }
 
 /* 分頁按鈕群組響應式調整 */
@@ -308,7 +308,7 @@
     
     /* 小螢幕下的表格進一步優化 */
     .table-responsive {
-        border: 1px solid #dee2e6;
+        border: 1px solid var(--border-color);
         border-radius: 0.375rem;
     }
     

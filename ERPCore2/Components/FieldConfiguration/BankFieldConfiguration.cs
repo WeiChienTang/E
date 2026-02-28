@@ -31,8 +31,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Bank>
                         {
                             PropertyName = nameof(Bank.Code),
-                            DisplayName = "銀行編號",
-                            FilterPlaceholder = "輸入銀行編號搜尋",
+                            DisplayName = Dn("Field.BankCode", "銀行編號"),
+                            FilterPlaceholder = Fp("Field.BankCode", "輸入銀行編號搜尋"),
                             TableOrder = 0,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.Code), b => b.Code)
@@ -43,8 +43,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Bank>
                         {
                             PropertyName = nameof(Bank.BankName),
-                            DisplayName = "銀行名稱",
-                            FilterPlaceholder = "輸入銀行名稱搜尋",
+                            DisplayName = Dn("Field.BankName", "銀行名稱"),
+                            FilterPlaceholder = Fp("Field.BankName", "輸入銀行名稱搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.BankName), b => b.BankName)
@@ -55,8 +55,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Bank>
                         {
                             PropertyName = nameof(Bank.BankNameEn),
-                            DisplayName = "英文名稱",
-                            FilterPlaceholder = "輸入英文名稱搜尋",
+                            DisplayName = Dn("Field.EnglishName", "英文名稱"),
+                            FilterPlaceholder = Fp("Field.EnglishName", "輸入英文名稱搜尋"),
                             TableOrder = 2,
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -68,8 +68,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Bank>
                         {
                             PropertyName = nameof(Bank.SwiftCode),
-                            DisplayName = "SWIFT編號",
-                            FilterPlaceholder = "輸入SWIFT編號搜尋",
+                            DisplayName = Dn("Field.SwiftCode", "SWIFT編號"),
+                            FilterPlaceholder = Fp("Field.SwiftCode", "輸入SWIFT編號搜尋"),
                             TableOrder = 3,
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -81,8 +81,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Bank>
                         {
                             PropertyName = nameof(Bank.Phone),
-                            DisplayName = "電話",
-                            FilterPlaceholder = "輸入電話搜尋",
+                            DisplayName = Dn("Field.Phone", "電話"),
+                            FilterPlaceholder = Fp("Field.Phone", "輸入電話搜尋"),
                             TableOrder = 4,
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -94,7 +94,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Bank>
                         {
                             PropertyName = nameof(Bank.Address),
-                            DisplayName = "地址",
+                            DisplayName = Dn("Field.Address", "地址"),
                             ShowInFilter = false,
                             TableOrder = 5,
                             NullDisplayText = "-"
@@ -105,7 +105,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Bank>
                         {
                             PropertyName = nameof(Bank.Fax),
-                            DisplayName = "傳真",
+                            DisplayName = Dn("Field.Fax", "傳真"),
                             ShowInFilter = false,
                             TableOrder = 6,
                             NullDisplayText = "-"

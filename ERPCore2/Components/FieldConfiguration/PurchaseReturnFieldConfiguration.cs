@@ -50,8 +50,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReturn>
                         {
                             PropertyName = nameof(PurchaseReturn.Code),
-                            DisplayName = "退回單號",
-                            FilterPlaceholder = "輸入退回單號搜尋",
+                            DisplayName = Dn("Field.PurchaseReturnCode", "退回單號"),
+                            FilterPlaceholder = Fp("Field.PurchaseReturnCode", "輸入退回單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PurchaseReturn.Code), pr => pr.Code)
@@ -62,10 +62,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReturn>
                         {
                             PropertyName = "Supplier.CompanyName",
-                            DisplayName = "廠商",
+                            DisplayName = Dn("Field.Supplier", "廠商"),
                             TableOrder = 2,
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入廠商名稱搜尋",
+                            FilterPlaceholder = Fp("Field.Supplier", "輸入廠商名稱搜尋"),
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "SupplierName", pr => pr.Supplier != null ? pr.Supplier.CompanyName : "")
                         }
@@ -75,7 +75,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReturn>
                         {
                             PropertyName = nameof(PurchaseReturn.ReturnDate),
-                            DisplayName = "退回日期",
+                            DisplayName = Dn("Field.PurchaseReturnDate", "退回日期"),
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 3,
@@ -88,10 +88,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReturn>
                         {
                             PropertyName = "PurchaseReceivingNumber",
-                            DisplayName = "原進貨單號",
+                            DisplayName = Dn("Field.OriginalReceivingCode", "原進貨單號"),
                             TableOrder = 4,
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入原進貨單號搜尋",
+                            FilterPlaceholder = Fp("Field.OriginalReceivingCode", "輸入原進貨單號搜尋"),
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "PurchaseReceivingNumber", pr => string.Empty, allowNull: true)
                         }
@@ -101,7 +101,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReturn>
                         {
                             PropertyName = nameof(PurchaseReturn.TotalReturnAmountWithTax),
-                            DisplayName = "總額",
+                            DisplayName = Dn("Field.TotalAmount", "總額"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 6,
                             ShowInFilter = false,

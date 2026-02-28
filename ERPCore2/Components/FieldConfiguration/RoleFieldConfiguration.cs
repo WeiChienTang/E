@@ -31,8 +31,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Role>
                         {
                             PropertyName = nameof(Role.Code),
-                            DisplayName = "權限組編號",
-                            FilterPlaceholder = "輸入權限組編號搜尋",
+                            DisplayName = Dn("Field.RoleCode", "權限組編號"),
+                            FilterPlaceholder = Fp("Field.RoleCode", "輸入權限組編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -45,8 +45,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = nameof(Role.Name),
                             FilterPropertyName = "RoleName", // 保持原有的篩選器屬性名稱
-                            DisplayName = "權限組名稱",
-                            FilterPlaceholder = "輸入權限組名稱搜尋",
+                            DisplayName = Dn("Field.RoleName", "權限組名稱"),
+                            FilterPlaceholder = Fp("Field.RoleName", "輸入權限組名稱搜尋"),
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

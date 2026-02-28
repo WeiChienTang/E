@@ -259,6 +259,18 @@
   <data name="Preference.FontSize" xml:space="preserve">
     <value>Laki ng Font</value>
   </data>
+  <data name="Preference.Theme" xml:space="preserve">
+    <value>Kulay ng Tema</value>
+  </data>
+  <data name="Preference.ThemeLight" xml:space="preserve">
+    <value>Maliwanag</value>
+  </data>
+  <data name="Preference.ThemeDark" xml:space="preserve">
+    <value>Madilim</value>
+  </data>
+  <data name="Preference.ThemeSystem" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
 
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
@@ -1138,4 +1150,163 @@
   <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Sales Order</value></data>
   <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Pagbabalik ng Benta</value></data>
   <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Paglipat ng Imbentaryo</value></data>
+  <!-- ===== FormSectionNames keys ===== -->
+  <data name="Section.BasicInfo" xml:space="preserve"><value>Pangunahing Impormasyon</value></data>
+  <data name="Section.FilterConditions" xml:space="preserve"><value>Mga Kondisyon ng Filter</value></data>
+  <data name="Section.ContactInfo" xml:space="preserve"><value>Impormasyon sa Pakikipag-ugnayan</value></data>
+  <data name="Section.ContactPersonInfo" xml:space="preserve"><value>Impormasyon ng Nakikipag-ugnayan</value></data>
+  <data name="Section.AmountInfo" xml:space="preserve"><value>Impormasyon ng Halaga</value></data>
+  <data name="Section.AmountInfoAutoCalculated" xml:space="preserve"><value>Impormasyon ng Halaga (Awtomatikong Kinakalkula)</value></data>
+  <data name="Section.PaymentInfo" xml:space="preserve"><value>Impormasyon sa Pagbabayad</value></data>
+  <data name="Section.AdditionalData" xml:space="preserve"><value>Karagdagang Data</value></data>
+  <data name="Section.AdditionalInfo" xml:space="preserve"><value>Karagdagang Impormasyon</value></data>
+  <data name="Section.OtherInfo" xml:space="preserve"><value>Iba Pang Impormasyon</value></data>
+  <data name="Section.OrganizationStructure" xml:space="preserve"><value>Istraktura ng Organisasyon</value></data>
+  <data name="Section.EmploymentInfo" xml:space="preserve"><value>Impormasyon sa Trabaho</value></data>
+  <data name="Section.CompanyData" xml:space="preserve"><value>Data ng Kumpanya</value></data>
+  <data name="Section.AccountInfo" xml:space="preserve"><value>Impormasyon ng Account</value></data>
+  <data name="Section.SalesInfo" xml:space="preserve"><value>Impormasyon sa Pagbebenta</value></data>
+  <data name="Section.TradingTerms" xml:space="preserve"><value>Mga Tuntunin sa Kalakalan</value></data>
+  <data name="Section.UnitSettings" xml:space="preserve"><value>Mga Setting ng Yunit</value></data>
+  <data name="Section.CategoryAndSpecification" xml:space="preserve"><value>Kategorya at Detalye</value></data>
+  <data name="Section.FinanceAndRemarks" xml:space="preserve"><value>Pananalapi at Mga Tala</value></data>
+  <data name="Section.EquipmentAssignment" xml:space="preserve"><value>Pagtatalaga ng Kagamitan</value></data>
+  <!-- ===== Tab keys (Modal tabs) ===== -->
+  <data name="Tab.SupplierData" xml:space="preserve"><value>Data ng Supplier</value></data>
+  <data name="Tab.AccountingInfo" xml:space="preserve"><value>Impormasyon sa Accounting</value></data>
+  <data name="Tab.SupplierProducts" xml:space="preserve"><value>Mga Produkto ng Supplier</value></data>
+  <data name="Tab.CustomerData" xml:space="preserve"><value>Data ng Customer</value></data>
+  <data name="Tab.VisitRecords" xml:space="preserve"><value>Mga Talaan ng Pagbisita</value></data>
+  <data name="Tab.TransactionRecords" xml:space="preserve"><value>Mga Talaan ng Transaksyon</value></data>
+  <data name="Tab.ProductData" xml:space="preserve"><value>Data ng Produkto</value></data>
+  <data name="Tab.OrderData" xml:space="preserve"><value>Data ng Order</value></data>
+  <data name="Tab.OrderDetail" xml:space="preserve"><value>Detalye ng Order</value></data>
+  <data name="Tab.ReceivingRecords" xml:space="preserve"><value>Mga Talaan ng Pagtanggap</value></data>
+  <data name="Tab.ReturnRecords" xml:space="preserve"><value>Mga Talaan ng Pagbabalik</value></data>
+  <data name="Tab.ReceivingData" xml:space="preserve"><value>Data ng Pagtanggap</value></data>
+  <data name="Tab.ReceivingDetail" xml:space="preserve"><value>Detalye ng Pagtanggap</value></data>
+  <data name="Tab.SetoffRecords" xml:space="preserve"><value>Mga Talaan ng Setoff</value></data>
+  <data name="Tab.SourcePurchaseOrder" xml:space="preserve"><value>Pinagmulan na Purchase Order</value></data>
+  <data name="Tab.ReturnData" xml:space="preserve"><value>Data ng Pagbabalik</value></data>
+  <data name="Tab.ReturnDetail" xml:space="preserve"><value>Detalye ng Pagbabalik</value></data>
+  <data name="Tab.OriginalReceiving" xml:space="preserve"><value>Orihinal na Pagtanggap</value></data>
+  <data name="Tab.QuotationData" xml:space="preserve"><value>Data ng Quotation</value></data>
+  <data name="Tab.QuotationDetail" xml:space="preserve"><value>Detalye ng Quotation</value></data>
+  <data name="Tab.ConvertToOrder" xml:space="preserve"><value>I-convert sa Order</value></data>
+  <data name="Tab.DeliveryRecords" xml:space="preserve"><value>Mga Talaan ng Pagpapadala</value></data>
+  <data name="Tab.SourceQuotation" xml:space="preserve"><value>Pinagmulan na Quotation</value></data>
+  <data name="Tab.DeliveryData" xml:space="preserve"><value>Data ng Pagpapadala</value></data>
+  <data name="Tab.DeliveryDetail" xml:space="preserve"><value>Detalye ng Pagpapadala</value></data>
+  <data name="Tab.SourceOrder" xml:space="preserve"><value>Pinagmulan na Order</value></data>
+  <data name="Tab.OriginalDelivery" xml:space="preserve"><value>Orihinal na Pagpapadala</value></data>
+  <data name="Tab.PageShortcut" xml:space="preserve"><value>Shortcut ng Pahina</value></data>
+  <data name="Tab.QuickAction" xml:space="preserve"><value>Mabilis na Aksyon</value></data>
+  <data name="Tab.ChartView" xml:space="preserve"><value>Chart View</value></data>
+  <!-- ===== Supplier action keys ===== -->
+  <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>Kopyahin sa Customer</value></data>
+  <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong kopyahin ang data ng supplier na ito bilang bagong customer?</value></data>
+  <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>Isang bagong rekord ang malilikha sa listahan ng customer pagkatapos ng pagkopya.</value></data>
+  <data name="Button.ConfirmCopy" xml:space="preserve"><value>Kumpirmahin ang Pagkopya</value></data>
+  <!-- ===== Dashboard Widget Picker keys ===== -->
+  <data name="Dashboard.AddShortcutTitle" xml:space="preserve"><value>Magdagdag ng Shortcut na Item</value></data>
+  <data name="Dashboard.NoMatchFound" xml:space="preserve"><value>Walang nahanap na item na tumutugma sa &quot;{0}&quot;</value></data>
+  <data name="Dashboard.NoItems" xml:space="preserve"><value>Walang {0} na maaaring idagdag</value></data>
+  <data name="Placeholder.SearchWidgets" xml:space="preserve"><value>Maghanap ng pangalan, paglalarawan o kategorya...</value></data>
+  <data name="Dashboard.RemoveShortcut" xml:space="preserve"><value>Alisin ang Shortcut</value></data>
+  <data name="Dashboard.SelectIcon" xml:space="preserve"><value>Pumili ng Icon ng Panel</value></data>
+  <data name="Dashboard.ApplyIcon" xml:space="preserve"><value>I-apply ang Napiling Icon</value></data>
+  <data name="Dashboard.CurrentSelection" xml:space="preserve"><value>Kasalukuyang Pinili</value></data>
+  <data name="Dashboard.NotSelected" xml:space="preserve"><value>Hindi Napili</value></data>
+  <!-- ===== Accounting tab keys ===== -->
+  <data name="Accounting.SaveFirst" xml:space="preserve"><value>I-save muna ang data bago tingnan ang mga sub-account sa accounting.</value></data>
+  <data name="Accounting.SubAccountType" xml:space="preserve"><value>Uri ng Sub-Account</value></data>
+  <data name="Accounting.AccountCode" xml:space="preserve"><value>Kodigo ng Account</value></data>
+  <data name="Accounting.AccountName" xml:space="preserve"><value>Pangalan ng Account</value></data>
+  <data name="Accounting.Created" xml:space="preserve"><value>Nalikha Na</value></data>
+  <data name="Accounting.NotCreated" xml:space="preserve"><value>Hindi Pa Nalikha</value></data>
+  <data name="Accounting.CreateSubAccount" xml:space="preserve"><value>Lumikha ng Sub-Account</value></data>
+  <data name="Accounting.CreateSubAccountTitle" xml:space="preserve"><value>Likhain ang lahat ng nawawalang sub-account para sa rekord na ito</value></data>
+  <data name="Accounting.AccountsReceivable" xml:space="preserve"><value>Mga Accounts Receivable</value></data>
+  <data name="Accounting.NoteReceivable" xml:space="preserve"><value>Mga Notes Receivable</value></data>
+  <data name="Accounting.SalesReturn" xml:space="preserve"><value>Sales Return</value></data>
+  <data name="Accounting.AdvanceReceipt" xml:space="preserve"><value>Advance Receipt</value></data>
+  <data name="Accounting.AccountsPayable" xml:space="preserve"><value>Mga Accounts Payable</value></data>
+  <data name="Accounting.NotePayable" xml:space="preserve"><value>Mga Notes Payable</value></data>
+  <data name="Accounting.PurchaseReturn" xml:space="preserve"><value>Purchase Return</value></data>
+  <data name="Accounting.AdvancePayment" xml:space="preserve"><value>Advance Payment</value></data>
+  <data name="Accounting.CreateError" xml:space="preserve"><value>May naganap na error habang nililikha ang mga sub-account</value></data>
+  <!-- ===== Label keys ===== -->
+  <data name="Label.Unassigned" xml:space="preserve"><value>Hindi Naitalaga</value></data>
+  <data name="Label.NeverLoggedIn" xml:space="preserve"><value>Hindi Pa Naka-login</value></data>
+  <data name="Label.HasPermission" xml:space="preserve"><value>May Pahintulot</value></data>
+  <data name="Label.NoPermission" xml:space="preserve"><value>Walang Pahintulot</value></data>
+
+  <!-- ===== Placeholder - Search keys ===== -->
+  <data name="Placeholder.InputToSearch" xml:space="preserve"><value>Maghanap ng {0}</value></data>
+
+  <!-- ===== Label keys - Extra ===== -->
+  <data name="Label.NotSet" xml:space="preserve"><value>Hindi Nakatakda</value></data>
+
+  <!-- ===== Field keys - Employee/Org ===== -->
+  <data name="Field.IsSystemUser" xml:space="preserve"><value>Access ng System</value></data>
+  <data name="Field.LastLogin" xml:space="preserve"><value>Huling Login</value></data>
+  <data name="Field.Role" xml:space="preserve"><value>Grupo ng Pahintulot</value></data>
+  <data name="Field.Department" xml:space="preserve"><value>Departamento</value></data>
+  <data name="Field.EmployeePosition" xml:space="preserve"><value>Posisyon</value></data>
+
+  <!-- ===== Field keys - Error Log ===== -->
+  <data name="Field.ErrorId" xml:space="preserve"><value>ID ng Error</value></data>
+  <data name="Field.ErrorLevel" xml:space="preserve"><value>Antas ng Error</value></data>
+  <data name="Field.ErrorSource" xml:space="preserve"><value>Pinagmulan ng Error</value></data>
+  <data name="Field.ErrorCategory" xml:space="preserve"><value>Kategorya ng Error</value></data>
+  <data name="Field.ErrorMessage" xml:space="preserve"><value>Mensahe ng Error</value></data>
+  <data name="Field.ErrorModule" xml:space="preserve"><value>Module</value></data>
+  <data name="Field.OccurredAt" xml:space="preserve"><value>Oras ng Pangyayari</value></data>
+  <data name="Field.IsResolved" xml:space="preserve"><value>Nalutas Na</value></data>
+  <data name="Field.UserId" xml:space="preserve"><value>Gumagamit</value></data>
+  <data name="Field.RequestPath" xml:space="preserve"><value>Landas ng Kahilingan</value></data>
+
+  <!-- ===== Field keys - Inventory ===== -->
+  <data name="Field.CurrentStock" xml:space="preserve"><value>Kasalukuyang Stock</value></data>
+  <data name="Field.AverageCost" xml:space="preserve"><value>Karaniwang Gastos</value></data>
+  <data name="Field.ProductUnit" xml:space="preserve"><value>Yunit ng Produkto</value></data>
+
+  <!-- ===== Field keys - Material ===== -->
+  <data name="Field.MaterialCode" xml:space="preserve"><value>Kodigo ng Materyales</value></data>
+  <data name="Field.MaterialName" xml:space="preserve"><value>Pangalan ng Materyales</value></data>
+  <data name="Field.Remarks" xml:space="preserve"><value>Mga Tala</value></data>
+  <data name="Field.DetailCount" xml:space="preserve"><value>Bilang ng Detalye</value></data>
+
+  <!-- ===== Field keys - General ===== -->
+  <data name="Field.CompanyCode" xml:space="preserve"><value>Kodigo ng Kumpanya</value></data>
+  <data name="Field.UsageCount" xml:space="preserve"><value>Bilang ng Paggamit</value></data>
+  <data name="Field.ConnectionType" xml:space="preserve"><value>Uri ng Koneksyon</value></data>
+  <data name="Field.UsbPort" xml:space="preserve"><value>USB Port</value></data>
+  <data name="Field.ComponentCount" xml:space="preserve"><value>Bilang ng Bahagi</value></data>
+  <data name="Field.BatchNumber" xml:space="preserve"><value>Numero ng Batch</value></data>
+  <data name="Field.OriginalReceivingCode" xml:space="preserve"><value>Orihinal na Numero ng Resibo</value></data>
+  <data name="Field.ApprovalStatus" xml:space="preserve"><value>Katayuan ng Pag-apruba</value></data>
+  <data name="Field.ReportId" xml:space="preserve"><value>ID ng Ulat</value></data>
+  <data name="Field.RelatedPartyName" xml:space="preserve"><value>Pangalan ng Kaugnay na Partido</value></data>
+  <data name="Field.BelongsToWarehouse" xml:space="preserve"><value>Bodega</value></data>
+  <data name="Field.NetAmount" xml:space="preserve"><value>Netong Halaga</value></data>
+  <data name="Field.MeasurementUnit" xml:space="preserve"><value>Yunit ng Sukat</value></data>
+  <data name="Field.CompletedItems" xml:space="preserve"><value>Natapos na mga Item</value></data>
+  <data name="Field.DifferenceItems" xml:space="preserve"><value>Mga Item na may Pagkakaiba</value></data>
+  <data name="Field.DifferenceAmount" xml:space="preserve"><value>Kita/Pagkawala sa Imbentaryo</value></data>
+
+  <!-- ===== Field keys - Journal/Voucher ===== -->
+  <data name="Field.VoucherCode" xml:space="preserve"><value>Numero ng Voucher</value></data>
+  <data name="Field.VoucherDate" xml:space="preserve"><value>Petsa ng Voucher</value></data>
+  <data name="Field.VoucherType" xml:space="preserve"><value>Uri ng Voucher</value></data>
+  <data name="Field.VoucherDescription" xml:space="preserve"><value>Paglalarawan ng Voucher</value></data>
+  <data name="Field.TotalDebit" xml:space="preserve"><value>Kabuuang Debit</value></data>
+  <data name="Field.TotalCredit" xml:space="preserve"><value>Kabuuang Credit</value></data>
+  <data name="Field.SourceCode" xml:space="preserve"><value>Numero ng Pinagmulan</value></data>
+
+  <!-- ===== Field keys - Vehicle/Maintenance ===== -->
+  <data name="Field.ServiceProvider" xml:space="preserve"><value>Tagapagbigay ng Serbisyo</value></data>
+
+  <!-- ===== Field keys - Account/Inventory extra ===== -->
+  <data name="Field.AccountType" xml:space="preserve"><value>Uri ng Account</value></data>
 </root>

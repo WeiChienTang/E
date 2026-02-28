@@ -64,6 +64,7 @@
 
             // 3. 建立欄位配置
             fieldConfiguration = new JournalEntryFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
 
             // 4. 建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();

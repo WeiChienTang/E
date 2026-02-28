@@ -32,8 +32,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteRecord>
                         {
                             PropertyName = nameof(WasteRecord.Code),
-                            DisplayName = "廢料單號",
-                            FilterPlaceholder = "輸入單號搜尋",
+                            DisplayName = Dn("Field.WasteRecordCode", "廢料單號"),
+                            FilterPlaceholder = Fp("Field.WasteRecordCode", "輸入單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(WasteRecord.Code), wr => wr.Code, allowNull: true)
@@ -44,8 +44,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteRecord>
                         {
                             PropertyName = nameof(WasteRecord.RecordDate),
-                            DisplayName = "記錄日期",
-                            FilterPlaceholder = "選擇日期範圍",
+                            DisplayName = Dn("Field.RecordDate", "記錄日期"),
+                            FilterPlaceholder = Fp("Field.RecordDate", "選擇日期範圍"),
                             TableOrder = 2,
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
@@ -59,8 +59,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Vehicle.LicensePlate",
                             FilterPropertyName = nameof(WasteRecord.VehicleId),
-                            DisplayName = "車輛",
-                            FilterPlaceholder = "輸入車牌搜尋",
+                            DisplayName = Dn("Field.Vehicle", "車輛"),
+                            FilterPlaceholder = Fp("Field.Vehicle", "輸入車牌搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(WasteRecord.VehicleId), wr => wr.VehicleId)
@@ -72,8 +72,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "WasteType.Name",
                             FilterPropertyName = nameof(WasteRecord.WasteTypeId),
-                            DisplayName = "廢料類型",
-                            FilterPlaceholder = "選擇廢料類型",
+                            DisplayName = Dn("Field.WasteType", "廢料類型"),
+                            FilterPlaceholder = Fp("Field.WasteType", "選擇廢料類型"),
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(WasteRecord.WasteTypeId), wr => wr.WasteTypeId)
@@ -85,8 +85,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Customer.CompanyName",
                             FilterPropertyName = nameof(WasteRecord.CustomerId),
-                            DisplayName = "客戶",
-                            FilterPlaceholder = "輸入客戶搜尋",
+                            DisplayName = Dn("Field.Customer", "客戶"),
+                            FilterPlaceholder = Fp("Field.Customer", "輸入客戶搜尋"),
                             TableOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(WasteRecord.CustomerId), wr => wr.CustomerId)
@@ -98,8 +98,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Warehouse.Name",
                             FilterPropertyName = nameof(WasteRecord.WarehouseId),
-                            DisplayName = "入庫倉庫",
-                            FilterPlaceholder = "輸入倉庫搜尋",
+                            DisplayName = Dn("Field.InboundWarehouse", "入庫倉庫"),
+                            FilterPlaceholder = Fp("Field.InboundWarehouse", "輸入倉庫搜尋"),
                             TableOrder = 6,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(WasteRecord.WarehouseId), wr => wr.WarehouseId)
@@ -110,7 +110,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteRecord>
                         {
                             PropertyName = nameof(WasteRecord.TotalWeight),
-                            DisplayName = "總重量",
+                            DisplayName = Dn("Field.TotalWeight", "總重量"),
                             TableOrder = 7,
                             ColumnType = ColumnDataType.Number,
                             ShowInFilter = false,
@@ -128,7 +128,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteRecord>
                         {
                             PropertyName = nameof(WasteRecord.DisposalFee),
-                            DisplayName = "處理費",
+                            DisplayName = Dn("Field.DisposalFee", "處理費"),
                             TableOrder = 8,
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
@@ -146,7 +146,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteRecord>
                         {
                             PropertyName = nameof(WasteRecord.PurchaseFee),
-                            DisplayName = "採購費",
+                            DisplayName = Dn("Field.PurchaseFee", "採購費"),
                             TableOrder = 9,
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
@@ -164,7 +164,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteRecord>
                         {
                             PropertyName = nameof(WasteRecord.NetAmount),
-                            DisplayName = "淨額",
+                            DisplayName = Dn("Field.NetAmount", "淨額"),
                             TableOrder = 10,
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,

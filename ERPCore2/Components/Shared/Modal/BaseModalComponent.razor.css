@@ -62,13 +62,13 @@
 
 /* Header 樣式優化 */
 ::deep .modal-header {
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid var(--border-color);
     padding: 1rem 1.5rem;
     border-top-left-radius: 0.5rem;
     border-top-right-radius: 0.5rem;
 }
 
-/* 專案主色 Header 特殊處理 */
+/* 專案主色 Header 特殊處理（深色系 header 在任何主題下保持深色 + 白字） */
 ::deep .modal-header.bg-project-primary {
     background-color: #1F2937;
     color: #FFFFFF;
@@ -83,30 +83,30 @@
 
 /* Footer 樣式優化 */
 ::deep .modal-footer {
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid var(--border-color);
     padding: 0.75rem 1rem;
-    background-color: #f8f9fa;
+    background-color: var(--bg-secondary);
     border-bottom-left-radius: 0.5rem;
     border-bottom-right-radius: 0.5rem;
 }
 
 /* Metadata 樣式優化（審計資訊區域） */
 ::deep .modal-metadata {
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid var(--border-color);
     padding: 0.75rem 1rem;
-    background-color: #f8f9fa;
+    background-color: var(--bg-secondary);
     border-bottom-left-radius: 0.5rem;
     border-bottom-right-radius: 0.5rem;
 }
 
 ::deep .modal-metadata .text-muted {
     font-size: 0.875rem;
-    color: #6c757d;
+    color: var(--text-secondary);
 }
 
 ::deep .modal-metadata strong {
     font-weight: 600;
-    color: #495057;
+    color: var(--text-primary);
 }
 
 /* ===== 動畫效果 ===== */
@@ -136,17 +136,17 @@
 }
 
 ::deep .modal-body::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--bg-tertiary);
     border-radius: 4px;
 }
 
 ::deep .modal-body::-webkit-scrollbar-thumb {
-    background: #888;
+    background: var(--border-color);
     border-radius: 4px;
 }
 
 ::deep .modal-body::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--text-secondary);
 }
 
 /* ===== 響應式設計 ===== */

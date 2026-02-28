@@ -40,8 +40,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesOrder>
                         {
                             PropertyName = nameof(SalesOrder.Code),
-                            DisplayName = "訂單單號",
-                            FilterPlaceholder = "輸入訂單單號搜尋",
+                            DisplayName = Dn("Field.SalesOrderCode", "訂單單號"),
+                            FilterPlaceholder = Fp("Field.SalesOrderCode", "輸入訂單單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesOrder.Code), so => so.Code)
@@ -54,7 +54,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Customer.CompanyName",
                             FilterPropertyName = nameof(SalesOrder.CustomerId),
-                            DisplayName = "客戶",
+                            DisplayName = Dn("Field.Customer", "客戶"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
                             Options = _customers.Select(c => new SelectOption 
@@ -71,7 +71,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesOrder>
                         {
                             PropertyName = nameof(SalesOrder.TotalAmountWithTax),
-                            DisplayName = "總額",
+                            DisplayName = Dn("Field.TotalAmount", "總額"),
                             FilterType = SearchFilterType.NumberRange,
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 4,
@@ -91,7 +91,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesOrder>
                         {
                             PropertyName = nameof(SalesOrder.OrderDate),
-                            DisplayName = "訂單日",
+                            DisplayName = Dn("Field.SalesOrderDate", "訂單日"),
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 5,
@@ -104,11 +104,11 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesOrder>
                         {
                             PropertyName = nameof(SalesOrder.ExpectedDeliveryDate),
-                            DisplayName = "預交日",
+                            DisplayName = Dn("Field.ExpectedDeliveryDate", "預交日"),
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 6,
-                            NullDisplayText = "未設定",
+                            NullDisplayText = Nd("Label.NotSet", "未設定"),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableDateRangeFilter(
                                 model, query, nameof(SalesOrder.ExpectedDeliveryDate), so => so.ExpectedDeliveryDate)
                         }

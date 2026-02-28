@@ -43,8 +43,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseOrder>
                         {
                             PropertyName = nameof(PurchaseOrder.Code),
-                            DisplayName = "採購單號",
-                            FilterPlaceholder = "輸入採購單號搜尋",
+                            DisplayName = Dn("Field.PurchaseOrderCode", "採購單號"),
+                            FilterPlaceholder = Fp("Field.PurchaseOrderCode", "輸入採購單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
 
@@ -57,9 +57,9 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Company.CompanyName", // 表格顯示用
                             FilterPropertyName = "Company.CompanyName", // 篩選器使用公司名稱
-                            DisplayName = "採購公司",
+                            DisplayName = Dn("Field.PurchasingCompany", "採購公司"),
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入公司名稱搜尋",
+                            FilterPlaceholder = Fp("Field.PurchasingCompany", "輸入公司名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Company.CompanyName", po => po.Company.CompanyName)
@@ -71,9 +71,9 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Supplier.CompanyName", // 表格顯示用
                             FilterPropertyName = "Supplier.CompanyName", // 篩選器也使用公司名稱
-                            DisplayName = "廠商",
+                            DisplayName = Dn("Field.Supplier", "廠商"),
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入廠商名稱搜尋",
+                            FilterPlaceholder = Fp("Field.Supplier", "輸入廠商名稱搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Supplier.CompanyName", po => po.Supplier != null ? po.Supplier.CompanyName : null, allowNull: true)
@@ -84,7 +84,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseOrder>
                         {
                             PropertyName = nameof(PurchaseOrder.OrderDate),
-                            DisplayName = "採購日",
+                            DisplayName = Dn("Field.PurchaseDate", "採購日"),
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 4,
@@ -97,7 +97,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseOrder>
                         {
                             PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
-                            DisplayName = "預交日",
+                            DisplayName = Dn("Field.ExpectedDeliveryDate", "預交日"),
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 5,
@@ -110,7 +110,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseOrder>
                         {
                             PropertyName = nameof(PurchaseOrder.PurchaseTotalAmountIncludingTax),
-                            DisplayName = "總額",
+                            DisplayName = Dn("Field.TotalAmount", "總額"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 6,
                             ShowInFilter = false, // 通常不會用金額篩選
@@ -133,7 +133,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseOrder>
                         {
                             PropertyName = nameof(PurchaseOrder.IsApproved),
-                            DisplayName = "核准狀態",
+                            DisplayName = Dn("Field.ApprovalStatus", "核准狀態"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 7,
                             Options = new List<SelectOption>

@@ -111,6 +111,7 @@
             
             // 建立欄位配置
             fieldConfiguration = new SalesReturnFieldConfiguration(salesDeliveries, warehouses, returnReasons, NotificationService);
+            fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }

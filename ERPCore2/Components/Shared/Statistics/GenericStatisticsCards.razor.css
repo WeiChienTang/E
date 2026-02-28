@@ -22,14 +22,14 @@
     border-radius: 25px;
     font-size: 1rem; /* 與 InteractiveTableComponent 一致 */
     font-weight: 500;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     transition: all 0.2s ease;
     white-space: nowrap;
 }
 
 .statistics-badge .badge-title {
-    color: #495057;
+    color: var(--text-secondary);
     font-size: 1rem; /* 與 InteractiveTableComponent 一致 */
     font-weight: 500;
 }
@@ -37,7 +37,7 @@
 .statistics-badge .badge-value {
     font-weight: 700;
     font-size: 1rem; /* 與 InteractiveTableComponent 一致 */
-    color: #212529;
+    color: var(--text-primary);
 }
 
 .statistics-badge .badge-arrow {

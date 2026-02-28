@@ -539,17 +539,17 @@
                     c => c.EmployeeId,
                     c => c.CustomerStatus,
                     c => c.Remarks)
-                .GroupIntoTab("客戶資料", "bi-building", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo);
+                .GroupIntoTab(L["Tab.CustomerData"].ToString(), "bi-building", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo);
 
             if (isVehiclesEnabled)
-                builder = builder.GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent());
+                builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent());
 
             if (isAccountingEnabled)
-                builder = builder.GroupIntoCustomTab("會計資訊", "bi-calculator", CreateAccountingTabContent());
+                builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent());
 
             var layout = builder
-                .GroupIntoCustomTab("拜訪紀錄", "bi-journal-text", CreateVisitTabContent())
-                .GroupIntoCustomTab("交易紀錄", "bi-receipt", CreateTransactionTabContent())
+                .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent())
+                .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent())
                 .BuildAll();
 
             formSections = layout.FieldSections;

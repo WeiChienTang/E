@@ -31,8 +31,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Department>
                         {
                             PropertyName = nameof(Department.Code),
-                            DisplayName = "部門編號",
-                            FilterPlaceholder = "輸入部門編號搜尋",
+                            DisplayName = Dn("Field.DepartmentCode", "部門編號"),
+                            FilterPlaceholder = Fp("Field.DepartmentCode", "輸入部門編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Department.Code), d => d.Code)
@@ -43,8 +43,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Department>
                         {
                             PropertyName = nameof(Department.Name),
-                            DisplayName = "部門名稱",
-                            FilterPlaceholder = "輸入部門名稱搜尋",
+                            DisplayName = Dn("Field.DepartmentName", "部門名稱"),
+                            FilterPlaceholder = Fp("Field.DepartmentName", "輸入部門名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Department.Name), d => d.Name)
@@ -55,10 +55,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Department>
                         {
                             PropertyName = "Manager.FirstName",
-                            DisplayName = "部門主管",
+                            DisplayName = Dn("Field.DepartmentManager", "部門主管"),
                             ShowInFilter = false, // 不顯示在篩選器中
                             TableOrder = 3,
-                            NullDisplayText = "未指派",
+                            NullDisplayText = Nd("Label.Unassigned", "未指派"),
                             CustomTemplate = item => builder =>
                             {
                                 var department = (Department)item;

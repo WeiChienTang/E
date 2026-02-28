@@ -60,7 +60,8 @@
                           ApprovalPermission="Quotation.Approve"
                           OnApprove="@HandleQuotationApprove"
                           OnRejectWithReason="@HandleQuotationRejectWithReason"
-                          OnEntityLoaded="@HandleEntityLoaded">
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          AdditionalSections="@CreateRelatedSections()">
 </GenericEditModalComponent>
 
 @* 客戶編輯 Modal *@
@@ -557,11 +558,10 @@
                     q => q.PaymentTerms,
                     q => q.DeliveryTerms)
                 .AddCustomFields(FormSectionNames.OtherInfo, "Remarks")
-                .GroupIntoTab("報價資料", "bi-file-earmark-text",
+                .GroupIntoTab(L["Tab.QuotationData"].ToString(), "bi-file-earmark-text",
                     FormSectionNames.BasicInfo, FormSectionNames.AmountInfo,
                     FormSectionNames.TradingTerms, FormSectionNames.OtherInfo)
-                .GroupIntoCustomTab("報價明細", "bi-list-ul", CreateQuotationDetailManagerContent())
-                .GroupIntoCustomTab("轉換訂單", "bi-arrow-right-circle", CreateOrderTabContent())
+                .GroupIntoCustomTab(L["Tab.QuotationDetail"].ToString(), "bi-list-ul", CreateQuotationDetailManagerContent())
                 .BuildAll();
             formSections = layout.FieldSections;
             tabDefinitions = layout.TabDefinitions;
@@ -1055,10 +1055,14 @@
                                   Message="@EditModalMessages.UndeletableDetailsWarning"/>
     };
     
-    private RenderFragment CreateOrderTabContent() => __builder =>
+    /// <summary>相關單據 Additional Sections 內容</summary>
+    private RenderFragment CreateRelatedSections() => __builder =>
     {
-        <QuotationOrderTab @ref="orderTab"
-                           OnOpenOrder="@HandleOpenOrderFromTab" />
+        <div class="mb-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-arrow-right-circle me-1"></i>@L["Tab.ConvertToOrder"]</h6>
+            <QuotationOrderTab @ref="orderTab"
+                               OnOpenOrder="@HandleOpenOrderFromTab" />
+        </div>
     };
 
     private void HandleOpenOrderFromTab(int orderId)

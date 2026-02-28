@@ -33,8 +33,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PrinterConfiguration>
                         {
                             PropertyName = nameof(PrinterConfiguration.Name),
-                            DisplayName = "印表機名稱",
-                            FilterPlaceholder = "輸入印表機名稱搜尋",
+                            DisplayName = Dn("Field.PrinterName", "印表機名稱"),
+                            FilterPlaceholder = Fp("Field.PrinterName", "輸入印表機名稱搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PrinterConfiguration.Name), p => p.Name)
@@ -45,7 +45,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PrinterConfiguration>
                         {
                             PropertyName = nameof(PrinterConfiguration.ConnectionType),
-                            DisplayName = "連接方式",
+                            DisplayName = Dn("Field.ConnectionType", "連接方式"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
                             Options = Enum.GetValues(typeof(PrinterConnectionType))
@@ -70,8 +70,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PrinterConfiguration>
                         {
                             PropertyName = nameof(PrinterConfiguration.UsbPort),
-                            DisplayName = "USB連接埠",
-                            FilterPlaceholder = "輸入USB連接埠搜尋",
+                            DisplayName = Dn("Field.UsbPort", "USB連接埠"),
+                            FilterPlaceholder = Fp("Field.UsbPort", "輸入USB連接埠搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PrinterConfiguration.UsbPort), p => p.UsbPort ?? string.Empty),
@@ -90,8 +90,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PrinterConfiguration>
                         {
                             PropertyName = nameof(PrinterConfiguration.IpAddress),
-                            DisplayName = "IP位址",
-                            FilterPlaceholder = "輸入IP位址搜尋",
+                            DisplayName = Dn("Field.PrinterIpAddress", "IP位址"),
+                            FilterPlaceholder = Fp("Field.PrinterIpAddress", "輸入IP位址搜尋"),
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PrinterConfiguration.IpAddress), p => p.IpAddress ?? string.Empty),

@@ -303,7 +303,7 @@
                                             @* 改用 inline style 讓 JS 可以動態調整位置，解決手機版下拉選單被裁切的問題 *@
                                             <div class="dropdown-menu show w-auto shadow searchable-dropdown" 
                                                  id="@dropdownId"
-                                                 style="position: fixed; z-index: 10000; max-height: @column.DropdownMaxHeight; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; min-width: @column.DropdownMinWidth; max-width: @column.DropdownMaxWidth;"
+                                                 style="position: fixed; z-index: 10000; max-height: @column.DropdownMaxHeight; overflow-y: auto; overflow-x: hidden; border: 1px solid var(--border-color); min-width: @column.DropdownMinWidth; max-width: @column.DropdownMaxWidth;"
                                                  @onmousedown:preventDefault="true">
                                                 @{
                                                     var dropdownItemIndex = 0;

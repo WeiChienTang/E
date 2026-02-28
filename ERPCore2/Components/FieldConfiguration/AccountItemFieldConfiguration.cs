@@ -29,8 +29,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<AccountItem>
                         {
                             PropertyName = nameof(AccountItem.Code),
-                            DisplayName = "科目代碼",
-                            FilterPlaceholder = "輸入科目代碼搜尋",
+                            DisplayName = Dn("Field.AccountCode", "科目代碼"),
+                            FilterPlaceholder = Fp("Field.AccountCode", "輸入科目代碼搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(AccountItem.Code), a => a.Code)
@@ -41,8 +41,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<AccountItem>
                         {
                             PropertyName = nameof(AccountItem.Name),
-                            DisplayName = "科目名稱",
-                            FilterPlaceholder = "輸入科目名稱搜尋",
+                            DisplayName = Dn("Field.AccountName", "科目名稱"),
+                            FilterPlaceholder = Fp("Field.AccountName", "輸入科目名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(AccountItem.Name), a => a.Name)
@@ -53,7 +53,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<AccountItem>
                         {
                             PropertyName = nameof(AccountItem.AccountType),
-                            DisplayName = "科目大類",
+                            DisplayName = Dn("Field.AccountType", "科目大類"),
                             TableOrder = 4,
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
@@ -105,7 +105,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<AccountItem>
                         {
                             PropertyName = nameof(AccountItem.Direction),
-                            DisplayName = "借貸方向",
+                            DisplayName = Dn("Field.DebitCreditDirection", "借貸方向"),
                             TableOrder = 5,
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
@@ -141,7 +141,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<AccountItem>
                         {
                             PropertyName = nameof(AccountItem.IsDetailAccount),
-                            DisplayName = "明細科目",
+                            DisplayName = Dn("Field.IsDetailAccount", "明細科目"),
                             TableOrder = 6,
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>

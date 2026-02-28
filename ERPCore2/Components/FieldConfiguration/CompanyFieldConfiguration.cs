@@ -34,8 +34,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Company>
                         {
                             PropertyName = nameof(Company.Code),
-                            DisplayName = "公司編號",
-                            FilterPlaceholder = "輸入公司編號搜尋",
+                            DisplayName = Dn("Field.CompanyCode", "公司編號"),
+                            FilterPlaceholder = Fp("Field.CompanyCode", "輸入公司編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Company.Code), c => c.Code)
@@ -46,8 +46,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Company>
                         {
                             PropertyName = nameof(Company.CompanyName),
-                            DisplayName = "公司名稱",
-                            FilterPlaceholder = "輸入公司名稱搜尋",
+                            DisplayName = Dn("Field.CompanyName", "公司名稱"),
+                            FilterPlaceholder = Fp("Field.CompanyName", "輸入公司名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Company.CompanyName), c => c.CompanyName)
@@ -58,8 +58,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Company>
                         {
                             PropertyName = nameof(Company.TaxId),
-                            DisplayName = "統一編號",
-                            FilterPlaceholder = "輸入統一編號搜尋",
+                            DisplayName = Dn("Field.TaxNumber", "統一編號"),
+                            FilterPlaceholder = Fp("Field.TaxNumber", "輸入統一編號搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Company.TaxId), c => c.TaxId)
@@ -70,8 +70,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Company>
                         {
                             PropertyName = nameof(Company.Representative),
-                            DisplayName = "負責人",
-                            FilterPlaceholder = "輸入負責人姓名搜尋",
+                            DisplayName = Dn("Field.ResponsiblePerson", "負責人"),
+                            FilterPlaceholder = Fp("Field.ResponsiblePerson", "輸入負責人姓名搜尋"),
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Company.Representative), c => c.Representative)
@@ -82,8 +82,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Company>
                         {
                             PropertyName = nameof(Company.Phone),
-                            DisplayName = "電話",
-                            FilterPlaceholder = "輸入電話號碼搜尋",
+                            DisplayName = Dn("Field.Phone", "電話"),
+                            FilterPlaceholder = Fp("Field.Phone", "輸入電話號碼搜尋"),
                             TableOrder = 5,
                             ShowInFilter = false, // 電話不常用於篩選
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -95,7 +95,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Company>
                         {
                             PropertyName = nameof(Company.Status),
-                            DisplayName = "狀態",
+                            DisplayName = Dn("Field.Status", "狀態"),
                             FilterPlaceholder = "選擇狀態",
                             TableOrder = 6,
                             // 使用自訂模板來顯示 StatusBadge

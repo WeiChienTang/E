@@ -67,6 +67,7 @@
             
             // 建立欄位配置
             fieldConfiguration = new SalesReturnReasonFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }

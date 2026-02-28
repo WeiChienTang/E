@@ -26,10 +26,10 @@
     font-size: 1.25rem;
     font-weight: 700;
     margin-bottom: 0;
-    color: #5a5c69;
+    color: var(--text-primary);
 }
 
 .statistics-card-icon {
     font-size: 2rem;
-    color: #dddfeb;
+    color: var(--text-light);
 }

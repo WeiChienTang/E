@@ -31,6 +31,12 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "字型大小")]
         public ContentZoom Zoom { get; set; } = ContentZoom.Medium;
 
+        /// <summary>
+        /// 介面主題
+        /// </summary>
+        [Display(Name = "主題")]
+        public AppTheme Theme { get; set; } = AppTheme.System;
+
         // 導航屬性
         public Employee? Employee { get; set; }
     }
@@ -57,6 +63,21 @@ namespace ERPCore2.Data.Entities
 
         [Display(Name = "150%")]
         XXLarge = 6
+    }
+
+    /// <summary>
+    /// 介面主題列舉
+    /// </summary>
+    public enum AppTheme
+    {
+        [Display(Name = "淺色")]
+        Light = 1,
+
+        [Display(Name = "深色")]
+        Dark = 2,
+
+        [Display(Name = "系統設定")]
+        System = 3
     }
 
     /// <summary>

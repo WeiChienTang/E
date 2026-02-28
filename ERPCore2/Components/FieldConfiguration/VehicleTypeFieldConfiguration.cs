@@ -32,8 +32,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<VehicleType>
                         {
                             PropertyName = nameof(VehicleType.Code),
-                            DisplayName = "車型編號",
-                            FilterPlaceholder = "輸入車型編號搜尋",
+                            DisplayName = Dn("Field.VehicleTypeCode", "車型編號"),
+                            FilterPlaceholder = Fp("Field.VehicleTypeCode", "輸入車型編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -45,8 +45,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<VehicleType>
                         {
                             PropertyName = nameof(VehicleType.Name),
-                            DisplayName = "車型名稱",
-                            FilterPlaceholder = "輸入車型名稱搜尋",
+                            DisplayName = Dn("Field.VehicleTypeName", "車型名稱"),
+                            FilterPlaceholder = Fp("Field.VehicleTypeName", "輸入車型名稱搜尋"),
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -58,8 +58,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<VehicleType>
                         {
                             PropertyName = nameof(VehicleType.Description),
-                            DisplayName = "車型描述",
-                            FilterPlaceholder = "輸入車型描述搜尋",
+                            DisplayName = Dn("Field.VehicleTypeDescription", "車型描述"),
+                            FilterPlaceholder = Fp("Field.VehicleTypeDescription", "輸入車型描述搜尋"),
                             TableOrder = 3,
                             FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

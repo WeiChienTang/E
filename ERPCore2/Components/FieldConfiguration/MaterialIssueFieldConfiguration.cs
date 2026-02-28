@@ -40,8 +40,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<MaterialIssue>
                         {
                             PropertyName = nameof(MaterialIssue.Code),
-                            DisplayName = "領貨單號",
-                            FilterPlaceholder = "輸入領貨單號搜尋",
+                            DisplayName = Dn("Field.MaterialIssueCode", "領貨單號"),
+                            FilterPlaceholder = Fp("Field.MaterialIssueCode", "輸入領貨單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(MaterialIssue.Code), mi => mi.Code)
@@ -52,7 +52,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<MaterialIssue>
                         {
                             PropertyName = nameof(MaterialIssue.IssueDate),
-                            DisplayName = "領貨日期",
+                            DisplayName = Dn("Field.MaterialIssueDate", "領貨日期"),
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
@@ -65,7 +65,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Employee.Name",
                             FilterPropertyName = nameof(MaterialIssue.EmployeeId),
-                            DisplayName = "領料人員",
+                            DisplayName = Dn("Field.MaterialIssueStaff", "領料人員"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             Options = _employees.Select(e => new SelectOption
@@ -83,7 +83,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Department.Name",
                             FilterPropertyName = nameof(MaterialIssue.DepartmentId),
-                            DisplayName = "領料部門",
+                            DisplayName = Dn("Field.MaterialIssueDept", "領料部門"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
                             Options = _departments.Select(d => new SelectOption
@@ -100,7 +100,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<MaterialIssue>
                         {
                             PropertyName = nameof(MaterialIssue.TotalQuantity),
-                            DisplayName = "總數量",
+                            DisplayName = Dn("Field.TotalQuantity", "總數量"),
                             TableOrder = 5,
                             ShowInFilter = false,
                         }
@@ -110,7 +110,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<MaterialIssue>
                         {
                             PropertyName = nameof(MaterialIssue.DetailCount),
-                            DisplayName = "明細筆數",
+                            DisplayName = Dn("Field.DetailCount", "明細筆數"),
                             TableOrder = 6,
                             ShowInFilter = false,
                         }
@@ -120,8 +120,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<MaterialIssue>
                         {
                             PropertyName = nameof(MaterialIssue.Remarks),
-                            DisplayName = "備註",
-                            FilterPlaceholder = "輸入備註搜尋",
+                            DisplayName = Dn("Field.Remarks", "備註"),
+                            FilterPlaceholder = Fp("Field.Remarks", "輸入備註搜尋"),
                             TableOrder = 7,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(MaterialIssue.Remarks), mi => mi.Remarks, allowNull: true)

@@ -103,7 +103,8 @@
             
             // 建立欄位配置（在載入相關資料後，並傳遞 NotificationService）
             fieldConfiguration = new SalesOrderFieldConfiguration(customers, employees, NotificationService);
-            
+            fieldConfiguration.SetLocalizer(L);
+
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();

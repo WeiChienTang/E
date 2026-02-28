@@ -80,6 +80,7 @@
 
             // 建立欄位配置
             fieldConfiguration = new StockTakingFieldConfiguration(warehouses, employees, NotificationService);
+            fieldConfiguration.SetLocalizer(L);
 
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();

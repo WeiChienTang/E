@@ -43,8 +43,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryTransaction>
                         {
                             PropertyName = nameof(InventoryTransaction.TransactionNumber),
-                            DisplayName = "交易單號",
-                            FilterPlaceholder = "輸入交易單號搜尋",
+                            DisplayName = Dn("Field.TransactionCode", "交易單號"),
+                            FilterPlaceholder = Fp("Field.TransactionCode", "輸入交易單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(InventoryTransaction.TransactionNumber), t => t.TransactionNumber)
@@ -55,7 +55,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryTransaction>
                         {
                             PropertyName = nameof(InventoryTransaction.TransactionType),
-                            DisplayName = "交易類型",
+                            DisplayName = Dn("Field.TransactionType", "交易類型"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
                             Options = GetTransactionTypeOptions(),
@@ -81,7 +81,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryTransaction>
                         {
                             PropertyName = nameof(InventoryTransaction.TransactionDate),
-                            DisplayName = "交易日期",
+                            DisplayName = Dn("Field.TransactionDate", "交易日期"),
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 3,
@@ -94,7 +94,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryTransaction>
                         {
                             PropertyName = nameof(InventoryTransaction.SourceDocumentType),
-                            DisplayName = "來源類型",
+                            DisplayName = Dn("Field.SourceDocumentType", "來源類型"),
                             TableOrder = 4,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -113,7 +113,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryTransaction>
                         {
                             PropertyName = nameof(InventoryTransaction.SourceDocumentId),
-                            DisplayName = "來源單據ID",
+                            DisplayName = Dn("Field.SourceDocumentId", "來源單據ID"),
                             TableOrder = 5,
                             NullDisplayText = "-",
                             ShowInFilter = false
@@ -125,7 +125,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Warehouse.Name",
                             FilterPropertyName = nameof(InventoryTransaction.WarehouseId),
-                            DisplayName = "倉庫",
+                            DisplayName = Dn("Field.Warehouse", "倉庫"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 6,
                             Options = _warehouses.Select(w => new SelectOption 

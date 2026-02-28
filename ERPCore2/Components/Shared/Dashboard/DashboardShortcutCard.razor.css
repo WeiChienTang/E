@@ -6,8 +6,8 @@
     justify-content: flex-start;
     gap: 0.5rem;
     padding: 0.45rem 0.65rem;
-    background-color: #ffffff;
-    border: 2px solid #e5e7eb;
+    background-color: var(--bg-primary);
+    border: 2px solid var(--border-light);
     border-radius: 0.75rem;
     cursor: pointer;
     transition: all 0.25s ease;
@@ -20,7 +20,7 @@
 .shortcut-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-    border-color: #1F2937;
+    border-color: var(--primary-dark-gray);
 }
 
 .shortcut-card:active {
@@ -76,7 +76,7 @@
 /* 圖示 */
 .shortcut-icon {
     font-size: 1.3rem;
-    color: #1F2937;
+    color: var(--primary-dark-gray);
     flex-shrink: 0;
     transition: transform 0.25s ease;
     line-height: 1;
@@ -94,7 +94,7 @@
 .shortcut-name {
     font-size: 1rem;
     font-weight: 600;
-    color: #1F2937;
+    color: var(--text-primary);
     text-align: left;
     line-height: 1.3;
     flex: 1;
@@ -113,7 +113,7 @@
 /* 拖曳放置目標 */
 .shortcut-card.drag-over {
     border-color: #3b82f6;
-    background-color: #eff6ff;
+    background-color: rgba(var(--primary-blue-rgb), 0.08);
 }
 
 /* 響應式 - 平板 */

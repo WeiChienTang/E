@@ -79,7 +79,7 @@
             @* 預留：快速設定 *@
             @if (showSettings)
             {
-                <button class="quick-action-item" 
+                <button class="quick-action-item"
                         @onclick="HandleSettingsClick"
                         title="快速設定">
                     <span class="bi bi-gear"></span>
@@ -87,10 +87,22 @@
                 </button>
             }
 
+            @* 關於本系統 *@
+            <button class="quick-action-item"
+                    @onclick="HandleAboutClick"
+                    title="關於本系統">
+                <span class="bi bi-info-circle"></span>
+                <span class="quick-action-label">關於</span>
+            </button>
+
         </div>
     }
 
 </div>
+
+@* 關於 Modal *@
+<AboutModalComponent IsVisible="@showAboutModal"
+                    IsVisibleChanged="@((bool v) => showAboutModal = v)" />
 
 @code {
     // ===== 參數 =====
@@ -132,9 +144,10 @@
     public bool showSettings { get; set; } = false;
 
     // ===== 狀態 =====
-    
+
     private bool isExpanded = false;
     private int notificationCount = 0; // 預留：通知數量
+    private bool showAboutModal = false;
     
     // ESC 鍵支援
     private DotNetObjectReference<QuickActionMenu>? _escKeyDotNetRef;
@@ -272,6 +285,15 @@
     {
         CloseMenu();
         await JSRuntime.InvokeVoidAsync("alert", "快速設定功能開發中...");
+    }
+
+    /// <summary>
+    /// 處理關於點擊
+    /// </summary>
+    private void HandleAboutClick()
+    {
+        CloseMenu();
+        showAboutModal = true;
     }
 
     // ===== 公開方法 =====

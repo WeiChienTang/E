@@ -57,7 +57,8 @@
                           ReportId="PO003"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.PurchaseReturnDoc"]]"
                           GetReportDocumentName="@(e => $"進貨退出單-{e.Code}")"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          AdditionalSections="@CreateRelatedSections()" />
 
 @* 沖款單編輯 Modal *@
 @if (showSetoffDocumentModal)
@@ -564,12 +565,10 @@
                     pr => pr.TotalReturnAmountWithTax)
                 .AddToSection(FormSectionNames.AdditionalInfo,
                     pr => pr.Remarks)
-                .GroupIntoTab("退回資料", "bi-file-earmark-text",
+                .GroupIntoTab(L["Tab.ReturnData"].ToString(), "bi-file-earmark-text",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
-                .GroupIntoCustomTab("退回明細", "bi-list-ul", CreateReturnDetailManagerContent())
-                .GroupIntoCustomTab("原始進貨", "bi-box-arrow-in-down", CreateReceivingTabContent())
-                .GroupIntoCustomTab("沖款記錄", "bi-cash-coin", CreateSetoffTabContent())
+                .GroupIntoCustomTab(L["Tab.ReturnDetail"].ToString(), "bi-list-ul", CreateReturnDetailManagerContent())
                 .BuildAll();
             formSections = layout.FieldSections;
             tabDefinitions = layout.TabDefinitions;
@@ -1100,22 +1099,19 @@
         </DetailSectionWrapper>
     };
 
-    /// <summary>
-    /// 原始進貨 Tab 內容
-    /// </summary>
-    private RenderFragment CreateReceivingTabContent() => __builder =>
+    /// <summary>相關單據 Additional Sections 內容</summary>
+    private RenderFragment CreateRelatedSections() => __builder =>
     {
-        <PurchaseReturnReceivingTab @ref="receivingTab"
-                                    OnOpenReceiving="@HandleOpenPurchaseReceiving" />
-    };
-
-    /// <summary>
-    /// 沖款記錄 Tab 內容
-    /// </summary>
-    private RenderFragment CreateSetoffTabContent() => __builder =>
-    {
-        <PurchaseReturnSetoffTab @ref="setoffTab"
-                                 OnOpenSetoff="@HandleOpenSetoffFromTab" />
+        <div class="mb-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-box-arrow-in-down me-1"></i>@L["Tab.OriginalReceiving"]</h6>
+            <PurchaseReturnReceivingTab @ref="receivingTab"
+                                        OnOpenReceiving="@HandleOpenPurchaseReceiving" />
+        </div>
+        <div class="mb-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-cash-coin me-1"></i>@L["Tab.SetoffRecords"]</h6>
+            <PurchaseReturnSetoffTab @ref="setoffTab"
+                                     OnOpenSetoff="@HandleOpenSetoffFromTab" />
+        </div>
     };
 
     /// <summary>

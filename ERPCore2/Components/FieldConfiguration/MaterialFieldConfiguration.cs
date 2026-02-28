@@ -31,8 +31,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Material>
                         {
                             PropertyName = nameof(Material.Code),
-                            DisplayName = "材質編號",
-                            FilterPlaceholder = "輸入材質編號搜尋",
+                            DisplayName = Dn("Field.MaterialCode", "材質編號"),
+                            FilterPlaceholder = Fp("Field.MaterialCode", "輸入材質編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Code", m => m.Code, allowNull: true)
@@ -43,8 +43,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Material>
                         {
                             PropertyName = nameof(Material.Name),
-                            DisplayName = "材質名稱",
-                            FilterPlaceholder = "輸入材質名稱搜尋",
+                            DisplayName = Dn("Field.MaterialName", "材質名稱"),
+                            FilterPlaceholder = Fp("Field.MaterialName", "輸入材質名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Name", m => m.Name)
@@ -55,8 +55,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Material>
                         {
                             PropertyName = nameof(Material.Description),
-                            DisplayName = "描述",
-                            FilterPlaceholder = "輸入描述搜尋",
+                            DisplayName = Dn("Field.Description", "描述"),
+                            FilterPlaceholder = Fp("Field.Description", "輸入描述搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Description", m => m.Description, allowNull: true)
@@ -67,7 +67,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Material>
                         {
                             PropertyName = nameof(Material.Remarks),
-                            DisplayName = "備註",
+                            DisplayName = Dn("Field.Remarks", "備註"),
                             TableOrder = 4,
                             ShowInFilter = false, // 備註不加入篩選器
                             FilterFunction = (model, query) => query // 不需要篩選邏輯

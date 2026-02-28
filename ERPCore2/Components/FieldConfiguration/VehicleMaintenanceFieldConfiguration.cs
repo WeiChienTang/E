@@ -32,8 +32,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<VehicleMaintenance>
                         {
                             PropertyName = nameof(VehicleMaintenance.Code),
-                            DisplayName = "保養編號",
-                            FilterPlaceholder = "輸入保養編號搜尋",
+                            DisplayName = Dn("Field.MaintenanceCode", "保養編號"),
+                            FilterPlaceholder = Fp("Field.MaintenanceCode", "輸入保養編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -46,8 +46,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Vehicle.LicensePlate",
                             FilterPropertyName = nameof(VehicleMaintenance.VehicleId),
-                            DisplayName = "車輛",
-                            FilterPlaceholder = "選擇車輛",
+                            DisplayName = Dn("Field.Vehicle", "車輛"),
+                            FilterPlaceholder = Fp("Field.Vehicle", "選擇車輛"),
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
@@ -59,8 +59,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<VehicleMaintenance>
                         {
                             PropertyName = nameof(VehicleMaintenance.MaintenanceDate),
-                            DisplayName = "保養日期",
-                            FilterPlaceholder = "選擇保養日期",
+                            DisplayName = Dn("Field.MaintenanceDate", "保養日期"),
+                            FilterPlaceholder = Fp("Field.MaintenanceDate", "選擇保養日期"),
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 3,
@@ -74,8 +74,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<VehicleMaintenance>
                         {
                             PropertyName = nameof(VehicleMaintenance.ServiceProvider),
-                            DisplayName = "維修廠/服務商",
-                            FilterPlaceholder = "輸入維修廠搜尋",
+                            DisplayName = Dn("Field.ServiceProvider", "維修廠/服務商"),
+                            FilterPlaceholder = Fp("Field.ServiceProvider", "輸入維修廠搜尋"),
                             TableOrder = 4,
                             FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

@@ -99,12 +99,13 @@
             
             // 建立欄位配置
             fieldConfiguration = new PurchaseReturnFieldConfiguration(
-                suppliers, 
-                purchaseOrders, 
-                purchaseReceivings, 
-                warehouses, 
-                employees, 
+                suppliers,
+                purchaseOrders,
+                purchaseReceivings,
+                warehouses,
+                employees,
                 NotificationService);
+            fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }

@@ -41,8 +41,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Employee>
                         {
                             PropertyName = nameof(Employee.Code),
-                            DisplayName = "員工編號",
-                            FilterPlaceholder = "輸入員工編號搜尋",
+                            DisplayName = Dn("Field.EmployeeCode", "員工編號"),
+                            FilterPlaceholder = Fp("Field.EmployeeCode", "輸入員工編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -54,16 +54,16 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Employee>
                         {
                             PropertyName = "FullName",
-                            DisplayName = "姓名",
-                            FilterPlaceholder = "輸入姓名搜尋",
+                            DisplayName = Dn("Field.FullName", "姓名"),
+                            FilterPlaceholder = Fp("Field.FullName", "輸入姓名搜尋"),
                             TableOrder = 2,
-                            FilterOrder = 2,                            
+                            FilterOrder = 2,
                             FilterFunction = (model, query) => {
                                 var fullNameFilter = model.GetFilterValue("FullName")?.ToString();
                                 if (!string.IsNullOrWhiteSpace(fullNameFilter))
                                 {
                                     // 搜尋名字
-                                    query = query.Where(e => 
+                                    query = query.Where(e =>
                                         (e.Name != null && e.Name.Contains(fullNameFilter)));
                                 }
                                 return query;
@@ -84,15 +84,15 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Department.Name",
                             FilterPropertyName = nameof(Employee.DepartmentId),
-                            DisplayName = "部門",
+                            DisplayName = Dn("Field.Department", "部門"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             FilterOrder = 3,
-                            NullDisplayText = "未指派",
-                            Options = _departments.Select(d => new SelectOption 
-                            { 
-                                Text = d.Name, 
-                                Value = d.Id.ToString() 
+                            NullDisplayText = Nd("Label.Unassigned", "未指派"),
+                            Options = _departments.Select(d => new SelectOption
+                            {
+                                Text = d.Name,
+                                Value = d.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Employee.DepartmentId), e => e.DepartmentId)
@@ -104,15 +104,15 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "EmployeePosition.Name",
                             FilterPropertyName = nameof(Employee.EmployeePositionId),
-                            DisplayName = "職位",
+                            DisplayName = Dn("Field.EmployeePosition", "職位"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
                             FilterOrder = 4,
-                            NullDisplayText = "未指派",
-                            Options = _employeePositions.Select(p => new SelectOption 
-                            { 
-                                Text = p.Name, 
-                                Value = p.Id.ToString() 
+                            NullDisplayText = Nd("Label.Unassigned", "未指派"),
+                            Options = _employeePositions.Select(p => new SelectOption
+                            {
+                                Text = p.Name,
+                                Value = p.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Employee.EmployeePositionId), e => e.EmployeePositionId)
@@ -124,15 +124,15 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Role.Name",
                             FilterPropertyName = nameof(Employee.RoleId),
-                            DisplayName = "權限組",
+                            DisplayName = Dn("Field.Role", "權限組"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
                             FilterOrder = 5,
-                            NullDisplayText = "未指派",
-                            Options = _roles.Select(r => new SelectOption 
-                            { 
-                                Text = r.Name, 
-                                Value = r.Id.ToString() 
+                            NullDisplayText = Nd("Label.Unassigned", "未指派"),
+                            Options = _roles.Select(r => new SelectOption
+                            {
+                                Text = r.Name,
+                                Value = r.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Employee.RoleId), e => e.RoleId)
@@ -143,7 +143,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Employee>
                         {
                             PropertyName = "IsSystemUser",
-                            DisplayName = "系統操控",
+                            DisplayName = Dn("Field.IsSystemUser", "系統操控"),
                             ShowInFilter = false,
                             TableOrder = 6,
                             CustomTemplate = item => builder =>
@@ -151,7 +151,7 @@ namespace ERPCore2.FieldConfiguration
                                 var employee = (Employee)item;
                                 builder.OpenComponent<GenericStatusBadgeComponent>(0);
                                 builder.AddAttribute(1, "Status", employee.IsSystemUser ? EntityStatus.Active : EntityStatus.Inactive);
-                                builder.AddAttribute(2, "CustomText", employee.IsSystemUser ? "有權限" : "無權限");
+                                builder.AddAttribute(2, "CustomText", employee.IsSystemUser ? L?["Label.HasPermission"].ToString() ?? "有權限" : L?["Label.NoPermission"].ToString() ?? "無權限");
                                 builder.AddAttribute(3, "Size", GenericStatusBadgeComponent.BadgeSize.Large);
                                 builder.CloseComponent();
                             }
@@ -162,10 +162,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Employee>
                         {
                             PropertyName = "LastLoginAt",
-                            DisplayName = "最後登入",
+                            DisplayName = Dn("Field.LastLogin", "最後登入"),
                             ShowInFilter = false,
                             TableOrder = 7,
-                            NullDisplayText = "從未登入"
+                            NullDisplayText = Nd("Label.NeverLoggedIn", "從未登入")
                         }
                     }
                 };

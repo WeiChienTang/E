@@ -94,7 +94,8 @@
             try
             {
                 fieldConfiguration = new ProductFieldConfiguration(productCategories, suppliers, units, sizes, NotificationService);
-                
+                fieldConfiguration.SetLocalizer(L);
+
                 // 使用欄位配置建立篩選器和表格欄位
                 filterDefinitions = fieldConfiguration.BuildFilters();
                 columnDefinitions = fieldConfiguration.BuildColumns();
@@ -110,11 +111,12 @@
                 
                 // 創建一個最小的欄位配置以避免 null 引用
                 fieldConfiguration = new ProductFieldConfiguration(
-                    new List<ProductCategory>(), 
-                    new List<Supplier>(), 
-                    new List<Unit>(), 
-                    new List<Size>(), 
+                    new List<ProductCategory>(),
+                    new List<Supplier>(),
+                    new List<Unit>(),
+                    new List<Size>(),
                     NotificationService);
+                fieldConfiguration.SetLocalizer(L);
             }
         }
         catch (Exception ex)

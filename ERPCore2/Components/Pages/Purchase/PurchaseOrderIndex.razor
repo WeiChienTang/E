@@ -110,6 +110,7 @@
             
             // 使用欄位配置替代原本的方法調用
             fieldConfiguration = new PurchaseOrderFieldConfiguration(suppliers, companies, enableApproval, NotificationService);
+            fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }

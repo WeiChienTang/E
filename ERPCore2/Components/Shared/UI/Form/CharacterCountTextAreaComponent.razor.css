@@ -11,7 +11,7 @@
 }
 
 .character-count-textarea-container textarea[readonly] {
-    background-color: #f8f9fa;
+    background-color: var(--bg-tertiary);
 }
 
 /* 覆蓋 Bootstrap 的 min-height，讓 rows=1 真正生效為單行 */

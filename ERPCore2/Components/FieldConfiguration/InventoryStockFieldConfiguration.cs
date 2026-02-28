@@ -45,9 +45,9 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryStock>
                         {
                             PropertyName = "Product.Code",
-                            DisplayName = "商品編號",
+                            DisplayName = Dn("Field.ProductCode", "商品編號"),
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入商品編號搜尋",
+                            FilterPlaceholder = Fp("Field.ProductCode", "輸入商品編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => {
                                 var filterValue = model.GetFilterValue("ProductCode")?.ToString();
@@ -68,7 +68,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Product.Name", // 表格顯示用
                             FilterPropertyName = nameof(InventoryStock.ProductId), // 篩選器用
-                            DisplayName = "商品名稱",
+                            DisplayName = Dn("Field.ProductName", "商品名稱"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
                             Options = _products.Select(p => new SelectOption
@@ -86,7 +86,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Product.ProductCategory.Name",
                             FilterPropertyName = "ProductCategoryId",
-                            DisplayName = "商品類型",
+                            DisplayName = Dn("Field.ProductCategory", "商品類型"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             Options = _productCategories.Select(pc => new SelectOption
@@ -110,7 +110,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryStock>
                         {
                             PropertyName = nameof(InventoryStock.TotalCurrentStock),
-                            DisplayName = "現有庫存",
+                            DisplayName = Dn("Field.CurrentStock", "現有庫存"),
                             FilterType = SearchFilterType.Text,
                             TableOrder = 4,
                             ShowInFilter = false,
@@ -130,7 +130,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryStock>
                         {
                             PropertyName = "Product.Unit.Name",
-                            DisplayName = "商品單位",
+                            DisplayName = Dn("Field.ProductUnit", "商品單位"),
                             FilterType = SearchFilterType.Text,
                             TableOrder = 5,
                             ShowInFilter = false
@@ -141,7 +141,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryStock>
                         {
                             PropertyName = nameof(InventoryStock.WeightedAverageCost),
-                            DisplayName = "平均成本",
+                            DisplayName = Dn("Field.AverageCost", "平均成本"),
                             FilterType = SearchFilterType.Text,
                             TableOrder = 6,
                             ShowInFilter = false,

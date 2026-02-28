@@ -1,8 +1,26 @@
-@* 顯示設定 Tab — 字型縮放 *@
+@* 顯示設定 Tab — 主題顏色 + 字型縮放 *@
 @inject IStringLocalizer<SharedResource> L
 
 <div class="p-2">
-    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.Display"]</div>
+
+    @* 主題顏色 *@
+    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.Theme"]</div>
+    <div class="d-flex gap-2 flex-wrap mb-4">
+        @foreach (var option in _themeOptions)
+        {
+            var isSelected = (Model ?? _fallback).Theme == option.Value;
+            <button type="button"
+                    class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") theme-option-btn"
+                    title="@option.Label"
+                    @onclick="() => SelectTheme(option.Value)">
+                <i class="bi @option.Icon theme-icon"></i>
+                <span class="theme-label">@option.Label</span>
+            </button>
+        }
+    </div>
+
+    @* 字型縮放 *@
+    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.FontSize"]</div>
     <div class="d-flex gap-2 flex-wrap">
         @foreach (var option in _zoomOptions)
         {
@@ -16,6 +34,7 @@
             </button>
         }
     </div>
+
 </div>
 
 @code {
@@ -24,7 +43,10 @@
 
     private readonly EmployeePreference _fallback = new();
 
+    private record ThemeOption(AppTheme Value, string Label, string Icon);
     private record ZoomOption(ContentZoom Value, string Label, string PreviewSize);
+
+    private List<ThemeOption> _themeOptions = new();
 
     private static readonly List<ZoomOption> _zoomOptions = new()
     {
@@ -35,6 +57,22 @@
         new(ContentZoom.XLarge,  "125%", "1.25rem"),
         new(ContentZoom.XXLarge, "150%", "1.5rem"),
     };
+
+    protected override void OnInitialized()
+    {
+        _themeOptions = new List<ThemeOption>
+        {
+            new(AppTheme.Light,  L["Preference.ThemeLight"],  "bi-sun"),
+            new(AppTheme.Dark,   L["Preference.ThemeDark"],   "bi-moon-stars"),
+            new(AppTheme.System, L["Preference.ThemeSystem"], "bi-circle-half"),
+        };
+    }
+
+    private void SelectTheme(AppTheme value)
+    {
+        (Model ?? _fallback).Theme = value;
+        StateHasChanged();
+    }
 
     private void SelectZoom(ContentZoom value)
     {

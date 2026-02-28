@@ -31,8 +31,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Unit>
                         {
                             PropertyName = nameof(Unit.Code),
-                            DisplayName = "單位編號",
-                            FilterPlaceholder = "輸入單位編號搜尋",
+                            DisplayName = Dn("Field.UnitCode", "單位編號"),
+                            FilterPlaceholder = Fp("Field.UnitCode", "輸入單位編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -44,8 +44,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Unit>
                         {
                             PropertyName = nameof(Unit.Name),
-                            DisplayName = "單位名稱",
-                            FilterPlaceholder = "輸入單位名稱搜尋",
+                            DisplayName = Dn("Field.UnitName", "單位名稱"),
+                            FilterPlaceholder = Fp("Field.UnitName", "輸入單位名稱搜尋"),
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

@@ -11,7 +11,8 @@
     background-color: transparent;
     border: none;
     border-radius: var(--radius-lg);
-    height: 3rem;
+    min-height: 3rem;
+    height: auto;
     display: flex;
     align-items: center;
     width: 100%;
@@ -76,7 +77,8 @@
     background-color: transparent;
     border: none;
     border-radius: var(--radius-lg);
-    height: 2.25rem;
+    min-height: 2.25rem;
+    height: auto;
     display: flex;
     align-items: center;
     width: 100%;
@@ -99,4 +101,13 @@
 .nav-menu-dropdown-toggle-btn span[aria-hidden="true"] {
     font-size: 1.25rem;
     margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* 選單文字：允許換行，防止在 flex 容器中溢出 */
+.nav-menu-item-text {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }

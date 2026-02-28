@@ -31,8 +31,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<CompositionCategory>
                         {
                             PropertyName = nameof(CompositionCategory.Code),
-                            DisplayName = "類型編號",
-                            FilterPlaceholder = "輸入類型編號搜尋",
+                            DisplayName = Dn("Field.TypeCode", "類型編號"),
+                            FilterPlaceholder = Fp("Field.TypeCode", "輸入類型編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -44,8 +44,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<CompositionCategory>
                         {
                             PropertyName = nameof(CompositionCategory.Name),
-                            DisplayName = "類型名稱",
-                            FilterPlaceholder = "輸入類型名稱搜尋",
+                            DisplayName = Dn("Field.TypeName", "類型名稱"),
+                            FilterPlaceholder = Fp("Field.TypeName", "輸入類型名稱搜尋"),
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -57,7 +57,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<CompositionCategory>
                         {
                             PropertyName = "UsageCount",
-                            DisplayName = "使用次數",
+                            DisplayName = Dn("Field.UsageCount", "使用次數"),
                             ShowInFilter = false,
                             TableOrder = 3,
                             CustomTemplate = item => builder =>

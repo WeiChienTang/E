@@ -84,7 +84,7 @@
     gap: 10px;
     padding: 10px 16px;
     min-width: 140px;
-    background-color: white;
+    background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
     border-radius: 24px;
     color: var(--text-primary);
@@ -278,19 +278,8 @@
     }
 }
 
-/* ===== 深色主題支援（預留） ===== */
-@media (prefers-color-scheme: dark) {
-    .quick-action-item {
-        background-color: #2d3748;
-        border-color: #4a5568;
-        color: #e2e8f0;
-    }
-
-    .quick-action-item:hover {
-        background-color: var(--primary-blue);
-        color: white;
-    }
-}
+/* ===== 深色主題支援 ===== */
+/* 由 html[data-bs-theme=dark] 控制，透過 CSS variable 自動切換，無需額外覆寫 */
 
 /* ===== 可訪問性 ===== */
 .quick-action-main-btn:focus,

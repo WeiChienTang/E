@@ -6,6 +6,7 @@ using ERPCore2.Components.Shared.Statistics;
 using ERPCore2.Data;
 using ERPCore2.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 using ERPCore2.Helpers;
 
 namespace ERPCore2.FieldConfiguration
@@ -15,6 +16,40 @@ namespace ERPCore2.FieldConfiguration
     /// </summary>
     public abstract class BaseFieldConfiguration<TEntity> where TEntity : BaseEntity
     {
+        /// <summary>
+        /// 字串本地化器，由呼叫端注入以支援多語言
+        /// </summary>
+        protected IStringLocalizer<SharedResource>? L { get; private set; }
+
+        /// <summary>
+        /// 設定本地化器以啟用多語言支援
+        /// </summary>
+        public BaseFieldConfiguration<TEntity> SetLocalizer(IStringLocalizer<SharedResource> localizer)
+        {
+            L = localizer;
+            return this;
+        }
+
+        /// <summary>
+        /// 取得本地化顯示名稱，L 未設定時回傳 fallback（繁體中文）
+        /// </summary>
+        protected string Dn(string key, string fallback) =>
+            L?[key].ToString() ?? fallback;
+
+        /// <summary>
+        /// 取得本地化篩選輸入框提示文字，使用 Placeholder.InputToSearch 格式字串
+        /// L 未設定時回傳 fallback（繁體中文）
+        /// </summary>
+        protected string Fp(string displayNameKey, string fallback) =>
+            L != null
+                ? string.Format(L["Placeholder.InputToSearch"].ToString(), L[displayNameKey].ToString())
+                : fallback;
+
+        /// <summary>
+        /// 取得本地化 NullDisplayText，L 未設定時回傳 fallback
+        /// </summary>
+        protected string Nd(string key, string fallback) =>
+            L?[key].ToString() ?? fallback;
         /// <summary>
         /// 取得欄位定義
         /// </summary>

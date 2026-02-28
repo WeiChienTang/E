@@ -28,5 +28,5 @@
 /* 分類欄位樣式 */
 .shortcut-keys-content ::deep .interactive-table td:first-child {
     font-weight: 600;
-    color: #495057;
+    color: var(--text-primary);
 }

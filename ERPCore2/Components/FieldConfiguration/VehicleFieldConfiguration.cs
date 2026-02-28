@@ -32,8 +32,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Vehicle>
                         {
                             PropertyName = nameof(Vehicle.Code),
-                            DisplayName = "車輛編號",
-                            FilterPlaceholder = "輸入車輛編號搜尋",
+                            DisplayName = Dn("Field.VehicleCode", "車輛編號"),
+                            FilterPlaceholder = Fp("Field.VehicleCode", "輸入車輛編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -45,8 +45,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Vehicle>
                         {
                             PropertyName = nameof(Vehicle.LicensePlate),
-                            DisplayName = "車牌號碼",
-                            FilterPlaceholder = "輸入車牌號碼搜尋",
+                            DisplayName = Dn("Field.LicensePlate", "車牌號碼"),
+                            FilterPlaceholder = Fp("Field.LicensePlate", "輸入車牌號碼搜尋"),
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -58,8 +58,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Vehicle>
                         {
                             PropertyName = nameof(Vehicle.VehicleName),
-                            DisplayName = "車輛名稱",
-                            FilterPlaceholder = "輸入車輛名稱搜尋",
+                            DisplayName = Dn("Field.VehicleName", "車輛名稱"),
+                            FilterPlaceholder = Fp("Field.VehicleName", "輸入車輛名稱搜尋"),
                             TableOrder = 3,
                             FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -72,8 +72,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "VehicleType.Name",
                             FilterPropertyName = nameof(Vehicle.VehicleTypeId),
-                            DisplayName = "車型",
-                            FilterPlaceholder = "選擇車型",
+                            DisplayName = Dn("Field.VehicleType", "車型"),
+                            FilterPlaceholder = Fp("Field.VehicleType", "選擇車型"),
                             TableOrder = 4,
                             FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
@@ -85,8 +85,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Vehicle>
                         {
                             PropertyName = nameof(Vehicle.Brand),
-                            DisplayName = "廠牌",
-                            FilterPlaceholder = "輸入廠牌搜尋",
+                            DisplayName = Dn("Field.Brand", "廠牌"),
+                            FilterPlaceholder = Fp("Field.Brand", "輸入廠牌搜尋"),
                             TableOrder = 5,
                             FilterOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

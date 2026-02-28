@@ -3,18 +3,18 @@
     display: flex;
     align-items: center;
     padding: 0.4rem 0.5rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border-light);
     border-radius: 0.5rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    background-color: #ffffff;
+    background-color: var(--bg-primary);
     min-height: 2.4rem;
     overflow: hidden;
 }
 
 .picker-item:hover {
-    background-color: #f3f4f6;
-    border-color: #d1d5db;
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color);
 }
 
 /* 已選取 */

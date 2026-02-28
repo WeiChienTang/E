@@ -1,0 +1,188 @@
+@*
+    關於系統 Modal 組件
+    顯示系統資訊、開發者資訊及聯絡方式（Email + Line QR Code）
+*@
+@inject IJSRuntime JSRuntime
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="關於本系統"
+                   Icon="bi bi-info-circle-fill"
+                   Size="BaseModalComponent.ModalSize.Default"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   BodyCssClass="p-0">
+
+    <BodyContent>
+
+        @* ===== 系統標題橫幅 ===== *@
+        <div class="text-center py-4 px-4"
+             style="background: linear-gradient(135deg, #1F2937 0%, #374151 100%);">
+            <i class="bi bi-diagram-3-fill text-white mb-2" style="font-size: 2.5rem; display: block;"></i>
+            <h4 class="text-white fw-bold mb-1">ERPCore2</h4>
+            <p class="mb-0 small" style="color: rgba(255,255,255,0.6);">企業資源規劃系統</p>
+            <span class="badge bg-light text-dark mt-2 px-3">v@(GetVersion())</span>
+        </div>
+
+        <div class="p-4">
+
+            @* ===== 開發資訊 ===== *@
+            <div class="mb-4">
+                <h6 class="fw-semibold mb-3 pb-2 border-bottom text-secondary">
+                    <i class="bi bi-person-badge me-2"></i>開發資訊
+                </h6>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-building text-secondary"></i>
+                    <span class="text-secondary">開發者：</span>
+                    <span class="fw-semibold">@DeveloperName</span>
+                </div>
+            </div>
+
+            @* ===== 聯絡方式 ===== *@
+            <div class="mb-4">
+                <h6 class="fw-semibold mb-3 pb-2 border-bottom text-secondary">
+                    <i class="bi bi-headset me-2"></i>聯絡我們
+                </h6>
+
+                @* Email *@
+                <div class="card border mb-3 shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width: 42px; height: 42px; background-color: #dbeafe;">
+                                    <i class="bi bi-envelope-fill text-primary fs-5"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted small">電子郵件</div>
+                                    <a href="mailto:@ContactEmail"
+                                       class="fw-semibold text-decoration-none text-dark">@ContactEmail</a>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm @(emailCopied ? "btn-success" : "btn-outline-secondary") flex-shrink-0"
+                                    @onclick="CopyEmailAsync"
+                                    title="複製信箱">
+                                <i class="bi @(emailCopied ? "bi-check2" : "bi-copy") me-1"></i>
+                                @(emailCopied ? "已複製" : "複製")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @* Line QR Code *@
+                <div class="card border shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                 style="width: 42px; height: 42px; background-color: #dcfce7;">
+                                <i class="bi bi-chat-dots-fill fs-5" style="color: #16a34a;"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Line</div>
+                                <div class="fw-semibold">掃描 QR Code 加我好友</div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="d-inline-block p-2 bg-white rounded border">
+                                @if (!string.IsNullOrEmpty(LineQrCodeImagePath) && !qrCodeLoadFailed)
+                                {
+                                    <img src="@LineQrCodeImagePath"
+                                         alt="Line QR Code"
+                                         style="width: 160px; height: 160px; display: block;"
+                                         @onerror="@(() => { qrCodeLoadFailed = true; StateHasChanged(); })" />
+                                }
+                                else
+                                {
+                                    <div class="d-flex flex-column align-items-center justify-content-center text-muted"
+                                         style="width: 160px; height: 160px;">
+                                        <i class="bi bi-qr-code" style="font-size: 3rem;"></i>
+                                        <span class="small mt-2">請放置 QR Code 圖片</span>
+                                        <span class="mt-1" style="font-size: 0.65rem; color: #9ca3af;">wwwroot/images/about/line-qrcode.png</span>
+                                    </div>
+                                }
+                            </div>
+                            <p class="text-muted small mt-2 mb-0">
+                                <i class="bi bi-phone me-1"></i>使用 Line App 掃描此 QR Code 與我聯繫
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            @* ===== 版權聲明 ===== *@
+            <div class="text-center text-muted small pt-3 border-top">
+                <i class="bi bi-c-circle me-1"></i>@DateTime.Now.Year @DeveloperName. All Rights Reserved.
+            </div>
+
+        </div>
+    </BodyContent>
+
+</BaseModalComponent>
+
+@code {
+
+    // ===== 參數 =====
+
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    /// <summary>
+    /// 開發者 / 公司名稱
+    /// </summary>
+    [Parameter]
+    public string DeveloperName { get; set; } = "鯨奇資訊 - 唐維謙 先生";
+
+    /// <summary>
+    /// 聯絡信箱
+    /// </summary>
+    [Parameter]
+    public string ContactEmail { get; set; } = "尚未設定";
+
+    /// <summary>
+    /// Line QR Code 圖片路徑（相對於 wwwroot）
+    /// 請將圖片放至 wwwroot/images/about/line-qrcode.png
+    /// </summary>
+    [Parameter]
+    public string LineQrCodeImagePath { get; set; } = "/images/about/line-qrcode.png";
+
+    // ===== 私有狀態 =====
+
+    private bool emailCopied = false;
+    private bool qrCodeLoadFailed = false;
+
+    // ===== 生命週期 =====
+
+    protected override void OnParametersSet()
+    {
+        // 每次開啟 Modal 時重置 QR Code 載入狀態
+        if (!IsVisible)
+        {
+            qrCodeLoadFailed = false;
+        }
+    }
+
+    // ===== 輔助方法 =====
+
+    private string GetVersion()
+        => Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+
+    private async Task CopyEmailAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", ContactEmail);
+            emailCopied = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            emailCopied = false;
+            StateHasChanged();
+        }
+        catch
+        {
+            // Clipboard API 不可用時靜默失敗
+        }
+    }
+}

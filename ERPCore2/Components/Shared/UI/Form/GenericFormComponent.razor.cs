@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -88,7 +89,46 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
 
         InitializeAutoCompleteDisplayValues();
         ApplyDefaultValues();
+        AutoApplyMaxLengths();
         base.OnParametersSet();
+    }
+
+    /// <summary>
+    /// 自動從 TModel 的 [MaxLength]/[StringLength] attribute 補齊未設定的 MaxLength
+    /// 讓文字欄位不需手動設定 MaxLength 就能自動套用資料庫層級的長度限制
+    /// </summary>
+    private void AutoApplyMaxLengths()
+    {
+        if (FieldDefinitions == null) return;
+
+        foreach (var field in FieldDefinitions)
+        {
+            // 已手動設定則跳過（尊重開發者明確設定的值）
+            if (field.MaxLength.HasValue) continue;
+
+            // 只處理文字類型欄位
+            if (field.FieldType is not (FormFieldType.Text or
+                                        FormFieldType.Email or
+                                        FormFieldType.Password or
+                                        FormFieldType.TextArea)) continue;
+
+            var property = typeof(TModel).GetProperty(field.PropertyName);
+            if (property == null) continue;
+
+            // 優先讀取 [MaxLength]，其次 [StringLength]
+            var maxLengthAttr = property.GetCustomAttribute<MaxLengthAttribute>();
+            if (maxLengthAttr != null)
+            {
+                field.MaxLength = maxLengthAttr.Length;
+                continue;
+            }
+
+            var stringLengthAttr = property.GetCustomAttribute<StringLengthAttribute>();
+            if (stringLengthAttr != null)
+            {
+                field.MaxLength = stringLengthAttr.MaximumLength;
+            }
+        }
     }
 
     /// <summary>

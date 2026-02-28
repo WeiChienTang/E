@@ -423,7 +423,7 @@
 
 /* 確保 tbody 與 thead 無縫連接 */
 .interactive-table tbody tr:first-child td {
-    border-top: 2px solid #e5e7eb !important;
+    border-top: 2px solid var(--border-light) !important;
 }
 
 /* 搜尋下拉選單樣式優化 - 使用 fixed 定位解決手機版被裁切問題 */
@@ -434,8 +434,8 @@
     transform: none !important; /* 移除可能的變換效果 */
     will-change: auto !important; /* 優化渲染性能 */
     -webkit-transform: none !important; /* Safari 兼容 */
-    background-color: #fff !important;
-    border: 1px solid #dee2e6 !important;
+    background-color: var(--bg-primary) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 0.375rem !important;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
@@ -589,5 +589,46 @@
 ::deep tr.dragging .drag-handle {
     cursor: grabbing;
     color: #1976d2;
+}
+
+/* ===== 深色模式覆寫 ===== */
+
+/* 表格 body hover / 選取列：使用 CSS 變數替換硬編碼的黃色 */
+[data-bs-theme=dark] .interactive-table tbody tr:hover td {
+    background-color: var(--table-hover-bg) !important;
+    color: var(--table-hover-text) !important;
+}
+
+[data-bs-theme=dark] .interactive-table tbody tr.row-selected td {
+    background-color: var(--table-hover-bg-striped) !important;
+    color: var(--table-hover-text) !important;
+}
+
+[data-bs-theme=dark] .interactive-table tbody tr.row-selected:hover td {
+    background-color: var(--table-hover-bg-striped) !important;
+    color: var(--table-hover-text) !important;
+}
+
+/* 唯讀 / 停用控件背景 */
+[data-bs-theme=dark] .interactive-table-container .form-control[readonly],
+[data-bs-theme=dark] .interactive-table-container .form-select[disabled] {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+}
+
+/* 搜尋下拉選單項目文字顏色 */
+[data-bs-theme=dark] ::deep .searchable-dropdown .dropdown-item {
+    color: var(--text-primary) !important;
+}
+
+[data-bs-theme=dark] ::deep .searchable-dropdown .dropdown-item:hover,
+[data-bs-theme=dark] ::deep .searchable-dropdown .dropdown-item:focus {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-bs-theme=dark] ::deep .searchable-dropdown .dropdown-item.active {
+    background-color: var(--primary-blue) !important;
+    color: #ffffff !important;
 }
 

@@ -32,8 +32,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Currency>
                         {
                             PropertyName = nameof(Currency.Code),
-                            DisplayName = "貨幣編號",
-                            FilterPlaceholder = "輸入貨幣編號搜尋",
+                            DisplayName = Dn("Field.CurrencyCode", "貨幣編號"),
+                            FilterPlaceholder = Fp("Field.CurrencyCode", "輸入貨幣編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -45,8 +45,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Currency>
                         {
                             PropertyName = nameof(Currency.Name),
-                            DisplayName = "貨幣名稱",
-                            FilterPlaceholder = "輸入貨幣名稱搜尋",
+                            DisplayName = Dn("Field.CurrencyName", "貨幣名稱"),
+                            FilterPlaceholder = Fp("Field.CurrencyName", "輸入貨幣名稱搜尋"),
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -58,7 +58,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Currency>
                         {
                             PropertyName = nameof(Currency.Symbol),
-                            DisplayName = "符號",
+                            DisplayName = Dn("Field.CurrencySymbol", "符號"),
                             ShowInFilter = false,
                             TableOrder = 3,
                             NullDisplayText = "-"
@@ -69,7 +69,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Currency>
                         {
                             PropertyName = nameof(Currency.ExchangeRate),
-                            DisplayName = "匯率",
+                            DisplayName = Dn("Field.ExchangeRate", "匯率"),
                             ShowInFilter = false,
                             TableOrder = 4,
                             CustomTemplate = item => builder =>
@@ -94,7 +94,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Currency>
                         {
                             PropertyName = nameof(Currency.IsBaseCurrency),
-                            DisplayName = "本位幣",
+                            DisplayName = Dn("Field.IsBaseCurrency", "本位幣"),
                             ShowInFilter = true,
                             TableOrder = 5,
                             FilterOrder = 3,

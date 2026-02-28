@@ -34,8 +34,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ReportPrintConfiguration>
                         {
                             PropertyName = nameof(ReportPrintConfiguration.Code),
-                            DisplayName = "編號",
-                            FilterPlaceholder = "輸入編號搜尋",
+                            DisplayName = Dn("Field.Code", "編號"),
+                            FilterPlaceholder = Fp("Field.Code", "輸入編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ReportPrintConfiguration.Code), r => r.Code)
@@ -46,8 +46,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ReportPrintConfiguration>
                         {
                             PropertyName = nameof(ReportPrintConfiguration.ReportId),
-                            DisplayName = "報表識別碼",
-                            FilterPlaceholder = "輸入報表識別碼搜尋",
+                            DisplayName = Dn("Field.ReportId", "報表識別碼"),
+                            FilterPlaceholder = Fp("Field.ReportId", "輸入報表識別碼搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ReportPrintConfiguration.ReportId), r => r.ReportId)
@@ -58,8 +58,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ReportPrintConfiguration>
                         {
                             PropertyName = nameof(ReportPrintConfiguration.ReportName),
-                            DisplayName = "報表名稱",
-                            FilterPlaceholder = "輸入報表名稱搜尋",
+                            DisplayName = Dn("Field.ReportName", "報表名稱"),
+                            FilterPlaceholder = Fp("Field.ReportName", "輸入報表名稱搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ReportPrintConfiguration.ReportName), r => r.ReportName)
@@ -70,8 +70,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ReportPrintConfiguration>
                         {
                             PropertyName = "PrinterConfigurationName",
-                            DisplayName = "印表機設定",
-                            FilterPlaceholder = "輸入印表機名稱搜尋",
+                            DisplayName = Dn("Field.Printer", "印表機設定"),
+                            FilterPlaceholder = Fp("Field.Printer", "輸入印表機名稱搜尋"),
                             TableOrder = 4,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -92,8 +92,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ReportPrintConfiguration>
                         {
                             PropertyName = "PaperSettingName",
-                            DisplayName = "紙張設定",
-                            FilterPlaceholder = "輸入紙張名稱搜尋",
+                            DisplayName = Dn("Field.Paper", "紙張設定"),
+                            FilterPlaceholder = Fp("Field.Paper", "輸入紙張名稱搜尋"),
                             TableOrder = 5,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -114,7 +114,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ReportPrintConfiguration>
                         {
                             PropertyName = nameof(ReportPrintConfiguration.Status),
-                            DisplayName = "狀態",
+                            DisplayName = Dn("Field.Status", "狀態"),
                             FilterPlaceholder = "選擇狀態搜尋",
                             TableOrder = 6,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>

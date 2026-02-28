@@ -45,8 +45,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Quotation>
                         {
                             PropertyName = nameof(Quotation.Code),
-                            DisplayName = "報價單號",
-                            FilterPlaceholder = "輸入報價單號搜尋",
+                            DisplayName = Dn("Field.QuotationCode", "報價單號"),
+                            FilterPlaceholder = Fp("Field.QuotationCode", "輸入報價單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Quotation.Code), q => q.Code)
@@ -57,7 +57,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Quotation>
                         {
                             PropertyName = nameof(Quotation.QuotationDate),
-                            DisplayName = "報價日期",
+                            DisplayName = Dn("Field.QuotationDate", "報價日期"),
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 2,
@@ -71,7 +71,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Customer.CompanyName",
                             FilterPropertyName = nameof(Quotation.CustomerId),
-                            DisplayName = "客戶",
+                            DisplayName = Dn("Field.Customer", "客戶"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             Options = _customers.Select(c => new SelectOption 
@@ -89,10 +89,10 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Employee.Name",
                             FilterPropertyName = nameof(Quotation.EmployeeId),
-                            DisplayName = "業務人員",
+                            DisplayName = Dn("Field.SalesPerson", "業務人員"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            NullDisplayText = "未指派",
+                            NullDisplayText = Nd("Label.Unassigned", "未指派"),
                             Options = _employees.Select(e => new SelectOption 
                             { 
                                 Text = e.Name ?? "", 
@@ -107,7 +107,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Quotation>
                         {
                             PropertyName = nameof(Quotation.TotalAmount),
-                            DisplayName = "總額",
+                            DisplayName = Dn("Field.TotalAmount", "總額"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
                             ShowInFilter = false,
@@ -130,7 +130,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Quotation>
                         {
                             PropertyName = nameof(Quotation.IsApproved),
-                            DisplayName = "核准狀態",
+                            DisplayName = Dn("Field.ApprovalStatus", "核准狀態"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 8,
                             Options = new List<SelectOption>

@@ -64,7 +64,8 @@
             
             // 建立欄位配置（傳遞 NotificationService）
             fieldConfiguration = new ProductCategoryFieldConfiguration(NotificationService);
-            
+            fieldConfiguration.SetLocalizer(L);
+
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();

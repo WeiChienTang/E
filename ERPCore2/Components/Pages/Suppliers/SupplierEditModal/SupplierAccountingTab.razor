@@ -1,19 +1,21 @@
 @* 廠商會計資訊 Tab — 顯示應付帳款等四種子科目，並可立即建立 *@
 @using ERPCore2.Models.Enums
+@using Microsoft.Extensions.Localization
 @inject ISubAccountService SubAccountService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IStringLocalizer<SharedResource> L
 
 @if (_supplierId <= 0)
 {
     <div class="text-muted py-3 px-2">
-        <i class="bi bi-info-circle me-2"></i>請先儲存廠商資料，再查看會計子科目。
+        <i class="bi bi-info-circle me-2"></i>@L["Accounting.SaveFirst"]
     </div>
 }
 else if (_isLoading)
 {
     <div class="text-muted py-3 px-2">
-        <i class="bi bi-hourglass-split me-2"></i>載入中...
+        <i class="bi bi-hourglass-split me-2"></i>@L["Label.Loading"]
     </div>
 }
 else
@@ -22,10 +24,10 @@ else
         <table class="table table-sm table-hover mb-3">
             <thead class="table-light">
                 <tr>
-                    <th style="width:160px">子科目類型</th>
-                    <th style="width:140px">科目代碼</th>
-                    <th>科目名稱</th>
-                    <th style="width:90px">狀態</th>
+                    <th style="width:160px">@L["Accounting.SubAccountType"]</th>
+                    <th style="width:140px">@L["Accounting.AccountCode"]</th>
+                    <th>@L["Accounting.AccountName"]</th>
+                    <th style="width:90px">@L["Field.Status"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -38,11 +40,11 @@ else
                         <td>
                             @if (row.Item != null)
                             {
-                                <span class="text-success small"><i class="bi bi-check-circle me-1"></i>已建立</span>
+                                <span class="text-success small"><i class="bi bi-check-circle me-1"></i>@L["Accounting.Created"]</span>
                             }
                             else
                             {
-                                <span class="text-warning small"><i class="bi bi-exclamation-circle me-1"></i>未建立</span>
+                                <span class="text-warning small"><i class="bi bi-exclamation-circle me-1"></i>@L["Accounting.NotCreated"]</span>
                             }
                         </td>
                     </tr>
@@ -54,11 +56,11 @@ else
     @if (_rows.Any(r => r.Item == null))
     {
         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                               Text="建立子科目"
+                               Text="@L["Accounting.CreateSubAccount"].ToString()"
                                OnClick="HandleCreateAsync"
                                IsLoading="@_isCreating"
                                IsDisabled="@_isCreating"
-                               Title="為此廠商建立所有缺少的子科目" />
+                               Title="@L["Accounting.CreateSubAccountTitle"].ToString()" />
     }
 }
 
@@ -98,10 +100,10 @@ else
 
         _rows = new()
         {
-            ("應付帳款", Find(SubAccountLinkType.ReceivablePayable)),
-            ("應付票據", Find(SubAccountLinkType.NoteReceivablePayable)),
-            ("進貨退出", Find(SubAccountLinkType.SalesPurchaseReturn)),
-            ("預付款項", Find(SubAccountLinkType.AdvanceReceiptPayment)),
+            (L["Accounting.AccountsPayable"].ToString(), Find(SubAccountLinkType.ReceivablePayable)),
+            (L["Accounting.NotePayable"].ToString(), Find(SubAccountLinkType.NoteReceivablePayable)),
+            (L["Accounting.PurchaseReturn"].ToString(), Find(SubAccountLinkType.SalesPurchaseReturn)),
+            (L["Accounting.AdvancePayment"].ToString(), Find(SubAccountLinkType.AdvanceReceiptPayment)),
         };
 
         _isLoading = false;
@@ -122,7 +124,7 @@ else
         }
         catch (Exception)
         {
-            await NotificationService.ShowErrorAsync("建立子科目時發生錯誤");
+            await NotificationService.ShowErrorAsync(L["Accounting.CreateError"].ToString());
         }
         finally
         {

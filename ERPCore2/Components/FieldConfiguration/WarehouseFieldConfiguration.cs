@@ -31,8 +31,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Warehouse>
                         {
                             PropertyName = nameof(Warehouse.Code),
-                            DisplayName = "倉庫編號",
-                            FilterPlaceholder = "輸入倉庫編號搜尋",
+                            DisplayName = Dn("Field.WarehouseCode", "倉庫編號"),
+                            FilterPlaceholder = Fp("Field.WarehouseCode", "輸入倉庫編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -44,8 +44,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Warehouse>
                         {
                             PropertyName = nameof(Warehouse.Name),
-                            DisplayName = "倉庫名稱",
-                            FilterPlaceholder = "輸入倉庫名稱搜尋",
+                            DisplayName = Dn("Field.WarehouseName", "倉庫名稱"),
+                            FilterPlaceholder = Fp("Field.WarehouseName", "輸入倉庫名稱搜尋"),
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -57,8 +57,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Warehouse>
                         {
                             PropertyName = nameof(Warehouse.ContactPerson),
-                            DisplayName = "聯絡人",
-                            FilterPlaceholder = "輸入聯絡人姓名搜尋",
+                            DisplayName = Dn("Field.ContactPerson", "聯絡人"),
+                            FilterPlaceholder = Fp("Field.ContactPerson", "輸入聯絡人姓名搜尋"),
                             TableOrder = 3,
                             FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -70,7 +70,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Warehouse>
                         {
                             PropertyName = nameof(Warehouse.Phone),
-                            DisplayName = "聯絡電話",
+                            DisplayName = Dn("Field.ContactPhone", "聯絡電話"),
                             TableOrder = 4,
                             FilterOrder = 0, // 不在篩選器中顯示
                             ShowInFilter = false
@@ -81,8 +81,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Warehouse>
                         {
                             PropertyName = nameof(Warehouse.Address),
-                            DisplayName = "地址",
-                            FilterPlaceholder = "輸入地址搜尋",
+                            DisplayName = Dn("Field.Address", "地址"),
+                            FilterPlaceholder = Fp("Field.Address", "輸入地址搜尋"),
                             TableOrder = 5,
                             FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

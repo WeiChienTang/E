@@ -33,8 +33,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Customer>
                         {
                             PropertyName = nameof(Customer.Code),
-                            DisplayName = "客戶編號",
-                            FilterPlaceholder = "輸入客戶編號搜尋",
+                            DisplayName = Dn("Field.CustomerCode", "客戶編號"),
+                            FilterPlaceholder = Fp("Field.CustomerCode", "輸入客戶編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.Code), c => c.Code)
@@ -45,8 +45,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Customer>
                         {
                             PropertyName = nameof(Customer.CompanyName),
-                            DisplayName = "公司名稱",
-                            FilterPlaceholder = "輸入公司名稱搜尋",
+                            DisplayName = Dn("Field.CompanyName", "公司名稱"),
+                            FilterPlaceholder = Fp("Field.CompanyName", "輸入公司名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.CompanyName), c => c.CompanyName)
@@ -57,8 +57,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Customer>
                         {
                             PropertyName = nameof(Customer.ContactPerson),
-                            DisplayName = "聯絡人",
-                            FilterPlaceholder = "輸入聯絡人姓名搜尋",
+                            DisplayName = Dn("Field.ContactPerson", "聯絡人"),
+                            FilterPlaceholder = Fp("Field.ContactPerson", "輸入聯絡人姓名搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.ContactPerson), c => c.ContactPerson)
@@ -69,8 +69,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Customer>
                         {
                             PropertyName = nameof(Customer.TaxNumber),
-                            DisplayName = "統一編號",
-                            FilterPlaceholder = "輸入統一編號搜尋",
+                            DisplayName = Dn("Field.TaxNumber", "統一編號"),
+                            FilterPlaceholder = Fp("Field.TaxNumber", "輸入統一編號搜尋"),
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.TaxNumber), c => c.TaxNumber, allowNull: true)
@@ -81,7 +81,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Customer>
                         {
                             PropertyName = nameof(Customer.CustomerStatus),
-                            DisplayName = "客戶狀態",
+                            DisplayName = Dn("Field.CustomerStatus", "客戶狀態"),
                             TableOrder = 5,
                             FilterType = SearchFilterType.Select,
                             FilterPlaceholder = "選擇狀態",

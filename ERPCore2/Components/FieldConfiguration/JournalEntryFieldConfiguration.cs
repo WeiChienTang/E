@@ -29,8 +29,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<JournalEntry>
                         {
                             PropertyName = nameof(JournalEntry.Code),
-                            DisplayName = "傳票號碼",
-                            FilterPlaceholder = "輸入傳票號碼搜尋",
+                            DisplayName = Dn("Field.VoucherCode", "傳票號碼"),
+                            FilterPlaceholder = Fp("Field.VoucherCode", "輸入傳票號碼搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(JournalEntry.Code), je => je.Code)
@@ -41,7 +41,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<JournalEntry>
                         {
                             PropertyName = nameof(JournalEntry.EntryDate),
-                            DisplayName = "傳票日期",
+                            DisplayName = Dn("Field.VoucherDate", "傳票日期"),
                             TableOrder = 2,
                             FilterType = SearchFilterType.DateRange,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
@@ -58,7 +58,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<JournalEntry>
                         {
                             PropertyName = nameof(JournalEntry.EntryType),
-                            DisplayName = "傳票類型",
+                            DisplayName = Dn("Field.VoucherType", "傳票類型"),
                             TableOrder = 3,
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
@@ -105,7 +105,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<JournalEntry>
                         {
                             PropertyName = nameof(JournalEntry.JournalEntryStatus),
-                            DisplayName = "狀態",
+                            DisplayName = Dn("Field.Status", "狀態"),
                             TableOrder = 4,
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
@@ -150,8 +150,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<JournalEntry>
                         {
                             PropertyName = nameof(JournalEntry.Description),
-                            DisplayName = "傳票說明",
-                            FilterPlaceholder = "輸入說明搜尋",
+                            DisplayName = Dn("Field.VoucherDescription", "傳票說明"),
+                            FilterPlaceholder = Fp("Field.VoucherDescription", "輸入說明搜尋"),
                             TableOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(JournalEntry.Description), je => je.Description, allowNull: true),
@@ -163,7 +163,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<JournalEntry>
                         {
                             PropertyName = nameof(JournalEntry.TotalDebitAmount),
-                            DisplayName = "借方合計",
+                            DisplayName = Dn("Field.TotalDebit", "借方合計"),
                             TableOrder = 6,
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
@@ -178,7 +178,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<JournalEntry>
                         {
                             PropertyName = nameof(JournalEntry.TotalCreditAmount),
-                            DisplayName = "貸方合計",
+                            DisplayName = Dn("Field.TotalCredit", "貸方合計"),
                             TableOrder = 7,
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
@@ -193,8 +193,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<JournalEntry>
                         {
                             PropertyName = nameof(JournalEntry.SourceDocumentCode),
-                            DisplayName = "來源單號",
-                            FilterPlaceholder = "輸入來源單號搜尋",
+                            DisplayName = Dn("Field.SourceCode", "來源單號"),
+                            FilterPlaceholder = Fp("Field.SourceCode", "輸入來源單號搜尋"),
                             TableOrder = 8,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(JournalEntry.SourceDocumentCode), je => je.SourceDocumentCode, allowNull: true),

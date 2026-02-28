@@ -47,8 +47,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesReturn>
                         {
                             PropertyName = nameof(SalesReturn.Code),
-                            DisplayName = "退貨單號",
-                            FilterPlaceholder = "輸入退貨單號搜尋",
+                            DisplayName = Dn("Field.SalesReturnCode", "退貨單號"),
+                            FilterPlaceholder = Fp("Field.SalesReturnCode", "輸入退貨單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesReturn.Code), sr => sr.Code)
@@ -59,10 +59,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesReturn>
                         {
                             PropertyName = "Customer.CompanyName", // 使用客戶公司名稱
-                            DisplayName = "客戶",
+                            DisplayName = Dn("Field.Customer", "客戶"),
                             TableOrder = 2,
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入客戶名稱搜尋",
+                            FilterPlaceholder = Fp("Field.Customer", "輸入客戶名稱搜尋"),
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "CustomerName", sr => sr.Customer != null ? sr.Customer.CompanyName : "")
                         }
@@ -72,7 +72,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesReturn>
                         {
                             PropertyName = nameof(SalesReturn.ReturnDate),
-                            DisplayName = "退貨日期",
+                            DisplayName = Dn("Field.SalesReturnDate", "退貨日期"),
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 3,
@@ -85,7 +85,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesReturn>
                         {
                             PropertyName = "ReturnReason.Name",
-                            DisplayName = "退貨原因",
+                            DisplayName = Dn("Field.ReturnReason", "退貨原因"),
                             TableOrder = 4,
                             FilterType = SearchFilterType.Select,
                             Options = _returnReasons.Select(r => new SelectOption
@@ -102,7 +102,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesReturn>
                         {
                             PropertyName = nameof(SalesReturn.TotalReturnAmountWithTax),
-                            DisplayName = "總額",
+                            DisplayName = Dn("Field.TotalAmount", "總額"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
                             ShowInFilter = false,

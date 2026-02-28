@@ -60,7 +60,8 @@
                           ReportId="@ReportIds.SalesDelivery"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.SalesDelivery"]]"
                           GetReportDocumentName="@(e => $"出貨單-{e.Code}")"
-                          OnEntityLoaded="@HandleEntityLoaded">
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          AdditionalSections="@CreateRelatedSections()">
 </GenericEditModalComponent>
 
 @* 客戶編輯 Modal *@
@@ -656,13 +657,10 @@
                 .AddToSection(FormSectionNames.OtherInfo,
                     sd => sd.DeliveryAddress,
                     sd => sd.Remarks)
-                .GroupIntoTab("出貨資料", "bi-file-earmark-text",
+                .GroupIntoTab(L["Tab.DeliveryData"].ToString(), "bi-file-earmark-text",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.OtherInfo)
-                .GroupIntoCustomTab("出貨明細", "bi-list-ul", CreateDeliveryDetailManagerContent())
-                .GroupIntoCustomTab("退回記錄", "bi-arrow-return-left", CreateReturnTabContent())
-                .GroupIntoCustomTab("沖款記錄", "bi-cash-coin", CreateSetoffTabContent())
-                .GroupIntoCustomTab("來源訂單", "bi-file-earmark-arrow-up", CreateOrderTabContent())
+                .GroupIntoCustomTab(L["Tab.DeliveryDetail"].ToString(), "bi-list-ul", CreateDeliveryDetailManagerContent())
                 .BuildAll();
             formSections = layout.FieldSections;
             tabDefinitions = layout.TabDefinitions;
@@ -1171,22 +1169,24 @@
         </DetailSectionWrapper>
     };
     
-    private RenderFragment CreateReturnTabContent() => __builder =>
+    /// <summary>相關單據 Additional Sections 內容</summary>
+    private RenderFragment CreateRelatedSections() => __builder =>
     {
-        <SalesDeliveryReturnTab @ref="returnTab"
-                                OnOpenReturn="@HandleOpenReturnFromTab" />
-    };
-
-    private RenderFragment CreateSetoffTabContent() => __builder =>
-    {
-        <SalesDeliverySetoffTab @ref="setoffTab"
-                                OnOpenSetoff="@HandleOpenSetoffFromTab" />
-    };
-
-    private RenderFragment CreateOrderTabContent() => __builder =>
-    {
-        <SalesDeliveryOrderTab @ref="orderTab"
-                               OnOpenOrder="@HandleOpenOrderFromTab" />
+        <div class="mb-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-arrow-return-left me-1"></i>@L["Tab.ReturnRecords"]</h6>
+            <SalesDeliveryReturnTab @ref="returnTab"
+                                    OnOpenReturn="@HandleOpenReturnFromTab" />
+        </div>
+        <div class="mb-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-cash-coin me-1"></i>@L["Tab.SetoffRecords"]</h6>
+            <SalesDeliverySetoffTab @ref="setoffTab"
+                                    OnOpenSetoff="@HandleOpenSetoffFromTab" />
+        </div>
+        <div class="mb-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-file-earmark-arrow-up me-1"></i>@L["Tab.SourceOrder"]</h6>
+            <SalesDeliveryOrderTab @ref="orderTab"
+                                   OnOpenOrder="@HandleOpenOrderFromTab" />
+        </div>
     };
 
     private void HandleOpenReturnFromTab(int returnId)

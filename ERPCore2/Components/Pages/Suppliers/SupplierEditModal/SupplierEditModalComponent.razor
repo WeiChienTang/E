@@ -57,13 +57,13 @@
 @* 複製至客戶確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showCopyToCustomerModal"
                               IsVisibleChanged="@((bool v) => showCopyToCustomerModal = v)"
-                              Title="複製至客戶"
+                              Title="@L["Supplier.CopyToCustomerTitle"]"
                               Icon="bi-person-lines-fill"
-                              Message="確定要將此廠商的資料複製為新客戶嗎？"
+                              Message="@L["Supplier.CopyToCustomerMessage"]"
                               Conditions="@copyToCustomerConditions"
-                              SummaryMessage="複製後將在客戶清單中建立一筆新資料"
-                              ConfirmButtonText="確認複製"
-                              CancelButtonText="取消"
+                              SummaryMessage="@L["Supplier.CopyToCustomerSummary"]"
+                              ConfirmButtonText="@L["Button.ConfirmCopy"]"
+                              CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Green"
                               HeaderColor="BaseModalComponent.HeaderVariant.Primary"
                               OnConfirm="@HandleConfirmCopyToCustomer"
@@ -513,16 +513,16 @@
                     s => s.PaymentTerms)
                 .AddToSection(FormSectionNames.OtherInfo,
                     s => s.Remarks)
-                .GroupIntoTab("廠商資料", "bi-shop", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo);
+                .GroupIntoTab(L["Tab.SupplierData"].ToString(), "bi-shop", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo);
 
             if (isVehiclesEnabled)
-                builder = builder.GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent());
+                builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent());
 
             if (isAccountingEnabled)
-                builder = builder.GroupIntoCustomTab("會計資訊", "bi-calculator", CreateAccountingTabContent());
+                builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent());
 
             var layout = builder
-                .GroupIntoCustomTab("供應商品", "bi-box-seam", CreateSupplierProductTabContent())
+                .GroupIntoCustomTab(L["Tab.SupplierProducts"].ToString(), "bi-box-seam", CreateSupplierProductTabContent())
                 .BuildAll();
 
             formSections = layout.FieldSections;
@@ -628,10 +628,10 @@
     {
         if (editModalComponent?.Entity != null && SupplierId.HasValue)
         {
-            <GenericButtonComponent Text="複製至客戶"
+            <GenericButtonComponent Text="@L["Supplier.CopyToCustomerTitle"]"
                                     Variant="ButtonVariant.Green"
                                     OnClick="HandleCopyToCustomerClick"
-                                    Title="將此廠商資料複製為新客戶" />
+                                    Title="@L["Supplier.CopyToCustomerTitle"]" />
         }
     };
 

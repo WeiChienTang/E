@@ -43,6 +43,7 @@
             
             // 建立欄位配置
             fieldConfiguration = new MaterialFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }

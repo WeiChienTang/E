@@ -41,8 +41,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReceiving>
                         {
                             PropertyName = nameof(PurchaseReceiving.Code),
-                            DisplayName = "進貨單號",
-                            FilterPlaceholder = "輸入進貨單號搜尋",
+                            DisplayName = Dn("Field.PurchaseReceivingCode", "進貨單號"),
+                            FilterPlaceholder = Fp("Field.PurchaseReceivingCode", "輸入進貨單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PurchaseReceiving.Code), pr => pr.Code)
@@ -53,8 +53,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReceiving>
                         {
                             PropertyName = nameof(PurchaseReceiving.BatchNumber),
-                            DisplayName = "批號",
-                            FilterPlaceholder = "輸入批號搜尋",
+                            DisplayName = Dn("Field.BatchNumber", "批號"),
+                            FilterPlaceholder = Fp("Field.BatchNumber", "輸入批號搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PurchaseReceiving.BatchNumber), pr => pr.BatchNumber)
@@ -65,10 +65,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReceiving>
                         {
                             PropertyName = "Supplier.CompanyName", // 直接使用廠商關聯顯示廠商名稱
-                            DisplayName = "廠商",
+                            DisplayName = Dn("Field.Supplier", "廠商"),
                             TableOrder = 3,
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入廠商名稱搜尋",
+                            FilterPlaceholder = Fp("Field.Supplier", "輸入廠商名稱搜尋"),
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "SupplierName", pr => pr.Supplier != null ? pr.Supplier.CompanyName : "")
                         }
@@ -78,7 +78,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReceiving>
                         {
                             PropertyName = nameof(PurchaseReceiving.ReceiptDate),
-                            DisplayName = "進貨日期",
+                            DisplayName = Dn("Field.ReceiptDate", "進貨日期"),
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 4,
@@ -91,7 +91,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReceiving>
                         {
                             PropertyName = nameof(PurchaseReceiving.PurchaseReceivingTotalAmountIncludingTax),
-                            DisplayName = "總額",
+                            DisplayName = Dn("Field.TotalAmount", "總額"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
                             ShowInFilter = false,

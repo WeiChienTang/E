@@ -45,8 +45,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Product>
                         {
                             PropertyName = nameof(Product.Code),
-                            DisplayName = "商品編號",
-                            FilterPlaceholder = "輸入商品編號搜尋",
+                            DisplayName = Dn("Field.ProductCode", "商品編號"),
+                            FilterPlaceholder = Fp("Field.ProductCode", "輸入商品編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Product.Code), p => p.Code)
@@ -57,8 +57,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Product>
                         {
                             PropertyName = nameof(Product.Name),
-                            DisplayName = "商品名稱",
-                            FilterPlaceholder = "輸入商品名稱搜尋",
+                            DisplayName = Dn("Field.ProductName", "商品名稱"),
+                            FilterPlaceholder = Fp("Field.ProductName", "輸入商品名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Product.Name), p => p.Name)
@@ -69,8 +69,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Product>
                         {
                             PropertyName = nameof(Product.Barcode),
-                            DisplayName = "條碼編號",
-                            FilterPlaceholder = "輸入條碼編號搜尋",
+                            DisplayName = Dn("Field.Barcode", "條碼編號"),
+                            FilterPlaceholder = Fp("Field.Barcode", "輸入條碼編號搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Product.Barcode), p => p.Barcode)
@@ -82,7 +82,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Size.Name", // 表格顯示用
                             FilterPropertyName = nameof(Product.SizeId), // 篩選器用
-                            DisplayName = "尺寸",
+                            DisplayName = Dn("Field.Size", "尺寸"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
                             Options = _sizes.Select(s => new SelectOption 
@@ -100,7 +100,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "ProductCategory.Name", // 表格顯示用
                             FilterPropertyName = nameof(Product.ProductCategoryId), // 篩選器用
-                            DisplayName = "商品分類",
+                            DisplayName = Dn("Field.CategoryName", "商品分類"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
                             Options = _productCategories.Select(pc => new SelectOption 
@@ -118,7 +118,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Unit.Name", // 表格顯示用
                             FilterPropertyName = nameof(Product.UnitId), // 篩選器用
-                            DisplayName = "採購單位",
+                            DisplayName = Dn("Field.PurchaseUnit", "採購單位"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 6,
                             Options = _units.Select(u => new SelectOption 
@@ -136,7 +136,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "ProductionUnit.Name", // 表格顯示用
                             FilterPropertyName = nameof(Product.ProductionUnitId), // 篩選器用
-                            DisplayName = "製程單位",
+                            DisplayName = Dn("Field.ProductionUnit", "製程單位"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 7,
                             Options = _units.Select(u => new SelectOption 

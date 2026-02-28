@@ -38,8 +38,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ProductionSchedule>
                         {
                             PropertyName = nameof(ProductionSchedule.Code),
-                            DisplayName = "排程單號",
-                            FilterPlaceholder = "輸入排程單號搜尋",
+                            DisplayName = Dn("Field.ScheduleCode", "排程單號"),
+                            FilterPlaceholder = Fp("Field.ScheduleCode", "輸入排程單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ProductionSchedule.Code), ps => ps.Code)
@@ -50,7 +50,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ProductionSchedule>
                         {
                             PropertyName = nameof(ProductionSchedule.ScheduleDate),
-                            DisplayName = "排程日期",
+                            DisplayName = Dn("Field.ScheduleDate", "排程日期"),
                             FilterType = SearchFilterType.Date,
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
@@ -68,7 +68,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "CreatedByEmployee.Name",
                             FilterPropertyName = nameof(ProductionSchedule.CreatedByEmployeeId),
-                            DisplayName = "製單人員",
+                            DisplayName = Dn("Field.ScheduleCreator", "製單人員"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
                             Options = _employees.Select(e => new SelectOption

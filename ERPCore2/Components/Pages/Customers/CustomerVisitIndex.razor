@@ -57,6 +57,7 @@
             await InitializeBreadcrumbsAsync();
 
             fieldConfiguration = new CustomerVisitFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
 
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();

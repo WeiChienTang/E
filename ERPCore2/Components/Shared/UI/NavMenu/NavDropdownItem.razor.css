@@ -21,7 +21,8 @@
     clear: both;
     font-weight: 400;
     line-height: 1.5;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
     text-align: left; /* 確保按鈕文字靠左 */
     cursor: pointer; /* 確保滑鼠游標顯示為指標 */
 }

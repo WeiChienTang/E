@@ -259,6 +259,18 @@
   <data name="Preference.FontSize" xml:space="preserve">
     <value>フォントサイズ</value>
   </data>
+  <data name="Preference.Theme" xml:space="preserve">
+    <value>テーマカラー</value>
+  </data>
+  <data name="Preference.ThemeLight" xml:space="preserve">
+    <value>ライト</value>
+  </data>
+  <data name="Preference.ThemeDark" xml:space="preserve">
+    <value>ダーク</value>
+  </data>
+  <data name="Preference.ThemeSystem" xml:space="preserve">
+    <value>システム設定</value>
+  </data>
 
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
@@ -1138,4 +1150,163 @@
   <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>受注承認を有効にする</value></data>
   <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>売上返品承認を有効にする</value></data>
   <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>在庫振替承認を有効にする</value></data>
+  <!-- ===== FormSectionNames keys ===== -->
+  <data name="Section.BasicInfo" xml:space="preserve"><value>基本情報</value></data>
+  <data name="Section.FilterConditions" xml:space="preserve"><value>フィルター条件</value></data>
+  <data name="Section.ContactInfo" xml:space="preserve"><value>連絡先情報</value></data>
+  <data name="Section.ContactPersonInfo" xml:space="preserve"><value>担当者情報</value></data>
+  <data name="Section.AmountInfo" xml:space="preserve"><value>金額情報</value></data>
+  <data name="Section.AmountInfoAutoCalculated" xml:space="preserve"><value>金額情報（システム自動計算）</value></data>
+  <data name="Section.PaymentInfo" xml:space="preserve"><value>支払い情報</value></data>
+  <data name="Section.AdditionalData" xml:space="preserve"><value>追加データ</value></data>
+  <data name="Section.AdditionalInfo" xml:space="preserve"><value>追加情報</value></data>
+  <data name="Section.OtherInfo" xml:space="preserve"><value>その他の情報</value></data>
+  <data name="Section.OrganizationStructure" xml:space="preserve"><value>組織構造</value></data>
+  <data name="Section.EmploymentInfo" xml:space="preserve"><value>雇用情報</value></data>
+  <data name="Section.CompanyData" xml:space="preserve"><value>会社情報</value></data>
+  <data name="Section.AccountInfo" xml:space="preserve"><value>アカウント情報</value></data>
+  <data name="Section.SalesInfo" xml:space="preserve"><value>営業情報</value></data>
+  <data name="Section.TradingTerms" xml:space="preserve"><value>取引条件</value></data>
+  <data name="Section.UnitSettings" xml:space="preserve"><value>単位設定</value></data>
+  <data name="Section.CategoryAndSpecification" xml:space="preserve"><value>カテゴリーと仕様</value></data>
+  <data name="Section.FinanceAndRemarks" xml:space="preserve"><value>財務と備考</value></data>
+  <data name="Section.EquipmentAssignment" xml:space="preserve"><value>装備割り当て</value></data>
+  <!-- ===== Tab keys (Modal tabs) ===== -->
+  <data name="Tab.SupplierData" xml:space="preserve"><value>仕入先情報</value></data>
+  <data name="Tab.AccountingInfo" xml:space="preserve"><value>会計情報</value></data>
+  <data name="Tab.SupplierProducts" xml:space="preserve"><value>仕入商品</value></data>
+  <data name="Tab.CustomerData" xml:space="preserve"><value>顧客情報</value></data>
+  <data name="Tab.VisitRecords" xml:space="preserve"><value>訪問記録</value></data>
+  <data name="Tab.TransactionRecords" xml:space="preserve"><value>取引記録</value></data>
+  <data name="Tab.ProductData" xml:space="preserve"><value>商品情報</value></data>
+  <data name="Tab.OrderData" xml:space="preserve"><value>受注情報</value></data>
+  <data name="Tab.OrderDetail" xml:space="preserve"><value>受注明細</value></data>
+  <data name="Tab.ReceivingRecords" xml:space="preserve"><value>入荷記録</value></data>
+  <data name="Tab.ReturnRecords" xml:space="preserve"><value>返品記録</value></data>
+  <data name="Tab.ReceivingData" xml:space="preserve"><value>入荷情報</value></data>
+  <data name="Tab.ReceivingDetail" xml:space="preserve"><value>入荷明細</value></data>
+  <data name="Tab.SetoffRecords" xml:space="preserve"><value>相殺記録</value></data>
+  <data name="Tab.SourcePurchaseOrder" xml:space="preserve"><value>元の発注書</value></data>
+  <data name="Tab.ReturnData" xml:space="preserve"><value>返品情報</value></data>
+  <data name="Tab.ReturnDetail" xml:space="preserve"><value>返品明細</value></data>
+  <data name="Tab.OriginalReceiving" xml:space="preserve"><value>元の入荷</value></data>
+  <data name="Tab.QuotationData" xml:space="preserve"><value>見積情報</value></data>
+  <data name="Tab.QuotationDetail" xml:space="preserve"><value>見積明細</value></data>
+  <data name="Tab.ConvertToOrder" xml:space="preserve"><value>受注に変換</value></data>
+  <data name="Tab.DeliveryRecords" xml:space="preserve"><value>出荷記録</value></data>
+  <data name="Tab.SourceQuotation" xml:space="preserve"><value>元の見積</value></data>
+  <data name="Tab.DeliveryData" xml:space="preserve"><value>出荷情報</value></data>
+  <data name="Tab.DeliveryDetail" xml:space="preserve"><value>出荷明細</value></data>
+  <data name="Tab.SourceOrder" xml:space="preserve"><value>元の受注</value></data>
+  <data name="Tab.OriginalDelivery" xml:space="preserve"><value>元の出荷</value></data>
+  <data name="Tab.PageShortcut" xml:space="preserve"><value>ページショートカット</value></data>
+  <data name="Tab.QuickAction" xml:space="preserve"><value>クイックアクション</value></data>
+  <data name="Tab.ChartView" xml:space="preserve"><value>グラフビュー</value></data>
+  <!-- ===== Supplier action keys ===== -->
+  <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>顧客にコピー</value></data>
+  <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>この仕入先のデータを新しい顧客としてコピーしますか？</value></data>
+  <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>コピー後、顧客一覧に新しいレコードが作成されます。</value></data>
+  <data name="Button.ConfirmCopy" xml:space="preserve"><value>コピーを確認</value></data>
+  <!-- ===== Dashboard Widget Picker keys ===== -->
+  <data name="Dashboard.AddShortcutTitle" xml:space="preserve"><value>ショートカット項目を追加</value></data>
+  <data name="Dashboard.NoMatchFound" xml:space="preserve"><value>「{0}」に一致する項目が見つかりません</value></data>
+  <data name="Dashboard.NoItems" xml:space="preserve"><value>追加できる{0}はありません</value></data>
+  <data name="Placeholder.SearchWidgets" xml:space="preserve"><value>名前、説明またはカテゴリーを検索...</value></data>
+  <data name="Dashboard.RemoveShortcut" xml:space="preserve"><value>ショートカットを削除</value></data>
+  <data name="Dashboard.SelectIcon" xml:space="preserve"><value>パネルアイコンを選択</value></data>
+  <data name="Dashboard.ApplyIcon" xml:space="preserve"><value>選択したアイコンを適用</value></data>
+  <data name="Dashboard.CurrentSelection" xml:space="preserve"><value>現在の選択</value></data>
+  <data name="Dashboard.NotSelected" xml:space="preserve"><value>未選択</value></data>
+  <!-- ===== Accounting tab keys ===== -->
+  <data name="Accounting.SaveFirst" xml:space="preserve"><value>データを保存してから、会計補助科目を確認してください。</value></data>
+  <data name="Accounting.SubAccountType" xml:space="preserve"><value>補助科目タイプ</value></data>
+  <data name="Accounting.AccountCode" xml:space="preserve"><value>科目コード</value></data>
+  <data name="Accounting.AccountName" xml:space="preserve"><value>科目名称</value></data>
+  <data name="Accounting.Created" xml:space="preserve"><value>作成済み</value></data>
+  <data name="Accounting.NotCreated" xml:space="preserve"><value>未作成</value></data>
+  <data name="Accounting.CreateSubAccount" xml:space="preserve"><value>補助科目を作成</value></data>
+  <data name="Accounting.CreateSubAccountTitle" xml:space="preserve"><value>このレコードの未作成の補助科目をすべて作成します</value></data>
+  <data name="Accounting.AccountsReceivable" xml:space="preserve"><value>売掛金</value></data>
+  <data name="Accounting.NoteReceivable" xml:space="preserve"><value>受取手形</value></data>
+  <data name="Accounting.SalesReturn" xml:space="preserve"><value>売上返品</value></data>
+  <data name="Accounting.AdvanceReceipt" xml:space="preserve"><value>前受金</value></data>
+  <data name="Accounting.AccountsPayable" xml:space="preserve"><value>買掛金</value></data>
+  <data name="Accounting.NotePayable" xml:space="preserve"><value>支払手形</value></data>
+  <data name="Accounting.PurchaseReturn" xml:space="preserve"><value>仕入返品</value></data>
+  <data name="Accounting.AdvancePayment" xml:space="preserve"><value>前払金</value></data>
+  <data name="Accounting.CreateError" xml:space="preserve"><value>補助科目の作成中にエラーが発生しました</value></data>
+  <!-- ===== Label keys ===== -->
+  <data name="Label.Unassigned" xml:space="preserve"><value>未割り当て</value></data>
+  <data name="Label.NeverLoggedIn" xml:space="preserve"><value>ログイン未経験</value></data>
+  <data name="Label.HasPermission" xml:space="preserve"><value>権限あり</value></data>
+  <data name="Label.NoPermission" xml:space="preserve"><value>権限なし</value></data>
+
+  <!-- ===== Placeholder - Search keys ===== -->
+  <data name="Placeholder.InputToSearch" xml:space="preserve"><value>{0}を検索</value></data>
+
+  <!-- ===== Label keys - Extra ===== -->
+  <data name="Label.NotSet" xml:space="preserve"><value>未設定</value></data>
+
+  <!-- ===== Field keys - Employee/Org ===== -->
+  <data name="Field.IsSystemUser" xml:space="preserve"><value>システム権限</value></data>
+  <data name="Field.LastLogin" xml:space="preserve"><value>最終ログイン</value></data>
+  <data name="Field.Role" xml:space="preserve"><value>役割グループ</value></data>
+  <data name="Field.Department" xml:space="preserve"><value>部門</value></data>
+  <data name="Field.EmployeePosition" xml:space="preserve"><value>役職</value></data>
+
+  <!-- ===== Field keys - Error Log ===== -->
+  <data name="Field.ErrorId" xml:space="preserve"><value>エラーID</value></data>
+  <data name="Field.ErrorLevel" xml:space="preserve"><value>エラーレベル</value></data>
+  <data name="Field.ErrorSource" xml:space="preserve"><value>エラー発生元</value></data>
+  <data name="Field.ErrorCategory" xml:space="preserve"><value>エラー分類</value></data>
+  <data name="Field.ErrorMessage" xml:space="preserve"><value>エラーメッセージ</value></data>
+  <data name="Field.ErrorModule" xml:space="preserve"><value>モジュール</value></data>
+  <data name="Field.OccurredAt" xml:space="preserve"><value>発生時刻</value></data>
+  <data name="Field.IsResolved" xml:space="preserve"><value>解決済み</value></data>
+  <data name="Field.UserId" xml:space="preserve"><value>ユーザー</value></data>
+  <data name="Field.RequestPath" xml:space="preserve"><value>リクエストパス</value></data>
+
+  <!-- ===== Field keys - Inventory ===== -->
+  <data name="Field.CurrentStock" xml:space="preserve"><value>現在在庫</value></data>
+  <data name="Field.AverageCost" xml:space="preserve"><value>平均原価</value></data>
+  <data name="Field.ProductUnit" xml:space="preserve"><value>商品単位</value></data>
+
+  <!-- ===== Field keys - Material ===== -->
+  <data name="Field.MaterialCode" xml:space="preserve"><value>材質コード</value></data>
+  <data name="Field.MaterialName" xml:space="preserve"><value>材質名</value></data>
+  <data name="Field.Remarks" xml:space="preserve"><value>備考</value></data>
+  <data name="Field.DetailCount" xml:space="preserve"><value>明細件数</value></data>
+
+  <!-- ===== Field keys - General ===== -->
+  <data name="Field.CompanyCode" xml:space="preserve"><value>会社コード</value></data>
+  <data name="Field.UsageCount" xml:space="preserve"><value>使用回数</value></data>
+  <data name="Field.ConnectionType" xml:space="preserve"><value>接続タイプ</value></data>
+  <data name="Field.UsbPort" xml:space="preserve"><value>USBポート</value></data>
+  <data name="Field.ComponentCount" xml:space="preserve"><value>部品数</value></data>
+  <data name="Field.BatchNumber" xml:space="preserve"><value>バッチ番号</value></data>
+  <data name="Field.OriginalReceivingCode" xml:space="preserve"><value>元入荷番号</value></data>
+  <data name="Field.ApprovalStatus" xml:space="preserve"><value>承認状態</value></data>
+  <data name="Field.ReportId" xml:space="preserve"><value>レポートID</value></data>
+  <data name="Field.RelatedPartyName" xml:space="preserve"><value>取引先名</value></data>
+  <data name="Field.BelongsToWarehouse" xml:space="preserve"><value>所属倉庫</value></data>
+  <data name="Field.NetAmount" xml:space="preserve"><value>純額</value></data>
+  <data name="Field.MeasurementUnit" xml:space="preserve"><value>計量単位</value></data>
+  <data name="Field.CompletedItems" xml:space="preserve"><value>完了済み項目数</value></data>
+  <data name="Field.DifferenceItems" xml:space="preserve"><value>差異項目数</value></data>
+  <data name="Field.DifferenceAmount" xml:space="preserve"><value>在庫差損益</value></data>
+
+  <!-- ===== Field keys - Journal/Voucher ===== -->
+  <data name="Field.VoucherCode" xml:space="preserve"><value>伝票番号</value></data>
+  <data name="Field.VoucherDate" xml:space="preserve"><value>伝票日付</value></data>
+  <data name="Field.VoucherType" xml:space="preserve"><value>伝票種別</value></data>
+  <data name="Field.VoucherDescription" xml:space="preserve"><value>伝票説明</value></data>
+  <data name="Field.TotalDebit" xml:space="preserve"><value>借方合計</value></data>
+  <data name="Field.TotalCredit" xml:space="preserve"><value>貸方合計</value></data>
+  <data name="Field.SourceCode" xml:space="preserve"><value>元伝票番号</value></data>
+
+  <!-- ===== Field keys - Vehicle/Maintenance ===== -->
+  <data name="Field.ServiceProvider" xml:space="preserve"><value>整備業者/サービス提供者</value></data>
+
+  <!-- ===== Field keys - Account/Inventory extra ===== -->
+  <data name="Field.AccountType" xml:space="preserve"><value>科目大分類</value></data>
 </root>

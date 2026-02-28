@@ -501,10 +501,10 @@
                 p => p.Specification)
             .AddToSection(FormSectionNames.AdditionalInfo,
                 p => p.Remarks)
-            .GroupIntoTab("商品資料", "bi-box-seam", FormSectionNames.BasicInfo, FormSectionNames.CategoryAndSpecification, FormSectionNames.AdditionalInfo);
+            .GroupIntoTab(L["Tab.ProductData"].ToString(), "bi-box-seam", FormSectionNames.BasicInfo, FormSectionNames.CategoryAndSpecification, FormSectionNames.AdditionalInfo);
 
         if (isAccountingEnabled)
-            builder = builder.GroupIntoCustomTab("會計資訊", "bi-calculator", CreateAccountingTabContent());
+            builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent());
 
         var layout = builder.BuildAll();
         formSections = layout.FieldSections;

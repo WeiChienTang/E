@@ -45,8 +45,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesDelivery>
                         {
                             PropertyName = nameof(SalesDelivery.Code),
-                            DisplayName = "出貨單號",
-                            FilterPlaceholder = "輸入出貨單號搜尋",
+                            DisplayName = Dn("Field.SalesDeliveryCode", "出貨單號"),
+                            FilterPlaceholder = Fp("Field.SalesDeliveryCode", "輸入出貨單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesDelivery.Code), sd => sd.Code)
@@ -57,7 +57,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesDelivery>
                         {
                             PropertyName = nameof(SalesDelivery.DeliveryDate),
-                            DisplayName = "出貨日期",
+                            DisplayName = Dn("Field.SalesDeliveryDate", "出貨日期"),
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 2,
@@ -71,7 +71,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Customer.CompanyName",
                             FilterPropertyName = nameof(SalesDelivery.CustomerId),
-                            DisplayName = "客戶",
+                            DisplayName = Dn("Field.Customer", "客戶"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             FilterOrder = 3,
@@ -90,7 +90,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Employee.Name",
                             FilterPropertyName = nameof(SalesDelivery.EmployeeId),
-                            DisplayName = "業務人員",
+                            DisplayName = Dn("Field.SalesPerson", "業務人員"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
                             NullDisplayText = "-",
@@ -108,7 +108,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesDelivery>
                         {
                             PropertyName = nameof(SalesDelivery.TotalAmountWithTax),
-                            DisplayName = "總額",
+                            DisplayName = Dn("Field.TotalAmount", "總額"),
                             FilterType = SearchFilterType.NumberRange,
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 7,

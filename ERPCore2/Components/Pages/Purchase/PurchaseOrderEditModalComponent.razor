@@ -62,7 +62,8 @@
                           OnRejectWithReason="@HandlePurchaseOrderRejectWithReason"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomActionButtons="@GetCustomActionButtons()"
-                          OnEntityLoaded="@HandleEntityLoaded">
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          AdditionalSections="@CreateRelatedSections()">
 </GenericEditModalComponent>
 
 @* 廠商編輯 Modal *@
@@ -504,11 +505,9 @@
                     po => po.PurchaseTotalAmountIncludingTax)
                 .AddToSection(FormSectionNames.AdditionalInfo,
                     po => po.Remarks)
-                .GroupIntoTab("訂單資料", "bi-file-earmark-text",
+                .GroupIntoTab(L["Tab.OrderData"].ToString(), "bi-file-earmark-text",
                     FormSectionNames.BasicInfo, FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
-                .GroupIntoCustomTab("訂單明細", "bi-list-ul", CreateProductManagerContent())
-                .GroupIntoCustomTab("進貨記錄", "bi-box-arrow-in-down", CreateReceivingTabContent())
-                .GroupIntoCustomTab("退回記錄", "bi-arrow-return-left", CreateReturnTabContent())
+                .GroupIntoCustomTab(L["Tab.OrderDetail"].ToString(), "bi-list-ul", CreateProductManagerContent())
                 .BuildAll();
             formSections = layout.FieldSections;
             tabDefinitions = layout.TabDefinitions;
@@ -597,18 +596,19 @@
         }
     };
     
-    /// <summary>進貨記錄 Tab 內容</summary>
-    private RenderFragment CreateReceivingTabContent() => __builder =>
+    /// <summary>相關單據 Additional Sections 內容</summary>
+    private RenderFragment CreateRelatedSections() => __builder =>
     {
-        <PurchaseOrderReceivingTab @ref="receivingTab"
-                                   OnOpenReceiving="@HandleOpenReceivingFromTab" />
-    };
-
-    /// <summary>退回記錄 Tab 內容</summary>
-    private RenderFragment CreateReturnTabContent() => __builder =>
-    {
-        <PurchaseOrderReturnTab @ref="returnTab"
-                                OnOpenReturn="@HandleOpenReturnFromTab" />
+        <div class="mb-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-box-arrow-in-down me-1"></i>@L["Tab.ReceivingRecords"]</h6>
+            <PurchaseOrderReceivingTab @ref="receivingTab"
+                                       OnOpenReceiving="@HandleOpenReceivingFromTab" />
+        </div>
+        <div class="mb-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-arrow-return-left me-1"></i>@L["Tab.ReturnRecords"]</h6>
+            <PurchaseOrderReturnTab @ref="returnTab"
+                                    OnOpenReturn="@HandleOpenReturnFromTab" />
+        </div>
     };
 
     private void HandleOpenReceivingFromTab(int id)
