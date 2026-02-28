@@ -35,12 +35,9 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<ServiceResult<Employee>> LoginAsync(string account, string password)
         {
-            ConsoleHelper.WriteDebug($"[AuthenticationService.LoginAsync] 開始，account={account}");
             try
             {
-                ConsoleHelper.WriteDebug("[AuthenticationService.LoginAsync] 建立 DbContext...");
                 using var context = _contextFactory.CreateDbContext();
-                ConsoleHelper.WriteDebug("[AuthenticationService.LoginAsync] DbContext 建立完成，查詢員工資料...");
 
                 var employee = await context.Employees
                     .Include(e => e.Role)
@@ -48,37 +45,29 @@ namespace ERPCore2.Services
                     .Include(e => e.EmployeePosition)
                     .FirstOrDefaultAsync(e => e.Account == account);
 
-                ConsoleHelper.WriteDebug($"[AuthenticationService.LoginAsync] 員工查詢完成，Found={employee != null}");
-
                 if (employee == null)
                 {
-                    ConsoleHelper.WriteDebug("[AuthenticationService.LoginAsync] 帳號不存在");
                     return ServiceResult<Employee>.Failure("帳號或密碼錯誤");
                 }
 
                 // 檢查帳號是否為系統使用者
                 if (!employee.IsSystemUser)
                 {
-                    ConsoleHelper.WriteDebug("[AuthenticationService.LoginAsync] 帳號非系統使用者");
                     return ServiceResult<Employee>.Failure("該帳號無法登入系統");
                 }
 
                 // 驗證密碼
                 if (!VerifyPassword(password, employee.Password))
                 {
-                    ConsoleHelper.WriteDebug("[AuthenticationService.LoginAsync] 密碼錯誤");
                     return ServiceResult<Employee>.Failure("帳號或密碼錯誤");
                 }
 
-                ConsoleHelper.WriteDebug("[AuthenticationService.LoginAsync] 驗證通過，呼叫 UpdateLastLoginAsync...");
                 // 更新最後登入時間
                 await UpdateLastLoginAsync(employee.Id);
-                ConsoleHelper.WriteDebug("[AuthenticationService.LoginAsync] UpdateLastLoginAsync 完成，登入成功");
                 return ServiceResult<Employee>.Success(employee);
             }
             catch (Exception ex)
             {
-                ConsoleHelper.WriteError($"[AuthenticationService.LoginAsync] 例外：{ex.GetType().Name} - {ex.Message}");
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(LoginAsync), GetType(), _logger);
                 return ServiceResult<Employee>.Failure("登入過程發生錯誤");
             }
@@ -259,17 +248,13 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<ServiceResult> UpdateLastLoginAsync(int employeeId)
         {
-            ConsoleHelper.WriteDebug($"[AuthenticationService.UpdateLastLoginAsync] 開始，employeeId={employeeId}");
             try
             {
-                ConsoleHelper.WriteDebug("[AuthenticationService.UpdateLastLoginAsync] 建立 DbContext...");
                 using var context = _contextFactory.CreateDbContext();
-                ConsoleHelper.WriteDebug("[AuthenticationService.UpdateLastLoginAsync] DbContext 完成，查詢員工...");
 
                 var employee = await context.Employees.FindAsync(employeeId);
                 if (employee == null)
                 {
-                    ConsoleHelper.WriteDebug("[AuthenticationService.UpdateLastLoginAsync] 找不到員工");
                     return ServiceResult.Failure("找不到指定的員工");
                 }
 
@@ -277,15 +262,12 @@ namespace ERPCore2.Services
                 employee.UpdatedAt = DateTime.UtcNow;
                 employee.UpdatedBy = "System";
 
-                ConsoleHelper.WriteDebug("[AuthenticationService.UpdateLastLoginAsync] 呼叫 SaveChangesAsync...");
                 await context.SaveChangesAsync();
-                ConsoleHelper.WriteDebug("[AuthenticationService.UpdateLastLoginAsync] SaveChangesAsync 完成");
 
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                ConsoleHelper.WriteError($"[AuthenticationService.UpdateLastLoginAsync] 例外：{ex.GetType().Name} - {ex.Message}");
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateLastLoginAsync), GetType(), _logger);
                 return ServiceResult.Failure("更新最後登入時間發生錯誤");
             }

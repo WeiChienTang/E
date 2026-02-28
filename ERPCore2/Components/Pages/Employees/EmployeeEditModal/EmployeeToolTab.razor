@@ -1,6 +1,7 @@
 @* 員工個人工具 Tab - 自包含元件，主組件透過 @ref 協調 *@
 @inject IEmployeeToolService EmployeeToolService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @* 工具配給列表 *@
 <EmployeeToolTable Tools="@employeeTools"
@@ -19,11 +20,11 @@
 @* 刪除確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showDeleteToolModal"
                               IsVisibleChanged="@((bool v) => showDeleteToolModal = v)"
-                              Title="刪除工具配給紀錄"
+                              Title="@L["Tab.PersonalTools"]"
                               Icon="bi-trash"
-                              Message="確定要刪除此筆工具配給紀錄嗎？"
-                              ConfirmButtonText="確認刪除"
-                              CancelButtonText="取消"
+                              Message="@L["Message.DeleteConfirm"]"
+                              ConfirmButtonText="@L["Button.Delete"]"
+                              CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Red"
                               HeaderColor="BaseModalComponent.HeaderVariant.Danger"
                               OnConfirm="@HandleConfirmDeleteTool"

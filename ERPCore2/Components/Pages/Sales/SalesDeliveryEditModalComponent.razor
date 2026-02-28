@@ -80,27 +80,36 @@
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
 
 @* 銷貨退貨編輯 Modal *@
-<SalesReturnEditModalComponent @ref="salesReturnEditModal"
-                              IsVisible="@showSalesReturnModal"
-                              IsVisibleChanged="@((bool visible) => showSalesReturnModal = visible)"
-                              SalesReturnId="@selectedSalesReturnId"
-                              OnSalesReturnSaved="@HandleSalesReturnSaved"
-                              OnCancel="@(() => showSalesReturnModal = false)" />
+@if (showSalesReturnModal)
+{
+    <SalesReturnEditModalComponent @ref="salesReturnEditModal"
+                                  IsVisible="@showSalesReturnModal"
+                                  IsVisibleChanged="@((bool visible) => showSalesReturnModal = visible)"
+                                  SalesReturnId="@selectedSalesReturnId"
+                                  OnSalesReturnSaved="@HandleSalesReturnSaved"
+                                  OnCancel="@(() => showSalesReturnModal = false)" />
+}
 
 @* 沖款單編輯 Modal *@
-<SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
-                                 IsVisible="@showSetoffDocumentModal"
-                                 IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
-                                 SetoffDocumentId="@selectedSetoffDocumentId"
-                                 OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
-                                 OnCancel="@(() => showSetoffDocumentModal = false)" />
+@if (showSetoffDocumentModal)
+{
+    <SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
+                                     IsVisible="@showSetoffDocumentModal"
+                                     IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
+                                     SetoffDocumentId="@selectedSetoffDocumentId"
+                                     OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
+                                     OnCancel="@(() => showSetoffDocumentModal = false)" />
+}
 
 @* 銷售訂單編輯 Modal（由 OrderTab 開啟） *@
-<SalesOrderEditModalComponent @ref="salesOrderEditModal"
-                              IsVisible="@showSalesOrderModal"
-                              IsVisibleChanged="@((bool visible) => showSalesOrderModal = visible)"
-                              SalesOrderId="@selectedSalesOrderId"
-                              OnCancel="@(() => showSalesOrderModal = false)" />
+@if (showSalesOrderModal)
+{
+    <SalesOrderEditModalComponent @ref="salesOrderEditModal"
+                                  IsVisible="@showSalesOrderModal"
+                                  IsVisibleChanged="@((bool visible) => showSalesOrderModal = visible)"
+                                  SalesOrderId="@selectedSalesOrderId"
+                                  OnCancel="@(() => showSalesOrderModal = false)" />
+}
 
 @code {
     // ===== 必要參數 =====
@@ -1276,6 +1285,13 @@
                 return;
             }
             
+            // 確保退貨單 Modal 組件已渲染（@if guard 下需要先設定 flag 再等待渲染）
+            if (!showSalesReturnModal)
+            {
+                showSalesReturnModal = true;
+                await Task.Yield(); // 讓 Blazor 完成 SalesReturnEditModalComponent 的渲染
+            }
+
             // 直接開啟退貨單 Modal，使用 Entity.Id 作為出貨單 ID（最可靠的來源）
             await salesReturnEditModal!.ShowAddModalWithPrefilledDelivery(
                 editModalComponent.Entity.CustomerId,

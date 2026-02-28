@@ -7,8 +7,9 @@
 @using System.ComponentModel.DataAnnotations
 @inject NavigationManager Navigation
 @inject IHttpContextAccessor HttpContextAccessor
+@inject ICompanyService CompanyService
 
-<PageTitle>登入 - 美莊磚業</PageTitle>
+<PageTitle>登入@(companyName != null ? $" - {companyName}" : "")</PageTitle>
 
 <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
     <div class="container">
@@ -18,8 +19,11 @@
                     <div class="card-body p-5">
                         <!-- 公司 Logo 和標題 -->
                         <div class="text-center mb-4">
-                            <h2 class="h3 text-primary fw-bold">美莊磚業</h2>
-                            <p class="text-muted">企業資源管理系統</p>
+                            <h2 class="h3 text-primary fw-bold">@(companyName ?? "企業資源管理系統")</h2>
+                            @if (companyName != null)
+                            {
+                                <p class="text-muted">企業資源管理系統</p>
+                            }
                         </div>
 
                         <!-- 登入表單 -->
@@ -73,7 +77,7 @@
                         <!-- 版權資訊 -->
                         <div class="text-center mt-4">
                             <small class="text-muted">
-                                © @DateTime.Now.Year 美莊磚業. All rights reserved.
+                                © @DateTime.Now.Year @(companyName != null ? $"{companyName}." : "") All rights reserved.
                             </small>
                         </div>
                     </div>
@@ -85,6 +89,7 @@
 
 @code {
     private string errorMessage = string.Empty;
+    private string? companyName;
 
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
@@ -94,6 +99,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // 載入預設公司名稱
+        var company = await CompanyService.GetPrimaryCompanyAsync();
+        companyName = company?.CompanyName;
+
         // 檢查是否已經登入
         var httpContext = HttpContextAccessor.HttpContext;
         if (httpContext?.User?.Identity?.IsAuthenticated == true)

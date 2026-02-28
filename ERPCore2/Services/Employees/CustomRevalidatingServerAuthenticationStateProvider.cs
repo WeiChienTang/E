@@ -38,7 +38,7 @@ namespace ERPCore2.Services
 
                 using var scope = _scopeFactory.CreateScope();
                 var employeeService = scope.ServiceProvider.GetRequiredService<IEmployeeService>();
-                
+
                 // 驗證員工是否仍然存在
                 var employee = await employeeService.GetByIdAsync(userId);
                 if (employee == null)

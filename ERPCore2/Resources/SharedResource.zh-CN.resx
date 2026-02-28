@@ -798,4 +798,70 @@
   <data name="Column.OriginalDiscount" xml:space="preserve"><value>当初折扣(%)</value></data>
   <data name="Column.SalesReturnQuantity" xml:space="preserve"><value>退货数量</value></data>
   <data name="Column.MaterialCodeName" xml:space="preserve"><value>材料编号/名称</value></data>
+  <!-- ===== Employee Field keys ===== -->
+  <data name="Field.EmployeeCode" xml:space="preserve"><value>员工编号</value></data>
+  <data name="Field.FullName" xml:space="preserve"><value>姓名</value></data>
+  <data name="Field.Gender" xml:space="preserve"><value>性别</value></data>
+  <data name="Field.Birthday" xml:space="preserve"><value>出生日期</value></data>
+  <data name="Field.IdNumber" xml:space="preserve"><value>身份证号码</value></data>
+  <data name="Field.PhoneNumber" xml:space="preserve"><value>手机号码</value></data>
+  <data name="Field.EmergencyContact" xml:space="preserve"><value>紧急联系人</value></data>
+  <data name="Field.EmergencyPhone" xml:space="preserve"><value>紧急联系电话</value></data>
+  <data name="Field.HireDate" xml:space="preserve"><value>入职日期</value></data>
+  <data name="Field.ResignDate" xml:space="preserve"><value>离职日期</value></data>
+  <data name="Field.EmploymentStatus" xml:space="preserve"><value>在职状态</value></data>
+  <data name="Field.LicenseName" xml:space="preserve"><value>证照名称</value></data>
+  <data name="Field.LicenseNumber" xml:space="preserve"><value>证照编号</value></data>
+  <data name="Field.IssuingAuthority" xml:space="preserve"><value>颁发机构</value></data>
+  <data name="Field.IssueDate" xml:space="preserve"><value>取得日期</value></data>
+  <data name="Field.ExpiryDate" xml:space="preserve"><value>到期日</value></data>
+  <data name="Field.ReminderDays" xml:space="preserve"><value>到期提醒天数</value></data>
+  <data name="Field.CourseName" xml:space="preserve"><value>课程名称</value></data>
+  <data name="Field.TrainingDate" xml:space="preserve"><value>培训日期</value></data>
+  <data name="Field.CompletionDate" xml:space="preserve"><value>完成日期</value></data>
+  <data name="Field.TrainingHours" xml:space="preserve"><value>培训时数</value></data>
+  <data name="Field.TrainingOrganization" xml:space="preserve"><value>培训机构</value></data>
+  <data name="Field.TrainingResult" xml:space="preserve"><value>培训结果</value></data>
+  <data name="Field.ToolName" xml:space="preserve"><value>工具名称</value></data>
+  <data name="Field.SerialModel" xml:space="preserve"><value>序号/型号</value></data>
+  <data name="Field.AssignDate" xml:space="preserve"><value>配发日期</value></data>
+  <data name="Field.ReturnDate" xml:space="preserve"><value>归还日期</value></data>
+  <!-- ===== Employee Column keys ===== -->
+  <data name="Column.CourseName" xml:space="preserve"><value>课程名称</value></data>
+  <data name="Column.TrainingDate" xml:space="preserve"><value>培训日期</value></data>
+  <data name="Column.CompletionDate" xml:space="preserve"><value>完成日期</value></data>
+  <data name="Column.TrainingHours" xml:space="preserve"><value>时数</value></data>
+  <data name="Column.TrainingOrganization" xml:space="preserve"><value>培训机构</value></data>
+  <data name="Column.TrainingResult" xml:space="preserve"><value>结果</value></data>
+  <data name="Column.LicenseName" xml:space="preserve"><value>证照名称</value></data>
+  <data name="Column.LicenseNumber" xml:space="preserve"><value>证照编号</value></data>
+  <data name="Column.IssueDate" xml:space="preserve"><value>取得日期</value></data>
+  <data name="Column.ExpiryDate" xml:space="preserve"><value>到期日</value></data>
+  <data name="Column.LicenseStatus" xml:space="preserve"><value>状态</value></data>
+  <data name="Column.ToolName" xml:space="preserve"><value>工具名称</value></data>
+  <data name="Column.SerialModel" xml:space="preserve"><value>序号/型号</value></data>
+  <data name="Column.AssignDate" xml:space="preserve"><value>配发日期</value></data>
+  <data name="Column.ReturnDate" xml:space="preserve"><value>归还日期</value></data>
+  <!-- ===== Employee Tab keys ===== -->
+  <data name="Tab.EmployeeData" xml:space="preserve"><value>员工资料</value></data>
+  <data name="Tab.VehicleInfo" xml:space="preserve"><value>车辆信息</value></data>
+  <data name="Tab.PersonalTools" xml:space="preserve"><value>个人工具</value></data>
+  <data name="Tab.Training" xml:space="preserve"><value>教育培训</value></data>
+  <!-- ===== Employee Label keys ===== -->
+  <data name="Label.TrainingRecords" xml:space="preserve"><value>培训记录</value></data>
+  <data name="Label.LicenseManagement" xml:space="preserve"><value>证照管理</value></data>
+  <data name="Label.PermanentValid" xml:space="preserve"><value>永久有效</value></data>
+  <data name="Label.Valid" xml:space="preserve"><value>有效</value></data>
+  <data name="Label.Expired" xml:space="preserve"><value>已过期</value></data>
+  <data name="Label.ExpiringSoon" xml:space="preserve"><value>即将到期</value></data>
+  <!-- ===== Employee Button keys ===== -->
+  <data name="Button.AddTrainingRecord" xml:space="preserve"><value>新增培训记录</value></data>
+  <data name="Button.AddLicense" xml:space="preserve"><value>新增证照</value></data>
+  <data name="Button.AddToolRecord" xml:space="preserve"><value>新增工具记录</value></data>
+  <!-- ===== Employee Message keys ===== -->
+  <data name="Message.NoTrainingRecords" xml:space="preserve"><value>暂无培训记录</value></data>
+  <data name="Message.NoLicenseRecords" xml:space="preserve"><value>暂无证照记录</value></data>
+  <data name="Message.NoToolRecords" xml:space="preserve"><value>暂无工具配发记录</value></data>
+  <!-- ===== Employee Placeholder keys ===== -->
+  <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>例：通过、优秀、不合格</value></data>
 </root>

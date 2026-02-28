@@ -1,7 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.SeedDataManager.Interfaces;
 using ERPCore2.Data.SeedDataManager.Seeders;
-using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -35,25 +34,18 @@ namespace ERPCore2.Data
                 {
                     // 取得所有種子器並按順序執行
                     var seeders = GetAllSeeders().OrderBy(s => s.Order).ToList();
-                    ConsoleHelper.WriteInfo($"共 {seeders.Count} 個 Seeder 待執行");
 
                     foreach (var seeder in seeders)
                     {
-                        var sw = System.Diagnostics.Stopwatch.StartNew();
-                        ConsoleHelper.WriteInfo($"  [{seeder.Order:D2}] 執行 {seeder.Name}...");
                         await seeder.SeedAsync(context);
-                        sw.Stop();
-                        ConsoleHelper.WriteSuccess($"  [{seeder.Order:D2}] {seeder.Name} 完成（{sw.Elapsed.TotalSeconds:F1}s）");
                     }
 
                     // 提交交易
-                    ConsoleHelper.WriteInfo("提交交易中...");
                     await transaction.CommitAsync();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // 回滾交易
-                    ConsoleHelper.WriteError($"Seeder 執行失敗，回滾交易：{ex.Message}");
                     await transaction.RollbackAsync();
                     throw;
                 }
@@ -72,26 +64,21 @@ namespace ERPCore2.Data
             // 資料庫不存在 → 全部從頭建立
             if (!await databaseCreator.ExistsAsync())
             {
-                ConsoleHelper.WriteWarning("資料庫不存在，建立全新資料庫及所有資料表...");
                 await databaseCreator.CreateAsync();
                 await databaseCreator.CreateTablesAsync();
                 await SyncMigrationHistoryAsync(context);
-                ConsoleHelper.WriteSuccess("全新資料庫初始化完成");
                 return;
             }
 
             // 資料庫存在但完全空白 → 建立所有資料表
             if (!await databaseCreator.HasTablesAsync())
             {
-                ConsoleHelper.WriteWarning("資料庫為空，建立所有資料表...");
                 await databaseCreator.CreateTablesAsync();
                 await SyncMigrationHistoryAsync(context);
-                ConsoleHelper.WriteSuccess("空白資料庫初始化完成");
                 return;
             }
 
             // 資料庫有現有資料表 → 正常套用待處理的 Migration
-            ConsoleHelper.WriteInfo("現有資料庫，執行 MigrateAsync...");
             await context.Database.MigrateAsync();
         }
 
@@ -123,7 +110,6 @@ namespace ERPCore2.Data
                     migrationId, "9.0.0");
             }
 
-            ConsoleHelper.WriteSuccess($"已同步 {allMigrations.Count} 個 Migration 紀錄至歷史表");
         }
 
         /// <summary>

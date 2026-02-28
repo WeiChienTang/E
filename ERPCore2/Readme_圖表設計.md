@@ -96,7 +96,7 @@ AppDbContext（Customers / SalesDeliveries / SalesReturns 等）
 | `Models/Charts/ChartDataItem.cs` | 通用圖表資料點 `ChartDataItem` + Drill-down 明細 `ChartDetailItem` |
 | `Models/Charts/ChartIds.cs` | 各模組圖表 ID 常數 |
 | `Models/Charts/ChartDefinition.cs` | `ChartDefinition` 模型 + `ChartCategory` 常數 + `ChartSeriesTypeInfo` |
-| `Data/Charts/ChartRegistry.cs` | 全域圖表登記表 |
+| `Data/Charts/ChartRegistry.cs` | 全域圖表登記表（彙總器，只呼叫各模組的 `Register()`） |
 | `Components/Shared/Chart/GenericChartModalComponent.razor` | 通用圖表 Modal（含圖表類型切換、Drill-down 明細面板） |
 | `Components/Shared/Chart/GenericChartModalComponent.razor.css` | 圖表 Modal 專用 CSS（tab 按鈕樣式） |
 
@@ -106,6 +106,7 @@ AppDbContext（Customers / SalesDeliveries / SalesReturns 等）
 |------|------|
 | `Services/Customers/ICustomerChartService.cs` | 圖表查詢 + Drill-down 明細查詢方法定義 |
 | `Services/Customers/CustomerChartService.cs` | EF Core 查詢實作 |
+| `Services/Customers/CustomerChartDefinitions.cs` | 客戶模組圖表定義（`Register()` 登記至 ChartRegistry） |
 | `Components/Pages/Customers/CustomerChartModalComponent.razor` | 薄包裝器（摘要卡片 + 呼叫 GenericChartModalComponent） |
 | `Data/ServiceRegistration.cs` | DI 容器中的 Service 註冊 |
 | `Data/Navigation/NavigationConfig.cs` | 客戶群組下的 Action Item |
@@ -376,9 +377,47 @@ for (int i = months - 1; i >= 0; i--)
 
 ---
 
-## 7. ChartRegistry 登記方式
+## 7. 圖表定義架構（模組各自擁有）
+
+圖表定義採**模組各自擁有**的設計：每個模組在自己的 `Services/[Module]/` 目錄下建立 `*ChartDefinitions.cs`，`ChartRegistry.cs` 只做彙總呼叫。
+
+### ChartRegistry.cs（彙總器，不含任何圖表定義）
 
 位置：`Data/Charts/ChartRegistry.cs`
+
+```csharp
+public static class ChartRegistry
+{
+    private static readonly List<ChartDefinition> _definitions = new();
+    private static bool _initialized = false;
+    private static readonly object _lock = new();
+
+    public static void EnsureInitialized() { ... }  // 雙檢查鎖定，執行緒安全
+
+    private static void Initialize()
+    {
+        CustomerChartDefinitions.Register(_definitions);
+        // VendorChartDefinitions.Register(_definitions);    // 未來廠商圖表
+        // InventoryChartDefinitions.Register(_definitions); // 未來庫存圖表
+    }
+
+    public static List<ChartDefinition> GetByCategory(string category) { ... }
+}
+```
+
+### 模組圖表定義檔（以客戶為例）
+
+位置：`Services/Customers/CustomerChartDefinitions.cs`
+
+```csharp
+public static class CustomerChartDefinitions
+{
+    public static void Register(List<ChartDefinition> definitions)
+    {
+        // 此模組所有圖表在此定義，以 definitions.Add() 登記
+    }
+}
+```
 
 ### ChartDefinition 關鍵欄位
 
@@ -398,11 +437,11 @@ public class ChartDefinition
 }
 ```
 
-### 登記範例（含 Drill-down）
+### 定義範例（均寫在模組的 `Register()` 方法內）
 
 ```csharp
 // 一般圖表（含 Drill-down，使用預設明細欄位：代碼 + 名稱）
-_definitions.Add(new ChartDefinition
+definitions.Add(new ChartDefinition
 {
     ChartId            = ChartIds.CustomerByAccountManager,   // "CU001"
     Title              = "依業務負責人分布",
@@ -415,7 +454,7 @@ _definitions.Add(new ChartDefinition
 });
 
 // 金額圖表（IsMoneyChart = true → Y 軸千分位；自訂明細欄位）
-_definitions.Add(new ChartDefinition
+definitions.Add(new ChartDefinition
 {
     ChartId            = ChartIds.CustomerTopSalesByAmount,
     Title              = "客戶銷售金額排行 Top 10",
@@ -434,7 +473,7 @@ _definitions.Add(new ChartDefinition
 });
 
 // 時間序列圖（不支援 Drill-down，省略 DetailFetcher）
-_definitions.Add(new ChartDefinition
+definitions.Add(new ChartDefinition
 {
     ChartId            = ChartIds.CustomerMonthlyTrend,
     Title              = "每月新增趨勢",
@@ -733,10 +772,12 @@ public async Task<List<ChartDetailItem>> GetCustomerDetailsByRegionAsync(string 
 public const string CustomerByRegion = "CU010";
 ```
 
-### (4) 在 ChartRegistry.cs 登記
+### (4) 在 CustomerChartDefinitions.cs 的 `Register()` 內新增
+
+位置：`Services/Customers/CustomerChartDefinitions.cs`
 
 ```csharp
-_definitions.Add(new ChartDefinition
+definitions.Add(new ChartDefinition
 {
     ChartId            = ChartIds.CustomerByRegion,
     Title              = "依地區分布",
@@ -750,7 +791,7 @@ _definitions.Add(new ChartDefinition
 });
 ```
 
-完成。`GenericChartModalComponent` 會自動讀取新登記的圖表並顯示頁籤，不需修改 UI 組件。
+完成。`GenericChartModalComponent` 會自動讀取新登記的圖表並顯示頁籤，不需修改 UI 組件或 `ChartRegistry.cs`。
 
 ---
 
@@ -781,20 +822,45 @@ public const string SupplierMonthlyTrend = "SU002";
 // ...
 ```
 
-### 4. 在 ChartRegistry.cs 登記
+### 4. 建立 SupplierChartDefinitions.cs
+
+位置：`Services/Suppliers/SupplierChartDefinitions.cs`
 
 ```csharp
-_definitions.Add(new ChartDefinition
+using ApexCharts;
+using ERPCore2.Models.Charts;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace ERPCore2.Services.Suppliers;
+
+public static class SupplierChartDefinitions
 {
-    ChartId            = ChartIds.SupplierByCategory,
-    Title              = "依分類分布",
-    Category           = ChartCategory.Supplier,
-    SortOrder          = 1,
-    DefaultSeriesType  = SeriesType.Donut,
-    AllowedSeriesTypes = new() { SeriesType.Donut, SeriesType.Pie, SeriesType.Bar },
-    DataFetcher        = sp => sp.GetRequiredService<ISupplierChartService>().GetSuppliersByCategoryAsync(),
-    DetailFetcher      = (sp, label) => sp.GetRequiredService<ISupplierChartService>().GetSupplierDetailsByCategoryAsync(label)
-});
+    public static void Register(List<ChartDefinition> definitions)
+    {
+        definitions.Add(new ChartDefinition
+        {
+            ChartId            = ChartIds.SupplierByCategory,
+            Title              = "依分類分布",
+            Category           = ChartCategory.Supplier,
+            SortOrder          = 1,
+            DefaultSeriesType  = SeriesType.Donut,
+            AllowedSeriesTypes = new() { SeriesType.Donut, SeriesType.Pie, SeriesType.Bar },
+            DataFetcher        = sp => sp.GetRequiredService<ISupplierChartService>().GetSuppliersByCategoryAsync(),
+            DetailFetcher      = (sp, label) => sp.GetRequiredService<ISupplierChartService>().GetSupplierDetailsByCategoryAsync(label)
+        });
+        // ... 其他廠商圖表
+    }
+}
+```
+
+然後在 `Data/Charts/ChartRegistry.cs` 的 `Initialize()` 加入一行：
+
+```csharp
+private static void Initialize()
+{
+    CustomerChartDefinitions.Register(_definitions);
+    SupplierChartDefinitions.Register(_definitions);   // ← 新增這行
+}
 ```
 
 ### 5. 建立薄包裝器
@@ -857,4 +923,4 @@ public void OpenSupplierCharts()
 
 ---
 
-*最後更新：2026-02-27*
+*最後更新：2026-02-28（ChartRegistry 重構為模組各自擁有圖表定義）*

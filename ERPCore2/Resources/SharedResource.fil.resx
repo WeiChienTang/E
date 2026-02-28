@@ -798,4 +798,70 @@
   <data name="Column.OriginalDiscount" xml:space="preserve"><value>Orihinal na Diskwento(%)</value></data>
   <data name="Column.SalesReturnQuantity" xml:space="preserve"><value>Return Qty</value></data>
   <data name="Column.MaterialCodeName" xml:space="preserve"><value>Material Code/Name</value></data>
+  <!-- ===== Employee Field keys ===== -->
+  <data name="Field.EmployeeCode" xml:space="preserve"><value>Employee Code</value></data>
+  <data name="Field.FullName" xml:space="preserve"><value>Buong Pangalan</value></data>
+  <data name="Field.Gender" xml:space="preserve"><value>Kasarian</value></data>
+  <data name="Field.Birthday" xml:space="preserve"><value>Petsa ng Kapanganakan</value></data>
+  <data name="Field.IdNumber" xml:space="preserve"><value>ID Number</value></data>
+  <data name="Field.PhoneNumber" xml:space="preserve"><value>Numero ng Telepono</value></data>
+  <data name="Field.EmergencyContact" xml:space="preserve"><value>Emergency Contact</value></data>
+  <data name="Field.EmergencyPhone" xml:space="preserve"><value>Emergency Phone</value></data>
+  <data name="Field.HireDate" xml:space="preserve"><value>Petsa ng Pagtatrabaho</value></data>
+  <data name="Field.ResignDate" xml:space="preserve"><value>Petsa ng Pagpapaalis</value></data>
+  <data name="Field.EmploymentStatus" xml:space="preserve"><value>Katayuan ng Trabaho</value></data>
+  <data name="Field.LicenseName" xml:space="preserve"><value>Pangalan ng Lisensya</value></data>
+  <data name="Field.LicenseNumber" xml:space="preserve"><value>Numero ng Lisensya</value></data>
+  <data name="Field.IssuingAuthority" xml:space="preserve"><value>Nag-isyung Awtoridad</value></data>
+  <data name="Field.IssueDate" xml:space="preserve"><value>Petsa ng Pag-isyu</value></data>
+  <data name="Field.ExpiryDate" xml:space="preserve"><value>Petsa ng Pagka-expire</value></data>
+  <data name="Field.ReminderDays" xml:space="preserve"><value>Mga Araw ng Paalala Bago Mag-expire</value></data>
+  <data name="Field.CourseName" xml:space="preserve"><value>Pangalan ng Kurso</value></data>
+  <data name="Field.TrainingDate" xml:space="preserve"><value>Petsa ng Pagsasanay</value></data>
+  <data name="Field.CompletionDate" xml:space="preserve"><value>Petsa ng Pagkumpleto</value></data>
+  <data name="Field.TrainingHours" xml:space="preserve"><value>Oras ng Pagsasanay</value></data>
+  <data name="Field.TrainingOrganization" xml:space="preserve"><value>Organisasyong Nagsasanay</value></data>
+  <data name="Field.TrainingResult" xml:space="preserve"><value>Resulta ng Pagsasanay</value></data>
+  <data name="Field.ToolName" xml:space="preserve"><value>Pangalan ng Kagamitan</value></data>
+  <data name="Field.SerialModel" xml:space="preserve"><value>Serial / Model No.</value></data>
+  <data name="Field.AssignDate" xml:space="preserve"><value>Petsa ng Pagtatalaga</value></data>
+  <data name="Field.ReturnDate" xml:space="preserve"><value>Petsa ng Pagbabalik</value></data>
+  <!-- ===== Employee Column keys ===== -->
+  <data name="Column.CourseName" xml:space="preserve"><value>Pangalan ng Kurso</value></data>
+  <data name="Column.TrainingDate" xml:space="preserve"><value>Petsa ng Pagsasanay</value></data>
+  <data name="Column.CompletionDate" xml:space="preserve"><value>Petsa ng Pagkumpleto</value></data>
+  <data name="Column.TrainingHours" xml:space="preserve"><value>Oras</value></data>
+  <data name="Column.TrainingOrganization" xml:space="preserve"><value>Organisasyon</value></data>
+  <data name="Column.TrainingResult" xml:space="preserve"><value>Resulta</value></data>
+  <data name="Column.LicenseName" xml:space="preserve"><value>Pangalan ng Lisensya</value></data>
+  <data name="Column.LicenseNumber" xml:space="preserve"><value>Numero ng Lisensya</value></data>
+  <data name="Column.IssueDate" xml:space="preserve"><value>Petsa ng Pag-isyu</value></data>
+  <data name="Column.ExpiryDate" xml:space="preserve"><value>Petsa ng Pagka-expire</value></data>
+  <data name="Column.LicenseStatus" xml:space="preserve"><value>Katayuan</value></data>
+  <data name="Column.ToolName" xml:space="preserve"><value>Pangalan ng Kagamitan</value></data>
+  <data name="Column.SerialModel" xml:space="preserve"><value>Serial / Model</value></data>
+  <data name="Column.AssignDate" xml:space="preserve"><value>Petsa ng Pagtatalaga</value></data>
+  <data name="Column.ReturnDate" xml:space="preserve"><value>Petsa ng Pagbabalik</value></data>
+  <!-- ===== Employee Tab keys ===== -->
+  <data name="Tab.EmployeeData" xml:space="preserve"><value>Impormasyon ng Empleyado</value></data>
+  <data name="Tab.VehicleInfo" xml:space="preserve"><value>Impormasyon ng Sasakyan</value></data>
+  <data name="Tab.PersonalTools" xml:space="preserve"><value>Personal na Kagamitan</value></data>
+  <data name="Tab.Training" xml:space="preserve"><value>Pagsasanay</value></data>
+  <!-- ===== Employee Label keys ===== -->
+  <data name="Label.TrainingRecords" xml:space="preserve"><value>Mga Rekord ng Pagsasanay</value></data>
+  <data name="Label.LicenseManagement" xml:space="preserve"><value>Pamamahala ng Lisensya</value></data>
+  <data name="Label.PermanentValid" xml:space="preserve"><value>Permanente</value></data>
+  <data name="Label.Valid" xml:space="preserve"><value>Wasto</value></data>
+  <data name="Label.Expired" xml:space="preserve"><value>Nag-expire na</value></data>
+  <data name="Label.ExpiringSoon" xml:space="preserve"><value>Malapit nang Mag-expire</value></data>
+  <!-- ===== Employee Button keys ===== -->
+  <data name="Button.AddTrainingRecord" xml:space="preserve"><value>Magdagdag ng Rekord ng Pagsasanay</value></data>
+  <data name="Button.AddLicense" xml:space="preserve"><value>Magdagdag ng Lisensya</value></data>
+  <data name="Button.AddToolRecord" xml:space="preserve"><value>Magdagdag ng Rekord ng Kagamitan</value></data>
+  <!-- ===== Employee Message keys ===== -->
+  <data name="Message.NoTrainingRecords" xml:space="preserve"><value>Walang rekord ng pagsasanay</value></data>
+  <data name="Message.NoLicenseRecords" xml:space="preserve"><value>Walang rekord ng lisensya</value></data>
+  <data name="Message.NoToolRecords" xml:space="preserve"><value>Walang rekord ng kagamitan</value></data>
+  <!-- ===== Employee Placeholder keys ===== -->
+  <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>hal.: Pumasa, Mahusay, Bumagsak</value></data>
 </root>

@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using ERPCore2.Helpers;
 using ERPCore2.Models.Reports.FilterCriteria;
 
 namespace ERPCore2.Models.Reports.FilterTemplates;
@@ -21,12 +20,10 @@ public static class FilterTemplateRegistry
     {
         if (_isInitialized) return;
 
-        ConsoleHelper.WriteDebug("[FilterTemplateRegistry] Initialize 開始");
         lock (_initLock)
         {
             if (_isInitialized) return;
 
-        ConsoleHelper.WriteDebug("[FilterTemplateRegistry] 進入 lock，開始註冊報表配置...");
         // ==================== 客戶報表 ====================
 
         // 客戶對帳單（含期初餘額、出貨/退貨/收款明細、期末餘額）
@@ -753,7 +750,6 @@ public static class FilterTemplateRegistry
         });
 
             _isInitialized = true;
-            ConsoleHelper.WriteDebug($"[FilterTemplateRegistry] Initialize 完成，共 {_configs.Count} 個報表配置");
         }
     }
 

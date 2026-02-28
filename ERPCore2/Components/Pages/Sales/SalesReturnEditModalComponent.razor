@@ -67,19 +67,25 @@
 />
 
 @* 出貨單編輯 Modal *@
-<SalesDeliveryEditModalComponent @ref="salesDeliveryEditModal"
-                                 IsVisible="@showSalesDeliveryModal"
-                                 IsVisibleChanged="@((bool visible) => showSalesDeliveryModal = visible)"
-                                 SalesDeliveryId="@selectedSalesDeliveryId"
-                                 OnCancel="@(() => showSalesDeliveryModal = false)" />
+@if (showSalesDeliveryModal)
+{
+    <SalesDeliveryEditModalComponent @ref="salesDeliveryEditModal"
+                                     IsVisible="@showSalesDeliveryModal"
+                                     IsVisibleChanged="@((bool visible) => showSalesDeliveryModal = visible)"
+                                     SalesDeliveryId="@selectedSalesDeliveryId"
+                                     OnCancel="@(() => showSalesDeliveryModal = false)" />
+}
 
 @* 沖款單編輯 Modal *@
-<SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
-                                 IsVisible="@showSetoffDocumentModal"
-                                 IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
-                                 SetoffDocumentId="@selectedSetoffDocumentId"
-                                 OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
-                                 OnCancel="@(() => showSetoffDocumentModal = false)" />
+@if (showSetoffDocumentModal)
+{
+    <SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
+                                     IsVisible="@showSetoffDocumentModal"
+                                     IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
+                                     SetoffDocumentId="@selectedSetoffDocumentId"
+                                     OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
+                                     OnCancel="@(() => showSetoffDocumentModal = false)" />
+}
 
 @code {
     // ===== 必要參數 =====

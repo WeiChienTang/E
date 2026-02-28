@@ -164,44 +164,33 @@
 
     protected override async Task OnInitializedAsync()
     {
-        ConsoleHelper.WriteDebug("[MainLayout] OnInitializedAsync 開始");
-
         // 初始化報表篩選模板註冊表（純記憶體操作，SSR / Circuit 皆需要）
-        ConsoleHelper.WriteDebug("[MainLayout] 呼叫 FilterTemplateInitializer.EnsureInitialized...");
         FilterTemplateInitializer.EnsureInitialized();
-        ConsoleHelper.WriteDebug("[MainLayout] FilterTemplateInitializer.EnsureInitialized 完成");
 
         // SSR 預渲染：跳過 DB 查詢與 ActionRegistry 初始化，等 Circuit 連線後再執行
         if (!RendererInfo.IsInteractive)
         {
-            ConsoleHelper.WriteDebug("[MainLayout] SSR 預渲染，跳過 DB 初始化");
             return;
         }
 
         try
         {
             // 預先載入當前使用者的所有權限到快取
-            ConsoleHelper.WriteDebug("[MainLayout] 呼叫 GetCurrentEmployeeIdAsync...");
             var employeeId = await NavigationPermissionService.GetCurrentEmployeeIdAsync();
-            ConsoleHelper.WriteDebug($"[MainLayout] GetCurrentEmployeeIdAsync 完成，EmployeeId={employeeId}");
             if (employeeId > 0)
             {
                 // 這會觸發一次資料庫查詢，並將結果快取
-                ConsoleHelper.WriteDebug("[MainLayout] 呼叫 GetAllEmployeePermissionsAsync...");
                 _ = await NavigationPermissionService.GetAllEmployeePermissionsAsync(employeeId);
-                ConsoleHelper.WriteDebug("[MainLayout] GetAllEmployeePermissionsAsync 完成");
             }
         }
         catch (Exception ex)
         {
-            ConsoleHelper.WriteError($"[MainLayout] 預載權限失敗：{ex.Message}");
+            _ = ex;
             // 忽略預載錯誤，不影響主要功能
         }
 
         // 初始化 Action 註冊表
-        ConsoleHelper.WriteDebug("[MainLayout] 初始化 ActionRegistry...");
         actionRegistry = NavigationActionHelper.CreateRegistry();
-        ConsoleHelper.WriteDebug("[MainLayout] ActionRegistry 初始化完成");
 
         // 註册所有 Action 處理器
         actionRegistry.Register("OpenAccountsReceivableReport", OpenAccountsReceivableReport);
@@ -221,7 +210,6 @@
         actionRegistry.Register("OpenVehicleReportIndex", OpenVehicleReportIndex);
         actionRegistry.Register("OpenWasteReportIndex", OpenWasteReportIndex);
         // actionRegistry.Register("OpenAnotherModal", OpenAnotherModal);
-        ConsoleHelper.WriteDebug("[MainLayout] OnInitializedAsync 完成");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

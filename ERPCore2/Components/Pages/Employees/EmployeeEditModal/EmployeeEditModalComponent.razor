@@ -150,8 +150,8 @@
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
-                .AddManager<Department>(nameof(Employee.DepartmentId), "部門")
-                .AddManager<EmployeePosition>(nameof(Employee.EmployeePositionId), "職位")
+                .AddManager<Department>(nameof(Employee.DepartmentId), L["Entity.Department"].ToString())
+                .AddManager<EmployeePosition>(nameof(Employee.EmployeePositionId), L["Entity.EmployeePosition"].ToString())
                 .Build();
             departmentModalManager = modalManagers.Get<Department>(nameof(Employee.DepartmentId));
             positionModalManager = modalManagers.Get<EmployeePosition>(nameof(Employee.EmployeePositionId));
@@ -386,14 +386,14 @@
                     e => e.DepartmentId, e => e.EmployeePositionId, e => e.HireDate, e => e.ResignationDate, e => e.EmploymentStatus)
                 .AddToSection(FormSectionNames.AdditionalData,
                     e => e.Remarks)
-                .GroupIntoTab("員工資料", "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData);
+                .GroupIntoTab(L["Tab.EmployeeData"].ToString(), "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData);
 
             if (isVehiclesEnabled)
-                builder = builder.GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent());
+                builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent());
 
             var layout = builder
-                .GroupIntoCustomTab("個人工具", "bi-tools", CreateToolTabContent())
-                .GroupIntoCustomTab("教育訓練", "bi-mortarboard", CreateTrainingTabContent())
+                .GroupIntoCustomTab(L["Tab.PersonalTools"].ToString(), "bi-tools", CreateToolTabContent())
+                .GroupIntoCustomTab(L["Tab.Training"].ToString(), "bi-mortarboard", CreateTrainingTabContent())
                 .BuildAll();
 
             formSections = layout.FieldSections;

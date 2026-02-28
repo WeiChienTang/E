@@ -10,25 +10,21 @@ namespace ERPCore2.Helpers
     {
         public override Task OnCircuitOpenedAsync(Circuit circuit, CancellationToken cancellationToken)
         {
-            ConsoleHelper.WriteDebug($"[Circuit] OnCircuitOpenedAsync - Id={circuit.Id}");
             return base.OnCircuitOpenedAsync(circuit, cancellationToken);
         }
 
         public override Task OnConnectionUpAsync(Circuit circuit, CancellationToken cancellationToken)
         {
-            ConsoleHelper.WriteDebug($"[Circuit] OnConnectionUpAsync - Id={circuit.Id}");
             return base.OnConnectionUpAsync(circuit, cancellationToken);
         }
 
         public override Task OnConnectionDownAsync(Circuit circuit, CancellationToken cancellationToken)
         {
-            ConsoleHelper.WriteDebug($"[Circuit] OnConnectionDownAsync - Id={circuit.Id}");
             return base.OnConnectionDownAsync(circuit, cancellationToken);
         }
 
         public override Task OnCircuitClosedAsync(Circuit circuit, CancellationToken cancellationToken)
         {
-            ConsoleHelper.WriteDebug($"[Circuit] OnCircuitClosedAsync - Id={circuit.Id}");
             return base.OnCircuitClosedAsync(circuit, cancellationToken);
         }
     }

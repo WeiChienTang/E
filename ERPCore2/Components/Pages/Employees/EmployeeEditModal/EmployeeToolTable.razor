@@ -1,16 +1,17 @@
 @* 可重用的員工工具配給列表面板 - 用於員工 EditModal 的 Tab 頁籤中 *@
 @using ERPCore2.Data.Entities
+@inject IStringLocalizer<SharedResource> L
 
 <div class="employee-tool-table-panel">
     @* 工具列 *@
     <div class="d-flex justify-content-between align-items-center mb-2 px-1">
         @if (!IsReadOnly)
         {
-            <GenericButtonComponent Text="新增工具紀錄"
+            <GenericButtonComponent Text="@L["Button.AddToolRecord"]"
                                   Variant="ButtonVariant.DarkBlue"
                                   Size="ButtonSize.Small"
                                   OnClick="@HandleAddTool"
-                                  Title="新增一筆工具配給紀錄" />
+                                  Title="@L["Button.AddToolRecord"]" />
         }
         else
         {
@@ -31,7 +32,7 @@
                               ShowBuiltInActions="@(!IsReadOnly)"
                               ShowBuiltInDeleteButton="false"
                               EnableAutoEmptyRow="false"
-                              EmptyMessage="尚無工具配給紀錄"
+                              EmptyMessage="@L["Message.NoToolRecords"]"
                               CustomActionsTemplate="@GetActionsTemplate()"
                               ActionsColumnWidth="80px" />
 </div>
@@ -58,14 +59,14 @@
         {
             new InteractiveColumnDefinition
             {
-                Title = "工具名稱",
+                Title = L["Column.ToolName"],
                 PropertyName = nameof(EmployeeTool.ToolName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px"
             },
             new InteractiveColumnDefinition
             {
-                Title = "序號/型號",
+                Title = L["Column.SerialModel"],
                 PropertyName = nameof(EmployeeTool.ToolCode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
@@ -73,7 +74,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "配給日期",
+                Title = L["Column.AssignDate"],
                 PropertyName = nameof(EmployeeTool.AssignedDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",
@@ -86,7 +87,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "歸還日期",
+                Title = L["Column.ReturnDate"],
                 PropertyName = nameof(EmployeeTool.ReturnedDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",
@@ -99,7 +100,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "備註",
+                Title = L["Label.Remarks"],
                 PropertyName = nameof(EmployeeTool.Remarks),
                 ColumnType = InteractiveColumnType.Display,
                 NullDisplayText = "-"

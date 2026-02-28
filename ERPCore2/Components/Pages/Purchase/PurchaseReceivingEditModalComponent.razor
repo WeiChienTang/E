@@ -90,27 +90,36 @@
 }
 
 @* 進貨退出編輯 Modal *@
-<PurchaseReturnEditModalComponent @ref="purchaseReturnEditModal"
-                                 IsVisible="@showPurchaseReturnModal"
-                                 IsVisibleChanged="@((bool visible) => showPurchaseReturnModal = visible)"
-                                 PurchaseReturnId="@selectedPurchaseReturnId"
-                                 OnPurchaseReturnSaved="@HandlePurchaseReturnSaved"
-                                 OnCancel="@(() => showPurchaseReturnModal = false)" />
+@if (showPurchaseReturnModal)
+{
+    <PurchaseReturnEditModalComponent @ref="purchaseReturnEditModal"
+                                     IsVisible="@showPurchaseReturnModal"
+                                     IsVisibleChanged="@((bool visible) => showPurchaseReturnModal = visible)"
+                                     PurchaseReturnId="@selectedPurchaseReturnId"
+                                     OnPurchaseReturnSaved="@HandlePurchaseReturnSaved"
+                                     OnCancel="@(() => showPurchaseReturnModal = false)" />
+}
 
 @* 沖款單編輯 Modal *@
-<SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
-                                 IsVisible="@showSetoffDocumentModal"
-                                 IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
-                                 SetoffDocumentId="@selectedSetoffDocumentId"
-                                 OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
-                                 OnCancel="@(() => showSetoffDocumentModal = false)" />
+@if (showSetoffDocumentModal)
+{
+    <SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
+                                     IsVisible="@showSetoffDocumentModal"
+                                     IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
+                                     SetoffDocumentId="@selectedSetoffDocumentId"
+                                     OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
+                                     OnCancel="@(() => showSetoffDocumentModal = false)" />
+}
 
 @* 採購訂單編輯 Modal（從來源採購訂單 Tab 開啟） *@
-<PurchaseOrderEditModalComponent @ref="purchaseOrderEditModal"
-                                  IsVisible="@showPurchaseOrderModal"
-                                  IsVisibleChanged="@((bool visible) => showPurchaseOrderModal = visible)"
-                                  PurchaseOrderId="@selectedPurchaseOrderId"
-                                  OnCancel="@(() => showPurchaseOrderModal = false)" />
+@if (showPurchaseOrderModal)
+{
+    <PurchaseOrderEditModalComponent @ref="purchaseOrderEditModal"
+                                      IsVisible="@showPurchaseOrderModal"
+                                      IsVisibleChanged="@((bool visible) => showPurchaseOrderModal = visible)"
+                                      PurchaseOrderId="@selectedPurchaseOrderId"
+                                      OnCancel="@(() => showPurchaseOrderModal = false)" />
+}
 
 @code {
     // ===== 必要參數 =====
@@ -323,7 +332,12 @@
                 return;
             }
             
-            // 5. 呼叫進貨退出組件的公開方法
+            // 5. 呼叫進貨退出組件的公開方法（確保組件已渲染）
+            if (!showPurchaseReturnModal)
+            {
+                showPurchaseReturnModal = true;
+                await Task.Yield(); // 讓 Blazor 完成 PurchaseReturnEditModalComponent 的渲染
+            }
             await purchaseReturnEditModal!.ShowAddModalWithPrefilledReceiving(
                 editModalComponent.Entity.SupplierId,
                 PurchaseReceivingId.Value
@@ -375,7 +389,12 @@
                 return;
             }
             
-            // 5. 呼叫沖款單組件的公開方法
+            // 5. 呼叫沖款單組件的公開方法（確保組件已渲染）
+            if (!showSetoffDocumentModal)
+            {
+                showSetoffDocumentModal = true;
+                await Task.Yield(); // 讓 Blazor 完成 SetoffDocumentEditModalComponent 的渲染
+            }
             await setoffDocumentEditModal!.ShowAddModalWithPrefilledReceiving(
                 editModalComponent.Entity.SupplierId,
                 PurchaseReceivingId.Value

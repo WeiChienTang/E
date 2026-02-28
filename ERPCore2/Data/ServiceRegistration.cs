@@ -26,11 +26,9 @@ namespace ERPCore2.Data
                 options.UseSqlServer(connectionString,
                     sqlServerOptions => sqlServerOptions
                         .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
-                        .CommandTimeout(10)  // 10 秒命令逾時，避免 DB 不穩定時卡住 30 秒（預設值）
-                        .EnableRetryOnFailure(
-                            maxRetryCount: 1,
-                            maxRetryDelay: TimeSpan.FromSeconds(2),
-                            errorNumbersToAdd: new[] { 233 }))  // 233 = Shared Memory pipe broken（最多重試 1 次，避免延長載入時間）
+                        .CommandTimeout(10))  // 10 秒命令逾時，避免 DB 不穩定時卡住 30 秒（預設值）
+                        // EnableRetryOnFailure 已移除：即使 maxRetryCount=0/1，SqlServerRetryingExecutionStrategy
+                        // 仍會禁止全系統 50+ 個 BeginTransactionAsync() 呼叫，導致所有交易失敗。
                 .ConfigureWarnings(warnings =>
                     warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.SqlServerEventId.SavepointsDisabledBecauseOfMARS)));
             

@@ -25,8 +25,8 @@
   --warning-color-hover: #c2410c;
   --danger-color: #DC2626;
   --danger-color-hover: #b91c1c;
-  --info-color: #1E3A8A;
-  --info-color-hover: #1e40af;
+  --info-color: #0891B2;
+  --info-color-hover: #0e7490;
   --cyan-color: #06B6D4;
   --cyan-color-hover: #0891B2;
   --purple-color: #8B5CF6;
@@ -37,6 +37,18 @@
   --orange-color-hover: #EA580C;
   --black-color: #000000;
   --black-color-hover: #333333;
+
+  /* warning 深色文字（橙色系在淡背景上需要更深的文字色） */
+  --warning-text-dark: #9a3412;
+  --warning-text-hover: #7c2d12;
+
+  /* RGB 分量值（供 rgba() 透明度計算使用） */
+  --primary-blue-rgb: 30, 58, 138;
+  --text-secondary-rgb: 107, 114, 128;
+  --success-color-rgb: 5, 150, 105;
+  --warning-color-rgb: 234, 88, 12;
+  --danger-color-rgb: 220, 38, 38;
+  --info-color-rgb: 8, 145, 178;
 
     /* 背景色彩 */
   --bg-primary: #FFFFFF;

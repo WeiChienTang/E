@@ -2,18 +2,19 @@
 @inject IEmployeeTrainingRecordService EmployeeTrainingRecordService
 @inject IEmployeeLicenseService EmployeeLicenseService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @* ===== 受訓紀錄區段 ===== *@
 <div class="training-section mb-4">
     <div class="d-flex justify-content-between align-items-center mb-2 px-1">
         <h6 class="mb-0 fw-semibold text-secondary">
-            <i class="bi bi-journal-text me-1"></i>受訓紀錄
+            <i class="bi bi-journal-text me-1"></i>@L["Label.TrainingRecords"]
         </h6>
-        <GenericButtonComponent Text="新增受訓紀錄"
+        <GenericButtonComponent Text="@L["Button.AddTrainingRecord"]"
                                Variant="ButtonVariant.DarkBlue"
                                Size="ButtonSize.Small"
                                OnClick="@HandleAddTrainingRecord"
-                               Title="新增一筆受訓紀錄" />
+                               Title="@L["Button.AddTrainingRecord"]" />
     </div>
 
     <InteractiveTableComponent TItem="EmployeeTrainingRecord"
@@ -28,7 +29,7 @@
                               ShowBuiltInActions="true"
                               ShowBuiltInDeleteButton="false"
                               EnableAutoEmptyRow="false"
-                              EmptyMessage="尚無受訓紀錄"
+                              EmptyMessage="@L["Message.NoTrainingRecords"]"
                               CustomActionsTemplate="@GetTrainingActionsTemplate()"
                               ActionsColumnWidth="80px" />
 </div>
@@ -37,13 +38,13 @@
 <div class="license-section">
     <div class="d-flex justify-content-between align-items-center mb-2 px-1">
         <h6 class="mb-0 fw-semibold text-secondary">
-            <i class="bi bi-patch-check me-1"></i>證照管理
+            <i class="bi bi-patch-check me-1"></i>@L["Label.LicenseManagement"]
         </h6>
-        <GenericButtonComponent Text="新增證照"
+        <GenericButtonComponent Text="@L["Button.AddLicense"]"
                                Variant="ButtonVariant.DarkBlue"
                                Size="ButtonSize.Small"
                                OnClick="@HandleAddLicense"
-                               Title="新增一筆證照紀錄" />
+                               Title="@L["Button.AddLicense"]" />
     </div>
 
     <InteractiveTableComponent TItem="EmployeeLicense"
@@ -58,7 +59,7 @@
                               ShowBuiltInActions="true"
                               ShowBuiltInDeleteButton="false"
                               EnableAutoEmptyRow="false"
-                              EmptyMessage="尚無證照紀錄"
+                              EmptyMessage="@L["Message.NoLicenseRecords"]"
                               CustomActionsTemplate="@GetLicenseActionsTemplate()"
                               ActionsColumnWidth="80px" />
 </div>
@@ -74,11 +75,11 @@
 @* ===== 受訓紀錄刪除確認 ===== *@
 <GenericConfirmModalComponent IsVisible="@showDeleteTrainingModal"
                               IsVisibleChanged="@((bool v) => showDeleteTrainingModal = v)"
-                              Title="刪除受訓紀錄"
+                              Title="@L["Label.TrainingRecords"]"
                               Icon="bi-trash"
-                              Message="確定要刪除此筆受訓紀錄嗎？"
-                              ConfirmButtonText="確認刪除"
-                              CancelButtonText="取消"
+                              Message="@L["Message.DeleteConfirm"]"
+                              ConfirmButtonText="@L["Button.Delete"]"
+                              CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Red"
                               HeaderColor="BaseModalComponent.HeaderVariant.Danger"
                               OnConfirm="@HandleConfirmDeleteTrainingRecord"
@@ -95,11 +96,11 @@
 @* ===== 證照刪除確認 ===== *@
 <GenericConfirmModalComponent IsVisible="@showDeleteLicenseModal"
                               IsVisibleChanged="@((bool v) => showDeleteLicenseModal = v)"
-                              Title="刪除證照紀錄"
+                              Title="@L["Label.LicenseManagement"]"
                               Icon="bi-trash"
-                              Message="確定要刪除此筆證照紀錄嗎？"
-                              ConfirmButtonText="確認刪除"
-                              CancelButtonText="取消"
+                              Message="@L["Message.DeleteConfirm"]"
+                              ConfirmButtonText="@L["Button.Delete"]"
+                              CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Red"
                               HeaderColor="BaseModalComponent.HeaderVariant.Danger"
                               OnConfirm="@HandleConfirmDeleteLicense"
@@ -302,14 +303,14 @@
         {
             new InteractiveColumnDefinition
             {
-                Title = "課程名稱",
+                Title = L["Column.CourseName"],
                 PropertyName = nameof(EmployeeTrainingRecord.CourseName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "160px"
             },
             new InteractiveColumnDefinition
             {
-                Title = "受訓日期",
+                Title = L["Column.TrainingDate"],
                 PropertyName = nameof(EmployeeTrainingRecord.TrainingDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "105px",
@@ -322,7 +323,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "完成日期",
+                Title = L["Column.CompletionDate"],
                 PropertyName = nameof(EmployeeTrainingRecord.CompletedDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "105px",
@@ -335,7 +336,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "時數",
+                Title = L["Column.TrainingHours"],
                 PropertyName = nameof(EmployeeTrainingRecord.TrainingHours),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "65px",
@@ -348,7 +349,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "訓練機構",
+                Title = L["Column.TrainingOrganization"],
                 PropertyName = nameof(EmployeeTrainingRecord.TrainingOrganization),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "130px",
@@ -356,7 +357,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "結果",
+                Title = L["Column.TrainingResult"],
                 PropertyName = nameof(EmployeeTrainingRecord.Result),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "80px",
@@ -371,14 +372,14 @@
         {
             new InteractiveColumnDefinition
             {
-                Title = "證照名稱",
+                Title = L["Column.LicenseName"],
                 PropertyName = nameof(EmployeeLicense.LicenseName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "160px"
             },
             new InteractiveColumnDefinition
             {
-                Title = "證照字號",
+                Title = L["Column.LicenseNumber"],
                 PropertyName = nameof(EmployeeLicense.LicenseNumber),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",
@@ -386,7 +387,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "取得日期",
+                Title = L["Column.IssueDate"],
                 PropertyName = nameof(EmployeeLicense.IssuedDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "105px",
@@ -399,7 +400,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "到期日",
+                Title = L["Column.ExpiryDate"],
                 PropertyName = nameof(EmployeeLicense.ExpiryDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "105px",
@@ -408,7 +409,7 @@
                     if (item is EmployeeLicense l)
                     {
                         if (!l.ExpiryDate.HasValue)
-                            return "永久有效";
+                            return L["Label.PermanentValid"].ToString();
                         return l.ExpiryDate.Value.ToString("yyyy-MM-dd");
                     }
                     return "-";
@@ -416,7 +417,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "狀態",
+                Title = L["Column.LicenseStatus"],
                 PropertyName = nameof(EmployeeLicense.ExpiryDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "80px",
@@ -474,18 +475,18 @@
 
     // ===== 輔助方法 =====
 
-    private static string GetLicenseStatusText(EmployeeLicense license)
+    private string GetLicenseStatusText(EmployeeLicense license)
     {
         if (!license.ExpiryDate.HasValue)
-            return "有效";
+            return L["Label.Valid"].ToString();
 
         var today = DateTime.Today;
         var daysUntilExpiry = (license.ExpiryDate.Value.Date - today).Days;
 
         if (daysUntilExpiry < 0)
-            return "已到期";
+            return L["Label.Expired"].ToString();
         if (daysUntilExpiry <= license.AlertDays)
-            return $"即將到期";
-        return "有效";
+            return L["Label.ExpiringSoon"].ToString();
+        return L["Label.Valid"].ToString();
     }
 }

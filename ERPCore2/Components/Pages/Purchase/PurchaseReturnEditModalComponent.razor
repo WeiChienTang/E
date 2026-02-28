@@ -60,19 +60,25 @@
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @* 沖款單編輯 Modal *@
-<SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
-                                 IsVisible="@showSetoffDocumentModal"
-                                 IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
-                                 SetoffDocumentId="@selectedSetoffDocumentId"
-                                 OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
-                                 OnCancel="@(() => showSetoffDocumentModal = false)" />
+@if (showSetoffDocumentModal)
+{
+    <SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
+                                     IsVisible="@showSetoffDocumentModal"
+                                     IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
+                                     SetoffDocumentId="@selectedSetoffDocumentId"
+                                     OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
+                                     OnCancel="@(() => showSetoffDocumentModal = false)" />
+}
 
 @* 進貨單編輯 Modal（從原始進貨 Tab 開啟） *@
-<PurchaseReceivingEditModalComponent @ref="purchaseReceivingEditModal"
-                                     IsVisible="@showPurchaseReceivingModal"
-                                     IsVisibleChanged="@((bool visible) => showPurchaseReceivingModal = visible)"
-                                     PurchaseReceivingId="@selectedPurchaseReceivingId"
-                                     OnCancel="@(() => showPurchaseReceivingModal = false)" />
+@if (showPurchaseReceivingModal)
+{
+    <PurchaseReceivingEditModalComponent @ref="purchaseReceivingEditModal"
+                                         IsVisible="@showPurchaseReceivingModal"
+                                         IsVisibleChanged="@((bool visible) => showPurchaseReceivingModal = visible)"
+                                         PurchaseReceivingId="@selectedPurchaseReceivingId"
+                                         OnCancel="@(() => showPurchaseReceivingModal = false)" />
+}
 
 @code {
     // 參數
@@ -972,7 +978,12 @@
                 return;
             }
             
-            // 5. 呼叫沖款單組件的公開方法
+            // 5. 呼叫沖款單組件的公開方法（確保組件已渲染）
+            if (!showSetoffDocumentModal)
+            {
+                showSetoffDocumentModal = true;
+                await Task.Yield(); // 讓 Blazor 完成 SetoffDocumentEditModalComponent 的渲染
+            }
             await setoffDocumentEditModal!.ShowAddModalWithPrefilledPurchaseReturn(
                 editModalComponent.Entity.SupplierId,
                 PurchaseReturnId.Value

@@ -237,6 +237,50 @@ private RenderFragment CreateTabContent() => __builder =>
 
 ---
 
+## ⚠️ 循環引用警告（必讀）
+
+**Tab 化功能讓多個 EditModal 可以互相開啟**，這表示組件 A 嵌套組件 B、組件 B 又嵌套組件 A。
+若不加以防範，Blazor 會在頁面載入時無限遞歸建立組件實例，耗盡 DB 連線池，造成 `EF Connection[20004]` 錯誤。
+
+### 強制規則：所有嵌套 EditModal 必須使用 `@if` Guard
+
+```razor
+@* ❌ 錯誤：無條件渲染，若存在循環引用會造成無限遞歸 *@
+<PurchaseReceivingEditModalComponent @ref="purchaseReceivingEditModal"
+                                     IsVisible="@showPurchaseReceivingModal" ... />
+
+@* ✅ 正確：@if guard，只在需要時才建立組件實例 *@
+@if (showPurchaseReceivingModal)
+{
+    <PurchaseReceivingEditModalComponent @ref="purchaseReceivingEditModal"
+                                         IsVisible="@showPurchaseReceivingModal" ... />
+}
+```
+
+此規則適用於：採購訂單、採購進貨、採購退回、銷貨訂單、銷貨出貨、銷貨退回 的所有相互引用 EditModal。
+
+### `@ref` 搭配 `@if` Guard 的使用方式
+
+`@if` guard 讓 `@ref` 在組件渲染前為 `null`。呼叫公開方法（如 `ShowAddModalWithPrefilledOrder`）時，必須先確保組件已渲染：
+
+```csharp
+// ❌ 錯誤：@if guard 下 @ref 為 null，直接呼叫會 NullReferenceException
+await purchaseReceivingEditModal!.ShowAddModalWithPrefilledOrder(supplierId, orderId);
+
+// ✅ 正確：先設定顯示旗標，等待 Blazor 完成渲染，再呼叫方法
+if (!showPurchaseReceivingModal)
+{
+    showPurchaseReceivingModal = true;
+    await Task.Yield(); // 讓 Blazor 完成 PurchaseReceivingEditModalComponent 的渲染
+}
+await purchaseReceivingEditModal!.ShowAddModalWithPrefilledOrder(supplierId, orderId);
+```
+
+> 只有呼叫 **公開方法**（轉單類，如 `ShowAddModalWithPrefilledOrder`）才需要此模式。
+> 單純設定 `showXxxModal = true` 開啟 Modal 查閱記錄，不需要呼叫 `@ref` 方法，不受影響。
+
+---
+
 ## 注意事項
 
 1. **眼睛按鈕保留**：各 Table 元件（PurchaseOrderTable、SalesOrderTable 等）的眼睛按鈕維持不動。Tab 是主檔層級全覽，眼睛按鈕是明細層級細查，兩者用途不同，並存互補。
@@ -249,4 +293,4 @@ private RenderFragment CreateTabContent() => __builder =>
 
 ---
 
-*最後更新：2026-02-27*
+*最後更新：2026-02-28（補充循環引用警告）*
