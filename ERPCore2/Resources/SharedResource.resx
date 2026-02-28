@@ -915,6 +915,198 @@
   <data name="Field.PermissionName" xml:space="preserve"><value>權限名稱</value></data>
   <data name="Field.PermissionAction" xml:space="preserve"><value>操作類型</value></data>
   <data name="Field.PermissionLevel" xml:space="preserve"><value>權限等級</value></data>
+  <!-- ===== Button additional keys ===== -->
+  <data name="Button.Confirm" xml:space="preserve"><value>確認</value></data>
+  <data name="Button.ResetToDefault" xml:space="preserve"><value>重設為預設</value></data>
+  <!-- ===== Column - Warehouse/Inventory keys ===== -->
+  <data name="Column.AvailableInventory" xml:space="preserve"><value>可用庫存</value></data>
+  <data name="Column.AverageCost" xml:space="preserve"><value>平均成本</value></data>
+  <data name="Column.CurrentStock" xml:space="preserve"><value>目前庫存</value></data>
+  <data name="Column.IssuedQuantity" xml:space="preserve"><value>已領用量</value></data>
+  <data name="Column.MaterialIssueWL" xml:space="preserve"><value>領料倉庫/位置</value></data>
+  <data name="Column.MaxAlertLevel" xml:space="preserve"><value>最大警示量</value></data>
+  <data name="Column.MinAlertLevel" xml:space="preserve"><value>最小警示量</value></data>
+  <data name="Column.StockTakingQuantity" xml:space="preserve"><value>盤點數量</value></data>
+  <data name="Column.UnitCost" xml:space="preserve"><value>單位成本</value></data>
+  <!-- ===== Column - Financial/Setoff keys ===== -->
+  <data name="Column.CurrentAllowance" xml:space="preserve"><value>目前折讓</value></data>
+  <data name="Column.CurrentSetoff" xml:space="preserve"><value>目前沖抵</value></data>
+  <data name="Column.ReceivablePayable" xml:space="preserve"><value>應收/應付</value></data>
+  <data name="Column.SourceDocNumber" xml:space="preserve"><value>來源單號</value></data>
+  <data name="Column.UnsetoffBalance" xml:space="preserve"><value>未沖抵餘額</value></data>
+  <!-- ===== Column - Product keys ===== -->
+  <data name="Column.ProductionUnit" xml:space="preserve"><value>生產單位</value></data>
+  <data name="Column.RequiredQuantity" xml:space="preserve"><value>所需用量</value></data>
+  <!-- ===== Field - Accounting keys ===== -->
+  <data name="Field.AccountCategory" xml:space="preserve"><value>科目分類</value></data>
+  <data name="Field.AccountCode" xml:space="preserve"><value>科目代碼</value></data>
+  <data name="Field.AccountDescription" xml:space="preserve"><value>科目說明</value></data>
+  <data name="Field.AccountDescriptionEn" xml:space="preserve"><value>科目英文說明</value></data>
+  <data name="Field.AccountLevel" xml:space="preserve"><value>科目層級</value></data>
+  <data name="Field.AccountName" xml:space="preserve"><value>科目名稱</value></data>
+  <data name="Field.DebitCreditDirection" xml:space="preserve"><value>借貸方向</value></data>
+  <data name="Field.IsDetailAccount" xml:space="preserve"><value>是否明細科目</value></data>
+  <data name="Field.JournalEntryCode" xml:space="preserve"><value>分錄編號</value></data>
+  <data name="Field.JournalEntryDate" xml:space="preserve"><value>分錄日期</value></data>
+  <data name="Field.JournalEntryDescription" xml:space="preserve"><value>分錄說明</value></data>
+  <data name="Field.JournalEntryType" xml:space="preserve"><value>分錄類型</value></data>
+  <data name="Field.ParentAccount" xml:space="preserve"><value>上層科目</value></data>
+  <data name="Field.SortOrder" xml:space="preserve"><value>排序</value></data>
+  <!-- ===== Field - Bank/Currency/Payment keys ===== -->
+  <data name="Field.BankCode" xml:space="preserve"><value>銀行代碼</value></data>
+  <data name="Field.BankName" xml:space="preserve"><value>銀行名稱</value></data>
+  <data name="Field.CurrencyCode" xml:space="preserve"><value>幣別代碼</value></data>
+  <data name="Field.CurrencyName" xml:space="preserve"><value>幣別名稱</value></data>
+  <data name="Field.CurrencySymbol" xml:space="preserve"><value>貨幣符號</value></data>
+  <data name="Field.ExchangeRate" xml:space="preserve"><value>匯率</value></data>
+  <data name="Field.IsBaseCurrency" xml:space="preserve"><value>是否基準幣別</value></data>
+  <data name="Field.PaymentMethodCode" xml:space="preserve"><value>付款方式代碼</value></data>
+  <data name="Field.PaymentMethodName" xml:space="preserve"><value>付款方式名稱</value></data>
+  <data name="Field.SwiftCode" xml:space="preserve"><value>SWIFT代碼</value></data>
+  <!-- ===== Field - Setoff/Document keys ===== -->
+  <data name="Field.CurrentDiscount" xml:space="preserve"><value>目前折扣</value></data>
+  <data name="Field.CurrentWriteOff" xml:space="preserve"><value>目前核銷</value></data>
+  <data name="Field.EndDate" xml:space="preserve"><value>結束日期</value></data>
+  <data name="Field.SetoffCode" xml:space="preserve"><value>沖抵單號</value></data>
+  <data name="Field.SetoffDate" xml:space="preserve"><value>沖抵日期</value></data>
+  <data name="Field.StartDate" xml:space="preserve"><value>開始日期</value></data>
+  <!-- ===== Field - Company keys ===== -->
+  <data name="Field.CapitalAmount" xml:space="preserve"><value>資本額</value></data>
+  <data name="Field.CompanyAddress" xml:space="preserve"><value>公司地址</value></data>
+  <data name="Field.CompanyDescription" xml:space="preserve"><value>公司簡介</value></data>
+  <data name="Field.CompanyName" xml:space="preserve"><value>公司名稱</value></data>
+  <data name="Field.EstablishedDate" xml:space="preserve"><value>成立日期</value></data>
+  <data name="Field.InvoiceTitle" xml:space="preserve"><value>發票抬頭</value></data>
+  <data name="Field.IsDefaultCompany" xml:space="preserve"><value>預設公司</value></data>
+  <data name="Field.ShortName" xml:space="preserve"><value>公司簡稱</value></data>
+  <data name="Field.ShortNameEn" xml:space="preserve"><value>英文簡稱</value></data>
+  <!-- ===== Field - Customer/Visit keys ===== -->
+  <data name="Field.CollectionDay" xml:space="preserve"><value>收款日</value></data>
+  <data name="Field.CustomerCode" xml:space="preserve"><value>客戶代碼</value></data>
+  <data name="Field.CustomerStatus" xml:space="preserve"><value>客戶狀態</value></data>
+  <data name="Field.NextFollowUpDate" xml:space="preserve"><value>下次追蹤日</value></data>
+  <data name="Field.SalesManager" xml:space="preserve"><value>業務員</value></data>
+  <data name="Field.VisitContent" xml:space="preserve"><value>拜訪內容</value></data>
+  <data name="Field.VisitDate" xml:space="preserve"><value>拜訪日期</value></data>
+  <data name="Field.VisitMethod" xml:space="preserve"><value>拜訪方式</value></data>
+  <data name="Field.VisitPurpose" xml:space="preserve"><value>拜訪目的</value></data>
+  <data name="Field.VisitResult" xml:space="preserve"><value>拜訪結果</value></data>
+  <!-- ===== Field - Supplier keys ===== -->
+  <data name="Field.SupplierCode" xml:space="preserve"><value>廠商代碼</value></data>
+  <data name="Field.SupplierName" xml:space="preserve"><value>廠商名稱</value></data>
+  <!-- ===== Field - Product keys ===== -->
+  <data name="Field.Barcode" xml:space="preserve"><value>條碼</value></data>
+  <data name="Field.CategoryCode" xml:space="preserve"><value>類別代碼</value></data>
+  <data name="Field.CategoryName" xml:space="preserve"><value>類別名稱</value></data>
+  <data name="Field.CompositionCode" xml:space="preserve"><value>組成單號</value></data>
+  <data name="Field.CompositionCreator" xml:space="preserve"><value>組成建立人</value></data>
+  <data name="Field.CompositionType" xml:space="preserve"><value>組成類型</value></data>
+  <data name="Field.ForSale" xml:space="preserve"><value>可銷售</value></data>
+  <data name="Field.ProductCode" xml:space="preserve"><value>商品編號</value></data>
+  <data name="Field.ProductName" xml:space="preserve"><value>商品名稱</value></data>
+  <data name="Field.ProductionUnit" xml:space="preserve"><value>生產單位</value></data>
+  <data name="Field.PurchaseUnit" xml:space="preserve"><value>採購單位</value></data>
+  <data name="Field.ScheduleCode" xml:space="preserve"><value>排程單號</value></data>
+  <data name="Field.ScheduleCreator" xml:space="preserve"><value>排程建立人</value></data>
+  <data name="Field.ScheduleDate" xml:space="preserve"><value>排程日期</value></data>
+  <data name="Field.SizeCode" xml:space="preserve"><value>尺寸代碼</value></data>
+  <data name="Field.SizeName" xml:space="preserve"><value>尺寸名稱</value></data>
+  <data name="Field.Spec" xml:space="preserve"><value>規格</value></data>
+  <data name="Field.Specification" xml:space="preserve"><value>規格說明</value></data>
+  <data name="Field.Type" xml:space="preserve"><value>類型</value></data>
+  <data name="Field.TypeCode" xml:space="preserve"><value>類型代碼</value></data>
+  <data name="Field.TypeName" xml:space="preserve"><value>類型名稱</value></data>
+  <data name="Field.UnitCode" xml:space="preserve"><value>單位代碼</value></data>
+  <data name="Field.UnitName" xml:space="preserve"><value>單位名稱</value></data>
+  <!-- ===== Field - Warehouse/Inventory keys ===== -->
+  <data name="Field.CompletionRate" xml:space="preserve"><value>完成率</value></data>
+  <data name="Field.CountSupervisor" xml:space="preserve"><value>盤點監督人</value></data>
+  <data name="Field.CountedQuantity" xml:space="preserve"><value>盤點數量</value></data>
+  <data name="Field.DifferenceQuantity" xml:space="preserve"><value>差異數量</value></data>
+  <data name="Field.InventoryResult" xml:space="preserve"><value>盤點結果</value></data>
+  <data name="Field.Level" xml:space="preserve"><value>層別</value></data>
+  <data name="Field.LocationCode" xml:space="preserve"><value>儲位代碼</value></data>
+  <data name="Field.LocationName" xml:space="preserve"><value>儲位名稱</value></data>
+  <data name="Field.MaterialIssueCode" xml:space="preserve"><value>領料單號</value></data>
+  <data name="Field.MaterialIssueDate" xml:space="preserve"><value>領料日期</value></data>
+  <data name="Field.MaterialIssueDept" xml:space="preserve"><value>領料部門</value></data>
+  <data name="Field.MaterialIssueStaff" xml:space="preserve"><value>領料人員</value></data>
+  <data name="Field.MaxCapacity" xml:space="preserve"><value>最大容量</value></data>
+  <data name="Field.Operator" xml:space="preserve"><value>操作人員</value></data>
+  <data name="Field.Position" xml:space="preserve"><value>欄位</value></data>
+  <data name="Field.Row" xml:space="preserve"><value>排</value></data>
+  <data name="Field.SourceDocumentId" xml:space="preserve"><value>來源單據ID</value></data>
+  <data name="Field.SourceDocumentType" xml:space="preserve"><value>來源單據類型</value></data>
+  <data name="Field.StockTaker" xml:space="preserve"><value>盤點人員</value></data>
+  <data name="Field.StockTakingCode" xml:space="preserve"><value>盤點單號</value></data>
+  <data name="Field.StockTakingDate" xml:space="preserve"><value>盤點日期</value></data>
+  <data name="Field.StockTakingItems" xml:space="preserve"><value>盤點明細</value></data>
+  <data name="Field.StockTakingType" xml:space="preserve"><value>盤點類型</value></data>
+  <data name="Field.TotalAmountFull" xml:space="preserve"><value>總金額</value></data>
+  <data name="Field.TotalQuantity" xml:space="preserve"><value>總數量</value></data>
+  <data name="Field.TotalStock" xml:space="preserve"><value>總庫存</value></data>
+  <data name="Field.TransactionCode" xml:space="preserve"><value>異動單號</value></data>
+  <data name="Field.TransactionDate" xml:space="preserve"><value>異動日期</value></data>
+  <data name="Field.TransactionType" xml:space="preserve"><value>異動類型</value></data>
+  <data name="Field.WarehouseCode" xml:space="preserve"><value>倉庫代碼</value></data>
+  <data name="Field.WarehouseName" xml:space="preserve"><value>倉庫名稱</value></data>
+  <data name="Field.Zone" xml:space="preserve"><value>區域</value></data>
+  <!-- ===== Field - Waste Management keys ===== -->
+  <data name="Field.Description" xml:space="preserve"><value>說明</value></data>
+  <data name="Field.DisposalFee" xml:space="preserve"><value>處理費用</value></data>
+  <data name="Field.InboundLocation" xml:space="preserve"><value>入庫位置</value></data>
+  <data name="Field.InboundWarehouse" xml:space="preserve"><value>入庫倉庫</value></data>
+  <data name="Field.PurchaseFee" xml:space="preserve"><value>收購費用</value></data>
+  <data name="Field.RecordDate" xml:space="preserve"><value>記錄日期</value></data>
+  <data name="Field.RelatedProduct" xml:space="preserve"><value>相關產品</value></data>
+  <data name="Field.TotalWeight" xml:space="preserve"><value>總重量</value></data>
+  <data name="Field.WasteRecordCode" xml:space="preserve"><value>廢棄記錄單號</value></data>
+  <data name="Field.WasteTypeCode" xml:space="preserve"><value>廢棄類型代碼</value></data>
+  <data name="Field.WasteTypeName" xml:space="preserve"><value>廢棄類型名稱</value></data>
+  <!-- ===== Field - Paper/Printer keys ===== -->
+  <data name="Field.Paper" xml:space="preserve"><value>紙張設定</value></data>
+  <data name="Field.PaperBottomMargin" xml:space="preserve"><value>下邊距</value></data>
+  <data name="Field.PaperCode" xml:space="preserve"><value>紙張代碼</value></data>
+  <data name="Field.PaperHeight" xml:space="preserve"><value>紙張高度</value></data>
+  <data name="Field.PaperLeftMargin" xml:space="preserve"><value>左邊距</value></data>
+  <data name="Field.PaperRightMargin" xml:space="preserve"><value>右邊距</value></data>
+  <data name="Field.PaperTopMargin" xml:space="preserve"><value>上邊距</value></data>
+  <data name="Field.PaperWidth" xml:space="preserve"><value>紙張寬度</value></data>
+  <data name="Field.Printer" xml:space="preserve"><value>列印機</value></data>
+  <data name="Field.PrinterCode" xml:space="preserve"><value>印表機代碼</value></data>
+  <data name="Field.PrinterIpAddress" xml:space="preserve"><value>IP 位址</value></data>
+  <data name="Field.PrinterName" xml:space="preserve"><value>印表機名稱</value></data>
+  <data name="Field.PrinterPort" xml:space="preserve"><value>連接埠</value></data>
+  <data name="Field.ReportName" xml:space="preserve"><value>報表名稱</value></data>
+  <!-- ===== Field - System Parameter keys ===== -->
+  <data name="Field.CustomerAdvanceAccount" xml:space="preserve"><value>客戶預收帳戶</value></data>
+  <data name="Field.CustomerNoteAccount" xml:space="preserve"><value>客戶票據帳戶</value></data>
+  <data name="Field.CustomerReceivableAccount" xml:space="preserve"><value>客戶應收帳戶</value></data>
+  <data name="Field.CustomerReturnAccount" xml:space="preserve"><value>客戶退貨帳戶</value></data>
+  <data name="Field.CustomerSubAccount" xml:space="preserve"><value>客戶輔助科目</value></data>
+  <data name="Field.ProductInventoryAccount" xml:space="preserve"><value>商品庫存帳戶</value></data>
+  <data name="Field.ProductSubAccount" xml:space="preserve"><value>商品輔助科目</value></data>
+  <data name="Field.SubAccountCodeFormat" xml:space="preserve"><value>輔助科目格式</value></data>
+  <data name="Field.SupplierAdvanceAccount" xml:space="preserve"><value>廠商預付帳戶</value></data>
+  <data name="Field.SupplierNoteAccount" xml:space="preserve"><value>廠商票據帳戶</value></data>
+  <data name="Field.SupplierPayableAccount" xml:space="preserve"><value>廠商應付帳戶</value></data>
+  <data name="Field.SupplierReturnAccount" xml:space="preserve"><value>廠商退貨帳戶</value></data>
+  <data name="Field.SupplierSubAccount" xml:space="preserve"><value>廠商輔助科目</value></data>
+  <data name="Field.TaxRatePercent" xml:space="preserve"><value>稅率 (%)</value></data>
+  <!-- ===== Option keys ===== -->
+  <data name="Option.EntityCode" xml:space="preserve"><value>以代碼組成</value></data>
+  <data name="Option.Sequential" xml:space="preserve"><value>流水號</value></data>
+  <!-- ===== Placeholder additional keys ===== -->
+  <data name="Placeholder.ClickToQueryPrinter" xml:space="preserve"><value>點擊查詢印表機</value></data>
+  <data name="Placeholder.CollectionDayHint" xml:space="preserve"><value>請輸入收款日 (1-31)</value></data>
+  <!-- ===== Section keys ===== -->
+  <data name="Section.AutoGenerateSetting" xml:space="preserve"><value>自動產生設定</value></data>
+  <data name="Section.ControlAccountCode" xml:space="preserve"><value>控制科目代碼</value></data>
+  <data name="Section.FeeInfo" xml:space="preserve"><value>費用資訊</value></data>
+  <data name="Section.TaxSettings" xml:space="preserve"><value>稅務設定</value></data>
+  <!-- ===== Tab additional keys ===== -->
+  <data name="Tab.ModuleManagement" xml:space="preserve"><value>模組管理</value></data>
+  <data name="Tab.SubAccountSettings" xml:space="preserve"><value>輔助科目設定</value></data>
   <!-- ===== Vehicle Field keys ===== -->
   <data name="Field.AssociatedCompany" xml:space="preserve"><value>關聯公司</value></data>
   <data name="Field.AssociatedCustomer" xml:space="preserve"><value>關聯客戶</value></data>

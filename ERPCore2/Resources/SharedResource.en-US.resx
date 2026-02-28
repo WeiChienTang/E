@@ -897,6 +897,198 @@
   <data name="Field.PermissionName" xml:space="preserve"><value>Permission Name</value></data>
   <data name="Field.PermissionAction" xml:space="preserve"><value>Permission Action</value></data>
   <data name="Field.PermissionLevel" xml:space="preserve"><value>Permission Level</value></data>
+  <!-- ===== Button additional keys ===== -->
+  <data name="Button.Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Button.ResetToDefault" xml:space="preserve"><value>Reset to Default</value></data>
+  <!-- ===== Column - Warehouse/Inventory keys ===== -->
+  <data name="Column.AvailableInventory" xml:space="preserve"><value>Available Inventory</value></data>
+  <data name="Column.AverageCost" xml:space="preserve"><value>Average Cost</value></data>
+  <data name="Column.CurrentStock" xml:space="preserve"><value>Current Stock</value></data>
+  <data name="Column.IssuedQuantity" xml:space="preserve"><value>Issued Quantity</value></data>
+  <data name="Column.MaterialIssueWL" xml:space="preserve"><value>Warehouse/Location</value></data>
+  <data name="Column.MaxAlertLevel" xml:space="preserve"><value>Max Alert Level</value></data>
+  <data name="Column.MinAlertLevel" xml:space="preserve"><value>Min Alert Level</value></data>
+  <data name="Column.StockTakingQuantity" xml:space="preserve"><value>Stock Taking Quantity</value></data>
+  <data name="Column.UnitCost" xml:space="preserve"><value>Unit Cost</value></data>
+  <!-- ===== Column - Financial/Setoff keys ===== -->
+  <data name="Column.CurrentAllowance" xml:space="preserve"><value>Current Allowance</value></data>
+  <data name="Column.CurrentSetoff" xml:space="preserve"><value>Current Setoff</value></data>
+  <data name="Column.ReceivablePayable" xml:space="preserve"><value>Receivable/Payable</value></data>
+  <data name="Column.SourceDocNumber" xml:space="preserve"><value>Source Doc Number</value></data>
+  <data name="Column.UnsetoffBalance" xml:space="preserve"><value>Unsetoff Balance</value></data>
+  <!-- ===== Column - Product keys ===== -->
+  <data name="Column.ProductionUnit" xml:space="preserve"><value>Production Unit</value></data>
+  <data name="Column.RequiredQuantity" xml:space="preserve"><value>Required Quantity</value></data>
+  <!-- ===== Field - Accounting keys ===== -->
+  <data name="Field.AccountCategory" xml:space="preserve"><value>Account Category</value></data>
+  <data name="Field.AccountCode" xml:space="preserve"><value>Account Code</value></data>
+  <data name="Field.AccountDescription" xml:space="preserve"><value>Account Description</value></data>
+  <data name="Field.AccountDescriptionEn" xml:space="preserve"><value>Account Description (EN)</value></data>
+  <data name="Field.AccountLevel" xml:space="preserve"><value>Account Level</value></data>
+  <data name="Field.AccountName" xml:space="preserve"><value>Account Name</value></data>
+  <data name="Field.DebitCreditDirection" xml:space="preserve"><value>Debit/Credit Direction</value></data>
+  <data name="Field.IsDetailAccount" xml:space="preserve"><value>Is Detail Account</value></data>
+  <data name="Field.JournalEntryCode" xml:space="preserve"><value>Journal Entry Code</value></data>
+  <data name="Field.JournalEntryDate" xml:space="preserve"><value>Journal Entry Date</value></data>
+  <data name="Field.JournalEntryDescription" xml:space="preserve"><value>Journal Entry Description</value></data>
+  <data name="Field.JournalEntryType" xml:space="preserve"><value>Journal Entry Type</value></data>
+  <data name="Field.ParentAccount" xml:space="preserve"><value>Parent Account</value></data>
+  <data name="Field.SortOrder" xml:space="preserve"><value>Sort Order</value></data>
+  <!-- ===== Field - Bank/Currency/Payment keys ===== -->
+  <data name="Field.BankCode" xml:space="preserve"><value>Bank Code</value></data>
+  <data name="Field.BankName" xml:space="preserve"><value>Bank Name</value></data>
+  <data name="Field.CurrencyCode" xml:space="preserve"><value>Currency Code</value></data>
+  <data name="Field.CurrencyName" xml:space="preserve"><value>Currency Name</value></data>
+  <data name="Field.CurrencySymbol" xml:space="preserve"><value>Currency Symbol</value></data>
+  <data name="Field.ExchangeRate" xml:space="preserve"><value>Exchange Rate</value></data>
+  <data name="Field.IsBaseCurrency" xml:space="preserve"><value>Is Base Currency</value></data>
+  <data name="Field.PaymentMethodCode" xml:space="preserve"><value>Payment Method Code</value></data>
+  <data name="Field.PaymentMethodName" xml:space="preserve"><value>Payment Method Name</value></data>
+  <data name="Field.SwiftCode" xml:space="preserve"><value>SWIFT Code</value></data>
+  <!-- ===== Field - Setoff/Document keys ===== -->
+  <data name="Field.CurrentDiscount" xml:space="preserve"><value>Current Discount</value></data>
+  <data name="Field.CurrentWriteOff" xml:space="preserve"><value>Current Write-Off</value></data>
+  <data name="Field.EndDate" xml:space="preserve"><value>End Date</value></data>
+  <data name="Field.SetoffCode" xml:space="preserve"><value>Setoff Code</value></data>
+  <data name="Field.SetoffDate" xml:space="preserve"><value>Setoff Date</value></data>
+  <data name="Field.StartDate" xml:space="preserve"><value>Start Date</value></data>
+  <!-- ===== Field - Company keys ===== -->
+  <data name="Field.CapitalAmount" xml:space="preserve"><value>Capital Amount</value></data>
+  <data name="Field.CompanyAddress" xml:space="preserve"><value>Company Address</value></data>
+  <data name="Field.CompanyDescription" xml:space="preserve"><value>Company Description</value></data>
+  <data name="Field.CompanyName" xml:space="preserve"><value>Company Name</value></data>
+  <data name="Field.EstablishedDate" xml:space="preserve"><value>Established Date</value></data>
+  <data name="Field.InvoiceTitle" xml:space="preserve"><value>Invoice Title</value></data>
+  <data name="Field.IsDefaultCompany" xml:space="preserve"><value>Default Company</value></data>
+  <data name="Field.ShortName" xml:space="preserve"><value>Short Name</value></data>
+  <data name="Field.ShortNameEn" xml:space="preserve"><value>Short Name (EN)</value></data>
+  <!-- ===== Field - Customer/Visit keys ===== -->
+  <data name="Field.CollectionDay" xml:space="preserve"><value>Collection Day</value></data>
+  <data name="Field.CustomerCode" xml:space="preserve"><value>Customer Code</value></data>
+  <data name="Field.CustomerStatus" xml:space="preserve"><value>Customer Status</value></data>
+  <data name="Field.NextFollowUpDate" xml:space="preserve"><value>Next Follow-Up Date</value></data>
+  <data name="Field.SalesManager" xml:space="preserve"><value>Sales Manager</value></data>
+  <data name="Field.VisitContent" xml:space="preserve"><value>Visit Content</value></data>
+  <data name="Field.VisitDate" xml:space="preserve"><value>Visit Date</value></data>
+  <data name="Field.VisitMethod" xml:space="preserve"><value>Visit Method</value></data>
+  <data name="Field.VisitPurpose" xml:space="preserve"><value>Visit Purpose</value></data>
+  <data name="Field.VisitResult" xml:space="preserve"><value>Visit Result</value></data>
+  <!-- ===== Field - Supplier keys ===== -->
+  <data name="Field.SupplierCode" xml:space="preserve"><value>Supplier Code</value></data>
+  <data name="Field.SupplierName" xml:space="preserve"><value>Supplier Name</value></data>
+  <!-- ===== Field - Product keys ===== -->
+  <data name="Field.Barcode" xml:space="preserve"><value>Barcode</value></data>
+  <data name="Field.CategoryCode" xml:space="preserve"><value>Category Code</value></data>
+  <data name="Field.CategoryName" xml:space="preserve"><value>Category Name</value></data>
+  <data name="Field.CompositionCode" xml:space="preserve"><value>Composition Code</value></data>
+  <data name="Field.CompositionCreator" xml:space="preserve"><value>Composition Creator</value></data>
+  <data name="Field.CompositionType" xml:space="preserve"><value>Composition Type</value></data>
+  <data name="Field.ForSale" xml:space="preserve"><value>For Sale</value></data>
+  <data name="Field.ProductCode" xml:space="preserve"><value>Product Code</value></data>
+  <data name="Field.ProductName" xml:space="preserve"><value>Product Name</value></data>
+  <data name="Field.ProductionUnit" xml:space="preserve"><value>Production Unit</value></data>
+  <data name="Field.PurchaseUnit" xml:space="preserve"><value>Purchase Unit</value></data>
+  <data name="Field.ScheduleCode" xml:space="preserve"><value>Schedule Code</value></data>
+  <data name="Field.ScheduleCreator" xml:space="preserve"><value>Schedule Creator</value></data>
+  <data name="Field.ScheduleDate" xml:space="preserve"><value>Schedule Date</value></data>
+  <data name="Field.SizeCode" xml:space="preserve"><value>Size Code</value></data>
+  <data name="Field.SizeName" xml:space="preserve"><value>Size Name</value></data>
+  <data name="Field.Spec" xml:space="preserve"><value>Spec</value></data>
+  <data name="Field.Specification" xml:space="preserve"><value>Specification</value></data>
+  <data name="Field.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Field.TypeCode" xml:space="preserve"><value>Type Code</value></data>
+  <data name="Field.TypeName" xml:space="preserve"><value>Type Name</value></data>
+  <data name="Field.UnitCode" xml:space="preserve"><value>Unit Code</value></data>
+  <data name="Field.UnitName" xml:space="preserve"><value>Unit Name</value></data>
+  <!-- ===== Field - Warehouse/Inventory keys ===== -->
+  <data name="Field.CompletionRate" xml:space="preserve"><value>Completion Rate</value></data>
+  <data name="Field.CountSupervisor" xml:space="preserve"><value>Count Supervisor</value></data>
+  <data name="Field.CountedQuantity" xml:space="preserve"><value>Counted Quantity</value></data>
+  <data name="Field.DifferenceQuantity" xml:space="preserve"><value>Difference Quantity</value></data>
+  <data name="Field.InventoryResult" xml:space="preserve"><value>Inventory Result</value></data>
+  <data name="Field.Level" xml:space="preserve"><value>Level</value></data>
+  <data name="Field.LocationCode" xml:space="preserve"><value>Location Code</value></data>
+  <data name="Field.LocationName" xml:space="preserve"><value>Location Name</value></data>
+  <data name="Field.MaterialIssueCode" xml:space="preserve"><value>Material Issue Code</value></data>
+  <data name="Field.MaterialIssueDate" xml:space="preserve"><value>Material Issue Date</value></data>
+  <data name="Field.MaterialIssueDept" xml:space="preserve"><value>Material Issue Department</value></data>
+  <data name="Field.MaterialIssueStaff" xml:space="preserve"><value>Material Issue Staff</value></data>
+  <data name="Field.MaxCapacity" xml:space="preserve"><value>Max Capacity</value></data>
+  <data name="Field.Operator" xml:space="preserve"><value>Operator</value></data>
+  <data name="Field.Position" xml:space="preserve"><value>Position</value></data>
+  <data name="Field.Row" xml:space="preserve"><value>Row</value></data>
+  <data name="Field.SourceDocumentId" xml:space="preserve"><value>Source Document ID</value></data>
+  <data name="Field.SourceDocumentType" xml:space="preserve"><value>Source Document Type</value></data>
+  <data name="Field.StockTaker" xml:space="preserve"><value>Stock Taker</value></data>
+  <data name="Field.StockTakingCode" xml:space="preserve"><value>Stock Taking Code</value></data>
+  <data name="Field.StockTakingDate" xml:space="preserve"><value>Stock Taking Date</value></data>
+  <data name="Field.StockTakingItems" xml:space="preserve"><value>Stock Taking Items</value></data>
+  <data name="Field.StockTakingType" xml:space="preserve"><value>Stock Taking Type</value></data>
+  <data name="Field.TotalAmountFull" xml:space="preserve"><value>Total Amount</value></data>
+  <data name="Field.TotalQuantity" xml:space="preserve"><value>Total Quantity</value></data>
+  <data name="Field.TotalStock" xml:space="preserve"><value>Total Stock</value></data>
+  <data name="Field.TransactionCode" xml:space="preserve"><value>Transaction Code</value></data>
+  <data name="Field.TransactionDate" xml:space="preserve"><value>Transaction Date</value></data>
+  <data name="Field.TransactionType" xml:space="preserve"><value>Transaction Type</value></data>
+  <data name="Field.WarehouseCode" xml:space="preserve"><value>Warehouse Code</value></data>
+  <data name="Field.WarehouseName" xml:space="preserve"><value>Warehouse Name</value></data>
+  <data name="Field.Zone" xml:space="preserve"><value>Zone</value></data>
+  <!-- ===== Field - Waste Management keys ===== -->
+  <data name="Field.Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Field.DisposalFee" xml:space="preserve"><value>Disposal Fee</value></data>
+  <data name="Field.InboundLocation" xml:space="preserve"><value>Inbound Location</value></data>
+  <data name="Field.InboundWarehouse" xml:space="preserve"><value>Inbound Warehouse</value></data>
+  <data name="Field.PurchaseFee" xml:space="preserve"><value>Purchase Fee</value></data>
+  <data name="Field.RecordDate" xml:space="preserve"><value>Record Date</value></data>
+  <data name="Field.RelatedProduct" xml:space="preserve"><value>Related Product</value></data>
+  <data name="Field.TotalWeight" xml:space="preserve"><value>Total Weight</value></data>
+  <data name="Field.WasteRecordCode" xml:space="preserve"><value>Waste Record Code</value></data>
+  <data name="Field.WasteTypeCode" xml:space="preserve"><value>Waste Type Code</value></data>
+  <data name="Field.WasteTypeName" xml:space="preserve"><value>Waste Type Name</value></data>
+  <!-- ===== Field - Paper/Printer keys ===== -->
+  <data name="Field.Paper" xml:space="preserve"><value>Paper</value></data>
+  <data name="Field.PaperBottomMargin" xml:space="preserve"><value>Bottom Margin</value></data>
+  <data name="Field.PaperCode" xml:space="preserve"><value>Paper Code</value></data>
+  <data name="Field.PaperHeight" xml:space="preserve"><value>Paper Height</value></data>
+  <data name="Field.PaperLeftMargin" xml:space="preserve"><value>Left Margin</value></data>
+  <data name="Field.PaperRightMargin" xml:space="preserve"><value>Right Margin</value></data>
+  <data name="Field.PaperTopMargin" xml:space="preserve"><value>Top Margin</value></data>
+  <data name="Field.PaperWidth" xml:space="preserve"><value>Paper Width</value></data>
+  <data name="Field.Printer" xml:space="preserve"><value>Printer</value></data>
+  <data name="Field.PrinterCode" xml:space="preserve"><value>Printer Code</value></data>
+  <data name="Field.PrinterIpAddress" xml:space="preserve"><value>IP Address</value></data>
+  <data name="Field.PrinterName" xml:space="preserve"><value>Printer Name</value></data>
+  <data name="Field.PrinterPort" xml:space="preserve"><value>Port</value></data>
+  <data name="Field.ReportName" xml:space="preserve"><value>Report Name</value></data>
+  <!-- ===== Field - System Parameter keys ===== -->
+  <data name="Field.CustomerAdvanceAccount" xml:space="preserve"><value>Customer Advance Account</value></data>
+  <data name="Field.CustomerNoteAccount" xml:space="preserve"><value>Customer Note Account</value></data>
+  <data name="Field.CustomerReceivableAccount" xml:space="preserve"><value>Customer Receivable Account</value></data>
+  <data name="Field.CustomerReturnAccount" xml:space="preserve"><value>Customer Return Account</value></data>
+  <data name="Field.CustomerSubAccount" xml:space="preserve"><value>Customer Sub Account</value></data>
+  <data name="Field.ProductInventoryAccount" xml:space="preserve"><value>Product Inventory Account</value></data>
+  <data name="Field.ProductSubAccount" xml:space="preserve"><value>Product Sub Account</value></data>
+  <data name="Field.SubAccountCodeFormat" xml:space="preserve"><value>Sub Account Code Format</value></data>
+  <data name="Field.SupplierAdvanceAccount" xml:space="preserve"><value>Supplier Advance Account</value></data>
+  <data name="Field.SupplierNoteAccount" xml:space="preserve"><value>Supplier Note Account</value></data>
+  <data name="Field.SupplierPayableAccount" xml:space="preserve"><value>Supplier Payable Account</value></data>
+  <data name="Field.SupplierReturnAccount" xml:space="preserve"><value>Supplier Return Account</value></data>
+  <data name="Field.SupplierSubAccount" xml:space="preserve"><value>Supplier Sub Account</value></data>
+  <data name="Field.TaxRatePercent" xml:space="preserve"><value>Tax Rate (%)</value></data>
+  <!-- ===== Option keys ===== -->
+  <data name="Option.EntityCode" xml:space="preserve"><value>By Entity Code</value></data>
+  <data name="Option.Sequential" xml:space="preserve"><value>Sequential</value></data>
+  <!-- ===== Placeholder additional keys ===== -->
+  <data name="Placeholder.ClickToQueryPrinter" xml:space="preserve"><value>Click to query printer</value></data>
+  <data name="Placeholder.CollectionDayHint" xml:space="preserve"><value>Enter collection day (1-31)</value></data>
+  <!-- ===== Section keys ===== -->
+  <data name="Section.AutoGenerateSetting" xml:space="preserve"><value>Auto Generate Setting</value></data>
+  <data name="Section.ControlAccountCode" xml:space="preserve"><value>Control Account Code</value></data>
+  <data name="Section.FeeInfo" xml:space="preserve"><value>Fee Information</value></data>
+  <data name="Section.TaxSettings" xml:space="preserve"><value>Tax Settings</value></data>
+  <!-- ===== Tab additional keys ===== -->
+  <data name="Tab.ModuleManagement" xml:space="preserve"><value>Module Management</value></data>
+  <data name="Tab.SubAccountSettings" xml:space="preserve"><value>Sub Account Settings</value></data>
   <!-- ===== Vehicle Field keys ===== -->
   <data name="Field.AssociatedCompany" xml:space="preserve"><value>Associated Company</value></data>
   <data name="Field.AssociatedCustomer" xml:space="preserve"><value>Associated Customer</value></data>
