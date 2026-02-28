@@ -100,6 +100,7 @@
     // Tab 子元件參考
     private SubAccountSettingsTab? subAccountTab;
     private ModuleManagementTab? moduleManagementTab;
+    private ApprovalSettingsTab? approvalSettingsTab;
 
     // Tab 與權限
     private bool isSuperAdmin = false;
@@ -135,6 +136,12 @@
                              IsDisabled="@(isSaving || isLoading)" />
     };
 
+    private RenderFragment CreateApprovalSettingsTabContent() => __builder =>
+    {
+        <ApprovalSettingsTab @ref="approvalSettingsTab"
+                             Model="@systemParameter" />
+    };
+
     // ===== 生命週期方法 =====
 
     protected override void OnInitialized()
@@ -143,6 +150,7 @@
         {
             new() { Label = L["Section.TaxSettings"], Icon = "bi bi-cash-stack", SectionNames = new(), CustomContent = CreateTaxTabContent() },
             new() { Label = L["Tab.SubAccountSettings"], Icon = "bi bi-diagram-3", SectionNames = new(), CustomContent = CreateSubAccountTabContent() },
+            new() { Label = L["Tab.ApprovalSettings"], Icon = "bi bi-check2-square", SectionNames = new(), CustomContent = CreateApprovalSettingsTabContent() },
             // 安全憑證 Tab 暫時停用（HTTPS 自簽憑證方案未完成，詳見 README_HTTPS憑證設計(失敗).md）
             // new() { Label = "安全憑證", Icon = "bi bi-shield-lock", SectionNames = new(), CustomContent = CreateCertificateTabContent() },
         };

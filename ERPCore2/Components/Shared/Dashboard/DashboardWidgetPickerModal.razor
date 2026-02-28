@@ -151,12 +151,8 @@
                                 var isSelected = selectedItemKeys.Contains(itemKey);
                                 var capturedItemKey = itemKey;
                                 var iconClass = widget.ItemType == NavigationItemType.QuickAction
-                                    ? "bi bi-wrench-adjustable"
-                                    : widget.IsChartWidget
-                                        ? (widget.IconClass ?? "bi bi-bar-chart-fill")
-                                        : widget.IconClass?.Contains("printer") == true
-                                            ? "bi bi-printer-fill"
-                                            : "bi bi-window";
+                                    ? (widget.QuickActionIconClass ?? widget.IconClass ?? "bi bi-plus-circle-fill")
+                                    : (widget.IconClass ?? "bi bi-window");
 
                                 <div class="col-lg-2 col-md-4 col-6">
                                     <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"
@@ -188,10 +184,8 @@
                 var isSelected = selectedItemKeys.Contains(itemKey);
                 var capturedItemKey = itemKey;
                 var iconClass = widget.ItemType == NavigationItemType.QuickAction
-                    ? "bi bi-wrench-adjustable"
-                    : widget.IconClass?.Contains("printer") == true
-                        ? "bi bi-printer-fill"
-                        : "bi bi-window";
+                    ? (widget.QuickActionIconClass ?? widget.IconClass ?? "bi bi-plus-circle-fill")
+                    : (widget.IconClass ?? "bi bi-window");
 
                 <div class="col-lg-2 col-md-4 col-6">
                     <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"

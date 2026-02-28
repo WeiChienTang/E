@@ -1,16 +1,17 @@
 /* ===== 新增捷徑卡片 ===== */
 .add-shortcut-card {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    padding: 1.25rem 1rem;
+    gap: 0.4rem;
+    padding: 0.45rem 0.65rem;
     background-color: #f9fafb;
     border: 2px dashed #d1d5db;
     border-radius: 0.75rem;
     cursor: pointer;
     transition: all 0.25s ease;
-    min-height: 140px;
+    min-height: 52px;
     color: #9ca3af;
 }
 
@@ -21,42 +22,50 @@
 }
 
 .add-shortcut-card i {
+    font-size: 1.1rem;
     transition: transform 0.25s ease;
+    flex-shrink: 0;
 }
 
 .add-shortcut-card:hover i {
     transform: scale(1.15);
 }
 
+.add-shortcut-card span {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 /* ===== 響應式調整 - 平板 ===== */
 @media (max-width: 768px) {
     .add-shortcut-card {
-        min-height: 100px;
-        padding: 0.75rem 0.5rem;
+        min-height: 46px;
+        padding: 0.35rem 0.5rem;
     }
 
     .add-shortcut-card i {
-        font-size: 1.5rem !important;
+        font-size: 1rem !important;
     }
 
     .add-shortcut-card span {
-        font-size: 0.7rem;
+        font-size: 0.78rem;
     }
 }
 
 /* ===== 響應式調整 - 手機 ===== */
 @media (max-width: 576px) {
     .add-shortcut-card {
-        min-height: 80px;
-        padding: 0.5rem 0.35rem;
+        min-height: 40px;
+        padding: 0.3rem 0.4rem;
     }
 
     .add-shortcut-card i {
-        font-size: 1.25rem !important;
+        font-size: 0.9rem !important;
     }
 
     .add-shortcut-card span {
-        font-size: 0.6rem;
+        font-size: 0.7rem;
     }
 }
 

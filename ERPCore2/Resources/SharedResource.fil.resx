@@ -864,4 +864,69 @@
   <data name="Message.NoToolRecords" xml:space="preserve"><value>Walang rekord ng kagamitan</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>hal.: Pumasa, Mahusay, Bumagsak</value></data>
+  <!-- ===== Vehicle Button/Message keys ===== -->
+  <data name="Button.AddVehicle" xml:space="preserve"><value>Magdagdag ng Sasakyan</value></data>
+  <data name="Button.SelectVehicle" xml:space="preserve"><value>Pumili ng Sasakyan</value></data>
+  <data name="Button.EditVehicle" xml:space="preserve"><value>I-edit ang Sasakyan</value></data>
+  <data name="Button.UnlinkVehicle" xml:space="preserve"><value>I-unlink ang Sasakyan</value></data>
+  <data name="Message.NoVehicles" xml:space="preserve"><value>Walang impormasyon ng sasakyan</value></data>
+  <!-- ===== Vehicle Column keys ===== -->
+  <data name="Column.VehicleLicensePlate" xml:space="preserve"><value>Plaka ng Sasakyan</value></data>
+  <data name="Column.VehicleName" xml:space="preserve"><value>Pangalan ng Sasakyan</value></data>
+  <data name="Column.VehicleTypeLabel" xml:space="preserve"><value>Uri ng Sasakyan</value></data>
+  <data name="Column.VehicleBrand" xml:space="preserve"><value>Brand</value></data>
+  <data name="Column.VehicleModel" xml:space="preserve"><value>Modelo</value></data>
+  <!-- ===== Department Field keys ===== -->
+  <data name="Field.DepartmentCode" xml:space="preserve"><value>Kodigo ng Departamento</value></data>
+  <data name="Field.DepartmentName" xml:space="preserve"><value>Pangalan ng Departamento</value></data>
+  <data name="Field.DepartmentManager" xml:space="preserve"><value>Tagapamahala ng Departamento</value></data>
+  <!-- ===== Vehicle Field keys ===== -->
+  <data name="Field.AssociatedCompany" xml:space="preserve"><value>Kaugnay na Kumpanya</value></data>
+  <data name="Field.AssociatedCustomer" xml:space="preserve"><value>Kaugnay na Customer</value></data>
+  <data name="Field.AssociatedSupplier" xml:space="preserve"><value>Kaugnay na Supplier</value></data>
+  <data name="Field.BodyColor" xml:space="preserve"><value>Kulay ng Katawan</value></data>
+  <data name="Field.Brand" xml:space="preserve"><value>Brand</value></data>
+  <data name="Field.Driver" xml:space="preserve"><value>Drayber</value></data>
+  <data name="Field.EngineNumber" xml:space="preserve"><value>Numero ng Engine</value></data>
+  <data name="Field.FuelType" xml:space="preserve"><value>Uri ng Gasolina</value></data>
+  <data name="Field.GarageName" xml:space="preserve"><value>Pangalan ng Garahe</value></data>
+  <data name="Field.InsuranceCompany" xml:space="preserve"><value>Kumpanya ng Insurance</value></data>
+  <data name="Field.InsuranceExpiryDate" xml:space="preserve"><value>Petsa ng Pagkawala ng Insurance</value></data>
+  <data name="Field.InsurancePolicyNumber" xml:space="preserve"><value>Numero ng Patakaran ng Insurance</value></data>
+  <data name="Field.LastMaintenanceDate" xml:space="preserve"><value>Huling Petsa ng Pagpapanatili</value></data>
+  <data name="Field.LicensePlate" xml:space="preserve"><value>Plaka ng Sasakyan</value></data>
+  <data name="Field.LoadCapacity" xml:space="preserve"><value>Kapasidad ng Karga</value></data>
+  <data name="Field.MaintenanceCode" xml:space="preserve"><value>Kodigo ng Pagpapanatili</value></data>
+  <data name="Field.MaintenanceDate" xml:space="preserve"><value>Petsa ng Pagpapanatili</value></data>
+  <data name="Field.MaintenanceDescription" xml:space="preserve"><value>Paglalarawan ng Pagpapanatili</value></data>
+  <data name="Field.MaintenanceFee" xml:space="preserve"><value>Bayad sa Pagpapanatili</value></data>
+  <data name="Field.MaintenanceHandler" xml:space="preserve"><value>Tauhan ng Pagpapanatili</value></data>
+  <data name="Field.MaintenanceType" xml:space="preserve"><value>Uri ng Pagpapanatili</value></data>
+  <data name="Field.MaintenanceVehicle" xml:space="preserve"><value>Sasakyan na Pinananatili</value></data>
+  <data name="Field.ManufactureYear" xml:space="preserve"><value>Taon ng Pagmamanupaktura</value></data>
+  <data name="Field.Mileage" xml:space="preserve"><value>Kilometrahe</value></data>
+  <data name="Field.MileageAtMaintenance" xml:space="preserve"><value>Kilometrahe sa Pagpapanatili</value></data>
+  <data name="Field.ModelNumber" xml:space="preserve"><value>Numero ng Modelo</value></data>
+  <data name="Field.NextMaintenanceDate" xml:space="preserve"><value>Susunod na Petsa ng Pagpapanatili</value></data>
+  <data name="Field.NextMaintenanceMileage" xml:space="preserve"><value>Susunod na Kilometrahe ng Pagpapanatili</value></data>
+  <data name="Field.VIN" xml:space="preserve"><value>VIN</value></data>
+  <data name="Field.VehicleCode" xml:space="preserve"><value>Kodigo ng Sasakyan</value></data>
+  <data name="Field.VehicleInspectionExpiryDate" xml:space="preserve"><value>Petsa ng Pagkawala ng Inspeksyon</value></data>
+  <data name="Field.VehicleName" xml:space="preserve"><value>Pangalan ng Sasakyan</value></data>
+  <data name="Field.VehicleOwnershipType" xml:space="preserve"><value>Uri ng Pagmamay-ari</value></data>
+  <data name="Field.VehiclePurchaseDate" xml:space="preserve"><value>Petsa ng Pagbili ng Sasakyan</value></data>
+  <data name="Field.VehiclePurchasePrice" xml:space="preserve"><value>Presyo ng Pagbili ng Sasakyan</value></data>
+  <data name="Field.VehicleTypeCode" xml:space="preserve"><value>Kodigo ng Uri ng Sasakyan</value></data>
+  <data name="Field.VehicleTypeDescription" xml:space="preserve"><value>Paglalarawan ng Uri ng Sasakyan</value></data>
+  <data name="Field.VehicleTypeName" xml:space="preserve"><value>Pangalan ng Uri ng Sasakyan</value></data>
+  <!-- ===== Approval Settings Tab keys ===== -->
+  <data name="Tab.ApprovalSettings" xml:space="preserve"><value>Pamamahala ng Pag-apruba</value></data>
+  <data name="Section.ApprovalSettings" xml:space="preserve"><value>Mga Setting ng Proseso ng Pag-apruba</value></data>
+  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Quotation</value></data>
+  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Purchase Order</value></data>
+  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Pagtanggap ng Binili</value></data>
+  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Pagbabalik ng Binili</value></data>
+  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Sales Order</value></data>
+  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Pagbabalik ng Benta</value></data>
+  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Paglipat ng Imbentaryo</value></data>
 </root>

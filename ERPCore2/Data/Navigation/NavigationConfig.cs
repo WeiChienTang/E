@@ -214,6 +214,19 @@ public static class NavigationConfig
                         QuickActionId = "NewCustomer",
                         QuickActionName = "新增客戶"
                     },
+                    new NavigationItem
+                    {
+                        Name = "拜訪紀錄",
+                        NameKey = "Nav.CustomerVisits",
+                        Description = "管理客戶拜訪與聯繫紀錄",
+                        Route = "/customer-visits",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "客戶關係管理",
+                        RequiredPermission = "Customer.Read",
+                        SearchKeywords = new List<string> { "拜訪紀錄", "客戶拜訪", "visit", "拜訪管理" },
+                        QuickActionId = "NewCustomerVisit",
+                        QuickActionName = "新增拜訪紀錄"
+                    },
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {

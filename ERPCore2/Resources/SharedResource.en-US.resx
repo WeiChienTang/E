@@ -864,4 +864,69 @@
   <data name="Message.NoToolRecords" xml:space="preserve"><value>No tool records</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>e.g.: Pass, Excellent, Fail</value></data>
+  <!-- ===== Vehicle Button/Message keys ===== -->
+  <data name="Button.AddVehicle" xml:space="preserve"><value>Add Vehicle</value></data>
+  <data name="Button.SelectVehicle" xml:space="preserve"><value>Select Vehicle</value></data>
+  <data name="Button.EditVehicle" xml:space="preserve"><value>Edit Vehicle</value></data>
+  <data name="Button.UnlinkVehicle" xml:space="preserve"><value>Unlink Vehicle</value></data>
+  <data name="Message.NoVehicles" xml:space="preserve"><value>No vehicle information</value></data>
+  <!-- ===== Vehicle Column keys ===== -->
+  <data name="Column.VehicleLicensePlate" xml:space="preserve"><value>License Plate</value></data>
+  <data name="Column.VehicleName" xml:space="preserve"><value>Vehicle Name</value></data>
+  <data name="Column.VehicleTypeLabel" xml:space="preserve"><value>Vehicle Type</value></data>
+  <data name="Column.VehicleBrand" xml:space="preserve"><value>Brand</value></data>
+  <data name="Column.VehicleModel" xml:space="preserve"><value>Model</value></data>
+  <!-- ===== Department Field keys ===== -->
+  <data name="Field.DepartmentCode" xml:space="preserve"><value>Department Code</value></data>
+  <data name="Field.DepartmentName" xml:space="preserve"><value>Department Name</value></data>
+  <data name="Field.DepartmentManager" xml:space="preserve"><value>Department Manager</value></data>
+  <!-- ===== Vehicle Field keys ===== -->
+  <data name="Field.AssociatedCompany" xml:space="preserve"><value>Associated Company</value></data>
+  <data name="Field.AssociatedCustomer" xml:space="preserve"><value>Associated Customer</value></data>
+  <data name="Field.AssociatedSupplier" xml:space="preserve"><value>Associated Supplier</value></data>
+  <data name="Field.BodyColor" xml:space="preserve"><value>Body Color</value></data>
+  <data name="Field.Brand" xml:space="preserve"><value>Brand</value></data>
+  <data name="Field.Driver" xml:space="preserve"><value>Driver</value></data>
+  <data name="Field.EngineNumber" xml:space="preserve"><value>Engine Number</value></data>
+  <data name="Field.FuelType" xml:space="preserve"><value>Fuel Type</value></data>
+  <data name="Field.GarageName" xml:space="preserve"><value>Garage Name</value></data>
+  <data name="Field.InsuranceCompany" xml:space="preserve"><value>Insurance Company</value></data>
+  <data name="Field.InsuranceExpiryDate" xml:space="preserve"><value>Insurance Expiry Date</value></data>
+  <data name="Field.InsurancePolicyNumber" xml:space="preserve"><value>Insurance Policy Number</value></data>
+  <data name="Field.LastMaintenanceDate" xml:space="preserve"><value>Last Maintenance Date</value></data>
+  <data name="Field.LicensePlate" xml:space="preserve"><value>License Plate</value></data>
+  <data name="Field.LoadCapacity" xml:space="preserve"><value>Load Capacity</value></data>
+  <data name="Field.MaintenanceCode" xml:space="preserve"><value>Maintenance Code</value></data>
+  <data name="Field.MaintenanceDate" xml:space="preserve"><value>Maintenance Date</value></data>
+  <data name="Field.MaintenanceDescription" xml:space="preserve"><value>Maintenance Description</value></data>
+  <data name="Field.MaintenanceFee" xml:space="preserve"><value>Maintenance Fee</value></data>
+  <data name="Field.MaintenanceHandler" xml:space="preserve"><value>Maintenance Handler</value></data>
+  <data name="Field.MaintenanceType" xml:space="preserve"><value>Maintenance Type</value></data>
+  <data name="Field.MaintenanceVehicle" xml:space="preserve"><value>Maintenance Vehicle</value></data>
+  <data name="Field.ManufactureYear" xml:space="preserve"><value>Manufacture Year</value></data>
+  <data name="Field.Mileage" xml:space="preserve"><value>Mileage</value></data>
+  <data name="Field.MileageAtMaintenance" xml:space="preserve"><value>Mileage at Maintenance</value></data>
+  <data name="Field.ModelNumber" xml:space="preserve"><value>Model Number</value></data>
+  <data name="Field.NextMaintenanceDate" xml:space="preserve"><value>Next Maintenance Date</value></data>
+  <data name="Field.NextMaintenanceMileage" xml:space="preserve"><value>Next Maintenance Mileage</value></data>
+  <data name="Field.VIN" xml:space="preserve"><value>VIN</value></data>
+  <data name="Field.VehicleCode" xml:space="preserve"><value>Vehicle Code</value></data>
+  <data name="Field.VehicleInspectionExpiryDate" xml:space="preserve"><value>Vehicle Inspection Expiry Date</value></data>
+  <data name="Field.VehicleName" xml:space="preserve"><value>Vehicle Name</value></data>
+  <data name="Field.VehicleOwnershipType" xml:space="preserve"><value>Ownership Type</value></data>
+  <data name="Field.VehiclePurchaseDate" xml:space="preserve"><value>Purchase Date</value></data>
+  <data name="Field.VehiclePurchasePrice" xml:space="preserve"><value>Purchase Price</value></data>
+  <data name="Field.VehicleTypeCode" xml:space="preserve"><value>Vehicle Type Code</value></data>
+  <data name="Field.VehicleTypeDescription" xml:space="preserve"><value>Vehicle Type Description</value></data>
+  <data name="Field.VehicleTypeName" xml:space="preserve"><value>Vehicle Type Name</value></data>
+  <!-- ===== Approval Settings Tab keys ===== -->
+  <data name="Tab.ApprovalSettings" xml:space="preserve"><value>Approval Settings</value></data>
+  <data name="Section.ApprovalSettings" xml:space="preserve"><value>Approval Workflow Settings</value></data>
+  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>Enable Quotation Approval</value></data>
+  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>Enable Purchase Order Approval</value></data>
+  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>Enable Purchase Receiving Approval</value></data>
+  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>Enable Purchase Return Approval</value></data>
+  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>Enable Sales Order Approval</value></data>
+  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>Enable Sales Return Approval</value></data>
+  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>Enable Inventory Transfer Approval</value></data>
 </root>

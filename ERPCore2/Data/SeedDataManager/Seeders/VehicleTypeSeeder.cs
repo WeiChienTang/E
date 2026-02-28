@@ -24,12 +24,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         {
             if (await context.VehicleTypes.AnyAsync()) return;
 
-            var (createdAt1, createdBy) = SeedDataHelper.GetSystemCreateInfo(30);
-            var (createdAt2, _) = SeedDataHelper.GetSystemCreateInfo(25);
-            var (createdAt3, _) = SeedDataHelper.GetSystemCreateInfo(20);
-            var (createdAt4, _) = SeedDataHelper.GetSystemCreateInfo(15);
-            var (createdAt5, _) = SeedDataHelper.GetSystemCreateInfo(10);
-            var (createdAt6, _) = SeedDataHelper.GetSystemCreateInfo(5);
+            var (createdAt1, createdBy) = SeedDataHelper.GetSystemCreateInfo(0);
+            var (createdAt2, _) = SeedDataHelper.GetSystemCreateInfo(0);
 
             var vehicleTypes = new[]
             {
@@ -43,43 +39,11 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new VehicleType
                 {
-                    Code = "VAN",
-                    Name = "廂型車",
-                    Description = "封閉式廂型貨車",
-                    Status = EntityStatus.Active,
-                    CreatedAt = createdAt2,
-                },
-                new VehicleType
-                {
-                    Code = "SEDAN",
-                    Name = "小客車",
-                    Description = "一般乘用小客車",
-                    Status = EntityStatus.Active,
-                    CreatedAt = createdAt3,
-                },
-                new VehicleType
-                {
-                    Code = "MOTORCYCLE",
-                    Name = "機車",
-                    Description = "機車或摩托車",
-                    Status = EntityStatus.Active,
-                    CreatedAt = createdAt4,
-                },
-                new VehicleType
-                {
-                    Code = "REFRIGERATED",
-                    Name = "冷藏車",
-                    Description = "具備冷藏設備的貨車",
-                    Status = EntityStatus.Active,
-                    CreatedAt = createdAt5,
-                },
-                new VehicleType
-                {
                     Code = "TRAILER",
                     Name = "拖車",
                     Description = "拖車或半拖車",
                     Status = EntityStatus.Active,
-                    CreatedAt = createdAt6,
+                    CreatedAt = createdAt2,
                 }
             };
 

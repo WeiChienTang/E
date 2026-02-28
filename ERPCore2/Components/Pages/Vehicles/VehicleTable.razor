@@ -9,16 +9,16 @@
         @if (!IsReadOnly)
         {
             <div class="d-flex gap-2">
-                <GenericButtonComponent Text="增車"
+                <GenericButtonComponent Text="@L["Button.AddVehicle"]"
                                       Variant="ButtonVariant.DarkBlue"
                                       Size="ButtonSize.Small"
                                       OnClick="@HandleAddVehicle"
-                                      Title="新增一筆車輛資訊" />
-                <GenericButtonComponent Text="選車"
+                                      Title="@L["Button.AddVehicle"]" />
+                <GenericButtonComponent Text="@L["Button.SelectVehicle"]"
                                       Variant="ButtonVariant.DarkBlue"
                                       Size="ButtonSize.Small"
                                       OnClick="@HandleSelectVehicle"
-                                      Title="從現有車輛中選擇配給" />
+                                      Title="@L["Button.SelectVehicle"]" />
             </div>
         }
     </div>
@@ -36,7 +36,7 @@
                               ShowBuiltInActions="@(!IsReadOnly)"
                               ShowBuiltInDeleteButton="false"
                               EnableAutoEmptyRow="false"
-                              EmptyMessage="目前沒有車輛資訊"
+                              EmptyMessage="@L["Message.NoVehicles"]"
                               CustomActionsTemplate="@GetActionsTemplate()"
                               ActionsColumnWidth="100px" />
 </div>
@@ -127,13 +127,13 @@
                                       Variant="ButtonVariant.DarkBlue"
                                       Size="ButtonSize.Large"
                                       OnClick="@(() => OnEditVehicle.InvokeAsync(vehicle))"
-                                      Title="編輯車輛"
+                                      Title="@L["Button.EditVehicle"]"
                                       CssClass="btn-square" />
                 <GenericButtonComponent IconClass="bi bi-link-45deg"
                                       Variant="ButtonVariant.Yellow"
                                       Size="ButtonSize.Large"
                                       OnClick="@(() => OnUnlinkVehicle.InvokeAsync(vehicle))"
-                                      Title="解除配給（不會刪除車輛）"
+                                      Title="@L["Button.UnlinkVehicle"]"
                                       CssClass="btn-square" />
             </div>
         };

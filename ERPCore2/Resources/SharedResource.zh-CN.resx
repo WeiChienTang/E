@@ -864,4 +864,69 @@
   <data name="Message.NoToolRecords" xml:space="preserve"><value>暂无工具配发记录</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>例：通过、优秀、不合格</value></data>
+  <!-- ===== Vehicle Button/Message keys ===== -->
+  <data name="Button.AddVehicle" xml:space="preserve"><value>增车</value></data>
+  <data name="Button.SelectVehicle" xml:space="preserve"><value>选车</value></data>
+  <data name="Button.EditVehicle" xml:space="preserve"><value>编辑车辆</value></data>
+  <data name="Button.UnlinkVehicle" xml:space="preserve"><value>解除分配</value></data>
+  <data name="Message.NoVehicles" xml:space="preserve"><value>暂无车辆信息</value></data>
+  <!-- ===== Vehicle Column keys ===== -->
+  <data name="Column.VehicleLicensePlate" xml:space="preserve"><value>车牌号码</value></data>
+  <data name="Column.VehicleName" xml:space="preserve"><value>车辆名称</value></data>
+  <data name="Column.VehicleTypeLabel" xml:space="preserve"><value>车型</value></data>
+  <data name="Column.VehicleBrand" xml:space="preserve"><value>品牌</value></data>
+  <data name="Column.VehicleModel" xml:space="preserve"><value>型号</value></data>
+  <!-- ===== Department Field keys ===== -->
+  <data name="Field.DepartmentCode" xml:space="preserve"><value>部门编号</value></data>
+  <data name="Field.DepartmentName" xml:space="preserve"><value>部门名称</value></data>
+  <data name="Field.DepartmentManager" xml:space="preserve"><value>部门负责人</value></data>
+  <!-- ===== Vehicle Field keys ===== -->
+  <data name="Field.AssociatedCompany" xml:space="preserve"><value>关联公司</value></data>
+  <data name="Field.AssociatedCustomer" xml:space="preserve"><value>关联客户</value></data>
+  <data name="Field.AssociatedSupplier" xml:space="preserve"><value>关联供应商</value></data>
+  <data name="Field.BodyColor" xml:space="preserve"><value>车身颜色</value></data>
+  <data name="Field.Brand" xml:space="preserve"><value>品牌</value></data>
+  <data name="Field.Driver" xml:space="preserve"><value>驾驶员</value></data>
+  <data name="Field.EngineNumber" xml:space="preserve"><value>发动机号</value></data>
+  <data name="Field.FuelType" xml:space="preserve"><value>燃料类型</value></data>
+  <data name="Field.GarageName" xml:space="preserve"><value>修理厂名称</value></data>
+  <data name="Field.InsuranceCompany" xml:space="preserve"><value>保险公司</value></data>
+  <data name="Field.InsuranceExpiryDate" xml:space="preserve"><value>保险到期日</value></data>
+  <data name="Field.InsurancePolicyNumber" xml:space="preserve"><value>保险单号</value></data>
+  <data name="Field.LastMaintenanceDate" xml:space="preserve"><value>上次保养日期</value></data>
+  <data name="Field.LicensePlate" xml:space="preserve"><value>车牌号码</value></data>
+  <data name="Field.LoadCapacity" xml:space="preserve"><value>载重量</value></data>
+  <data name="Field.MaintenanceCode" xml:space="preserve"><value>保养单号</value></data>
+  <data name="Field.MaintenanceDate" xml:space="preserve"><value>保养日期</value></data>
+  <data name="Field.MaintenanceDescription" xml:space="preserve"><value>保养说明</value></data>
+  <data name="Field.MaintenanceFee" xml:space="preserve"><value>保养费用</value></data>
+  <data name="Field.MaintenanceHandler" xml:space="preserve"><value>保养人员</value></data>
+  <data name="Field.MaintenanceType" xml:space="preserve"><value>保养类型</value></data>
+  <data name="Field.MaintenanceVehicle" xml:space="preserve"><value>保养车辆</value></data>
+  <data name="Field.ManufactureYear" xml:space="preserve"><value>出厂年份</value></data>
+  <data name="Field.Mileage" xml:space="preserve"><value>里程数</value></data>
+  <data name="Field.MileageAtMaintenance" xml:space="preserve"><value>保养时里程</value></data>
+  <data name="Field.ModelNumber" xml:space="preserve"><value>型号</value></data>
+  <data name="Field.NextMaintenanceDate" xml:space="preserve"><value>下次保养日期</value></data>
+  <data name="Field.NextMaintenanceMileage" xml:space="preserve"><value>下次保养里程</value></data>
+  <data name="Field.VIN" xml:space="preserve"><value>车架号</value></data>
+  <data name="Field.VehicleCode" xml:space="preserve"><value>车辆编号</value></data>
+  <data name="Field.VehicleInspectionExpiryDate" xml:space="preserve"><value>年检到期日</value></data>
+  <data name="Field.VehicleName" xml:space="preserve"><value>车辆名称</value></data>
+  <data name="Field.VehicleOwnershipType" xml:space="preserve"><value>车辆所有权</value></data>
+  <data name="Field.VehiclePurchaseDate" xml:space="preserve"><value>购车日期</value></data>
+  <data name="Field.VehiclePurchasePrice" xml:space="preserve"><value>购车价格</value></data>
+  <data name="Field.VehicleTypeCode" xml:space="preserve"><value>车型代码</value></data>
+  <data name="Field.VehicleTypeDescription" xml:space="preserve"><value>车型说明</value></data>
+  <data name="Field.VehicleTypeName" xml:space="preserve"><value>车型名称</value></data>
+  <!-- ===== Approval Settings Tab keys ===== -->
+  <data name="Tab.ApprovalSettings" xml:space="preserve"><value>审核管理</value></data>
+  <data name="Section.ApprovalSettings" xml:space="preserve"><value>审核流程设置</value></data>
+  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>启用报价单审核</value></data>
+  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>启用采购单审核</value></data>
+  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>启用进货单审核</value></data>
+  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>启用进货退回审核</value></data>
+  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>启用销货单审核</value></data>
+  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>启用销货退回审核</value></data>
+  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>启用库存调拨审核</value></data>
 </root>

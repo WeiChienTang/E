@@ -882,4 +882,69 @@
   <data name="Message.NoToolRecords" xml:space="preserve"><value>尚無工具配給紀錄</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>例：通過、優秀、不合格</value></data>
+  <!-- ===== Vehicle Button/Message keys ===== -->
+  <data name="Button.AddVehicle" xml:space="preserve"><value>增車</value></data>
+  <data name="Button.SelectVehicle" xml:space="preserve"><value>選車</value></data>
+  <data name="Button.EditVehicle" xml:space="preserve"><value>編輯車輛</value></data>
+  <data name="Button.UnlinkVehicle" xml:space="preserve"><value>解除配給</value></data>
+  <data name="Message.NoVehicles" xml:space="preserve"><value>目前沒有車輛資訊</value></data>
+  <!-- ===== Vehicle Column keys ===== -->
+  <data name="Column.VehicleLicensePlate" xml:space="preserve"><value>車牌號碼</value></data>
+  <data name="Column.VehicleName" xml:space="preserve"><value>車輛名稱</value></data>
+  <data name="Column.VehicleTypeLabel" xml:space="preserve"><value>車型</value></data>
+  <data name="Column.VehicleBrand" xml:space="preserve"><value>廠牌</value></data>
+  <data name="Column.VehicleModel" xml:space="preserve"><value>型號</value></data>
+  <!-- ===== Department Field keys ===== -->
+  <data name="Field.DepartmentCode" xml:space="preserve"><value>部門編號</value></data>
+  <data name="Field.DepartmentName" xml:space="preserve"><value>部門名稱</value></data>
+  <data name="Field.DepartmentManager" xml:space="preserve"><value>部門主管</value></data>
+  <!-- ===== Vehicle Field keys ===== -->
+  <data name="Field.AssociatedCompany" xml:space="preserve"><value>關聯公司</value></data>
+  <data name="Field.AssociatedCustomer" xml:space="preserve"><value>關聯客戶</value></data>
+  <data name="Field.AssociatedSupplier" xml:space="preserve"><value>關聯廠商</value></data>
+  <data name="Field.BodyColor" xml:space="preserve"><value>車身顏色</value></data>
+  <data name="Field.Brand" xml:space="preserve"><value>廠牌</value></data>
+  <data name="Field.Driver" xml:space="preserve"><value>駕駛人</value></data>
+  <data name="Field.EngineNumber" xml:space="preserve"><value>引擎號碼</value></data>
+  <data name="Field.FuelType" xml:space="preserve"><value>燃料類型</value></data>
+  <data name="Field.GarageName" xml:space="preserve"><value>維修廠名稱</value></data>
+  <data name="Field.InsuranceCompany" xml:space="preserve"><value>保險公司</value></data>
+  <data name="Field.InsuranceExpiryDate" xml:space="preserve"><value>保險到期日</value></data>
+  <data name="Field.InsurancePolicyNumber" xml:space="preserve"><value>保險單號</value></data>
+  <data name="Field.LastMaintenanceDate" xml:space="preserve"><value>上次保養日期</value></data>
+  <data name="Field.LicensePlate" xml:space="preserve"><value>車牌號碼</value></data>
+  <data name="Field.LoadCapacity" xml:space="preserve"><value>載重量</value></data>
+  <data name="Field.MaintenanceCode" xml:space="preserve"><value>保養單號</value></data>
+  <data name="Field.MaintenanceDate" xml:space="preserve"><value>保養日期</value></data>
+  <data name="Field.MaintenanceDescription" xml:space="preserve"><value>保養說明</value></data>
+  <data name="Field.MaintenanceFee" xml:space="preserve"><value>保養費用</value></data>
+  <data name="Field.MaintenanceHandler" xml:space="preserve"><value>保養人員</value></data>
+  <!-- ===== Approval Settings Tab keys ===== -->
+  <data name="Tab.ApprovalSettings" xml:space="preserve"><value>審核管理</value></data>
+  <data name="Section.ApprovalSettings" xml:space="preserve"><value>審核流程設定</value></data>
+  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>啟用報價單審核</value></data>
+  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>啟用採購單審核</value></data>
+  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>啟用進貨單審核</value></data>
+  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>啟用進貨退回審核</value></data>
+  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>啟用銷貨單審核</value></data>
+  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>啟用銷貨退回審核</value></data>
+  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>啟用庫存調撥審核</value></data>
+  <data name="Field.MaintenanceType" xml:space="preserve"><value>保養類型</value></data>
+  <data name="Field.MaintenanceVehicle" xml:space="preserve"><value>保養車輛</value></data>
+  <data name="Field.ManufactureYear" xml:space="preserve"><value>出廠年份</value></data>
+  <data name="Field.Mileage" xml:space="preserve"><value>里程數</value></data>
+  <data name="Field.MileageAtMaintenance" xml:space="preserve"><value>保養時里程</value></data>
+  <data name="Field.ModelNumber" xml:space="preserve"><value>型號</value></data>
+  <data name="Field.NextMaintenanceDate" xml:space="preserve"><value>下次保養日期</value></data>
+  <data name="Field.NextMaintenanceMileage" xml:space="preserve"><value>下次保養里程</value></data>
+  <data name="Field.VIN" xml:space="preserve"><value>車身號碼</value></data>
+  <data name="Field.VehicleCode" xml:space="preserve"><value>車輛編號</value></data>
+  <data name="Field.VehicleInspectionExpiryDate" xml:space="preserve"><value>驗車到期日</value></data>
+  <data name="Field.VehicleName" xml:space="preserve"><value>車輛名稱</value></data>
+  <data name="Field.VehicleOwnershipType" xml:space="preserve"><value>車輛所有權</value></data>
+  <data name="Field.VehiclePurchaseDate" xml:space="preserve"><value>購車日期</value></data>
+  <data name="Field.VehiclePurchasePrice" xml:space="preserve"><value>購車價格</value></data>
+  <data name="Field.VehicleTypeCode" xml:space="preserve"><value>車型代碼</value></data>
+  <data name="Field.VehicleTypeDescription" xml:space="preserve"><value>車型說明</value></data>
+  <data name="Field.VehicleTypeName" xml:space="preserve"><value>車型名稱</value></data>
 </root>
