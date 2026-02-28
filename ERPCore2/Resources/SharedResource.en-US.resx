@@ -253,6 +253,12 @@
   <data name="Preference.LanguageHelpText" xml:space="preserve">
     <value>Page will reload after saving to apply new language</value>
   </data>
+  <data name="Preference.Display" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="Preference.FontSize" xml:space="preserve">
+    <value>Font Size</value>
+  </data>
 
   <!-- ===== Employee Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
@@ -880,6 +886,17 @@
   <data name="Field.DepartmentCode" xml:space="preserve"><value>Department Code</value></data>
   <data name="Field.DepartmentName" xml:space="preserve"><value>Department Name</value></data>
   <data name="Field.DepartmentManager" xml:space="preserve"><value>Department Manager</value></data>
+  <!-- ===== Position Field keys ===== -->
+  <data name="Field.PositionCode" xml:space="preserve"><value>Position Code</value></data>
+  <data name="Field.PositionName" xml:space="preserve"><value>Position Name</value></data>
+  <!-- ===== Role Field keys ===== -->
+  <data name="Field.RoleCode" xml:space="preserve"><value>Role Code</value></data>
+  <data name="Field.RoleName" xml:space="preserve"><value>Role Name</value></data>
+  <!-- ===== Permission Field keys ===== -->
+  <data name="Field.PermissionCode" xml:space="preserve"><value>Permission Code</value></data>
+  <data name="Field.PermissionName" xml:space="preserve"><value>Permission Name</value></data>
+  <data name="Field.PermissionAction" xml:space="preserve"><value>Permission Action</value></data>
+  <data name="Field.PermissionLevel" xml:space="preserve"><value>Permission Level</value></data>
   <!-- ===== Vehicle Field keys ===== -->
   <data name="Field.AssociatedCompany" xml:space="preserve"><value>Associated Company</value></data>
   <data name="Field.AssociatedCustomer" xml:space="preserve"><value>Associated Customer</value></data>

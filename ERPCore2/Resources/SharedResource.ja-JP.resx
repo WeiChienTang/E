@@ -253,6 +253,12 @@
   <data name="Preference.LanguageHelpText" xml:space="preserve">
     <value>保存後、新しい言語を適用するためにページがリロードされます</value>
   </data>
+  <data name="Preference.Display" xml:space="preserve">
+    <value>表示設定</value>
+  </data>
+  <data name="Preference.FontSize" xml:space="preserve">
+    <value>フォントサイズ</value>
+  </data>
 
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
@@ -880,6 +886,17 @@
   <data name="Field.DepartmentCode" xml:space="preserve"><value>部門コード</value></data>
   <data name="Field.DepartmentName" xml:space="preserve"><value>部門名</value></data>
   <data name="Field.DepartmentManager" xml:space="preserve"><value>部門責任者</value></data>
+  <!-- ===== Position Field keys ===== -->
+  <data name="Field.PositionCode" xml:space="preserve"><value>職位コード</value></data>
+  <data name="Field.PositionName" xml:space="preserve"><value>職位名</value></data>
+  <!-- ===== Role Field keys ===== -->
+  <data name="Field.RoleCode" xml:space="preserve"><value>ロールコード</value></data>
+  <data name="Field.RoleName" xml:space="preserve"><value>ロール名</value></data>
+  <!-- ===== Permission Field keys ===== -->
+  <data name="Field.PermissionCode" xml:space="preserve"><value>権限コード</value></data>
+  <data name="Field.PermissionName" xml:space="preserve"><value>権限名</value></data>
+  <data name="Field.PermissionAction" xml:space="preserve"><value>操作タイプ</value></data>
+  <data name="Field.PermissionLevel" xml:space="preserve"><value>権限レベル</value></data>
   <!-- ===== Vehicle Field keys ===== -->
   <data name="Field.AssociatedCompany" xml:space="preserve"><value>関連会社</value></data>
   <data name="Field.AssociatedCustomer" xml:space="preserve"><value>関連顧客</value></data>

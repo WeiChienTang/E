@@ -1,4 +1,8 @@
 /* 全域基礎樣式 */
+html {
+    font-size: var(--content-zoom, 1rem); /* 字型縮放：由 content-zoom-helper.js 動態設定 */
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background-color: var(--bg-secondary);

@@ -274,6 +274,12 @@
   <data name="Preference.LanguageHelpText" xml:space="preserve">
     <value>儲存後頁面將重新載入以套用新語言</value>
   </data>
+  <data name="Preference.Display" xml:space="preserve">
+    <value>顯示設定</value>
+  </data>
+  <data name="Preference.FontSize" xml:space="preserve">
+    <value>字型大小</value>
+  </data>
 
   <!-- ===== 員工帳號 ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
@@ -898,6 +904,17 @@
   <data name="Field.DepartmentCode" xml:space="preserve"><value>部門編號</value></data>
   <data name="Field.DepartmentName" xml:space="preserve"><value>部門名稱</value></data>
   <data name="Field.DepartmentManager" xml:space="preserve"><value>部門主管</value></data>
+  <!-- ===== Position Field keys ===== -->
+  <data name="Field.PositionCode" xml:space="preserve"><value>職位編號</value></data>
+  <data name="Field.PositionName" xml:space="preserve"><value>職位名稱</value></data>
+  <!-- ===== Role Field keys ===== -->
+  <data name="Field.RoleCode" xml:space="preserve"><value>權限組編號</value></data>
+  <data name="Field.RoleName" xml:space="preserve"><value>權限組名稱</value></data>
+  <!-- ===== Permission Field keys ===== -->
+  <data name="Field.PermissionCode" xml:space="preserve"><value>權限代碼</value></data>
+  <data name="Field.PermissionName" xml:space="preserve"><value>權限名稱</value></data>
+  <data name="Field.PermissionAction" xml:space="preserve"><value>操作類型</value></data>
+  <data name="Field.PermissionLevel" xml:space="preserve"><value>權限等級</value></data>
   <!-- ===== Vehicle Field keys ===== -->
   <data name="Field.AssociatedCompany" xml:space="preserve"><value>關聯公司</value></data>
   <data name="Field.AssociatedCustomer" xml:space="preserve"><value>關聯客戶</value></data>

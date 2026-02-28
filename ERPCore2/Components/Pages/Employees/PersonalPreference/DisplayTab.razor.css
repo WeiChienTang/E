@@ -1,0 +1,21 @@
+.zoom-option-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 60px;
+    padding: 8px 12px;
+    line-height: 1;
+}
+
+.zoom-preview {
+    font-weight: 600;
+    line-height: 1;
+    display: block;
+}
+
+.zoom-label {
+    font-size: 0.7rem;
+    line-height: 1;
+    display: block;
+}

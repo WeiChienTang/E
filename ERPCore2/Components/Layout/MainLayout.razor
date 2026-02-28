@@ -14,6 +14,7 @@
 @inject INavigationPermissionService NavigationPermissionService
 @inject INavigationSearchService NavigationSearchService
 @inject IReportSearchService ReportSearchService
+@inject IEmployeePreferenceService EmployeePreferenceService
 @inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 @implements IAsyncDisposable
@@ -159,6 +160,9 @@
     // 個人化設定 Modal 狀態
     private bool showPersonalPreference = false;
     
+    // 當前登入員工 ID（供 OnAfterRenderAsync 套用縮放偏好使用）
+    private int _currentEmployeeId = 0;
+
     // Action 處理器註册表
     private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;
 
@@ -179,6 +183,7 @@
             var employeeId = await NavigationPermissionService.GetCurrentEmployeeIdAsync();
             if (employeeId > 0)
             {
+                _currentEmployeeId = employeeId;
                 // 這會觸發一次資料庫查詢，並將結果快取
                 _ = await NavigationPermissionService.GetAllEmployeePermissionsAsync(employeeId);
             }
@@ -216,6 +221,20 @@
     {
         if (firstRender)
         {
+            // 強制套用當前用戶的字型縮放偏好，覆寫可能殘留的上一個用戶 cookie
+            if (_currentEmployeeId > 0)
+            {
+                try
+                {
+                    var preference = await EmployeePreferenceService.GetByEmployeeIdAsync(_currentEmployeeId);
+                    await JSRuntime.InvokeVoidAsync("setContentZoom", (int)preference.Zoom);
+                }
+                catch
+                {
+                    // 忽略套用縮放失敗，不影響主要功能
+                }
+            }
+
             try
             {
                 // 註冊 Alt+S 快捷鍵開啟頁面搜尋

@@ -56,8 +56,8 @@ namespace ERPCore2.Services
                 }
                 else
                 {
-                    // 更新只更新語言欄位（未來新增其他設定時在此擴充）
                     existing.Language = preference.Language;
+                    existing.Zoom = preference.Zoom;
                     existing.UpdatedAt = DateTime.Now;
                 }
 

@@ -1,0 +1,44 @@
+@* 顯示設定 Tab — 字型縮放 *@
+@inject IStringLocalizer<SharedResource> L
+
+<div class="p-2">
+    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.Display"]</div>
+    <div class="d-flex gap-2 flex-wrap">
+        @foreach (var option in _zoomOptions)
+        {
+            var isSelected = (Model ?? _fallback).Zoom == option.Value;
+            <button type="button"
+                    class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") zoom-option-btn"
+                    title="@option.Label"
+                    @onclick="() => SelectZoom(option.Value)">
+                <span class="zoom-preview" style="font-size: @option.PreviewSize;">Aa</span>
+                <span class="zoom-label">@option.Label</span>
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EmployeePreference? Model { get; set; }
+
+    private readonly EmployeePreference _fallback = new();
+
+    private record ZoomOption(ContentZoom Value, string Label, string PreviewSize);
+
+    private static readonly List<ZoomOption> _zoomOptions = new()
+    {
+        new(ContentZoom.XSmall,  "75%",  "0.75rem"),
+        new(ContentZoom.Small,   "90%",  "0.9rem"),
+        new(ContentZoom.Medium,  "100%", "1rem"),
+        new(ContentZoom.Large,   "110%", "1.1rem"),
+        new(ContentZoom.XLarge,  "125%", "1.25rem"),
+        new(ContentZoom.XXLarge, "150%", "1.5rem"),
+    };
+
+    private void SelectZoom(ContentZoom value)
+    {
+        (Model ?? _fallback).Zoom = value;
+        StateHasChanged();
+    }
+}

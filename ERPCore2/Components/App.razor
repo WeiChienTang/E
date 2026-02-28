@@ -15,6 +15,13 @@
     <link rel="stylesheet" href="@Assets["ERPCore2.styles.css"]" />
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
+    @* 字型縮放：在 CSS 載入後立即套用，避免頁面 flash *@
+    <script>
+        (function () {
+            var match = document.cookie.match(/ERPCore2\.ContentZoom=([^;]+)/);
+            if (match) document.documentElement.style.setProperty('--content-zoom', decodeURIComponent(match[1]));
+        })();
+    </script>
     <HeadOutlet />
 </head>
 
@@ -37,6 +44,7 @@
     <script src="@Assets["js/drag-drop-helper.js"]"></script>
     <script src="@Assets["js/file-download-helper.js"]"></script>
     <script src="@Assets["js/culture-helper.js"]"></script>
+    <script src="@Assets["js/content-zoom-helper.js"]"></script>
 
     @* JsBarcode CDN - 用於條碼生成（defer 避免阻塞 blazor.web.js 載入）*@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" defer></script>

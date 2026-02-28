@@ -253,6 +253,12 @@
   <data name="Preference.LanguageHelpText" xml:space="preserve">
     <value>Mag-reload ang pahina pagkatapos i-save upang ilapat ang bagong wika</value>
   </data>
+  <data name="Preference.Display" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="Preference.FontSize" xml:space="preserve">
+    <value>Laki ng Font</value>
+  </data>
 
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
@@ -880,6 +886,17 @@
   <data name="Field.DepartmentCode" xml:space="preserve"><value>Kodigo ng Departamento</value></data>
   <data name="Field.DepartmentName" xml:space="preserve"><value>Pangalan ng Departamento</value></data>
   <data name="Field.DepartmentManager" xml:space="preserve"><value>Tagapamahala ng Departamento</value></data>
+  <!-- ===== Position Field keys ===== -->
+  <data name="Field.PositionCode" xml:space="preserve"><value>Kodigo ng Posisyon</value></data>
+  <data name="Field.PositionName" xml:space="preserve"><value>Pangalan ng Posisyon</value></data>
+  <!-- ===== Role Field keys ===== -->
+  <data name="Field.RoleCode" xml:space="preserve"><value>Kodigo ng Role</value></data>
+  <data name="Field.RoleName" xml:space="preserve"><value>Pangalan ng Role</value></data>
+  <!-- ===== Permission Field keys ===== -->
+  <data name="Field.PermissionCode" xml:space="preserve"><value>Kodigo ng Pahintulot</value></data>
+  <data name="Field.PermissionName" xml:space="preserve"><value>Pangalan ng Pahintulot</value></data>
+  <data name="Field.PermissionAction" xml:space="preserve"><value>Uri ng Aksyon</value></data>
+  <data name="Field.PermissionLevel" xml:space="preserve"><value>Antas ng Pahintulot</value></data>
   <!-- ===== Vehicle Field keys ===== -->
   <data name="Field.AssociatedCompany" xml:space="preserve"><value>Kaugnay na Kumpanya</value></data>
   <data name="Field.AssociatedCustomer" xml:space="preserve"><value>Kaugnay na Customer</value></data>

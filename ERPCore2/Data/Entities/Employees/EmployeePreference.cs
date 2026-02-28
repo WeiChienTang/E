@@ -25,8 +25,38 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "介面語言")]
         public UILanguage Language { get; set; } = UILanguage.ZhTW;
 
+        /// <summary>
+        /// 字型縮放級別
+        /// </summary>
+        [Display(Name = "字型大小")]
+        public ContentZoom Zoom { get; set; } = ContentZoom.Medium;
+
         // 導航屬性
         public Employee? Employee { get; set; }
+    }
+
+    /// <summary>
+    /// 字型縮放級別列舉
+    /// </summary>
+    public enum ContentZoom
+    {
+        [Display(Name = "75%")]
+        XSmall = 1,
+
+        [Display(Name = "90%")]
+        Small = 2,
+
+        [Display(Name = "100%")]
+        Medium = 3,
+
+        [Display(Name = "110%")]
+        Large = 4,
+
+        [Display(Name = "125%")]
+        XLarge = 5,
+
+        [Display(Name = "150%")]
+        XXLarge = 6
     }
 
     /// <summary>

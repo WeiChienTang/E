@@ -55,9 +55,10 @@
     private bool isLoading = false;
     private int? currentEmployeeId = null;
 
-    // 語言偏好
+    // 語言偏好 + 字型縮放
     private EmployeePreference employeePreference = new();
-    private UILanguage _originalLanguage = UILanguage.ZhTW; // 記錄載入時的語言，用於判斷是否需要 reload
+    private UILanguage _originalLanguage = UILanguage.ZhTW;   // 記錄載入時的語言，用於判斷是否需要 reload
+    private ContentZoom _originalZoom = ContentZoom.Medium;    // 記錄載入時的縮放，用於判斷是否需要套用
 
     // 個人資料
     private Employee? currentEmployee = null;
@@ -85,6 +86,11 @@
         <LanguageRegionTab Model="@employeePreference" />
     };
 
+    private RenderFragment CreateDisplayTabContent() => __builder =>
+    {
+        <DisplayTab Model="@employeePreference" />
+    };
+
     // ===== 生命週期 =====
 
     protected override void OnInitialized()
@@ -92,7 +98,8 @@
         tabDefinitions = new List<FormTabDefinition>
         {
             new() { Label = L["Preference.PersonalData"], Icon = "bi bi-person", SectionNames = new(), CustomContent = CreatePersonalDataTabContent() },
-            new() { Label = L["Preference.LanguageRegion"], Icon = "bi bi-translate", SectionNames = new(), CustomContent = CreateLanguageRegionTabContent() }
+            new() { Label = L["Preference.LanguageRegion"], Icon = "bi bi-translate", SectionNames = new(), CustomContent = CreateLanguageRegionTabContent() },
+            new() { Label = L["Preference.Display"], Icon = "bi bi-type", SectionNames = new(), CustomContent = CreateDisplayTabContent() }
         };
     }
 
@@ -117,9 +124,10 @@
 
             if (currentEmployeeId.HasValue)
             {
-                // 載入語言偏好，並記錄原始語言供儲存後比對
+                // 載入語言偏好，並記錄原始值供儲存後比對
                 employeePreference = await EmployeePreferenceService.GetByEmployeeIdAsync(currentEmployeeId.Value);
                 _originalLanguage = employeePreference.Language;
+                _originalZoom = employeePreference.Zoom;
 
                 // 載入員工個人資料
                 currentEmployee = await EmployeeService.GetByIdAsync(currentEmployeeId.Value);
@@ -190,6 +198,13 @@
             if (OnSaved.HasDelegate)
                 await OnSaved.InvokeAsync();
 
+            // 字型縮放若有變更，即時套用（寫 cookie + 更新 CSS variable，不需 reload）
+            if (employeePreference.Zoom != _originalZoom)
+            {
+                await JSRuntime.InvokeVoidAsync("setContentZoom", (int)employeePreference.Zoom);
+                _originalZoom = employeePreference.Zoom;
+            }
+
             // 語言若與目前 UI 文化不同，寫入 cookie 並重新載入頁面以套用新語言
             var newCultureCode = ERPCore2.Helpers.CultureHelper.ToCultureCode(employeePreference.Language);
             if (newCultureCode != System.Globalization.CultureInfo.CurrentUICulture.Name)
@@ -223,6 +238,7 @@
         currentEmployee = null;
         employeePreference = new();
         _originalLanguage = UILanguage.ZhTW;
+        _originalZoom = ContentZoom.Medium;
         newPassword = string.Empty;
         confirmPassword = string.Empty;
 
