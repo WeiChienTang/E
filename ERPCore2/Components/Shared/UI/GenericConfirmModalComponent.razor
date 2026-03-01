@@ -1,8 +1,9 @@
-@* 
+@*
     通用確認對話框組件
     提供一個簡潔美觀的確認對話框，支援顯示條件清單
     適用於需要使用者確認「是」或「否」的場景
 *@
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -15,14 +16,14 @@
                    CloseOnBackdropClick="true"
                    OnClose="@HandleCancel">
     <HeaderButtons>
-        <GenericButtonComponent Variant="@ConfirmButtonVariant" 
-                            Text="@ConfirmButtonText" 
+        <GenericButtonComponent Variant="@ConfirmButtonVariant"
+                            Text="@ConfirmButtonText"
                             OnClick="HandleConfirm"
-                            Title="確認" />
-        <GenericButtonComponent Variant="ButtonVariant.Red" 
-                            Text="@CancelButtonText" 
+                            Title="@L["Button.Confirm"]" />
+        <GenericButtonComponent Variant="ButtonVariant.Red"
+                            Text="@CancelButtonText"
                             OnClick="HandleCancel"
-                            Title="取消" />
+                            Title="@L["Button.Cancel"]" />
 
     </HeaderButtons>
     <BodyContent>

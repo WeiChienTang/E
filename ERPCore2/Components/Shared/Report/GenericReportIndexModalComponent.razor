@@ -183,7 +183,17 @@
             {
                 PropertyName = "Description",
                 Title = L["Report.DescriptionColumn"],
-                ColumnType = InteractiveColumnType.Display
+                ColumnType = InteractiveColumnType.Display,
+                CustomTemplate = (data) => (RenderFragment)(builder =>
+                {
+                    if (data is ReportDefinition r)
+                    {
+                        var text = r.DescriptionKey != null
+                            ? L[r.DescriptionKey].ToString()
+                            : r.Description;
+                        builder.AddContent(0, text);
+                    }
+                })
             }
         };
     }

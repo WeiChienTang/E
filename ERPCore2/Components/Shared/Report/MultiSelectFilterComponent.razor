@@ -6,6 +6,7 @@
 @typeparam TItem
 @using System.Reflection
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
+@inject IStringLocalizer<SharedResource> L
 
 <div class="row g-2">
     @* 左欄：可選項目 *@
@@ -37,7 +38,7 @@
     <div class="col-md-6">
         <input type="text"
                class="form-control mb-1"
-               placeholder="搜尋已選項目..."
+               placeholder="@L["Report.SearchPlaceholder"]"
                @bind="selectedSearchTerm"
                @bind:event="oninput" />
         <div style="max-height: @ListHeight; overflow: auto;">
@@ -157,7 +158,7 @@
         {
             new()
             {
-                Title = "名稱",
+                Title = L["Column.Name"].ToString(),
                 PropertyName = DisplayProperty,
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "100%",
@@ -184,7 +185,7 @@
         {
             new()
             {
-                Title = "名稱",
+                Title = L["Column.Name"].ToString(),
                 PropertyName = DisplayProperty,
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "100%",

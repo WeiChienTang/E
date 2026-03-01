@@ -2,7 +2,9 @@
     駁回確認 Modal 組件
     提供審核駁回前的確認對話框，可選填駁回原因
 *@
+@using Microsoft.Extensions.Localization
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -15,23 +17,23 @@
                    CloseOnBackdropClick="@(!IsProcessing)"
                    OnClose="@HandleCancel">
         <HeaderButtons>
-            <GenericButtonComponent Variant="ButtonVariant.Gray" 
-                                Text="@CancelButtonText" 
+            <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                Text="@CancelButtonText"
                                 OnClick="HandleCancel"
                                 IsDisabled="@IsProcessing"
-                                Title="取消" />
-            <GenericButtonComponent Variant="ButtonVariant.Red" 
-                                Text="@ConfirmButtonText" 
+                                Title="@L["Button.Cancel"].ToString()" />
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                Text="@ConfirmButtonText"
                                 OnClick="HandleConfirm"
                                 IsDisabled="@IsProcessing"
                                 IsLoading="@IsProcessing"
-                                Title="確認" />
+                                Title="@L["Button.Confirm"].ToString()" />
         </HeaderButtons>
     <BodyContent>
         <div class="mb-3">                    
             <textarea class="form-control" 
                       rows="4" 
-                      placeholder="請輸入駁回原因..."
+                      placeholder="@L["Purchase.RejectReasonPlaceholder"].ToString()"
                       @bind="RejectReason"
                       disabled="@IsProcessing"></textarea>
         </div>
@@ -113,7 +115,7 @@
             // 驗證必填欄位
             if (string.IsNullOrWhiteSpace(RejectReason))
             {
-                await NotificationService.ShowWarningAsync("請填寫駁回原因");
+                await NotificationService.ShowWarningAsync(L["Purchase.RejectReasonRequired"].ToString());
                 return;
             }
             
@@ -130,7 +132,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"確認駁回時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Purchase.ConfirmRejectError"].ToString(), ex.Message));
         }
         finally
         {
@@ -157,7 +159,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"取消操作時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Purchase.CancelError"].ToString(), ex.Message));
         }
     }
     

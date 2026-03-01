@@ -50,15 +50,14 @@
                           OnTaxMethodChanged="@(() => HandleReturnDetailsChanged(purchaseReturnDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          TabDefinitions="@tabDefinitions"
+                          CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@PurchaseReturnReportService"
                           ReportId="PO003"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.PurchaseReturnDoc"]]"
                           GetReportDocumentName="@(e => $"進貨退出單-{e.Code}")"
-                          OnEntityLoaded="@HandleEntityLoaded"
-                          AdditionalSections="@CreateRelatedSections()" />
+                          OnEntityLoaded="@HandleEntityLoaded" />
 
 @* 沖款單編輯 Modal *@
 @if (showSetoffDocumentModal)
@@ -71,15 +70,6 @@
                                      OnCancel="@(() => showSetoffDocumentModal = false)" />
 }
 
-@* 進貨單編輯 Modal（從原始進貨 Tab 開啟） *@
-@if (showPurchaseReceivingModal)
-{
-    <PurchaseReceivingEditModalComponent @ref="purchaseReceivingEditModal"
-                                         IsVisible="@showPurchaseReceivingModal"
-                                         IsVisibleChanged="@((bool visible) => showPurchaseReceivingModal = visible)"
-                                         PurchaseReceivingId="@selectedPurchaseReceivingId"
-                                         OnCancel="@(() => showPurchaseReceivingModal = false)" />
-}
 
 @code {
     // 參數
@@ -99,7 +89,6 @@
     // 表單欄位和區塊
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    private List<FormTabDefinition>? tabDefinitions;
 
     // 相關資料
     private List<Supplier> suppliers = new();
@@ -135,17 +124,6 @@
         {
             UpdateFilterFieldsState();
 
-            if (loadedEntityId > 0)
-            {
-                if (receivingTab != null) await receivingTab.LoadAsync(loadedEntityId);
-                if (setoffTab != null) await setoffTab.LoadAsync(loadedEntityId);
-            }
-            else
-            {
-                receivingTab?.Clear();
-                setoffTab?.Clear();
-            }
-
             StateHasChanged();
         }
         catch (Exception ex)
@@ -161,15 +139,6 @@
     private bool showSetoffDocumentModal = false;
     private int? selectedSetoffDocumentId = null;
 
-    // ===== Tab 元件參考 =====
-    private PurchaseReturnReceivingTab? receivingTab;
-    private PurchaseReturnSetoffTab? setoffTab;
-
-    // ===== 進貨單 Modal（從原始進貨 Tab 開啟） =====
-    private PurchaseReceivingEditModalComponent? purchaseReceivingEditModal;
-    private bool showPurchaseReceivingModal = false;
-    private int? selectedPurchaseReceivingId = null;
-    
     // ===== 系統參數 - 稅率快取（避免重複查詢資料庫） =====
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
 
@@ -552,7 +521,7 @@
                 ),
             };
 
-            var layout = FormSectionHelper<PurchaseReturn>.Create()
+            formSections = FormSectionHelper<PurchaseReturn>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.Code,
                     pr => pr.SupplierId,
@@ -565,13 +534,7 @@
                     pr => pr.TotalReturnAmountWithTax)
                 .AddToSection(FormSectionNames.AdditionalInfo,
                     pr => pr.Remarks)
-                .GroupIntoTab(L["Tab.ReturnData"].ToString(), "bi-file-earmark-text",
-                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
-                    FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
-                .GroupIntoCustomTab(L["Tab.ReturnDetail"].ToString(), "bi-list-ul", CreateReturnDetailManagerContent())
-                .BuildAll();
-            formSections = layout.FieldSections;
-            tabDefinitions = layout.TabDefinitions;
+                .Build();
             
             // 關鍵：如果實體已經載入且有廠商ID，立即更新商品和進貨單選項
             if (editModalComponent?.Entity?.SupplierId > 0)
@@ -1072,6 +1035,34 @@
     // ===== 輔助方法 =====
 
     /// <summary>
+    /// 配置自訂模組（退貨明細表格）
+    /// </summary>
+    private List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            if (editModalComponent == null)
+            {
+                return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>();
+            }
+
+            return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>
+            {
+                new GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule
+                {
+                    Title = "",
+                    Content = CreateReturnDetailManagerContent(),
+                    Order = 1
+                }
+            };
+        }
+        catch
+        {
+            return new List<GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule>();
+        }
+    }
+
+    /// <summary>
     /// 創建退貨明細管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateReturnDetailManagerContent() => __builder =>
@@ -1083,6 +1074,7 @@
                               PreconditionMessage="請先選擇廠商後再進行退貨明細管理">
             <PurchaseReturnTable @ref="purchaseReturnDetailManager"
                                  SupplierId="@editModalComponent!.Entity.SupplierId"
+                                 SelectedSupplierId="@editModalComponent!.Entity.SupplierId"
                                  FilterPurchaseReceivingId="@filterPurchaseReceivingId"
                                  FilterProductId="@filterProductId"
                                  SelectedSupplierName="@GetSelectedSupplierName()"
@@ -1090,7 +1082,7 @@
                                  FilterProductName="@GetFilterProductName()"
                                  TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                  IsEditMode="@(PurchaseReturnId.HasValue)"
-                                 ExistingReturnDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
+                                 ExistingDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
                                  DataVersion="@_detailsDataVersion"
                                  IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
                                  OnReturnDetailsChanged="@HandleReturnDetailsChanged"
@@ -1098,41 +1090,6 @@
                                  OnOpenRelatedDocument="@HandleOpenRelatedDocument" />
         </DetailSectionWrapper>
     };
-
-    /// <summary>相關單據 Additional Sections 內容</summary>
-    private RenderFragment CreateRelatedSections() => __builder =>
-    {
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-box-arrow-in-down me-1"></i>@L["Tab.OriginalReceiving"]</h6>
-            <PurchaseReturnReceivingTab @ref="receivingTab"
-                                        OnOpenReceiving="@HandleOpenPurchaseReceiving" />
-        </div>
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-cash-coin me-1"></i>@L["Tab.SetoffRecords"]</h6>
-            <PurchaseReturnSetoffTab @ref="setoffTab"
-                                     OnOpenSetoff="@HandleOpenSetoffFromTab" />
-        </div>
-    };
-
-    /// <summary>
-    /// 從原始進貨 Tab 開啟進貨單
-    /// </summary>
-    private void HandleOpenPurchaseReceiving(int id)
-    {
-        selectedPurchaseReceivingId = id;
-        showPurchaseReceivingModal = true;
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 從沖款記錄 Tab 開啟沖款單
-    /// </summary>
-    private void HandleOpenSetoffFromTab(int id)
-    {
-        selectedSetoffDocumentId = id;
-        showSetoffDocumentModal = true;
-        StateHasChanged();
-    }
 
     /// <summary>
     /// 處理退貨明細變更

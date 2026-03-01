@@ -53,10 +53,10 @@
     // 自訂操作按鈕
     private RenderFragment CustomActionButtonsFragment => __builder =>
     {
-        <GenericButtonComponent Text="載入範本" 
-                              Variant="ButtonVariant.Blue" 
+        <GenericButtonComponent Text="@L["Button.LoadTemplate"]"
+                              Variant="ButtonVariant.Blue"
                               OnClick="HandleLoadDefaultTemplate"
-                              Title="載入預設的問候語和結語" />
+                              Title="@L["Button.LoadTemplate"]" />
     };
     
     // 問候語欄位（因為用 CustomModule 需要獨立綁定）
@@ -102,7 +102,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Error.LoadDataFailed"], ex.Message));
         }
     }
     // ===== 資料載入 =====
@@ -156,7 +156,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入範本資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Error.LoadTemplateFailed"], ex.Message));
             detailFormatConfig = new DetailFormatConfig();
             return new TextMessageTemplate
             {
@@ -202,7 +202,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存範本時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Error.SaveTemplateFailed"], ex.Message));
             return false;
         }
     }
@@ -217,7 +217,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"處理欄位變更時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Error.FieldChangeFailed"], ex.Message));
         }
     }
 
@@ -228,7 +228,7 @@
         {
             if (editModalComponent?.Entity == null)
             {
-                await NotificationService.ShowWarningAsync("請先開啟編輯視窗");
+                await NotificationService.ShowWarningAsync(L["Message.OpenEditWindowFirst"]);
                 return;
             }
             
@@ -248,12 +248,12 @@
                 ShowRemark = false
             };
             
-            await NotificationService.ShowSuccessAsync("已載入預設範本內容");
+            await NotificationService.ShowSuccessAsync(L["Message.DefaultTemplateLoaded"]);
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入預設範本時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Error.LoadDefaultTemplateFailed"], ex.Message));
         }
     }
 
@@ -292,81 +292,81 @@
     {
         <div class="row g-3">
             <div class="col-12 col-md-4">
-                <label class="form-label fw-bold">問候語（第一段）</label>
+                <label class="form-label fw-bold">@L["Label.HeaderText"]</label>
                 <textarea class="form-control" rows="6"
-                          placeholder="請輸入問候語..."
+                          placeholder="@L["Placeholder.HeaderText"]"
                           @bind="headerTextValue"
                           @bind:event="oninput" />
             </div>
             <div class="col-12 col-md-4">
-                <label class="form-label fw-bold">商品明細（第二段）</label>
+                <label class="form-label fw-bold">@L["Label.DetailColumns"]</label>
                 <div class="row row-cols-2 g-1 mt-1">
                     <div class="col">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="showProductCode"
                                    @bind="detailFormatConfig.ShowProductCode" />
-                            <label class="form-check-label" for="showProductCode">編號</label>
+                            <label class="form-check-label" for="showProductCode">@L["Field.Code"]</label>
                         </div>
                     </div>
                     <div class="col">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="showProductName"
                                    @bind="detailFormatConfig.ShowProductName" />
-                            <label class="form-check-label" for="showProductName">品名</label>
+                            <label class="form-check-label" for="showProductName">@L["Label.ProductName"]</label>
                         </div>
                     </div>
                     <div class="col">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="showQuantity"
                                    @bind="detailFormatConfig.ShowQuantity" />
-                            <label class="form-check-label" for="showQuantity">數量</label>
+                            <label class="form-check-label" for="showQuantity">@L["Label.Quantity"]</label>
                         </div>
                     </div>
                     <div class="col">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="showUnit"
                                    @bind="detailFormatConfig.ShowUnit" />
-                            <label class="form-check-label" for="showUnit">單位</label>
+                            <label class="form-check-label" for="showUnit">@L["Label.Unit"]</label>
                         </div>
                     </div>
                     <div class="col">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="showUnitPrice"
                                    @bind="detailFormatConfig.ShowUnitPrice" />
-                            <label class="form-check-label" for="showUnitPrice">單價</label>
+                            <label class="form-check-label" for="showUnitPrice">@L["Label.UnitPrice"]</label>
                         </div>
                     </div>
                     <div class="col">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="showSubtotal"
                                    @bind="detailFormatConfig.ShowSubtotal" />
-                            <label class="form-check-label" for="showSubtotal">小計</label>
+                            <label class="form-check-label" for="showSubtotal">@L["Label.Subtotal"]</label>
                         </div>
                     </div>
                     <div class="col">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="showRemark"
                                    @bind="detailFormatConfig.ShowRemark" />
-                            <label class="form-check-label" for="showRemark">備註</label>
+                            <label class="form-check-label" for="showRemark">@L["Label.Remarks"]</label>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-12 col-md-4">
-                <label class="form-label fw-bold">結語（第三段）</label>
+                <label class="form-label fw-bold">@L["Label.FooterText"]</label>
                 <textarea class="form-control" rows="6"
-                          placeholder="請輸入結語..."
+                          placeholder="@L["Placeholder.FooterText"]"
                           @bind="footerTextValue"
                           @bind:event="oninput" />
             </div>
         </div>
         <div class="form-text mt-2">
             <i class="bi bi-code-square me-1"></i>
-            <strong>支援變數：</strong>
-            <code>{supplierName}</code> 供應商、
-            <code>{orderCode}</code> 單號、
-            <code>{orderDate}</code> 日期、
-            <code>{companyName}</code> 本公司
+            <strong>@L["Label.SupportedVariables"]</strong>
+            <code>{supplierName}</code> @L["Label.Supplier"]、
+            <code>{orderCode}</code> @L["Label.OrderCode"]、
+            <code>{orderDate}</code> @L["Label.Date"]、
+            <code>{companyName}</code> @L["Label.CompanyName"]
         </div>
     };
 
@@ -397,11 +397,11 @@
         var previewDetails = GeneratePreviewDetails();
         
         <div class="card">
-            <div class="card-header bg-light">
-                <i class="bi bi-eye me-1"></i> 訊息預覽
+            <div class="card-header">
+                <i class="bi bi-eye me-1"></i> @L["Label.MessagePreview"]
             </div>
             <div class="card-body">
-                <pre class="mb-0 p-3 bg-light rounded" style="white-space: pre-wrap; font-family: inherit;">@previewHeader
+                <pre class="mb-0 p-3 rounded" style="white-space: pre-wrap; font-family: inherit; background-color: var(--bg-secondary); color: var(--text-primary);">@previewHeader
 
 @previewDetails
 

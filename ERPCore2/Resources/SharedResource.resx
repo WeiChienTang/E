@@ -1366,13 +1366,11 @@
   <data name="Entity.DocumentCategory" xml:space="preserve"><value>檔案分類</value></data>
   <data name="Field.DocumentTitle" xml:space="preserve"><value>文件標題</value></data>
   <data name="Field.DocumentCategory" xml:space="preserve"><value>檔案分類</value></data>
-  <data name="Field.CategoryName" xml:space="preserve"><value>分類名稱</value></data>
   <data name="Field.DocumentSource" xml:space="preserve"><value>來源類型</value></data>
   <data name="Field.DefaultAccessLevel" xml:space="preserve"><value>預設存取層級</value></data>
   <data name="Field.AccessLevel" xml:space="preserve"><value>存取層級</value></data>
   <data name="Field.IssuedBy" xml:space="preserve"><value>發文機關/來源</value></data>
   <data name="Field.IssuedDate" xml:space="preserve"><value>發文日期</value></data>
-  <data name="Field.ExpiryDate" xml:space="preserve"><value>有效期限</value></data>
   <data name="Field.FileSize" xml:space="preserve"><value>檔案大小</value></data>
   <data name="Field.FileName" xml:space="preserve"><value>原始檔案名稱</value></data>
   <data name="Label.DocumentSource.Government" xml:space="preserve"><value>政府/法規</value></data>
@@ -1394,4 +1392,488 @@
   <data name="Field.VehicleType" xml:space="preserve"><value>車型</value></data>
   <data name="Field.WasteType" xml:space="preserve"><value>廢料類型</value></data>
   <data name="Field.ReturnReason" xml:space="preserve"><value>退貨原因</value></data>
+
+  <!-- ===== TextMessageTemplate keys ===== -->
+  <data name="Button.LoadTemplate" xml:space="preserve"><value>載入範本</value></data>
+  <data name="Label.HeaderText" xml:space="preserve"><value>問候語（第一段）</value></data>
+  <data name="Label.FooterText" xml:space="preserve"><value>結語（第三段）</value></data>
+  <data name="Label.DetailColumns" xml:space="preserve"><value>商品明細（第二段）</value></data>
+  <data name="Label.MessagePreview" xml:space="preserve"><value>訊息預覽</value></data>
+  <data name="Label.SupportedVariables" xml:space="preserve"><value>支援變數：</value></data>
+  <data name="Label.ProductName" xml:space="preserve"><value>品名</value></data>
+  <data name="Label.Quantity" xml:space="preserve"><value>數量</value></data>
+  <data name="Label.Unit" xml:space="preserve"><value>單位</value></data>
+  <data name="Label.UnitPrice" xml:space="preserve"><value>單價</value></data>
+  <data name="Label.Subtotal" xml:space="preserve"><value>小計</value></data>
+  <data name="Label.Supplier" xml:space="preserve"><value>供應商</value></data>
+  <data name="Label.OrderCode" xml:space="preserve"><value>單號</value></data>
+  <data name="Label.Date" xml:space="preserve"><value>日期</value></data>
+  <data name="Label.CompanyName" xml:space="preserve"><value>本公司</value></data>
+  <data name="Placeholder.HeaderText" xml:space="preserve"><value>請輸入問候語...</value></data>
+  <data name="Placeholder.FooterText" xml:space="preserve"><value>請輸入結語...</value></data>
+  <data name="Message.OpenEditWindowFirst" xml:space="preserve"><value>請先開啟編輯視窗</value></data>
+  <data name="Message.DefaultTemplateLoaded" xml:space="preserve"><value>已載入預設範本內容</value></data>
+  <data name="Error.LoadDataFailed" xml:space="preserve"><value>載入資料時發生錯誤：{0}</value></data>
+  <data name="Error.LoadTemplateFailed" xml:space="preserve"><value>載入範本資料時發生錯誤：{0}</value></data>
+  <data name="Error.SaveTemplateFailed" xml:space="preserve"><value>儲存範本時發生錯誤：{0}</value></data>
+  <data name="Error.FieldChangeFailed" xml:space="preserve"><value>處理欄位變更時發生錯誤：{0}</value></data>
+  <data name="Error.LoadDefaultTemplateFailed" xml:space="preserve"><value>載入預設範本時發生錯誤：{0}</value></data>
+  <!-- ===== FieldConfiguration 補充 keys ===== -->
+  <data name="Field.ProductCategory" xml:space="preserve"><value>商品類型</value></data>
+  <data name="Field.LocationPosition" xml:space="preserve"><value>位號</value></data>
+  <!-- ===== DynamicFilterTemplate keys ===== -->
+  <data name="Filter.BasicFilter" xml:space="preserve"><value>基本篩選</value></data>
+  <data name="Filter.DateRange" xml:space="preserve"><value>日期範圍</value></data>
+  <data name="Filter.QuickCondition" xml:space="preserve"><value>快速條件</value></data>
+  <data name="Filter.AllItems" xml:space="preserve"><value>未選擇（查詢全部）</value></data>
+  <data name="Label.DateStart" xml:space="preserve"><value>起始</value></data>
+  <data name="Label.DateEnd" xml:space="preserve"><value>結束</value></data>
+  <data name="Placeholder.Search" xml:space="preserve"><value>搜尋...</value></data>
+  <data name="Label.LoadingFilterOptions" xml:space="preserve"><value>載入篩選選項中...</value></data>
+  <data name="Error.LoadFieldDataFailed" xml:space="preserve"><value>載入「{0}」資料失敗</value></data>
+  <!-- ===== ProductBarcodeBatchFilterTemplate keys ===== -->
+  <data name="Report.BarcodeSettings" xml:space="preserve"><value>條碼列印設定</value></data>
+  <data name="Button.DeselectAll" xml:space="preserve"><value>取消全選</value></data>
+  <data name="Message.NoBarcodeProducts" xml:space="preserve"><value>目前沒有可列印的商品條碼</value></data>
+  <data name="Label.ShowProductName" xml:space="preserve"><value>顯示商品名稱</value></data>
+  <data name="Label.ShowProductCode" xml:space="preserve"><value>顯示商品編號</value></data>
+  <data name="Message.LoadProductsFailed" xml:space="preserve"><value>載入商品資料失敗</value></data>
+  <!-- ===== Report Description keys ===== -->
+  <data name="Report.CustomerStatementDesc" xml:space="preserve"><value>產生指定期間客戶對帳單，含出貨、退貨、收款明細及期初期末餘額</value></data>
+  <data name="Report.CustomerSalesAnalysisDesc" xml:space="preserve"><value>按銷售額由高至低排列，分析客戶銷售金額佔比與排名</value></data>
+  <data name="Report.CustomerTransactionDesc" xml:space="preserve"><value>查詢客戶出貨與退貨交易記錄明細，依客戶分組顯示</value></data>
+  <data name="Report.CustomerRosterDesc" xml:space="preserve"><value>列印客戶基本資料清單，含客戶編號、公司名稱、聯絡人、統編、聯絡電話、地址等</value></data>
+  <data name="Report.CustomerDetailDesc" xml:space="preserve"><value>列印客戶完整詳細資料，含聯絡資訊、付款條件、業務負責人等，每位客戶各佔一區塊</value></data>
+  <data name="Report.CustomerVisitReportDesc" xml:space="preserve"><value>列印客戶拜訪記錄報告，含拜訪日期、客戶、拜訪人員、拜訪目的及結果摘要</value></data>
+  <data name="Report.SupplierStatementDesc" xml:space="preserve"><value>產生指定期間廠商對帳單，含進貨、退貨、付款明細及期初期末餘額</value></data>
+  <data name="Report.SupplierPurchaseAnalysisDesc" xml:space="preserve"><value>分析廠商進貨金額與趨勢</value></data>
+  <data name="Report.SupplierRosterDesc" xml:space="preserve"><value>列印廠商基本資料清單，含廠商編號、廠商名稱、聯絡人、統編、聯絡電話、地址等</value></data>
+  <data name="Report.SupplierDetailDesc" xml:space="preserve"><value>列印廠商完整詳細資料，含聯絡資訊、付款條件、地址等，每位廠商各佔一區塊</value></data>
+  <data name="Report.PurchaseOrderDesc" xml:space="preserve"><value>列印採購訂單（含廠商資訊、商品明細、金額統計）</value></data>
+  <data name="Report.PurchaseReceivingDesc" xml:space="preserve"><value>列印進貨單（含驗收資訊、入庫明細）</value></data>
+  <data name="Report.PurchaseReturnDesc" xml:space="preserve"><value>列印進貨退出單（含退貨原因、退貨明細）</value></data>
+  <data name="Report.QuotationDesc" xml:space="preserve"><value>列印報價單（含客戶資訊、商品明細、金額統計）</value></data>
+  <data name="Report.SalesOrderDesc" xml:space="preserve"><value>列印銷貨訂單（含客戶資訊、商品明細、金額統計）</value></data>
+  <data name="Report.SalesDeliveryDesc" xml:space="preserve"><value>列印出貨單（含客戶資訊、商品明細、金額統計）</value></data>
+  <data name="Report.SalesReturnDesc" xml:space="preserve"><value>列印銷貨退回單（含退貨原因、退貨明細）</value></data>
+  <data name="Report.ProductListDesc" xml:space="preserve"><value>列印商品基本資料清單（含品號、品名、規格、條碼、分類、單位）</value></data>
+  <data name="Report.ProductDetailDesc" xml:space="preserve"><value>列印商品完整詳細資料，含規格、條碼、分類、單位、採購類型、成本定價等，每項商品各佔一區塊</value></data>
+  <data name="Report.ProductBarcodeDesc" xml:space="preserve"><value>列印商品條碼</value></data>
+  <data name="Report.BOMReportDesc" xml:space="preserve"><value>列印商品BOM物料清單，依配方分組顯示組件品號、品名、數量、單位、成本</value></data>
+  <data name="Report.ProductionScheduleDesc" xml:space="preserve"><value>查詢生產排程，含排程項目、數量、狀態、預計日期等明細</value></data>
+  <data name="Report.InventoryStatusDesc" xml:space="preserve"><value>查詢各倉庫商品庫存現況，含現有庫存、預留庫存、可用庫存及庫存金額</value></data>
+  <data name="Report.InventoryTransactionDesc" xml:space="preserve"><value>查詢庫存進出異動記錄明細</value></data>
+  <data name="Report.InventoryCountDesc" xml:space="preserve"><value>依盤點單分組顯示各商品系統庫存、實盤數量及差異金額，支援僅差異項目篩選</value></data>
+  <data name="Report.VehicleListDesc" xml:space="preserve"><value>列印車輛基本資料清單，含車牌號碼、車輛名稱、車型、廠牌、負責人、保險到期日等</value></data>
+  <data name="Report.VehicleMaintenanceDesc" xml:space="preserve"><value>列印車輛保養紀錄，含保養類型、保養日期、里程數、費用、維修廠等明細</value></data>
+  <data name="Report.EmployeeRosterDesc" xml:space="preserve"><value>列印員工基本資料清單，含員工編號、姓名、部門、職位、到職日期、在職狀態等</value></data>
+  <data name="Report.EmployeeDetailDesc" xml:space="preserve"><value>列印員工完整詳細資料，含聯絡資訊、緊急聯絡人、任職資訊等，每位員工各佔一區塊</value></data>
+  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>列印廢料記錄清單，依廢料類型分組，含車牌號碼、客戶、入庫倉庫、重量及費用明細</value></data>
+  <data name="Report.AccountsReceivableSetoffDesc" xml:space="preserve"><value>列印應收帳款沖款單（含客戶資訊、沖銷明細、收款記錄）</value></data>
+  <data name="Report.AccountsPayableSetoffDesc" xml:space="preserve"><value>列印應付帳款沖款單（含廠商資訊、沖銷明細、付款記錄）</value></data>
+  <data name="Report.AccountItemListDesc" xml:space="preserve"><value>列印標準會計科目表，依科目大類分組顯示科目代碼、名稱、層級、借貸方向等</value></data>
+  <data name="Report.TrialBalanceDesc" xml:space="preserve"><value>依科目匯總已過帳傳票的本期借貸發生額與期末累計餘額，驗證借貸平衡</value></data>
+  <data name="Report.IncomeStatementDesc" xml:space="preserve"><value>彙總指定期間的營業收入、成本、費用，計算毛利潤、營業損益及稅前損益</value></data>
+  <data name="Report.BalanceSheetDesc" xml:space="preserve"><value>彙總截止日當天的資產、負債、權益累計餘額（資產 = 負債 + 權益）</value></data>
+  <data name="Report.GeneralLedgerDesc" xml:space="preserve"><value>顯示所有科目的帳戶卡片，依科目大類分組，每個科目列出所有已過帳傳票明細（含期初餘額、逐筆流水餘額、期末餘額）</value></data>
+  <data name="Report.SubsidiaryLedgerDesc" xml:space="preserve"><value>依科目代碼/名稱關鍵字查詢特定科目的帳戶卡片，顯示已過帳傳票明細與流水餘額，適合查看應收帳款按客戶、應付帳款按廠商等明細</value></data>
+  <data name="Report.DetailAccountBalanceDesc" xml:space="preserve"><value>彙總各科目的期初餘額、本期借方發生額、本期貸方發生額及期末餘額，無逐筆明細，適合快速掌握各科目餘額變動</value></data>
+  <!-- ===== 缺失 keys 補充 ===== -->
+  <data name="Column.TaxRate" xml:space="preserve"><value>稅率</value></data>
+  <data name="Column.IsReceivingCompleted" xml:space="preserve"><value>已收完</value></data>
+  <data name="Placeholder.SelectWarehouseFirst" xml:space="preserve"><value>請先選擇倉庫</value></data>
+  <!-- ===== Auth / Login keys ===== -->
+  <data name="Auth.LoginPageTitle" xml:space="preserve"><value>登入</value></data>
+  <data name="Auth.SystemTitle" xml:space="preserve"><value>企業資源管理系統</value></data>
+  <data name="Auth.Username" xml:space="preserve"><value>帳號</value></data>
+  <data name="Auth.Password" xml:space="preserve"><value>密碼</value></data>
+  <data name="Auth.RememberMe" xml:space="preserve"><value>記住我</value></data>
+  <data name="Auth.LoginButton" xml:space="preserve"><value>登入</value></data>
+  <data name="Auth.ErrorInvalid" xml:space="preserve"><value>使用者名稱或密碼錯誤</value></data>
+  <data name="Auth.ErrorLocked" xml:space="preserve"><value>帳號已被鎖定，請聯絡管理員</value></data>
+  <data name="Auth.ErrorDisabled" xml:space="preserve"><value>帳號已停用</value></data>
+  <data name="Auth.ErrorDefault" xml:space="preserve"><value>登入失敗，請稍後再試</value></data>
+  <data name="Placeholder.EnterUsername" xml:space="preserve"><value>請輸入帳號</value></data>
+  <data name="Placeholder.EnterPassword" xml:space="preserve"><value>請輸入密碼</value></data>
+  <!-- ===== Auth / AccessDenied keys ===== -->
+  <data name="Auth.AccessDenied" xml:space="preserve"><value>存取被拒絕</value></data>
+  <data name="Auth.NoPermission" xml:space="preserve"><value>您沒有權限存取此頁面</value></data>
+  <data name="Auth.NoPermissionDetail" xml:space="preserve"><value>抱歉，您的帳戶沒有足夠的權限來存取此功能。</value></data>
+  <data name="Auth.ContactAdmin" xml:space="preserve"><value>請聯絡系統管理員取得所需的權限。</value></data>
+  <data name="Button.BackToHome" xml:space="preserve"><value>回到首頁</value></data>
+  <data name="Button.GoBack" xml:space="preserve"><value>返回上一頁</value></data>
+  <!-- ===== Auth / Logout keys ===== -->
+  <data name="Auth.LoggingOut" xml:space="preserve"><value>正在登出</value></data>
+  <data name="Auth.LoggingOutMessage" xml:space="preserve"><value>正在為您安全登出，請稍候...</value></data>
+  <data name="Auth.LoggingOutRedirectPrefix" xml:space="preserve"><value>如果頁面沒有自動跳轉，請</value></data>
+  <data name="Auth.LoggingOutClickHere" xml:space="preserve"><value>點擊這裡</value></data>
+  <!-- ===== ErrorPage keys ===== -->
+  <data name="Error.PageTitle" xml:space="preserve"><value>系統錯誤</value></data>
+  <data name="Error.PageHasError" xml:space="preserve"><value>頁面目前有些錯誤</value></data>
+  <data name="Error.ContactEngineer" xml:space="preserve"><value>請聯繫工程師修復，造成困擾深感抱歉。</value></data>
+  <data name="Error.ErrorMessage" xml:space="preserve"><value>錯誤訊息：</value></data>
+  <data name="Error.ErrorId" xml:space="preserve"><value>錯誤編號：</value></data>
+  <data name="Error.TechnicalDetails" xml:space="preserve"><value>技術詳情</value></data>
+  <data name="Error.OccurredAt" xml:space="preserve"><value>發生時間：</value></data>
+  <data name="Error.ExceptionType" xml:space="preserve"><value>例外類型：</value></data>
+  <data name="Error.Module" xml:space="preserve"><value>模組：</value></data>
+  <data name="Error.Unknown" xml:space="preserve"><value>未知</value></data>
+  <data name="Error.ShowTechnicalDetails" xml:space="preserve"><value>顯示技術詳情</value></data>
+  <data name="Error.HideTechnicalDetails" xml:space="preserve"><value>隱藏技術詳情</value></data>
+  <data name="Error.ReportError" xml:space="preserve"><value>回報問題</value></data>
+  <data name="Error.UnknownError" xml:space="preserve"><value>系統發生未知錯誤</value></data>
+  <data name="Error.ReportThankYou" xml:space="preserve"><value>感謝您的回報，我們會盡快處理此問題。</value></data>
+  <data name="Error.MsgTimeout" xml:space="preserve"><value>系統回應逾時，請稍後再試</value></data>
+  <data name="Error.MsgConnection" xml:space="preserve"><value>資料庫連線異常，請稍後再試</value></data>
+  <data name="Error.MsgUnauthorized" xml:space="preserve"><value>權限不足，請聯繫管理員</value></data>
+  <data name="Error.MsgValidation" xml:space="preserve"><value>資料驗證失敗，請檢查輸入內容</value></data>
+  <data name="Error.MsgFile" xml:space="preserve"><value>找不到相關檔案，請聯繫技術人員</value></data>
+  <data name="Error.MsgMemory" xml:space="preserve"><value>系統資源不足，請聯繫技術人員</value></data>
+  <data name="Error.MsgDatabase" xml:space="preserve"><value>資料庫操作異常，請稍後再試</value></data>
+  <data name="Error.MsgGeneral" xml:space="preserve"><value>系統發生錯誤，請聯繫技術人員</value></data>
+  <!-- ===== About modal keys ===== -->
+  <data name="About.Title" xml:space="preserve"><value>關於本系統</value></data>
+  <data name="About.SystemSubtitle" xml:space="preserve"><value>企業資源規劃系統</value></data>
+  <data name="About.DeveloperInfo" xml:space="preserve"><value>開發資訊</value></data>
+  <data name="About.Developer" xml:space="preserve"><value>開發者：</value></data>
+  <data name="About.ContactUs" xml:space="preserve"><value>聯絡我們</value></data>
+  <data name="About.Email" xml:space="preserve"><value>電子郵件</value></data>
+  <data name="About.CopyEmail" xml:space="preserve"><value>複製信箱</value></data>
+  <data name="About.Copied" xml:space="preserve"><value>已複製</value></data>
+  <data name="About.Copy" xml:space="preserve"><value>複製</value></data>
+  <data name="About.LineScanQr" xml:space="preserve"><value>掃描 QR Code 加我好友</value></data>
+  <data name="About.LineContact" xml:space="preserve"><value>使用 Line App 掃描此 QR Code 與我聯繫</value></data>
+  <data name="About.QrCodePlaceholder" xml:space="preserve"><value>請放置 QR Code 圖片</value></data>
+
+  <!-- ===== Home 首頁 ===== -->
+  <data name="Home.SystemName" xml:space="preserve"><value>ERP系統</value></data>
+  <data name="Home.PageTitle" xml:space="preserve"><value>系統首頁</value></data>
+  <data name="Home.LoadingConfig" xml:space="preserve"><value>載入首頁配置中...</value></data>
+  <data name="Home.ClickToChangeIcon" xml:space="preserve"><value>點擊更換圖示</value></data>
+  <data name="Home.Done" xml:space="preserve"><value>完成</value></data>
+  <data name="Home.AddItem" xml:space="preserve"><value>新增項目</value></data>
+  <data name="Home.NoPanelItems" xml:space="preserve"><value>此區塊尚無項目</value></data>
+  <data name="Home.AddPanel" xml:space="preserve"><value>新增區塊</value></data>
+  <data name="Home.RestoreDefault" xml:space="preserve"><value>恢復預設</value></data>
+  <data name="Home.RestoreDefaultTooltip" xml:space="preserve"><value>將首頁恢復為系統預設配置</value></data>
+  <data name="Home.NoPanels" xml:space="preserve"><value>尚未設定任何區塊</value></data>
+  <data name="Home.CreateFirstPanel" xml:space="preserve"><value>建立第一個區塊</value></data>
+  <data name="Home.ConfirmRestoreTitle" xml:space="preserve"><value>恢復預設配置</value></data>
+  <data name="Home.ConfirmRestoreMessage" xml:space="preserve"><value>確定要將首頁恢復為預設配置嗎？所有自訂區塊將被清除，並重新建立預設的「頁面捷徑」與「快速功能」區塊。</value></data>
+  <data name="Home.ConfirmRestoreButton" xml:space="preserve"><value>確定恢復</value></data>
+  <data name="Home.DeletePanelTitle" xml:space="preserve"><value>刪除區塊</value></data>
+  <data name="Home.DeletePanelMessage" xml:space="preserve"><value>確定要刪除「{0}」區塊嗎？區塊內的所有項目將一併刪除。</value></data>
+  <data name="Home.CreatePanelTitle" xml:space="preserve"><value>新增區塊</value></data>
+  <data name="Home.PanelTitleLabel" xml:space="preserve"><value>區塊標題</value></data>
+  <data name="Home.PanelTitlePlaceholder" xml:space="preserve"><value>請輸入區塊標題</value></data>
+  <data name="Home.MaxCharsHint" xml:space="preserve"><value>最多 {0} 字</value></data>
+  <data name="Home.CompanySetupTitle" xml:space="preserve"><value>設定公司資料</value></data>
+  <data name="Home.CompanySetupMessage" xml:space="preserve"><value>系統尚未設定公司資料，是否立即設定？</value></data>
+  <data name="Home.CompanySetupNow" xml:space="preserve"><value>立即設定</value></data>
+  <data name="Home.CompanySetupLater" xml:space="preserve"><value>稍後設定</value></data>
+  <data name="Home.DeleteThisPanelTooltip" xml:space="preserve"><value>刪除此區塊</value></data>
+  <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>編輯此區塊</value></data>
+  <data name="Home.Create" xml:space="preserve"><value>建立</value></data>
+
+  <!-- ===== Message - Home 操作 ===== -->
+  <data name="Message.LoadHomeFailed" xml:space="preserve"><value>載入首頁配置失敗</value></data>
+  <data name="Message.UpdateTitleFailed" xml:space="preserve"><value>更新標題失敗</value></data>
+  <data name="Message.IconUpdated" xml:space="preserve"><value>圖示已更新</value></data>
+  <data name="Message.UpdateIconFailed" xml:space="preserve"><value>更新圖示失敗</value></data>
+  <data name="Message.PanelCreated" xml:space="preserve"><value>區塊已建立</value></data>
+  <data name="Message.CreatePanelFailed" xml:space="preserve"><value>建立區塊失敗</value></data>
+  <data name="Message.PanelDeleted" xml:space="preserve"><value>區塊已刪除</value></data>
+  <data name="Message.DeletePanelFailed" xml:space="preserve"><value>刪除區塊失敗</value></data>
+  <data name="Message.RestoredToDefault" xml:space="preserve"><value>已恢復為預設配置</value></data>
+  <data name="Message.RestoreDefaultFailed" xml:space="preserve"><value>恢復預設配置失敗</value></data>
+  <data name="Message.OpenFunctionFailed" xml:space="preserve"><value>開啟功能失敗</value></data>
+  <data name="Message.LoadAvailableItemsFailed" xml:space="preserve"><value>載入可用項目失敗</value></data>
+  <data name="Message.ItemAdded" xml:space="preserve"><value>項目已新增</value></data>
+  <data name="Message.AddItemFailed" xml:space="preserve"><value>新增項目失敗</value></data>
+  <data name="Message.ItemRemoved" xml:space="preserve"><value>已移除</value></data>
+  <data name="Message.RemoveFailed" xml:space="preserve"><value>移除失敗</value></data>
+  <data name="Message.SortUpdateFailed" xml:space="preserve"><value>排序更新失敗</value></data>
+  <data name="Message.CompanySetupComplete" xml:space="preserve"><value>公司設定完成</value></data>
+  <data name="Message.CompanySetupFailed" xml:space="preserve"><value>設定公司時發生錯誤</value></data>
+  <data name="Warning.EnterPanelTitle" xml:space="preserve"><value>請輸入區塊標題</value></data>
+
+  <!-- ===== Modal (BaseModalComponent) ===== -->
+  <data name="Modal.ErrorHeading" xml:space="preserve"><value>錯誤</value></data>
+  <data name="Modal.NoContent" xml:space="preserve"><value>暫無內容</value></data>
+  <data name="Modal.CreatedAt" xml:space="preserve"><value>建立時間：</value></data>
+  <data name="Modal.CreatedBy" xml:space="preserve"><value>創建者：</value></data>
+  <data name="Modal.UpdatedAt" xml:space="preserve"><value>最後更新時間：</value></data>
+  <data name="Modal.UpdatedBy" xml:space="preserve"><value>最後修改者：</value></data>
+  <data name="Modal.DefaultTitle" xml:space="preserve"><value>視窗</value></data>
+  <data name="Modal.DefaultLoading" xml:space="preserve"><value>載入中...</value></data>
+
+  <!-- ===== BatchDelete ===== -->
+  <data name="BatchDelete.Loading" xml:space="preserve"><value>正在刪除中，請稍候...</value></data>
+  <data name="BatchDelete.ConfirmButton" xml:space="preserve"><value>確認刪除</value></data>
+  <data name="BatchDelete.ConfirmTooltip" xml:space="preserve"><value>確認執行批次刪除</value></data>
+  <data name="BatchDelete.CancelTooltip" xml:space="preserve"><value>取消並關閉</value></data>
+  <data name="BatchDelete.Warning" xml:space="preserve"><value>警告：此操作無法還原！</value></data>
+  <data name="BatchDelete.DefaultTitle" xml:space="preserve"><value>確認批次刪除</value></data>
+
+  <!-- ===== Shortcut 快捷鍵 ===== -->
+  <data name="Shortcut.Title" xml:space="preserve"><value>快捷鍵說明</value></data>
+  <data name="Shortcut.InfoMessage" xml:space="preserve"><value>以下是系統中可用的快捷鍵組合，使用快捷鍵可以提高您的操作效率。</value></data>
+  <data name="Shortcut.NoKeys" xml:space="preserve"><value>沒有可用的快捷鍵</value></data>
+  <data name="Shortcut.CategoryColumn" xml:space="preserve"><value>分類</value></data>
+  <data name="Shortcut.KeysColumn" xml:space="preserve"><value>快捷鍵</value></data>
+  <data name="Shortcut.DescriptionColumn" xml:space="preserve"><value>說明</value></data>
+  <data name="Shortcut.OpenPageSearch" xml:space="preserve"><value>開啟頁面搜尋視窗</value></data>
+  <data name="Shortcut.OpenReportSelector" xml:space="preserve"><value>開啟報表選擇視窗</value></data>
+  <data name="Shortcut.OpenQuickActionMenu" xml:space="preserve"><value>開啟快速功能表</value></data>
+  <data name="Shortcut.CloseModal" xml:space="preserve"><value>關閉當前 Modal 視窗</value></data>
+  <data name="Shortcut.CategoryNavigation" xml:space="preserve"><value>導航</value></data>
+  <data name="Shortcut.CategoryWindowControl" xml:space="preserve"><value>視窗控制</value></data>
+
+  <!-- ===== Search 搜尋 ===== -->
+  <data name="Search.GoTo" xml:space="preserve"><value>前往</value></data>
+  <data name="Search.GoToItem" xml:space="preserve"><value>前往 {0}</value></data>
+  <data name="Search.ItemNotAvailable" xml:space="preserve"><value>此項目無法使用</value></data>
+  <data name="Search.NameColumn" xml:space="preserve"><value>名稱</value></data>
+  <data name="Search.DescriptionColumn" xml:space="preserve"><value>說明</value></data>
+  <data name="Search.StartTyping" xml:space="preserve"><value>開始輸入以搜尋</value></data>
+  <data name="Search.KeywordHint" xml:space="preserve"><value>支援名稱、關鍵字搜尋</value></data>
+  <data name="Search.NoResults" xml:space="preserve"><value>沒有找到符合條件的項目，請嘗試使用其他關鍵字</value></data>
+  <data name="Search.DefaultTitle" xml:space="preserve"><value>搜尋</value></data>
+  <data name="Search.DefaultPlaceholder" xml:space="preserve"><value>輸入關鍵字搜尋...</value></data>
+
+  <!-- ===== QuickAction 快速功能 ===== -->
+  <data name="QuickAction.MenuTooltip" xml:space="preserve"><value>快速功能 (Alt + Q)</value></data>
+  <data name="QuickAction.MenuAriaLabel" xml:space="preserve"><value>快速功能選單</value></data>
+  <data name="QuickAction.PageSearch" xml:space="preserve"><value>頁面搜尋</value></data>
+  <data name="QuickAction.PageSearchTooltip" xml:space="preserve"><value>頁面搜尋 (Alt + S)</value></data>
+  <data name="QuickAction.ReportSearch" xml:space="preserve"><value>報表搜尋</value></data>
+  <data name="QuickAction.ReportSearchTooltip" xml:space="preserve"><value>報表搜尋 (Alt + R)</value></data>
+  <data name="QuickAction.ShortcutKeys" xml:space="preserve"><value>快捷鍵說明</value></data>
+  <data name="QuickAction.Notifications" xml:space="preserve"><value>通知</value></data>
+  <data name="QuickAction.NotificationsTitle" xml:space="preserve"><value>通知中心</value></data>
+  <data name="QuickAction.RecentPages" xml:space="preserve"><value>最近使用</value></data>
+  <data name="QuickAction.Settings" xml:space="preserve"><value>設定</value></data>
+  <data name="QuickAction.SettingsTitle" xml:space="preserve"><value>快速設定</value></data>
+  <data name="QuickAction.About" xml:space="preserve"><value>關於</value></data>
+  <data name="QuickAction.AboutTitle" xml:space="preserve"><value>關於本系統</value></data>
+  <data name="QuickAction.NotificationsDev" xml:space="preserve"><value>通知功能開發中...</value></data>
+  <data name="QuickAction.RecentPagesDev" xml:space="preserve"><value>最近使用功能開發中...</value></data>
+  <data name="QuickAction.SettingsDev" xml:space="preserve"><value>快速設定功能開發中...</value></data>
+
+  <!-- ===== Chart 圖表 ===== -->
+  <data name="Chart.LoadingData" xml:space="preserve"><value>載入圖表資料中...</value></data>
+  <data name="Chart.NoData" xml:space="preserve"><value>尚無資料</value></data>
+  <data name="Chart.ClickForDetail" xml:space="preserve"><value>點擊圖表區塊可查看明細</value></data>
+  <data name="Chart.LoadingDetail" xml:space="preserve"><value>載入明細中...</value></data>
+
+  <!-- ===== Column 欄位標題 ===== -->
+  <data name="Column.Code" xml:space="preserve"><value>代碼</value></data>
+  <data name="Column.Name" xml:space="preserve"><value>名稱</value></data>
+
+  <!-- ===== Button 按鈕 (date range) ===== -->
+  <data name="Button.Today" xml:space="preserve"><value>今日</value></data>
+  <data name="Button.ThisWeek" xml:space="preserve"><value>本週</value></data>
+  <data name="Button.ThisMonth" xml:space="preserve"><value>本月</value></data>
+  <data name="Button.LastMonth" xml:space="preserve"><value>上月</value></data>
+  <data name="Button.ThisYear" xml:space="preserve"><value>今年</value></data>
+  <data name="Button.Clear" xml:space="preserve"><value>清空</value></data>
+
+  <!-- ===== Label 標籤 ===== -->
+  <data name="Label.StartDate" xml:space="preserve"><value>起始日期</value></data>
+  <data name="Label.EndDate" xml:space="preserve"><value>結束日期</value></data>
+  <data name="Label.FilterConditions" xml:space="preserve"><value>篩選條件</value></data>
+  <data name="Label.MultiSelect" xml:space="preserve"><value>多選</value></data>
+  <data name="Label.Selected" xml:space="preserve"><value>已選擇</value></data>
+
+  <!-- ===== Message 訊息 ===== -->
+  <data name="Message.DateRangeInvalid" xml:space="preserve"><value>起始日期不能大於結束日期</value></data>
+  <data name="Message.NoMatches" xml:space="preserve"><value>找不到符合的項目</value></data>
+  <data name="Message.NoItemsSelected" xml:space="preserve"><value>尚未選擇項目</value></data>
+  <data name="Message.NoResults" xml:space="preserve"><value>沒有符合的結果</value></data>
+
+  <!-- ===== Placeholder 提示文字 ===== -->
+  <data name="Placeholder.SearchByKeyword" xml:space="preserve"><value>請輸入關鍵字搜尋...</value></data>
+
+  <!-- ===== Report 報表 ===== -->
+  <data name="Report.AdvancedOptions" xml:space="preserve"><value>進階選項</value></data>
+  <data name="Report.ShowAdvancedOptions" xml:space="preserve"><value>顯示進階選項</value></data>
+  <data name="Report.HideAdvancedOptions" xml:space="preserve"><value>隱藏進階選項</value></data>
+  <data name="Report.SelectAll" xml:space="preserve"><value>全選</value></data>
+  <data name="Report.DeselectAll" xml:space="preserve"><value>取消全選</value></data>
+  <data name="Report.BatchPrintTitle" xml:space="preserve"><value>批次列印</value></data>
+  <data name="Report.NoItemsForPrint" xml:space="preserve"><value>沒有可列印的項目</value></data>
+  <!-- ===== Approval 審核狀態 ===== -->
+  <data name="Approval.AllStatuses" xml:space="preserve"><value>全部狀態</value></data>
+  <data name="Approval.Pending" xml:space="preserve"><value>待審核</value></data>
+  <data name="Approval.Approved" xml:space="preserve"><value>已核准</value></data>
+  <data name="Approval.Rejected" xml:space="preserve"><value>已拒絕</value></data>
+  <data name="Approval.Draft" xml:space="preserve"><value>草稿</value></data>
+
+  <!-- ===== Customer 客戶模組 ===== -->
+  <data name="Customer.ChartTitle" xml:space="preserve"><value>客戶分析圖表</value></data>
+  <data name="Customer.NoTransactions" xml:space="preserve"><value>沒有相關交易紀錄</value></data>
+  <data name="Customer.NoVisits" xml:space="preserve"><value>尚無拜訪紀錄</value></data>
+  <data name="Customer.NetSales" xml:space="preserve"><value>淨銷售額</value></data>
+  <data name="Customer.Delivery" xml:space="preserve"><value>出貨</value></data>
+  <data name="Customer.Deliveries" xml:space="preserve"><value>出貨單</value></data>
+  <data name="Customer.Return" xml:space="preserve"><value>退貨</value></data>
+  <data name="Customer.Returns" xml:space="preserve"><value>退貨單</value></data>
+  <data name="Customer.SalesOrders" xml:space="preserve"><value>銷貨訂單</value></data>
+  <data name="Customer.Quotations" xml:space="preserve"><value>報價單</value></data>
+  <data name="Customer.LastTransaction" xml:space="preserve"><value>最後交易</value></data>
+  <data name="Customer.ConversionRate" xml:space="preserve"><value>成交率</value></data>
+  <data name="Customer.AvgDelivery" xml:space="preserve"><value>平均出貨</value></data>
+
+  <!-- ===== Column 欄位標題（新增） ===== -->
+  <data name="Column.Date" xml:space="preserve"><value>日期</value></data>
+  <data name="Column.OrderType" xml:space="preserve"><value>訂單類型</value></data>
+  <data name="Column.OrderNumber" xml:space="preserve"><value>訂單編號</value></data>
+  <data name="Column.Amount" xml:space="preserve"><value>金額</value></data>
+  <data name="Column.VisitDate" xml:space="preserve"><value>拜訪日期</value></data>
+  <data name="Column.VisitMethod" xml:space="preserve"><value>方式</value></data>
+  <data name="Column.SalesEmployee" xml:space="preserve"><value>業務人員</value></data>
+  <data name="Column.VisitPurpose" xml:space="preserve"><value>拜訪目的</value></data>
+  <data name="Column.VisitResult" xml:space="preserve"><value>結果摘要</value></data>
+  <data name="Column.NextFollowUp" xml:space="preserve"><value>下次追蹤</value></data>
+  <data name="Column.ProductCode" xml:space="preserve"><value>商品編號</value></data>
+  <data name="Column.ProductName" xml:space="preserve"><value>商品名稱</value></data>
+  <data name="Column.SupplierProductCode" xml:space="preserve"><value>供應商料號</value></data>
+  <data name="Column.LastPurchasePrice" xml:space="preserve"><value>最近採購價</value></data>
+  <data name="Column.LastPurchaseDate" xml:space="preserve"><value>最近採購日</value></data>
+  <data name="Column.IsPreferred" xml:space="preserve"><value>常用</value></data>
+  <data name="Column.Product" xml:space="preserve"><value>商品</value></data>
+  <data name="Column.Select" xml:space="preserve"><value>選擇</value></data>
+  <data name="Column.PermissionName" xml:space="preserve"><value>權限名稱</value></data>
+  <data name="Column.PermissionCode" xml:space="preserve"><value>權限編號</value></data>
+
+  <!-- ===== VisitType 拜訪方式 ===== -->
+  <data name="VisitType.Phone" xml:space="preserve"><value>電話</value></data>
+  <data name="VisitType.OnSite" xml:space="preserve"><value>現場</value></data>
+  <data name="VisitType.VideoConference" xml:space="preserve"><value>視訊</value></data>
+  <data name="VisitType.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="VisitType.Other" xml:space="preserve"><value>其他</value></data>
+
+  <!-- ===== Button 按鈕（新增） ===== -->
+  <data name="Button.AddVisitRecord" xml:space="preserve"><value>新增拜訪紀錄</value></data>
+  <data name="Button.ConfirmDelete" xml:space="preserve"><value>確認刪除</value></data>
+  <data name="Button.ConfirmRemove" xml:space="preserve"><value>確認移除</value></data>
+  <data name="Button.ClearDetails" xml:space="preserve"><value>清除明細</value></data>
+  <data name="Button.DisableAccount" xml:space="preserve"><value>停用帳號</value></data>
+  <data name="Button.OpenEdit" xml:space="preserve"><value>開啟編輯</value></data>
+  <data name="Button.Copy" xml:space="preserve"><value>複製</value></data>
+  <data name="Button.SelectAll" xml:space="preserve"><value>全選</value></data>
+  <data name="Button.ClearAll" xml:space="preserve"><value>全清</value></data>
+
+  <!-- ===== Label 標籤（新增） ===== -->
+  <data name="Label.Show" xml:space="preserve"><value>顯示：</value></data>
+  <data name="Label.RecordCount" xml:space="preserve"><value>共 {0} 筆</value></data>
+  <data name="Label.AllDataStats" xml:space="preserve"><value>全部資料統計</value></data>
+  <data name="Label.DaysAgo" xml:space="preserve"><value>（{0} 天前）</value></data>
+  <data name="Label.LoginAccount" xml:space="preserve"><value>登入帳號</value></data>
+  <data name="Label.LoginPassword" xml:space="preserve"><value>登入密碼</value></data>
+  <data name="Label.PermissionGroup" xml:space="preserve"><value>權限組</value></data>
+  <data name="Label.LoadingRoles" xml:space="preserve"><value>載入權限組資料中...</value></data>
+  <data name="Label.LoadingPermissions" xml:space="preserve"><value>載入權限資料中...</value></data>
+  <data name="Label.None" xml:space="preserve"><value>無</value></data>
+  <data name="Label.SelectCopyTarget" xml:space="preserve"><value>選擇複製對象</value></data>
+  <data name="Label.CurrentStatus" xml:space="preserve"><value>目前狀態：</value></data>
+  <data name="Label.Saving" xml:space="preserve"><value>儲存中...</value></data>
+
+  <!-- ===== Placeholder 提示文字（新增） ===== -->
+  <data name="Placeholder.LoginAccount" xml:space="preserve"><value>請輸入登入帳號（留空表示無法登入）</value></data>
+  <data name="Placeholder.LoginAccountKeepPassword" xml:space="preserve"><value>留空表示不變更現有密碼</value></data>
+  <data name="Placeholder.SetPassword" xml:space="preserve"><value>請設定登入密碼</value></data>
+  <data name="Placeholder.SearchPermission" xml:space="preserve"><value>搜尋權限名稱...</value></data>
+  <data name="Placeholder.SelectRole" xml:space="preserve"><value>請選擇要設定的權限組 ...</value></data>
+  <data name="Placeholder.SelectPermissionGroup" xml:space="preserve"><value>-- 請選擇權限組 --</value></data>
+
+  <!-- ===== Modal 彈窗文字（新增） ===== -->
+  <data name="Modal.DeleteVisitRecord" xml:space="preserve"><value>刪除拜訪紀錄</value></data>
+  <data name="Modal.ConfirmDeleteVisitRecord" xml:space="preserve"><value>確定要刪除此筆拜訪紀錄嗎？</value></data>
+
+  <!-- ===== Message 訊息（新增） ===== -->
+  <data name="Message.VisitDeleted" xml:space="preserve"><value>拜訪紀錄已刪除</value></data>
+
+  <!-- ===== Supplier 廠商模組（新增） ===== -->
+  <data name="Supplier.AutoSyncNote" xml:space="preserve"><value>採購單儲存時自動同步，★ 表示常用廠商</value></data>
+  <data name="Supplier.NoProducts" xml:space="preserve"><value>尚無供應商品，採購單儲存後將自動建立</value></data>
+  <data name="Supplier.NoProductsDefault" xml:space="preserve"><value>尚未設定供應商品</value></data>
+  <data name="Supplier.RemoveProduct" xml:space="preserve"><value>移除供應商品</value></data>
+  <data name="Supplier.ConfirmRemoveProduct" xml:space="preserve"><value>確定要將「{0}」從廠商供應目錄中移除嗎？</value></data>
+  <data name="Supplier.RemovedFromCatalog" xml:space="preserve"><value>已從供應目錄中移除</value></data>
+  <data name="Supplier.DeleteButtonTitle" xml:space="preserve"><value>從供應目錄移除</value></data>
+  <data name="Supplier.AlreadyBound" xml:space="preserve"><value>商品「{0}」已經綁定此供應商</value></data>
+  <data name="Supplier.ClearedAll" xml:space="preserve"><value>已清空所有供應商品明細</value></data>
+  <data name="Supplier.ConfirmClearAll" xml:space="preserve"><value>確定要清除所有供應商品明細嗎？</value></data>
+  <data name="Supplier.NoClearTooltip" xml:space="preserve"><value>目前沒有明細可清除</value></data>
+  <data name="Supplier.ClearDetailsTooltip" xml:space="preserve"><value>清除所有供應商品明細</value></data>
+
+  <!-- ===== Employee 員工帳號管理（新增） ===== -->
+  <data name="Employee.AccountManagement" xml:space="preserve"><value>帳號管理</value></data>
+  <data name="Employee.SystemUser" xml:space="preserve"><value>系統使用者</value></data>
+  <data name="Employee.NeverLoggedIn" xml:space="preserve"><value>從未登入</value></data>
+  <data name="Employee.RegularEmployee" xml:space="preserve"><value>一般員工（無帳號）</value></data>
+  <data name="Employee.NotFound" xml:space="preserve"><value>找不到員工資料</value></data>
+  <data name="Employee.EmptyMeansNoLogin" xml:space="preserve"><value>留空表示此員工無法登入系統</value></data>
+  <data name="Employee.KeepPasswordHint" xml:space="preserve"><value>編輯時留空表示不變更現有密碼</value></data>
+  <data name="Employee.RoleRequiredHint" xml:space="preserve"><value>設定此員工在系統中的操作權限（有帳號時必填）</value></data>
+
+  <!-- ===== Permission 權限管理（新增） ===== -->
+  <data name="Permission.RoleManagement" xml:space="preserve"><value>權限組管理</value></data>
+  <data name="Permission.NotCreated" xml:space="preserve"><value>尚未建立任何權限組</value></data>
+  <data name="Permission.AdminHasAll" xml:space="preserve"><value>管理員權限組擁有所有權限。</value></data>
+  <data name="Permission.SelectAllHint" xml:space="preserve"><value>「全選」/「全清」按鈕僅影響一般權限，敏感權限需要手動點擊個別選擇以確保安全性。</value></data>
+  <data name="Permission.SensitiveDanger" xml:space="preserve"><value>請謹慎授權！這些權限可能影響系統安全性和穩定性。</value></data>
+  <data name="Permission.NoPermissions" xml:space="preserve"><value>沒有找到權限資料</value></data>
+  <data name="Permission.NoSystemPermissions" xml:space="preserve"><value>沒有找到系統權限資料</value></data>
+  <data name="Permission.AdminCannotCopy" xml:space="preserve"><value>管理員權限組無法複製權限</value></data>
+  <data name="Permission.AdminCannotModify" xml:space="preserve"><value>管理員權限組無法修改權限</value></data>
+  <data name="Permission.SelectAllTooltip" xml:space="preserve"><value>僅選擇一般權限，敏感權限需手動選擇</value></data>
+  <data name="Permission.ClearAllTooltip" xml:space="preserve"><value>僅清除一般權限，敏感權限需手動取消</value></data>
+
+  <!-- ===== Purchase 採購模組 ===== -->
+  <data name="Purchase.LoadingPending" xml:space="preserve"><value>正在載入待審核資料...</value></data>
+  <data name="Purchase.SelectedCount" xml:space="preserve"><value>已選取 {0} / {1} 筆</value></data>
+  <data name="Purchase.DeselectAll" xml:space="preserve"><value>取消全選</value></data>
+  <data name="Purchase.SelectAll" xml:space="preserve"><value>全選</value></data>
+  <data name="Purchase.DeselectAllTooltip" xml:space="preserve"><value>取消選取所有項目</value></data>
+  <data name="Purchase.SelectAllTooltip" xml:space="preserve"><value>選取所有項目</value></data>
+  <data name="Purchase.ApproveSelected" xml:space="preserve"><value>審核</value></data>
+  <data name="Purchase.ApproveSelectedTooltip" xml:space="preserve"><value>審核已選取的 {0} 筆單據</value></data>
+  <data name="Purchase.NoPendingItems" xml:space="preserve"><value>太棒了！目前沒有待審核的項目。</value></data>
+  <data name="Purchase.SelectItemsFirst" xml:space="preserve"><value>請先選取要審核的項目</value></data>
+  <data name="Purchase.ApproveSuccessAll" xml:space="preserve"><value>審核完成！成功審核 {0} 筆{1}</value></data>
+  <data name="Purchase.ApproveSuccessPartial" xml:space="preserve"><value>審核完成！成功 {0} 筆，失敗 {1} 筆</value></data>
+  <data name="Purchase.LoadPendingFailed" xml:space="preserve"><value>載入待審核{0}失敗：{1}</value></data>
+  <data name="Purchase.ApproveError" xml:space="preserve"><value>審核所選項目時發生錯誤：{0}</value></data>
+  <data name="Purchase.ViewDetail" xml:space="preserve"><value>查看詳情</value></data>
+  <data name="Purchase.RejectReasonPlaceholder" xml:space="preserve"><value>請輸入駁回原因...</value></data>
+  <data name="Purchase.ConfirmReject" xml:space="preserve"><value>確認駁回</value></data>
+  <data name="Purchase.RejectReasonRequired" xml:space="preserve"><value>請填寫駁回原因</value></data>
+  <data name="Purchase.ConfirmRejectError" xml:space="preserve"><value>確認駁回時發生錯誤：{0}</value></data>
+  <data name="Purchase.CancelError" xml:space="preserve"><value>取消操作時發生錯誤：{0}</value></data>
+  <data name="Column.PurchaseOrderCode" xml:space="preserve"><value>採購單號</value></data>
+  <data name="Column.ReceivingCode" xml:space="preserve"><value>進貨單號</value></data>
+  <data name="Column.ReturnCode" xml:space="preserve"><value>退回單號</value></data>
+  <data name="Column.SetoffCode" xml:space="preserve"><value>沖款單號</value></data>
+  <data name="Column.OrderCode" xml:space="preserve"><value>訂單單號</value></data>
+  <data name="Column.SupplierName" xml:space="preserve"><value>廠商</value></data>
+  <data name="Column.OrderDate" xml:space="preserve"><value>訂單日期</value></data>
+  <data name="Column.OrderDateAlt" xml:space="preserve"><value>訂購日期</value></data>
+  <data name="Column.ExpectedDeliveryDate" xml:space="preserve"><value>預計到貨日</value></data>
+  <data name="Column.TotalAmount" xml:space="preserve"><value>總金額</value></data>
+  <data name="Column.ReceivingDate" xml:space="preserve"><value>進貨日期</value></data>
+  <data name="Column.OrderReturnDate" xml:space="preserve"><value>退回日期</value></data>
+  <data name="Column.SetoffDate" xml:space="preserve"><value>沖款日期</value></data>
+  <data name="Column.BatchNumber" xml:space="preserve"><value>批號</value></data>
+  <data name="Column.AmountWithTax" xml:space="preserve"><value>金額（含稅）</value></data>
+  <data name="Column.ReturnAmountWithTax" xml:space="preserve"><value>退回金額（含稅）</value></data>
+  <data name="Column.OrderAmountWithTax" xml:space="preserve"><value>訂單金額（含稅）</value></data>
+  <data name="Column.SetoffAmount" xml:space="preserve"><value>本次沖款金額</value></data>
+  <data name="Column.CollectionAmount" xml:space="preserve"><value>本次收款金額</value></data>
+  <data name="Column.IsJournalized" xml:space="preserve"><value>已過帳</value></data>
+  <data name="Button.OpenReceiving" xml:space="preserve"><value>開啟進貨單</value></data>
+  <data name="Button.OpenReturn" xml:space="preserve"><value>開啟退回單</value></data>
+  <data name="Button.OpenOrder" xml:space="preserve"><value>開啟採購訂單</value></data>
+  <data name="Button.OpenSetoff" xml:space="preserve"><value>開啟沖款單</value></data>
 </root>

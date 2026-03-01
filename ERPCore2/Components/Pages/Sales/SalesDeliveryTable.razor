@@ -13,8 +13,7 @@
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
 @inject IJSRuntime JSRuntime
 
-@typeparam TMainEntity where TMainEntity : BaseEntity
-@typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
+@inherits BaseDetailTableComponent<SalesDelivery, SalesDeliveryDetail, SalesDeliveryTable.DeliveryItem>
 
 @if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
 {
@@ -31,8 +30,8 @@ else
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
                                       TItem="DeliveryItem"
-                                      OnDataChanged="@NotifyDetailsChanged"
-                                      Items="@DeliveryItems"
+                                      OnDataChanged="@NotifyDetailsChangedAsync"
+                                      Items="@Items"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       ShowHeader="true"
                                       ShowBuiltInActions="true"
@@ -65,7 +64,7 @@ else
                 <div class="btn-group-right">
                     <GenericButtonComponent Text="清除明細"
                                           Variant="ButtonVariant.Red"
-                                          IsDisabled="@(IsReadOnly || !DeliveryItems.Any(item => item.ProductId > 0) || _hasUndeletableDetails)"
+                                          IsDisabled="@(IsReadOnly || !Items.Any(item => item.ProductId > 0) || _hasUndeletableDetails)"
                                           Title="@GetClearAllDetailsTooltip()"
                                           OnClick="ClearAllDetails" />
                 </div>
@@ -95,13 +94,6 @@ else
                              OnCancel="@(() => _showLoadConfirmModal = false)" />
 
 @code {
-    // ===== InteractiveTableComponent 參考 =====
-    private InteractiveTableComponent<DeliveryItem>? tableComponent;
-    
-    // ===== 資料載入完成標記 =====
-    private bool _dataLoadCompleted = true;  // 資料載入完成標記
-    private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細（已有退貨記錄）
-    
     // ===== 載入確認 Modal =====
     private bool _showLoadConfirmModal = false;
     private List<string> _loadConditions = new();
@@ -122,32 +114,18 @@ else
     
     // ===== 退貨數量參數 =====
     [Parameter] public Dictionary<int, decimal>? ReturnedQuantities { get; set; }
-    
+
     // ===== 額外參數（用於顯示確認訊息）=====
     [Parameter] public string? SelectedCustomerName { get; set; }
     [Parameter] public string? SelectedSalesOrderCode { get; set; }
     [Parameter] public string? FilterProductName { get; set; }
-    
+
     // ===== 商品篩選參數 =====
     [Parameter] public int? FilterProductId { get; set; }
-    
-    // ===== 泛型參數 =====
-    [Parameter] public TMainEntity? MainEntity { get; set; }
-    [Parameter] public List<TDetailEntity> ExistingDetails { get; set; } = new List<TDetailEntity>();
-    [Parameter] public EventCallback<List<TDetailEntity>> OnDetailsChanged { get; set; }
+
+    // ===== 刪除的明細 ID 回調 =====
     [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; }
-    [Parameter] public EventCallback<bool> OnHasUndeletableDetailsChanged { get; set; }
-    
-    // ===== 欄位映射參數 =====
-    [Parameter] public string MainEntityIdPropertyName { get; set; } = string.Empty;
-    [Parameter] public string QuantityPropertyName { get; set; } = "DeliveryQuantity";
-    [Parameter] public string UnitPricePropertyName { get; set; } = "UnitPrice";
-    [Parameter] public string? DiscountPercentagePropertyName { get; set; } = "DiscountPercentage";
-    [Parameter] public string RemarksPropertyName { get; set; } = "Remarks";
-    [Parameter] public string? UnitIdPropertyName { get; set; }
-    [Parameter] public string? WarehouseIdPropertyName { get; set; }
-    [Parameter] public string? WarehouseLocationIdPropertyName { get; set; }
-    
+
     // ===== 顯示控制參數 =====
     [Parameter] public bool ShowWarehouse { get; set; } = true;
     [Parameter] public bool ShowWarehouseLocation { get; set; } = true;    
@@ -156,12 +134,9 @@ else
     [Parameter] public string Title { get; set; } = "出貨明細";
     [Parameter] public string EmptyMessage { get; set; } = "尚未新增出貨商品";
     
-    // ===== 唯讀模式參數 =====
-    [Parameter] public bool IsReadOnly { get; set; } = false;
-    
     // ===== 篩選參數 =====
     [Parameter] public int? SelectedSalesOrderId { get; set; }  //  用於過濾指定訂單的明細
-    
+
     // ===== 稅別參數（新增）=====
     [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
     
@@ -169,15 +144,11 @@ else
     [Parameter] public List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
     [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new List<WarehouseLocation>();
 
-    private List<DeliveryItem> DeliveryItems { get; set; } = new List<DeliveryItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
     private List<SalesOrderDetail> AvailableSalesDetails { get; set; } = new List<SalesOrderDetail>();
-    private int? _previousSelectedCustomerId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
-    
-    // 方案 D 改良版：資料版本追蹤
-    private int _previousDataVersion = 0;
-    private bool _isLoadingDetails = false;
+
+    // 模組特定追蹤欄位
     private int? _previousFilterProductId = null;
     
     // 稅率快取變數
@@ -191,13 +162,7 @@ else
     
     // ===== 相關單據開啟事件 =====
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
-    
-    // 方案 D 改良版：資料版本追蹤
-    [Parameter] public int DataVersion { get; set; } = 0;
-    
-    // 修正：父元件載入中標記
-    [Parameter] public bool IsParentLoading { get; set; } = false;
-    
+
     // ===== 輔助計算屬性 =====
     private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
 
@@ -271,7 +236,7 @@ else
         if (IsReadOnly)
             return "唯讀模式無法使用";
         
-        if (!DeliveryItems.Any(item => item.ProductId > 0))
+        if (!Items.Any(item => item.ProductId > 0))
             return "沒有可清除的明細項目";
         
         if (_hasUndeletableDetails)
@@ -282,17 +247,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // 修正：父元件載入中時不執行初始化
-        // 🔥 重要：此時不設定 _previousDataVersion，讓 OnParametersSetAsync 能夠偵測到變化
-        if (IsParentLoading) { return; }
-        
-        // 只有在成功載入後才設定 _previousDataVersion
-        _previousDataVersion = DataVersion;
-        
-        // 初始化時記錄當前客戶ID與商品篩選，避免 OnParametersSetAsync 誤判為變更
-        _previousSelectedCustomerId = SelectedCustomerId;
         _previousFilterProductId = FilterProductId;
-        
+
         // 載入系統預設稅率
         try
         {
@@ -307,84 +263,101 @@ else
         {
             currentTaxRate = 5.0m;
         }
-        
-        await LoadAvailableProductsAsync();
-        await LoadExistingDetailsAsync();
+
+        await base.OnInitializedAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        // 防止重入
-        if (_isLoadingDetails) { return; }
-        
-        // 方案 D 改良版：優先檢查 DataVersion
-        bool versionChanged = DataVersion != _previousDataVersion;
-        
-        if (versionChanged)
-        {
-            // 同時更新所有追蹤變數
-            _previousDataVersion = DataVersion;
-            _previousSelectedCustomerId = SelectedCustomerId;
-            _previousFilterProductId = FilterProductId;
+        bool filterProductChanged = _previousFilterProductId != FilterProductId;
 
-            _isLoadingDetails = true;
-            try
-            {
-                // 重新載入資料
-                await LoadExistingDetailsAsync();
-                tableComponent?.RefreshEmptyRow();
-            }
-            finally
-            {
-                _isLoadingDetails = false;
-            }
-            return;
-        }
+        await base.OnParametersSetAsync();
 
-        base.OnParametersSet();
-
-        // 客戶變更時重新載入
-        bool customerChanged = _previousSelectedCustomerId != SelectedCustomerId;
-
-        // 商品篩選變更時
-        bool productFilterChanged = _previousFilterProductId != FilterProductId;
-
-        if (customerChanged)
-        {
-            _previousSelectedCustomerId = SelectedCustomerId;
-            _previousFilterProductId = FilterProductId;
-            await LoadAvailableProductsAsync();
-
-            DeliveryItems.Clear();
-
-            if (ExistingDetails?.Any() != true)
-            {
-                _dataLoadCompleted = true;
-                StateHasChanged();
-            }
-            else
-            {
-                await LoadExistingDetailsAsync();
-            }
-        }
-        else if (productFilterChanged)
+        if (filterProductChanged)
         {
             _previousFilterProductId = FilterProductId;
-
-            // 觸發重新渲染以套用新的商品篩選條件
             StateHasChanged();
         }
     }
-    
-    /// <summary>
-    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
-    /// </summary>
-    public async Task RefreshDetailsAsync()
+
+    protected override async Task OnCounterpartyChangedAsync()
     {
-        await LoadExistingDetailsAsync();
-        
-        tableComponent?.RefreshEmptyRow();
-        StateHasChanged();
+        await LoadAvailableProductsAsync();
+    }
+
+    protected override async Task LoadItemsFromDetailsAsync()
+    {
+        if (ExistingDetails?.Any() != true)
+        {
+            return;
+        }
+
+        foreach (var detail in ExistingDetails)
+        {
+            var product = AvailableProducts.FirstOrDefault(p => p.Id == detail.ProductId);
+
+            var deliveryItem = new DeliveryItem
+            {
+                ProductId = detail.ProductId,
+                SelectedProduct = product,
+                DeliveryQuantity = detail.DeliveryQuantity,
+                TotalReturnedQuantity = detail.TotalReturnedQuantity,
+                UnitPrice = detail.UnitPrice,
+                DiscountPercentage = detail.DiscountPercentage,
+                Remarks = detail.Remarks ?? string.Empty,
+                TaxRate = detail.TaxRate ?? product?.TaxRate ?? currentTaxRate,
+                WarehouseId = detail.WarehouseId,
+                WarehouseLocationId = detail.WarehouseLocationId,
+                ExistingDetailEntity = detail,
+                ProductSearchValue = product != null ? FormatProductDisplayText(product) : string.Empty
+            };
+
+            await LoadStockQuantityAsync(deliveryItem);
+
+            deliveryItem.OriginalDeliveryQuantity = detail.DeliveryQuantity;
+            deliveryItem.OriginalInventoryStockDetailId = deliveryItem.InventoryStockDetailId;
+
+            Items.Add(deliveryItem);
+        }
+    }
+
+    protected override bool ComputeHasUndeletableDetails()
+    {
+        return Items.Any(item =>
+            item.ExistingDetailEntity != null &&
+            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _,
+                checkReturn: true,
+                returnedQuantities: ReturnedQuantities));
+    }
+
+    protected override List<SalesDeliveryDetail> ConvertItemsToDetails()
+    {
+        var validItems = Items.Where(item => item.ProductId > 0).ToList();
+        var detailEntities = new List<SalesDeliveryDetail>();
+
+        foreach (var item in validItems)
+        {
+            SalesDeliveryDetail detailEntity = item.ExistingDetailEntity ?? new SalesDeliveryDetail();
+
+            detailEntity.ProductId = item.ProductId;
+
+            if (item.SelectedSalesDetail != null)
+            {
+                detailEntity.SalesOrderDetailId = item.SelectedSalesDetail.Id;
+            }
+
+            detailEntity.DeliveryQuantity = item.DeliveryQuantity ?? 0;
+            detailEntity.UnitPrice = item.UnitPrice ?? 0;
+            detailEntity.DiscountPercentage = item.DiscountPercentage;
+            detailEntity.TaxRate = item.TaxRate;
+            detailEntity.Remarks = item.Remarks;
+            detailEntity.WarehouseId = item.WarehouseId;
+            detailEntity.WarehouseLocationId = item.WarehouseLocationId;
+
+            detailEntities.Add(detailEntity);
+        }
+
+        return detailEntities;
     }
 
     // ===== InteractiveTableComponent 方法 =====
@@ -776,22 +749,22 @@ else
 
     private async Task HandleItemDelete(DeliveryItem item)
     {
-        var index = DeliveryItems.IndexOf(item);
+        var index = Items.IndexOf(item);
         if (index >= 0)
         {
             // 如果是已存在的明細（有ID），加入刪除清單
             if (item.ExistingDetailEntity != null)
             {
-                var detailId = GetExistingDetailId(item.ExistingDetailEntity);
+                var detailId = item.ExistingDetailEntity.Id;
                 if (detailId > 0 && !_deletedDetailIds.Contains(detailId))
                 {
                     _deletedDetailIds.Add(detailId);
                     await NotifyDeletedDetailsChanged();
                 }
             }
-            
-            DeliveryItems.RemoveAt(index);
-            await NotifyDetailsChanged();
+
+            Items.RemoveAt(index);
+            await NotifyDetailsChangedAsync();
         }
     }
     
@@ -802,14 +775,14 @@ else
     /// </summary>
     private async Task ShowRelatedDocuments(DeliveryItem item)
     {
-        if (item.ExistingDetailEntity is not SalesDeliveryDetail detail || detail.Id <= 0)
+        if (item.ExistingDetailEntity == null || item.ExistingDetailEntity.Id <= 0)
         {
             await NotificationService.ShowWarningAsync("此項目尚未儲存，無法查看相關單據", "提示");
             return;
         }
 
         selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
-        
+
         showRelatedDocumentsModal = true;
         isLoadingRelatedDocuments = true;
         relatedDocuments = null;
@@ -817,7 +790,7 @@ else
 
         try
         {
-            relatedDocuments = await RelatedDocumentsHelper.GetRelatedDocumentsForSalesDeliveryDetailAsync(detail.Id);
+            relatedDocuments = await RelatedDocumentsHelper.GetRelatedDocumentsForSalesDeliveryDetailAsync(item.ExistingDetailEntity.Id);
         }
         catch (Exception ex)
         {
@@ -930,233 +903,11 @@ else
         );
     }
     
-    private async Task LoadExistingDetailsAsync()
-    {
-        if (ExistingDetails?.Any() != true)
-        {
-            return;
-        }
-        
-        //  開始載入資料 - 設定為未完成
-        _dataLoadCompleted = false;
-        
-        DeliveryItems.Clear();
-        
-        foreach (var detail in ExistingDetails)
-        {
-            var productId = GetPropertyValue<int>(detail, nameof(DeliveryItem.ProductId));
-            
-            var quantity = GetPropertyValue<decimal>(detail, QuantityPropertyName);
-            var unitPrice = GetPropertyValue<decimal>(detail, UnitPricePropertyName);
-            var discountPercentage = !string.IsNullOrEmpty(DiscountPercentagePropertyName)
-                ? GetPropertyValue<decimal>(detail, DiscountPercentagePropertyName)
-                : 0;
-            var remarks = GetPropertyValue<string>(detail, RemarksPropertyName);
-            var taxRate = GetPropertyValue<decimal?>(detail, nameof(DeliveryItem.TaxRate));
-            var warehouseId = !string.IsNullOrEmpty(WarehouseIdPropertyName) 
-                ? GetPropertyValue<int?>(detail, WarehouseIdPropertyName) 
-                : null;
-            var warehouseLocationId = !string.IsNullOrEmpty(WarehouseLocationIdPropertyName) 
-                ? GetPropertyValue<int?>(detail, WarehouseLocationIdPropertyName) 
-                : null;
-
-            // 使用 AvailableProducts 而非 Products 參數（與 PurchaseReceivingTable 一致）
-            var product = AvailableProducts.FirstOrDefault(p => p.Id == productId);
-            
-            // 從 Entity 讀取累計退貨數量
-            var totalReturnedQuantity = detail is SalesDeliveryDetail salesDetail 
-                ? salesDetail.TotalReturnedQuantity 
-                : 0;
-            
-            var deliveryItem = new DeliveryItem
-            {
-                ProductId = productId,
-                SelectedProduct = product,
-                DeliveryQuantity = quantity,
-                TotalReturnedQuantity = totalReturnedQuantity, // 載入累計退貨數量
-                UnitPrice = unitPrice,
-                DiscountPercentage = discountPercentage,
-                Remarks = remarks ?? string.Empty,
-                TaxRate = taxRate ?? product?.TaxRate ?? currentTaxRate,
-                WarehouseId = warehouseId,
-                WarehouseLocationId = warehouseLocationId,
-                ExistingDetailEntity = detail,
-                ProductSearchValue = product != null ? FormatProductDisplayText(product) : string.Empty
-            };
-
-            // ✅ 修正：同步等待庫存資訊載入完成（與 PurchaseReceivingTable、PurchaseReturnTable 保持一致）
-            // 這確保在用戶點擊儲存前，所有庫存資料都已載入完成
-            await LoadStockQuantityAsync(deliveryItem);
-            
-            // 記錄原始值（用於編輯模式下的庫存驗證）
-            // 必須在 LoadStockQuantityAsync 之後設定，因為該方法會透過倉庫/庫位匹配找出 InventoryStockDetailId
-            deliveryItem.OriginalDeliveryQuantity = quantity;
-            deliveryItem.OriginalInventoryStockDetailId = deliveryItem.InventoryStockDetailId;
-
-            DeliveryItems.Add(deliveryItem);
-        }
-        
-        // 檢查是否有不可刪除的明細（已有退貨記錄）
-        bool hasUndeletableDetails = DeliveryItems.Any(item => 
-            item.ExistingDetailEntity != null && 
-            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
-                checkReturn: true, 
-                returnedQuantities: ReturnedQuantities));
-        if (_hasUndeletableDetails != hasUndeletableDetails)
-        {
-            _hasUndeletableDetails = hasUndeletableDetails;
-            await NotifyHasUndeletableDetailsChanged();
-        }
-        
-        //  資料載入完成 - 觸發空行檢查
-        _dataLoadCompleted = true;
-        tableComponent?.RefreshEmptyRow();
-        StateHasChanged();
-    }
-
-    private List<TDetailEntity> ConvertToDetailEntities()
-    {
-        var validItems = DeliveryItems.Where(item => item.ProductId > 0).ToList();
-        var detailEntities = new List<TDetailEntity>();
-
-        foreach (var item in validItems)
-        {
-            TDetailEntity detailEntity;
-            
-            if (item.ExistingDetailEntity != null)
-            {
-                detailEntity = item.ExistingDetailEntity;
-            }
-            else
-            {
-                detailEntity = new TDetailEntity();
-            }
-
-            // 設定商品ID
-            SetPropertyValue(detailEntity, nameof(DeliveryItem.ProductId), item.ProductId);
-            
-            // 關鍵：設定來源銷貨訂單明細ID（如果是從訂單載入的）
-            if (item.SelectedSalesDetail != null)
-            {
-                SetPropertyValue(detailEntity, "SalesOrderDetailId", item.SelectedSalesDetail.Id);
-            }
-            
-            // 設定數量
-            SetPropertyValue(detailEntity, QuantityPropertyName, item.DeliveryQuantity ?? 0);
-            
-            // 設定單價
-            SetPropertyValue(detailEntity, UnitPricePropertyName, item.UnitPrice ?? 0);
-            
-            // 設定折扣
-            if (!string.IsNullOrEmpty(DiscountPercentagePropertyName))
-            {
-                SetPropertyValue(detailEntity, DiscountPercentagePropertyName, item.DiscountPercentage);
-            }
-            
-            // 設定稅率
-            SetPropertyValue(detailEntity, nameof(DeliveryItem.TaxRate), item.TaxRate);
-            
-            // 設定備註
-            SetPropertyValue(detailEntity, RemarksPropertyName, item.Remarks);
-            
-            // 設定倉庫（如果有）
-            if (!string.IsNullOrEmpty(WarehouseIdPropertyName))
-            {
-                SetPropertyValue(detailEntity, WarehouseIdPropertyName, item.WarehouseId);
-            }
-            
-            // 修正：設定庫位（之前遺漏，導致庫位選擇無法儲存到資料庫）
-            if (!string.IsNullOrEmpty(WarehouseLocationIdPropertyName))
-            {
-                SetPropertyValue(detailEntity, WarehouseLocationIdPropertyName, item.WarehouseLocationId);
-            }
-
-            detailEntities.Add(detailEntity);
-        }
-
-        return detailEntities;
-    }
-
-    private async Task NotifyDetailsChanged()
-    {
-        var detailEntities = ConvertToDetailEntities();
-        
-        if (OnDetailsChanged.HasDelegate)
-        {
-            await DetailSyncHelper.SyncToParentAsync(detailEntities, OnDetailsChanged);
-        }
-        
-        // 檢查並更新不可刪除明細的狀態
-        bool hasUndeletableDetails = DeliveryItems.Any(item => 
-            item.ExistingDetailEntity != null && 
-            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
-                checkReturn: true, 
-                returnedQuantities: ReturnedQuantities));
-        if (_hasUndeletableDetails != hasUndeletableDetails)
-        {
-            _hasUndeletableDetails = hasUndeletableDetails;
-            await NotifyHasUndeletableDetailsChanged();
-        }
-        
-        // 🔧 修正：無條件刷新空行和觸發 UI 更新，確保選擇商品後立即顯示
-        tableComponent?.RefreshEmptyRow();
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 通知父組件 hasUndeletableDetails 狀態變更
-    /// </summary>
-    private async Task NotifyHasUndeletableDetailsChanged()
-    {
-        if (OnHasUndeletableDetailsChanged.HasDelegate)
-        {
-            await OnHasUndeletableDetailsChanged.InvokeAsync(_hasUndeletableDetails);
-        }
-    }
-
     private async Task NotifyDeletedDetailsChanged()
     {
         if (OnDeletedDetailsChanged.HasDelegate)
         {
             await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds);
-        }
-    }
-
-    private T? GetPropertyValue<T>(object obj, string propertyName)
-    {
-        if (obj == null || string.IsNullOrEmpty(propertyName))
-            return default;
-
-        var property = obj.GetType().GetProperty(propertyName);
-        if (property == null)
-            return default;
-
-        var value = property.GetValue(obj);
-        return value == null ? default : (T)value;
-    }
-
-    private void SetPropertyValue(object obj, string propertyName, object? value)
-    {
-        if (obj == null || string.IsNullOrEmpty(propertyName))
-            return;
-
-        var property = obj.GetType().GetProperty(propertyName);
-        if (property != null && property.CanWrite)
-        {
-            try
-            {
-                if (value == null && property.PropertyType.IsValueType && 
-                    Nullable.GetUnderlyingType(property.PropertyType) == null)
-                {
-                    return;
-                }
-                
-                property.SetValue(obj, value);
-            }
-            catch
-            {
-                // 忽略設定失敗
-            }
         }
     }
 
@@ -1185,7 +936,7 @@ else
             }
         }
         
-        await NotifyDetailsChanged();
+        await NotifyDetailsChangedAsync();
         StateHasChanged();
     }
 
@@ -1293,13 +1044,13 @@ else
     private async Task OnQuantityInput(DeliveryItem item, string? value)
     {
         item.DeliveryQuantity = string.IsNullOrWhiteSpace(value) ? null : InputEventHelper.HandleQuantityInput(value);
-        await NotifyDetailsChanged();
+        await NotifyDetailsChangedAsync();
     }
 
     private async Task OnUnitPriceInput(DeliveryItem item, string? value)
     {
         item.UnitPrice = string.IsNullOrWhiteSpace(value) ? null : InputEventHelper.HandlePriceInput(value);
-        await NotifyDetailsChanged();
+        await NotifyDetailsChangedAsync();
     }
 
     private async Task OnWarehouseChanged(DeliveryItem item, object? value)
@@ -1307,14 +1058,14 @@ else
         if (value != null && int.TryParse(value.ToString(), out var warehouseId))
         {
             item.WarehouseId = warehouseId > 0 ? warehouseId : null;
-            await NotifyDetailsChanged();
+            await NotifyDetailsChangedAsync();
         }
     }
 
     private async Task OnRemarksInput(DeliveryItem item, string? value)
     {
         item.Remarks = InputEventHelper.HandleTextInput(value);
-        await NotifyDetailsChanged();
+        await NotifyDetailsChangedAsync();
     }
     
     /// <summary>
@@ -1330,7 +1081,7 @@ else
         {
             item.DiscountPercentage = Math.Max(0, Math.Min(100, percentage)); // 限制在 0-100 之間
         }
-        await NotifyDetailsChanged();
+        await NotifyDetailsChangedAsync();
     }
     
     /// <summary>
@@ -1346,7 +1097,7 @@ else
         {
             item.TaxRate = Math.Max(0, Math.Min(100, taxRate)); // 限制在 0-100 之間
         }
-        await NotifyDetailsChanged();
+        await NotifyDetailsChangedAsync();
     }
     
     /// <summary>
@@ -1526,7 +1277,7 @@ else
             await LoadStockQuantityAsync(item);
         }
         
-        await NotifyDetailsChanged();
+        await NotifyDetailsChangedAsync();
         StateHasChanged();
     }
 
@@ -1617,23 +1368,9 @@ else
         return options;
     }
 
-    private int GetExistingDetailId(TDetailEntity entity)
-    {
-        var idProperty = entity.GetType().GetProperty("Id");
-        if (idProperty != null)
-        {
-            var id = idProperty.GetValue(entity);
-            if (id != null && int.TryParse(id.ToString(), out var intId))
-            {
-                return intId;
-            }
-        }
-        return 0;
-    }
-
     private decimal GetTotalAmount()
     {
-        return DeliveryItems
+        return Items
             .Where(item => item.ProductId > 0)
             .Sum(item => item.SubtotalAmount);
     }
@@ -1644,43 +1381,43 @@ else
     /// </summary>
     private async Task ClearAllDetails()
     {
-        var nonEmptyItems = DeliveryItems.Where(item => item.ProductId > 0).ToList();
-        
+        var nonEmptyItems = Items.Where(item => item.ProductId > 0).ToList();
+
         if (!nonEmptyItems.Any())
         {
             await NotificationService.ShowWarningAsync("沒有可清除的明細項目", "提示");
             return;
         }
-        
+
         // 區分可刪除和被鎖定的明細
         var unlocked = nonEmptyItems.Where(item => CanDeleteItem(item, out _)).ToList();
         var locked = nonEmptyItems.Where(item => !CanDeleteItem(item, out _)).ToList();
-        
+
         if (!unlocked.Any())
         {
             await NotificationService.ShowWarningAsync(
-                "所有明細都已有退貨記錄，無法移除", 
+                "所有明細都已有退貨記錄，無法移除",
                 "操作限制");
             return;
         }
-        
+
         // 記錄所有要刪除的現有明細 ID
         foreach (var item in unlocked.Where(item => item.ExistingDetailEntity != null))
         {
-            var entityId = GetExistingDetailId(item.ExistingDetailEntity!);
+            var entityId = item.ExistingDetailEntity!.Id;
             if (entityId > 0 && !_deletedDetailIds.Contains(entityId))
             {
                 _deletedDetailIds.Add(entityId);
             }
         }
-        
+
         // 從列表中移除未鎖定的項目，保留已鎖定的項目
         foreach (var item in unlocked)
         {
-            DeliveryItems.Remove(item);
+            Items.Remove(item);
         }
         
-        await NotifyDetailsChanged();
+        await NotifyDetailsChangedAsync();
         await NotifyDeletedDetailsChanged();
         
         var message = $"已清除 {unlocked.Count} 項明細";
@@ -1701,7 +1438,7 @@ else
         if (IsReadOnly || !SelectedCustomerId.HasValue) return;
         
         // 檢查是否有現有資料
-        var hasExistingData = DeliveryItems.Any(item => item.ProductId > 0);
+        var hasExistingData = Items.Any(item => item.ProductId > 0);
         
         if (hasExistingData)
         {
@@ -1721,7 +1458,7 @@ else
         }
 
         // 清空現有項目
-        DeliveryItems.Clear();
+        Items.Clear();
         _deletedDetailIds.Clear();
 
         // 將歷史出貨轉換為新的出貨項目
@@ -1738,24 +1475,24 @@ else
                 Remarks = detail.Remarks ?? "",
                 WarehouseId = detail.WarehouseId
             };
-            
+
             // 初始化 ProductSearchValue
             if (deliveryItem.SelectedProduct != null)
             {
                 deliveryItem.ProductSearchValue = FormatProductDisplayText(deliveryItem.SelectedProduct);
             }
-            
+
             // 載入庫存資訊（非同步）
             _ = Task.Run(async () =>
             {
                 await LoadStockQuantityAsync(deliveryItem);
                 await InvokeAsync(StateHasChanged);
             });
-            
-            DeliveryItems.Add(deliveryItem);
+
+            Items.Add(deliveryItem);
         }
         
-        await NotifyDetailsChanged();
+        await NotifyDetailsChangedAsync();
         await NotificationService.ShowSuccessAsync($"已載入 {lastDeliveryDetails.Count} 項商品作為參考", "智能下單完成");
         
         StateHasChanged();
@@ -1886,11 +1623,8 @@ else
     {
         try
         {
-            //  開始載入資料 - 設定為未完成
-            _dataLoadCompleted = false;
-            
             // 清空現有項目
-            DeliveryItems.Clear();
+            Items.Clear();
 
             // 載入所有未出貨項目
             foreach (var detail in details)
@@ -1916,14 +1650,12 @@ else
                     await InvokeAsync(StateHasChanged);
                 });
 
-                DeliveryItems.Add(deliveryItem);
+                Items.Add(deliveryItem);
             }
-            
+
             // 通知變更
-            await NotifyDetailsChanged();
-            
-            //  資料載入完成 - 觸發空行檢查
-            _dataLoadCompleted = true;
+            await NotifyDetailsChangedAsync();
+
             StateHasChanged();
             
             await NotificationService.ShowSuccessAsync(
@@ -1938,7 +1670,7 @@ else
 
     public async Task<bool> ValidateAsync()
     {
-        var nonEmptyItems = DeliveryItems.Where(item => item.ProductId > 0).ToList();
+        var nonEmptyItems = Items.Where(item => item.ProductId > 0).ToList();
         
         if (!nonEmptyItems.Any())
         {
@@ -2059,7 +1791,7 @@ else
         /// </summary>
         public decimal SubtotalAmount => (DeliveryQuantity ?? 0) * (UnitPrice ?? 0);
         
-        public TDetailEntity? ExistingDetailEntity { get; set; }
+        public SalesDeliveryDetail? ExistingDetailEntity { get; set; }
         
         /// <summary>
         /// 即時庫存量（不儲存到資料庫）

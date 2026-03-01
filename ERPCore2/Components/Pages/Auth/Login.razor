@@ -8,8 +8,9 @@
 @inject NavigationManager Navigation
 @inject IHttpContextAccessor HttpContextAccessor
 @inject ICompanyService CompanyService
+@inject IStringLocalizer<ERPCore2.SharedResource> L
 
-<PageTitle>登入@(companyName != null ? $" - {companyName}" : "")</PageTitle>
+<PageTitle>@L["Auth.LoginPageTitle"]@(companyName != null ? $" - {companyName}" : "")</PageTitle>
 
 <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
     <div class="container">
@@ -19,10 +20,10 @@
                     <div class="card-body p-5">
                         <!-- 公司 Logo 和標題 -->
                         <div class="text-center mb-4">
-                            <h2 class="h3 text-primary fw-bold">@(companyName ?? "企業資源管理系統")</h2>
+                            <h2 class="h3 text-primary fw-bold">@(companyName ?? L["Auth.SystemTitle"].ToString())</h2>
                             @if (companyName != null)
                             {
-                                <p class="text-muted">企業資源管理系統</p>
+                                <p class="text-muted">@L["Auth.SystemTitle"]</p>
                             }
                         </div>
 
@@ -38,28 +39,28 @@
                             
                             <div class="mb-3">
                                 <label for="account" class="form-label">
-                                    <i class="bi bi-person me-1"></i>帳號
+                                    <i class="bi bi-person me-1"></i>@L["Auth.Username"]
                                 </label>
-                                <input type="text" name="account" class="form-control form-control-lg" 
-                                       id="account" placeholder="請輸入帳號" autocomplete="username" required />
+                                <input type="text" name="account" class="form-control form-control-lg"
+                                       id="account" placeholder="@L["Placeholder.EnterUsername"]" autocomplete="username" required />
                             </div>
 
                             <div class="mb-3">
                                 <label for="password" class="form-label">
-                                    <i class="bi bi-lock me-1"></i>密碼
+                                    <i class="bi bi-lock me-1"></i>@L["Auth.Password"]
                                 </label>
-                                <input type="password" name="password" class="form-control form-control-lg" 
-                                       id="password" placeholder="請輸入密碼" autocomplete="current-password" required />
+                                <input type="password" name="password" class="form-control form-control-lg"
+                                       id="password" placeholder="@L["Placeholder.EnterPassword"]" autocomplete="current-password" required />
                             </div>
 
                             <div class="mb-3 form-check">
                                 <!-- 修復記住我功能：確保 checkbox 值能正確傳送 -->
                                 <input type="hidden" name="rememberMe" value="false" />
-                                <input type="checkbox" name="rememberMe" value="true" class="form-check-input" 
-                                       id="rememberMe" onchange="saveRememberMeState(this.checked)" 
+                                <input type="checkbox" name="rememberMe" value="true" class="form-check-input"
+                                       id="rememberMe" onchange="saveRememberMeState(this.checked)"
                                        @(ShouldCheckRememberMe() ? "checked" : "") />
                                 <label class="form-check-label" for="rememberMe">
-                                    記住我
+                                    @L["Auth.RememberMe"]
                                 </label>
                             </div>
 
@@ -69,7 +70,7 @@
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="bi bi-box-arrow-in-right me-2"></i>
-                                    <span>登入</span>
+                                    <span>@L["Auth.LoginButton"]</span>
                                 </button>
                             </div>
                         </form>
@@ -124,10 +125,10 @@
         {
             errorMessage = Error switch
             {
-                "invalid" => "使用者名稱或密碼錯誤",
-                "locked" => "帳號已被鎖定，請聯絡管理員",
-                "disabled" => "帳號已停用",
-                _ => "登入失敗，請稍後再試"
+                "invalid" => L["Auth.ErrorInvalid"].ToString(),
+                "locked" => L["Auth.ErrorLocked"].ToString(),
+                "disabled" => L["Auth.ErrorDisabled"].ToString(),
+                _ => L["Auth.ErrorDefault"].ToString()
             };
         }
         

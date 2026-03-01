@@ -57,15 +57,14 @@
                           OnTaxMethodChanged="@(() => HandleReceivingDetailsChanged(purchaseReceivingDetails))"
                           GetStatusMessage="@GetPurchaseReceivingStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          TabDefinitions="@tabDefinitions"
+                          CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@PurchaseReceivingReportService"
                           ReportId="PO002"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.PurchaseReceivingDoc"]]"
                           GetReportDocumentName="@(e => $"進貨單-{e.Code}")"
-                          OnEntityLoaded="@HandleEntityLoaded"
-                          AdditionalSections="@CreateRelatedSections()" />
+                          OnEntityLoaded="@HandleEntityLoaded" />
 
 @* 廠商編輯 Modal *@
 @if (supplierModalManager != null)
@@ -112,15 +111,6 @@
                                      OnCancel="@(() => showSetoffDocumentModal = false)" />
 }
 
-@* 採購訂單編輯 Modal（從來源採購訂單 Tab 開啟） *@
-@if (showPurchaseOrderModal)
-{
-    <PurchaseOrderEditModalComponent @ref="purchaseOrderEditModal"
-                                      IsVisible="@showPurchaseOrderModal"
-                                      IsVisibleChanged="@((bool visible) => showPurchaseOrderModal = visible)"
-                                      PurchaseOrderId="@selectedPurchaseOrderId"
-                                      OnCancel="@(() => showPurchaseOrderModal = false)" />
-}
 
 @code {
     // ===== 必要參數 =====
@@ -138,7 +128,6 @@
     private GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    private List<FormTabDefinition>? tabDefinitions;
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -155,7 +144,7 @@
     
     // ===== 進貨明細 =====
     private List<PurchaseReceivingDetail> purchaseReceivingDetails = new();
-    private PurchaseReceivingTable<PurchaseReceiving, PurchaseReceivingDetail>? purchaseReceivingDetailManager;
+    private PurchaseReceivingTable? purchaseReceivingDetailManager;
     
     // 方案 D 改良版：資料版本計數器
     private int _detailsDataVersion = 0;
@@ -194,16 +183,6 @@
     private int? selectedPurchaseReturnId = null;
     private int? selectedSetoffDocumentId = null;
 
-    // ===== Tab 元件參考 =====
-    private PurchaseReceivingReturnTab? returnTab;
-    private PurchaseReceivingSetoffTab? setoffTab;
-    private PurchaseReceivingOrderTab? orderTab;
-
-    // ===== 採購訂單 Modal（從來源採購訂單 Tab 開啟） =====
-    private PurchaseOrderEditModalComponent? purchaseOrderEditModal;
-    private bool showPurchaseOrderModal = false;
-    private int? selectedPurchaseOrderId = null;
-    
     // ===== 系統參數 - 稅率快取（避免重複查詢資料庫） =====
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
     
@@ -897,7 +876,7 @@
                 )
             };
 
-            var layout = FormSectionHelper<PurchaseReceiving>.Create()
+            formSections = FormSectionHelper<PurchaseReceiving>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.Code,
                     pr => pr.SupplierId,
@@ -910,13 +889,7 @@
                     pr => pr.PurchaseReceivingTotalAmountIncludingTax)
                 .AddToSection(FormSectionNames.OtherInfo,
                     pr => pr.Remarks)
-                .GroupIntoTab(L["Tab.ReceivingData"].ToString(), "bi-file-earmark-text",
-                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
-                    FormSectionNames.AmountInfo, FormSectionNames.OtherInfo)
-                .GroupIntoCustomTab(L["Tab.ReceivingDetail"].ToString(), "bi-list-ul", CreateReceivingDetailManagerContent())
-                .BuildAll();
-            formSections = layout.FieldSections;
-            tabDefinitions = layout.TabDefinitions;
+                .Build();
         }
         catch (Exception ex)
         {
@@ -972,19 +945,6 @@
         try
         {
             UpdateFilterFieldsState();
-
-            if (loadedEntityId > 0)
-            {
-                if (returnTab != null) await returnTab.LoadAsync(loadedEntityId);
-                if (setoffTab != null) await setoffTab.LoadAsync(loadedEntityId);
-                if (orderTab != null) await orderTab.LoadAsync(loadedEntityId);
-            }
-            else
-            {
-                returnTab?.Clear();
-                setoffTab?.Clear();
-                orderTab?.Clear();
-            }
 
             StateHasChanged();
         }
@@ -1508,6 +1468,34 @@
     }
 
     /// <summary>
+    /// 配置自訂模組（進貨明細表格）
+    /// </summary>
+    private List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            if (editModalComponent == null)
+            {
+                return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>();
+            }
+
+            return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>
+            {
+                new GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule
+                {
+                    Title = "",
+                    Content = CreateReceivingDetailManagerContent(),
+                    Order = 1
+                }
+            };
+        }
+        catch
+        {
+            return new List<GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.CustomModule>();
+        }
+    }
+
+    /// <summary>
     /// 創建進貨明細管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateReceivingDetailManagerContent() => __builder =>
@@ -1519,8 +1507,6 @@
                               IsPreconditionMet="@(editModalComponent?.Entity?.SupplierId > 0)"
                               PreconditionMessage="請先選擇廠商後再進行採購明細管理">
             <PurchaseReceivingTable @ref="purchaseReceivingDetailManager"
-                                    TMainEntity="PurchaseReceiving"
-                                    TDetailEntity="PurchaseReceivingDetail"
                                     SelectedSupplierId="@editModalComponent!.Entity.SupplierId"
                                     SelectedPurchaseOrderId="@filterPurchaseOrderId"
                                     FilterProductId="@filterProductId"
@@ -1536,62 +1522,14 @@
                                     OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
                                     OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                                     OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                                    MainEntityIdPropertyName="PurchaseReceivingId"
-                                    QuantityPropertyName="ReceivedQuantity"
-                                    UnitPricePropertyName="UnitPrice"
-                                    RemarksPropertyName="Remarks"
-                                    PurchaseOrderDetailIdPropertyName="PurchaseOrderDetailId"
                                     ShowWarehouse="true"
                                     ShowWarehouseLocation="true"
-                                    WarehouseIdPropertyName="WarehouseId"
-                                    WarehouseLocationIdPropertyName="WarehouseLocationId"
                                     Warehouses="@warehouses"
                                     WarehouseLocations="@warehouseLocations"
                                     IsReadOnly="false" />
         </DetailSectionWrapper>
     };
     
-    /// <summary>相關單據 Additional Sections 內容</summary>
-    private RenderFragment CreateRelatedSections() => __builder =>
-    {
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-arrow-return-left me-1"></i>@L["Tab.ReturnRecords"]</h6>
-            <PurchaseReceivingReturnTab @ref="returnTab"
-                                        OnOpenReturn="@HandleOpenPurchaseReturn" />
-        </div>
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-cash-coin me-1"></i>@L["Tab.SetoffRecords"]</h6>
-            <PurchaseReceivingSetoffTab @ref="setoffTab"
-                                        OnOpenSetoff="@HandleOpenSetoffFromTab" />
-        </div>
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-cart3 me-1"></i>@L["Tab.SourcePurchaseOrder"]</h6>
-            <PurchaseReceivingOrderTab @ref="orderTab"
-                                       OnOpenOrder="@HandleOpenPurchaseOrder" />
-        </div>
-    };
-
-    private void HandleOpenPurchaseReturn(int id)
-    {
-        selectedPurchaseReturnId = id;
-        showPurchaseReturnModal = true;
-        StateHasChanged();
-    }
-
-    private void HandleOpenSetoffFromTab(int id)
-    {
-        selectedSetoffDocumentId = id;
-        showSetoffDocumentModal = true;
-        StateHasChanged();
-    }
-
-    private void HandleOpenPurchaseOrder(int id)
-    {
-        selectedPurchaseOrderId = id;
-        showPurchaseOrderModal = true;
-        StateHasChanged();
-    }
-
     // ===== 輔助方法：取得選項名稱 =====
 
     private string? GetSelectedSupplierName()

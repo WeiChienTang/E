@@ -1,21 +1,22 @@
 @* 廠商供應商品 Tab - 自包含元件，主組件透過 @ref 協調 *@
 @inject IProductSupplierService ProductSupplierService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @if (_isLoading)
 {
     <div class="text-center py-4">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">載入中...</span>
+            <span class="visually-hidden">@L["Label.Loading"]</span>
         </div>
     </div>
 }
 else
 {
     <div class="d-flex justify-content-between align-items-center mb-2 px-1">
-        <small class="text-muted">共 <strong>@_productSuppliers.Count</strong> 項商品</small>
+        <small class="text-muted">@string.Format(L["Label.RecordCount"], _productSuppliers.Count)</small>
         <small class="text-muted fst-italic">
-            <i class="bi bi-info-circle me-1"></i>採購單儲存時自動同步，★ 表示常用廠商
+            <i class="bi bi-info-circle me-1"></i>@L["Supplier.AutoSyncNote"]
         </small>
     </div>
 
@@ -30,19 +31,19 @@ else
                                ShowBuiltInActions="true"
                                ShowBuiltInDeleteButton="true"
                                DeleteButtonVariant="ButtonVariant.Red"
-                               DeleteButtonTitle="從供應目錄移除"
+                               DeleteButtonTitle="@L["Supplier.DeleteButtonTitle"]"
                                OnItemDelete="@HandleDeleteItem"
-                               EmptyMessage="尚無供應商品，採購單儲存後將自動建立" />
+                               EmptyMessage="@L["Supplier.NoProducts"]" />
 }
 
 @* 刪除確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@_showDeleteModal"
                               IsVisibleChanged="@((bool v) => _showDeleteModal = v)"
-                              Title="移除供應商品"
+                              Title="@L["Supplier.RemoveProduct"]"
                               Icon="bi-trash"
-                              Message="@($"確定要將「{_deletingItem?.Product?.Name ?? "此商品"}」從廠商供應目錄中移除嗎？")"
-                              ConfirmButtonText="確認移除"
-                              CancelButtonText="取消"
+                              Message="@string.Format(L["Supplier.ConfirmRemoveProduct"], _deletingItem?.Product?.Name ?? L["Column.Product"])"
+                              ConfirmButtonText="@L["Button.ConfirmRemove"]"
+                              CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Red"
                               HeaderColor="BaseModalComponent.HeaderVariant.Danger"
                               OnConfirm="@HandleConfirmDelete"
@@ -93,7 +94,7 @@ else
         {
             new()
             {
-                Title = "商品編號",
+                Title = L["Column.ProductCode"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",
@@ -101,14 +102,14 @@ else
             },
             new()
             {
-                Title = "商品名稱",
+                Title = L["Column.ProductName"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Display,
                 DisplayFormatter = item => item is ProductSupplier ps1 ? ps1.Product?.Name ?? "-" : "-"
             },
             new()
             {
-                Title = "供應商料號",
+                Title = L["Column.SupplierProductCode"],
                 PropertyName = nameof(ProductSupplier.SupplierProductCode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
@@ -116,7 +117,7 @@ else
             },
             new()
             {
-                Title = "最近採購價",
+                Title = L["Column.LastPurchasePrice"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",
@@ -131,7 +132,7 @@ else
             },
             new()
             {
-                Title = "最近採購日",
+                Title = L["Column.LastPurchaseDate"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",
@@ -145,7 +146,7 @@ else
             },
             new()
             {
-                Title = "常用",
+                Title = L["Column.IsPreferred"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Display,
                 Width = "55px",
@@ -179,7 +180,7 @@ else
             if (result.IsSuccess)
             {
                 _productSuppliers.RemoveAll(ps => ps.Id == _deletingItem.Id);
-                await NotificationService.ShowSuccessAsync("已從供應目錄中移除");
+                await NotificationService.ShowSuccessAsync(L["Supplier.RemovedFromCatalog"]);
             }
             else
             {

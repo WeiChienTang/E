@@ -4,11 +4,12 @@
 @inject IPermissionManagementService PermissionManagementService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 
 @* 權限組權限管理 Modal *@
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@HandleModalVisibilityChanged"
-                   Title="權限組管理"
+                   Title="@L["Permission.RoleManagement"]"
                    Icon="bi bi-shield-lock"
                    Size="BaseModalComponent.ModalSize.Desktop"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
@@ -22,9 +23,9 @@
             {
                 <div class="text-center py-4">
                     <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">載入中...</span>
+                        <span class="visually-hidden">@L["Label.Loading"]</span>
                     </div>
-                    <p class="mt-2 text-muted">載入權限組資料中...</p>
+                    <p class="mt-2 text-muted">@L["Label.LoadingRoles"]</p>
                 </div>
             }
             else if (roles.Any())
@@ -35,7 +36,7 @@
                                 class="form-select" 
                                 @onchange="HandleRoleSelectionChanged"
                                 disabled="@isSaving">
-                            <option value="">請選擇要設定的權限組 ... </option>
+                            <option value="">@L["Placeholder.SelectRole"]</option>
                             @foreach (var role in roles)
                             {
                                 <option value="@role.Id" selected="@(role.Id == selectedRole?.Id)">
@@ -51,13 +52,13 @@
                         <div class="col-md-4">
                             <div class="d-flex gap-2 justify-content-end flex-wrap mt-3 mt-md-0">
                                 <div class="dropdown">
-                                    <GenericButtonComponent Text="複製"
+                                    <GenericButtonComponent Text="@L["Button.Copy"]"
                                                         Variant="ButtonVariant.Gray"
                                                         Size="ButtonSize.Small"
                                                         IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
                                                         AdditionalAttributes="@GetCopyButtonAttributes()" />
                                     <ul class="dropdown-menu">
-                                        <li><h6 class="dropdown-header">選擇複製對象</h6></li>
+                                        <li><h6 class="dropdown-header">@L["Label.SelectCopyTarget"]</h6></li>
                                         @foreach (var role in roles.Where(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
                                         {
                                             <li>
@@ -68,23 +69,23 @@
                                         }
                                         @if (!roles.Any(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
                                         {
-                                            <li><span class="dropdown-item-text text-muted">無</span></li>
+                                            <li><span class="dropdown-item-text text-muted">@L["Label.None"]</span></li>
                                         }
                                     </ul>
                                 </div>
-                                <GenericButtonComponent Text="全選"
+                                <GenericButtonComponent Text="@L["Button.SelectAll"]"
                                                     Variant="ButtonVariant.Green"
                                                     Size="ButtonSize.Small"
                                                     OnClick="SelectAllPermissions"
                                                     IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
                                                     AdditionalAttributes="@GetSelectAllButtonAttributes()" />
-                                <GenericButtonComponent Text="全清"
+                                <GenericButtonComponent Text="@L["Button.ClearAll"]"
                                                     Variant="ButtonVariant.Yellow"
                                                     Size="ButtonSize.Small"
                                                     OnClick="ClearAllPermissions"
                                                     IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
                                                     AdditionalAttributes="@GetClearAllButtonAttributes()" />
-                                <GenericButtonComponent Text="儲存"
+                                <GenericButtonComponent Text="@L["Button.Save"]"
                                                     Variant="ButtonVariant.DarkBlue"
                                                     Size="ButtonSize.Small"
                                                     OnClick="SaveRolePermissions"
@@ -100,7 +101,7 @@
             {
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-1"></i>
-                    尚未建立任何權限組
+                    @L["Permission.NotCreated"]
                 </div>
             }
         </div>
@@ -113,9 +114,9 @@
                 {
                     <div class="text-center py-4">
                         <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">載入中...</span>
+                            <span class="visually-hidden">@L["Label.Loading"]</span>
                         </div>
-                        <p class="mt-2 text-muted">載入權限資料中...</p>
+                        <p class="mt-2 text-muted">@L["Label.LoadingPermissions"]</p>
                     </div>
                 }
                 else
@@ -124,21 +125,21 @@
                     @if (!IsAdminRole(selectedRole))
                     {
                     <GenericLockedFieldMessage IsVisible="true"
-                                            Message="「全選」/「全清」按鈕僅影響一般權限，敏感權限需要手動點擊個別選擇以確保安全性。"
+                                            Message="@L["Permission.SelectAllHint"]"
                                             Type="GenericLockedFieldMessage.MessageType.Info"
                                             IconClass="bi bi-lightbulb" />
                     }
                     else
                     {
                     <GenericLockedFieldMessage IsVisible="true"
-                                            Message="管理員權限組擁有所有權限。"
+                                            Message="@L["Permission.AdminHasAll"]"
                                             Type="GenericLockedFieldMessage.MessageType.Info"
                                             IconClass="bi bi-lightbulb" />
                     }                    
                     @* 權限搜尋框 *@
                     <div class="mb-3">
                         <SearchInputComponent @bind-Value="permissionSearchKeyword"
-                                              Placeholder="搜尋權限名稱..." />
+                                              Placeholder="@L["Placeholder.SearchPermission"]" />
                     </div>
                     
                     @* 一般權限表格 *@
@@ -153,7 +154,7 @@
                                                   IsHoverable="true"
                                                   IsBordered="true"
                                                   IsReadOnly="@IsAdminRole(selectedRole)"
-                                                  EmptyMessage="沒有找到權限資料"
+                                                  EmptyMessage="@L["Permission.NoPermissions"]"
                                                   GetRowCssClass="@GetPermissionRowClass"
                                                   EnableRowClick="@(!IsAdminRole(selectedRole))"
                                                   OnRowClick="@HandlePermissionRowClick" />
@@ -165,7 +166,7 @@
                         <div class="mt-4">
 
                             <GenericLockedFieldMessage IsVisible="true"
-                                Message="@("以下為敏感權限，" + (IsAdminRole(selectedRole) ? "管理員權限組擁有所有權限。" : "請謹慎授權！這些權限可能影響系統安全性和穩定性。"))"
+                                Message="@("以下為敏感權限，" + (IsAdminRole(selectedRole) ? L["Permission.AdminHasAll"].ToString() : L["Permission.SensitiveDanger"].ToString()))"
                                 Type="GenericLockedFieldMessage.MessageType.Danger"
                                 IconClass="bi bi-exclamation-triangle" />
 
@@ -180,7 +181,7 @@
                                                       IsBordered="true"
                                                       IsReadOnly="@IsAdminRole(selectedRole)"
                                                       CssClass="table-danger"
-                                                      EmptyMessage="沒有找到系統權限資料"
+                                                      EmptyMessage="@L["Permission.NoSystemPermissions"]"
                                                       GetRowCssClass="@GetPermissionRowClass"
                                                       EnableRowClick="@(!IsAdminRole(selectedRole))"
                                                       OnRowClick="@HandlePermissionRowClick" />
@@ -264,7 +265,7 @@
         {
             new()
             {
-                Title = "選擇",
+                Title = L["Column.Select"],
                 PropertyName = nameof(Permission.Id),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "80px",
@@ -275,10 +276,10 @@
                     var p = (Permission)permission;
                     var isChecked = permissionSelections.GetValueOrDefault(p.Id, false);
                     var isDisabled = IsAdminRole(selectedRole);
-                    
+
                     builder.OpenElement(0, "div");
                     builder.AddAttribute(1, "class", "form-check form-switch d-flex justify-content-center");
-                    
+
                     builder.OpenElement(2, "input");
                     builder.AddAttribute(3, "class", "form-check-input");
                     builder.AddAttribute(4, "type", "checkbox");
@@ -287,20 +288,20 @@
                     builder.AddAttribute(7, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(
                         this, async e => await HandlePermissionCheckboxChanged(p, e.Value is bool b && b)));
                     builder.CloseElement();
-                    
+
                     builder.CloseElement();
                 }
             },
             new()
             {
-                Title = "權限名稱",
+                Title = L["Column.PermissionName"],
                 PropertyName = nameof(Permission.Name),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "25%"
             },
             new()
             {
-                Title = "權限編號",
+                Title = L["Column.PermissionCode"],
                 PropertyName = nameof(Permission.Code),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "30%",
@@ -309,10 +310,10 @@
             },
             new()
             {
-                Title = "備註",
+                Title = L["Label.Remarks"],
                 PropertyName = nameof(Permission.Remarks),
                 ColumnType = InteractiveColumnType.Display,
-                DisplayFormatter = item => 
+                DisplayFormatter = item =>
                 {
                     var permission = item as Permission;
                     return string.IsNullOrEmpty(permission?.Remarks) ? "-" : permission.Remarks;
@@ -325,7 +326,7 @@
         {
             new()
             {
-                Title = "選擇",
+                Title = L["Column.Select"],
                 PropertyName = nameof(Permission.Id),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "80px",
@@ -336,10 +337,10 @@
                     var p = (Permission)permission;
                     var isChecked = permissionSelections.GetValueOrDefault(p.Id, false);
                     var isDisabled = IsAdminRole(selectedRole);
-                    
+
                     builder.OpenElement(0, "div");
                     builder.AddAttribute(1, "class", "form-check form-switch d-flex justify-content-center");
-                    
+
                     builder.OpenElement(2, "input");
                     builder.AddAttribute(3, "class", "form-check-input");
                     builder.AddAttribute(4, "type", "checkbox");
@@ -348,13 +349,13 @@
                     builder.AddAttribute(7, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(
                         this, async e => await HandlePermissionCheckboxChanged(p, e.Value is bool b && b)));
                     builder.CloseElement();
-                    
+
                     builder.CloseElement();
                 }
             },
             new()
             {
-                Title = "權限名稱",
+                Title = L["Column.PermissionName"],
                 PropertyName = nameof(Permission.Name),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "25%",
@@ -362,7 +363,7 @@
             },
             new()
             {
-                Title = "權限編號",
+                Title = L["Column.PermissionCode"],
                 PropertyName = nameof(Permission.Code),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "30%",
@@ -371,11 +372,11 @@
             },
             new()
             {
-                Title = "備註",
+                Title = L["Label.Remarks"],
                 PropertyName = nameof(Permission.Remarks),
                 ColumnType = InteractiveColumnType.Display,
                 CellCssClass = "text-danger",
-                DisplayFormatter = item => 
+                DisplayFormatter = item =>
                 {
                     var permission = item as Permission;
                     return string.IsNullOrEmpty(permission?.Remarks) ? "-" : permission.Remarks;
@@ -810,54 +811,54 @@
         
         if (IsAdminRole(selectedRole))
         {
-            attributes.Add("title", "管理員權限組無法複製權限");
+            attributes.Add("title", L["Permission.AdminCannotCopy"].ToString());
         }
-        
+
         return attributes;
     }
-    
+
     /// <summary>
     /// 取得全選按鈕的額外屬性
     /// </summary>
     private Dictionary<string, object> GetSelectAllButtonAttributes()
     {
-        var tooltip = IsAdminRole(selectedRole) 
-            ? "管理員權限組無法修改權限" 
-            : "僅選擇一般權限，敏感權限需手動選擇";
-        
+        var tooltip = IsAdminRole(selectedRole)
+            ? L["Permission.AdminCannotModify"].ToString()
+            : L["Permission.SelectAllTooltip"].ToString();
+
         return new Dictionary<string, object>
         {
             { "title", tooltip }
         };
     }
-    
+
     /// <summary>
     /// 取得全清按鈕的額外屬性
     /// </summary>
     private Dictionary<string, object> GetClearAllButtonAttributes()
     {
-        var tooltip = IsAdminRole(selectedRole) 
-            ? "管理員權限組無法修改權限" 
-            : "僅清除一般權限，敏感權限需手動取消";
-        
+        var tooltip = IsAdminRole(selectedRole)
+            ? L["Permission.AdminCannotModify"].ToString()
+            : L["Permission.ClearAllTooltip"].ToString();
+
         return new Dictionary<string, object>
         {
             { "title", tooltip }
         };
     }
-    
+
     /// <summary>
     /// 取得儲存按鈕的額外屬性
     /// </summary>
     private Dictionary<string, object> GetSaveButtonAttributes()
     {
         var attributes = new Dictionary<string, object>();
-        
+
         if (IsAdminRole(selectedRole))
         {
-            attributes.Add("title", "管理員權限組無法修改權限");
+            attributes.Add("title", L["Permission.AdminCannotModify"].ToString());
         }
-        
+
         return attributes;
     }
 }

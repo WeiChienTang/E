@@ -11,27 +11,28 @@
 @implements IFilterTemplateComponent
 @inject IProductService ProductService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<ERPCore2.SharedResource> L
 
 <FilterSectionGroup>
-    <FilterSectionColumn Title="條碼列印設定" Icon="bi bi-upc-scan">
+    <FilterSectionColumn Title="@L["Report.BarcodeSettings"]" Icon="bi bi-upc-scan">
     @* 商品選擇表格 *@
     <div class="mb-3">
         <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end mb-2">
-            <GenericButtonComponent Text="全選" 
-                                    Variant="ButtonVariant.Green" 
-                                    Size="ButtonSize.Small" 
+            <GenericButtonComponent Text="@L["Label.SelectAll"]"
+                                    Variant="ButtonVariant.Green"
+                                    Size="ButtonSize.Small"
                                     OnClick="SelectAll" />
-            <GenericButtonComponent Text="取消全選" 
-                                    Variant="ButtonVariant.Red" 
-                                    Size="ButtonSize.Small" 
+            <GenericButtonComponent Text="@L["Button.DeselectAll"]"
+                                    Variant="ButtonVariant.Red"
+                                    Size="ButtonSize.Small"
                                     OnClick="DeselectAll" />
         </div>
-        
+
         @if (barcodeItems == null || !barcodeItems.Any())
         {
             <div class="alert alert-info py-2">
                 <i class="bi bi-info-circle me-2"></i>
-                目前沒有可列印的商品條碼
+                @L["Message.NoBarcodeProducts"]
             </div>
         }
         else
@@ -51,31 +52,30 @@
         <div class="card-header bg-light py-2">
             <h6 class="mb-0 small">
                 <i class="bi bi-gear me-2"></i>
-                列印設定
+                @L["Report.PrintSettings"]
             </h6>
         </div>
         <div class="card-body py-2">
             <div class="d-flex align-items-center gap-4 flex-wrap">
                 <div>
-                    <span class="text-muted small">條碼尺寸：</span>
-                    <span class="fw-bold small">58mm × 28mm（一行 3 張）</span>
+                    <span class="fw-bold small">58mm × 28mm</span>
                 </div>
-                
+
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" 
-                           @bind="showProductName" 
+                    <input class="form-check-input" type="checkbox"
+                           @bind="showProductName"
                            id="showProductName">
                     <label class="form-check-label" for="showProductName">
-                        顯示商品名稱
+                        @L["Label.ShowProductName"]
                     </label>
                 </div>
-                
+
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" 
-                           @bind="showProductCode" 
+                    <input class="form-check-input" type="checkbox"
+                           @bind="showProductCode"
                            id="showProductCode">
                     <label class="form-check-label" for="showProductCode">
-                        顯示商品編號
+                        @L["Label.ShowProductCode"]
                     </label>
                 </div>
             </div>
@@ -126,7 +126,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
-            await NotificationService.ShowErrorAsync("載入商品資料失敗");
+            await NotificationService.ShowErrorAsync(L["Message.LoadProductsFailed"]);
             barcodeItems = new();
         }
     }

@@ -177,3 +177,30 @@ h1:focus {
     text-align: center;
     box-shadow: var(--shadow-lg);
 }
+
+/* ===== searchable-dropdown 深色模式（全域，繞開 Blazor CSS isolation）=====
+   放在此處的原因：.razor.css 的 [data-bs-theme=dark] ::deep 會被 Blazor 編譯為
+   [data-bs-theme=dark][b-scope]，導致 scope 錯誤附加於主題選擇器，規則永遠不生效。
+   全域 CSS 無 scope 限制，可正確覆蓋 Bootstrap 預設值。 */
+
+[data-bs-theme=dark] .searchable-dropdown {
+    background-color: var(--bg-primary) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-bs-theme=dark] .searchable-dropdown .dropdown-item {
+    color: var(--text-primary) !important;
+    background-color: transparent !important;
+}
+
+[data-bs-theme=dark] .searchable-dropdown .dropdown-item:hover,
+[data-bs-theme=dark] .searchable-dropdown .dropdown-item:focus {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-bs-theme=dark] .searchable-dropdown .dropdown-item.active {
+    background-color: var(--primary-blue) !important;
+    color: #ffffff !important;
+}

@@ -5,6 +5,7 @@
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
@@ -216,10 +217,12 @@
 
             // 語言若與目前 UI 文化不同，寫入 cookie 並重新載入頁面以套用新語言
             var newCultureCode = ERPCore2.Helpers.CultureHelper.ToCultureCode(employeePreference.Language);
-            if (newCultureCode != System.Globalization.CultureInfo.CurrentUICulture.Name)
+            var currentCulture = System.Globalization.CultureInfo.CurrentUICulture.Name;
+            if (newCultureCode != currentCulture)
             {
-                await JSRuntime.InvokeVoidAsync("setCultureAndReload", newCultureCode);
-                return; // reload 後頁面會重整，不需要繼續執行
+                await JSRuntime.InvokeVoidAsync("setCultureCookie", newCultureCode);
+                NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+                return; // forceLoad 後頁面會重整，不需要繼續執行
             }
 
             await CloseModalAsync();

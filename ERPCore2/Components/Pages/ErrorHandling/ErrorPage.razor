@@ -4,9 +4,10 @@
 @inject IErrorLogService ErrorLogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<ERPCore2.SharedResource> L
 @rendermode InteractiveServer
 
-<PageTitle>系統錯誤</PageTitle>
+<PageTitle>@L["Error.PageTitle"]</PageTitle>
 
 <PagePermissionCheck RequiredPermission="System.Admin">
     <div class="error-page">
@@ -16,50 +17,50 @@
                     <i class="fas fa-exclamation-triangle text-warning"></i>
                 </div>
                 
-                <h2 class="error-title">頁面目前有些錯誤</h2>
-                
+                <h2 class="error-title">@L["Error.PageHasError"]</h2>
+
                 <div class="error-message">
                     <p class="lead mb-3">
-                        請聯繫工程師修復，造成困擾深感抱歉。
+                        @L["Error.ContactEngineer"]
                     </p>
-                    
+
                     @if (!string.IsNullOrEmpty(userFriendlyMessage))
                     {
                         <div class="alert alert-info">
-                            <strong>錯誤訊息：</strong>@userFriendlyMessage
+                            <strong>@L["Error.ErrorMessage"]</strong>@userFriendlyMessage
                         </div>
                     }
-                    
+
                     @if (!string.IsNullOrEmpty(ErrorId))
                     {
                         <div class="alert alert-secondary">
                             <small>
                                 <i class="fas fa-code me-1"></i>
-                                錯誤編號：@ErrorId
+                                @L["Error.ErrorId"]@ErrorId
                             </small>
                         </div>
                     }
                 </div>
-                
+
                 <div class="error-actions">
                     <button class="btn btn-primary me-2" @onclick="GoBack">
-                        <i class="fas fa-arrow-left me-1"></i> 返回上一頁
+                        <i class="fas fa-arrow-left me-1"></i> @L["Button.GoBack"]
                     </button>
                     <button class="btn btn-secondary me-2" @onclick="GoHome">
-                        <i class="fas fa-home me-1"></i> 回到首頁
+                        <i class="fas fa-home me-1"></i> @L["Button.BackToHome"]
                     </button>
                     <button class="btn btn-outline-info" @onclick="ReportError">
-                        <i class="fas fa-bug me-1"></i> 回報問題
+                        <i class="fas fa-bug me-1"></i> @L["Error.ReportError"]
                     </button>
                 </div>
-                
+
                 @if (showTechnicalDetails)
                 {
                     <div class="technical-details mt-4">
                         <div class="card">
                             <div class="card-header">
                                 <h6 class="card-title mb-0">
-                                    <i class="fas fa-cogs me-2"></i>技術詳情
+                                    <i class="fas fa-cogs me-2"></i>@L["Error.TechnicalDetails"]
                                 </h6>
                             </div>
                             <div class="card-body">
@@ -67,18 +68,18 @@
                                 {
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <small class="text-muted">發生時間：</small><br>
+                                            <small class="text-muted">@L["Error.OccurredAt"]</small><br>
                                             <span>@errorLog.OccurredAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
                                         </div>
                                         <div class="col-md-6">
-                                            <small class="text-muted">例外類型：</small><br>
-                                            <span>@(errorLog.ExceptionType ?? "未知")</span>
+                                            <small class="text-muted">@L["Error.ExceptionType"]</small><br>
+                                            <span>@(errorLog.ExceptionType ?? L["Error.Unknown"].ToString())</span>
                                         </div>
                                     </div>
                                     @if (!string.IsNullOrEmpty(errorLog.Module))
                                     {
                                         <div class="mt-2">
-                                            <small class="text-muted">模組：</small><br>
+                                            <small class="text-muted">@L["Error.Module"]</small><br>
                                             <span>@errorLog.Module</span>
                                         </div>
                                     }
@@ -87,11 +88,11 @@
                         </div>
                     </div>
                 }
-                
+
                 <div class="mt-3">
                     <button class="btn btn-sm btn-outline-secondary" @onclick="ToggleTechnicalDetails">
                         <i class="fas @(showTechnicalDetails ? "fa-eye-slash" : "fa-eye") me-1"></i>
-                        @(showTechnicalDetails ? "隱藏" : "顯示")技術詳情
+                        @(showTechnicalDetails ? L["Error.HideTechnicalDetails"].ToString() : L["Error.ShowTechnicalDetails"].ToString())
                     </button>
                 </div>
             </div>
@@ -113,10 +114,10 @@
         }
         else
         {
-            userFriendlyMessage = "系統發生未知錯誤";
+            userFriendlyMessage = L["Error.UnknownError"].ToString();
         }
     }
-    
+
     private async Task LoadErrorDetails()
     {
         try
@@ -126,27 +127,27 @@
         }
         catch
         {
-            userFriendlyMessage = "系統發生未知錯誤";
+            userFriendlyMessage = L["Error.UnknownError"].ToString();
         }
     }
-    
+
     private string TranslateToUserFriendlyMessage(string? errorMessage)
     {
-        if (string.IsNullOrEmpty(errorMessage)) return "系統發生未知錯誤";
-        
+        if (string.IsNullOrEmpty(errorMessage)) return L["Error.UnknownError"].ToString();
+
         // 根據錯誤訊息內容返回友善訊息
         var message = errorMessage.ToLowerInvariant();
-        
+
         return message switch
         {
-            var msg when msg.Contains("timeout") || msg.Contains("逾時") => "系統回應逾時，請稍後再試",
-            var msg when msg.Contains("connection") || msg.Contains("連線") => "資料庫連線異常，請稍後再試",
-            var msg when msg.Contains("unauthorized") || msg.Contains("權限") => "權限不足，請聯繫管理員",
-            var msg when msg.Contains("validation") || msg.Contains("驗證") => "資料驗證失敗，請檢查輸入內容",
-            var msg when msg.Contains("file") || msg.Contains("檔案") => "找不到相關檔案，請聯繫技術人員",
-            var msg when msg.Contains("memory") || msg.Contains("記憶體") => "系統資源不足，請聯繫技術人員",
-            var msg when msg.Contains("sql") || msg.Contains("database") => "資料庫操作異常，請稍後再試",
-            _ => "系統發生錯誤，請聯繫技術人員"
+            var msg when msg.Contains("timeout") || msg.Contains("逾時") => L["Error.MsgTimeout"].ToString(),
+            var msg when msg.Contains("connection") || msg.Contains("連線") => L["Error.MsgConnection"].ToString(),
+            var msg when msg.Contains("unauthorized") || msg.Contains("權限") => L["Error.MsgUnauthorized"].ToString(),
+            var msg when msg.Contains("validation") || msg.Contains("驗證") => L["Error.MsgValidation"].ToString(),
+            var msg when msg.Contains("file") || msg.Contains("檔案") => L["Error.MsgFile"].ToString(),
+            var msg when msg.Contains("memory") || msg.Contains("記憶體") => L["Error.MsgMemory"].ToString(),
+            var msg when msg.Contains("sql") || msg.Contains("database") => L["Error.MsgDatabase"].ToString(),
+            _ => L["Error.MsgGeneral"].ToString()
         };
     }
     
@@ -164,7 +165,7 @@
     {
         // 這裡可以實作錯誤回報功能
         // 例如發送郵件、建立工單等
-        await JSRuntime.InvokeVoidAsync("alert", "感謝您的回報，我們會盡快處理此問題。");
+        await JSRuntime.InvokeVoidAsync("alert", L["Error.ReportThankYou"].ToString());
     }
     
     private void ToggleTechnicalDetails()

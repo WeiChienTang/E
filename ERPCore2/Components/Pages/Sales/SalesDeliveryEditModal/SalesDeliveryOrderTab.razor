@@ -1,22 +1,10 @@
 @* 銷貨出貨 → 來源銷貨訂單 Tab（唯讀） *@
 @inject ISalesOrderService SalesOrderService
 
-@if (_deliveryId <= 0)
-{
-    <div class="text-muted py-4 px-2">
-        <i class="bi bi-info-circle me-2"></i>請先儲存出貨單，再查看來源訂單。
-    </div>
-}
-else if (_isLoading)
+@if (_isLoading)
 {
     <div class="text-muted py-4 px-2">
         <i class="bi bi-hourglass-split me-2"></i>載入中...
-    </div>
-}
-else if (!_orders.Any())
-{
-    <div class="text-muted py-4 px-2">
-        <i class="bi bi-inbox me-2"></i>此出貨單無相關聯的銷貨訂單。
     </div>
 }
 else

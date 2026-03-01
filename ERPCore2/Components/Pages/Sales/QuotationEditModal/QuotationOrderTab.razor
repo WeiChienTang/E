@@ -1,22 +1,10 @@
 @* 報價單 → 轉換訂單 Tab（唯讀） *@
 @inject ISalesOrderService SalesOrderService
 
-@if (_quotationId <= 0)
-{
-    <div class="text-muted py-4 px-2">
-        <i class="bi bi-info-circle me-2"></i>請先儲存報價單，再查看轉換訂單。
-    </div>
-}
-else if (_isLoading)
+@if (_isLoading)
 {
     <div class="text-muted py-4 px-2">
         <i class="bi bi-hourglass-split me-2"></i>載入中...
-    </div>
-}
-else if (!_orders.Any())
-{
-    <div class="text-muted py-4 px-2">
-        <i class="bi bi-inbox me-2"></i>此報價單尚未轉換成銷貨訂單。
     </div>
 }
 else

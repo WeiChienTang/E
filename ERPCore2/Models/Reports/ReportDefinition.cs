@@ -22,9 +22,15 @@ namespace ERPCore2.Models.Reports
         public string? NameKey { get; set; }
 
         /// <summary>
-        /// 報表說明
+        /// 報表說明（繁體中文，用於 fallback）
         /// </summary>
         public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 說明多語系資源鍵（設定後 UI 使用 IStringLocalizer 取得當前語言說明）
+        /// 格式：Report.XxxDesc，對應 SharedResource.resx 中的 key
+        /// </summary>
+        public string? DescriptionKey { get; set; }
         
         /// <summary>
         /// 報表圖示 CSS 類別

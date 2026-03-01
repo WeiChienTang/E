@@ -1,22 +1,12 @@
 @* 採購進貨 → 來源採購訂單 Tab（唯讀） *@
+@using Microsoft.Extensions.Localization
 @inject IPurchaseOrderService PurchaseOrderService
+@inject IStringLocalizer<SharedResource> L
 
-@if (_receivingId <= 0)
+@if (_isLoading)
 {
     <div class="text-muted py-4 px-2">
-        <i class="bi bi-info-circle me-2"></i>請先儲存進貨單，再查看來源採購訂單。
-    </div>
-}
-else if (_isLoading)
-{
-    <div class="text-muted py-4 px-2">
-        <i class="bi bi-hourglass-split me-2"></i>載入中...
-    </div>
-}
-else if (!_orders.Any())
-{
-    <div class="text-muted py-4 px-2">
-        <i class="bi bi-inbox me-2"></i>此進貨單無相關採購訂單。
+        <i class="bi bi-hourglass-split me-2"></i>@L["Label.Loading"]
     </div>
 }
 else
@@ -25,10 +15,10 @@ else
         <table class="table table-sm table-hover mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>訂單單號</th>
-                    <th>訂購日期</th>
-                    <th>廠商</th>
-                    <th class="text-end">訂單金額（含稅）</th>
+                    <th>@L["Column.OrderCode"]</th>
+                    <th>@L["Column.OrderDateAlt"]</th>
+                    <th>@L["Column.SupplierName"]</th>
+                    <th class="text-end">@L["Column.OrderAmountWithTax"]</th>
                     <th style="width:60px"></th>
                 </tr>
             </thead>
@@ -42,7 +32,7 @@ else
                         <td class="text-end">@order.PurchaseTotalAmountIncludingTax.ToString("N0")</td>
                         <td class="text-center">
                             <button type="button" class="btn btn-sm btn-outline-primary"
-                                    title="開啟採購訂單"
+                                    title="@L["Button.OpenOrder"].ToString()"
                                     @onclick="@(() => OnOpenOrder.InvokeAsync(order.Id))">
                                 <i class="bi bi-box-arrow-up-right"></i>
                             </button>

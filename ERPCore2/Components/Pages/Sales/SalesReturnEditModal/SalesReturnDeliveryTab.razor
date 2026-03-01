@@ -1,22 +1,10 @@
 @* 銷貨退回 → 原始出貨記錄 Tab（唯讀） *@
 @inject ISalesDeliveryService SalesDeliveryService
 
-@if (_returnId <= 0)
-{
-    <div class="text-muted py-4 px-2">
-        <i class="bi bi-info-circle me-2"></i>請先儲存退回單，再查看原始出貨記錄。
-    </div>
-}
-else if (_isLoading)
+@if (_isLoading)
 {
     <div class="text-muted py-4 px-2">
         <i class="bi bi-hourglass-split me-2"></i>載入中...
-    </div>
-}
-else if (!_deliveries.Any())
-{
-    <div class="text-muted py-4 px-2">
-        <i class="bi bi-inbox me-2"></i>此退回單無相關聯的出貨記錄。
     </div>
 }
 else

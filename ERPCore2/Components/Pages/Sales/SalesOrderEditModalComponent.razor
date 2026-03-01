@@ -50,15 +50,14 @@
                           OnTaxMethodChanged="@(() => HandleDetailsChanged(salesOrderDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          TabDefinitions="@tabDefinitions"
+                          CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@SalesOrderReportService"
                           ReportId="@ReportIds.SalesOrder"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.SalesDeliveryDoc"]]"
                           GetReportDocumentName="@(e => $"銷貨單-{e.Code}")"
-                          OnEntityLoaded="@HandleEntityLoaded"
-                          AdditionalSections="@CreateRelatedSections()">
+                          OnEntityLoaded="@HandleEntityLoaded">
 </GenericEditModalComponent>
 
 @* 客戶編輯 Modal *@
@@ -118,16 +117,6 @@
                                      OnCancel="@(() => showSetoffDocumentModal = false)" />
 }
 
-@* 報價單編輯 Modal（由 QuotationTab 開啟） *@
-@if (showQuotationModal)
-{
-    <QuotationEditModalComponent @ref="quotationEditModal"
-                                 IsVisible="@showQuotationModal"
-                                 IsVisibleChanged="@((bool visible) => showQuotationModal = visible)"
-                                 QuotationId="@selectedQuotationId"
-                                 OnCancel="@(() => showQuotationModal = false)" />
-}
-
 @* 生產排程編輯 Modal *@
 @if (showProductionScheduleModal)
 {
@@ -165,18 +154,7 @@
     private GenericEditModalComponent<SalesOrder, ISalesOrderService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    private List<FormTabDefinition>? tabDefinitions;
 
-    // ===== 關聯文件 Tabs =====
-    private SalesOrderDeliveryTab? deliveryTab;
-    private SalesOrderReturnTab? returnTab;
-    private SalesOrderQuotationTab? quotationTab;
-
-    // ===== 報價單 Modal（由 QuotationTab 開啟） =====
-    private QuotationEditModalComponent? quotationEditModal;
-    private bool showQuotationModal = false;
-    private int? selectedQuotationId = null;
-    
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
     
@@ -194,7 +172,7 @@
     private int _detailsDataVersion = 0;
     
     // 明細管理組件引用
-    private SalesOrderTable<SalesOrder, SalesOrderDetail>? salesOrderDetailManager;
+    private SalesOrderTable? salesOrderDetailManager;
     
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
@@ -652,7 +630,7 @@
                 ),
             };
 
-            var layout = FormSectionHelper<SalesOrder>.Create()
+            formSections = FormSectionHelper<SalesOrder>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     so => so.Code,
                     so => so.CustomerId,
@@ -671,13 +649,7 @@
                     so => so.PaymentTerms,
                     so => so.DeliveryTerms,
                     so => so.Remarks)
-                .GroupIntoTab(L["Tab.OrderData"].ToString(), "bi-file-earmark-text",
-                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
-                    FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
-                .GroupIntoCustomTab(L["Tab.OrderDetail"].ToString(), "bi-list-ul", CreateProductManagerContent())
-                .BuildAll();
-            formSections = layout.FieldSections;
-            tabDefinitions = layout.TabDefinitions;
+                .Build();
         }
         catch (Exception ex)
         {
@@ -704,8 +676,6 @@
                               IsPreconditionMet="@(editModalComponent?.Entity?.CustomerId > 0)"
                               PreconditionMessage="請先選擇客戶後再進行銷售明細管理">
             <SalesOrderTable @ref="salesOrderDetailManager"
-                             TMainEntity="SalesOrder"
-                             TDetailEntity="SalesOrderDetail"
                              MainEntity="@editModalComponent!.Entity"
                              ExistingDetails="@salesOrderDetails"
                              DataVersion="@_detailsDataVersion"
@@ -713,6 +683,7 @@
                              Products="@products"
                              Warehouses="@warehouses"
                              SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"
+                             SelectedSupplierId="@((int?)editModalComponent?.Entity?.CustomerId)"
                              SelectedCustomerName="@GetSelectedCustomerName()"
                              SelectedQuotationId="@(filterQuotationId ?? 0)"
                              SelectedQuotationCode="@GetSelectedQuotationCode()"
@@ -720,13 +691,6 @@
                              FilterProductName="@GetFilterProductName()"
                              TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
                              IsReadOnly="false"
-                             MainEntityIdPropertyName="SalesOrderId"
-                             QuantityPropertyName="OrderQuantity"
-                             UnitPricePropertyName="UnitPrice"
-                             DiscountPercentagePropertyName="DiscountPercentage"
-                             UnitIdPropertyName="UnitId"
-                             WarehouseIdPropertyName="WarehouseId"
-                             RemarksPropertyName="Remarks"
                              SourceQuotationId="@PrefilledQuotationId"
                              OnDetailsChanged="@HandleDetailsChanged"
                              OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
@@ -735,7 +699,35 @@
                              EmptyMessage="尚未新增銷售商品" />
         </DetailSectionWrapper>
     };
-    
+
+    /// <summary>
+    /// 配置自訂模組（訂單明細表格）
+    /// </summary>
+    private List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            if (editModalComponent == null)
+            {
+                return new List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule>();
+            }
+
+            return new List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule>
+            {
+                new GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule
+                {
+                    Title = "",
+                    Content = CreateProductManagerContent(),
+                    Order = 1
+                }
+            };
+        }
+        catch
+        {
+            return new List<GenericEditModalComponent<SalesOrder, ISalesOrderService>.CustomModule>();
+        }
+    }
+
     // ===== ActionButton 產生方法 =====
     
     /// <summary>
@@ -896,24 +888,13 @@
 
     // ===== 銷貨明細管理方法 =====
     
-    private async Task HandleEntityLoaded(int loadedEntityId)
+    private Task HandleEntityLoaded(int loadedEntityId)
     {
         UpdateFilterFieldsState();
-        if (loadedEntityId > 0)
-        {
-            if (deliveryTab != null) await deliveryTab.LoadAsync(loadedEntityId);
-            if (returnTab != null) await returnTab.LoadAsync(loadedEntityId);
-            if (quotationTab != null) await quotationTab.LoadAsync(loadedEntityId);
-        }
-        else
-        {
-            deliveryTab?.Clear();
-            returnTab?.Clear();
-            quotationTab?.Clear();
-        }
         StateHasChanged();
+        return Task.CompletedTask;
     }
-    
+
     /// <summary>
     /// 載入訂單明細
     /// </summary>
@@ -1103,46 +1084,6 @@
     private string GetFilterProductName()
         => EntityDisplayHelper.GetDisplayValue(filterProductId, products, p => p.Name) ?? string.Empty;
 
-    /// <summary>相關單據 Additional Sections 內容</summary>
-    private RenderFragment CreateRelatedSections() => __builder =>
-    {
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-truck me-1"></i>@L["Tab.DeliveryRecords"]</h6>
-            <SalesOrderDeliveryTab @ref="deliveryTab"
-                                   OnOpenDelivery="@HandleOpenDeliveryFromTab" />
-        </div>
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-arrow-return-left me-1"></i>@L["Tab.ReturnRecords"]</h6>
-            <SalesOrderReturnTab @ref="returnTab"
-                                 OnOpenReturn="@HandleOpenReturnFromTab" />
-        </div>
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-file-earmark-arrow-up me-1"></i>@L["Tab.SourceQuotation"]</h6>
-            <SalesOrderQuotationTab @ref="quotationTab"
-                                    OnOpenQuotation="@HandleOpenQuotationFromTab" />
-        </div>
-    };
-
-    private void HandleOpenDeliveryFromTab(int deliveryId)
-    {
-        selectedSalesDeliveryId = deliveryId;
-        showSalesDeliveryModal = true;
-        StateHasChanged();
-    }
-
-    private void HandleOpenReturnFromTab(int returnId)
-    {
-        selectedSalesReturnId = returnId;
-        showSalesReturnModal = true;
-        StateHasChanged();
-    }
-
-    private void HandleOpenQuotationFromTab(int quotationId)
-    {
-        selectedQuotationId = quotationId;
-        showQuotationModal = true;
-        StateHasChanged();
-    }
 
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）
@@ -1795,9 +1736,9 @@
                     // -(i+1) 的反向計算：從 -1 推回索引 0，從 -2 推回索引 1
                     int salesItemIndex = Math.Abs(salesOrderDetailId) - 1;
                     
-                    if (salesItemIndex >= 0 && salesItemIndex < salesOrderDetailManager.SalesItems.Count)
+                    if (salesItemIndex >= 0 && salesItemIndex < salesOrderDetailManager.Items.Count)
                     {
-                        var salesItem = salesOrderDetailManager.SalesItems[salesItemIndex];
+                        var salesItem = salesOrderDetailManager.Items[salesItemIndex];
                         
                         // 🔑 關鍵修正：找到新增的明細（沒有 ExistingDetailEntity 的）
                         // 因為可能有多筆相同 ProductId，需要按順序匹配
@@ -1810,7 +1751,7 @@
                         int newItemSequence = 0;
                         for (int idx = 0; idx <= salesItemIndex; idx++)
                         {
-                            var checkItem = salesOrderDetailManager.SalesItems[idx];
+                            var checkItem = salesOrderDetailManager.Items[idx];
                             if (checkItem.SelectedProduct?.Id == salesItem.SelectedProduct?.Id && 
                                 checkItem.ExistingDetailEntity == null)
                             {
@@ -1821,8 +1762,8 @@
                         }
                         
                         // 排除已存在的明細，取第 n 個新增的
-                        var existingCount = salesOrderDetailManager.SalesItems
-                            .Count(x => x.SelectedProduct?.Id == salesItem.SelectedProduct?.Id && 
+                        var existingCount = salesOrderDetailManager.Items
+                            .Count(x => x.SelectedProduct?.Id == salesItem.SelectedProduct?.Id &&
                                        x.ExistingDetailEntity != null);
                         
                         if (newItemSequence + existingCount < newDetails.Count)

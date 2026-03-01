@@ -1,17 +1,18 @@
 @* 可重用的客戶拜訪紀錄列表面板 - 用於客戶 EditModal 的 Tab 頁籤中 *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
+@inject IStringLocalizer<SharedResource> L
 
 <div class="customer-visit-table-panel">
     @* 工具列 *@
     <div class="d-flex justify-content-between align-items-center mb-2 px-1">
         @if (!IsReadOnly)
         {
-            <GenericButtonComponent Text="新增拜訪紀錄"
+            <GenericButtonComponent Text="@L["Button.AddVisitRecord"]"
                                   Variant="ButtonVariant.DarkBlue"
                                   Size="ButtonSize.Small"
                                   OnClick="@HandleAddVisit"
-                                  Title="新增一筆拜訪紀錄" />
+                                  Title="@L["Button.AddVisitRecord"]" />
         }
         else
         {
@@ -32,7 +33,7 @@
                               ShowBuiltInActions="@(!IsReadOnly)"
                               ShowBuiltInDeleteButton="false"
                               EnableAutoEmptyRow="false"
-                              EmptyMessage="尚無拜訪紀錄"
+                              EmptyMessage="@L["Customer.NoVisits"]"
                               CustomActionsTemplate="@GetActionsTemplate()"
                               ActionsColumnWidth="80px" />
 </div>
@@ -59,7 +60,7 @@
         {
             new InteractiveColumnDefinition
             {
-                Title = "拜訪日期",
+                Title = L["Column.VisitDate"],
                 PropertyName = nameof(CustomerVisit.VisitDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",
@@ -72,7 +73,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "方式",
+                Title = L["Column.VisitMethod"],
                 PropertyName = nameof(CustomerVisit.VisitType),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "80px",
@@ -81,11 +82,11 @@
                     if (item is CustomerVisit v)
                         return v.VisitType switch
                         {
-                            VisitType.Phone => "電話",
-                            VisitType.OnSite => "現場",
-                            VisitType.VideoConference => "視訊",
-                            VisitType.Email => "Email",
-                            VisitType.Other => "其他",
+                            VisitType.Phone => L["VisitType.Phone"],
+                            VisitType.OnSite => L["VisitType.OnSite"],
+                            VisitType.VideoConference => L["VisitType.VideoConference"],
+                            VisitType.Email => L["VisitType.Email"],
+                            VisitType.Other => L["VisitType.Other"],
                             _ => "-"
                         };
                     return "-";
@@ -93,7 +94,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "業務人員",
+                Title = L["Column.SalesEmployee"],
                 PropertyName = nameof(CustomerVisit.EmployeeId),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "90px",
@@ -106,7 +107,7 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "拜訪目的",
+                Title = L["Column.VisitPurpose"],
                 PropertyName = nameof(CustomerVisit.Purpose),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px",
@@ -114,14 +115,14 @@
             },
             new InteractiveColumnDefinition
             {
-                Title = "結果摘要",
+                Title = L["Column.VisitResult"],
                 PropertyName = nameof(CustomerVisit.Result),
                 ColumnType = InteractiveColumnType.Display,
                 NullDisplayText = "-"
             },
             new InteractiveColumnDefinition
             {
-                Title = "下次追蹤",
+                Title = L["Column.NextFollowUp"],
                 PropertyName = nameof(CustomerVisit.NextFollowUpDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",

@@ -89,7 +89,20 @@
       "Bash(tasklist)",
       "Bash(git restore \"Components/Pages/Purchase/PurchaseOrderEditModal/PurchaseOrderReceivingTab.razor\" \"Components/Pages/Purchase/PurchaseOrderEditModal/PurchaseOrderReturnTab.razor\" \"Components/Pages/Purchase/PurchaseReceivingEditModal/PurchaseReceivingReturnTab.razor\" \"Components/Pages/Purchase/PurchaseReceivingEditModal/PurchaseReceivingSetoffTab.razor\" \"Components/Pages/Purchase/PurchaseReceivingEditModal/PurchaseReceivingOrderTab.razor\" \"Components/Pages/Purchase/PurchaseReturnEditModal/PurchaseReturnReceivingTab.razor\" \"Components/Pages/Purchase/PurchaseReturnEditModal/PurchaseReturnSetoffTab.razor\" \"Components/Pages/Sales/QuotationEditModal/QuotationOrderTab.razor\" \"Components/Pages/Sales/SalesOrderEditModal/SalesOrderDeliveryTab.razor\" \"Components/Pages/Sales/SalesOrderEditModal/SalesOrderReturnTab.razor\" \"Components/Pages/Sales/SalesOrderEditModal/SalesOrderQuotationTab.razor\" \"Components/Pages/Sales/SalesDeliveryEditModal/SalesDeliveryReturnTab.razor\" \"Components/Pages/Sales/SalesDeliveryEditModal/SalesDeliverySetoffTab.razor\" \"Components/Pages/Sales/SalesDeliveryEditModal/SalesDeliveryOrderTab.razor\" \"Components/Pages/Sales/SalesReturnEditModal/SalesReturnDeliveryTab.razor\" \"Components/Pages/Sales/SalesReturnEditModal/SalesReturnSetoffTab.razor\")",
       "Bash(wc -l /c/Users/cses3/source/repos/ERPCore2/ERPCore2/Data/Entities/Employees/*.cs)",
-      "Bash(powershell -Command \"Get-Content ''c:/Users/cses3/source/repos/ERPCore2/ERPCore2/Resources/SharedResource.resx'' | Select-Object -Last 5\")"
+      "Bash(powershell -Command \"Get-Content ''c:/Users/cses3/source/repos/ERPCore2/ERPCore2/Resources/SharedResource.resx'' | Select-Object -Last 5\")",
+      "Bash(sed 's/<data name=\"\"//')",
+      "Bash(comm -23 /tmp/used_keys.txt /tmp/resx_keys_default.txt)",
+      "Bash(do if grep -q '[^\\\\x00-\\\\x7F]' \"$f\")",
+      "Bash(then echo \"$f\")",
+      "Bash(fi)",
+      "Bash(do)",
+      "Bash(if grep -q '[^\\\\x00-\\\\x7F]' \"$f\")",
+      "Bash(then)",
+      "Bash(if ! grep -q '@inject IStringLocalizer' \"$f\")",
+      "Bash(sed 's/L\\\\[\"\"//')",
+      "Bash(sed 's/\"\"\\\\]//')",
+      "Bash(comm -23 /tmp/used_keys_clean.txt /tmp/resx_keys_default.txt)",
+      "Bash(powershell -Command \":*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

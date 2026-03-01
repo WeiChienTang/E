@@ -3,10 +3,11 @@
     顯示系統所有可用的快捷鍵列表
 *@
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
-                   Title="快捷鍵說明"
+                   Title="@L["Shortcut.Title"]"
                    Icon="bi bi-keyboard"
                    Size="BaseModalComponent.ModalSize.Large"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
@@ -18,7 +19,7 @@
         <div class="shortcut-keys-content">
             <div class="alert alert-info mb-3">
                 <i class="bi bi-info-circle-fill me-2"></i>
-                以下是系統中可用的快捷鍵組合，使用快捷鍵可以提高您的操作效率。
+                @L["Shortcut.InfoMessage"]
             </div>
 
             <InteractiveTableComponent TItem="ShortcutKeyInfo"
@@ -31,7 +32,7 @@
                                       IsHoverable="true"
                                       IsBordered="true"
                                       IsReadOnly="true"
-                                      EmptyMessage="沒有可用的快捷鍵" />
+                                      EmptyMessage="@L["Shortcut.NoKeys"]" />
         </div>
     </BodyContent>
 </BaseModalComponent>
@@ -65,26 +66,26 @@
             new ShortcutKeyInfo
             {
                 Keys = "Alt + S",
-                Description = "開啟頁面搜尋視窗",
-                Category = "導航"
+                Description = L["Shortcut.OpenPageSearch"].ToString(),
+                Category = L["Shortcut.CategoryNavigation"].ToString()
             },
             new ShortcutKeyInfo
             {
                 Keys = "Ctrl + R",
-                Description = "開啟報表選擇視窗",
-                Category = "導航"
+                Description = L["Shortcut.OpenReportSelector"].ToString(),
+                Category = L["Shortcut.CategoryNavigation"].ToString()
             },
             new ShortcutKeyInfo
             {
                 Keys = "Alt + Q",
-                Description = "開啟快速功能表",
-                Category = "導航"
+                Description = L["Shortcut.OpenQuickActionMenu"].ToString(),
+                Category = L["Shortcut.CategoryNavigation"].ToString()
             },
             new ShortcutKeyInfo
             {
                 Keys = "Esc",
-                Description = "關閉當前 Modal 視窗",
-                Category = "視窗控制"
+                Description = L["Shortcut.CloseModal"].ToString(),
+                Category = L["Shortcut.CategoryWindowControl"].ToString()
             },
         };
     }
@@ -99,7 +100,7 @@
             new InteractiveColumnDefinition
             {
                 PropertyName = nameof(ShortcutKeyInfo.Category),
-                Title = "分類",
+                Title = L["Shortcut.CategoryColumn"].ToString(),
                 Width = "15%",
                 ColumnType = InteractiveColumnType.Display,
                 IsReadOnly = true,
@@ -108,7 +109,7 @@
             new InteractiveColumnDefinition
             {
                 PropertyName = nameof(ShortcutKeyInfo.Keys),
-                Title = "快捷鍵",
+                Title = L["Shortcut.KeysColumn"].ToString(),
                 Width = "25%",
                 ColumnType = InteractiveColumnType.Custom,
                 IsReadOnly = true,
@@ -145,7 +146,7 @@
             new InteractiveColumnDefinition
             {
                 PropertyName = nameof(ShortcutKeyInfo.Description),
-                Title = "說明",
+                Title = L["Shortcut.DescriptionColumn"].ToString(),
                 Width = "60%",
                 ColumnType = InteractiveColumnType.Display,
                 IsReadOnly = true

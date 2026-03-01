@@ -616,19 +616,27 @@
     color: var(--text-secondary) !important;
 }
 
-/* 搜尋下拉選單項目文字顏色 */
-[data-bs-theme=dark] ::deep .searchable-dropdown .dropdown-item {
-    color: var(--text-primary) !important;
+/* 搜尋下拉選單深色模式 — 已移至全域 app.css
+   原因：在 .razor.css 中，[data-bs-theme=dark] 選擇器無法與 Blazor scope attribute
+   正確組合（會被編譯為 [data-bs-theme=dark][b-xxx]，永遠不匹配），
+   因此統一在全域 CSS 中處理，不依賴 scoped CSS isolation。*/
+
+/* 滾動條深色模式 */
+[data-bs-theme=dark] .table-responsive::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
 }
 
-[data-bs-theme=dark] ::deep .searchable-dropdown .dropdown-item:hover,
-[data-bs-theme=dark] ::deep .searchable-dropdown .dropdown-item:focus {
-    background-color: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
+[data-bs-theme=dark] .table-responsive::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #4e5058, #3d3f47);
+    border: 1px solid var(--border-color);
 }
 
-[data-bs-theme=dark] ::deep .searchable-dropdown .dropdown-item.active {
-    background-color: var(--primary-blue) !important;
-    color: #ffffff !important;
+[data-bs-theme=dark] .table-responsive::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #6e7178, #5d5f67);
+}
+
+[data-bs-theme=dark] .table-responsive {
+    scrollbar-color: #4e5058 var(--bg-tertiary);
 }
 

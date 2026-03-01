@@ -3,6 +3,7 @@
 @using ERPCore2.Models.Charts
 @using ERPCore2.Components.Shared.Table
 @inject IServiceProvider ServiceProvider
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -16,9 +17,9 @@
         {
             <div class="d-flex justify-content-center align-items-center py-5">
                 <div class="spinner-border text-primary me-2" style="width:1.5rem;height:1.5rem;border-width:0.15em;" role="status">
-                    <span class="visually-hidden">載入中...</span>
+                    <span class="visually-hidden">@L["Label.Loading"]</span>
                 </div>
-                <span>載入圖表資料中...</span>
+                <span>@L["Chart.LoadingData"]</span>
             </div>
         }
         else
@@ -96,7 +97,7 @@
                             }
                             else
                             {
-                                <div class="text-center text-muted py-5">尚無資料</div>
+                                <div class="text-center text-muted py-5">@L["Chart.NoData"]</div>
                             }
                         </div>
 
@@ -105,7 +106,7 @@
                         {
                             <div class="text-end mt-1">
                                 <small class="text-muted">
-                                    <i class="bi bi-hand-index me-1"></i>點擊圖表區塊可查看明細
+                                    <i class="bi bi-hand-index me-1"></i>@L["Chart.ClickForDetail"]
                                 </small>
                             </div>
                         }
@@ -123,14 +124,14 @@
                                             <span class="text-muted ms-1">（共 @(_detailItems?.Count ?? 0) 筆）</span>
                                         }
                                     </span>
-                                    <button type="button" class="btn-close" title="關閉" @onclick="CloseDetail"></button>
+                                    <button type="button" class="btn-close" title="@L["Button.Close"]" @onclick="CloseDetail"></button>
                                 </div>
 
                                 @if (_detailLoading)
                                 {
                                     <div class="d-flex align-items-center text-muted py-2">
                                         <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                                        <span>載入明細中...</span>
+                                        <span>@L["Chart.LoadingDetail"]</span>
                                     </div>
                                 }
                                 else if (_detailItems == null || _detailItems.Count == 0)
@@ -186,11 +187,16 @@
     private bool _detailLoading = false;
     private int _detailLoadSeq = 0; // 防止非同步競爭
 
-    private readonly List<InteractiveColumnDefinition> _detailColumns = new()
+    private List<InteractiveColumnDefinition> _detailColumns = new();
+
+    protected override void OnInitialized()
     {
-        new() { Title = "代碼", PropertyName = "SubLabel", ColumnType = InteractiveColumnType.Display, Width = "110px" },
-        new() { Title = "名稱", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display }
-    };
+        _detailColumns = new List<InteractiveColumnDefinition>
+        {
+            new() { Title = L["Column.Code"].ToString(), PropertyName = "SubLabel", ColumnType = InteractiveColumnType.Display, Width = "110px" },
+            new() { Title = L["Column.Name"].ToString(), PropertyName = "Name",     ColumnType = InteractiveColumnType.Display }
+        };
+    }
 
     private void SetActiveChart(int idx)
     {

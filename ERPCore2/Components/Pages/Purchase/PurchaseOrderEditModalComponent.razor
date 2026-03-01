@@ -88,15 +88,6 @@
                                          OnCancel="@(() => showPurchaseReceivingModal = false)" />
 }
 
-@* 進貨退出編輯 Modal（從退回記錄 Tab 開啟） *@
-@if (showPurchaseReturnModal)
-{
-    <PurchaseReturnEditModalComponent @ref="purchaseReturnEditModal"
-                                     IsVisible="@showPurchaseReturnModal"
-                                     IsVisibleChanged="@((bool visible) => showPurchaseReturnModal = visible)"
-                                     PurchaseReturnId="@selectedPurchaseReturnId"
-                                     OnCancel="@(() => showPurchaseReturnModal = false)" />
-}
 
 @* 訊息範本設定 Modal *@
 <TextMessageTemplateEditModalComponent IsVisible="@showTemplateSettingModal"
@@ -128,7 +119,7 @@
     
     // 採購訂單明細
     private List<PurchaseOrderDetail> purchaseOrderDetails = new();
-    private PurchaseOrderTable<PurchaseOrder, PurchaseOrderDetail>? purchaseOrderDetailManager;
+    private PurchaseOrderTable? purchaseOrderDetailManager;
     
     // 方案 D 改良版：資料版本計數器，每次載入新資料時遞增
     private int _detailsDataVersion = 0;
@@ -143,15 +134,6 @@
     private bool showPurchaseReceivingModal = false;
     private int? selectedPurchaseReceivingId = null;
 
-    // ===== Tab 元件參考 =====
-    private PurchaseOrderReceivingTab? receivingTab;
-    private PurchaseOrderReturnTab? returnTab;
-
-    // ===== 退回單 Modal（從退回記錄 Tab 開啟） =====
-    private PurchaseReturnEditModalComponent? purchaseReturnEditModal;
-    private bool showPurchaseReturnModal = false;
-    private int? selectedPurchaseReturnId = null;
-    
     // 下拉選單選項
     private List<SelectOption> taxCalculationMethodOptions = new();
     
@@ -542,8 +524,6 @@
                     
                     <div style="@(editModalComponent.Entity.SupplierId > 0 ? "" : "display:none")">
                         <PurchaseOrderTable @ref="purchaseOrderDetailManager"
-                                                   TMainEntity="PurchaseOrder" 
-                                                   TDetailEntity="PurchaseOrderDetail"
                                                    Products="@availableProducts"
                                                    SelectedSupplierId="@editModalComponent.Entity.SupplierId"
                                                    MainEntity="@editModalComponent.Entity"
@@ -551,12 +531,6 @@
                                                    DataVersion="@_detailsDataVersion"
                                                    IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
                                                    OnDetailsChanged="@HandleDetailsChanged"
-                                                   MainEntityIdPropertyName="PurchaseOrderId"
-                                                   QuantityPropertyName="OrderQuantity"
-                                                   ReceivedQuantityPropertyName="ReceivedQuantity"
-                                                   UnitPricePropertyName="UnitPrice"
-                                                   RemarksPropertyName="Remarks"
-                                                   IsReceivingCompletedPropertyName="IsReceivingCompleted"
                                                    IsReadOnly="false"
                                                    IsApproved="@(editModalComponent?.Entity?.IsApproved ?? false)"
                                                    TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
@@ -615,35 +589,6 @@
         {
             return new List<GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule>();
         }
-    }
-
-    /// <summary>相關單據 Additional Sections 內容</summary>
-    private RenderFragment CreateRelatedSections() => __builder =>
-    {
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-box-arrow-in-down me-1"></i>@L["Tab.ReceivingRecords"]</h6>
-            <PurchaseOrderReceivingTab @ref="receivingTab"
-                                       OnOpenReceiving="@HandleOpenReceivingFromTab" />
-        </div>
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-arrow-return-left me-1"></i>@L["Tab.ReturnRecords"]</h6>
-            <PurchaseOrderReturnTab @ref="returnTab"
-                                    OnOpenReturn="@HandleOpenReturnFromTab" />
-        </div>
-    };
-
-    private void HandleOpenReceivingFromTab(int id)
-    {
-        selectedPurchaseReceivingId = id;
-        showPurchaseReceivingModal = true;
-        StateHasChanged();
-    }
-
-    private void HandleOpenReturnFromTab(int id)
-    {
-        selectedPurchaseReturnId = id;
-        showPurchaseReturnModal = true;
-        StateHasChanged();
     }
 
     // ===== ActionButton 產生方法 =====
@@ -731,17 +676,6 @@
         {
             canCreateReceiving = true;
             canCopyMessage = true;
-
-            if (loadedEntityId > 0)
-            {
-                if (receivingTab != null) await receivingTab.LoadAsync(loadedEntityId);
-                if (returnTab != null) await returnTab.LoadAsync(loadedEntityId);
-            }
-            else
-            {
-                receivingTab?.Clear();
-                returnTab?.Clear();
-            }
 
             StateHasChanged();
         }

@@ -6,6 +6,7 @@
 
 @typeparam TItem
 @using System.Reflection
+@inject IStringLocalizer<SharedResource> L
 
 <div class="position-relative">
     @* 搜尋欄位 *@
@@ -41,7 +42,7 @@
     else if (showDropdown && !string.IsNullOrWhiteSpace(searchTerm) && !FilteredAvailableItems.Any())
     {
         <div class="dropdown-menu show w-100 shadow-sm" style="position: absolute; z-index: 1050;">
-            <span class="dropdown-item-text text-muted small">找不到符合的項目</span>
+            <span class="dropdown-item-text text-muted small">@L["Message.NoMatches"]</span>
         </div>
     }
 </div>

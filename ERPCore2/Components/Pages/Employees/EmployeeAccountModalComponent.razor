@@ -2,37 +2,38 @@
 @inject IRoleService RoleService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
-                   Title="@($"帳號管理{(employee != null ? $" - {employee.Name}" : "")}")"
+                   Title="@($"{L["Employee.AccountManagement"]}{(employee != null ? $" - {employee.Name}" : "")}")"
                    Icon="bi bi-person-lock"
                    Size="BaseModalComponent.ModalSize.Default"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    IsLoading="@isSaving"
-                   LoadingMessage="儲存中..."
+                   LoadingMessage="@L["Label.Saving"]"
                    OnClose="@HandleCancel">
 
     <HeaderButtons>
         <div class="d-flex gap-2">
             <GenericButtonComponent Variant="ButtonVariant.Green"
-                                   Text="儲存"
+                                   Text="@L["Button.Save"]"
                                    IsLoading="@isSaving"
                                    OnClick="@HandleSave"
-                                   Title="儲存帳號設定" />
+                                   Title="@L["Button.Save"]" />
             @if (employee?.IsSystemUser == true)
             {
                 <GenericButtonComponent Variant="ButtonVariant.Red"
-                                       Text="停用帳號"
+                                       Text="@L["Button.DisableAccount"]"
                                        IsDisabled="@isSaving"
                                        OnClick="@HandleDisableAccount"
-                                       Title="清除帳號使此員工無法登入系統" />
+                                       Title="@L["Button.DisableAccount"]" />
             }
             <GenericButtonComponent Variant="ButtonVariant.Gray"
-                                   Text="取消"
+                                   Text="@L["Button.Cancel"]"
                                    IsDisabled="@isSaving"
                                    OnClick="@HandleCancel"
-                                   Title="取消並關閉" />
+                                   Title="@L["Button.Cancel"]" />
         </div>
     </HeaderButtons>
 
@@ -41,68 +42,68 @@
         {
             @* 目前狀態 *@
             <div class="mb-4 d-flex align-items-center gap-2">
-                <span class="text-muted small">目前狀態：</span>
+                <span class="text-muted small">@L["Label.CurrentStatus"]</span>
                 @if (employee.IsSystemUser)
                 {
-                    <span class="badge bg-success">系統使用者</span>
+                    <span class="badge bg-success">@L["Employee.SystemUser"]</span>
                     @if (employee.LastLoginAt.HasValue)
                     {
-                        <span class="text-muted small">最後登入：@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm")</span>
+                        <span class="text-muted small">@L["Field.LastLogin"]：@employee.LastLoginAt.Value.ToString("yyyy/MM/dd HH:mm")</span>
                     }
                     else
                     {
-                        <span class="text-muted small">從未登入</span>
+                        <span class="text-muted small">@L["Employee.NeverLoggedIn"]</span>
                     }
                 }
                 else
                 {
-                    <span class="badge bg-secondary">一般員工（無帳號）</span>
+                    <span class="badge bg-secondary">@L["Employee.RegularEmployee"]</span>
                 }
             </div>
 
             @* 帳號 *@
             <div class="mb-3">
-                <label class="form-label fw-semibold">登入帳號</label>
+                <label class="form-label fw-semibold">@L["Label.LoginAccount"]</label>
                 <input type="text" class="form-control"
                        maxlength="20"
                        autocomplete="off"
-                       placeholder="請輸入登入帳號（留空表示無法登入）"
+                       placeholder="@L["Placeholder.LoginAccount"]"
                        @bind="_account" />
-                <div class="form-text">留空表示此員工無法登入系統</div>
+                <div class="form-text">@L["Employee.EmptyMeansNoLogin"]</div>
             </div>
 
             @* 密碼 *@
             <div class="mb-3">
-                <label class="form-label fw-semibold">登入密碼</label>
+                <label class="form-label fw-semibold">@L["Label.LoginPassword"]</label>
                 <input type="password" class="form-control"
                        maxlength="20"
                        autocomplete="new-password"
-                       placeholder="@(employee.IsSystemUser ? "留空表示不變更現有密碼" : "請設定登入密碼")"
+                       placeholder="@(employee.IsSystemUser ? L["Placeholder.LoginAccountKeepPassword"].ToString() : L["Placeholder.SetPassword"].ToString())"
                        @bind="_newPassword" />
                 @if (employee.IsSystemUser)
                 {
-                    <div class="form-text">編輯時留空表示不變更現有密碼</div>
+                    <div class="form-text">@L["Employee.KeepPasswordHint"]</div>
                 }
             </div>
 
             @* 權限組 *@
             <div class="mb-3">
-                <label class="form-label fw-semibold">權限組</label>
+                <label class="form-label fw-semibold">@L["Label.PermissionGroup"]</label>
                 <select class="form-select" @bind="_roleIdStr">
-                    <option value="">-- 請選擇權限組 --</option>
+                    <option value="">@L["Placeholder.SelectPermissionGroup"]</option>
                     @foreach (var role in _availableRoles)
                     {
                         <option value="@role.Id">@role.Name</option>
                     }
                 </select>
-                <div class="form-text">設定此員工在系統中的操作權限（有帳號時必填）</div>
+                <div class="form-text">@L["Employee.RoleRequiredHint"]</div>
             </div>
         }
         else if (!isLoading)
         {
             <div class="text-center text-muted py-4">
                 <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                <p>找不到員工資料</p>
+                <p>@L["Employee.NotFound"]</p>
             </div>
         }
     </BodyContent>

@@ -48,7 +48,7 @@
                           OnEntitySaved="@OnQuotationSaved"
                           OnCancel="@OnCancel"
                           OnTaxMethodChanged="@(() => HandleQuotationDetailsChanged(quotationDetails))"
-                          TabDefinitions="@tabDefinitions"
+                          CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           FormHeaderContent="@GetWarningMessage()"
                           ShowPrintButton="true"
@@ -60,8 +60,7 @@
                           ApprovalPermission="Quotation.Approve"
                           OnApprove="@HandleQuotationApprove"
                           OnRejectWithReason="@HandleQuotationRejectWithReason"
-                          OnEntityLoaded="@HandleEntityLoaded"
-                          AdditionalSections="@CreateRelatedSections()">
+                          OnEntityLoaded="@HandleEntityLoaded">
 </GenericEditModalComponent>
 
 @* 客戶編輯 Modal *@
@@ -110,11 +109,7 @@
     private GenericEditModalComponent<Quotation, IQuotationService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    private List<FormTabDefinition>? tabDefinitions;
 
-    // ===== 關聯文件 Tabs =====
-    private QuotationOrderTab? orderTab;
-    
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
     
@@ -127,7 +122,7 @@
     
     // 報價單明細
     private List<QuotationDetail> quotationDetails = new();
-    private QuotationTable<Quotation, QuotationDetail>? quotationDetailManager;
+    private QuotationTable? quotationDetailManager;
     
     // 方案 D 改良版：資料版本計數器
     private int _detailsDataVersion = 0;
@@ -540,7 +535,7 @@
                 )
             };
 
-            var layout = FormSectionHelper<Quotation>.Create()
+            formSections = FormSectionHelper<Quotation>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     q => q.Code,
                     q => q.CustomerId,
@@ -558,13 +553,7 @@
                     q => q.PaymentTerms,
                     q => q.DeliveryTerms)
                 .AddCustomFields(FormSectionNames.OtherInfo, "Remarks")
-                .GroupIntoTab(L["Tab.QuotationData"].ToString(), "bi-file-earmark-text",
-                    FormSectionNames.BasicInfo, FormSectionNames.AmountInfo,
-                    FormSectionNames.TradingTerms, FormSectionNames.OtherInfo)
-                .GroupIntoCustomTab(L["Tab.QuotationDetail"].ToString(), "bi-list-ul", CreateQuotationDetailManagerContent())
-                .BuildAll();
-            formSections = layout.FieldSections;
-            tabDefinitions = layout.TabDefinitions;
+                .Build();
         }
         catch (Exception)
         {
@@ -842,6 +831,34 @@
     }
 
     /// <summary>
+    /// 配置自訂模組（報價明細表格）
+    /// </summary>
+    private List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            if (editModalComponent == null)
+            {
+                return new List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule>();
+            }
+
+            return new List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule>
+            {
+                new GenericEditModalComponent<Quotation, IQuotationService>.CustomModule
+                {
+                    Title = "",
+                    Content = CreateQuotationDetailManagerContent(),
+                    Order = 1
+                }
+            };
+        }
+        catch
+        {
+            return new List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule>();
+        }
+    }
+
+    /// <summary>
     /// 創建報價單明細管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateQuotationDetailManagerContent() => __builder =>
@@ -853,8 +870,6 @@
                               IsPreconditionMet="@(editModalComponent?.Entity?.CustomerId > 0)"
                               PreconditionMessage="請先選擇客戶後再進行報價明細管理">
             <QuotationTable @ref="quotationDetailManager"
-                                    TMainEntity="Quotation"
-                                    TDetailEntity="QuotationDetail"
                                     MainEntity="@editModalComponent!.Entity"
                                     ExistingDetails="@quotationDetails"
                                     DataVersion="@_detailsDataVersion"
@@ -863,14 +878,9 @@
                                     OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
                                     Products="@availableProducts"
                                     Units="@availableUnits"
-                                    SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"
+                                    SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId > 0 ? editModalComponent.Entity.CustomerId : (int?)null)"
+                                    SelectedSupplierId="@(editModalComponent?.Entity?.CustomerId > 0 ? editModalComponent.Entity.CustomerId : (int?)null)"
                                     TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                                    MainEntityIdPropertyName="@nameof(QuotationDetail.QuotationId)"
-                                    QuantityPropertyName="@nameof(QuotationDetail.Quantity)"
-                                    UnitPricePropertyName="@nameof(QuotationDetail.UnitPrice)"
-                                    DiscountPercentagePropertyName="@nameof(QuotationDetail.DiscountPercentage)"
-                                    RemarksPropertyName="@nameof(BaseEntity.Remarks)"
-                                    UnitIdPropertyName="@nameof(QuotationDetail.UnitId)"
                                     IsReadOnly="false"
                                     OnOpenRelatedDocument="@HandleOpenRelatedDocument"
                                     Title="報價明細"
@@ -1055,22 +1065,6 @@
                                   Message="@EditModalMessages.UndeletableDetailsWarning"/>
     };
     
-    /// <summary>相關單據 Additional Sections 內容</summary>
-    private RenderFragment CreateRelatedSections() => __builder =>
-    {
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-arrow-right-circle me-1"></i>@L["Tab.ConvertToOrder"]</h6>
-            <QuotationOrderTab @ref="orderTab"
-                               OnOpenOrder="@HandleOpenOrderFromTab" />
-        </div>
-    };
-
-    private void HandleOpenOrderFromTab(int orderId)
-    {
-        selectedSalesOrderId = orderId;
-        showSalesOrderModal = true;
-        StateHasChanged();
-    }
 
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）- 作為屬性以確保正確的渲染時機
@@ -1407,14 +1401,6 @@
         {
             // 明細已由 DataLoader (LoadQuotationData) 載入完成
             // Table 組件會自動偵測 ExistingDetails 參數變化並重新載入
-            if (loadedEntityId > 0)
-            {
-                if (orderTab != null) await orderTab.LoadAsync(loadedEntityId);
-            }
-            else
-            {
-                orderTab?.Clear();
-            }
             StateHasChanged();
         }
         catch (Exception ex)

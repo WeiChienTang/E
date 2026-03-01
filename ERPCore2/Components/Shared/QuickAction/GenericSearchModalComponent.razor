@@ -6,6 +6,7 @@
 @using ERPCore2.Models
 @using ERPCore2.Helpers
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 @implements IDisposable
@@ -67,9 +68,9 @@
                         }
                         <GenericButtonComponent Variant="@(isEnabled ? ButtonVariant.DarkBlue : ButtonVariant.Gray)"
                                               Size="ButtonSize.Small"
-                                              Text="前往"
+                                              Text="@L["Search.GoTo"]"
                                               IsDisabled="@(!isEnabled)"
-                                              Title="@(isEnabled ? $"前往 {item.Name}" : "此項目無法使用")"
+                                              Title="@(isEnabled ? string.Format(L["Search.GoToItem"], item.Name) : L["Search.ItemNotAvailable"].ToString())"
                                               OnClick="@(() => HandleItemClick(item))" />
                     </CustomActionsTemplate>
                 </InteractiveTableComponent>
@@ -198,14 +199,14 @@
             new InteractiveColumnDefinition
             {
                 PropertyName = "Name",
-                Title = "名稱",
+                Title = L["Search.NameColumn"].ToString(),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "200px"
             },
             new InteractiveColumnDefinition
             {
                 PropertyName = "Description",
-                Title = "說明",
+                Title = L["Search.DescriptionColumn"].ToString(),
                 ColumnType = InteractiveColumnType.Display
             },
         };

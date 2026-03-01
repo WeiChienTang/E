@@ -1,6 +1,7 @@
 @* 供應商商品綁定管理組件 - 使用 InteractiveTableComponent *@
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
 
@@ -29,11 +30,11 @@
     
     <div class="card-footer">
         <div class="d-flex justify-content-end">
-            <GenericButtonComponent Text="清除明細"
+            <GenericButtonComponent Text="@L["Button.ClearDetails"]"
                                   Variant="ButtonVariant.Red"
                                   OnClick="ClearAllDetails"
                                   IsDisabled="@(!HasProductItems)"
-                                  Title="@(!HasProductItems ? "目前沒有明細可清除" : "清除所有供應商品明細")" />
+                                  Title="@(!HasProductItems ? L["Supplier.NoClearTooltip"].ToString() : L["Supplier.ClearDetailsTooltip"].ToString())" />
         </div>
     </div>
 </div>
@@ -66,7 +67,7 @@
             // 商品選擇（必填，SearchableSelect）
             new InteractiveColumnDefinition
             {
-                Title = "商品",
+                Title = L["Column.Product"],
                 PropertyName = nameof(ProductSupplier.SearchText),  //  修正：綁定實際存在的屬性
                 EmptyCheckPropertyName = nameof(ProductSupplier.Product),  //  修正：檢查物件屬性（null = 空行）
                 ColumnType = InteractiveColumnType.SearchableSelect,
@@ -112,7 +113,7 @@
             // 供應商料號
             new InteractiveColumnDefinition
             {
-                Title = "供應商料號",
+                Title = L["Column.SupplierProductCode"],
                 PropertyName = nameof(ProductSupplier.SupplierProductCode),
                 ColumnType = InteractiveColumnType.Input,
                 Width = "150px",
@@ -123,7 +124,7 @@
             // 備註
             new InteractiveColumnDefinition
             {
-                Title = "備註",
+                Title = L["Label.Remarks"],
                 PropertyName = nameof(ProductSupplier.Remarks),
                 ColumnType = InteractiveColumnType.Input,
                 Width = "200px",
@@ -193,7 +194,7 @@
 
         if (existingBinding != null)
         {
-            await NotificationService.ShowWarningAsync($"商品「{selectedProduct.Name}」已經綁定此供應商");
+            await NotificationService.ShowWarningAsync(string.Format(L["Supplier.AlreadyBound"], selectedProduct.Name));
             productSupplier.ProductId = 0;
             productSupplier.SearchText = "";
             productSupplier.FilteredProducts = new List<Product>();
@@ -270,12 +271,12 @@
                 await ItemsChanged.InvokeAsync(Items);
                 tableComponent?.RefreshEmptyRow();
             },
-            "確定要清除所有供應商品明細嗎？"
+            L["Supplier.ConfirmClearAll"]
         );
         
         if (cleared)
         {
-            await NotificationService.ShowSuccessAsync("已清空所有供應商品明細");
+            await NotificationService.ShowSuccessAsync(L["Supplier.ClearedAll"]);
         }
     }
 }

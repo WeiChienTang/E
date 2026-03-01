@@ -4,7 +4,9 @@
 *@
 @using ERPCore2.Models
 @using ERPCore2.Data.Entities
+@using Microsoft.Extensions.Localization
 @typeparam TEntity where TEntity : class
+@inject IStringLocalizer<SharedResource> L
 
 <div class="table-responsive">
     <InteractiveTableComponent TItem="TEntity"
@@ -24,7 +26,7 @@
                              GetRowCssClass="@GetRowCssClass"
                              ActionsTemplate="@GetActionsTemplate()"
                              CssClass="batch-approval-table"
-                             EmptyMessage="太棒了！目前沒有待審核的項目。" />
+                             EmptyMessage="@L["Purchase.NoPendingItems"].ToString()" />
 </div>
 
 @code {
@@ -80,25 +82,25 @@
             // 採購單號
             new InteractiveColumnDefinition
             {
-                Title = "採購單號",
+                Title = L["Column.PurchaseOrderCode"].ToString(),
                 PropertyName = nameof(PurchaseOrder.Code),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px"
             },
-            
+
             // 廠商
             new InteractiveColumnDefinition
             {
-                Title = "廠商",
+                Title = L["Column.SupplierName"].ToString(),
                 PropertyName = "Supplier.CompanyName",
                 ColumnType = InteractiveColumnType.Display,
                 Width = "200px"
             },
-            
+
             // 訂單日期
             new InteractiveColumnDefinition
             {
-                Title = "訂單日期",
+                Title = L["Column.OrderDate"].ToString(),
                 PropertyName = nameof(PurchaseOrder.OrderDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
@@ -114,7 +116,7 @@
             // 預計到貨日
             new InteractiveColumnDefinition
             {
-                Title = "預計到貨日",
+                Title = L["Column.ExpectedDeliveryDate"].ToString(),
                 PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
@@ -130,7 +132,7 @@
             // 總金額
             new InteractiveColumnDefinition
             {
-                Title = "總金額",
+                Title = L["Column.TotalAmount"].ToString(),
                 PropertyName = nameof(PurchaseOrder.TotalAmount),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
@@ -145,7 +147,7 @@
             // 建立日期
             new InteractiveColumnDefinition
             {
-                Title = "建立日期",
+                Title = L["Label.CreatedAt"].ToString(),
                 PropertyName = nameof(PurchaseOrder.CreatedAt),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px",
@@ -201,7 +203,7 @@
             <GenericButtonComponent Variant="ButtonVariant.Blue"
                                   IconClass="bi bi-eye text-white"
                                   Size="ButtonSize.Large"
-                                  Title="查看詳情"
+                                  Title="@L["Purchase.ViewDetail"].ToString()"
                                   OnClick="@(async () => await HandleViewClick(entity))"
                                   StopPropagation="true"
                                   CssClass="btn-square" />

@@ -1,6 +1,7 @@
 @* 客戶拜訪紀錄 Tab - 自包含元件，主組件透過 @ref 協調 *@
 @inject ICustomerVisitService CustomerVisitService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @* 拜訪紀錄列表 *@
 <CustomerVisitTable Visits="@customerVisits"
@@ -19,11 +20,11 @@
 @* 刪除確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showDeleteVisitModal"
                               IsVisibleChanged="@((bool v) => showDeleteVisitModal = v)"
-                              Title="刪除拜訪紀錄"
+                              Title="@L["Modal.DeleteVisitRecord"]"
                               Icon="bi-trash"
-                              Message="確定要刪除此筆拜訪紀錄嗎？"
-                              ConfirmButtonText="確認刪除"
-                              CancelButtonText="取消"
+                              Message="@L["Modal.ConfirmDeleteVisitRecord"]"
+                              ConfirmButtonText="@L["Button.ConfirmDelete"]"
+                              CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Red"
                               HeaderColor="BaseModalComponent.HeaderVariant.Danger"
                               OnConfirm="@HandleConfirmDeleteVisit"
@@ -89,7 +90,7 @@
             if (result.IsSuccess)
             {
                 customerVisits.RemoveAll(v => v.Id == deletingVisit.Id);
-                await NotificationService.ShowSuccessAsync("拜訪紀錄已刪除");
+                await NotificationService.ShowSuccessAsync(L["Message.VisitDeleted"]);
             }
             else
             {

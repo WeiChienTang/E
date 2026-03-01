@@ -28,6 +28,7 @@
 *@
 @typeparam TItem
 @using ERPCore2.Components.Shared.Table
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -36,7 +37,7 @@
                    Size="BaseModalComponent.ModalSize.Large"
                    HeaderColor="BaseModalComponent.HeaderVariant.Danger"
                    IsLoading="@IsDeleting"
-                   LoadingMessage="正在刪除中，請稍候..."
+                   LoadingMessage="@L["BatchDelete.Loading"]"
                    ShowCloseButton="@(!IsDeleting)"
                    CloseOnBackdropClick="@(!IsDeleting)"
                    CloseOnEscape="@(!IsDeleting)"
@@ -45,16 +46,16 @@
     <HeaderButtons>
         <div class="d-flex gap-2">
             <GenericButtonComponent Variant="ButtonVariant.Red"
-                                   Text="確認刪除"
+                                   Text="@L["BatchDelete.ConfirmButton"]"
                                    IsDisabled="@(IsDeleting || SelectedCount == 0)"
                                    IsLoading="@IsDeleting"
                                    OnClick="@HandleConfirmDelete"
-                                   Title="確認執行批次刪除" />
+                                   Title="@L["BatchDelete.ConfirmTooltip"]" />
             <GenericButtonComponent Variant="ButtonVariant.Gray"
-                                   Text="取消"
+                                   Text="@L["Button.Cancel"]"
                                    IsDisabled="@IsDeleting"
                                    OnClick="@HandleCancel"
-                                   Title="取消並關閉" />
+                                   Title="@L["BatchDelete.CancelTooltip"]" />
         </div>
     </HeaderButtons>
 
@@ -63,7 +64,7 @@
         <div class="alert alert-danger d-flex align-items-start gap-3 mb-3" role="alert">
             <i class="bi bi-exclamation-triangle-fill fs-4 flex-shrink-0 mt-1"></i>
             <div>
-                <strong>警告：此操作無法還原！</strong>
+                <strong>@L["BatchDelete.Warning"]</strong>
             </div>
         </div>
 

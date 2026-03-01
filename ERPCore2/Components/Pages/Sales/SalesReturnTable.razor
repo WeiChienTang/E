@@ -13,6 +13,8 @@
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
 @inject IJSRuntime JSRuntime
 
+@inherits BaseDetailTableComponent<SalesReturn, SalesReturnDetail, SalesReturnTable.ReturnItem>
+
 @if (!EffectiveCustomerId.HasValue || EffectiveCustomerId.Value <= 0)
 {
     <div class="card border-0 shadow-sm">
@@ -30,8 +32,8 @@ else
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
                                       TItem="ReturnItem"
-                                      OnDataChanged="@NotifyDetailsChanged"
-                                      Items="@ReturnItems"
+                                      OnDataChanged="@NotifyDetailsChangedAsync"
+                                      Items="@Items"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"                                      
                                       EmptyMessage="@EmptyMessage"
@@ -100,83 +102,53 @@ else
                              OnCancel="@(() => _showLoadConfirmModal = false)" />
 
 @code {
-    // ===== InteractiveTableComponent 參考 =====
-    private InteractiveTableComponent<ReturnItem>? tableComponent;
-    
-    // ===== 資料載入完成標記 =====
-    private bool _dataLoadCompleted = true;  // 資料載入完成標記
-    private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細(已有沖款記錄)
-    
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
     [Parameter] public EventCallback<List<ReturnItem>> OnReturnItemsChanged { get; set; }
-    
+
     // ===== 客戶過濾參數 =====
+    // CustomerId: module-specific direct customer ID (e.g. from main entity)
+    // SelectedSupplierId (from base): used when customer is selected via dropdown/picker
     [Parameter] public int? CustomerId { get; set; }
-    [Parameter] public int? SelectedCustomerId { get; set; }
-    
+
     // ===== 篩選參數 =====
     [Parameter] public int? SelectedSalesDeliveryId { get; set; }
     [Parameter] public int? FilterSalesDeliveryId { get; set; }
     [Parameter] public int? FilterProductId { get; set; }
-    
+
     // ===== 額外參數（用於顯示確認訊息）=====
     [Parameter] public string? SelectedCustomerName { get; set; }
     [Parameter] public string? SelectedSalesDeliveryCode { get; set; }
     [Parameter] public string? FilterProductName { get; set; }
-    
-    // ===== 現有明細參數 =====
-    [Parameter] public List<SalesReturnDetail> ExistingReturnDetails { get; set; } = new List<SalesReturnDetail>();
-    [Parameter] public EventCallback<List<SalesReturnDetail>> OnDetailsChanged { get; set; }
-    [Parameter] public EventCallback<List<SalesReturnDetail>> OnReturnDetailsChanged { get; set; }
+
+    // ===== 現有明細參數（由 base 的 ExistingDetails 取代）=====
     [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; }
     [Parameter] public EventCallback<ReturnItem> OnItemRemoved { get; set; }
-    
+
     // ===== 編輯模式參數 =====
     [Parameter] public bool IsEditMode { get; set; } = false;
-    
+
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "退貨明細";
     [Parameter] public string Subtitle { get; set; } = "";
     [Parameter] public string Icon { get; set; } = "undo";
     [Parameter] public string ItemDisplayName { get; set; } = "商品";
     [Parameter] public string EmptyMessage { get; set; } = "尚未新增退貨商品";
-    
-    // ===== 唯讀模式參數 =====
-    [Parameter] public bool IsReadOnly { get; set; } = false;
-    
-    // ===== 稅別參數（新增）=====
+
+    // ===== 稅別參數 =====
     [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
 
     // ===== 輔助計算屬性 =====
     private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
-    
-    // ===== 狀態通知參數 =====
-    /// <summary>
-    /// 狀態通知參數 - 通知父組件是否有不可刪除的明細
-    /// </summary>
-    [Parameter] public EventCallback<bool> OnHasUndeletableDetailsChanged { get; set; }
-    
+
     // ===== 相關單據開啟事件 =====
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
-    
-    // 方案 D 改良版：資料版本追蹤
-    [Parameter] public int DataVersion { get; set; } = 0;
-    
-    // 修正：父元件載入中標記
-    [Parameter] public bool IsParentLoading { get; set; } = false;
 
-    private List<ReturnItem> ReturnItems { get; set; } = new List<ReturnItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
     private List<SalesDeliveryDetail> AvailableDeliveryDetails { get; set; } = new List<SalesDeliveryDetail>();
-    private int? _previousSelectedCustomerId = null;
     private int? _previousSelectedSalesDeliveryId = null;
     private int? _previousFilterProductId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
-    
-    // 方案 D 改良版：資料版本追蹤
-    private int _previousDataVersion = 0;
-    private bool _isLoadingDetails = false;
     
     // ===== 相關單據查看 =====
     private bool showRelatedDocumentsModal = false;
@@ -190,11 +162,10 @@ else
     private string _loadSummaryMessage = string.Empty;
 
     // ===== 計算屬性 =====
-    private int? EffectiveCustomerId => CustomerId ?? SelectedCustomerId;
+    // SelectedSupplierId (from base) serves as SelectedCustomerId for counterparty tracking
+    private int? EffectiveCustomerId => CustomerId ?? SelectedSupplierId;
     private int? EffectiveSalesDeliveryId => FilterSalesDeliveryId ?? SelectedSalesDeliveryId;
     private int? EffectiveFilterProductId => FilterProductId;
-    private EventCallback<List<SalesReturnDetail>> EffectiveDetailsChangedCallback => 
-        OnReturnDetailsChanged.HasDelegate ? OnReturnDetailsChanged : OnDetailsChanged;
     
     /// <summary>
     /// 判斷是否可以使用「載入全部可退」功能
@@ -226,7 +197,7 @@ else
     /// 計算屬性：是否有退貨明細項目
     /// </summary>
     private bool HasReturnItems =>
-        ReturnItems.Any(item => item.SelectedProduct != null);
+        Items.Any(item => item.SelectedProduct != null);
     
     /// <summary>
     /// 取得退貨全填按鈕的提示文字
@@ -284,100 +255,98 @@ else
     /// </summary>
     private bool HasLockedDetails()
     {
-        return ReturnItems.Any(item => 
+        return Items.Any(item =>
             item.SelectedProduct != null && HasPaymentRecord(item));
     }
 
     protected override async Task OnInitializedAsync()
     {
-        // 修正：父元件載入中時不執行初始化
-        // 🔥 重要：此時不設定 _previousDataVersion，讓 OnParametersSetAsync 能夠偵測到變化
-        if (IsParentLoading) { return; }
-        
-        // 只有在成功載入後才設定 _previousDataVersion
-        _previousDataVersion = DataVersion;
-        
-        // 初始化前一個狀態值，避免 OnParametersSetAsync 誤判為變更
-        _previousSelectedCustomerId = EffectiveCustomerId;
         _previousSelectedSalesDeliveryId = EffectiveSalesDeliveryId;
         _previousFilterProductId = EffectiveFilterProductId;
-        
         await LoadAvailableProductsAsync();
-        await LoadExistingDetailsAsync();
+        await base.OnInitializedAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        // 防止重入
-        if (_isLoadingDetails) { return; }
-        
-        // 方案 D 改良版：優先檢查 DataVersion
-        bool versionChanged = DataVersion != _previousDataVersion;
-        
-        if (versionChanged)
-        {
-            // 同時更新所有追蹤變數
-            _previousDataVersion = DataVersion;
-            _previousSelectedCustomerId = EffectiveCustomerId;
-            _previousSelectedSalesDeliveryId = EffectiveSalesDeliveryId;
-            _previousFilterProductId = EffectiveFilterProductId;
-            
-            _isLoadingDetails = true;
-            try
-            {
-                // 重新載入資料
-                await LoadExistingDetailsAsync();
-                tableComponent?.RefreshEmptyRow();
-            }
-            finally
-            {
-                _isLoadingDetails = false;
-            }
-            return;
-        }
-        
-        base.OnParametersSet();
-        
-        // 檢查篩選參數是否變更
-        bool customerChanged = _previousSelectedCustomerId != EffectiveCustomerId;
         bool salesDeliveryChanged = _previousSelectedSalesDeliveryId != EffectiveSalesDeliveryId;
         bool productFilterChanged = _previousFilterProductId != EffectiveFilterProductId;
-        
-        // 如果客戶變更，需要重新載入所有資料
-        if (customerChanged)
-        {
-            _previousSelectedCustomerId = EffectiveCustomerId;
-            _previousSelectedSalesDeliveryId = EffectiveSalesDeliveryId;
-            _previousFilterProductId = EffectiveFilterProductId;
-            
-            await LoadAvailableProductsAsync();
-            
-            // 客戶變更時重新載入明細（LoadExistingDetailsAsync 內部會自動 Clear）
-            await LoadExistingDetailsAsync();
-            return;
-        }
-        
-        // 如果只是出貨單或商品篩選變更，只需要更新篩選狀態並重新渲染
+
+        await base.OnParametersSetAsync();
+
         if (salesDeliveryChanged || productFilterChanged)
         {
             _previousSelectedSalesDeliveryId = EffectiveSalesDeliveryId;
             _previousFilterProductId = EffectiveFilterProductId;
-            
-            // 觸發重新渲染以套用新的篩選
             StateHasChanged();
-            return;
         }
     }
-    
+
     /// <summary>
-    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// 當 SelectedSupplierId (客戶) 改變時，重新載入可退貨出貨明細
     /// </summary>
-    public async Task RefreshDetailsAsync()
+    protected override async Task OnCounterpartyChangedAsync()
     {
-        await LoadAvailableProductsAsync();
-        await LoadExistingDetailsAsync();
-        tableComponent?.RefreshEmptyRow();
-        StateHasChanged();
+        await LoadAvailableDeliveryDetailsAsync();
+    }
+
+    /// <summary>
+    /// 將 ExistingDetails 對應到 Items 列表
+    /// </summary>
+    protected override async Task LoadItemsFromDetailsAsync()
+    {
+        if (ExistingDetails?.Any() != true)
+            return;
+
+        _deletedDetailIds.Clear();
+
+        var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
+
+        foreach (var detail in ExistingDetails)
+        {
+            var deliveryDetail = detail.SalesDeliveryDetail;
+
+            var item = new ReturnItem
+            {
+                SelectedProduct = detail.Product,
+                SelectedDeliveryDetail = deliveryDetail,
+                DeliveryDetailSearchValue = deliveryDetail != null
+                    ? FormatDeliveryDetailDisplayText(deliveryDetail)
+                    : (detail.Product != null ? $"[{detail.Product.Code}] {detail.Product.Name}" : ""),
+                OriginalQuantity = (int)(deliveryDetail?.DeliveryQuantity ?? 0),
+                AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(deliveryDetail?.Id ?? 0),
+                ReturnQuantity = (int)detail.ReturnQuantity,
+                OriginalUnitPrice = deliveryDetail?.UnitPrice ?? detail.OriginalUnitPrice,
+                DiscountPercentage = deliveryDetail?.DiscountPercentage ?? detail.DiscountPercentage,
+                TaxRate = detail.TaxRate ?? deliveryDetail?.TaxRate ?? detail.Product?.TaxRate ?? defaultTaxRate,
+                ReturnReason = string.Empty,
+                Remarks = detail.Remarks ?? string.Empty,
+                ExistingDetailEntity = detail
+            };
+
+            Items.Add(item);
+        }
+    }
+
+    /// <summary>
+    /// 判斷目前 Items 中是否有不可刪除的明細
+    /// </summary>
+    protected override bool ComputeHasUndeletableDetails()
+    {
+        return Items.Any(item =>
+            item.ExistingDetailEntity != null &&
+            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, checkPayment: true));
+    }
+
+    /// <summary>
+    /// 將 Items 轉換回 SalesReturnDetail 列表（用於通知父元件）
+    /// </summary>
+    protected override List<SalesReturnDetail> ConvertItemsToDetails()
+    {
+        return Items.Where(item => item.SelectedProduct != null)
+                    .Select(item => ConvertToEntity(item))
+                    .Where(entity => entity != null)
+                    .ToList()!;
     }
 
     // ===== 沖款記錄檢查方法 =====
@@ -442,29 +411,6 @@ else
         return canDelete;
     }
     
-    /// <summary>
-    /// 檢查是否有不可刪除的明細（已有沖款記錄）
-    /// </summary>
-    private bool HasUndeletableDetails()
-    {
-        return ReturnItems.Any(item => 
-            item.SelectedProduct != null && !CanDeleteItem(item, out _));
-    }
-
-    /// <summary>
-    /// 通知父組件是否有不可刪除的明細
-    /// </summary>
-    private async Task NotifyHasUndeletableDetailsChanged()
-    {
-        if (OnHasUndeletableDetailsChanged.HasDelegate)
-        {
-            var hasUndeletableDetails = HasUndeletableDetails();
-            _hasUndeletableDetails = hasUndeletableDetails;
-            await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
-            tableComponent?.RefreshEmptyRow();  // 刷新空行狀態
-            StateHasChanged();
-        }
-    }
 
     // ===== InteractiveTableComponent 方法 =====
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
@@ -735,7 +681,7 @@ else
             return;
         }
         
-        var index = ReturnItems.IndexOf(item);
+        var index = Items.IndexOf(item);
         await RemoveItemAsync(index);
     }
 
@@ -834,81 +780,12 @@ else
     }
 
     /// <summary>
-    /// 公開方法：刷新明細資料（供父組件呼叫）
-    /// 用於沖款單儲存後，重新載入明細以更新沖款相關資訊
+    /// 公開方法：刷新明細資料（供父組件呼叫，例如沖款單儲存後）
+    /// 使用 base.RefreshDetailsAsync() 重新載入明細
     /// </summary>
     public async Task RefreshDetails()
     {
-        // 重新載入現有明細（會從 ExistingReturnDetails 參數重新載入）
-        await LoadExistingDetailsAsync();
-        
-        // 強制 UI 更新
-        StateHasChanged();
-    }
-    
-    /// <summary>
-    /// 從現有明細資料載入到 ReturnItems
-    /// </summary>
-    private async Task LoadExistingDetailsAsync()
-    {
-        if (ExistingReturnDetails?.Any() != true) 
-        {
-            ReturnItems.Clear();
-            _dataLoadCompleted = true;
-            tableComponent?.RefreshEmptyRow();
-            StateHasChanged();
-            return;
-        }
-
-        //  開始載入資料
-        _dataLoadCompleted = false;
-        ReturnItems.Clear();
-        _deletedDetailIds.Clear(); // 清空已刪除ID列表
-        
-        // 載入系統預設稅率
-        var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
-        
-        foreach (var detail in ExistingReturnDetails)
-        {
-            // 直接使用 Navigation Properties - 更可靠的方式
-            var deliveryDetail = detail.SalesDeliveryDetail;
-            
-            var item = new ReturnItem
-            {
-                // 直接使用 Navigation Properties
-                SelectedProduct = detail.Product,
-                SelectedDeliveryDetail = deliveryDetail,
-                DeliveryDetailSearchValue = deliveryDetail != null 
-                    ? FormatDeliveryDetailDisplayText(deliveryDetail)
-                    : (detail.Product != null ? $"[{detail.Product.Code}] {detail.Product.Name}" : ""),
-                OriginalQuantity = (int)(deliveryDetail?.DeliveryQuantity ?? 0),
-                AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(deliveryDetail?.Id ?? 0),
-                ReturnQuantity = (int)detail.ReturnQuantity,
-                OriginalUnitPrice = deliveryDetail?.UnitPrice ?? detail.OriginalUnitPrice,
-                DiscountPercentage = deliveryDetail?.DiscountPercentage ?? detail.DiscountPercentage,
-                TaxRate = detail.TaxRate ?? deliveryDetail?.TaxRate ?? detail.Product?.TaxRate ?? defaultTaxRate,  //  優先順序：明細 > 銀貨出貨明細 > 商品 > 系統
-                ReturnReason = string.Empty,
-                Remarks = detail.Remarks ?? string.Empty,
-                ExistingDetailEntity = detail
-            };
-            
-            ReturnItems.Add(item);
-        }
-        
-        // 關鍵：載入後立即檢查是否有不可刪除的明細（與 PurchaseReceivingTable 一致）
-        bool hasUndeletableDetails = ReturnItems.Any(item => 
-            item.ExistingDetailEntity != null && 
-            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, checkPayment: true));
-        
-        if (_hasUndeletableDetails != hasUndeletableDetails)
-        {
-            _hasUndeletableDetails = hasUndeletableDetails;
-        }
-        
-        //  資料載入完成
-        _dataLoadCompleted = true;
-        tableComponent?.RefreshEmptyRow();
-        StateHasChanged();
+        await RefreshDetailsAsync();
     }
 
     private List<SalesDeliveryDetail> GetAvailableDeliveryDetails()
@@ -1292,9 +1169,9 @@ else
             }
             
             // 清除現有項目但保留已有資料的項目
-            var existingItems = ReturnItems.Where(item => item.SelectedProduct != null).ToList();
-            ReturnItems.Clear();
-            ReturnItems.AddRange(existingItems);
+            var existingItems = Items.Where(item => item.SelectedProduct != null).ToList();
+            Items.Clear();
+            Items.AddRange(existingItems);
             
             // 載入系統預設稅率
             var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
@@ -1304,7 +1181,7 @@ else
             foreach (var deliveryDetail in availableDetails)
             {
                 // 檢查是否已經存在相同的明細
-                if (ReturnItems.Any(item => item.SelectedDeliveryDetail?.Id == deliveryDetail.Id))
+                if (Items.Any(item => item.SelectedDeliveryDetail?.Id == deliveryDetail.Id))
                     continue;
                 
                 // 取得稅率（優先順序：銷貨出貨明細稅率 > 商品稅率 > 系統預設稅率）
@@ -1323,7 +1200,7 @@ else
                     TaxRate = taxRate
                 };
                 
-                ReturnItems.Add(newItem);
+                Items.Add(newItem);
                 addedCount++;
             }
             
@@ -1347,9 +1224,9 @@ else
 
     private async Task RemoveItemAsync(int index)
     {
-        if (index >= 0 && index < ReturnItems.Count)
+        if (index >= 0 && index < Items.Count)
         {
-            var item = ReturnItems[index];
+            var item = Items[index];
             
             // 通知父組件項目即將被移除
             if (OnItemRemoved.HasDelegate)
@@ -1363,49 +1240,36 @@ else
                 _deletedDetailIds.Add(item.ExistingDetailEntity.Id);
             }
             
-            ReturnItems.RemoveAt(index);
+            Items.RemoveAt(index);
             await NotifyDetailsChanged();
         }
     }
 
     private decimal GetTotalAmount()
     {
-        return ReturnItems.Where(item => item.SelectedProduct != null)
-                          .Sum(item => item.ReturnSubtotalAmount);
+        return Items.Where(item => item.SelectedProduct != null)
+                    .Sum(item => item.ReturnSubtotalAmount);
     }
 
+    /// <summary>
+    /// 通知明細變更，並處理此模組特有的額外通知（已刪除 ID、ReturnItems 清單）
+    /// </summary>
     private async Task NotifyDetailsChanged()
     {
-        // 🔧 修正：只檢查 SelectedProduct != null，不過濾 ReturnQuantity
-        // 這樣剛選擇的商品也會被保留，不會因為數量為 0 而被過濾掉
-        var details = ReturnItems.Where(item => item.SelectedProduct != null)
-                                 .Select(item => ConvertToEntity(item))
-                                 .Where(entity => entity != null)
-                                 .ToList();
-        
-        if (EffectiveDetailsChangedCallback.HasDelegate)
-        {
-            await DetailSyncHelper.SyncToParentAsync(details!, EffectiveDetailsChangedCallback);
-        }
-        
         // 通知已刪除的明細 ID
         if (OnDeletedDetailsChanged.HasDelegate && _deletedDetailIds.Any())
         {
             await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds.ToList());
-            _deletedDetailIds.Clear(); // 清空已通知的ID
+            _deletedDetailIds.Clear();
         }
-        
+
         if (OnReturnItemsChanged.HasDelegate)
         {
-            await OnReturnItemsChanged.InvokeAsync(ReturnItems);
+            await OnReturnItemsChanged.InvokeAsync(Items);
         }
-        
-        //  通知父組件是否有不可刪除的明細
-        await NotifyHasUndeletableDetailsChanged();
-        
-        // 🔧 修正：無條件刷新空行和觸發 UI 更新，確保選擇商品後立即顯示
-        tableComponent?.RefreshEmptyRow();
-        StateHasChanged();
+
+        // 委派給 base 執行標準的 OnDetailsChanged + _hasUndeletableDetails 更新
+        await NotifyDetailsChangedAsync();
     }
 
     private SalesReturnDetail? ConvertToEntity(ReturnItem item)
@@ -1462,21 +1326,21 @@ else
     /// </summary>
     private async Task FillAllQuantities()
     {
-        var nonEmptyItems = ReturnItems.Where(item => item.SelectedProduct != null).ToList();
-        
+        var nonEmptyItems = Items.Where(item => item.SelectedProduct != null).ToList();
+
         if (!nonEmptyItems.Any())
         {
             await NotificationService.ShowWarningAsync("沒有可更新的明細項目", "提示");
             return;
         }
-        
+
         var unlocked = nonEmptyItems.Where(item => CanDeleteItem(item, out _)).ToList();
         var locked = nonEmptyItems.Where(item => !CanDeleteItem(item, out _)).ToList();
-        
+
         if (!unlocked.Any())
         {
             await NotificationService.ShowWarningAsync(
-                "所有明細都已有沖款記錄，無法批次填入數量", 
+                "所有明細都已有沖款記錄，無法批次填入數量",
                 "操作限制");
             return;
         }
@@ -1505,21 +1369,21 @@ else
     /// </summary>
     private async Task ClearAllQuantities()
     {
-        var nonEmptyItems = ReturnItems.Where(item => item.SelectedProduct != null).ToList();
-        
+        var nonEmptyItems = Items.Where(item => item.SelectedProduct != null).ToList();
+
         if (!nonEmptyItems.Any())
         {
             await NotificationService.ShowWarningAsync("沒有可更新的明細項目", "提示");
             return;
         }
-        
+
         var unlocked = nonEmptyItems.Where(item => CanDeleteItem(item, out _)).ToList();
         var locked = nonEmptyItems.Where(item => !CanDeleteItem(item, out _)).ToList();
-        
+
         if (!unlocked.Any())
         {
             await NotificationService.ShowWarningAsync(
-                "所有明細都已有沖款記錄，無法批次清空數量", 
+                "所有明細都已有沖款記錄，無法批次清空數量",
                 "操作限制");
             return;
         }
@@ -1544,14 +1408,14 @@ else
     /// </summary>
     private async Task ClearAllDetails()
     {
-        var nonEmptyItems = ReturnItems.Where(item => item.SelectedProduct != null).ToList();
-        
+        var nonEmptyItems = Items.Where(item => item.SelectedProduct != null).ToList();
+
         if (!nonEmptyItems.Any())
         {
             await NotificationService.ShowWarningAsync("沒有可移除的明細項目", "提示");
             return;
         }
-        
+
         // 區分可刪除和被鎖定的明細
         var unlocked = nonEmptyItems.Where(item => CanDeleteItem(item, out _)).ToList();
         var locked = nonEmptyItems.Where(item => !CanDeleteItem(item, out _)).ToList();
@@ -1582,7 +1446,7 @@ else
         // 從列表中移除未鎖定的項目，保留已鎖定的項目
         foreach (var item in unlocked)
         {
-            ReturnItems.Remove(item);
+            Items.Remove(item);
         }
         
         await NotifyDetailsChanged();
@@ -1603,7 +1467,7 @@ else
             var errors = new List<string>();
             
             // 檢查是否有退貨項目
-            var potentialItems = ReturnItems.Where(item => item.SelectedProduct != null && item.ReturnQuantity > 0).ToList();
+            var potentialItems = Items.Where(item => item.SelectedProduct != null && item.ReturnQuantity > 0).ToList();
             if (!potentialItems.Any())
             {
                 errors.Add("至少需要一個退貨項目");

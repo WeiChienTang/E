@@ -18,6 +18,7 @@
 @implements IFilterTemplateComponent
 @inject IServiceProvider ServiceProvider
 @inject INotificationService NotificationService
+@inject IStringLocalizer<ERPCore2.SharedResource> L
 
 @if (CriteriaType == null)
 {
@@ -30,7 +31,7 @@ else if (_isLoading)
 {
     <div class="text-center py-4">
         <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-        載入篩選選項中...
+        @L["Label.LoadingFilterOptions"]
     </div>
 }
 else
@@ -40,7 +41,7 @@ else
         @* ===== 欄 1：基本篩選 ===== *@
         @if (_basicFields.Any())
         {
-            <FilterSectionColumn Title="基本篩選" Icon="bi bi-funnel">
+            <FilterSectionColumn Title="@L["Filter.BasicFilter"]" Icon="bi bi-funnel">
                 @foreach (var field in _basicFields)
                 {
                     @if (field is FKFieldDef fkField)
@@ -67,8 +68,8 @@ else
                                                          SelectedItemsChanged="@(items => _selectedEnumItems[fn] = items)"
                                                          DisplayProperty="DisplayName"
                                                          ValueProperty="Id"
-                                                         Placeholder="搜尋..."
-                                                         EmptyMessage="未選擇（查詢全部）" />
+                                                         Placeholder="@L["Placeholder.Search"]"
+                                                         EmptyMessage="@L["Filter.AllItems"]" />
                         </FilterFieldRow>
                     }
                 }
@@ -78,7 +79,7 @@ else
         @* ===== 欄 2：日期範圍 ===== *@
         @if (_dateFields.Any())
         {
-            <FilterSectionColumn Title="日期範圍" Icon="bi bi-calendar-range">
+            <FilterSectionColumn Title="@L["Filter.DateRange"]" Icon="bi bi-calendar-range">
                 @foreach (var field in _dateFields)
                 {
                     var sk = field.PropertyName;
@@ -88,8 +89,8 @@ else
                                                    StartDateChanged="@((DateTime? v) => _dateValues[sk] = v)"
                                                    EndDate="@_dateValues.GetValueOrDefault(ek)"
                                                    EndDateChanged="@((DateTime? v) => _dateValues[ek] = v)"
-                                                   StartDateLabel="起始"
-                                                   EndDateLabel="結束"
+                                                   StartDateLabel="@L["Label.DateStart"]"
+                                                   EndDateLabel="@L["Label.DateEnd"]"
                                                    ShowQuickSelectors="true"
                                                    AutoValidate="true"
                                                    ShowValidationMessage="true" />
@@ -101,7 +102,7 @@ else
         @* ===== 欄 3：快速條件 ===== *@
         @if (_quickFields.Any())
         {
-            <FilterSectionColumn Title="快速條件" Icon="bi bi-search">
+            <FilterSectionColumn Title="@L["Filter.QuickCondition"]" Icon="bi bi-search">
                 @foreach (var field in _quickFields)
                 {
                     @if (field is KeywordFieldDef keywordField)
@@ -417,7 +418,7 @@ else
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadFKDataAsync), GetType());
-            await NotificationService.ShowErrorAsync($"載入「{field.Label}」資料失敗");
+            await NotificationService.ShowErrorAsync(string.Format(L["Error.LoadFieldDataFailed"], field.Label));
             _availableItems[field.PropertyName] = new();
         }
     }

@@ -1,4 +1,5 @@
 @using ERPCore2.Components.Shared.UI.Form
+@inject IStringLocalizer<SharedResource> L
 
 <div class="row g-2">
     @* 起始日期 *@
@@ -31,12 +32,12 @@
     @if (ShowQuickSelectors)
     {
         <div class="col-auto d-flex gap-1 align-items-center">
-            <GenericButtonComponent Text="今日" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetToday" />
-            <GenericButtonComponent Text="本週" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisWeek" />
-            <GenericButtonComponent Text="本月" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisMonth" />
-            <GenericButtonComponent Text="上月" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetLastMonth" />
-            <GenericButtonComponent Text="今年" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisYear" />
-            <GenericButtonComponent Text="清空" Variant="ButtonVariant.Red" Size="ButtonSize.Small" OnClick="ClearDates" />
+            <GenericButtonComponent Text="@L["Button.Today"]" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetToday" />
+            <GenericButtonComponent Text="@L["Button.ThisWeek"]" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisWeek" />
+            <GenericButtonComponent Text="@L["Button.ThisMonth"]" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisMonth" />
+            <GenericButtonComponent Text="@L["Button.LastMonth"]" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetLastMonth" />
+            <GenericButtonComponent Text="@L["Button.ThisYear"]" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisYear" />
+            <GenericButtonComponent Text="@L["Button.Clear"]" Variant="ButtonVariant.Red" Size="ButtonSize.Small" OnClick="ClearDates" />
         </div>
     }
 </div>
@@ -191,7 +192,7 @@
         
         if (StartDate.HasValue && EndDate.HasValue && StartDate.Value > EndDate.Value)
         {
-            ValidationMessage = "起始日期不能大於結束日期";
+            ValidationMessage = L["Message.DateRangeInvalid"];
         }
         else
         {

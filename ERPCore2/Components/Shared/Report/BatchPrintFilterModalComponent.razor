@@ -1,5 +1,5 @@
-
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -14,16 +14,16 @@
     <HeaderButtons>
         @* 按鈕組 *@
         <div class="d-flex gap-2">
-            <GenericButtonComponent Variant="ButtonVariant.DarkBlue" 
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                   Size="ButtonSize.Small"
-                                  Text="@ConfirmButtonText" 
+                                  Text="@ConfirmButtonText"
                                   OnClick="HandleConfirm"
-                                  Title="確認並執行列印" />
-            <GenericButtonComponent Variant="ButtonVariant.Red" 
+                                  Title="@L["Button.Confirm"]" />
+            <GenericButtonComponent Variant="ButtonVariant.Red"
                                   Size="ButtonSize.Small"
-                                  Text="@CancelButtonText" 
+                                  Text="@CancelButtonText"
                                   OnClick="HandleCancel"
-                                  Title="取消並關閉" />
+                                  Title="@L["Button.Cancel"]" />
         </div>
     </HeaderButtons>
     

@@ -131,11 +131,45 @@ await JSRuntime.InvokeVoidAsync("setContentZoom", (int)preference.Zoom);
 
 > ⚠️ `--primary-white` **不覆寫於深色模式**：NavMenu、表頭等深色背景上的文字必須保持白色。
 
-#### 重要規則
+#### 開發規則
 
 - **禁止** 在 `.razor.css` 中使用 `@media (prefers-color-scheme: dark)`，應使用 `[data-bs-theme=dark]`
 - **禁止** 在元件 CSS 中使用硬編碼 hex 色碼，必須使用 CSS 變數（`var(--bg-primary)` 等）
+- **禁止** 在 HTML 使用 Bootstrap 背景 utility class（`bg-light`、`bg-white`），見下方說明
 - `--primary-white` 始終為 `#FFFFFF`，用於深色背景（側邊欄、表頭）上的文字
+
+#### Bootstrap Utility Class 衝突問題
+
+Bootstrap 的背景 utility class（`bg-light`、`bg-white`）使用 `!important` 宣告 `background-color`，會**直接覆蓋** `.razor.css` 中所有 CSS 變數規則，導致深色模式下元素仍顯示為白色背景。
+
+**錯誤寫法（會在深色模式破版）：**
+```razor
+<div class="modal-footer bg-light">...</div>
+<pre class="bg-light rounded">...</pre>
+<div class="filter-bar bg-white">...</div>
+```
+
+**正確寫法：**
+
+方式一 — 移除 Bootstrap class，在 `.razor.css` 以 CSS 變數定義（推薦）：
+```css
+/* ComponentName.razor.css */
+.filter-bar {
+    background-color: var(--bg-secondary);
+}
+```
+
+方式二 — 使用 inline style（適用於一次性局部覆蓋）：
+```razor
+<pre style="background-color: var(--bg-secondary); color: var(--text-primary);">...</pre>
+```
+
+方式三 — 在 `.razor.css` 以 `[data-bs-theme=dark]` 選擇器加 `!important` 強制覆蓋（不推薦，僅作最後手段）：
+```css
+[data-bs-theme=dark] .some-element {
+    background-color: var(--bg-primary) !important;
+}
+```
 
 #### Bootstrap 變數覆寫
 
@@ -145,6 +179,54 @@ await JSRuntime.InvokeVoidAsync("setContentZoom", (int)preference.Zoom);
 - `--bs-dropdown-*`：下拉選單顏色
 - `--bs-table-*`：表格顏色
 - `--bs-body-color`、`--bs-body-bg`、`--bs-border-color`、`--bs-link-color` 等
+
+#### Blazor 重新連線 UI
+
+Blazor Server 斷線重連的系統 UI（`#components-reconnect-modal`）樣式定義在 `wwwroot/css/app.css`，使用 CSS 變數確保深色模式正常顯示：
+
+```css
+#components-reconnect-modal {
+    display: none;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 9999;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    align-items: center; justify-content: center;
+}
+#components-reconnect-modal.components-reconnect-show,
+#components-reconnect-modal.components-reconnect-failed,
+#components-reconnect-modal.components-reconnect-rejected { display: flex; }
+
+#components-reconnect-modal > * {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    /* ... */
+}
+```
+
+#### 已審計並修正的組件（深色模式）
+
+以下組件已完成深色模式審計，移除所有硬編碼色碼與 Bootstrap utility class：
+
+| 組件 | 修正內容 |
+|------|----------|
+| `Components/Shared/Modal/BaseModalComponent.razor` | 移除 action-bar、modal-footer、modal-metadata 上的 `bg-light` |
+| `Components/Shared/Modal/BaseModalComponent.razor.css` | `.modal-action-bar` 改用 `var(--bg-secondary)` |
+| `Components/Shared/Report/ReportPreviewModalComponent.razor.css` | print-settings-panel、export-progress 等加入 `[data-bs-theme=dark]` 覆寫 |
+| `Components/Pages/Customers/CustomerTransactionTable.razor` | filter-bar、stats-bar、net-sales-cell 移除 `bg-light`/`bg-white`，改用自訂 class |
+| `Components/Pages/Customers/CustomerTransactionTable.razor.css` | 新建，三個自訂 class 使用 CSS 變數 |
+| `Components/Pages/Systems/TextMessageTemplateEditModalComponent.razor` | 預覽區 `pre` 移除 `bg-light`，改用 inline CSS 變數 |
+| `Components/Shared/GenericIndexPageComponent.razor.css` | tbody hover、selected row、readonly 控制項深色覆寫 |
+| `Components/Shared/InteractiveTableComponent.razor.css` | 同上 |
+| `Components/Shared/GenericStatisticsCards.razor.css` | badge bg/border/title/value 改用 CSS 變數 |
+| `Components/Shared/Report/GenericChartModalComponent.razor.css` | chart-tab-btn 所有狀態改用 CSS 變數 |
+| `Components/Shared/FilterSectionColumn.razor.css` | filter-section-header 改用 CSS 變數 |
+| `Components/Layout/Home.razor.css` | add-shortcut-card、panel-icon-edit 改用 CSS 變數 |
+| `Components/Shared/Modal/GenericEditModalComponent.razor.css` | mobile custom-buttons-section 改用 CSS 變數 |
+| `Components/Shared/FilterFieldRow.razor.css` | filter-field-label 改用 CSS 變數 |
+| `Components/Shared/ShortcutKeysModalComponent.razor.css` | table td:first-child 改用 CSS 變數 |
+| `Components/Shared/CharacterCountTextAreaComponent.razor.css` | textarea[readonly] 改用 CSS 變數 |
 
 ---
 
@@ -215,14 +297,16 @@ HandleSave()（PersonalPreferenceModalComponent）
 |------|------|
 | `Data/Entities/Employees/EmployeePreference.cs` | `AppTheme` + `ContentZoom` enum 定義 |
 | `Migrations/20260228083502_AddEmployeePreferenceTheme.cs` | 新增 Theme 欄位的 EF migration |
-| `wwwroot/css/colors.css` | CSS 變數定義 + `[data-bs-theme=dark]` 深色覆寫 |
-| `wwwroot/css/app.css` | `html { font-size: var(--content-zoom, 1rem); }` |
+| `wwwroot/css/colors.css` | CSS 變數定義 + `[data-bs-theme=dark]` 深色覆寫（含 Bootstrap 變數） |
+| `wwwroot/css/app.css` | `html { font-size: var(--content-zoom) }`、Blazor reconnect modal 樣式 |
 | `wwwroot/js/theme-helper.js` | `setAppTheme(enumValue)` — enum → cookie → data-bs-theme |
 | `wwwroot/js/content-zoom-helper.js` | `setContentZoom(enumValue)` — enum → rem → cookie → CSS var |
 | `Components/App.razor` | `<head>` 內 inline script（防止 flash：主題 + 縮放同一 IIFE） |
 | `Components/Layout/MainLayout.razor` | `OnAfterRenderAsync` 強制套用當前用戶的設定（跨用戶修正） |
 | `Components/Pages/Employees/PersonalPreference/DisplayTab.razor` | 顯示設定 Tab UI |
 | `Components/Pages/Employees/PersonalPreference/PersonalPreferenceModalComponent.razor` | HandleSave 觸發 JS |
+| `Components/Shared/Modal/BaseModalComponent.razor` | Modal 底層結構，已移除 `bg-light` |
+| `Components/Shared/Modal/BaseModalComponent.razor.css` | Modal action-bar 背景使用 CSS 變數 |
 
 ---
 
@@ -233,6 +317,7 @@ HandleSave()（PersonalPreferenceModalComponent）
 3. **未知 enum 值 fallback 至 `'light'`**：`themeEnumMap[enumValue] || 'light'`，不會套用深色。
 4. **新增主題或縮放級別**：需同時更新 C# enum 與 JS 的 `themeEnumMap` / `contentZoomMap`。
 5. **禁止移除 MainLayout 的套用邏輯**：移除後，同台電腦切換帳號將導致設定被前一用戶污染。
+6. **禁止使用 Bootstrap 背景 utility class**：`bg-light`、`bg-white` 因 `!important` 會覆蓋 CSS 變數，導致深色模式破版。新組件一律使用自訂 class + CSS 變數，或 inline `var(--bg-*)` style。
 
 ---
 

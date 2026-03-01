@@ -1,11 +1,12 @@
 @using ERPCore2.Models.Charts
 @using ERPCore2.Services.Customers
 @inject ICustomerChartService ChartService
+@inject IStringLocalizer<SharedResource> L
 
 <GenericChartModalComponent IsVisible="@IsVisible"
                             IsVisibleChanged="@IsVisibleChanged"
                             Category="@ChartCategory.Customer"
-                            Title="客戶分析圖表"
+                            Title="@L["Customer.ChartTitle"]"
                             Icon="bi bi-bar-chart-fill"
                             OnDataLoading="@LoadSummaryAsync">
 </GenericChartModalComponent>

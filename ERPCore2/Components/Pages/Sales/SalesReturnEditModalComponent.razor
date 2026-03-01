@@ -54,11 +54,10 @@
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          AdditionalSections="@CreateRelatedSections()"
                           OnTaxMethodChanged="@(() => HandleReturnDetailsChanged(salesReturnDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          TabDefinitions="@tabDefinitions"
+                          CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@SalesReturnReportService"
@@ -66,16 +65,6 @@
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.SalesReturnDoc"]]"
                           GetReportDocumentName="@(e => $"銷貨退回單-{e.Code}")"
 />
-
-@* 出貨單編輯 Modal *@
-@if (showSalesDeliveryModal)
-{
-    <SalesDeliveryEditModalComponent @ref="salesDeliveryEditModal"
-                                     IsVisible="@showSalesDeliveryModal"
-                                     IsVisibleChanged="@((bool visible) => showSalesDeliveryModal = visible)"
-                                     SalesDeliveryId="@selectedSalesDeliveryId"
-                                     OnCancel="@(() => showSalesDeliveryModal = false)" />
-}
 
 @* 沖款單編輯 Modal *@
 @if (showSetoffDocumentModal)
@@ -105,17 +94,7 @@
     private GenericEditModalComponent<SalesReturn, ISalesReturnService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    private List<FormTabDefinition>? tabDefinitions;
 
-    // ===== 關聯文件 Tabs =====
-    private SalesReturnDeliveryTab? deliveryTab;
-    private SalesReturnSetoffTab? setoffTab;
-
-    // ===== 出貨單 Modal（由 DeliveryTab 開啟） =====
-    private SalesDeliveryEditModalComponent? salesDeliveryEditModal;
-    private bool showSalesDeliveryModal = false;
-    private int? selectedSalesDeliveryId = null;
-    
     // 原始資料集合（用於 AutoComplete）
     private List<SalesDelivery> availableSalesDeliveries = new();
     private List<Warehouse> availableWarehouses = new();
@@ -700,7 +679,7 @@
                 )
             };
 
-            var layout = FormSectionHelper<SalesReturn>.Create()
+            formSections = FormSectionHelper<SalesReturn>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     sr => sr.Code,
                     sr => sr.CustomerId,
@@ -714,13 +693,7 @@
                     sr => sr.TotalReturnAmountWithTax)
                 .AddToSection(FormSectionNames.OtherInfo,
                     sr => sr.Remarks)
-                .GroupIntoTab(L["Tab.ReturnData"].ToString(), "bi-file-earmark-text",
-                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
-                    FormSectionNames.AmountInfo, FormSectionNames.OtherInfo)
-                .GroupIntoCustomTab(L["Tab.ReturnDetail"].ToString(), "bi-list-ul", CreateReturnDetailManagerContent())
-                .BuildAll();
-            formSections = layout.FieldSections;
-            tabDefinitions = layout.TabDefinitions;
+                .Build();
         }
         catch (Exception ex)
         {
@@ -880,20 +853,11 @@
     /// <summary>
     /// 根據 hasUndeletableDetails 狀態更新欄位的唯讀狀態
     /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
+    private Task HandleEntityLoaded(int loadedEntityId)
     {
         UpdateFilterFieldsState();
-        if (loadedEntityId > 0)
-        {
-            if (deliveryTab != null) await deliveryTab.LoadAsync(loadedEntityId);
-            if (setoffTab != null) await setoffTab.LoadAsync(loadedEntityId);
-        }
-        else
-        {
-            deliveryTab?.Clear();
-            setoffTab?.Clear();
-        }
         StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private void UpdateFieldsReadOnlyState()
@@ -1185,6 +1149,34 @@
     }
 
     /// <summary>
+    /// 配置自訂模組（退貨明細表格）
+    /// </summary>
+    private List<GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            if (editModalComponent == null)
+            {
+                return new List<GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule>();
+            }
+
+            return new List<GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule>
+            {
+                new GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule
+                {
+                    Title = "",
+                    Content = CreateReturnDetailManagerContent(),
+                    Order = 1
+                }
+            };
+        }
+        catch
+        {
+            return new List<GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule>();
+        }
+    }
+
+    /// <summary>
     /// 創建退貨明細管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateReturnDetailManagerContent() => __builder =>
@@ -1198,16 +1190,17 @@
             <SalesReturnTable @ref="salesReturnDetailManager"
                               Products="@products"
                               CustomerId="@(editModalComponent?.Entity?.CustomerId)"
+                              SelectedSupplierId="@(editModalComponent?.Entity?.CustomerId)"
                               FilterSalesDeliveryId="@FilterSalesDeliveryId"
                               FilterProductId="@FilterProductId"
                               SelectedCustomerName="@GetSelectedCustomerName()"
                               SelectedSalesDeliveryCode="@GetSelectedSalesDeliveryCode()"
                               FilterProductName="@GetFilterProductName()"
-                              ExistingReturnDetails="@salesReturnDetails"
+                              ExistingDetails="@salesReturnDetails"
                               DataVersion="@_detailsDataVersion"
                               IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
                               TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                              OnReturnDetailsChanged="@HandleReturnDetailsChanged"
+                              OnDetailsChanged="@HandleReturnDetailsChanged"
                               OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                               OnOpenRelatedDocument="@HandleOpenRelatedDocument"
                               IsEditMode="@SalesReturnId.HasValue" />
@@ -1239,35 +1232,6 @@
         }
     }
     
-    /// <summary>相關單據 Additional Sections 內容</summary>
-    private RenderFragment CreateRelatedSections() => __builder =>
-    {
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-truck me-1"></i>@L["Tab.OriginalDelivery"]</h6>
-            <SalesReturnDeliveryTab @ref="deliveryTab"
-                                    OnOpenDelivery="@HandleOpenDeliveryFromTab" />
-        </div>
-        <div class="mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-cash-coin me-1"></i>@L["Tab.SetoffRecords"]</h6>
-            <SalesReturnSetoffTab @ref="setoffTab"
-                                  OnOpenSetoff="@HandleOpenSetoffFromTab" />
-        </div>
-    };
-
-    private void HandleOpenDeliveryFromTab(int deliveryId)
-    {
-        selectedSalesDeliveryId = deliveryId;
-        showSalesDeliveryModal = true;
-        StateHasChanged();
-    }
-
-    private void HandleOpenSetoffFromTab(int setoffId)
-    {
-        selectedSetoffDocumentId = setoffId;
-        showSetoffDocumentModal = true;
-        StateHasChanged();
-    }
-
     /// <summary>
     /// 處理沖款單儲存後的事件
     /// 使用 ChildDocumentRefreshHelper 統一處理刷新邏輯

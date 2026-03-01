@@ -8,12 +8,13 @@
 @inject ISalesReturnService SalesReturnService
 @inject INotificationService NotificationService
 @inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> L
 
 @if (_isLoading)
 {
     <div class="text-center py-4">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">載入中...</span>
+            <span class="visually-hidden">@L["Label.Loading"]</span>
         </div>
     </div>
 }
@@ -21,13 +22,13 @@ else
 {
     @* 篩選列 *@
     <div class="d-flex align-items-center gap-3 mb-2 p-2 rounded border tx-filter-bar">
-        <span class="text-muted small fw-semibold me-1">顯示：</span>
+        <span class="text-muted small fw-semibold me-1">@L["Label.Show"]</span>
         <div class="form-check form-check-inline mb-0">
             <input class="form-check-input" type="checkbox" id="chk-delivery"
                    checked="@_showDeliveries"
                    @onchange="@(e => { _showDeliveries = (bool)e.Value!; })" />
             <label class="form-check-label small" for="chk-delivery">
-                <span class="badge bg-info me-1"><i class="bi bi-truck"></i></span>出貨單
+                <span class="badge bg-info me-1"><i class="bi bi-truck"></i></span>@L["Customer.Deliveries"]
             </label>
         </div>
         <div class="form-check form-check-inline mb-0">
@@ -35,7 +36,7 @@ else
                    checked="@_showReturns"
                    @onchange="@(e => { _showReturns = (bool)e.Value!; })" />
             <label class="form-check-label small" for="chk-return">
-                <span class="badge bg-warning text-dark me-1"><i class="bi bi-arrow-return-left"></i></span>退貨單
+                <span class="badge bg-warning text-dark me-1"><i class="bi bi-arrow-return-left"></i></span>@L["Customer.Returns"]
             </label>
         </div>
         <div class="vr mx-1"></div>
@@ -44,7 +45,7 @@ else
                    checked="@_showSalesOrders"
                    @onchange="@(e => { _showSalesOrders = (bool)e.Value!; })" />
             <label class="form-check-label small" for="chk-order">
-                <span class="badge bg-primary me-1"><i class="bi bi-cart-check"></i></span>銷貨訂單
+                <span class="badge bg-primary me-1"><i class="bi bi-cart-check"></i></span>@L["Customer.SalesOrders"]
             </label>
         </div>
         <div class="form-check form-check-inline mb-0">
@@ -52,12 +53,12 @@ else
                    checked="@_showQuotations"
                    @onchange="@(e => { _showQuotations = (bool)e.Value!; })" />
             <label class="form-check-label small" for="chk-quotation">
-                <span class="badge bg-warning text-dark me-1"><i class="bi bi-file-earmark-text"></i></span>報價單
+                <span class="badge bg-warning text-dark me-1"><i class="bi bi-file-earmark-text"></i></span>@L["Customer.Quotations"]
             </label>
         </div>
         @if (_allTransactions.Any())
         {
-            <span class="ms-auto text-muted small">共 @FilteredTransactions.Count 筆</span>
+            <span class="ms-auto text-muted small">@string.Format(L["Label.RecordCount"], FilteredTransactions.Count)</span>
         }
     </div>
 
@@ -68,9 +69,9 @@ else
                                ShowBuiltInActions="false"
                                ShowActions="true"
                                ActionsTemplate="@GetActionsTemplate"
-                               ActionsHeader="操作"
+                               ActionsHeader="@L["Label.Actions"]"
                                ActionsColumnWidth="70px"
-                               EmptyMessage="沒有相關交易紀錄" />
+                               EmptyMessage="@L["Customer.NoTransactions"]" />
 
     @* 統計摘要（基於全部資料，不受篩選影響） *@
     @if (_allTransactions.Any())
@@ -79,7 +80,7 @@ else
 
             @* 淨銷售額 - 主要指標 *@
             <div class="d-flex flex-column align-items-center justify-content-center px-3 py-2 border-end tx-net-sales-cell">
-                <span class="text-muted">淨銷售額</span>
+                <span class="text-muted">@L["Customer.NetSales"]</span>
                 <span class="fw-bold fs-5 @(NetSales >= 0 ? "text-success" : "text-danger")">
                     @NumberFormatHelper.FormatSmartTrim(NetSales, useThousandsSeparator: true)
                 </span>
@@ -87,18 +88,18 @@ else
 
             @* 出貨 *@
             <div class="d-flex flex-column justify-content-center px-3 py-2 border-end">
-                <span class="text-muted">出貨</span>
+                <span class="text-muted">@L["Customer.Delivery"]</span>
                 <span>
-                    <span class="text-success fw-semibold">@DeliveryCount 筆</span>
+                    <span class="text-success fw-semibold">@string.Format(L["Label.RecordCount"], DeliveryCount)</span>
                     <span class="text-muted ms-1">@NumberFormatHelper.FormatSmartTrim(DeliveryTotal, useThousandsSeparator: true)</span>
                 </span>
             </div>
 
             @* 退貨 *@
             <div class="d-flex flex-column justify-content-center px-3 py-2 border-end">
-                <span class="text-muted">退貨@(ReturnRate.HasValue ? $"（{ReturnRate.Value:F1}%）" : "")</span>
+                <span class="text-muted">@L["Customer.Return"]@(ReturnRate.HasValue ? $"（{ReturnRate.Value:F1}%）" : "")</span>
                 <span>
-                    <span class="text-danger fw-semibold">@ReturnCount 筆</span>
+                    <span class="text-danger fw-semibold">@string.Format(L["Label.RecordCount"], ReturnCount)</span>
                     <span class="text-muted ms-1">@NumberFormatHelper.FormatSmartTrim(ReturnTotal, useThousandsSeparator: true)</span>
                 </span>
             </div>
@@ -107,10 +108,10 @@ else
             @if (LastTxDate.HasValue)
             {
                 <div class="d-flex flex-column justify-content-center px-3 py-2 border-end">
-                    <span class="text-muted">最後交易</span>
+                    <span class="text-muted">@L["Customer.LastTransaction"]</span>
                     <span>
                         <span class="@LastTxRecencyClass fw-semibold">@LastTxDate.Value.ToString("yyyy-MM-dd")</span>
-                        <span class="text-muted ms-1">（@DaysSinceLastTx 天前）</span>
+                        <span class="text-muted ms-1">@string.Format(L["Label.DaysAgo"], DaysSinceLastTx)</span>
                     </span>
                 </div>
             }
@@ -119,7 +120,7 @@ else
             @if (ConversionRate.HasValue)
             {
                 <div class="d-flex flex-column justify-content-center px-3 py-2 border-end">
-                    <span class="text-muted">成交率</span>
+                    <span class="text-muted">@L["Customer.ConversionRate"]</span>
                     <span class="fw-semibold">@ConversionRate.Value.ToString("F0")%</span>
                 </div>
             }
@@ -128,13 +129,13 @@ else
             @if (AvgDelivery.HasValue)
             {
                 <div class="d-flex flex-column justify-content-center px-3 py-2">
-                    <span class="text-muted">平均出貨</span>
+                    <span class="text-muted">@L["Customer.AvgDelivery"]</span>
                     <span class="text-primary fw-semibold">@NumberFormatHelper.FormatSmartTrim(AvgDelivery.Value, useThousandsSeparator: true)</span>
                 </div>
             }
 
             <div class="ms-auto d-flex align-items-center pe-2">
-                <span class="text-muted">全部資料統計</span>
+                <span class="text-muted">@L["Label.AllDataStats"]</span>
             </div>
         </div>
     }
@@ -291,7 +292,7 @@ else
         {
             new()
             {
-                Title = "日期",
+                Title = L["Column.Date"],
                 PropertyName = nameof(RelatedDocumentInfo.DocumentDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px",
@@ -303,7 +304,7 @@ else
             },
             new()
             {
-                Title = "訂單類型",
+                Title = L["Column.OrderType"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "90px",
@@ -317,7 +318,7 @@ else
             },
             new()
             {
-                Title = "訂單編號",
+                Title = L["Column.OrderNumber"],
                 PropertyName = nameof(RelatedDocumentInfo.DocumentNumber),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px"
@@ -329,7 +330,7 @@ else
                 // - 銷貨訂單 (blue): 已確認承諾，但尚未出貨/收款
                 // - 出貨單 (green): 實際出貨 = 收入實現
                 // - 退貨單 (red): 退款 = 負向現金流
-                Title = "金額",
+                Title = L["Column.Amount"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
@@ -361,7 +362,7 @@ else
         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                IconClass="bi bi-pencil-square text-white"
                                Size="ButtonSize.Large"
-                               Title="開啟編輯"
+                               Title="@L["Button.OpenEdit"]"
                                OnClick="() => NavigationManager.NavigateTo(GetDocumentEditUrl(item))"
                                StopPropagation="true"
                                CssClass="btn-square" />

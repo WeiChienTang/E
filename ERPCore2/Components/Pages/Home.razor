@@ -12,10 +12,11 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>@(primaryCompany?.CompanyName ?? "ERP系統") - 系統首頁</PageTitle>
+<PageTitle>@(primaryCompany?.CompanyName ?? L["Home.SystemName"].ToString()) - @L["Home.PageTitle"]</PageTitle>
 
 @* 從 MainLayout 接收 Action 處理器 *@
 @code {
@@ -29,9 +30,9 @@
     {
         <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">載入中...</span>
+                <span class="visually-hidden">@L["Label.Loading"]</span>
             </div>
-            <p class="text-muted mt-2">載入首頁配置中...</p>
+            <p class="text-muted mt-2">@L["Home.LoadingConfig"]</p>
         </div>
     }
     else
@@ -50,7 +51,7 @@
                         {
                             <span class="panel-icon-edit me-2" 
                                   @onclick="@(() => OpenIconPicker(panel.Id, panel.IconClass))"
-                                  title="點擊更換圖示">
+                                  title="@L["Home.ClickToChangeIcon"]">
                                 <i class="@(panel.IconClass ?? "bi bi-grid-fill")"></i>
                                 <i class="bi bi-pencil-fill icon-edit-badge"></i>
                             </span>
@@ -78,14 +79,14 @@
                         {
                             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                                     Size="ButtonSize.Small"
-                                                    Text="完成"
+                                                    Text="@L["Home.Done"]"
                                                     OnClick="@(() => FinishEditPanel())" />
                             @if (panels.Count > 1)
                             {
                                 <GenericButtonComponent Variant="ButtonVariant.Red"
                                                         Size="ButtonSize.Small"
-                                                        Text="刪除"
-                                                        Title="刪除此區塊"
+                                                        Text="@L["Button.Delete"]"
+                                                        Title="@L["Home.DeleteThisPanelTooltip"]"
                                                         CssClass="ms-1"
                                                         OnClick="@(() => HandleDeletePanel(panel))" />
                             }
@@ -94,8 +95,8 @@
                         {
                             <GenericButtonComponent Variant="ButtonVariant.Green"
                                                     Size="ButtonSize.Small"
-                                                    Text="編輯"
-                                                    Title="編輯此區塊"
+                                                    Text="@L["Button.Edit"]"
+                                                    Title="@L["Home.EditThisPanelTooltip"]"
                                                     OnClick="@(() => StartEditPanel(panel.Id))" />
                         }
                     </div>
@@ -130,7 +131,7 @@
                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4">
                                 <div class="add-shortcut-card" @onclick="@(() => OpenWidgetPicker(panel.Id))">
                                     <i class="bi bi-plus-circle"></i>
-                                    <span>新增項目</span>
+                                    <span>@L["Home.AddItem"]</span>
                                 </div>
                             </div>
                         }
@@ -140,12 +141,12 @@
                 {
                     <div class="text-center py-4">
                         <i class="bi bi-grid-1x2 text-muted" style="font-size: 2.5rem;"></i>
-                        <p class="text-muted mt-3 mb-2">此區塊尚無項目</p>
+                        <p class="text-muted mt-3 mb-2">@L["Home.NoPanelItems"]</p>
                         @if (isEditMode)
                         {
                             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                                     Size="ButtonSize.Small"
-                                                    Text="新增項目"
+                                                    Text="@L["Home.AddItem"]"
                                                     OnClick="@(() => OpenWidgetPicker(panel.Id))" />
                         }
                     </div>
@@ -159,13 +160,13 @@
             {
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                         Size="ButtonSize.Normal"
-                                        Text="新增區塊"
+                                        Text="@L["Home.AddPanel"]"
                                         OnClick="@HandleCreatePanel" />
             }
             <GenericButtonComponent Variant="ButtonVariant.Orange"
                                     Size="ButtonSize.Normal"
-                                    Text="恢復預設"
-                                    Title="將首頁恢復為系統預設配置"
+                                    Text="@L["Home.RestoreDefault"]"
+                                    Title="@L["Home.RestoreDefaultTooltip"]"
                                     CssClass="ms-2"
                                     OnClick="@HandleResetAllToDefault" />
         </div>
@@ -175,15 +176,15 @@
         {
             <div class="text-center py-5">
                 <i class="bi bi-grid text-muted" style="font-size: 4rem;"></i>
-                <p class="text-muted mt-3 mb-3">尚未設定任何區塊</p>
+                <p class="text-muted mt-3 mb-3">@L["Home.NoPanels"]</p>
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                         Size="ButtonSize.Normal"
                                         IconClass="bi bi-plus-lg"
-                                        Text="建立第一個區塊"
+                                        Text="@L["Home.CreateFirstPanel"]"
                                         OnClick="@HandleCreatePanel" />
                 <GenericButtonComponent Variant="ButtonVariant.Orange"
                                         Size="ButtonSize.Normal"
-                                        Text="恢復預設"
+                                        Text="@L["Home.RestoreDefault"]"
                                         CssClass="ms-2"
                                         OnClick="@HandleResetAllToDefault" />
             </div>
@@ -204,49 +205,49 @@
 @* 重置確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showResetConfirm"
                              IsVisibleChanged="@((bool v) => showResetConfirm = v)"
-                             Title="恢復預設配置"
+                             Title="@L["Home.ConfirmRestoreTitle"]"
                              Icon="bi-arrow-counterclockwise"
-                             Message="確定要將首頁恢復為預設配置嗎？所有自訂區塊將被清除，並重新建立預設的「頁面捷徑」與「快速功能」區塊。"
-                             ConfirmButtonText="確定恢復"
+                             Message="@L["Home.ConfirmRestoreMessage"]"
+                             ConfirmButtonText="@L["Home.ConfirmRestoreButton"]"
                              HeaderColor="BaseModalComponent.HeaderVariant.Warning"
                              OnConfirm="@ConfirmResetAllToDefault" />
 
 @* 刪除區塊確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showDeletePanelConfirm"
                              IsVisibleChanged="@((bool v) => showDeletePanelConfirm = v)"
-                             Title="刪除區塊"
+                             Title="@L["Home.DeletePanelTitle"]"
                              Icon="bi-trash"
                              Message="@deleteConfirmMessage"
-                             ConfirmButtonText="確定"
+                             ConfirmButtonText="@L["Button.Confirm"]"
                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
                              OnConfirm="@ConfirmDeletePanel" />
 
 @* 新增區塊 Modal *@
 <BaseModalComponent IsVisible="@showCreatePanelModal"
                     IsVisibleChanged="@((bool v) => showCreatePanelModal = v)"
-                    Title="新增區塊"
+                    Title="@L["Home.CreatePanelTitle"]"
                     Size="BaseModalComponent.ModalSize.Small"
                     HeaderColor="BaseModalComponent.HeaderVariant.Primary"
                     UseWhiteCloseButton="true">
     <HeaderButtons>
         <GenericButtonComponent Variant="ButtonVariant.Blue"
-                               Text="建立"
+                               Text="@L["Home.Create"]"
                                OnClick="@ConfirmCreatePanel"
                                IsDisabled="@string.IsNullOrWhiteSpace(newPanelTitle)" />
         <GenericButtonComponent Variant="ButtonVariant.Red"
-                               Text="取消"
+                               Text="@L["Button.Cancel"]"
                                OnClick="@CancelCreatePanel" />
     </HeaderButtons>
     <BodyContent>
         <div class="mb-3">
-            <label class="form-label">區塊標題</label>
+            <label class="form-label">@L["Home.PanelTitleLabel"]</label>
             <input type="text"
                    class="form-control"
-                   placeholder="請輸入區塊標題"
+                   placeholder="@L["Home.PanelTitlePlaceholder"]"
                    maxlength="@DashboardDefaults.MaxPanelTitleLength"
                    @bind="newPanelTitle"
                    @bind:event="oninput" />
-            <div class="form-text">最多 @DashboardDefaults.MaxPanelTitleLength 字</div>
+            <div class="form-text">@string.Format(L["Home.MaxCharsHint"], DashboardDefaults.MaxPanelTitleLength)</div>
         </div>
     </BodyContent>
 </BaseModalComponent>
@@ -260,11 +261,11 @@
 @* ==================== 公司設定確認 Modal ==================== *@
 <GenericConfirmModalComponent IsVisible="@showCompanySetupConfirm"
                              IsVisibleChanged="@((bool v) => showCompanySetupConfirm = v)"
-                             Title="設定公司資料"
+                             Title="@L["Home.CompanySetupTitle"]"
                              Icon="bi-building"
-                             Message="系統尚未設定公司資料，是否立即設定？"
-                             ConfirmButtonText="立即設定"
-                             CancelButtonText="稍後設定"
+                             Message="@L["Home.CompanySetupMessage"]"
+                             ConfirmButtonText="@L["Home.CompanySetupNow"]"
+                             CancelButtonText="@L["Home.CompanySetupLater"]"
                              HeaderColor="BaseModalComponent.HeaderVariant.Primary"
                              OnConfirm="@OpenCompanySetupModal" />
 
@@ -377,7 +378,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDashboardAsync), GetType());
-            await NotificationService.ShowErrorAsync("載入首頁配置失敗");
+            await NotificationService.ShowErrorAsync(L["Message.LoadHomeFailed"]);
         }
     }
 
@@ -429,7 +430,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePanelTitleChange), GetType());
-            await NotificationService.ShowErrorAsync("更新標題失敗");
+            await NotificationService.ShowErrorAsync(L["Message.UpdateTitleFailed"]);
         }
     }
 
@@ -460,7 +461,7 @@
                 {
                     panel.Panel.IconClass = iconClass;
                 }
-                await NotificationService.ShowSuccessAsync("圖示已更新");
+                await NotificationService.ShowSuccessAsync(L["Message.IconUpdated"]);
             }
             else
             {
@@ -470,7 +471,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleIconSelected), GetType());
-            await NotificationService.ShowErrorAsync("更新圖示失敗");
+            await NotificationService.ShowErrorAsync(L["Message.UpdateIconFailed"]);
         }
         finally
         {
@@ -496,7 +497,7 @@
     {
         if (string.IsNullOrWhiteSpace(newPanelTitle))
         {
-            await NotificationService.ShowWarningAsync("請輸入區塊標題");
+            await NotificationService.ShowWarningAsync(L["Warning.EnterPanelTitle"]);
             return;
         }
 
@@ -509,7 +510,7 @@
                 editingPanelId = result.Data.Panel.Id; // 自動進入編輯模式
                 showCreatePanelModal = false;
                 newPanelTitle = "";
-                await NotificationService.ShowSuccessAsync("區塊已建立");
+                await NotificationService.ShowSuccessAsync(L["Message.PanelCreated"]);
             }
             else
             {
@@ -519,7 +520,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmCreatePanel), GetType());
-            await NotificationService.ShowErrorAsync("建立區塊失敗");
+            await NotificationService.ShowErrorAsync(L["Message.CreatePanelFailed"]);
         }
     }
 
@@ -528,7 +529,7 @@
     private void HandleDeletePanel(EmployeeDashboardPanel panel)
     {
         deletePanelId = panel.Id;
-        deleteConfirmMessage = $"確定要刪除「{panel.Title}」區塊嗎？區塊內的所有項目將一併刪除。";
+        deleteConfirmMessage = string.Format(L["Home.DeletePanelMessage"], panel.Title);
         showDeletePanelConfirm = true;
     }
 
@@ -541,7 +542,7 @@
             {
                 panels.RemoveAll(p => p.Panel.Id == deletePanelId);
                 editingPanelId = null;
-                await NotificationService.ShowSuccessAsync("區塊已刪除");
+                await NotificationService.ShowSuccessAsync(L["Message.PanelDeleted"]);
             }
             else
             {
@@ -551,7 +552,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmDeletePanel), GetType());
-            await NotificationService.ShowErrorAsync("刪除區塊失敗");
+            await NotificationService.ShowErrorAsync(L["Message.DeletePanelFailed"]);
         }
     }
 
@@ -576,7 +577,7 @@
             if (result.IsSuccess)
             {
                 editingPanelId = null; // 退出編輯模式
-                await NotificationService.ShowSuccessAsync("已恢復為預設配置");
+                await NotificationService.ShowSuccessAsync(L["Message.RestoredToDefault"]);
                 await LoadDashboardAsync();
             }
             else
@@ -587,7 +588,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmResetAllToDefault), GetType());
-            await NotificationService.ShowErrorAsync("恢復預設配置失敗");
+            await NotificationService.ShowErrorAsync(L["Message.RestoreDefaultFailed"]);
         }
     }
 
@@ -624,7 +625,7 @@
         catch (Exception ex)
         {
             _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleWidgetClick), GetType());
-            _ = NotificationService.ShowErrorAsync("開啟功能失敗");
+            _ = NotificationService.ShowErrorAsync(L["Message.OpenFunctionFailed"]);
         }
     }
 
@@ -654,7 +655,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OpenWidgetPicker), GetType());
-            await NotificationService.ShowErrorAsync("載入可用項目失敗");
+            await NotificationService.ShowErrorAsync(L["Message.LoadAvailableItemsFailed"]);
         }
     }
 
@@ -666,7 +667,7 @@
 
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync("項目已新增");
+                await NotificationService.ShowSuccessAsync(L["Message.ItemAdded"]);
                 await LoadDashboardAsync();
             }
             else
@@ -677,7 +678,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleAddWidgets), GetType());
-            await NotificationService.ShowErrorAsync("新增項目失敗");
+            await NotificationService.ShowErrorAsync(L["Message.AddItemFailed"]);
         }
     }
 
@@ -692,7 +693,7 @@
             if (result.IsSuccess)
             {
                 panelWithItems.Items.Remove(configWithNav);
-                await NotificationService.ShowSuccessAsync("已移除");
+                await NotificationService.ShowSuccessAsync(L["Message.ItemRemoved"]);
             }
             else
             {
@@ -702,7 +703,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleRemoveWidget), GetType());
-            await NotificationService.ShowErrorAsync("移除失敗");
+            await NotificationService.ShowErrorAsync(L["Message.RemoveFailed"]);
         }
     }
 
@@ -748,7 +749,7 @@
                 if (!result.IsSuccess)
                 {
                     await LoadDashboardAsync();
-                    await NotificationService.ShowErrorAsync("排序更新失敗");
+                    await NotificationService.ShowErrorAsync(L["Message.SortUpdateFailed"]);
                 }
             }
         }
@@ -789,13 +790,13 @@
             primaryCompany.IsDefault = true;
 
             showCompanyEditModal = false;
-            await NotificationService.ShowSuccessAsync("公司設定完成");
+            await NotificationService.ShowSuccessAsync(L["Message.CompanySetupComplete"]);
             StateHasChanged();
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCompanySetupComplete), GetType());
-            await NotificationService.ShowErrorAsync("設定公司時發生錯誤");
+            await NotificationService.ShowErrorAsync(L["Message.CompanySetupFailed"]);
         }
     }
 

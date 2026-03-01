@@ -5,9 +5,11 @@
 @using ERPCore2.Models
 @using ERPCore2.Services
 @using Microsoft.JSInterop
+@using Microsoft.Extensions.Localization
 @typeparam TEntity where TEntity : class
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -18,7 +20,7 @@
                    CloseOnBackdropClick="true"
                    OnClose="@HandleClose"
                    IsLoading="@isLoading"
-                   LoadingMessage="正在載入待審核資料...">
+                   LoadingMessage="@L["Purchase.LoadingPending"].ToString()">
     
     <HeaderButtons>
         @* 左側：選取資訊 *@
@@ -27,7 +29,7 @@
                 @if (pendingItems.Any())
                 {
                     <small>
-                        已選取 <strong class="text-primary">@selectedItems.Count</strong> / @pendingItems.Count 筆
+                        @((MarkupString)string.Format(L["Purchase.SelectedCount"].ToString(), $"<strong class='text-primary'>{selectedItems.Count}</strong>", pendingItems.Count))
                     </small>
                 }
             </div>
@@ -35,18 +37,18 @@
             @* 右側：按鈕組 *@
             <div class="d-flex gap-2 ms-auto">
                 @* 全選/取消全選按鈕 *@
-                <GenericButtonComponent Variant="ButtonVariant.Gray" 
-                                      Text="@(selectedItems.Count == pendingItems.Count ? "取消全選" : "全選")" 
+                <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                      Text="@(selectedItems.Count == pendingItems.Count ? L["Purchase.DeselectAll"].ToString() : L["Purchase.SelectAll"].ToString())"
                                       OnClick="HandleToggleSelectAll"
                                       IsDisabled="@(!pendingItems.Any() || isLoading)"
-                                      Title="@(selectedItems.Count == pendingItems.Count ? "取消選取所有項目" : "選取所有項目")" />
+                                      Title="@(selectedItems.Count == pendingItems.Count ? L["Purchase.DeselectAllTooltip"].ToString() : L["Purchase.SelectAllTooltip"].ToString())" />
                 
                 @* 審核按鈕 - 只審核已選取的項目 *@
-                <GenericButtonComponent Variant="ButtonVariant.Green" 
-                                      Text="審核" 
+                <GenericButtonComponent Variant="ButtonVariant.Green"
+                                      Text="@L["Purchase.ApproveSelected"].ToString()"
                                       OnClick="HandleApproveSelected"
                                       IsDisabled="@(!selectedItems.Any() || isLoading)"
-                                      Title="@($"審核已選取的 {selectedItems.Count} 筆單據")" />
+                                      Title="@string.Format(L["Purchase.ApproveSelectedTooltip"].ToString(), selectedItems.Count)" />
             </div>
         </div>
     </HeaderButtons>
@@ -55,7 +57,7 @@
         @if (!pendingItems.Any() && !isLoading)
         {
             <div class="alert alert-success mb-0">
-                太棒了！目前沒有待審核的項目。
+                @L["Purchase.NoPendingItems"]
             </div>
         }
         else if (pendingItems.Any())
@@ -70,10 +72,10 @@
     </BodyContent>
     
     <FooterContent>
-        <GenericButtonComponent Variant="ButtonVariant.Red" 
-                              Text="關閉" 
+        <GenericButtonComponent Variant="ButtonVariant.Red"
+                              Text="@L["Button.Close"].ToString()"
                               OnClick="HandleClose"
-                              Title="關閉視窗" />
+                              Title="@L["Button.Close"].ToString()" />
     </FooterContent>
     
 </BaseModalComponent>
@@ -169,7 +171,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入待審核{EntityName}失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Purchase.LoadPendingFailed"].ToString(), EntityName, ex.Message));
         }
         finally
         {
@@ -224,7 +226,7 @@
         {
             if (!selectedItems.Any())
             {
-                await NotificationService.ShowWarningAsync("請先選取要審核的項目");
+                await NotificationService.ShowWarningAsync(L["Purchase.SelectItemsFirst"].ToString());
                 return;
             }
 
@@ -237,11 +239,11 @@
 
                 if (failCount == 0)
                 {
-                    await NotificationService.ShowSuccessAsync($"審核完成！成功審核 {successCount} 筆{EntityName}");
+                    await NotificationService.ShowSuccessAsync(string.Format(L["Purchase.ApproveSuccessAll"].ToString(), successCount, EntityName));
                 }
                 else
                 {
-                    await NotificationService.ShowWarningAsync($"審核完成！成功 {successCount} 筆，失敗 {failCount} 筆");
+                    await NotificationService.ShowWarningAsync(string.Format(L["Purchase.ApproveSuccessPartial"].ToString(), successCount, failCount));
                 }
 
                 // 清空選取
@@ -259,7 +261,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"審核所選項目時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Purchase.ApproveError"].ToString(), ex.Message));
         }
         finally
         {
