@@ -1,4 +1,4 @@
-@page "/documents"
+﻿@page "/documents"
 @inject IDocumentService DocumentService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -19,7 +19,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.Document"]"
                         GetEntityDisplayName="@(d => d.Title)"
-                        RequiredPermission="Document.Read"
+                        RequiredPermission="@PermissionRegistry.Document.Read"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>

@@ -1,4 +1,4 @@
-@* 可重用的商品編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的商品編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Helpers
 @using ERPCore2.Models
 @using ERPCore2.Services.Reports.Interfaces
@@ -44,7 +44,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(ProductId.HasValue ? L["Message.UpdateSuccess", L["Entity.Product"]].ToString() : L["Message.CreateSuccess", L["Entity.Product"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Product"]]"
-                          RequiredPermission="Product.Read"
+                          RequiredPermission="@PermissionRegistry.Product.Read"
                           OnEntitySaved="@OnProductSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"

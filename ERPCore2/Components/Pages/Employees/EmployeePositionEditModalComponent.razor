@@ -1,4 +1,4 @@
-@* 可重用的職位編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的職位編輯組件 - 可在任何頁面中嵌入 *@
 @inject IEmployeePositionService EmployeePositionService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(EmployeePositionId.HasValue ? L["Message.UpdateSuccess", L["Entity.EmployeePosition"]].ToString() : L["Message.CreateSuccess", L["Entity.EmployeePosition"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeePosition"]]"
-                          RequiredPermission="EmployeePosition.Read"
+                          RequiredPermission="@PermissionRegistry.EmployeePosition.Read"
                           OnEntitySaved="@OnEmployeePositionSaved"
                           OnCancel="@OnCancel" />
 

@@ -2,25 +2,26 @@
 @using ERPCore2.Services
 @inject IPaperSettingService PaperSettingService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@IsVisibleChanged"
-                    Title="選取紙張格式"
+                    Title="@L["Paper.SelectTitle"]"
                     Icon="bi bi-file-earmark"
                     Size="BaseModalComponent.ModalSize.Desktop"
                     HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                     IsLoading="@isLoading"
-                    LoadingMessage="正在載入紙張設定..."
+                    LoadingMessage="@L["Paper.LoadingMessage"]"
                     BodyCssClass="p-4"
                     OnClose="@HandleCancelClick">
     
     <HeaderButtons>
-        <GenericButtonComponent Text="確定"
+        <GenericButtonComponent Text="@L["Button.Confirm"]"
                                 Icon="bi bi-check-lg"
                                 Variant="ButtonVariant.DarkBlue"
                                 OnClick="@HandleConfirm"
                                 IsDisabled="@(selectedPaper == null)" />
-        <GenericButtonComponent Text="取消"
+        <GenericButtonComponent Text="@L["Button.Cancel"]"
                                 Icon="bi bi-x-lg"
                                 Variant="ButtonVariant.Red"
                                 OnClick="@HandleCancelClick" />
@@ -31,14 +32,14 @@
         {
             <div class="alert alert-info mb-0">
                 <i class="bi bi-info-circle me-2"></i>
-                目前沒有已設定的紙張格式，請手動輸入紙張尺寸。
+                @L["Paper.NoPaperSettings"]
             </div>
         }
         else if (paperSettings.Any())
         {
             <div class="alert alert-info py-2 mb-2">
                 <i class="bi bi-info-circle me-1"></i>
-                所有尺寸單位均為「公分 (cm)」
+                @L["Paper.UnitHint"]
             </div>
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
@@ -105,63 +106,63 @@
         {
             new()
             {
-                Title = "編號",
+                Title = L["Column.Code"].ToString(),
                 PropertyName = nameof(PaperSetting.Code),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px"
             },
             new()
             {
-                Title = "名稱",
+                Title = L["Column.Name"].ToString(),
                 PropertyName = nameof(PaperSetting.Name),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px"
             },
             new()
             {
-                Title = "寬度",
+                Title = L["Column.Width"].ToString(),
                 PropertyName = nameof(PaperSetting.Width),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "50px"
             },
             new()
             {
-                Title = "高度",
+                Title = L["Column.Height"].ToString(),
                 PropertyName = nameof(PaperSetting.Height),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "50px"
             },
             new()
             {
-                Title = "上邊界",
+                Title = L["Column.TopMargin"].ToString(),
                 PropertyName = nameof(PaperSetting.TopMargin),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "50px"
             },
             new()
             {
-                Title = "下邊界",
+                Title = L["Column.BottomMargin"].ToString(),
                 PropertyName = nameof(PaperSetting.BottomMargin),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "50px"
             },
             new()
             {
-                Title = "左邊界",
+                Title = L["Column.LeftMargin"].ToString(),
                 PropertyName = nameof(PaperSetting.LeftMargin),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "50px"
             },
             new()
             {
-                Title = "右邊界",
+                Title = L["Column.RightMargin"].ToString(),
                 PropertyName = nameof(PaperSetting.RightMargin),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "50px"
             },
             new()
             {
-                Title = "備註",
+                Title = L["Label.Remarks"].ToString(),
                 PropertyName = nameof(PaperSetting.Remarks),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "250px"
@@ -194,7 +195,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPaperSettingsAsync), GetType());
-            await NotificationService.ShowErrorAsync("載入紙張設定失敗");
+            await NotificationService.ShowErrorAsync(L["Paper.LoadFailed"].ToString());
             paperSettings = new List<PaperSetting>();
         }
         finally

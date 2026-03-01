@@ -1,4 +1,4 @@
-@page "/departments"
+﻿@page "/departments"
 @inject IDepartmentService DepartmentService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -18,7 +18,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.Department"]"
                         GetEntityDisplayName="@(dept => dept.Name)"
-                        RequiredPermission="Department.Read"
+                        RequiredPermission="@PermissionRegistry.Department.Read"
                         RequiredModule="Employees"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

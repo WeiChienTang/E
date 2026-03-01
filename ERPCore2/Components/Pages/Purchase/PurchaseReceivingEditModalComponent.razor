@@ -1,4 +1,4 @@
-@* 進貨編輯模態組件 *@
+﻿@* 進貨編輯模態組件 *@
 @using ERPCore2.Helpers
 @using ERPCore2.Services.Reports
 @using ERPCore2.Services.Reports.Interfaces
@@ -50,7 +50,7 @@
                           AfterSave="@SavePurchaseReceivingDetailsAsync"
                           SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseReceiving"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseReceiving"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseReceiving"]]"
-                          RequiredPermission="PurchaseReceiving.Read"
+                          RequiredPermission="@PermissionRegistry.PurchaseReceiving.Read"
                           OnEntitySaved="@OnPurchaseReceivingSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"

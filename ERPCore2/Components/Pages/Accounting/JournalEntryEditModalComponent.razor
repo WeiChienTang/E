@@ -1,4 +1,4 @@
-@* 傳票編輯組件 - 使用 GenericEditModalComponent 統一架構 *@
+﻿@* 傳票編輯組件 - 使用 GenericEditModalComponent 統一架構 *@
 
 @using ERPCore2.Helpers
 @using ERPCore2.Helpers.EditModal
@@ -28,7 +28,7 @@
                           SaveHandler="@SaveJournalEntryWrapper"
                           SaveSuccessMessage="@(JournalEntryId.HasValue ? L["Message.UpdateSuccess", L["Entity.JournalEntry"]].ToString() : L["Message.CreateSuccess", L["Entity.JournalEntry"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.JournalEntry"]]"
-                          RequiredPermission="JournalEntry.Read"
+                          RequiredPermission="@PermissionRegistry.JournalEntry.Read"
                           OnEntitySaved="@OnJournalEntrySaved"
                           OnCancel="@OnCancel"
                           ShowAddButton="false"

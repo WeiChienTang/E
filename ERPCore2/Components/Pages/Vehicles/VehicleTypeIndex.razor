@@ -1,4 +1,4 @@
-@page "/vehicle-types"
+﻿@page "/vehicle-types"
 @inject IVehicleTypeService VehicleTypeService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -17,7 +17,7 @@
                           DataLoader="@LoadVehicleTypesAsync"
                           FilterApplier="@ApplyVehicleTypeFilters"
                           GetEntityDisplayName="@(vt => vt.Name)"
-                          RequiredPermission="VehicleType.Read"
+                          RequiredPermission="@PermissionRegistry.VehicleType.Read"
                           RequiredModule="Vehicles"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using ERPCore2.Models;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 
@@ -98,11 +99,11 @@ namespace ERPCore2.Services
             var routePermissionMap = new Dictionary<string, string[]>
             {
                 // 系統管理頁面 - 需要高權限
-                { "/permissions", new[] { "System.Admin" } },
-                { "/roles", new[] { "System.Admin" } },
-                { "/error-logs", new[] { "System.Admin" } },
-                { "/role-permission-management", new[] { "System.Admin" } },
-                
+                { "/permissions",               new[] { PermissionRegistry.System.Admin } },
+                { "/roles",                     new[] { PermissionRegistry.System.Admin } },
+                { "/error-logs",                new[] { PermissionRegistry.System.Admin } },
+                { "/role-permission-management",new[] { PermissionRegistry.System.Admin } },
+
                 // 可以加入其他需要中間件層級保護的特殊頁面
                 // 一般的 CRUD 頁面建議使用 PagePermissionCheck 處理
             };

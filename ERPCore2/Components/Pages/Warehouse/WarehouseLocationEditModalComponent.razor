@@ -1,4 +1,4 @@
-@* 可重用的倉庫內位置編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的倉庫內位置編輯組件 - 可在任何頁面中嵌入 *@
 @inject IWarehouseLocationService WarehouseLocationService
 @inject IWarehouseService WarehouseService
 @inject INotificationService NotificationService
@@ -27,7 +27,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(WarehouseLocationId.HasValue ? L["Message.UpdateSuccess", L["Entity.WarehouseLocation"]].ToString() : L["Message.CreateSuccess", L["Entity.WarehouseLocation"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WarehouseLocation"]]"
-                          RequiredPermission="WarehouseLocation.Read"
+                          RequiredPermission="@PermissionRegistry.WarehouseLocation.Read"
                           OnEntitySaved="@OnWarehouseLocationSaved"
                           OnCancel="@OnCancel" />
 

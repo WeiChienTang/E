@@ -1,4 +1,4 @@
-@* 員工受訓紀錄編輯組件 - 用於教育訓練 Tab 中 *@
+﻿@* 員工受訓紀錄編輯組件 - 用於教育訓練 Tab 中 *@
 @inject IEmployeeTrainingRecordService EmployeeTrainingRecordService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -20,7 +20,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(EmployeeTrainingRecordId.HasValue ? L["Message.UpdateSuccess", L["Entity.EmployeeTrainingRecord"]].ToString() : L["Message.CreateSuccess", L["Entity.EmployeeTrainingRecord"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeeTrainingRecord"]]"
-                          RequiredPermission="Employee.Read"
+                          RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnEntitySaved="@OnEmployeeTrainingRecordSaved"
                           OnCancel="@OnCancel" />
 

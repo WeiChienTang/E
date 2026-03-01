@@ -1,4 +1,4 @@
-@* 可重用的員工工具配給紀錄編輯組件 - 用於員工 EditModal 的 Tab 頁籤中 *@
+﻿@* 可重用的員工工具配給紀錄編輯組件 - 用於員工 EditModal 的 Tab 頁籤中 *@
 @inject IEmployeeToolService EmployeeToolService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -20,7 +20,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(EmployeeToolId.HasValue ? L["Message.UpdateSuccess", L["Entity.EmployeeTool"]].ToString() : L["Message.CreateSuccess", L["Entity.EmployeeTool"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeeTool"]]"
-                          RequiredPermission="Employee.Read"
+                          RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnEntitySaved="@OnEmployeeToolSaved"
                           OnCancel="@OnCancel" />
 

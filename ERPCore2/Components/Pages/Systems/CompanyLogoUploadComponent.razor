@@ -1,13 +1,14 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject IWebHostEnvironment Environment
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <div class="logo-upload-container">
     @* 目前的 Logo 顯示 *@
     @if (!string.IsNullOrEmpty(CurrentLogoPath))
     {
         <div class="current-logo-preview mb-3">
-            <h6 class="text-muted mb-2">目前的 Logo:</h6>
+            <h6 class="text-muted mb-2">@L["Company.CurrentLogo"]</h6>
             <div class="text-center p-3 bg-light rounded">
                 <img src="@CurrentLogoPath" alt="Current Logo" class="img-thumbnail" style="max-width: 200px; max-height: 100px;" />
             </div>
@@ -16,13 +17,13 @@
     
     @* 檔案選擇器 *@
     <div class="mb-3">
-        <label class="form-label fw-bold">選擇新的 Logo 圖片</label>
+        <label class="form-label fw-bold">@L["Company.SelectNewLogo"]</label>
         <InputFile OnChange="HandleFileSelected" 
                    accept=".jpg,.jpeg,.png,.gif,.svg" 
                    class="form-control" />
         <div class="form-text">
             <i class="bi bi-info-circle"></i> 
-            支援格式: JPG, PNG, GIF, SVG | 檔案大小限制: 500KB | 建議尺寸: 200x80px ~ 400x160px
+            @L["Company.LogoFormatHint"]
         </div>
     </div>
     
@@ -31,15 +32,15 @@
     {
         <div class="preview-section">
             <h6 class="text-muted mb-2">
-                <i class="bi bi-eye"></i> 預覽:
+                <i class="bi bi-eye"></i> @L["Company.LogoPreview"]
             </h6>
             <div class="preview-container p-3 bg-light rounded text-center">
                 <img src="@PreviewImageUrl" alt="Preview" class="img-thumbnail" style="max-width: 300px; max-height: 150px;" />
                 <div class="mt-2 text-muted small">
                     @if (SelectedFile != null)
                     {
-                        <div>檔案名稱: @SelectedFile.Name</div>
-                        <div>檔案大小: @FileUploadHelper.GetFileSizeString(SelectedFile.Size)</div>
+                        <div>@L["Company.LogoFileName"] @SelectedFile.Name</div>
+                        <div>@L["Company.LogoFileSize"] @FileUploadHelper.GetFileSizeString(SelectedFile.Size)</div>
                     }
                 </div>
             </div>
@@ -51,9 +52,9 @@
     {
         <div class="text-center mt-3">
             <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">上傳中...</span>
+                <span class="visually-hidden">@L["Label.Uploading"]</span>
             </div>
-            <div class="mt-2 text-muted">上傳中，請稍候...</div>
+            <div class="mt-2 text-muted">@L["Label.Uploading"]</div>
         </div>
     }
 </div>
@@ -99,15 +100,15 @@
             
             if (string.IsNullOrEmpty(PreviewImageUrl))
             {
-                await NotificationService.ShowErrorAsync("無法產生預覽圖片，請檢查檔案格式和大小");
+                await NotificationService.ShowErrorAsync(L["Message.PreviewFailed"].ToString());
                 SelectedFile = null;
             }
-            
+
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"選擇檔案時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.FileSelectError"].ToString(), ex.Message));
             SelectedFile = null;
             PreviewImageUrl = null;
         }
@@ -121,7 +122,7 @@
     {
         if (SelectedFile == null)
         {
-            await NotificationService.ShowWarningAsync("請先選擇要上傳的檔案");
+            await NotificationService.ShowWarningAsync(L["Message.NoFileSelected"].ToString());
             return null;
         }
 
@@ -161,7 +162,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"上傳失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.UploadFailed"].ToString(), ex.Message));
             return null;
         }
         finally

@@ -1,4 +1,4 @@
-@* 可重用的貨幣編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的貨幣編輯組件 - 可在任何頁面中嵌入 *@
 @inject ICurrencyService CurrencyService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(CurrencyId.HasValue ? L["Message.UpdateSuccess", L["Entity.Currency"]].ToString() : L["Message.CreateSuccess", L["Entity.Currency"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Currency"]]"
-                          RequiredPermission="Currency.Read"
+                          RequiredPermission="@PermissionRegistry.Currency.Read"
                           OnEntitySaved="@OnCurrencySaved"
                           OnCancel="@OnCancel" />
 

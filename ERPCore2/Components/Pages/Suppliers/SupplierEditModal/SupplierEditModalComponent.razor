@@ -1,4 +1,4 @@
-@* 可重用的廠商編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的廠商編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
 @inject ISupplierService SupplierService
@@ -34,7 +34,7 @@
                           DataLoader="@LoadSupplierData"
                           SaveHandler="@SaveSupplier"
                           OnSaveSuccess="@OnSaveSuccess"
-                          RequiredPermission="Supplier.Read"
+                          RequiredPermission="@PermissionRegistry.Supplier.Read"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"

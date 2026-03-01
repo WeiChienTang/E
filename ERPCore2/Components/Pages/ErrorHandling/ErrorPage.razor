@@ -1,4 +1,4 @@
-@page "/Error"
+﻿@page "/Error"
 @page "/Error/{errorId}"
 @attribute [Authorize]
 @inject IErrorLogService ErrorLogService
@@ -9,7 +9,7 @@
 
 <PageTitle>@L["Error.PageTitle"]</PageTitle>
 
-<PagePermissionCheck RequiredPermission="System.Admin">
+<PagePermissionCheck RequiredPermission="@PermissionRegistry.System.Admin">
     <div class="error-page">
         <div class="error-container">
             <div class="error-content">

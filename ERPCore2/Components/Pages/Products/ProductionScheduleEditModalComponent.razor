@@ -1,4 +1,4 @@
-@* 可重用的生產排程編輯組件 - 雙表格設計（左側明細、右側排程項目）*@
+﻿@* 可重用的生產排程編輯組件 - 雙表格設計（左側明細、右側排程項目）*@
 @using ERPCore2.Components.Shared.UI.Button
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Models.Enums
@@ -41,7 +41,7 @@
                           CustomDeleteHandler="@DeleteProductionScheduleAsync"
                           SaveSuccessMessage="@(ProductionScheduleId.HasValue ? L["Message.UpdateSuccess", L["Entity.ProductionSchedule"]].ToString() : L["Message.CreateSuccess", L["Entity.ProductionSchedule"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductionSchedule"]]"
-                          RequiredPermission="ProductionSchedule.Read"
+                          RequiredPermission="@PermissionRegistry.ProductionSchedule.Read"
                           OnEntitySaved="@OnProductionScheduleSaved"
                           OnCancel="@HandleCancel"
                           OnEntityLoaded="@HandleEntityLoaded"

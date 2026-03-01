@@ -1,4 +1,4 @@
-@* 可重用的客戶編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的客戶編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
 @using ERPCore2.Models.Enums
@@ -37,7 +37,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(CustomerId.HasValue ? L["Message.UpdateSuccess", L["Entity.Customer"]].ToString() : L["Message.CreateSuccess", L["Entity.Customer"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Customer"]]"
-                          RequiredPermission="Customer.Read"
+                          RequiredPermission="@PermissionRegistry.Customer.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"

@@ -1,4 +1,4 @@
-@* 可重用的廢料類型編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的廢料類型編輯組件 - 可在任何頁面中嵌入 *@
 @inject IWasteTypeService WasteTypeService
 @inject IProductService ProductService
 @inject INotificationService NotificationService
@@ -27,7 +27,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(WasteTypeId.HasValue ? L["Message.UpdateSuccess", L["Entity.WasteType"]].ToString() : L["Message.CreateSuccess", L["Entity.WasteType"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WasteType"]]"
-                          RequiredPermission="WasteType.Read"
+                          RequiredPermission="@PermissionRegistry.WasteType.Read"
                           OnEntitySaved="@OnWasteTypeSaved"
                           OnCancel="@OnCancel" />
 

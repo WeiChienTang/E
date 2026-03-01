@@ -1,4 +1,4 @@
-@page "/products"
+﻿@page "/products"
 @using ERPCore2.Models
 @using ERPCore2.Models.Reports
 @inject IProductService ProductService
@@ -20,7 +20,7 @@
                           DataLoader="@LoadProductsAsync"
                           FilterApplier="@ApplyProductFilters"
                           GetEntityDisplayName="@(product => product.Name)"
-                          RequiredPermission="Product.Read"
+                          RequiredPermission="@PermissionRegistry.Product.Read"
                           RequiredModule="Products"
                           ShowBarcodePrintButton="true"
                           OnBarcodePrintClick="@HandleBarcodePrintClick"

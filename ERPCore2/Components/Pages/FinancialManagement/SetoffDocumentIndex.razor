@@ -1,4 +1,4 @@
-@page "/accountsReceivableSetoff"
+﻿@page "/accountsReceivableSetoff"
 @page "/accountsPayableSetoff"  
 @inject ISetoffDocumentService SetoffDocumentService
 @inject ICompanyService CompanyService
@@ -19,7 +19,7 @@
                       DataLoader="@LoadSetoffDocumentsAsync"
                       FilterApplier="@ApplySetoffDocumentFilters"
                       GetEntityDisplayName="@(setoffDoc => setoffDoc.Code)"
-                      RequiredPermission="SetoffDocument.Read"
+                      RequiredPermission="@PermissionRegistry.SetoffDocument.Read"
                       RequiredModule="FinancialManagement"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"

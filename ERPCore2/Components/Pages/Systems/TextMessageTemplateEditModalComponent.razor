@@ -1,4 +1,4 @@
-@* 可重用的文字訊息範本編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的文字訊息範本編輯組件 - 可在任何頁面中嵌入 *@
 @using System.Text.Json
 @inject ITextMessageTemplateService TextMessageTemplateService
 @inject INotificationService NotificationService
@@ -26,7 +26,7 @@
                           ShowAddButton="false"
                           ShowRefreshButton="false"
                           EnableNavigation="false"
-                          RequiredPermission="SystemParameter.Read"
+                          RequiredPermission="@PermissionRegistry.SystemParameter.Read"
                           OnEntitySaved="@OnTemplateSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"

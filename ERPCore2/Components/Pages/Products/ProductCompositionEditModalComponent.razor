@@ -1,4 +1,4 @@
-@* 可重用的商品合成編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的商品合成編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
 @inject IProductCompositionService ProductCompositionService
@@ -37,7 +37,7 @@
                           SaveHandler="@SaveCompositionWithDetails"
                           SaveSuccessMessage="@(CompositionId.HasValue ? L["Message.UpdateSuccess", L["Entity.ProductComposition"]].ToString() : L["Message.CreateSuccess", L["Entity.ProductComposition"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductComposition"]]"
-                          RequiredPermission="ProductComposition.Read"
+                          RequiredPermission="@PermissionRegistry.ProductComposition.Read"
                           OnEntitySaved="@OnCompositionSaved"
                           OnCancel="@OnCancel"
 ShowPrintButton="true"

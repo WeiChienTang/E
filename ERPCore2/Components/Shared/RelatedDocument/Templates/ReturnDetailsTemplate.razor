@@ -1,6 +1,7 @@
 @* 退貨單詳細欄位範本 - 單行行內顯示 *@
 @using ERPCore2.Models
 @using ERPCore2.Helpers
+@inject IStringLocalizer<SharedResource> L
 
 <span class="text-muted">
     <i class="bi bi-calendar3 me-1"></i>@Document.DocumentDate.ToString("yyyy-MM-dd")
@@ -8,7 +9,7 @@
 @if (Document.Quantity.HasValue)
 {
     <span class="text-muted">
-        <i class="bi bi-box-seam me-1"></i>退貨: @NumberFormatHelper.FormatSmart(Document.Quantity.Value)
+        <i class="bi bi-box-seam me-1"></i>@L["RelatedDoc.ReturnQty"] @NumberFormatHelper.FormatSmart(Document.Quantity.Value)
     </span>
 }
 @if (!string.IsNullOrEmpty(Document.Remarks))

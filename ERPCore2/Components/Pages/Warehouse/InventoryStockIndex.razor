@@ -1,4 +1,4 @@
-@page "/inventoryStocks"
+﻿@page "/inventoryStocks"
 @inject IInventoryStockService InventoryStockService
 @inject IProductService ProductService
 @inject IProductCategoryService ProductCategoryService
@@ -25,7 +25,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.InventoryStock"]"
                         GetEntityDisplayName="@(stock => $"{GetProductName(stock.ProductId)}")"
-                        RequiredPermission="InventoryStock.Read"
+                        RequiredPermission="@PermissionRegistry.InventoryStock.Read"
                         RequiredModule="Warehouse"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

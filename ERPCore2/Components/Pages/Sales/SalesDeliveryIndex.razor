@@ -1,4 +1,4 @@
-@page "/salesDeliveries"
+﻿@page "/salesDeliveries"
 @using ERPCore2.Models.Reports
 @inject ISalesDeliveryService SalesDeliveryService
 @inject ICustomerService CustomerService
@@ -23,7 +23,7 @@
                           DataLoader="@LoadSalesDeliveriesAsync"
                           FilterApplier="@ApplySalesDeliveryFilters"
                           GetEntityDisplayName="@(delivery => delivery.Code)"
-                          RequiredPermission="SalesDelivery.Read"
+                          RequiredPermission="@PermissionRegistry.SalesDelivery.Read"
                           RequiredModule="Sales"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"

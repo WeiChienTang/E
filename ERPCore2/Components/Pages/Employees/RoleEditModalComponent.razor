@@ -1,4 +1,4 @@
-@* 可重用的權限組編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的權限組編輯組件 - 可在任何頁面中嵌入 *@
 @inject IRoleService RoleService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(RoleId.HasValue ? L["Message.UpdateSuccess", L["Entity.Role"]].ToString() : L["Message.CreateSuccess", L["Entity.Role"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Role"]]"
-                          RequiredPermission="Role.Read"
+                          RequiredPermission="@PermissionRegistry.Role.Read"
                           OnEntitySaved="@OnRoleSaved"
                           OnCancel="@OnCancel" />
 

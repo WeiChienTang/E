@@ -1,4 +1,4 @@
-@page "/quotations"
+﻿@page "/quotations"
 @using ERPCore2.Models.Reports
 @inject IQuotationService QuotationService
 @inject ICustomerService CustomerService
@@ -22,7 +22,7 @@
                       DataLoader="@LoadQuotationsAsync"
                       FilterApplier="@ApplyQuotationFilters"
                       GetEntityDisplayName="@(quotation => quotation.Code)"
-                      RequiredPermission="Quotation.Read"
+                      RequiredPermission="@PermissionRegistry.Quotation.Read"
                       RequiredModule="Sales"
                       ShowBatchPrintButton="true"
                       OnBatchPrintClick="@HandleBatchPrintAsync"

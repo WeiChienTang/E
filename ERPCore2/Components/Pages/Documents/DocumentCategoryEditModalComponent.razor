@@ -1,4 +1,4 @@
-@* 檔案分類編輯組件 *@
+﻿@* 檔案分類編輯組件 *@
 @inject IDocumentCategoryService DocumentCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(DocumentCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.DocumentCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.DocumentCategory"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.DocumentCategory"]]"
-                          RequiredPermission="Document.Manage"
+                          RequiredPermission="@PermissionRegistry.Document.Manage"
                           OnEntitySaved="@OnDocumentCategorySaved"
                           OnCancel="@OnCancel" />
 

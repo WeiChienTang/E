@@ -1,4 +1,4 @@
-@page "/customer-visits"
+﻿@page "/customer-visits"
 @inject ICustomerVisitService CustomerVisitService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -17,7 +17,7 @@
                           DataLoader="@LoadVisitsAsync"
                           FilterApplier="@ApplyVisitFilters"
                           GetEntityDisplayName="@(v => $"{v.Customer?.CompanyName} - {v.VisitDate:yyyy/MM/dd}")"
-                          RequiredPermission="Customer.Read"
+                          RequiredPermission="@PermissionRegistry.Customer.Read"
                           RequiredModule="Customers"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

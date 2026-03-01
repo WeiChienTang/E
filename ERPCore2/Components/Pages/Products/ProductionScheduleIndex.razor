@@ -1,4 +1,4 @@
-@page "/production-schedules"
+﻿@page "/production-schedules"
 @inject IProductionScheduleService ProductionScheduleService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
@@ -21,7 +21,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.ProductionSchedule"]"
                         GetEntityDisplayName="@(schedule => schedule.Code)"
-                        RequiredPermission="ProductionSchedule.Read"
+                        RequiredPermission="@PermissionRegistry.ProductionSchedule.Read"
                         RequiredModule="ProductionManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

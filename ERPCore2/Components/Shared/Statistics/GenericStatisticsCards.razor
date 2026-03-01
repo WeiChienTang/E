@@ -1,4 +1,5 @@
 @* 通用統計卡片套裝組件 - 緊湊 Badge 模式 *@
+@inject IStringLocalizer<SharedResource> L
 
 <div class="statistics-compact-container">
     <div class="statistics-compact-row">
@@ -8,7 +9,7 @@
             var isClickable = cardConfig.OnClick.HasDelegate;
             <span class="statistics-badge badge-@cardConfig.BorderColor @(isClickable ? "clickable" : "")"
                   @onclick="@(() => HandleBadgeClick(cardConfig))"
-                  title="@(isClickable ? "點擊查看詳情" : "")">
+                  title="@(isClickable ? L["Stats.ClickForDetail"].ToString() : "")">
                 <span class="badge-title">@cardConfig.Title</span>
                 <span class="badge-value">
                     @if (cardConfig.IsCurrency)

@@ -1,4 +1,4 @@
-@* 可重用的付款方式編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的付款方式編輯組件 - 可在任何頁面中嵌入 *@
 @inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(PaymentMethodId.HasValue ? L["Message.UpdateSuccess", L["Entity.PaymentMethod"]].ToString() : L["Message.CreateSuccess", L["Entity.PaymentMethod"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PaymentMethod"]]"
-                          RequiredPermission="PaymentMethod.Read"
+                          RequiredPermission="@PermissionRegistry.PaymentMethod.Read"
                           OnEntitySaved="@OnPaymentMethodSaved"
                           OnCancel="@OnCancel" />
 

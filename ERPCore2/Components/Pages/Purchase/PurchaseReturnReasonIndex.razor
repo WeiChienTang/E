@@ -1,4 +1,4 @@
-@page "/purchase/returnReasons"
+﻿@page "/purchase/returnReasons"
 @inject IPurchaseReturnReasonService PurchaseReturnReasonService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -19,7 +19,7 @@
                           DataLoader="@LoadPurchaseReturnReasonsAsync"
                           FilterApplier="@ApplyPurchaseReturnReasonFilters"
                           GetEntityDisplayName="@(reason => reason.Name)"
-                          RequiredPermission="PurchaseReturnReason.Read"
+                          RequiredPermission="@PermissionRegistry.PurchaseReturnReason.Read"
                           RequiredModule="Purchase"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

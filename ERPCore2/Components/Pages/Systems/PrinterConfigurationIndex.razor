@@ -1,4 +1,4 @@
-@page "/printerCconfigurations"
+﻿@page "/printerCconfigurations"
 @rendermode InteractiveServer
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject INotificationService NotificationService
@@ -17,7 +17,7 @@
                       DataLoader="@LoadPrinterConfigurationsAsync"
                       FilterApplier="@ApplyPrinterConfigurationFilters"
                       GetEntityDisplayName="@(printer => printer.Name)"
-                      RequiredPermission="PrinterConfiguration.Read"
+                      RequiredPermission="@PermissionRegistry.PrinterConfiguration.Read"
                       RequiredModule="Systems"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"

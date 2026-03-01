@@ -1,4 +1,4 @@
-@page "/purchase/orders"
+﻿@page "/purchase/orders"
 @using ERPCore2.Models.Reports
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
@@ -22,7 +22,7 @@
                           DataLoader="@LoadPurchaseOrdersAsync"
                           FilterApplier="@ApplyPurchaseOrderFilters"
                           GetEntityDisplayName="@(order => order.Code)"
-                          RequiredPermission="PurchaseOrder.Read"
+                          RequiredPermission="@PermissionRegistry.PurchaseOrder.Read"
                           RequiredModule="Purchase"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"

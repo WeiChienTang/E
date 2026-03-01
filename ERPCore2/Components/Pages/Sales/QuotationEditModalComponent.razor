@@ -1,4 +1,4 @@
-@using ERPCore2.Services.Reports.Interfaces
+﻿@using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
 @inject IQuotationService QuotationService
 @inject IQuotationDetailService QuotationDetailService
@@ -44,7 +44,7 @@
                           SaveHandler="@SaveQuotationWithDetails"
                           SaveSuccessMessage="@(QuotationId.HasValue ? L["Message.UpdateSuccess", L["Entity.Quotation"]].ToString() : L["Message.CreateSuccess", L["Entity.Quotation"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Quotation"]]"
-                          RequiredPermission="Quotation.Read"
+                          RequiredPermission="@PermissionRegistry.Quotation.Read"
                           OnEntitySaved="@OnQuotationSaved"
                           OnCancel="@OnCancel"
                           OnTaxMethodChanged="@(() => HandleQuotationDetailsChanged(quotationDetails))"

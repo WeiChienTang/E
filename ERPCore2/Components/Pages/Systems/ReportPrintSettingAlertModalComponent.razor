@@ -10,6 +10,7 @@
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject IPaperSettingService PaperSettingService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -18,7 +19,7 @@
                    Size="BaseModalComponent.ModalSize.Desktop"
                    HeaderColor="BaseModalComponent.HeaderVariant.Warning"
                    IsLoading="@isLoading"
-                   LoadingMessage="正在載入未設定的報表..."
+                   LoadingMessage="@L["Report.LoadingUnconfigured"]"
                    BodyCssClass="p-4"
                    OnClose="@HandleCancel">
     
@@ -29,14 +30,14 @@
             {
                 <div class="text-muted small me-2" style="font-size: 0.875rem;">
                     <i class="bi bi-info-circle me-1"></i>
-                    共 @reportConfigs.Count 筆
+                    @string.Format(L["Report.TotalCount"].ToString(), reportConfigs.Count)
                 </div>
-                
+
                 @* 批次填入輸入區 *@
                 <div class="input-group input-group-sm" style="width: 200px;">
-                    <span class="input-group-text">印表機</span>
+                    <span class="input-group-text">@L["Report.PrinterInputLabel"]</span>
                     <select class="form-select form-select-sm" @bind="batchPrinterId">
-                        <option value="">-- 選擇 --</option>
+                        <option value="">@L["Report.SelectPlaceholder"]</option>
                         @foreach (var printer in printers)
                         {
                             <option value="@printer.Id">@printer.Name</option>
@@ -44,9 +45,9 @@
                     </select>
                 </div>
                 <div class="input-group input-group-sm" style="width: 200px;">
-                    <span class="input-group-text">紙張</span>
+                    <span class="input-group-text">@L["Report.PaperInputLabel"]</span>
                     <select class="form-select form-select-sm" @bind="batchPaperId">
-                        <option value="">-- 選擇 --</option>
+                        <option value="">@L["Report.SelectPlaceholder"]</option>
                         @foreach (var paper in papers)
                         {
                             <option value="@paper.Id">@paper.Name</option>
@@ -55,20 +56,20 @@
                 </div>
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                       Size="ButtonSize.Small"
-                                      Text="批次填入"
+                                      Text="@L["Report.BatchFill"]"
                                       OnClick="ApplyBatchFill"
-                                      Title="批次設定所有報表的印表機和紙張" />
+                                      Title="@L["Report.BatchFillTitle"]" />
                 <GenericButtonComponent Variant="ButtonVariant.Green"
                                       Size="ButtonSize.Small"
-                                      Text="儲存"
+                                      Text="@L["Button.Save"]"
                                       OnClick="HandleSave"
                                       IsDisabled="@(!reportConfigs.Any())"
-                                      Title="儲存設定" />
+                                      Title="@L["Button.Save"]" />
                 <GenericButtonComponent Variant="ButtonVariant.Red"
                                       Size="ButtonSize.Small"
-                                      Text="清空"
+                                      Text="@L["Button.Clear"]"
                                       OnClick="HandleClearAll"
-                                      Title="清空所有已設定的印表機和紙張" />
+                                      Title="@L["Button.Clear"]" />
 
             }
         </div>
@@ -79,7 +80,7 @@
         {
             <div class="alert alert-success mb-0">
                 <i class="bi bi-check-circle me-1"></i>
-                所有報表均已設定完成，狀態為 "停用" 的報表為開發中或已下架的報表故無法設定印表機和紙張。
+                @L["Report.AllConfigured"]
             </div>
         }
         else
@@ -176,8 +177,8 @@
                 ReportName = c.ReportName,
                 PrinterConfigurationId = c.PrinterConfigurationId,
                 PaperSettingId = c.PaperSettingId,
-                CurrentPrinterName = c.PrinterConfiguration?.Name ?? "未設定",
-                CurrentPaperName = c.PaperSetting?.Name ?? "未設定"
+                CurrentPrinterName = c.PrinterConfiguration?.Name ?? L["Report.NotConfigured"].ToString(),
+                CurrentPaperName = c.PaperSetting?.Name ?? L["Report.NotConfigured"].ToString()
             }).ToList();
         }
         catch (Exception ex)
@@ -211,35 +212,35 @@
         {
             new()
             {
-                Title = "報表識別碼",
+                Title = L["Column.ReportId"].ToString(),
                 PropertyName = nameof(ReportPrintSettingItem.ReportId),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px"
             },
             new()
-            {                
-                Title = "報表名稱",
+            {
+                Title = L["Column.ReportName"].ToString(),
                 PropertyName = nameof(ReportPrintSettingItem.ReportName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "200px"
             },
             new()
             {
-                Title = "印表機",
+                Title = L["Report.PrinterInputLabel"].ToString(),
                 PropertyName = nameof(ReportPrintSettingItem.PrinterConfigurationId),
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
                 Options = printerOptions,
-                Placeholder = "請選擇印表機"
+                Placeholder = L["Placeholder.SelectPrinter"].ToString()
             },
             new()
             {
-                Title = "紙張",
+                Title = L["Report.PaperInputLabel"].ToString(),
                 PropertyName = nameof(ReportPrintSettingItem.PaperSettingId),
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
                 Options = paperOptions,
-                Placeholder = "請選擇紙張"
+                Placeholder = L["Placeholder.SelectPaper"].ToString()
             }
         };
     }
@@ -255,18 +256,18 @@
         {
             if (!reportConfigs.Any())
             {
-                await NotificationService.ShowWarningAsync("沒有需要儲存的資料");
+                await NotificationService.ShowWarningAsync(L["Report.NoDataToSave"].ToString());
                 return;
             }
 
             // 檢查是否有任何變更
-            var hasChanges = reportConfigs.Any(c => 
+            var hasChanges = reportConfigs.Any(c =>
                 (c.PrinterConfigurationId.HasValue && c.PrinterConfigurationId.Value > 0) ||
                 (c.PaperSettingId.HasValue && c.PaperSettingId.Value > 0));
 
             if (!hasChanges)
             {
-                await NotificationService.ShowWarningAsync("請至少設定一個印表機或紙張");
+                await NotificationService.ShowWarningAsync(L["Report.NeedAtLeastOne"].ToString());
                 return;
             }
 
@@ -289,7 +290,7 @@
 
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync($"成功更新 {updates.Count} 筆報表列印配置");
+                await NotificationService.ShowSuccessAsync(string.Format(L["Report.UpdateSuccess"].ToString(), updates.Count));
                 
                 // 清空資料並關閉 Modal
                 reportConfigs.Clear();
@@ -335,7 +336,7 @@
             // 驗證輸入
             if (!batchPrinterId.HasValue && !batchPaperId.HasValue)
             {
-                await NotificationService.ShowWarningAsync("請至少選擇印表機或紙張");
+                await NotificationService.ShowWarningAsync(L["Report.NeedChoicePrinterPaper"].ToString());
                 return;
             }
 
@@ -357,7 +358,7 @@
             batchPrinterId = null;
             batchPaperId = null;
             
-            await NotificationService.ShowSuccessAsync($"已批次填入 {reportConfigs.Count} 筆設定");
+            await NotificationService.ShowSuccessAsync(string.Format(L["Report.BatchFillSuccess"].ToString(), reportConfigs.Count));
             StateHasChanged();
         }
         catch (Exception ex)
@@ -380,7 +381,7 @@
                 item.PaperSettingId = null;
             }
 
-            await NotificationService.ShowSuccessAsync("已清空所有設定");
+            await NotificationService.ShowSuccessAsync(L["Report.ClearAllDone"].ToString());
             StateHasChanged();
         }
         catch (Exception ex)

@@ -1,4 +1,4 @@
-@page "/salesReturnReasons"
+﻿@page "/salesReturnReasons"
 @inject ISalesReturnReasonService SalesReturnReasonService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -19,7 +19,7 @@
                           DataLoader="@LoadSalesReturnReasonsAsync"
                           FilterApplier="@ApplySalesReturnReasonFilters"
                           GetEntityDisplayName="@(reason => reason.Name)"
-                          RequiredPermission="SalesReturnReason.Read"
+                          RequiredPermission="@PermissionRegistry.SalesReturnReason.Read"
                           RequiredModule="Sales"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

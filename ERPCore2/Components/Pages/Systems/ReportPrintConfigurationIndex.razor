@@ -1,4 +1,4 @@
-@page "/reportPrintConfigurations"
+﻿@page "/reportPrintConfigurations"
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -19,7 +19,7 @@
                       DataLoader="@LoadReportPrintConfigurationsAsync"
                       FilterApplier="@ApplyReportPrintConfigurationFilters"
                       GetEntityDisplayName="@(config => config.ReportName)"
-                      RequiredPermission="ReportPrintConfiguration.Read"
+                      RequiredPermission="@PermissionRegistry.ReportPrintConfiguration.Read"
                       RequiredModule="Systems"
                       ShowAddButton="false"
                       ShowDeleteButton="false"

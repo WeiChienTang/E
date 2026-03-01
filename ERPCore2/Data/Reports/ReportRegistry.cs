@@ -25,7 +25,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.CustomerStatementDesc",
                 IconClass = "bi bi-file-earmark-ruled",
                 Category = ReportCategory.Customer,
-                RequiredPermission = "Customer.Read",
+                RequiredPermission = PermissionRegistry.Customer.Read,
                 ActionId = "OpenCustomerStatementReport",
                 SortOrder = 2,
                 IsEnabled = true
@@ -39,7 +39,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.CustomerSalesAnalysisDesc",
                 IconClass = "bi bi-graph-up",
                 Category = ReportCategory.Customer,
-                RequiredPermission = "Customer.Read",
+                RequiredPermission = PermissionRegistry.Customer.Read,
                 ActionId = "OpenCustomerSalesAnalysisReport",
                 SortOrder = 3,
                 IsEnabled = true
@@ -53,7 +53,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.CustomerTransactionDesc",
                 IconClass = "bi bi-list-check",
                 Category = ReportCategory.Customer,
-                RequiredPermission = "Customer.Read",
+                RequiredPermission = PermissionRegistry.Customer.Read,
                 ActionId = "OpenCustomerTransactionReport",
                 SortOrder = 4,
                 IsEnabled = true
@@ -68,7 +68,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.CustomerRosterDesc",
                 IconClass = "bi bi-person-vcard",
                 Category = ReportCategory.Customer,
-                RequiredPermission = "Customer.Read",
+                RequiredPermission = PermissionRegistry.Customer.Read,
                 ActionId = "OpenCustomerRosterReport",
                 SortOrder = 5,
                 IsEnabled = true
@@ -82,7 +82,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.CustomerDetailDesc",
                 IconClass = "bi bi-person-vcard-fill",
                 Category = ReportCategory.Customer,
-                RequiredPermission = "Customer.Read",
+                RequiredPermission = PermissionRegistry.Customer.Read,
                 ActionId = "OpenCustomerDetailReport",
                 SortOrder = 6,
                 IsEnabled = true
@@ -96,7 +96,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.CustomerVisitReportDesc",
                 IconClass = "bi bi-journal-check",
                 Category = ReportCategory.Customer,
-                RequiredPermission = "Customer.Read",
+                RequiredPermission = PermissionRegistry.Customer.Read,
                 ActionId = "OpenCustomerVisitReport",
                 SortOrder = 7,
                 IsEnabled = true
@@ -112,7 +112,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.SupplierStatementDesc",
                 IconClass = "bi bi-file-earmark-ruled",
                 Category = ReportCategory.Supplier,
-                RequiredPermission = "Supplier.Read",
+                RequiredPermission = PermissionRegistry.Supplier.Read,
                 ActionId = "OpenSupplierStatementReport",
                 SortOrder = 2,
                 IsEnabled = true
@@ -126,7 +126,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.SupplierPurchaseAnalysisDesc",
                 IconClass = "bi bi-graph-up",
                 Category = ReportCategory.Supplier,
-                RequiredPermission = "Supplier.Read",
+                RequiredPermission = PermissionRegistry.Supplier.Read,
                 ActionId = "OpenSupplierPurchaseAnalysisReport",
                 SortOrder = 3,
                 IsEnabled = false  // 尚未實作
@@ -140,7 +140,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.SupplierRosterDesc",
                 IconClass = "bi bi-building",
                 Category = ReportCategory.Supplier,
-                RequiredPermission = "Supplier.Read",
+                RequiredPermission = PermissionRegistry.Supplier.Read,
                 ActionId = "OpenSupplierRosterReport",
                 SortOrder = 4,
                 IsEnabled = true
@@ -154,7 +154,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.SupplierDetailDesc",
                 IconClass = "bi bi-building-fill",
                 Category = ReportCategory.Supplier,
-                RequiredPermission = "Supplier.Read",
+                RequiredPermission = PermissionRegistry.Supplier.Read,
                 ActionId = "OpenSupplierDetailReport",
                 SortOrder = 5,
                 IsEnabled = true
@@ -170,7 +170,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.PurchaseOrderDesc",
                 IconClass = "bi bi-cart-plus",
                 Category = ReportCategory.Purchase,
-                RequiredPermission = "PurchaseOrder.Read",
+                RequiredPermission = PermissionRegistry.PurchaseOrder.Read,
                 ActionId = "PrintPurchaseOrder",
                 SortOrder = 1,
                 IsEnabled = true
@@ -184,7 +184,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.PurchaseReceivingDesc",
                 IconClass = "bi bi-box-seam",
                 Category = ReportCategory.Purchase,
-                RequiredPermission = "PurchaseReceiving.Read",
+                RequiredPermission = PermissionRegistry.PurchaseReceiving.Read,
                 ActionId = "PrintPurchaseReceiving",
                 SortOrder = 2,
                 IsEnabled = true
@@ -198,7 +198,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.PurchaseReturnDesc",
                 IconClass = "bi bi-arrow-return-left",
                 Category = ReportCategory.Purchase,
-                RequiredPermission = "PurchaseReturn.Read",
+                RequiredPermission = PermissionRegistry.PurchaseReturn.Read,
                 ActionId = "PrintPurchaseReturn",
                 SortOrder = 3,
                 IsEnabled = true
@@ -214,7 +214,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.QuotationDesc",
                 IconClass = "bi bi-file-earmark-text",
                 Category = ReportCategory.Sales,
-                RequiredPermission = "Quotation.Read",
+                RequiredPermission = PermissionRegistry.Quotation.Read,
                 ActionId = "PrintQuotation",
                 SortOrder = 1,
                 IsEnabled = true
@@ -228,7 +228,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.SalesOrderDesc",
                 IconClass = "bi bi-receipt",
                 Category = ReportCategory.Sales,
-                RequiredPermission = "SalesOrder.Read",
+                RequiredPermission = PermissionRegistry.SalesOrder.Read,
                 ActionId = "PrintSalesOrder",
                 SortOrder = 2,
                 IsEnabled = true
@@ -242,7 +242,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.SalesDeliveryDesc",
                 IconClass = "bi bi-truck",
                 Category = ReportCategory.Sales,
-                RequiredPermission = "SalesDelivery.Read",
+                RequiredPermission = PermissionRegistry.SalesDelivery.Read,
                 ActionId = "PrintSalesDelivery",
                 SortOrder = 3,
                 IsEnabled = true
@@ -256,7 +256,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.SalesReturnDesc",
                 IconClass = "bi bi-arrow-return-right",
                 Category = ReportCategory.Sales,
-                RequiredPermission = "SalesReturn.Read",
+                RequiredPermission = PermissionRegistry.SalesReturn.Read,
                 ActionId = "PrintSalesReturn",
                 SortOrder = 4,
                 IsEnabled = true
@@ -272,7 +272,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.ProductListDesc",
                 IconClass = "bi bi-box-seam",
                 Category = ReportCategory.Product,
-                RequiredPermission = "Product.Read",
+                RequiredPermission = PermissionRegistry.Product.Read,
                 ActionId = "PrintProductList",
                 SortOrder = 1,
                 IsEnabled = true
@@ -286,7 +286,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.ProductDetailDesc",
                 IconClass = "bi bi-box-fill",
                 Category = ReportCategory.Product,
-                RequiredPermission = "Product.Read",
+                RequiredPermission = PermissionRegistry.Product.Read,
                 ActionId = "OpenProductDetailReport",
                 SortOrder = 2,
                 IsEnabled = true
@@ -300,7 +300,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.ProductBarcodeDesc",
                 IconClass = "bi bi-upc-scan",
                 Category = ReportCategory.Product,
-                RequiredPermission = "Product.Read",
+                RequiredPermission = PermissionRegistry.Product.Read,
                 ActionId = "PrintProductBarcode",
                 SortOrder = 3,
                 IsEnabled = true
@@ -314,7 +314,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.BOMReportDesc",
                 IconClass = "bi bi-diagram-3",
                 Category = ReportCategory.Product,
-                RequiredPermission = "ProductComposition.Read",
+                RequiredPermission = PermissionRegistry.ProductComposition.Read,
                 ActionId = "OpenBOMReport",
                 SortOrder = 4,
                 IsEnabled = true
@@ -328,7 +328,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.ProductionScheduleDesc",
                 IconClass = "bi bi-calendar-check",
                 Category = ReportCategory.Product,
-                RequiredPermission = "ProductionSchedule.Read",
+                RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
                 ActionId = "OpenProductionScheduleReport",
                 SortOrder = 5,
                 IsEnabled = true
@@ -345,7 +345,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.InventoryStatusDesc",
                 IconClass = "bi bi-clipboard-data",
                 Category = ReportCategory.Inventory,
-                RequiredPermission = "InventoryStock.Read",
+                RequiredPermission = PermissionRegistry.InventoryStock.Read,
                 ActionId = "OpenInventoryStatusReport",
                 SortOrder = 1,
                 IsEnabled = true
@@ -359,7 +359,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.InventoryTransactionDesc",
                 IconClass = "bi bi-arrow-left-right",
                 Category = ReportCategory.Inventory,
-                RequiredPermission = "InventoryStock.Read",
+                RequiredPermission = PermissionRegistry.InventoryStock.Read,
                 ActionId = "OpenInventoryTransactionReport",
                 SortOrder = 2,
                 IsEnabled = false  // 尚未實作
@@ -373,7 +373,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.InventoryCountDesc",
                 IconClass = "bi bi-card-checklist",
                 Category = ReportCategory.Inventory,
-                RequiredPermission = "StockTaking.Read",
+                RequiredPermission = PermissionRegistry.StockTaking.Read,
                 ActionId = "OpenInventoryCountReport",
                 SortOrder = 3,
                 IsEnabled = true
@@ -389,7 +389,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.VehicleListDesc",
                 IconClass = "bi bi-truck-front-fill",
                 Category = ReportCategory.Vehicle,
-                RequiredPermission = "Vehicle.Read",
+                RequiredPermission = PermissionRegistry.Vehicle.Read,
                 ActionId = "OpenVehicleListReport",
                 SortOrder = 1,
                 IsEnabled = true
@@ -403,7 +403,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.VehicleMaintenanceDesc",
                 IconClass = "bi bi-wrench-adjustable",
                 Category = ReportCategory.Vehicle,
-                RequiredPermission = "VehicleMaintenance.Read",
+                RequiredPermission = PermissionRegistry.VehicleMaintenance.Read,
                 ActionId = "OpenVehicleMaintenanceReport",
                 SortOrder = 2,
                 IsEnabled = true
@@ -419,7 +419,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.EmployeeRosterDesc",
                 IconClass = "bi bi-person-lines-fill",
                 Category = ReportCategory.HR,
-                RequiredPermission = "Employee.Read",
+                RequiredPermission = PermissionRegistry.Employee.Read,
                 ActionId = "OpenEmployeeRosterReport",
                 SortOrder = 1,
                 IsEnabled = true
@@ -433,7 +433,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.EmployeeDetailDesc",
                 IconClass = "bi bi-person-vcard-fill",
                 Category = ReportCategory.HR,
-                RequiredPermission = "Employee.Read",
+                RequiredPermission = PermissionRegistry.Employee.Read,
                 ActionId = "OpenEmployeeDetailReport",
                 SortOrder = 2,
                 IsEnabled = true
@@ -449,7 +449,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.WasteRecordDesc",
                 IconClass = "bi bi-recycle",
                 Category = ReportCategory.Waste,
-                RequiredPermission = "WasteRecord.Read",
+                RequiredPermission = PermissionRegistry.WasteRecord.Read,
                 ActionId = "OpenWasteRecordReport",
                 SortOrder = 1,
                 IsEnabled = true
@@ -465,7 +465,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.AccountsReceivableSetoffDesc",
                 IconClass = "bi bi-receipt-cutoff",
                 Category = ReportCategory.Financial,
-                RequiredPermission = "SetoffDocument.Read",
+                RequiredPermission = PermissionRegistry.SetoffDocument.Read,
                 ActionId = "PrintAccountsReceivableSetoff",
                 SortOrder = 1,
                 IsEnabled = true
@@ -479,7 +479,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.AccountsPayableSetoffDesc",
                 IconClass = "bi bi-receipt-cutoff",
                 Category = ReportCategory.Financial,
-                RequiredPermission = "SetoffDocument.Read",
+                RequiredPermission = PermissionRegistry.SetoffDocument.Read,
                 ActionId = "PrintAccountsPayableSetoff",
                 SortOrder = 2,
                 IsEnabled = true
@@ -494,7 +494,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.AccountItemListDesc",
                 IconClass = "bi bi-list-columns",
                 Category = ReportCategory.Accounting,
-                RequiredPermission = "AccountItem.Read",
+                RequiredPermission = PermissionRegistry.AccountItem.Read,
                 ActionId = "OpenAccountItemListReport",
                 SortOrder = 1,
                 IsEnabled = true
@@ -508,7 +508,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.TrialBalanceDesc",
                 IconClass = "bi bi-calculator",
                 Category = ReportCategory.Accounting,
-                RequiredPermission = "JournalEntry.Read",
+                RequiredPermission = PermissionRegistry.JournalEntry.Read,
                 ActionId = "OpenTrialBalanceReport",
                 SortOrder = 2,
                 IsEnabled = true
@@ -522,7 +522,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.IncomeStatementDesc",
                 IconClass = "bi bi-graph-up",
                 Category = ReportCategory.Accounting,
-                RequiredPermission = "JournalEntry.Read",
+                RequiredPermission = PermissionRegistry.JournalEntry.Read,
                 ActionId = "OpenIncomeStatementReport",
                 SortOrder = 3,
                 IsEnabled = true
@@ -536,7 +536,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.BalanceSheetDesc",
                 IconClass = "bi bi-bank",
                 Category = ReportCategory.Accounting,
-                RequiredPermission = "JournalEntry.Read",
+                RequiredPermission = PermissionRegistry.JournalEntry.Read,
                 ActionId = "OpenBalanceSheetReport",
                 SortOrder = 4,
                 IsEnabled = true
@@ -550,7 +550,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.GeneralLedgerDesc",
                 IconClass = "bi bi-journal-text",
                 Category = ReportCategory.Accounting,
-                RequiredPermission = "JournalEntry.Read",
+                RequiredPermission = PermissionRegistry.JournalEntry.Read,
                 ActionId = "OpenGeneralLedgerReport",
                 SortOrder = 5,
                 IsEnabled = true
@@ -564,7 +564,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.SubsidiaryLedgerDesc",
                 IconClass = "bi bi-journal-bookmark",
                 Category = ReportCategory.Accounting,
-                RequiredPermission = "JournalEntry.Read",
+                RequiredPermission = PermissionRegistry.JournalEntry.Read,
                 ActionId = "OpenSubsidiaryLedgerReport",
                 SortOrder = 6,
                 IsEnabled = true
@@ -578,7 +578,7 @@ public static class ReportRegistry
                 DescriptionKey = "Report.DetailAccountBalanceDesc",
                 IconClass = "bi bi-table",
                 Category = ReportCategory.Accounting,
-                RequiredPermission = "JournalEntry.Read",
+                RequiredPermission = PermissionRegistry.JournalEntry.Read,
                 ActionId = "OpenDetailAccountBalanceReport",
                 SortOrder = 7,
                 IsEnabled = true

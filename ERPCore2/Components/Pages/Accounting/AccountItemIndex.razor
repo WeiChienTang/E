@@ -1,4 +1,4 @@
-@page "/account-items"
+﻿@page "/account-items"
 @inject IAccountItemService AccountItemService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -17,7 +17,7 @@
                           DataLoader="@LoadDataAsync"
                           FilterApplier="@ApplyFilters"
                           GetEntityDisplayName="@(a => $"{a.Code} {a.Name}")"
-                          RequiredPermission="AccountItem.Read"
+                          RequiredPermission="@PermissionRegistry.AccountItem.Read"
                           RequiredModule="Accounting"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

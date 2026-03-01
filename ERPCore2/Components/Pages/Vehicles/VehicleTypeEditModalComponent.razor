@@ -1,4 +1,4 @@
-@* 可重用的車型編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的車型編輯組件 - 可在任何頁面中嵌入 *@
 @inject IVehicleTypeService VehicleTypeService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(VehicleTypeId.HasValue ? L["Message.UpdateSuccess", L["Entity.VehicleType"]].ToString() : L["Message.CreateSuccess", L["Entity.VehicleType"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.VehicleType"]]"
-                          RequiredPermission="VehicleType.Read"
+                          RequiredPermission="@PermissionRegistry.VehicleType.Read"
                           OnEntitySaved="@OnVehicleTypeSaved"
                           OnCancel="@OnCancel" />
 

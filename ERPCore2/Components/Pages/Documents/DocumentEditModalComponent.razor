@@ -1,4 +1,4 @@
-@* 檔案存留編輯組件 *@
+﻿@* 檔案存留編輯組件 *@
 @inject IDocumentService DocumentService
 @inject IDocumentCategoryService DocumentCategoryService
 @inject INotificationService NotificationService
@@ -23,7 +23,7 @@
                           SaveHandler="@HandleSaveAsync"
                           SaveSuccessMessage="@(DocumentId.HasValue ? L["Message.UpdateSuccess", L["Entity.Document"]].ToString() : L["Message.CreateSuccess", L["Entity.Document"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Document"]]"
-                          RequiredPermission="Document.Read"
+                          RequiredPermission="@PermissionRegistry.Document.Read"
                           OnEntitySaved="@OnDocumentSaved"
                           OnCancel="@OnCancel">
     <CustomFormContent>

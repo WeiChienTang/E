@@ -1,4 +1,4 @@
-@* 可重用的物料清單類型編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的物料清單類型編輯組件 - 可在任何頁面中嵌入 *@
 @inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(CompositionCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.CompositionCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.CompositionCategory"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.CompositionCategory"]]"
-                          RequiredPermission="CompositionCategory.Read"
+                          RequiredPermission="@PermissionRegistry.CompositionCategory.Read"
                           OnEntitySaved="@OnCompositionCategorySaved"
                           OnCancel="@OnCancel" />
 

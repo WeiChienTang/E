@@ -1,4 +1,4 @@
-@page "/customers"
+﻿@page "/customers"
 @inject ICustomerService CustomerService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -17,7 +17,7 @@
                       DataLoader="@LoadCustomersAsync"
                       FilterApplier="@ApplyCustomerFilters"
                       GetEntityDisplayName="@(customer => customer.CompanyName)"
-                      RequiredPermission="Customer.Read"
+                      RequiredPermission="@PermissionRegistry.Customer.Read"
                       RequiredModule="Customers"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"

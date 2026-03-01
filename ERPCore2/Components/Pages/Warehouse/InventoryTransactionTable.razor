@@ -3,6 +3,7 @@
 @using ERPCore2.Models.Enums
 @using ERPCore2.Helpers
 @using ERPCore2.Models
+@inject IStringLocalizer<SharedResource> L
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
@@ -118,7 +119,7 @@
             // 商品編號
             new()
             {
-                Title = "商品編號",
+                Title = L["Column.ProductCode"].ToString(),
                 PropertyName = nameof(TransactionDetailItem.ProductCode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
@@ -127,7 +128,7 @@
             // 商品名稱
             new()
             {
-                Title = "商品名稱",
+                Title = L["Column.ProductName"].ToString(),
                 PropertyName = nameof(TransactionDetailItem.ProductName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "180px",
@@ -136,7 +137,7 @@
             // 倉位
             new()
             {
-                Title = "倉位",
+                Title = L["Column.StorageLocation"].ToString(),
                 PropertyName = nameof(TransactionDetailItem.WarehouseLocationName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px",
@@ -145,7 +146,7 @@
             // 數量
             new()
             {
-                Title = "數量",
+                Title = L["Column.Quantity"].ToString(),
                 PropertyName = nameof(TransactionDetailItem.Quantity),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "100px",
@@ -164,7 +165,7 @@
         {
             columns.Add(new()
             {
-                Title = "操作類型",
+                Title = L["Column.OperationType"].ToString(),
                 PropertyName = nameof(TransactionDetailItem.OperationType),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "90px",
@@ -183,7 +184,7 @@
         {
             columns.Add(new()
             {
-                Title = "異動前",
+                Title = L["Column.StockBefore"].ToString(),
                 PropertyName = nameof(TransactionDetailItem.StockBefore),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "100px",
@@ -198,7 +199,7 @@
             
             columns.Add(new()
             {
-                Title = "異動後",
+                Title = L["Column.StockAfter"].ToString(),
                 PropertyName = nameof(TransactionDetailItem.StockAfter),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "100px",
@@ -222,9 +223,9 @@
     {
         return operationType switch
         {
-            InventoryOperationTypeEnum.Initial => "首次",
-            InventoryOperationTypeEnum.Adjust => "調整",
-            InventoryOperationTypeEnum.Delete => "刪除",
+            InventoryOperationTypeEnum.Initial => L["Inventory.OperationInitial"].ToString(),
+            InventoryOperationTypeEnum.Adjust => L["Inventory.OperationAdjust"].ToString(),
+            InventoryOperationTypeEnum.Delete => L["Inventory.OperationDelete"].ToString(),
             _ => operationType.ToString()
         };
     }
@@ -252,7 +253,7 @@
         <GenericButtonComponent Variant="ButtonVariant.Blue"
                                IconClass="bi bi-clock-history text-white"
                                Size="ButtonSize.Large"
-                               Title="查看此商品的異動歷史"
+                               Title="@L["Inventory.ViewHistory"]"
                                OnClick="() => ShowProductTransactionHistory(item)"
                                StopPropagation="true"
                                CssClass="btn-square" />

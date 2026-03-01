@@ -16,24 +16,24 @@
                                   OnItemDelete="@HandleLineItemDelete"
                                   DataLoadCompleted="@_dataLoadCompleted"
                                   ShowRowNumbers="true"
-                                  EmptyMessage="尚未新增分錄行" />
+                                  EmptyMessage="@L["Journal.NoEntryLines"]" />
     </div>
     
     @* 借貸合計 *@
     <div class="card-footer">
         <div class="d-flex align-items-center gap-3 justify-content-end flex-wrap">
-            <span class="text-primary fw-semibold">借方合計：@TotalDebit.ToString("N2")</span>
-            <span class="text-success fw-semibold">貸方合計：@TotalCredit.ToString("N2")</span>
+            <span class="text-primary fw-semibold">@L["Journal.TotalDebit"]@TotalDebit.ToString("N2")</span>
+            <span class="text-success fw-semibold">@L["Journal.TotalCredit"]@TotalCredit.ToString("N2")</span>
             @if (IsBalanced)
             {
                 <span class="badge bg-success">
-                    <i class="bi bi-check-circle me-1"></i>借貸平衡
+                    <i class="bi bi-check-circle me-1"></i>@L["Journal.Balanced"]
                 </span>
             }
             else if (lineItems.Any(l => l.SelectedAccount != null))
             {
                 <span class="badge bg-danger">
-                    差額 @Math.Abs(TotalDebit - TotalCredit).ToString("N2")
+                    @L["Journal.Difference"] @Math.Abs(TotalDebit - TotalCredit).ToString("N2")
                 </span>
             }
         </div>
@@ -166,13 +166,13 @@
             // 會計科目（SearchableSelect）
             new InteractiveColumnDefinition
             {
-                Title = "會計科目",
+                Title = L["Journal.AccountItem"],
                 PropertyName = nameof(JournalEntryLineItem.AccountSearchValue),
                 EmptyCheckPropertyName = nameof(JournalEntryLineItem.SelectedAccount),
                 TriggerEmptyRowOnFilled = true,
                 ColumnType = InteractiveColumnType.SearchableSelect,
                 Width = "40%",
-                Placeholder = "請輸入科目編號或名稱",
+                Placeholder = L["Placeholder.SearchAccountCodeName"],
                 IsRequired = true,
 
                 SearchValuePropertyName = nameof(JournalEntryLineItem.AccountSearchValue),
@@ -221,15 +221,15 @@
             // 借貸方向（Select）— 使用 DirectionValue 字串屬性繞過 InteractiveTableComponent 不支援 enum 的限制
             new InteractiveColumnDefinition
             {
-                Title = "借貸",
+                Title = L["Journal.DebitCredit"],
                 PropertyName = "DirectionValue",
                 ColumnType = InteractiveColumnType.Select,
                 Width = "150px",
                 ExcludeFromEmptyCheck = true,
                 Options = new List<InteractiveSelectOption>
                 {
-                    new InteractiveSelectOption { Value = "Debit",  Text = "借（Debit）" },
-                    new InteractiveSelectOption { Value = "Credit", Text = "貸（Credit）" }
+                    new InteractiveSelectOption { Value = "Debit",  Text = L["Journal.Debit"] },
+                    new InteractiveSelectOption { Value = "Credit", Text = L["Journal.Credit"] }
                 },
                 OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async _ =>
                 {
@@ -240,7 +240,7 @@
             // 金額（Number）
             new InteractiveColumnDefinition
             {
-                Title = "金額",
+                Title = L["Column.Amount"],
                 PropertyName = nameof(JournalEntryLineItem.Amount),
                 ColumnType = InteractiveColumnType.Number,
                 Width = "150px",
@@ -255,11 +255,11 @@
             // 說明（Input）
             new InteractiveColumnDefinition
             {
-                Title = "說明",
+                Title = L["Journal.Description"],
                 PropertyName = nameof(JournalEntryLineItem.LineDescription),
                 ColumnType = InteractiveColumnType.Input,
                 ExcludeFromEmptyCheck = true,
-                Placeholder = "說明（選填）"
+                Placeholder = L["Placeholder.DescriptionOptional"]
             }
         };
     }

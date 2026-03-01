@@ -2169,4 +2169,416 @@
   <data name="Message.LoadPrepaymentTypeFailed" xml:space="preserve"><value>加载预收付类型失败：{0}</value></data>
   <data name="Message.LoadAvailablePrepaymentFailed" xml:space="preserve"><value>加载可用预收付款项失败：{0}</value></data>
 
+  <!-- ===== Company / Logo ===== -->
+  <data name="Company.CurrentLogo" xml:space="preserve"><value>当前 Logo:</value></data>
+  <data name="Company.SelectNewLogo" xml:space="preserve"><value>选择新的 Logo 图片</value></data>
+  <data name="Company.LogoFormatHint" xml:space="preserve"><value>支持格式: JPG, PNG, GIF, SVG | 文件大小限制: 500KB | 建议尺寸: 200x80px ~ 400x160px</value></data>
+  <data name="Company.LogoPreview" xml:space="preserve"><value>预览:</value></data>
+  <data name="Company.LogoFileName" xml:space="preserve"><value>文件名称:</value></data>
+  <data name="Company.LogoFileSize" xml:space="preserve"><value>文件大小:</value></data>
+  <data name="Label.Uploading" xml:space="preserve"><value>上传中，请稍候...</value></data>
+  <!-- ===== ErrorLog Detail ===== -->
+  <data name="ErrorLog.DetailTitle" xml:space="preserve"><value>错误记录详细信息</value></data>
+  <data name="ErrorLog.LoadingDetail" xml:space="preserve"><value>加载错误记录详细信息...</value></data>
+  <data name="ErrorLog.BasicInfo" xml:space="preserve"><value>基本信息</value></data>
+  <data name="ErrorLog.TechInfo" xml:space="preserve"><value>技术信息</value></data>
+  <data name="ErrorLog.ErrorMessage" xml:space="preserve"><value>错误消息</value></data>
+  <data name="ErrorLog.StackTrace" xml:space="preserve"><value>堆栈跟踪</value></data>
+  <data name="ErrorLog.InnerException" xml:space="preserve"><value>内部异常</value></data>
+  <data name="ErrorLog.AdditionalData" xml:space="preserve"><value>附加数据 (JSON)</value></data>
+  <data name="ErrorLog.ResolutionInfo" xml:space="preserve"><value>解决信息</value></data>
+  <data name="ErrorLog.NotFound" xml:space="preserve"><value>找不到指定的错误记录</value></data>
+  <data name="ErrorLog.Resolved" xml:space="preserve"><value>已解决</value></data>
+  <data name="ErrorLog.Unresolved" xml:space="preserve"><value>未解决</value></data>
+  <data name="ErrorLog.ResolvedBy" xml:space="preserve"><value>解决者:</value></data>
+  <data name="ErrorLog.ResolvedAt" xml:space="preserve"><value>解决时间:</value></data>
+  <data name="ErrorLog.ResolutionNote" xml:space="preserve"><value>解决方案:</value></data>
+  <data name="Label.ErrorId" xml:space="preserve"><value>错误ID：</value></data>
+  <data name="Label.ErrorLevel" xml:space="preserve"><value>错误等级：</value></data>
+  <data name="Label.ErrorSource" xml:space="preserve"><value>错误来源：</value></data>
+  <data name="Label.ErrorCategory" xml:space="preserve"><value>错误分类：</value></data>
+  <data name="Label.OccurredAt" xml:space="preserve"><value>发生时间：</value></data>
+  <data name="Label.ErrorStatus" xml:space="preserve"><value>状态：</value></data>
+  <data name="Label.BelongsToModule" xml:space="preserve"><value>所属模块：</value></data>
+  <data name="Label.ExceptionType" xml:space="preserve"><value>异常类型：</value></data>
+  <data name="Label.UserIdLabel" xml:space="preserve"><value>用户ID：</value></data>
+  <data name="Label.RequestPath" xml:space="preserve"><value>请求路径：</value></data>
+  <data name="Label.UserAgent" xml:space="preserve"><value>用户代理：</value></data>
+  <data name="Label.CreatedAtLabel" xml:space="preserve"><value>创建时间：</value></data>
+  <data name="Label.UpdatedAt" xml:space="preserve"><value>更新时间：</value></data>
+  <data name="Message.CopiedToClipboard" xml:space="preserve"><value>已复制到剪贴板</value></data>
+  <!-- ===== Paper Modal ===== -->
+  <data name="Paper.SelectTitle" xml:space="preserve"><value>选择纸张格式</value></data>
+  <data name="Paper.LoadingMessage" xml:space="preserve"><value>加载纸张设置中...</value></data>
+  <data name="Paper.LoadFailed" xml:space="preserve"><value>加载纸张设置失败</value></data>
+  <data name="Paper.NoPaperSettings" xml:space="preserve"><value>目前没有已设置的纸张格式，请手动输入纸张尺寸。</value></data>
+  <data name="Paper.UnitHint" xml:space="preserve"><value>所有尺寸单位均为「厘米 (cm)」</value></data>
+  <data name="Column.Width" xml:space="preserve"><value>宽度</value></data>
+  <data name="Column.Height" xml:space="preserve"><value>高度</value></data>
+  <data name="Column.TopMargin" xml:space="preserve"><value>上边距</value></data>
+  <data name="Column.BottomMargin" xml:space="preserve"><value>下边距</value></data>
+  <data name="Column.LeftMargin" xml:space="preserve"><value>左边距</value></data>
+  <data name="Column.RightMargin" xml:space="preserve"><value>右边距</value></data>
+  <!-- ===== Printer Modal ===== -->
+  <data name="Printer.QueryTitle" xml:space="preserve"><value>查询已安装打印机</value></data>
+  <data name="Printer.LoadingMessage" xml:space="preserve"><value>正在查询系统打印机...</value></data>
+  <data name="Printer.NoPrinterFound" xml:space="preserve"><value>未检测到任何已安装的打印机</value></data>
+  <data name="Column.PrinterName" xml:space="preserve"><value>打印机名称</value></data>
+  <data name="Column.PortName" xml:space="preserve"><value>端口</value></data>
+  <data name="Column.PrinterType" xml:space="preserve"><value>类型</value></data>
+  <data name="Column.SystemDefault" xml:space="preserve"><value>系统默认</value></data>
+  <data name="Label.NetworkPrinter" xml:space="preserve"><value>网络</value></data>
+  <data name="Label.LocalPrinter" xml:space="preserve"><value>本机</value></data>
+  <data name="Label.DefaultBadge" xml:space="preserve"><value>默认</value></data>
+  <!-- ===== Report Print Setting Modal ===== -->
+  <data name="Report.SetPrintConfig" xml:space="preserve"><value>设置报表打印配置</value></data>
+  <data name="Report.LoadingUnconfigured" xml:space="preserve"><value>正在加载未设置的报表...</value></data>
+  <data name="Report.AllConfigured" xml:space="preserve"><value>所有报表均已设置完成，状态为"停用"的报表为开发中或已下架，无法设置打印机和纸张。</value></data>
+  <data name="Column.ReportId" xml:space="preserve"><value>报表标识码</value></data>
+  <data name="Column.ReportName" xml:space="preserve"><value>报表名称</value></data>
+  <data name="Label.Printer" xml:space="preserve"><value>打印机</value></data>
+  <data name="Label.Paper" xml:space="preserve"><value>纸张</value></data>
+  <data name="Button.BatchFill" xml:space="preserve"><value>批量填入</value></data>
+  <data name="Placeholder.SelectPrinter" xml:space="preserve"><value>请选择打印机</value></data>
+  <data name="Placeholder.SelectPaper" xml:space="preserve"><value>请选择纸张</value></data>
+  <data name="Message.BatchFillSuccess" xml:space="preserve"><value>已批量填入 {0} 笔设置</value></data>
+  <data name="Message.AllSettingsCleared" xml:space="preserve"><value>已清空所有设置</value></data>
+  <data name="Message.NoDataToSave" xml:space="preserve"><value>没有需要保存的数据</value></data>
+  <data name="Message.SetAtLeastOne" xml:space="preserve"><value>请至少设置一个打印机或纸张</value></data>
+  <data name="Message.SelectAtLeastOnePrinterOrPaper" xml:space="preserve"><value>请至少选择打印机或纸张</value></data>
+  <data name="Message.UpdateReportConfigSuccess" xml:space="preserve"><value>成功更新 {0} 笔报表打印配置</value></data>
+  <!-- ===== Certificate Tab ===== -->
+  <data name="Certificate.Desc" xml:space="preserve"><value>提供用户下载并安装服务器证书，安装后浏览器将不再显示 HTTPS 安全警告。</value></data>
+  <data name="Certificate.Management" xml:space="preserve"><value>服务器证书管理</value></data>
+  <data name="Certificate.AlreadyExists" xml:space="preserve"><value>证书已存在。若需重新生成（例如服务器 IP 变更），请点击下方按钮。</value></data>
+  <data name="Certificate.NotExists" xml:space="preserve"><value>尚未生成证书。点击下方按钮可自动生成并应用，无需手动执行任何命令。</value></data>
+  <data name="Certificate.ExternalIP" xml:space="preserve"><value>外部 IP / 主机名（选填）</value></data>
+  <data name="Certificate.IPPlaceholder" xml:space="preserve"><value>例：59.126.246.98, myserver.example.com（逗号分隔）</value></data>
+  <data name="Certificate.IPHint" xml:space="preserve"><value>若用户通过外部 IP 或域名连接（例如对外网络），请在此输入，以确保证书覆盖该地址。</value></data>
+  <data name="Certificate.OneClickInstaller" xml:space="preserve"><value>一键安装程序</value></data>
+  <data name="Certificate.InstallerDesc" xml:space="preserve"><value>用户下载后双击运行，点击一次「是」即自动完成安装</value></data>
+  <data name="Certificate.PublicKey" xml:space="preserve"><value>证书公钥 (.cer)</value></data>
+  <data name="Certificate.PublicKeyDesc" xml:space="preserve"><value>高级用途，手动安装用</value></data>
+  <data name="Certificate.InstallGuide" xml:space="preserve"><value>用户安装步骤</value></data>
+  <data name="Button.GenerateCert" xml:space="preserve"><value>一键生成证书</value></data>
+  <data name="Button.RegenerateCert" xml:space="preserve"><value>重新生成证书</value></data>
+  <data name="Button.Download" xml:space="preserve"><value>下载</value></data>
+  <!-- ===== Module Management Tab ===== -->
+  <data name="Module.ControlDesc" xml:space="preserve"><value>控制此系统可使用的功能模块。停用的模块将对所有用户隐藏（SuperAdmin 除外）。</value></data>
+  <data name="Label.Enabled" xml:space="preserve"><value>启用</value></data>
+  <data name="Label.Disabled" xml:space="preserve"><value>停用</value></data>
+  <data name="Label.Toggle" xml:space="preserve"><value>开关</value></data>
+  <!-- ===== Vehicle Select Modal ===== -->
+  <data name="Vehicle.SelectTitle" xml:space="preserve"><value>选择配给车辆</value></data>
+  <data name="Vehicle.LoadingMessage" xml:space="preserve"><value>正在加载车辆信息...</value></data>
+  <data name="Vehicle.SearchPlaceholder" xml:space="preserve"><value>搜索车牌号码、车辆名称、品牌、车型...</value></data>
+  <data name="Vehicle.NoVehiclesAvailable" xml:space="preserve"><value>目前没有可配给的车辆</value></data>
+  <data name="Vehicle.NoMatchSearch" xml:space="preserve"><value>找不到符合「{0}」的车辆</value></data>
+  <data name="Vehicle.CountAndHint" xml:space="preserve"><value>共 {0} 辆车辆，点击行即可选取</value></data>
+  <data name="Column.LicensePlate" xml:space="preserve"><value>车牌号码</value></data>
+  <data name="Column.VehicleType" xml:space="preserve"><value>车型</value></data>
+  <data name="Column.Brand" xml:space="preserve"><value>品牌</value></data>
+  <data name="Column.CurrentAssignment" xml:space="preserve"><value>目前配给</value></data>
+  <data name="Label.NotAssigned" xml:space="preserve"><value>未配给</value></data>
+  <data name="Label.CustomerLabel" xml:space="preserve"><value>客户：</value></data>
+  <data name="Label.SupplierLabel" xml:space="preserve"><value>厂商：</value></data>
+  <data name="Label.UnknownLabel" xml:space="preserve"><value>未知</value></data>
+  <!-- ===== Import Schedule Modal ===== -->
+  <data name="Warehouse.ImportTitle" xml:space="preserve"><value>导入排程</value></data>
+  <data name="Warehouse.LoadingSchedule" xml:space="preserve"><value>加载排程数据中...</value></data>
+  <data name="Warehouse.NoImportItems" xml:space="preserve"><value>目前没有可导入的排程项目（所有排程项目都已完成）</value></data>
+  <data name="Warehouse.PendingItems" xml:space="preserve"><value>共 {0} 笔待导入项目</value></data>
+  <data name="Warehouse.SelectedCount" xml:space="preserve"><value>已选取 {0} 笔</value></data>
+  <data name="Warehouse.ImportHint" xml:space="preserve"><value>提示：导入后将增加对应仓库/库位的库存数量，并将排程项目状态标记为「已完成」</value></data>
+  <data name="Warehouse.NoImportMessage" xml:space="preserve"><value>没有可导入的排程项目</value></data>
+  <data name="Warehouse.StockLocations" xml:space="preserve"><value>商品现有库存位置</value></data>
+  <data name="Warehouse.NoStockLocations" xml:space="preserve"><value>无存放库存位置</value></data>
+  <data name="Button.Import" xml:space="preserve"><value>导入</value></data>
+  <data name="Column.ScheduledQuantity" xml:space="preserve"><value>排程数量</value></data>
+  <data name="Column.ImportQuantity" xml:space="preserve"><value>本次完成</value></data>
+  <data name="Column.WarehouseLocation" xml:space="preserve"><value>仓库/库位</value></data>
+  <!-- ===== Inventory Transaction Table ===== -->
+  <data name="Column.OperationType" xml:space="preserve"><value>操作类型</value></data>
+  <data name="Column.StockBefore" xml:space="preserve"><value>异动前</value></data>
+  <data name="Column.StockAfter" xml:space="preserve"><value>异动后</value></data>
+  <data name="Inventory.OperationInitial" xml:space="preserve"><value>首次</value></data>
+  <data name="Inventory.OperationAdjust" xml:space="preserve"><value>调整</value></data>
+  <data name="Inventory.OperationDelete" xml:space="preserve"><value>删除</value></data>
+  <data name="Label.ViewTransactionHistory" xml:space="preserve"><value>查看此商品的异动历史</value></data>
+  <!-- ===== Stock Alert View Modal ===== -->
+  <data name="Warehouse.LowStock" xml:space="preserve"><value>低库存商品清单</value></data>
+  <data name="Warehouse.OverStock" xml:space="preserve"><value>库存过多商品清单</value></data>
+  <data name="Warehouse.NoLowStock" xml:space="preserve"><value>目前没有缺乏的商品。</value></data>
+  <data name="Warehouse.NoOverStock" xml:space="preserve"><value>目前没有过量的商品。</value></data>
+  <data name="Warehouse.LoadingStock" xml:space="preserve"><value>正在加载库存信息...</value></data>
+  <data name="Column.Warehouse" xml:space="preserve"><value>仓库</value></data>
+  <data name="Column.Position" xml:space="preserve"><value>库位</value></data>
+  <data name="Column.StockLevel" xml:space="preserve"><value>存量</value></data>
+  <data name="Column.MinStock" xml:space="preserve"><value>最低量</value></data>
+  <data name="Column.MaxStock" xml:space="preserve"><value>最高量</value></data>
+  <data name="Button.Order" xml:space="preserve"><value>下单</value></data>
+  <data name="Label.Shortage" xml:space="preserve"><value>缺乏 {0} 个</value></data>
+  <data name="Label.Excess" xml:space="preserve"><value>过量 {0} 个</value></data>
+  <data name="Column.Operation" xml:space="preserve"><value>操作</value></data>
+  <!-- ===== Stock Level Alert Modal ===== -->
+  <data name="Warehouse.StockAlertTitle" xml:space="preserve"><value>设置库存警戒线</value></data>
+  <data name="Warehouse.LoadingAlerts" xml:space="preserve"><value>正在加载未设警戒线的库存明细...</value></data>
+  <data name="Warehouse.AllAlertsSet" xml:space="preserve"><value>太棒了！所有库存明细都已设置警戒线。</value></data>
+  <data name="Label.Min" xml:space="preserve"><value>最低</value></data>
+  <data name="Label.Max" xml:space="preserve"><value>最高</value></data>
+  <data name="Column.CurrentStockLevel" xml:space="preserve"><value>当前量</value></data>
+  <data name="Column.WarehousePosition" xml:space="preserve"><value>仓库位置</value></data>
+  <data name="Message.AlertSaveSuccess" xml:space="preserve"><value>成功更新 {0} 笔库存警戒线设置</value></data>
+  <data name="Message.AlertBatchFillSuccess" xml:space="preserve"><value>已批量填入 {0} 笔警戒线设置</value></data>
+  <data name="Message.AlertAllCleared" xml:space="preserve"><value>已清空所有警戒线设置</value></data>
+  <data name="Message.EnterMinOrMax" xml:space="preserve"><value>请至少输入最低量或最高量</value></data>
+  <data name="Message.MinCannotBeNegative" xml:space="preserve"><value>最低量不能为负数</value></data>
+  <data name="Message.MaxCannotBeNegative" xml:space="preserve"><value>最高量不能为负数</value></data>
+  <data name="Message.MinCannotExceedMax" xml:space="preserve"><value>最低量不能大于最高量</value></data>
+  <!-- ===== Warehouse Location Table ===== -->
+  <data name="Warehouse.SaveFirst" xml:space="preserve"><value>请先保存仓库后即可查看库位数据</value></data>
+  <data name="Warehouse.NoLocations" xml:space="preserve"><value>尚无库位数据</value></data>
+  <data name="Column.LocationName" xml:space="preserve"><value>库位名称</value></data>
+  <!-- ===== Related Document Components ===== -->
+  <data name="RelatedDoc.NoDocuments" xml:space="preserve"><value>暂无相关单据</value></data>
+  <data name="RelatedDoc.LoadingMessage" xml:space="preserve"><value>正在加载相关单据...</value></data>
+  <data name="RelatedDoc.NoRelated" xml:space="preserve"><value>暂无关联记录</value></data>
+  <data name="RelatedDoc.Product" xml:space="preserve"><value>商品：</value></data>
+  <data name="RelatedDoc.TransactionCount" xml:space="preserve"><value>共 {0} 笔异动记录</value></data>
+  <data name="RelatedDoc.TransactionHistory" xml:space="preserve"><value>库存异动历史</value></data>
+  <data name="RelatedDoc.TransactionHistoryTitle" xml:space="preserve"><value>异动历史 - {0}</value></data>
+  <data name="RelatedDoc.LoadingHistory" xml:space="preserve"><value>正在加载异动历史...</value></data>
+  <data name="Label.QuantityPrefix" xml:space="preserve"><value>数量:</value></data>
+  <data name="Label.UnitPricePrefix" xml:space="preserve"><value>单价:</value></data>
+  <data name="Label.ReturnPrefix" xml:space="preserve"><value>退货:</value></data>
+  <data name="Label.SetoffPrefix" xml:space="preserve"><value>冲款:</value></data>
+  <data name="Label.CurrentAmountPrefix" xml:space="preserve"><value>本次:</value></data>
+  <data name="Label.PurchaseTimeSuffix" xml:space="preserve"><value>次</value></data>
+  <!-- ===== GenericTableComponent Pagination ===== -->
+  <data name="Pagination.ShowingRange" xml:space="preserve"><value>显示第 {0} - {1} 笔，共 {2} 笔数据（第 {3} 页，共 {4} 页）</value></data>
+  <data name="Pagination.PerPage" xml:space="preserve"><value>每页显示:</value></data>
+  <data name="Pagination.Records" xml:space="preserve"><value>笔</value></data>
+  <data name="Pagination.FirstPage" xml:space="preserve"><value>第一页</value></data>
+  <data name="Pagination.LastPage" xml:space="preserve"><value>最后一页</value></data>
+  <data name="Pagination.PrevPage" xml:space="preserve"><value>上一页</value></data>
+  <data name="Pagination.NextPage" xml:space="preserve"><value>下一页</value></data>
+  <data name="Pagination.GoToPage" xml:space="preserve"><value>前往第 {0} 页</value></data>
+
+  <!-- ===== CompanyLogoUpload Messages ===== -->
+  <data name="Message.ClipboardFailed" xml:space="preserve"><value>复制到剪贴板失败</value></data>
+  <data name="Message.PreviewFailed" xml:space="preserve"><value>无法生成预览图片，请检查文件格式和大小</value></data>
+  <data name="Message.FileSelectError" xml:space="preserve"><value>选择文件时发生错误：{0}</value></data>
+  <data name="Message.NoFileSelected" xml:space="preserve"><value>请先选择要上传的文件</value></data>
+  <data name="Message.UploadFailed" xml:space="preserve"><value>上传失败：{0}</value></data>
+
+  <!-- ===== InstalledPrinterListModal ===== -->
+  <data name="Printer.UseSelected" xml:space="preserve"><value>使用选取的打印机</value></data>
+  <data name="Printer.CancelSelect" xml:space="preserve"><value>取消选择</value></data>
+  <data name="Printer.NetworkType" xml:space="preserve"><value>网络</value></data>
+  <data name="Printer.LocalType" xml:space="preserve"><value>本机</value></data>
+  <data name="Printer.DefaultBadge" xml:space="preserve"><value>默认</value></data>
+  <data name="Printer.LoadError" xml:space="preserve"><value>加载打印机列表失败：{0}</value></data>
+
+  <!-- ===== ReportPrintSettingAlertModal ===== -->
+  <data name="Report.TotalCount" xml:space="preserve"><value>共 {0} 笔</value></data>
+  <data name="Report.PrinterInputLabel" xml:space="preserve"><value>打印机</value></data>
+  <data name="Report.PaperInputLabel" xml:space="preserve"><value>纸张</value></data>
+  <data name="Report.SelectPlaceholder" xml:space="preserve"><value>-- 选择 --</value></data>
+  <data name="Report.BatchFill" xml:space="preserve"><value>批量填入</value></data>
+  <data name="Report.BatchFillTitle" xml:space="preserve"><value>批量设置所有报表的打印机和纸张</value></data>
+  <data name="Report.NotConfigured" xml:space="preserve"><value>未设置</value></data>
+  <data name="Report.NoDataToSave" xml:space="preserve"><value>没有需要保存的数据</value></data>
+  <data name="Report.NeedAtLeastOne" xml:space="preserve"><value>请至少设置一个打印机或纸张</value></data>
+  <data name="Report.UpdateSuccess" xml:space="preserve"><value>成功更新 {0} 笔报表打印配置</value></data>
+  <data name="Report.BatchFillSuccess" xml:space="preserve"><value>已批量填入 {0} 笔设置</value></data>
+  <data name="Report.ClearAllDone" xml:space="preserve"><value>已清空所有设置</value></data>
+  <data name="Report.NeedChoicePrinterPaper" xml:space="preserve"><value>请至少选择打印机或纸张</value></data>
+
+  <!-- ===== CertificateTab ===== -->
+  <data name="System.CertDesc" xml:space="preserve"><value>提供用户下载并安装服务器证书，安装后浏览器将不再显示 HTTPS 安全警告。</value></data>
+  <data name="System.CertManage" xml:space="preserve"><value>服务器证书管理</value></data>
+  <data name="System.CertExistsNote" xml:space="preserve"><value>证书已存在。若需重新生成（例如服务器 IP 变更），请点击下方按钮。</value></data>
+  <data name="System.NoCertNote" xml:space="preserve"><value>尚未生成证书。点击下方按钮可自动生成并应用，无需手动执行任何命令。</value></data>
+  <data name="System.ExternalSAN" xml:space="preserve"><value>外部 IP / 主机名（选填）</value></data>
+  <data name="System.ExternalSANHint" xml:space="preserve"><value>若用户通过外部 IP 或域名连接（例如外部网络），请在此输入，以确保证书涵盖该地址。</value></data>
+  <data name="System.ExternalSANPlaceholder" xml:space="preserve"><value>例：59.126.246.98, myserver.example.com（逗号分隔）</value></data>
+  <data name="System.ReGenCert" xml:space="preserve"><value>重新生成证书</value></data>
+  <data name="System.GenCert" xml:space="preserve"><value>一键生成证书</value></data>
+  <data name="System.GenCertTitle" xml:space="preserve"><value>自动生成自签 SSL 证书（含所有服务器 IP），无需手动操作</value></data>
+  <data name="System.InstallerTitle" xml:space="preserve"><value>一键安装程序</value></data>
+  <data name="System.InstallerDesc" xml:space="preserve"><value>用户下载后双击运行，点击一次「是」即可自动完成安装</value></data>
+  <data name="System.CerPublicKey" xml:space="preserve"><value>证书公钥 (.cer)</value></data>
+  <data name="System.CerPublicDesc" xml:space="preserve"><value>高级用途，手动安装用</value></data>
+  <data name="System.Download" xml:space="preserve"><value>下载</value></data>
+  <data name="System.InstallStepsTitle" xml:space="preserve"><value>用户安装步骤</value></data>
+  <data name="System.InstallStep1" xml:space="preserve"><value>将上方「一键安装程序」链接提供给用户，或直接下载后通过 USB / 邮件传送</value></data>
+  <data name="System.InstallStep2" xml:space="preserve"><value>用户双击 install-cert.bat</value></data>
+  <data name="System.InstallStep3" xml:space="preserve"><value>Windows 弹出询问窗口，点击「是」</value></data>
+  <data name="System.InstallStep4" xml:space="preserve"><value>看到「证书安装成功」后关闭所有浏览器</value></data>
+  <data name="System.InstallStep5" xml:space="preserve"><value>重新打开浏览器即可正常连接，不再显示安全警告</value></data>
+
+  <!-- ===== ModuleManagementTab ===== -->
+  <data name="System.ModuleControlDesc" xml:space="preserve"><value>控制此系统可使用的功能模块。停用的模块将对所有用户隐藏（SuperAdmin 除外）。</value></data>
+  <data name="System.Enabled" xml:space="preserve"><value>启用</value></data>
+  <data name="System.Disabled" xml:space="preserve"><value>停用</value></data>
+  <data name="System.Toggle" xml:space="preserve"><value>开关</value></data>
+
+  <!-- ===== ImportScheduleModal ===== -->
+  <data name="Warehouse.ImportButton" xml:space="preserve"><value>导入</value></data>
+  <data name="Warehouse.SelectAll" xml:space="preserve"><value>全选</value></data>
+  <data name="Warehouse.DeselectAll" xml:space="preserve"><value>取消全选</value></data>
+  <data name="Column.ClosedFlag" xml:space="preserve"><value>结案</value></data>
+  <data name="Warehouse.ClosedTooltip" xml:space="preserve"><value>勾选后此项目将不再显示于导入排程清单</value></data>
+
+  <!-- ===== InventoryTransactionTable ===== -->
+  <data name="Inventory.ViewHistory" xml:space="preserve"><value>查看此商品的异动历史</value></data>
+  <data name="Column.StorageLocation" xml:space="preserve"><value>仓位</value></data>
+
+  <!-- ===== StockAlertViewModal ===== -->
+  <data name="Column.StockCode" xml:space="preserve"><value>产品编号</value></data>
+  <data name="Column.StorageQty" xml:space="preserve"><value>存量</value></data>
+  <data name="Stats.ClickForDetail" xml:space="preserve"><value>点击查看详情</value></data>
+
+  <!-- ===== Vehicle Notifications ===== -->
+  <data name="Vehicle.LoadFailed" xml:space="preserve"><value>加载车辆列表失败：{0}</value></data>
+  <data name="Vehicle.AssignCustomer" xml:space="preserve"><value>客户：</value></data>
+  <data name="Vehicle.AssignSupplier" xml:space="preserve"><value>供应商：</value></data>
+  <data name="Vehicle.Unassigned" xml:space="preserve"><value>未分配</value></data>
+  <data name="Vehicle.Unknown" xml:space="preserve"><value>未知</value></data>
+
+  <data name="Column.ImportQty" xml:space="preserve"><value>本次完成</value></data>
+
+  <!-- ===== ImportScheduleModal Notifications ===== -->
+  <data name="Warehouse.NeedSelectItem" xml:space="preserve"><value>请至少选择一项排程项目</value></data>
+  <data name="Warehouse.NeedSelectWH" xml:space="preserve"><value>以下项目尚未选择仓库/库位：{0}{1}</value></data>
+  <data name="Warehouse.QuantityError" xml:space="preserve"><value>以下项目本次完成数量必须大于0，或勾选结案：{0}{1}</value></data>
+  <data name="Warehouse.ConfirmClose" xml:space="preserve"><value>以下 {0} 笔项目已勾选「结案」：\n{1}{2}\n\n结案后将不会入库，且此项目将不再显示于导入排程清单。\n确定要继续吗？</value></data>
+  <data name="Warehouse.ConfirmCloseTitle" xml:space="preserve"><value>确认结案</value></data>
+  <data name="Warehouse.ImportPartialFail" xml:space="preserve"><value>成功导入 {0} 笔，失败 {1} 笔\n{2}</value></data>
+  <data name="Warehouse.ImportSuccessMsg" xml:space="preserve"><value>已成功导入 {0} 笔排程项目到库存</value></data>
+  <data name="Warehouse.ImportClosedOnly" xml:space="preserve"><value>另有 {0} 笔仅结案（不入库）</value></data>
+  <data name="Warehouse.LoadScheduleFail" xml:space="preserve"><value>加载排程数据失败：{0}</value></data>
+  <data name="Warehouse.ImportFailed" xml:space="preserve"><value>导入失败：{0}</value></data>
+  <data name="Warehouse.MoreItems" xml:space="preserve"><value>...等 {0} 笔</value></data>
+  <data name="Warehouse.MoreFailed" xml:space="preserve"><value>...还有 {0} 笔失败</value></data>
+  <data name="Warehouse.ClosedItemBuildFail" xml:space="preserve"><value>创建完工记录失败</value></data>
+  <data name="Warehouse.StockInFail" xml:space="preserve"><value>库存入库失败 - {0}</value></data>
+
+  <data name="Warehouse.BatchMin" xml:space="preserve"><value>最低</value></data>
+  <data name="Warehouse.BatchMax" xml:space="preserve"><value>最高</value></data>
+
+  <!-- ===== StockLevelAlertModal Notifications ===== -->
+  <data name="Warehouse.NeedMinOrMax" xml:space="preserve"><value>请至少输入最低量或最高量</value></data>
+  <data name="Warehouse.MinNegative" xml:space="preserve"><value>最低量不能为负数</value></data>
+  <data name="Warehouse.MaxNegative" xml:space="preserve"><value>最高量不能为负数</value></data>
+  <data name="Warehouse.MinExceedsMax" xml:space="preserve"><value>最低量不能大于最高量</value></data>
+  <data name="Warehouse.NoDataSave" xml:space="preserve"><value>没有需要保存的数据</value></data>
+  <data name="Warehouse.ValidationFailed" xml:space="preserve"><value>数据验证失败：{0}</value></data>
+  <data name="Warehouse.UpdateSuccessCount" xml:space="preserve"><value>成功更新 {0} 笔库存警戒线设定</value></data>
+  <data name="Warehouse.BatchFillCount" xml:space="preserve"><value>已批次填入 {0} 笔警戒线设定</value></data>
+  <data name="Warehouse.ClearSuccess" xml:space="preserve"><value>已清空所有警戒线设定</value></data>
+  <data name="Warehouse.SaveError" xml:space="preserve"><value>保存时发生错误：{0}</value></data>
+  <data name="Warehouse.BatchFillError" xml:space="preserve"><value>批次填入时发生错误：{0}</value></data>
+  <data name="Warehouse.ClearError" xml:space="preserve"><value>清空时发生错误：{0}</value></data>
+  <data name="Warehouse.LocationLoadError" xml:space="preserve"><value>加载库位数据时发生错误：{0}</value></data>
+  <data name="Warehouse.MinNegativeItem" xml:space="preserve"><value>{0} 的最低量不能为负数</value></data>
+  <data name="Warehouse.MaxNegativeItem" xml:space="preserve"><value>{0} 的最高量不能为负数</value></data>
+  <data name="Warehouse.MinExceedsMaxItem" xml:space="preserve"><value>{0} 的最低量不能大于最高量</value></data>
+
+  <!-- ===== StockAlertViewModal Notifications ===== -->
+  <data name="Inventory.LoadFailed" xml:space="preserve"><value>加载库存信息失败：{0}</value></data>
+  <data name="Inventory.SupplierFailed" xml:space="preserve"><value>加载供应商推荐失败：{0}</value></data>
+  <data name="PurchaseOrder.OpenFailed" xml:space="preserve"><value>打开采购单失败：{0}</value></data>
+  <data name="PurchaseOrder.Created" xml:space="preserve"><value>采购单 {0} 已成功创建</value></data>
+
+  <!-- ===== RelatedDocument Templates ===== -->
+  <data name="RelatedDoc.Quantity" xml:space="preserve"><value>数量:</value></data>
+  <data name="RelatedDoc.UnitPrice" xml:space="preserve"><value>单价:</value></data>
+  <data name="RelatedDoc.ReturnQty" xml:space="preserve"><value>退货:</value></data>
+  <data name="RelatedDoc.Setoff" xml:space="preserve"><value>冲款:</value></data>
+  <data name="RelatedDoc.CurrentAmount" xml:space="preserve"><value>本次:</value></data>
+  <data name="RelatedDoc.Times" xml:space="preserve"><value> 次</value></data>
+
+  <!-- ===== GenericTableComponent Pagination ===== -->
+  <data name="Pagination.GoToFirst" xml:space="preserve"><value>前往第一页</value></data>
+  <data name="Pagination.GoToLast" xml:space="preserve"><value>前往最后一页</value></data>
+  <data name="Pagination.NoData" xml:space="preserve"><value>没有找到数据</value></data>
+
+  <!-- ===== Products Module (MaterialIssue / Completion / ScheduleItem / Picker / Supplier / Barcode) ===== -->
+  <data name="Message.LoadFailed" xml:space="preserve"><value>加载失败：{0}</value></data>
+  <data name="Message.ReduceStockFailed" xml:space="preserve"><value>扣减库存失败：{0} - {1}</value></data>
+  <data name="Message.IssueSuccess" xml:space="preserve"><value>成功领料 {0} 项组件，单号：{1}</value></data>
+  <data name="Message.IssueFailed" xml:space="preserve"><value>领料失败：{0}</value></data>
+  <data name="Message.UpdateScheduleItemFailed" xml:space="preserve"><value>更新排程项目失败：{0}</value></data>
+  <data name="Message.CompletionSuccess" xml:space="preserve"><value>成功登录完工数量：{0}</value></data>
+  <data name="Message.InventoryError" xml:space="preserve"><value>库存处理异常：{0}</value></data>
+  <data name="Message.CompletionRecordSuccess" xml:space="preserve"><value>完工登录成功，完成数量：{0}</value></data>
+  <data name="Message.UpdateFailed" xml:space="preserve"><value>更新失败：{0}</value></data>
+  <data name="Message.PrintValidationError" xml:space="preserve"><value>打印条件错误：{0}</value></data>
+  <data name="Message.PrintFailed" xml:space="preserve"><value>打印失败：{0}</value></data>
+  <data name="Message.LoadProductDataFailed" xml:space="preserve"><value>加载商品数据失败：{0}</value></data>
+  <data name="Label.UnknownProduct" xml:space="preserve"><value>未知商品</value></data>
+  <data name="Label.UnknownSupplier" xml:space="preserve"><value>未知供应商</value></data>
+  <data name="Placeholder.SelectOption" xml:space="preserve"><value>-- 请选择 --</value></data>
+  <data name="Tooltip.SelectSupplierProduct" xml:space="preserve"><value>选择供应此商品的供应商</value></data>
+  <data name="Tooltip.EnterSupplierCode" xml:space="preserve"><value>输入供应商对此商品的商品编号或料号</value></data>
+  <data name="Tooltip.EnterSupplierPrice" xml:space="preserve"><value>输入供应商对此商品的报价金额</value></data>
+  <data name="Tooltip.EnterLeadTime" xml:space="preserve"><value>输入供应商的交货时间（以天为单位）</value></data>
+  <data name="Tooltip.EnterMinOrderQty" xml:space="preserve"><value>输入供应商要求的最小订购数量</value></data>
+  <data name="Tooltip.SelectUnitForSupplier" xml:space="preserve"><value>选择供应商供应此商品的计量单位</value></data>
+
+  <!-- ===== CharacterCountTextAreaComponent ===== -->
+  <data name="Label.CharCount" xml:space="preserve"><value>字</value></data>
+
+  <!-- ===== GenericSearchFilterComponent ===== -->
+  <data name="Filter.Condition" xml:space="preserve"><value>条件</value></data>
+  <data name="Placeholder.StartDate" xml:space="preserve"><value>开始日期</value></data>
+  <data name="Placeholder.EndDate" xml:space="preserve"><value>结束日期</value></data>
+  <data name="Placeholder.StartTime" xml:space="preserve"><value>开始时间</value></data>
+  <data name="Placeholder.EndTime" xml:space="preserve"><value>结束时间</value></data>
+  <data name="Placeholder.MinValue" xml:space="preserve"><value>最小值</value></data>
+  <data name="Placeholder.MaxValue" xml:space="preserve"><value>最大值</value></data>
+  <data name="Filter.CustomTypeNote" xml:space="preserve"><value>自定义筛选类型需要在父组件中实现</value></data>
+
+  <!-- ===== DetailSectionWrapper ===== -->
+  <data name="Label.PleaseWait" xml:space="preserve"><value>请稍候...</value></data>
+  <data name="Label.LoadingDetailData" xml:space="preserve"><value>正在加载明细数据...</value></data>
+
+  <!-- ===== PurchaseOrderTable ===== -->
+  <data name="Message.SelectSupplierFirst" xml:space="preserve"><value>选择供应商后即可查看该供应商的未完成进货商品</value></data>
+  <data name="Message.NoProducts" xml:space="preserve"><value>尚未添加商品</value></data>
+  <data name="Button.SmartPurchase" xml:space="preserve"><value>智能下单</value></data>
+  <data name="Tooltip.PurchaseProductSearch" xml:space="preserve"><value>搜索并选择商品（输入编号或名称）。有进货记录的商品将无法更改</value></data>
+  <data name="Placeholder.PurchaseProductSearch" xml:space="preserve"><value>请输入商品编号或名称</value></data>
+  <data name="Message.ProductHasReceiving" xml:space="preserve"><value>此商品已有进货记录，无法修改商品选择</value></data>
+  <data name="Tooltip.PurchaseQuantity" xml:space="preserve"><value>采购的商品数量。有进货记录的商品将无法修改数量</value></data>
+  <data name="Message.QuantityHasReceiving" xml:space="preserve"><value>此商品已有进货记录，无法修改数量</value></data>
+  <data name="Tooltip.ReceivedQuantity" xml:space="preserve"><value>已完成入库的数量（从入库单自动更新）</value></data>
+  <data name="Tooltip.PurchasePrice" xml:space="preserve"><value>采购的商品单价</value></data>
+  <data name="Tooltip.TaxRatePercent" xml:space="preserve"><value>税率（%）</value></data>
+  <data name="Tooltip.ReceivingCompleted" xml:space="preserve"><value>标记此商品的进货是否已完成（可手动提前标记）</value></data>
+  <data name="Message.FullyReceived" xml:space="preserve"><value>已全数入库，无法取消</value></data>
+  <data name="Tooltip.PurchaseRemarks" xml:space="preserve"><value>选填。可记录采购相关的备注信息（核准后仍可编辑）</value></data>
+  <data name="Tooltip.ViewRelatedDocuments" xml:space="preserve"><value>查看相关单据</value></data>
+  <data name="Message.FullyReceivedCannotUndo" xml:space="preserve"><value>此商品已全数入库，无法取消完成状态</value></data>
+  <data name="Message.NeedAtLeastOneProduct" xml:space="preserve"><value>至少需要一个商品</value></data>
+  <data name="Message.PleaseSelectSupplier" xml:space="preserve"><value>请先选择供应商</value></data>
+  <data name="Message.AlreadyHasDetails" xml:space="preserve"><value>目前已有明细数据，无法使用智能下单</value></data>
+  <data name="Message.NoHistoryPurchase" xml:space="preserve"><value>此供应商没有历史采购记录</value></data>
+  <data name="Message.LoadLastPurchaseDetailsTooltip" xml:space="preserve"><value>加载该供应商上次采购的商品明细</value></data>
+  <data name="Message.PleaseSelectSupplierForSmartOrder" xml:space="preserve"><value>请先选择供应商后再使用智能下单</value></data>
+  <data name="Message.SupplierNoHistoryPurchase" xml:space="preserve"><value>该供应商没有历史采购记录，无法使用智能下单</value></data>
+  <data name="Message.SmartOrderConfirm" xml:space="preserve"><value>智能下单确认: 此操作将清空现有的商品明细并加载 {0} 项上次采购的商品。</value></data>
+  <data name="Message.SmartOrderFailed" xml:space="preserve"><value>智能下单失败：{0}</value></data>
+  <data name="Message.SmartOrderSuccess" xml:space="preserve"><value>成功加载 {0} 项上次采购的商品明细</value></data>
+  <data name="Message.LoadLastPurchaseFailed" xml:space="preserve"><value>加载上次采购明细失败：{0}</value></data>
+  <data name="Message.NoDetailsToDelete" xml:space="preserve"><value>目前没有可清除的明细</value></data>
+  <data name="Message.AllDetailsLocked" xml:space="preserve"><value>所有明细都已被锁定（有进货记录），无法清除</value></data>
+  <data name="Message.ClearDetailsPartial" xml:space="preserve"><value>已清除 {0} 条明细（保留 {1} 条已被锁定的明细）</value></data>
+  <data name="Message.ClearDetailsSuccess" xml:space="preserve"><value>已清除 {0} 条采购明细</value></data>
+  <data name="Message.ItemNotSaved" xml:space="preserve"><value>此项目尚未保存，无法查看相关单据</value></data>
+  <data name="Message.LoadRelatedDocFailed" xml:space="preserve"><value>加载相关单据失败：{0}</value></data>
+  <data name="Message.HasUndeletableDetailsTooltip" xml:space="preserve"><value>部分商品已有进货记录，无法清除明细</value></data>
+  <data name="Tooltip.ClearAllDetails" xml:space="preserve"><value>清除所有商品明细</value></data>
+
 </root>

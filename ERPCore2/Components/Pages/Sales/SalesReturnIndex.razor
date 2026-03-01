@@ -1,4 +1,4 @@
-@page "/salesReturns"
+﻿@page "/salesReturns"
 @using ERPCore2.Models
 @using ERPCore2.Models.Reports
 @inject ISalesReturnService SalesReturnService
@@ -25,7 +25,7 @@
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplySalesReturnFilters"
                           GetEntityDisplayName="@(salesReturn => salesReturn.Code)"
-                          RequiredPermission="SalesReturn.Read"
+                          RequiredPermission="@PermissionRegistry.SalesReturn.Read"
                           RequiredModule="Sales"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"

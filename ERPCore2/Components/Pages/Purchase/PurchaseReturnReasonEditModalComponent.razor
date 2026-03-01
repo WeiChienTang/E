@@ -1,4 +1,4 @@
-@* 進貨退出原因編輯組件 *@
+﻿@* 進貨退出原因編輯組件 *@
 @inject IPurchaseReturnReasonService PurchaseReturnReasonService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(PurchaseReturnReasonId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseReturnReason"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseReturnReason"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseReturnReason"]]"
-                          RequiredPermission="PurchaseReturnReason.Read"
+                          RequiredPermission="@PermissionRegistry.PurchaseReturnReason.Read"
                           OnEntitySaved="@OnPurchaseReturnReasonSaved"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded" />

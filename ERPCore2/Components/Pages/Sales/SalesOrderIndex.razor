@@ -1,4 +1,4 @@
-@page "/salesOrders"
+﻿@page "/salesOrders"
 @using ERPCore2.Models.Reports
 @inject ISalesOrderService SalesOrderService
 @inject ICustomerService CustomerService
@@ -21,7 +21,7 @@
                       DataLoader="@LoadSalesOrdersAsync"
                       FilterApplier="@ApplySalesOrderFilters"
                       GetEntityDisplayName="@(salesOrder => salesOrder.Code)"
-                      RequiredPermission="SalesOrder.Read"
+                      RequiredPermission="@PermissionRegistry.SalesOrder.Read"
                       RequiredModule="Sales"
                       ShowBatchPrintButton="true"
                       OnBatchPrintClick="@HandleBatchPrintAsync"

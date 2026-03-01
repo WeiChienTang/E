@@ -1,4 +1,4 @@
-@* 員工證照編輯組件 - 用於教育訓練 Tab 中 *@
+﻿@* 員工證照編輯組件 - 用於教育訓練 Tab 中 *@
 @inject IEmployeeLicenseService EmployeeLicenseService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -20,7 +20,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(EmployeeLicenseId.HasValue ? L["Message.UpdateSuccess", L["Entity.EmployeeLicense"]].ToString() : L["Message.CreateSuccess", L["Entity.EmployeeLicense"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeeLicense"]]"
-                          RequiredPermission="Employee.Read"
+                          RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnEntitySaved="@OnEmployeeLicenseSaved"
                           OnCancel="@OnCancel" />
 

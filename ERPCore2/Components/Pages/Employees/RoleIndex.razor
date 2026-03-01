@@ -1,4 +1,4 @@
-@page "/roles"
+﻿@page "/roles"
 @inject IRoleService RoleService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -17,7 +17,7 @@
                           DataLoader="@LoadRolesAsync"
                           FilterApplier="@ApplyRoleFilters"
                           GetEntityDisplayName="@(role => role.Name)"
-                          RequiredPermission="Role.Read"
+                          RequiredPermission="@PermissionRegistry.Role.Read"
                           RequiredModule="Employees"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

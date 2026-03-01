@@ -1,5 +1,6 @@
 @* 帶有字數統計功能的 TextArea 元件 *@
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 
 <div class="character-count-textarea-container">
     <textarea class="@CssClass" 
@@ -20,7 +21,7 @@
             }
         </div>
         <small class="@GetCounterCssClass()">
-            @CharacterCount / @MaxCharacters 字
+            @CharacterCount / @MaxCharacters @L["Label.CharCount"]
         </small>
     </div>
 </div>

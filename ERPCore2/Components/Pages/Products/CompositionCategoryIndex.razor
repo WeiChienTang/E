@@ -1,4 +1,4 @@
-@page "/composition-categories"
+﻿@page "/composition-categories"
 @inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -18,7 +18,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.CompositionCategory"]"
                         GetEntityDisplayName="@(category => category.Name)"
-                        RequiredPermission="CompositionCategory.Read"
+                        RequiredPermission="@PermissionRegistry.CompositionCategory.Read"
                         RequiredModule="ProductionManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

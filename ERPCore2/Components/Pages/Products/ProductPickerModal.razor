@@ -43,7 +43,7 @@
                            @onchange="e => { _hideAlreadyAdded = (bool)(e.Value ?? false); ApplyFilters(); }" />
                     <label class="form-check-label small text-nowrap" for="pickerHideAdded">@L["Label.HideAdded"]</label>
                 </div>
-                <GenericButtonComponent Text="確認"
+                <GenericButtonComponent Text="@L["Button.Confirm"]"
                                         Variant="ButtonVariant.Green"
                                         Size="ButtonSize.Small"
                                         IsDisabled="@(!_selectedItems.Any())"
@@ -65,9 +65,9 @@
                                        SelectedItems="@_selectedItems"
                                        OnSelectionChanged="HandleSelectionChanged"
                                        GetRowCssClass="@GetRowCssClass"
-                                       EmptyMessage="無符合條件的商品">
+                                       EmptyMessage="@L["Message.NoMatchingProducts"]">
                 <EmptyTemplate>
-                    <i class="bi bi-inbox me-2"></i>無符合條件的商品
+                    <i class="bi bi-inbox me-2"></i>@L["Message.NoMatchingProducts"]
                 </EmptyTemplate>
             </InteractiveTableComponent>
         </div>

@@ -1,4 +1,4 @@
-@page "/purchase/receiving"
+﻿@page "/purchase/receiving"
 @using ERPCore2.Models.Reports
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseOrderService PurchaseOrderService
@@ -23,7 +23,7 @@
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyPurchaseReceivingFilters"
                           GetEntityDisplayName="@(receipt => receipt.Code)"
-                          RequiredPermission="PurchaseReceiving.Read"
+                          RequiredPermission="@PermissionRegistry.PurchaseReceiving.Read"
                           RequiredModule="Purchase"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"

@@ -1,6 +1,7 @@
 @* 入庫單詳細欄位範本 - 單行行內顯示 *@
 @using ERPCore2.Models
 @using ERPCore2.Helpers
+@inject IStringLocalizer<SharedResource> L
 
 <span class="text-muted">
     <i class="bi bi-calendar3 me-1"></i>@Document.DocumentDate.ToString("yyyy-MM-dd")
@@ -8,13 +9,13 @@
 @if (Document.Quantity.HasValue)
 {
     <span class="text-muted">
-        <i class="bi bi-box-seam me-1"></i>數量: @NumberFormatHelper.FormatSmart(Document.Quantity.Value)
+        <i class="bi bi-box-seam me-1"></i>@L["RelatedDoc.Quantity"] @NumberFormatHelper.FormatSmart(Document.Quantity.Value)
     </span>
 }
 @if (Document.UnitPrice.HasValue)
 {
     <span class="text-muted">
-        <i class="bi bi-cash me-1"></i>單價: @NumberFormatHelper.FormatSmart(Document.UnitPrice.Value)
+        <i class="bi bi-cash me-1"></i>@L["RelatedDoc.UnitPrice"] @NumberFormatHelper.FormatSmart(Document.UnitPrice.Value)
     </span>
 }
 @if (!string.IsNullOrEmpty(Document.Remarks))

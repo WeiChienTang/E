@@ -1,4 +1,4 @@
-@page "/inventoryTransactions"
+﻿@page "/inventoryTransactions"
 @inject IInventoryTransactionService InventoryTransactionService
 @inject IWarehouseService WarehouseService
 @inject IEmployeeService EmployeeService
@@ -21,7 +21,7 @@
                           DataLoader="@LoadInventoryTransactionsAsync"
                           FilterApplier="@ApplyInventoryTransactionFilters"
                           GetEntityDisplayName="@(transaction => transaction.TransactionNumber)"
-                          RequiredPermission="InventoryTransaction.Read"
+                          RequiredPermission="@PermissionRegistry.InventoryTransaction.Read"
                           RequiredModule="Warehouse"
                           ShowAddButton="false"
                           AutoAddRemarksColumn="false"

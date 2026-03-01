@@ -1,4 +1,4 @@
-@* 可重用的車輛編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的車輛編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
 @inject IVehicleService VehicleService
@@ -35,7 +35,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(VehicleId.HasValue ? L["Message.UpdateSuccess", L["Entity.Vehicle"]].ToString() : L["Message.CreateSuccess", L["Entity.Vehicle"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Vehicle"]]"
-                          RequiredPermission="Vehicle.Read"
+                          RequiredPermission="@PermissionRegistry.Vehicle.Read"
                           OnEntitySaved="@OnVehicleSaved"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"

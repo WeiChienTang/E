@@ -7,6 +7,7 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @inject IProductionScheduleItemService ProductionScheduleItemService
 @inject IProductionScheduleCompletionService ProductionScheduleCompletionService
 @inject IWarehouseService WarehouseService
@@ -15,7 +16,7 @@
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
-                   Title="匯入排程"
+                   Title="@L["Warehouse.ImportTitle"]"
                    Icon="bi-box-arrow-in-down"
                    Size="BaseModalComponent.ModalSize.Desktop"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
@@ -26,19 +27,19 @@
     <HeaderButtons>
         @* 按鈕組 *@
         <div class="d-flex gap-2">
-            <GenericButtonComponent Variant="ButtonVariant.Green" 
+            <GenericButtonComponent Variant="ButtonVariant.Green"
                                   Size="ButtonSize.Small"
-                                  Text="匯入" 
+                                  Text="@L["Warehouse.ImportButton"]"
                                   OnClick="HandleImportConfirm"
                                   IsDisabled="@(selectedCount == 0)"
-                                  Title="確認並執行匯入" />
+                                  Title="@L["Warehouse.ImportButton"]" />
             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                   Size="ButtonSize.Small"
-                                  Text="全選"
+                                  Text="@L["Warehouse.SelectAll"]"
                                   OnClick="SelectAll" />
             <GenericButtonComponent Variant="ButtonVariant.Red"
                                   Size="ButtonSize.Small"
-                                  Text="取消全選"
+                                  Text="@L["Warehouse.DeselectAll"]"
                                   OnClick="DeselectAll" />
         </div>
     </HeaderButtons>
@@ -48,16 +49,16 @@
         {
             <div class="d-flex justify-content-center align-items-center py-5">
                 <div class="spinner-border text-primary me-2" role="status">
-                    <span class="visually-hidden">載入中...</span>
+                    <span class="visually-hidden">@L["Label.Loading"]</span>
                 </div>
-                <span>載入排程資料中...</span>
+                <span>@L["Warehouse.LoadingSchedule"]</span>
             </div>
         }
         else if (importItems == null || !importItems.Any())
         {
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
-                目前沒有可匯入的排程項目（所有排程項目都已完成）
+                @L["Warehouse.NoImportItems"]
             </div>
         }
         else
@@ -67,10 +68,10 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <span>
                         <i class="bi bi-list-check me-2"></i>
-                        共 <strong>@importItems.Count</strong> 筆待匯入項目
+                        @((MarkupString)string.Format(L["Warehouse.PendingItems"].ToString(), $"<strong>{importItems.Count}</strong>"))
                     </span>
                     <span>
-                        已選取 <strong class="text-primary">@selectedCount</strong> 筆
+                        @((MarkupString)string.Format(L["Warehouse.SelectedCount"].ToString(), $"<strong class=\"text-primary\">{selectedCount}</strong>"))
                     </span>
                 </div>
             </div>
@@ -89,14 +90,14 @@
                                            GetRowCssClass="@GetRowCssClass"
                                            IsHoverable="true"
                                            IsBordered="true"
-                                           EmptyMessage="沒有可匯入的排程項目"
+                                           EmptyMessage="@L["Warehouse.NoImportMessage"]"
                                            CssClass="mb-0" />
             </div>
             
             @* 匯入提示訊息 *@
             <div class="alert alert-info mt-3 mb-0 d-flex align-items-center" role="alert">
                 <i class="bi bi-info-circle-fill me-2"></i>
-                <span>提示：匯入後將增加對應倉庫/庫位的庫存數量，並將排程項目狀態標記為「已完成」</span>
+                <span>@L["Warehouse.ImportHint"]</span>
             </div>
         }
     </BodyContent>
@@ -207,7 +208,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入排程資料失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Warehouse.LoadScheduleFail"].ToString(), ex.Message));
             importItems = new();
         }
         finally
@@ -250,7 +251,7 @@
         {
             new()
             {
-                Title = "訂單編號",
+                Title = L["Column.SalesOrderCode"].ToString(),
                 PropertyName = nameof(ImportScheduleItemDto.SalesOrderCode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
@@ -258,28 +259,28 @@
             },
             new()
             {
-                Title = "客戶",
+                Title = L["Column.Customer"].ToString(),
                 PropertyName = nameof(ImportScheduleItemDto.CustomerName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px"
             },
             new()
             {
-                Title = "商品編號",
+                Title = L["Column.ProductCode"].ToString(),
                 PropertyName = nameof(ImportScheduleItemDto.ProductCode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "90px"
             },
             new()
             {
-                Title = "商品名稱",
+                Title = L["Column.ProductName"].ToString(),
                 PropertyName = nameof(ImportScheduleItemDto.ProductName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px"
             },
             new()
             {
-                Title = "排程數量",
+                Title = L["Column.ScheduledQty"].ToString(),
                 PropertyName = nameof(ImportScheduleItemDto.ScheduledQuantity),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "80px",
@@ -288,7 +289,7 @@
             },
             new()
             {
-                Title = "已完成",
+                Title = L["Column.CompletedQty"].ToString(),
                 PropertyName = nameof(ImportScheduleItemDto.CompletedQuantity),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "70px",
@@ -298,7 +299,7 @@
             },
             new()
             {
-                Title = "本次完成",
+                Title = L["Column.ImportQty"].ToString(),
                 PropertyName = nameof(ImportScheduleItemDto.ImportQuantity),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "100px",
@@ -307,7 +308,7 @@
             },
             new()
             {
-                Title = "倉庫/庫位",
+                Title = L["Column.WarehouseLocation"].ToString(),
                 PropertyName = nameof(ImportScheduleItemDto.SelectedLocationKey),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "200px",
@@ -315,12 +316,12 @@
             },
             new()
             {
-                Title = "結案",
+                Title = L["Column.ClosedFlag"].ToString(),
                 PropertyName = nameof(ImportScheduleItemDto.IsClosed),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "50px",
                 TextAlign = "center",
-                Tooltip = "勾選後此項目將不再顯示於匹入排程清單",
+                Tooltip = L["Warehouse.ClosedTooltip"].ToString(),
                 CustomTemplate = item => GetIsClosedTemplate((ImportScheduleItemDto)item)
             },
         };
@@ -375,7 +376,7 @@
                    class="form-check-input m-0"
                    checked="@item.IsClosed"
                    @onchange="e => HandleIsClosedChanged(item, e)"
-                   title="@(item.IsClosed ? "已結案：不入庫，此項目將不再顯示" : "點擊結案")" />
+                   title="@L["Warehouse.ClosedTooltip"]" />
         </div>
     };
     
@@ -415,7 +416,7 @@
                 // 此商品現有庫存位置（有數量的）
                 if (stockOptions.Any())
                 {
-                    <optgroup label="📦 商品現有庫存位置">
+                    <optgroup label="@($"📦 {L["Warehouse.StockLocations"]}")">
                         @foreach (var option in stockOptions)
                         {
                             <option value="@option.Key">@option.Text</option>
@@ -426,7 +427,7 @@
                 // 其他可用位置（無庫存或不同位置）
                 if (otherOptions.Any())
                 {
-                    <optgroup label=" - 無存放庫存位置 -">
+                    <optgroup label="@L["Warehouse.NoStockLocations"]">
                         @foreach (var option in otherOptions)
                         {
                             <option value="@option.Key">@option.Text</option>
@@ -583,40 +584,40 @@
         {
             if (selectedCount == 0)
             {
-                await NotificationService.ShowWarningAsync("請至少選擇一項排程項目");
+                await NotificationService.ShowWarningAsync(L["Warehouse.NeedSelectItem"].ToString());
                 return;
             }
-            
+
             // 驗證所有選取項目是否都有選擇倉庫（庫位可為空）
             // 只有需要入庫的項目才需要驗證倉庫
             var itemsNeedWarehouse = selectedItems.Where(x => x.ImportQuantity > 0 && !x.WarehouseId.HasValue).ToList();
             if (itemsNeedWarehouse.Any())
             {
                 var invalidCodes = string.Join(", ", itemsNeedWarehouse.Take(3).Select(x => x.ProductCode));
-                var moreCount = itemsNeedWarehouse.Count > 3 ? $"...等 {itemsNeedWarehouse.Count} 筆" : "";
-                await NotificationService.ShowWarningAsync($"以下項目尚未選擇倉庫/庫位：{invalidCodes}{moreCount}");
+                var moreCount = itemsNeedWarehouse.Count > 3 ? string.Format(L["Warehouse.MoreItems"].ToString(), itemsNeedWarehouse.Count) : "";
+                await NotificationService.ShowWarningAsync(string.Format(L["Warehouse.NeedSelectWH"].ToString(), invalidCodes, moreCount));
                 return;
             }
-            
+
             // 驗證本次完成數量：必須大於 0，或是勾選結案（只結案不入庫）
             var invalidQuantityItems = selectedItems.Where(x => x.ImportQuantity <= 0 && !x.IsClosed).ToList();
             if (invalidQuantityItems.Any())
             {
                 var invalidCodes = string.Join(", ", invalidQuantityItems.Take(3).Select(x => x.ProductCode));
-                var moreCount = invalidQuantityItems.Count > 3 ? $"...等 {invalidQuantityItems.Count} 筆" : "";
-                await NotificationService.ShowWarningAsync($"以下項目本次完成數量必須大於0，或勾選結案：{invalidCodes}{moreCount}");
+                var moreCount = invalidQuantityItems.Count > 3 ? string.Format(L["Warehouse.MoreItems"].ToString(), invalidQuantityItems.Count) : "";
+                await NotificationService.ShowWarningAsync(string.Format(L["Warehouse.QuantityError"].ToString(), invalidCodes, moreCount));
                 return;
             }
-            
+
             // 檢查是否有結案項目，需要確認
             var closedItems = selectedItems.Where(x => x.IsClosed).ToList();
             if (closedItems.Any())
             {
                 var closedCodes = string.Join("、", closedItems.Take(5).Select(x => x.ProductCode));
-                var moreText = closedItems.Count > 5 ? $"...等 {closedItems.Count} 筆" : "";
-                var confirmMessage = $"以下 {closedItems.Count} 筆項目已勾選「結案」：\n{closedCodes}{moreText}\n\n結案後將不會入庫，且此項目將不再顯示於匯入排程清單。\n確定要繼續嗎？";
-                
-                var confirmed = await NotificationService.ShowConfirmAsync(confirmMessage, "確認結案");
+                var moreText = closedItems.Count > 5 ? string.Format(L["Warehouse.MoreItems"].ToString(), closedItems.Count) : "";
+                var confirmMessage = string.Format(L["Warehouse.ConfirmClose"].ToString(), closedItems.Count, closedCodes, moreText).Replace("\\n", "\n");
+
+                var confirmed = await NotificationService.ShowConfirmAsync(confirmMessage, L["Warehouse.ConfirmCloseTitle"].ToString());
                 if (!confirmed)
                 {
                     return;
@@ -656,7 +657,7 @@
                         var completionResult = await ProductionScheduleCompletionService.CreateAsync(completion);
                         if (!completionResult.IsSuccess)
                         {
-                            failedItems.Add($"{item.ProductCode}: 建立完工記錄失敗");
+                            failedItems.Add($"{item.ProductCode}: {L["Warehouse.ClosedItemBuildFail"]}");
                             continue;
                         }
                         
@@ -675,7 +676,7 @@
                         
                         if (!stockResult.IsSuccess)
                         {
-                            failedItems.Add($"{item.ProductCode}: 庫存入庫失敗 - {stockResult.ErrorMessage}");
+                            failedItems.Add($"{item.ProductCode}: {string.Format(L["Warehouse.StockInFail"].ToString(), stockResult.ErrorMessage)}");
                             continue;
                         }
                     }
@@ -724,18 +725,18 @@
                 var failedMessage = string.Join("\n", failedItems.Take(5));
                 if (failedItems.Count > 5)
                 {
-                    failedMessage += $"\n...還有 {failedItems.Count - 5} 筆失敗";
+                    failedMessage += "\n" + string.Format(L["Warehouse.MoreFailed"].ToString(), failedItems.Count - 5);
                 }
-                await NotificationService.ShowWarningAsync($"成功匯入 {successCount} 筆，失敗 {failedItems.Count} 筆\n{failedMessage}");
+                await NotificationService.ShowWarningAsync(string.Format(L["Warehouse.ImportPartialFail"].ToString(), successCount, failedItems.Count, failedMessage));
             }
             else
             {
-                var message = successCount > 0 
-                    ? $"已成功匯入 {successCount} 筆排程項目到庫存"
+                var message = successCount > 0
+                    ? string.Format(L["Warehouse.ImportSuccessMsg"].ToString(), successCount)
                     : "";
                 if (closedOnlyCount > 0)
                 {
-                    message += (message.Length > 0 ? "，" : "") + $"另有 {closedOnlyCount} 筆僅結案（不入庫）";
+                    message += (message.Length > 0 ? "，" : "") + string.Format(L["Warehouse.ImportClosedOnly"].ToString(), closedOnlyCount);
                 }
                 await NotificationService.ShowSuccessAsync(message);
             }
@@ -749,7 +750,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"匯入失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Warehouse.ImportFailed"].ToString(), ex.Message));
         }
         finally
         {

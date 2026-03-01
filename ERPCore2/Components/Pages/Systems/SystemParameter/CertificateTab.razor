@@ -4,45 +4,46 @@
 @inject IWebHostEnvironment WebHostEnvironment
 @inject NavigationManager NavigationManager
 @inject IConfiguration Configuration
+@inject IStringLocalizer<SharedResource> L
 
 <div class="mt-2">
     <p class="text-muted mb-3">
-        提供使用者下載並安裝伺服器憑證，安裝後瀏覽器將不再顯示 HTTPS 安全警告。
+        @L["System.CertDesc"]
     </p>
 
     @* ── 產生憑證區塊（永遠顯示） ── *@
     <div class="card mb-4">
         <div class="card-header">
-            <h6 class="mb-0"><i class="bi bi-shield-plus me-2"></i>伺服器憑證管理</h6>
+            <h6 class="mb-0"><i class="bi bi-shield-plus me-2"></i>@L["System.CertManage"]</h6>
         </div>
         <div class="card-body">
             @if (certFileExists)
             {
-                <p class="text-muted small mb-3">憑證已存在。若需重新產生（例如伺服器 IP 變更），請點擊下方按鈕。</p>
+                <p class="text-muted small mb-3">@L["System.CertExistsNote"]</p>
             }
             else
             {
-                <p class="text-muted small mb-3">尚未產生憑證。點擊下方按鈕可自動產生並套用，無需手動執行任何指令。</p>
+                <p class="text-muted small mb-3">@L["System.NoCertNote"]</p>
             }
             <div class="mb-3">
                 <label class="form-label small fw-bold">
-                    <i class="bi bi-globe me-1"></i>對外 IP / 主機名稱（選填）
+                    <i class="bi bi-globe me-1"></i>@L["System.ExternalSAN"]
                 </label>
                 <input type="text" class="form-control form-control-sm"
-                       placeholder="例：59.126.246.98, myserver.example.com（逗號分隔）"
+                       placeholder="@L["System.ExternalSANPlaceholder"]"
                        value="@certExtraSans"
                        @oninput="@(e => certExtraSans = e.Value?.ToString() ?? string.Empty)"
                        disabled="@isGeneratingCert" />
                 <div class="form-text">
-                    若使用者透過外部 IP 或網域連線（例如對外網路），請在此輸入，以確保憑證涵蓋該位址。
+                    @L["System.ExternalSANHint"]
                 </div>
             </div>
             <GenericButtonComponent Variant="@(certFileExists ? ButtonVariant.Orange : ButtonVariant.DarkBlue)"
-                                   Text="@(certFileExists ? "重新產生憑證" : "一鍵產生憑證")"
+                                   Text="@(certFileExists ? L["System.ReGenCert"].ToString() : L["System.GenCert"].ToString())"
                                    OnClick="HandleGenerateCertAsync"
                                    IsDisabled="@isGeneratingCert"
                                    IsLoading="@isGeneratingCert"
-                                   Title="自動產生自簽 SSL 憑證（含所有伺服器 IP），無需手動操作" />
+                                   Title="@L["System.GenCertTitle"]" />
 
             @if (!string.IsNullOrEmpty(certGenerateMessage))
             {
@@ -61,12 +62,12 @@
                 <div class="d-flex align-items-center gap-3">
                     <i class="bi bi-file-earmark-arrow-down fs-4 text-primary"></i>
                     <div class="flex-grow-1">
-                        <strong>一鍵安裝程式</strong>
-                        <small class="text-muted d-block">使用者下載後雙擊執行，按一次「是」即自動完成安裝</small>
+                        <strong>@L["System.InstallerTitle"]</strong>
+                        <small class="text-muted d-block">@L["System.InstallerDesc"]</small>
                         <small class="text-muted font-monospace">@certInstallerUrl</small>
                     </div>
                     <a href="@certInstallerUrl" class="btn btn-primary" target="_blank">
-                        <i class="bi bi-download me-1"></i>下載
+                        <i class="bi bi-download me-1"></i>@L["System.Download"]
                     </a>
                 </div>
             </div>
@@ -74,12 +75,12 @@
                 <div class="d-flex align-items-center gap-3">
                     <i class="bi bi-file-earmark-binary fs-4 text-secondary"></i>
                     <div class="flex-grow-1">
-                        <strong>憑證公鑰 (.cer)</strong>
-                        <small class="text-muted d-block">進階用途，手動安裝用</small>
+                        <strong>@L["System.CerPublicKey"]</strong>
+                        <small class="text-muted d-block">@L["System.CerPublicDesc"]</small>
                         <small class="text-muted font-monospace">@certDownloadUrl</small>
                     </div>
                     <a href="@certDownloadUrl" class="btn btn-outline-secondary" target="_blank">
-                        <i class="bi bi-download me-1"></i>下載
+                        <i class="bi bi-download me-1"></i>@L["System.Download"]
                     </a>
                 </div>
             </div>
@@ -87,13 +88,13 @@
 
         <div class="card border-0 bg-light">
             <div class="card-body">
-                <h6 class="card-title"><i class="bi bi-info-circle me-2"></i>使用者安裝步驟</h6>
+                <h6 class="card-title"><i class="bi bi-info-circle me-2"></i>@L["System.InstallStepsTitle"]</h6>
                 <ol class="mb-0 small">
-                    <li class="mb-1">將上方「一鍵安裝程式」連結提供給使用者，或直接下載後透過 USB / 郵件傳送</li>
-                    <li class="mb-1">使用者雙擊 <strong>install-cert.bat</strong></li>
-                    <li class="mb-1">Windows 彈出詢問視窗，點擊<strong>「是」</strong></li>
-                    <li class="mb-1">看到「憑證安裝成功」後關閉所有瀏覽器</li>
-                    <li>重新開啟瀏覽器即可正常連線，不再顯示安全警告</li>
+                    <li class="mb-1">@L["System.InstallStep1"]</li>
+                    <li class="mb-1">@L["System.InstallStep2"]</li>
+                    <li class="mb-1">@L["System.InstallStep3"]</li>
+                    <li class="mb-1">@L["System.InstallStep4"]</li>
+                    <li>@L["System.InstallStep5"]</li>
                 </ol>
             </div>
         </div>

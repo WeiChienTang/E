@@ -1,4 +1,4 @@
-@page "/purchase/returns"
+﻿@page "/purchase/returns"
 @using ERPCore2.Models
 @using ERPCore2.Models.Reports
 @inject IPurchaseReturnService PurchaseReturnService
@@ -26,7 +26,7 @@
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyPurchaseReturnFilters"
                           GetEntityDisplayName="@(returnItem => returnItem.Code)"
-                          RequiredPermission="PurchaseReturn.Read"
+                          RequiredPermission="@PermissionRegistry.PurchaseReturn.Read"
                           RequiredModule="Purchase"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"

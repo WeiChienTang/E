@@ -21,11 +21,11 @@
             <div class="bg-light px-3 py-2 border-bottom mb-3 rounded">
                 <div class="row">
                     <div class="col-md-6">
-                        <small class="text-muted">訂單號碼:</small>
+                        <small class="text-muted">@L["Label.OrderNumber"]:</small>
                         <span class="fw-bold text-primary ms-2">@OrderInfo.OrderCode</span>
                     </div>
                     <div class="col-md-6">
-                        <small class="text-muted">客戶:</small>
+                        <small class="text-muted">@L["Label.CustomerLabel"]</small>
                         <span class="ms-2">@OrderInfo.CustomerName</span>
                     </div>
                 </div>
@@ -45,9 +45,9 @@
                                        IsItemSelectable="@(d => d.PendingQuantity > 0)"
                                        UnselectableTemplate="@GetUnselectableTemplate()"
                                        GetRowCssClass="@GetRowCssClass"
-                                       EmptyMessage="無可排程的明細">
+                                       EmptyMessage="@L["Message.NoSchedulableDetails"]">
                 <EmptyTemplate>
-                    <i class="bi bi-inbox me-2"></i>無可排程的明細
+                    <i class="bi bi-inbox me-2"></i>@L["Message.NoSchedulableDetails"]
                 </EmptyTemplate>
             </InteractiveTableComponent>
         </div>
@@ -345,7 +345,7 @@
         {
             builder.OpenElement(0, "i");
             builder.AddAttribute(1, "class", "bi bi-check-circle-fill text-success");
-            builder.AddAttribute(2, "title", "已完成排程");
+            builder.AddAttribute(2, "title", L["Label.ScheduleCompleted"].ToString());
             builder.CloseElement();
         };
     }

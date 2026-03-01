@@ -1,4 +1,4 @@
-@page "/document-categories"
+﻿@page "/document-categories"
 @inject IDocumentCategoryService DocumentCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -18,7 +18,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.DocumentCategory"]"
                         GetEntityDisplayName="@(c => c.Name)"
-                        RequiredPermission="Document.Manage"
+                        RequiredPermission="@PermissionRegistry.Document.Manage"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>

@@ -1,4 +1,4 @@
-@* 可重用的尺寸編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的尺寸編輯組件 - 可在任何頁面中嵌入 *@
 @inject ISizeService SizeService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(SizeId.HasValue ? L["Message.UpdateSuccess", L["Entity.Size"]].ToString() : L["Message.CreateSuccess", L["Entity.Size"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Size"]]"
-                          RequiredPermission="Size.Read"
+                          RequiredPermission="@PermissionRegistry.Size.Read"
                           OnEntitySaved="@OnSizeSaved"
                           OnCancel="@OnCancel" />
 

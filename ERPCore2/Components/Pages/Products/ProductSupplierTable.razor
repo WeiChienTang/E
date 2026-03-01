@@ -109,17 +109,17 @@
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "25%",
-                Tooltip = "選擇供應此商品的廠商",
-                CustomTemplate = item => 
+                Tooltip = L["Tooltip.SelectSupplierProduct"],
+                CustomTemplate = item =>
                 {
                     var productSupplier = (TProductSupplierEntity)item;
                     var supplierId = GetSupplierId(productSupplier);
                     var selectedValue = supplierId?.ToString() ?? "";
-                    
-                    return @<select class="form-select" 
+
+                    return @<select class="form-select"
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
-                                    title="選擇供應此商品的廠商"
+                                    title="@L["Tooltip.SelectSupplierProduct"]"
                                     @onchange="@(async (e) => await OnSupplierChanged((productSupplier, e.Value)))">
                         <option value="">@L["Placeholder.SelectSupplier"]</option>
                         @foreach (var option in Options)
@@ -137,17 +137,17 @@
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "20%",
-                Tooltip = "輸入廠商對此商品的商品編號或料號",
-                CustomTemplate = item => 
+                Tooltip = L["Tooltip.EnterSupplierCode"],
+                CustomTemplate = item =>
                 {
                     var productSupplier = (TProductSupplierEntity)item;
                     var value = GetSupplierProductCode(productSupplier) ?? "";
-                    
-                    return @<input type="text" 
-                                   class="form-control" 
+
+                    return @<input type="text"
+                                   class="form-control"
                                    value="@value"
                                    placeholder="@L["Placeholder.EnterCode"]"
-                                   title="輸入廠商對此商品的商品編號或料號"
+                                   title="@L["Tooltip.EnterSupplierCode"]"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnSupplierProductCodeChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -160,18 +160,18 @@
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
-                Tooltip = "輸入廠商對此商品的報價金額",
-                CustomTemplate = item => 
+                Tooltip = L["Tooltip.EnterSupplierPrice"],
+                CustomTemplate = item =>
                 {
                     var productSupplier = (TProductSupplierEntity)item;
                     var value = GetSupplierPrice(productSupplier)?.ToString("F0") ?? "";
-                    
-                    return @<input type="number" 
-                                   class="form-control" 
+
+                    return @<input type="number"
+                                   class="form-control"
                                    value="@value"
                                    min="0"
                                    step="1"
-                                   title="輸入廠商對此商品的報價金額"
+                                   title="@L["Tooltip.EnterSupplierPrice"]"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnSupplierPriceChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -184,17 +184,17 @@
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
-                Tooltip = "輸入廠商的交貨時間（以天為單位）",
-                CustomTemplate = item => 
+                Tooltip = L["Tooltip.EnterLeadTime"],
+                CustomTemplate = item =>
                 {
                     var productSupplier = (TProductSupplierEntity)item;
                     var value = GetLeadTime(productSupplier)?.ToString() ?? "";
-                    
-                    return @<input type="number" 
-                                   class="form-control" 
+
+                    return @<input type="number"
+                                   class="form-control"
                                    value="@value"
                                    min="0"
-                                   title="輸入廠商的交貨時間（以天為單位）"
+                                   title="@L["Tooltip.EnterLeadTime"]"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnLeadTimeChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -207,17 +207,17 @@
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
-                Tooltip = "輸入廠商要求的最小訂購數量",
-                CustomTemplate = item => 
+                Tooltip = L["Tooltip.EnterMinOrderQty"],
+                CustomTemplate = item =>
                 {
                     var productSupplier = (TProductSupplierEntity)item;
                     var value = GetMinOrderQuantity(productSupplier)?.ToString() ?? "";
-                    
-                    return @<input type="number" 
-                                   class="form-control" 
+
+                    return @<input type="number"
+                                   class="form-control"
                                    value="@value"
                                    min="0"
-                                   title="輸入廠商要求的最小訂購數量"
+                                   title="@L["Tooltip.EnterMinOrderQty"]"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnMinOrderQuantityChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -230,17 +230,17 @@
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
-                Tooltip = "選擇廠商供應此商品的計量單位",
-                CustomTemplate = item => 
+                Tooltip = L["Tooltip.SelectUnitForSupplier"],
+                CustomTemplate = item =>
                 {
                     var productSupplier = (TProductSupplierEntity)item;
                     var unitId = GetUnitId(productSupplier);
                     var selectedValue = unitId?.ToString() ?? "";
-                    
-                    return @<select class="form-select" 
+
+                    return @<select class="form-select"
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
-                                    title="選擇廠商供應此商品的計量單位"
+                                    title="@L["Tooltip.SelectUnitForSupplier"]"
                                     @onchange="@(async (e) => await OnUnitChanged((productSupplier, e.Value)))">
                         <option value="">@L["Placeholder.SelectUnit"]</option>
                         @foreach (var unit in UnitOptions)
@@ -284,7 +284,7 @@
                 return GetOptionDisplayText(supplier);
             }
         }
-        return "未知廠商";
+        return L["Label.UnknownSupplier"];
     }
 
     private string GetUnitDisplayText(TProductSupplierEntity item)

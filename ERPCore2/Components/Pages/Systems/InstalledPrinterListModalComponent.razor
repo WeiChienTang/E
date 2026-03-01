@@ -6,29 +6,30 @@
 @using ERPCore2.Services
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
-                   Title="查詢已安裝印表機"
+                   Title="@L["Printer.QueryTitle"]"
                    Icon="bi bi-printer"
                    Size="BaseModalComponent.ModalSize.Desktop"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    IsLoading="@isLoading"
-                   LoadingMessage="正在查詢系統印表機..."
+                   LoadingMessage="@L["Printer.LoadingMessage"]"
                    BodyCssClass="p-4"
                    OnClose="@HandleClose">
     
     <HeaderButtons>
-        <GenericButtonComponent Variant="ButtonVariant.DarkBlue" 
-                            Text="確定" 
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                            Text="@L["Button.Confirm"]"
                             Icon="bi bi-check-circle"
                             OnClick="@HandleConfirmSelection"
                             IsDisabled="@(selectedPrinter == null)"
-                            Title="使用選取的印表機" />
-        <GenericButtonComponent Variant="ButtonVariant.Red" 
-                            Text="取消" 
+                            Title="@L["Printer.UseSelected"]" />
+        <GenericButtonComponent Variant="ButtonVariant.Red"
+                            Text="@L["Button.Cancel"]"
                             OnClick="@HandleClose"
-                            Title="取消選擇" />
+                            Title="@L["Printer.CancelSelect"]" />
     </HeaderButtons>
     
     <BodyContent>
@@ -36,7 +37,7 @@
         {
             <div class="alert alert-info mb-0">
                 <i class="bi bi-info-circle me-2"></i>
-                未偵測到任何已安裝的印表機
+                @L["Printer.NoPrinterFound"]
             </div>
         }
         else if (installedPrinters.Any())
@@ -131,7 +132,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入印表機列表失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Printer.LoadError"].ToString(), ex.Message));
             installedPrinters = new List<InstalledPrinterInfo>();
         }
         finally
@@ -149,21 +150,21 @@
         {
             new()
             {
-                Title = "印表機名稱",
+                Title = L["Column.PrinterName"].ToString(),
                 PropertyName = nameof(InstalledPrinterInfo.Name),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "250px"
             },
             new()
             {
-                Title = "連接埠",
+                Title = L["Column.PortName"].ToString(),
                 PropertyName = nameof(InstalledPrinterInfo.PortName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px"
             },
             new()
             {
-                Title = "類型",
+                Title = L["Column.PrinterType"].ToString(),
                 PropertyName = nameof(InstalledPrinterInfo.IsNetworkPrinter),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "100px",
@@ -175,7 +176,7 @@
                         if (printer != null)
                         {
                             var icon = printer.IsNetworkPrinter ? "bi bi-globe" : "bi bi-usb-symbol";
-                            var text = printer.IsNetworkPrinter ? "網路" : "本機";
+                            var text = printer.IsNetworkPrinter ? L["Printer.NetworkType"].ToString() : L["Printer.LocalType"].ToString();
                             builder.OpenElement(0, "span");
                             builder.AddAttribute(1, "class", "d-flex align-items-center gap-1");
                             builder.OpenElement(2, "i");
@@ -189,7 +190,7 @@
             },
             new()
             {
-                Title = "系統預設",
+                Title = L["Column.SystemDefault"].ToString(),
                 PropertyName = nameof(InstalledPrinterInfo.IsSystemDefault),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "100px",
@@ -203,7 +204,7 @@
                         {
                             builder.OpenElement(0, "span");
                             builder.AddAttribute(1, "class", "badge bg-success");
-                            builder.AddContent(2, "預設");
+                            builder.AddContent(2, L["Printer.DefaultBadge"].ToString());
                             builder.CloseElement();
                         }
                     };
@@ -211,7 +212,7 @@
             },
             new()
             {
-                Title = "狀態",
+                Title = L["Column.Status"].ToString(),
                 PropertyName = nameof(InstalledPrinterInfo.Status),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px"

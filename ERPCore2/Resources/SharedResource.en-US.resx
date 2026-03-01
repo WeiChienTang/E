@@ -2169,4 +2169,430 @@
   <data name="Message.LoadPrepaymentTypeFailed" xml:space="preserve"><value>Failed to load prepayment types: {0}</value></data>
   <data name="Message.LoadAvailablePrepaymentFailed" xml:space="preserve"><value>Failed to load available prepayments: {0}</value></data>
 
+  <!-- ===== Company / Logo ===== -->
+  <data name="Company.CurrentLogo" xml:space="preserve"><value>Current Logo:</value></data>
+  <data name="Company.SelectNewLogo" xml:space="preserve"><value>Select New Logo Image</value></data>
+  <data name="Company.LogoFormatHint" xml:space="preserve"><value>Supported formats: JPG, PNG, GIF, SVG | Max size: 500KB | Recommended: 200x80px ~ 400x160px</value></data>
+  <data name="Company.LogoPreview" xml:space="preserve"><value>Preview:</value></data>
+  <data name="Company.LogoFileName" xml:space="preserve"><value>File Name:</value></data>
+  <data name="Company.LogoFileSize" xml:space="preserve"><value>File Size:</value></data>
+  <data name="Label.Uploading" xml:space="preserve"><value>Uploading, please wait...</value></data>
+
+  <!-- ===== ErrorLog Detail ===== -->
+  <data name="ErrorLog.DetailTitle" xml:space="preserve"><value>Error Log Details</value></data>
+  <data name="ErrorLog.LoadingDetail" xml:space="preserve"><value>Loading error log details...</value></data>
+  <data name="ErrorLog.BasicInfo" xml:space="preserve"><value>Basic Information</value></data>
+  <data name="ErrorLog.TechInfo" xml:space="preserve"><value>Technical Information</value></data>
+  <data name="ErrorLog.ErrorMessage" xml:space="preserve"><value>Error Message</value></data>
+  <data name="ErrorLog.StackTrace" xml:space="preserve"><value>Stack Trace</value></data>
+  <data name="ErrorLog.InnerException" xml:space="preserve"><value>Inner Exception</value></data>
+  <data name="ErrorLog.AdditionalData" xml:space="preserve"><value>Additional Data (JSON)</value></data>
+  <data name="ErrorLog.ResolutionInfo" xml:space="preserve"><value>Resolution Information</value></data>
+  <data name="ErrorLog.NotFound" xml:space="preserve"><value>Error log record not found</value></data>
+  <data name="ErrorLog.Resolved" xml:space="preserve"><value>Resolved</value></data>
+  <data name="ErrorLog.Unresolved" xml:space="preserve"><value>Unresolved</value></data>
+  <data name="ErrorLog.ResolvedBy" xml:space="preserve"><value>Resolved By:</value></data>
+  <data name="ErrorLog.ResolvedAt" xml:space="preserve"><value>Resolved At:</value></data>
+  <data name="ErrorLog.ResolutionNote" xml:space="preserve"><value>Resolution:</value></data>
+  <data name="Label.ErrorId" xml:space="preserve"><value>Error ID:</value></data>
+  <data name="Label.ErrorLevel" xml:space="preserve"><value>Error Level:</value></data>
+  <data name="Label.ErrorSource" xml:space="preserve"><value>Error Source:</value></data>
+  <data name="Label.ErrorCategory" xml:space="preserve"><value>Error Category:</value></data>
+  <data name="Label.OccurredAt" xml:space="preserve"><value>Occurred At:</value></data>
+  <data name="Label.ErrorStatus" xml:space="preserve"><value>Status:</value></data>
+  <data name="Label.BelongsToModule" xml:space="preserve"><value>Module:</value></data>
+  <data name="Label.ExceptionType" xml:space="preserve"><value>Exception Type:</value></data>
+  <data name="Label.UserIdLabel" xml:space="preserve"><value>User ID:</value></data>
+  <data name="Label.RequestPath" xml:space="preserve"><value>Request Path:</value></data>
+  <data name="Label.UserAgent" xml:space="preserve"><value>User Agent:</value></data>
+  <data name="Label.CreatedAtLabel" xml:space="preserve"><value>Created At:</value></data>
+  <data name="Label.UpdatedAt" xml:space="preserve"><value>Updated At:</value></data>
+  <data name="Message.CopiedToClipboard" xml:space="preserve"><value>Copied to clipboard</value></data>
+
+  <!-- ===== Paper Modal ===== -->
+  <data name="Paper.SelectTitle" xml:space="preserve"><value>Select Paper Format</value></data>
+  <data name="Paper.LoadingMessage" xml:space="preserve"><value>Loading paper settings...</value></data>
+  <data name="Paper.LoadFailed" xml:space="preserve"><value>Failed to load paper settings</value></data>
+  <data name="Paper.NoPaperSettings" xml:space="preserve"><value>No paper formats configured. Please enter paper dimensions manually.</value></data>
+  <data name="Paper.UnitHint" xml:space="preserve"><value>All dimensions are in centimeters (cm)</value></data>
+  <data name="Column.Width" xml:space="preserve"><value>Width</value></data>
+  <data name="Column.Height" xml:space="preserve"><value>Height</value></data>
+  <data name="Column.TopMargin" xml:space="preserve"><value>Top Margin</value></data>
+  <data name="Column.BottomMargin" xml:space="preserve"><value>Bottom Margin</value></data>
+  <data name="Column.LeftMargin" xml:space="preserve"><value>Left Margin</value></data>
+  <data name="Column.RightMargin" xml:space="preserve"><value>Right Margin</value></data>
+
+  <!-- ===== Printer Modal ===== -->
+  <data name="Printer.QueryTitle" xml:space="preserve"><value>Query Installed Printers</value></data>
+  <data name="Printer.LoadingMessage" xml:space="preserve"><value>Querying system printers...</value></data>
+  <data name="Printer.NoPrinterFound" xml:space="preserve"><value>No installed printers detected</value></data>
+  <data name="Column.PrinterName" xml:space="preserve"><value>Printer Name</value></data>
+  <data name="Column.PortName" xml:space="preserve"><value>Port</value></data>
+  <data name="Column.PrinterType" xml:space="preserve"><value>Type</value></data>
+  <data name="Column.SystemDefault" xml:space="preserve"><value>System Default</value></data>
+  <data name="Label.NetworkPrinter" xml:space="preserve"><value>Network</value></data>
+  <data name="Label.LocalPrinter" xml:space="preserve"><value>Local</value></data>
+  <data name="Label.DefaultBadge" xml:space="preserve"><value>Default</value></data>
+
+  <!-- ===== Report Print Setting Modal ===== -->
+  <data name="Report.SetPrintConfig" xml:space="preserve"><value>Configure Report Print Settings</value></data>
+  <data name="Report.LoadingUnconfigured" xml:space="preserve"><value>Loading unconfigured reports...</value></data>
+  <data name="Report.AllConfigured" xml:space="preserve"><value>All reports are configured. Reports with "Disabled" status are under development or discontinued and cannot be configured.</value></data>
+  <data name="Column.ReportId" xml:space="preserve"><value>Report ID</value></data>
+  <data name="Column.ReportName" xml:space="preserve"><value>Report Name</value></data>
+  <data name="Label.Printer" xml:space="preserve"><value>Printer</value></data>
+  <data name="Label.Paper" xml:space="preserve"><value>Paper</value></data>
+  <data name="Button.BatchFill" xml:space="preserve"><value>Batch Fill</value></data>
+  <data name="Placeholder.SelectPrinter" xml:space="preserve"><value>Select Printer</value></data>
+  <data name="Placeholder.SelectPaper" xml:space="preserve"><value>Select Paper</value></data>
+  <data name="Message.BatchFillSuccess" xml:space="preserve"><value>Batch filled {0} settings</value></data>
+  <data name="Message.AllSettingsCleared" xml:space="preserve"><value>All settings cleared</value></data>
+  <data name="Message.NoDataToSave" xml:space="preserve"><value>No data to save</value></data>
+  <data name="Message.SetAtLeastOne" xml:space="preserve"><value>Please set at least one printer or paper</value></data>
+  <data name="Message.SelectAtLeastOnePrinterOrPaper" xml:space="preserve"><value>Please select at least a printer or paper</value></data>
+  <data name="Message.UpdateReportConfigSuccess" xml:space="preserve"><value>Successfully updated {0} report print configurations</value></data>
+
+  <!-- ===== Certificate Tab ===== -->
+  <data name="Certificate.Desc" xml:space="preserve"><value>Allows users to download and install the server certificate. After installation, browsers will no longer show HTTPS security warnings.</value></data>
+  <data name="Certificate.Management" xml:space="preserve"><value>Server Certificate Management</value></data>
+  <data name="Certificate.AlreadyExists" xml:space="preserve"><value>Certificate already exists. To regenerate (e.g., if the server IP changed), click the button below.</value></data>
+  <data name="Certificate.NotExists" xml:space="preserve"><value>No certificate generated yet. Click the button below to automatically generate and apply one, no manual steps required.</value></data>
+  <data name="Certificate.ExternalIP" xml:space="preserve"><value>External IP / Hostname (Optional)</value></data>
+  <data name="Certificate.IPPlaceholder" xml:space="preserve"><value>e.g.: 59.126.246.98, myserver.example.com (comma-separated)</value></data>
+  <data name="Certificate.IPHint" xml:space="preserve"><value>If users connect via an external IP or domain (e.g., public network), enter it here to ensure the certificate covers that address.</value></data>
+  <data name="Certificate.OneClickInstaller" xml:space="preserve"><value>One-Click Installer</value></data>
+  <data name="Certificate.InstallerDesc" xml:space="preserve"><value>Users double-click after download and click "Yes" once to complete installation automatically</value></data>
+  <data name="Certificate.PublicKey" xml:space="preserve"><value>Certificate Public Key (.cer)</value></data>
+  <data name="Certificate.PublicKeyDesc" xml:space="preserve"><value>For advanced use, manual installation</value></data>
+  <data name="Certificate.InstallGuide" xml:space="preserve"><value>User Installation Steps</value></data>
+  <data name="Button.GenerateCert" xml:space="preserve"><value>One-Click Generate Certificate</value></data>
+  <data name="Button.RegenerateCert" xml:space="preserve"><value>Regenerate Certificate</value></data>
+  <data name="Button.Download" xml:space="preserve"><value>Download</value></data>
+
+  <!-- ===== Module Management Tab ===== -->
+  <data name="Module.ControlDesc" xml:space="preserve"><value>Control the feature modules available in this system. Disabled modules will be hidden from all users (except SuperAdmin).</value></data>
+  <data name="Label.Enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="Label.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Label.Toggle" xml:space="preserve"><value>Toggle</value></data>
+
+  <!-- ===== Vehicle Select Modal ===== -->
+  <data name="Vehicle.SelectTitle" xml:space="preserve"><value>Select Assigned Vehicle</value></data>
+  <data name="Vehicle.LoadingMessage" xml:space="preserve"><value>Loading vehicle information...</value></data>
+  <data name="Vehicle.SearchPlaceholder" xml:space="preserve"><value>Search license plate, vehicle name, brand, type...</value></data>
+  <data name="Vehicle.NoVehiclesAvailable" xml:space="preserve"><value>No vehicles available for assignment</value></data>
+  <data name="Vehicle.NoMatchSearch" xml:space="preserve"><value>No vehicles matching "{0}"</value></data>
+  <data name="Vehicle.CountAndHint" xml:space="preserve"><value>{0} vehicles found. Click a row to select.</value></data>
+  <data name="Column.LicensePlate" xml:space="preserve"><value>License Plate</value></data>
+  <data name="Column.VehicleType" xml:space="preserve"><value>Vehicle Type</value></data>
+  <data name="Column.Brand" xml:space="preserve"><value>Brand</value></data>
+  <data name="Column.CurrentAssignment" xml:space="preserve"><value>Current Assignment</value></data>
+  <data name="Label.NotAssigned" xml:space="preserve"><value>Unassigned</value></data>
+  <data name="Label.CustomerLabel" xml:space="preserve"><value>Customer:</value></data>
+  <data name="Label.SupplierLabel" xml:space="preserve"><value>Supplier:</value></data>
+  <data name="Label.UnknownLabel" xml:space="preserve"><value>Unknown</value></data>
+
+  <!-- ===== Import Schedule Modal ===== -->
+  <data name="Warehouse.ImportTitle" xml:space="preserve"><value>Import Schedule</value></data>
+  <data name="Warehouse.LoadingSchedule" xml:space="preserve"><value>Loading schedule data...</value></data>
+  <data name="Warehouse.NoImportItems" xml:space="preserve"><value>No importable schedule items (all items are completed)</value></data>
+  <data name="Warehouse.PendingItems" xml:space="preserve"><value>{0} items pending import</value></data>
+  <data name="Warehouse.SelectedCount" xml:space="preserve"><value>{0} selected</value></data>
+  <data name="Warehouse.ImportHint" xml:space="preserve"><value>Tip: Importing will increase inventory in the corresponding warehouse/location and mark schedule items as "Completed"</value></data>
+  <data name="Warehouse.NoImportMessage" xml:space="preserve"><value>No importable schedule items</value></data>
+  <data name="Warehouse.StockLocations" xml:space="preserve"><value>Existing Stock Locations</value></data>
+  <data name="Warehouse.NoStockLocations" xml:space="preserve"><value>No stock locations</value></data>
+  <data name="Button.Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Column.ScheduledQuantity" xml:space="preserve"><value>Scheduled Qty</value></data>
+  <data name="Column.ImportQuantity" xml:space="preserve"><value>This Import</value></data>
+  <data name="Column.WarehouseLocation" xml:space="preserve"><value>Warehouse/Location</value></data>
+
+  <!-- ===== Inventory Transaction Table ===== -->
+  <data name="Column.OperationType" xml:space="preserve"><value>Operation Type</value></data>
+  <data name="Column.StockBefore" xml:space="preserve"><value>Before</value></data>
+  <data name="Column.StockAfter" xml:space="preserve"><value>After</value></data>
+  <data name="Inventory.OperationInitial" xml:space="preserve"><value>Initial</value></data>
+  <data name="Inventory.OperationAdjust" xml:space="preserve"><value>Adjust</value></data>
+  <data name="Inventory.OperationDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Label.ViewTransactionHistory" xml:space="preserve"><value>View transaction history for this product</value></data>
+
+  <!-- ===== Stock Alert View Modal ===== -->
+  <data name="Warehouse.LowStock" xml:space="preserve"><value>Low Stock Products</value></data>
+  <data name="Warehouse.OverStock" xml:space="preserve"><value>Overstocked Products</value></data>
+  <data name="Warehouse.NoLowStock" xml:space="preserve"><value>No low stock products at this time.</value></data>
+  <data name="Warehouse.NoOverStock" xml:space="preserve"><value>No overstocked products at this time.</value></data>
+  <data name="Warehouse.LoadingStock" xml:space="preserve"><value>Loading stock information...</value></data>
+  <data name="Column.Warehouse" xml:space="preserve"><value>Warehouse</value></data>
+  <data name="Column.Position" xml:space="preserve"><value>Location</value></data>
+  <data name="Column.StockLevel" xml:space="preserve"><value>Stock</value></data>
+  <data name="Column.MinStock" xml:space="preserve"><value>Min Level</value></data>
+  <data name="Column.MaxStock" xml:space="preserve"><value>Max Level</value></data>
+  <data name="Button.Order" xml:space="preserve"><value>Order</value></data>
+  <data name="Label.Shortage" xml:space="preserve"><value>Short by {0}</value></data>
+  <data name="Label.Excess" xml:space="preserve"><value>Excess by {0}</value></data>
+  <data name="Column.Operation" xml:space="preserve"><value>Action</value></data>
+
+  <!-- ===== Stock Level Alert Modal ===== -->
+  <data name="Warehouse.StockAlertTitle" xml:space="preserve"><value>Set Stock Alert Levels</value></data>
+  <data name="Warehouse.LoadingAlerts" xml:space="preserve"><value>Loading stock details without alert levels...</value></data>
+  <data name="Warehouse.AllAlertsSet" xml:space="preserve"><value>All stock details have alert levels set.</value></data>
+  <data name="Label.Min" xml:space="preserve"><value>Min</value></data>
+  <data name="Label.Max" xml:space="preserve"><value>Max</value></data>
+  <data name="Column.CurrentStockLevel" xml:space="preserve"><value>Current Qty</value></data>
+  <data name="Column.WarehousePosition" xml:space="preserve"><value>Warehouse Location</value></data>
+  <data name="Message.AlertSaveSuccess" xml:space="preserve"><value>Successfully updated {0} stock alert settings</value></data>
+  <data name="Message.AlertBatchFillSuccess" xml:space="preserve"><value>Batch filled {0} alert settings</value></data>
+  <data name="Message.AlertAllCleared" xml:space="preserve"><value>All alert settings cleared</value></data>
+  <data name="Message.EnterMinOrMax" xml:space="preserve"><value>Please enter at least a minimum or maximum level</value></data>
+  <data name="Message.MinCannotBeNegative" xml:space="preserve"><value>Minimum level cannot be negative</value></data>
+  <data name="Message.MaxCannotBeNegative" xml:space="preserve"><value>Maximum level cannot be negative</value></data>
+  <data name="Message.MinCannotExceedMax" xml:space="preserve"><value>Minimum level cannot exceed maximum level</value></data>
+
+  <!-- ===== Warehouse Location Table ===== -->
+  <data name="Warehouse.SaveFirst" xml:space="preserve"><value>Please save the warehouse first to view location data</value></data>
+  <data name="Warehouse.NoLocations" xml:space="preserve"><value>No location data available</value></data>
+  <data name="Column.LocationName" xml:space="preserve"><value>Location Name</value></data>
+
+  <!-- ===== Related Document Components ===== -->
+  <data name="RelatedDoc.NoDocuments" xml:space="preserve"><value>No related documents</value></data>
+  <data name="RelatedDoc.LoadingMessage" xml:space="preserve"><value>Loading related documents...</value></data>
+  <data name="RelatedDoc.NoRelated" xml:space="preserve"><value>No related records</value></data>
+  <data name="RelatedDoc.Product" xml:space="preserve"><value>Product:</value></data>
+  <data name="RelatedDoc.TransactionCount" xml:space="preserve"><value>{0} transaction records</value></data>
+  <data name="RelatedDoc.TransactionHistory" xml:space="preserve"><value>Inventory Transaction History</value></data>
+  <data name="RelatedDoc.TransactionHistoryTitle" xml:space="preserve"><value>Transaction History - {0}</value></data>
+  <data name="RelatedDoc.LoadingHistory" xml:space="preserve"><value>Loading transaction history...</value></data>
+  <data name="Label.QuantityPrefix" xml:space="preserve"><value>Qty:</value></data>
+  <data name="Label.UnitPricePrefix" xml:space="preserve"><value>Unit Price:</value></data>
+  <data name="Label.ReturnPrefix" xml:space="preserve"><value>Return:</value></data>
+  <data name="Label.SetoffPrefix" xml:space="preserve"><value>Setoff:</value></data>
+  <data name="Label.CurrentAmountPrefix" xml:space="preserve"><value>This Time:</value></data>
+  <data name="Label.PurchaseTimeSuffix" xml:space="preserve"><value>times</value></data>
+
+  <!-- ===== GenericTableComponent Pagination ===== -->
+  <data name="Pagination.ShowingRange" xml:space="preserve"><value>Showing {0} - {1} of {2} records (Page {3} of {4})</value></data>
+  <data name="Pagination.PerPage" xml:space="preserve"><value>Per page:</value></data>
+  <data name="Pagination.Records" xml:space="preserve"><value>records</value></data>
+  <data name="Pagination.FirstPage" xml:space="preserve"><value>First</value></data>
+  <data name="Pagination.LastPage" xml:space="preserve"><value>Last</value></data>
+  <data name="Pagination.PrevPage" xml:space="preserve"><value>Prev</value></data>
+  <data name="Pagination.NextPage" xml:space="preserve"><value>Next</value></data>
+  <data name="Pagination.GoToPage" xml:space="preserve"><value>Go to page {0}</value></data>
+
+  <!-- ===== CompanyLogoUpload Messages ===== -->
+  <data name="Message.ClipboardFailed" xml:space="preserve"><value>Failed to copy to clipboard</value></data>
+  <data name="Message.PreviewFailed" xml:space="preserve"><value>Unable to generate preview image, please check the file format and size</value></data>
+  <data name="Message.FileSelectError" xml:space="preserve"><value>Error selecting file: {0}</value></data>
+  <data name="Message.NoFileSelected" xml:space="preserve"><value>Please select a file to upload first</value></data>
+  <data name="Message.UploadFailed" xml:space="preserve"><value>Upload failed: {0}</value></data>
+
+  <!-- ===== InstalledPrinterListModal ===== -->
+  <data name="Printer.UseSelected" xml:space="preserve"><value>Use selected printer</value></data>
+  <data name="Printer.CancelSelect" xml:space="preserve"><value>Cancel selection</value></data>
+  <data name="Printer.NetworkType" xml:space="preserve"><value>Network</value></data>
+  <data name="Printer.LocalType" xml:space="preserve"><value>Local</value></data>
+  <data name="Printer.DefaultBadge" xml:space="preserve"><value>Default</value></data>
+  <data name="Printer.LoadError" xml:space="preserve"><value>Failed to load printer list: {0}</value></data>
+
+  <!-- ===== ReportPrintSettingAlertModal ===== -->
+  <data name="Report.TotalCount" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="Report.PrinterInputLabel" xml:space="preserve"><value>Printer</value></data>
+  <data name="Report.PaperInputLabel" xml:space="preserve"><value>Paper</value></data>
+  <data name="Report.SelectPlaceholder" xml:space="preserve"><value>-- Select --</value></data>
+  <data name="Report.BatchFill" xml:space="preserve"><value>Batch Fill</value></data>
+  <data name="Report.BatchFillTitle" xml:space="preserve"><value>Batch set printer and paper for all reports</value></data>
+  <data name="Report.NotConfigured" xml:space="preserve"><value>Not configured</value></data>
+  <data name="Report.NoDataToSave" xml:space="preserve"><value>No data to save</value></data>
+  <data name="Report.NeedAtLeastOne" xml:space="preserve"><value>Please configure at least one printer or paper</value></data>
+  <data name="Report.UpdateSuccess" xml:space="preserve"><value>Successfully updated {0} report print configurations</value></data>
+  <data name="Report.BatchFillSuccess" xml:space="preserve"><value>Batch filled {0} records</value></data>
+  <data name="Report.ClearAllDone" xml:space="preserve"><value>All settings cleared</value></data>
+  <data name="Report.NeedChoicePrinterPaper" xml:space="preserve"><value>Please select at least a printer or paper</value></data>
+
+  <!-- ===== CertificateTab ===== -->
+  <data name="System.CertDesc" xml:space="preserve"><value>Allow users to download and install the server certificate. After installation, browsers will no longer show HTTPS security warnings.</value></data>
+  <data name="System.CertManage" xml:space="preserve"><value>Server Certificate Management</value></data>
+  <data name="System.CertExistsNote" xml:space="preserve"><value>Certificate exists. To regenerate (e.g., after server IP change), click the button below.</value></data>
+  <data name="System.NoCertNote" xml:space="preserve"><value>No certificate generated yet. Click the button below to automatically generate and apply one without any manual commands.</value></data>
+  <data name="System.ExternalSAN" xml:space="preserve"><value>External IP / Hostname (optional)</value></data>
+  <data name="System.ExternalSANHint" xml:space="preserve"><value>If users connect via an external IP or domain (e.g., external network), enter it here to ensure the certificate covers that address.</value></data>
+  <data name="System.ExternalSANPlaceholder" xml:space="preserve"><value>e.g.: 59.126.246.98, myserver.example.com (comma-separated)</value></data>
+  <data name="System.ReGenCert" xml:space="preserve"><value>Regenerate Certificate</value></data>
+  <data name="System.GenCert" xml:space="preserve"><value>One-Click Generate Certificate</value></data>
+  <data name="System.GenCertTitle" xml:space="preserve"><value>Automatically generate self-signed SSL certificate (includes all server IPs), no manual steps required</value></data>
+  <data name="System.InstallerTitle" xml:space="preserve"><value>One-Click Installer</value></data>
+  <data name="System.InstallerDesc" xml:space="preserve"><value>Users double-click after downloading and click "Yes" once to complete installation automatically</value></data>
+  <data name="System.CerPublicKey" xml:space="preserve"><value>Certificate Public Key (.cer)</value></data>
+  <data name="System.CerPublicDesc" xml:space="preserve"><value>Advanced use, for manual installation</value></data>
+  <data name="System.Download" xml:space="preserve"><value>Download</value></data>
+  <data name="System.InstallStepsTitle" xml:space="preserve"><value>User Installation Steps</value></data>
+  <data name="System.InstallStep1" xml:space="preserve"><value>Provide the "One-Click Installer" link above to users, or download and send via USB / email</value></data>
+  <data name="System.InstallStep2" xml:space="preserve"><value>User double-clicks install-cert.bat</value></data>
+  <data name="System.InstallStep3" xml:space="preserve"><value>Windows prompts a dialog, click "Yes"</value></data>
+  <data name="System.InstallStep4" xml:space="preserve"><value>After seeing "Certificate installed successfully", close all browsers</value></data>
+  <data name="System.InstallStep5" xml:space="preserve"><value>Reopen the browser to connect normally without security warnings</value></data>
+
+  <!-- ===== ModuleManagementTab ===== -->
+  <data name="System.ModuleControlDesc" xml:space="preserve"><value>Control the feature modules available in this system. Disabled modules will be hidden from all users (except SuperAdmin).</value></data>
+  <data name="System.Enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="System.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="System.Toggle" xml:space="preserve"><value>Toggle</value></data>
+
+  <!-- ===== ImportScheduleModal ===== -->
+  <data name="Warehouse.ImportButton" xml:space="preserve"><value>Import</value></data>
+  <data name="Warehouse.SelectAll" xml:space="preserve"><value>Select All</value></data>
+  <data name="Warehouse.DeselectAll" xml:space="preserve"><value>Deselect All</value></data>
+  <data name="Column.ClosedFlag" xml:space="preserve"><value>Closed</value></data>
+  <data name="Warehouse.ClosedTooltip" xml:space="preserve"><value>When checked, this item will no longer appear in the import schedule list</value></data>
+
+  <!-- ===== InventoryTransactionTable ===== -->
+  <data name="Inventory.ViewHistory" xml:space="preserve"><value>View transaction history for this product</value></data>
+  <data name="Column.StorageLocation" xml:space="preserve"><value>Location</value></data>
+
+  <!-- ===== StockAlertViewModal ===== -->
+  <data name="Column.StockCode" xml:space="preserve"><value>Product Code</value></data>
+  <data name="Column.StorageQty" xml:space="preserve"><value>Stock</value></data>
+  <data name="Stats.ClickForDetail" xml:space="preserve"><value>Click to view details</value></data>
+
+  <!-- ===== Vehicle Notifications ===== -->
+  <data name="Vehicle.LoadFailed" xml:space="preserve"><value>Failed to load vehicle list: {0}</value></data>
+  <data name="Vehicle.AssignCustomer" xml:space="preserve"><value>Customer: </value></data>
+  <data name="Vehicle.AssignSupplier" xml:space="preserve"><value>Supplier: </value></data>
+  <data name="Vehicle.Unassigned" xml:space="preserve"><value>Unassigned</value></data>
+  <data name="Vehicle.Unknown" xml:space="preserve"><value>Unknown</value></data>
+
+  <data name="Column.ImportQty" xml:space="preserve"><value>This Completion</value></data>
+
+  <!-- ===== ImportScheduleModal Notifications ===== -->
+  <data name="Warehouse.NeedSelectItem" xml:space="preserve"><value>Please select at least one schedule item</value></data>
+  <data name="Warehouse.NeedSelectWH" xml:space="preserve"><value>The following items have no warehouse/location selected: {0}{1}</value></data>
+  <data name="Warehouse.QuantityError" xml:space="preserve"><value>The following items must have quantity greater than 0, or be marked as closed: {0}{1}</value></data>
+  <data name="Warehouse.ConfirmClose" xml:space="preserve"><value>The following {0} items are marked as "Closed":\n{1}{2}\n\nClosed items will not be stocked, and will no longer appear in the import schedule list.\nAre you sure you want to continue?</value></data>
+  <data name="Warehouse.ConfirmCloseTitle" xml:space="preserve"><value>Confirm Close</value></data>
+  <data name="Warehouse.ImportPartialFail" xml:space="preserve"><value>Imported {0} items successfully, {1} failed\n{2}</value></data>
+  <data name="Warehouse.ImportSuccessMsg" xml:space="preserve"><value>Successfully imported {0} schedule items to inventory</value></data>
+  <data name="Warehouse.ImportClosedOnly" xml:space="preserve"><value>Additionally {0} items closed only (not stocked)</value></data>
+  <data name="Warehouse.LoadScheduleFail" xml:space="preserve"><value>Failed to load schedule data: {0}</value></data>
+  <data name="Warehouse.ImportFailed" xml:space="preserve"><value>Import failed: {0}</value></data>
+  <data name="Warehouse.MoreItems" xml:space="preserve"><value>...and {0} more</value></data>
+  <data name="Warehouse.MoreFailed" xml:space="preserve"><value>...and {0} more failed</value></data>
+  <data name="Warehouse.ClosedItemBuildFail" xml:space="preserve"><value>Failed to create completion record</value></data>
+  <data name="Warehouse.StockInFail" xml:space="preserve"><value>Stock-in failed - {0}</value></data>
+
+  <data name="Warehouse.BatchMin" xml:space="preserve"><value>Min</value></data>
+  <data name="Warehouse.BatchMax" xml:space="preserve"><value>Max</value></data>
+
+  <!-- ===== StockLevelAlertModal Notifications ===== -->
+  <data name="Warehouse.NeedMinOrMax" xml:space="preserve"><value>Please enter at least a minimum or maximum level</value></data>
+  <data name="Warehouse.MinNegative" xml:space="preserve"><value>Minimum level cannot be negative</value></data>
+  <data name="Warehouse.MaxNegative" xml:space="preserve"><value>Maximum level cannot be negative</value></data>
+  <data name="Warehouse.MinExceedsMax" xml:space="preserve"><value>Minimum level cannot exceed maximum level</value></data>
+  <data name="Warehouse.NoDataSave" xml:space="preserve"><value>No data to save</value></data>
+  <data name="Warehouse.ValidationFailed" xml:space="preserve"><value>Validation failed: {0}</value></data>
+  <data name="Warehouse.UpdateSuccessCount" xml:space="preserve"><value>Successfully updated {0} stock alert settings</value></data>
+  <data name="Warehouse.BatchFillCount" xml:space="preserve"><value>Batch filled {0} alert settings</value></data>
+  <data name="Warehouse.ClearSuccess" xml:space="preserve"><value>All alert settings cleared</value></data>
+  <data name="Warehouse.SaveError" xml:space="preserve"><value>Error occurred while saving: {0}</value></data>
+  <data name="Warehouse.BatchFillError" xml:space="preserve"><value>Error occurred during batch fill: {0}</value></data>
+  <data name="Warehouse.ClearError" xml:space="preserve"><value>Error occurred while clearing: {0}</value></data>
+  <data name="Warehouse.LocationLoadError" xml:space="preserve"><value>Error loading location data: {0}</value></data>
+  <data name="Warehouse.MinNegativeItem" xml:space="preserve"><value>{0} minimum level cannot be negative</value></data>
+  <data name="Warehouse.MaxNegativeItem" xml:space="preserve"><value>{0} maximum level cannot be negative</value></data>
+  <data name="Warehouse.MinExceedsMaxItem" xml:space="preserve"><value>{0} minimum level cannot exceed maximum level</value></data>
+
+  <!-- ===== StockAlertViewModal Notifications ===== -->
+  <data name="Inventory.LoadFailed" xml:space="preserve"><value>Failed to load inventory information: {0}</value></data>
+  <data name="Inventory.SupplierFailed" xml:space="preserve"><value>Failed to load supplier recommendations: {0}</value></data>
+  <data name="PurchaseOrder.OpenFailed" xml:space="preserve"><value>Failed to open purchase order: {0}</value></data>
+  <data name="PurchaseOrder.Created" xml:space="preserve"><value>Purchase order {0} created successfully</value></data>
+
+  <!-- ===== RelatedDocument Templates ===== -->
+  <data name="RelatedDoc.Quantity" xml:space="preserve"><value>Qty:</value></data>
+  <data name="RelatedDoc.UnitPrice" xml:space="preserve"><value>Unit Price:</value></data>
+  <data name="RelatedDoc.ReturnQty" xml:space="preserve"><value>Return:</value></data>
+  <data name="RelatedDoc.Setoff" xml:space="preserve"><value>Setoff:</value></data>
+  <data name="RelatedDoc.CurrentAmount" xml:space="preserve"><value>Current:</value></data>
+  <data name="RelatedDoc.Times" xml:space="preserve"><value> times</value></data>
+
+  <!-- ===== GenericTableComponent Pagination ===== -->
+  <data name="Pagination.GoToFirst" xml:space="preserve"><value>Go to first page</value></data>
+  <data name="Pagination.GoToLast" xml:space="preserve"><value>Go to last page</value></data>
+  <data name="Pagination.NoData" xml:space="preserve"><value>No data found</value></data>
+
+  <!-- ===== Products Module (MaterialIssue / Completion / ScheduleItem / Picker / Supplier / Barcode) ===== -->
+  <data name="Message.LoadFailed" xml:space="preserve"><value>Load failed: {0}</value></data>
+  <data name="Message.ReduceStockFailed" xml:space="preserve"><value>Failed to reduce stock: {0} - {1}</value></data>
+  <data name="Message.IssueSuccess" xml:space="preserve"><value>Successfully issued {0} component(s), transaction no.: {1}</value></data>
+  <data name="Message.IssueFailed" xml:space="preserve"><value>Material issue failed: {0}</value></data>
+  <data name="Message.UpdateScheduleItemFailed" xml:space="preserve"><value>Failed to update schedule item: {0}</value></data>
+  <data name="Message.CompletionSuccess" xml:space="preserve"><value>Successfully recorded completion quantity: {0}</value></data>
+  <data name="Message.InventoryError" xml:space="preserve"><value>Inventory processing error: {0}</value></data>
+  <data name="Message.CompletionRecordSuccess" xml:space="preserve"><value>Completion recorded successfully, quantity: {0}</value></data>
+  <data name="Message.UpdateFailed" xml:space="preserve"><value>Update failed: {0}</value></data>
+  <data name="Message.PrintValidationError" xml:space="preserve"><value>Print criteria error: {0}</value></data>
+  <data name="Message.PrintFailed" xml:space="preserve"><value>Print failed: {0}</value></data>
+  <data name="Message.LoadProductDataFailed" xml:space="preserve"><value>Failed to load product data: {0}</value></data>
+  <data name="Label.UnknownProduct" xml:space="preserve"><value>Unknown Product</value></data>
+  <data name="Label.UnknownSupplier" xml:space="preserve"><value>Unknown Supplier</value></data>
+  <data name="Placeholder.SelectOption" xml:space="preserve"><value>-- Please Select --</value></data>
+  <data name="Tooltip.SelectSupplierProduct" xml:space="preserve"><value>Select the supplier for this product</value></data>
+  <data name="Tooltip.EnterSupplierCode" xml:space="preserve"><value>Enter the supplier's product code or part number</value></data>
+  <data name="Tooltip.EnterSupplierPrice" xml:space="preserve"><value>Enter the supplier's quoted price for this product</value></data>
+  <data name="Tooltip.EnterLeadTime" xml:space="preserve"><value>Enter the supplier's lead time in days</value></data>
+  <data name="Tooltip.EnterMinOrderQty" xml:space="preserve"><value>Enter the supplier's minimum order quantity</value></data>
+  <data name="Tooltip.SelectUnitForSupplier" xml:space="preserve"><value>Select the unit of measure for this supplier's product</value></data>
+
+  <!-- ===== CharacterCountTextAreaComponent ===== -->
+  <data name="Label.CharCount" xml:space="preserve"><value>characters</value></data>
+
+  <!-- ===== GenericSearchFilterComponent ===== -->
+  <data name="Filter.Condition" xml:space="preserve"><value>Conditions</value></data>
+  <data name="Placeholder.StartDate" xml:space="preserve"><value>Start Date</value></data>
+  <data name="Placeholder.EndDate" xml:space="preserve"><value>End Date</value></data>
+  <data name="Placeholder.StartTime" xml:space="preserve"><value>Start Time</value></data>
+  <data name="Placeholder.EndTime" xml:space="preserve"><value>End Time</value></data>
+  <data name="Placeholder.MinValue" xml:space="preserve"><value>Min Value</value></data>
+  <data name="Placeholder.MaxValue" xml:space="preserve"><value>Max Value</value></data>
+  <data name="Filter.CustomTypeNote" xml:space="preserve"><value>Custom filter type must be implemented in the parent component</value></data>
+
+  <!-- ===== DetailSectionWrapper ===== -->
+  <data name="Label.PleaseWait" xml:space="preserve"><value>Please wait...</value></data>
+  <data name="Label.LoadingDetailData" xml:space="preserve"><value>Loading detail data...</value></data>
+
+  <!-- ===== PurchaseOrderTable ===== -->
+  <data name="Message.SelectSupplierFirst" xml:space="preserve"><value>Select a supplier to view their pending purchase items</value></data>
+  <data name="Message.NoProducts" xml:space="preserve"><value>No products added yet</value></data>
+  <data name="Button.SmartPurchase" xml:space="preserve"><value>Smart Order</value></data>
+  <data name="Tooltip.PurchaseProductSearch" xml:space="preserve"><value>Search and select a product (enter code or name). Products with receiving records cannot be changed</value></data>
+  <data name="Placeholder.PurchaseProductSearch" xml:space="preserve"><value>Enter product code or name</value></data>
+  <data name="Message.ProductHasReceiving" xml:space="preserve"><value>This product has receiving records and cannot be changed</value></data>
+  <data name="Tooltip.PurchaseQuantity" xml:space="preserve"><value>Purchase quantity. Products with receiving records cannot be modified</value></data>
+  <data name="Message.QuantityHasReceiving" xml:space="preserve"><value>This product has receiving records and the quantity cannot be modified</value></data>
+  <data name="Tooltip.ReceivedQuantity" xml:space="preserve"><value>Quantity received (auto-updated from receiving orders)</value></data>
+  <data name="Tooltip.PurchasePrice" xml:space="preserve"><value>Purchase unit price</value></data>
+  <data name="Tooltip.TaxRatePercent" xml:space="preserve"><value>Tax rate (%)</value></data>
+  <data name="Tooltip.ReceivingCompleted" xml:space="preserve"><value>Mark whether receiving is complete for this product (can be marked early manually)</value></data>
+  <data name="Message.FullyReceived" xml:space="preserve"><value>Fully received, cannot be undone</value></data>
+  <data name="Tooltip.PurchaseRemarks" xml:space="preserve"><value>Optional. Record remarks for this purchase item (editable after approval)</value></data>
+  <data name="Tooltip.ViewRelatedDocuments" xml:space="preserve"><value>View related documents</value></data>
+  <data name="Message.FullyReceivedCannotUndo" xml:space="preserve"><value>This product is fully received and the completion status cannot be undone</value></data>
+  <data name="Message.NeedAtLeastOneProduct" xml:space="preserve"><value>At least one product is required</value></data>
+  <data name="Message.PleaseSelectSupplier" xml:space="preserve"><value>Please select a supplier first</value></data>
+  <data name="Message.AlreadyHasDetails" xml:space="preserve"><value>There are already detail items; Smart Order cannot be used</value></data>
+  <data name="Message.NoHistoryPurchase" xml:space="preserve"><value>This supplier has no purchase history</value></data>
+  <data name="Message.LoadLastPurchaseDetailsTooltip" xml:space="preserve"><value>Load the last purchase details for this supplier</value></data>
+  <data name="Message.PleaseSelectSupplierForSmartOrder" xml:space="preserve"><value>Please select a supplier before using Smart Order</value></data>
+  <data name="Message.SupplierNoHistoryPurchase" xml:space="preserve"><value>This supplier has no purchase history; Smart Order cannot be used</value></data>
+  <data name="Message.SmartOrderConfirm" xml:space="preserve"><value>Smart Order Confirm: This will clear existing details and load {0} items from the last purchase.</value></data>
+  <data name="Message.SmartOrderFailed" xml:space="preserve"><value>Smart Order failed: {0}</value></data>
+  <data name="Message.SmartOrderSuccess" xml:space="preserve"><value>Successfully loaded {0} items from the last purchase</value></data>
+  <data name="Message.LoadLastPurchaseFailed" xml:space="preserve"><value>Failed to load last purchase details: {0}</value></data>
+  <data name="Message.NoDetailsToDelete" xml:space="preserve"><value>There are no details to clear</value></data>
+  <data name="Message.AllDetailsLocked" xml:space="preserve"><value>All details are locked (have receiving records) and cannot be cleared</value></data>
+  <data name="Message.ClearDetailsPartial" xml:space="preserve"><value>Cleared {0} items (kept {1} locked items)</value></data>
+  <data name="Message.ClearDetailsSuccess" xml:space="preserve"><value>Cleared {0} purchase detail items</value></data>
+  <data name="Message.ItemNotSaved" xml:space="preserve"><value>This item has not been saved yet; related documents cannot be viewed</value></data>
+  <data name="Message.LoadRelatedDocFailed" xml:space="preserve"><value>Failed to load related documents: {0}</value></data>
+  <data name="Message.HasUndeletableDetailsTooltip" xml:space="preserve"><value>Some products have receiving records and cannot be cleared</value></data>
+  <data name="Tooltip.ClearAllDetails" xml:space="preserve"><value>Clear all product details</value></data>
+
 </root>

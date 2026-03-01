@@ -3,11 +3,12 @@
 @inject ICustomerService CustomerService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 
 @* 批次列印篩選 Modal - 受控於外部的 IsVisible 參數 *@
 <BatchPrintFilterModalComponent IsVisible="@IsVisible"
                                IsVisibleChanged="@HandleModalVisibilityChanged"
-                               Title="應收帳款報表列印條件"
+                               Title="@L["Report.AccountsReceivableTitle"]"
                                OnConfirm="@HandlePrintConfirmAsync"
                                OnCancel="@HandlePrintCancelAsync">
     
@@ -18,36 +19,36 @@
                                    @bind-SelectedItems="@selectedCustomers"
                                    DisplayProperty="CompanyName"
                                    ValueProperty="Id"
-                                   Placeholder="請輸入客戶名稱搜尋..."
-                                   EmptyMessage="尚未選擇客戶，留空表示列印所有客戶的應收帳款"
+                                   Placeholder="@L["Placeholder.SearchCustomerName"]"
+                                   EmptyMessage="@L["Report.ARNoCustomerSelected"]"
                                    ShowCard="false" />
     </FilterSectionComponent>
     
     @* 區塊 2: 日期範圍篩選 *@
-    <FilterSectionComponent Title="統計日期" 
+    <FilterSectionComponent Title="@L["Report.StatisticsDate"]"
                            IconClass="bi bi-calendar-range">
         <DateRangeFilterComponent @bind-StartDate="@startDate"
                                  @bind-EndDate="@endDate"
-                                 StartDateLabel="起始日期"
-                                 EndDateLabel="結束日期"
+                                 StartDateLabel="@L["Label.StartDate"]"
+                                 EndDateLabel="@L["Label.EndDate"]"
                                  ShowQuickSelectors="true"
                                  AutoValidate="true"
                                  ShowValidationMessage="true" />
     </FilterSectionComponent>
     
     @* 區塊 3: 帳款狀態篩選（可選） *@
-    <FilterSectionComponent Title="帳款狀態" 
+    <FilterSectionComponent Title="@L["Report.AccountStatus"]"
                            IconClass="bi bi-filter">
         <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" id="includeSettled" @bind="includeSettled">
             <label class="form-check-label" for="includeSettled">
-                包含已結清帳款
+                @L["Report.IncludeSettled"]
             </label>
         </div>
         <div class="form-check">
             <input class="form-check-input" type="checkbox" id="includeOverdue" @bind="includeOverdue">
             <label class="form-check-label" for="includeOverdue">
-                僅顯示逾期帳款
+                @L["Report.OverdueOnly"]
             </label>
         </div>
     </FilterSectionComponent>
@@ -108,9 +109,9 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), 
-                additionalData: "初始化應收帳款報表資料失敗");
-            await NotificationService.ShowErrorAsync("初始化應收帳款報表資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(),
+                additionalData: L["Message.InitARReportFailed"].ToString());
+            await NotificationService.ShowErrorAsync(L["Message.InitARReportFailed"]);
         }
     }
 
@@ -122,9 +123,9 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), 
-                additionalData: "載入客戶資料失敗");
-            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(),
+                additionalData: L["Message.LoadCustomerFailed"].ToString());
+            await NotificationService.ShowErrorAsync(L["Message.LoadCustomerFailed"]);
             customers = new List<Customer>();
         }
     }
@@ -184,7 +185,7 @@
                     StartDate = startDate,
                     EndDate = endDate
                 });
-            await NotificationService.ShowErrorAsync("產生報表失敗");
+            await NotificationService.ShowErrorAsync(L["Message.GenerateReportFailed"]);
         }
     }
 

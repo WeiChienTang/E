@@ -1,4 +1,4 @@
-@page "/warehouses"
+﻿@page "/warehouses"
 @inject IWarehouseService WarehouseService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -17,7 +17,7 @@
                         DataLoader="@LoadWarehousesAsync"
                         FilterApplier="@ApplyWarehouseFilters"
                         GetEntityDisplayName="@(warehouse => warehouse.Name)"
-                        RequiredPermission="Warehouse.Read"
+                        RequiredPermission="@PermissionRegistry.Warehouse.Read"
                         RequiredModule="Warehouse"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

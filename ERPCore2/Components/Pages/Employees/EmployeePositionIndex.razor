@@ -1,4 +1,4 @@
-@page "/employee-positions"
+﻿@page "/employee-positions"
 @inject IEmployeePositionService EmployeePositionService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -18,7 +18,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.EmployeePosition"]"
                         GetEntityDisplayName="@(position => position.Name)"
-                        RequiredPermission="EmployeePosition.Read"
+                        RequiredPermission="@PermissionRegistry.EmployeePosition.Read"
                         RequiredModule="Employees"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

@@ -1,4 +1,4 @@
-@page "/employees"
+﻿@page "/employees"
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject IRoleService RoleService
@@ -22,7 +22,7 @@
                         FilterApplier="@ApplyEmployeeFilters"
                         EntityName="@L["Entity.Employee"]"
                         GetEntityDisplayName="@(employee => employee.Name?.Trim() ?? "")"
-                        RequiredPermission="Employee.Read"
+                        RequiredPermission="@PermissionRegistry.Employee.Read"
                         RequiredModule="Employees"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

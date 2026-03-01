@@ -1,4 +1,4 @@
-@page "/materials"
+﻿@page "/materials"
 
 @inject IMaterialService MaterialService
 @inject INotificationService NotificationService
@@ -19,7 +19,7 @@
                           FilterApplier="@ApplyMaterialFilters"
                           EntityName="@L["Entity.Material"]"
                           GetEntityDisplayName="@(material => material.Name)"
-                          RequiredPermission="Material.Read"
+                          RequiredPermission="@PermissionRegistry.Material.Read"
                           RequiredModule="ProductionManagement"
                           @ref="indexComponent" />
 

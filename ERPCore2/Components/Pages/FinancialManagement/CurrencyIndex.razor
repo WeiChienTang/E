@@ -1,4 +1,4 @@
-@page "/currencies"
+﻿@page "/currencies"
 @inject ICurrencyService CurrencyService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -18,7 +18,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.Currency"]"
                         GetEntityDisplayName="@(currency => currency.Name)"
-                        RequiredPermission="Currency.Read"
+                        RequiredPermission="@PermissionRegistry.Currency.Read"
                         RequiredModule="FinancialManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

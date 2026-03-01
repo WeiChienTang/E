@@ -3,9 +3,10 @@
 @inject ICompanyModuleService CompanyModuleService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IStringLocalizer<SharedResource> L
 
 <div class="mt-2">
-    <p class="text-muted mb-3">控制此系統可使用的功能模組。停用的模組將對所有使用者隱藏（SuperAdmin 除外）。</p>
+    <p class="text-muted mb-3">@L["System.ModuleControlDesc"]</p>
     <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 mb-3">
         @foreach (var module in companyModules)
         {
@@ -15,7 +16,7 @@
                         <div class="d-flex justify-content-between align-items-start">
                             <strong class="small">@module.DisplayName</strong>
                             <span class="badge @(module.IsEnabled ? "bg-success" : "bg-secondary") ms-1 flex-shrink-0">
-                                @(module.IsEnabled ? "啟用" : "停用")
+                                @(module.IsEnabled ? L["System.Enabled"].ToString() : L["System.Disabled"].ToString())
                             </span>
                         </div>
                         @if (!string.IsNullOrEmpty(module.Description))
@@ -30,7 +31,7 @@
                                    checked="@module.IsEnabled"
                                    disabled="@(isModuleSaving || IsDisabled)"
                                    @onchange="@((e) => module.IsEnabled = (bool)(e.Value ?? true))" />
-                            <label class="form-check-label small" for="module_@module.Id">開關</label>
+                            <label class="form-check-label small" for="module_@module.Id">@L["System.Toggle"]</label>
                         </div>
                     </div>
                 </div>
@@ -76,12 +77,12 @@
 
             if (!result.IsSuccess)
             {
-                await NotificationService.ShowErrorAsync($"儲存模組設定失敗：{result.ErrorMessage}");
+                await NotificationService.ShowErrorAsync($"{L["Message.SaveFailed"]}：{result.ErrorMessage}");
             }
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存模組設定時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"{L["Message.SaveFailed"]}：{ex.Message}");
         }
         finally
         {

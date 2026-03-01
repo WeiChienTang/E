@@ -1,4 +1,4 @@
-@* 可重用的員工編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的員工編輯組件 - 可在任何頁面中嵌入 *@
 @using System.Security.Claims
 @using ERPCore2.Helpers
 @using ERPCore2.Helpers.EditModal
@@ -38,7 +38,7 @@
                           DataLoader="@LoadEmployeeData"
                           SaveHandler="@SaveEmployee"
                           OnSaveSuccess="@OnSaveSuccess"
-                          RequiredPermission="Employee.Read"
+                          RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"

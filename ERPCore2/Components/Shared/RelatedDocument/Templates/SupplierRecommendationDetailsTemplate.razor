@@ -1,6 +1,7 @@
 @* 供應商推薦詳細欄位範本 - 單行行內顯示 *@
 @using ERPCore2.Models
 @using ERPCore2.Helpers
+@inject IStringLocalizer<SharedResource> L
 
 @if (Document.UnitPrice.HasValue)
 {
@@ -11,7 +12,7 @@
 @if (Document.Quantity.HasValue && Document.Quantity.Value > 0)
 {
     <span class="text-muted">
-        <i class="bi bi-cart-check me-1"></i>@NumberFormatHelper.FormatSmart(Document.Quantity.Value) 次
+        <i class="bi bi-cart-check me-1"></i>@NumberFormatHelper.FormatSmart(Document.Quantity.Value)@L["RelatedDoc.Times"]
     </span>
 }
 @if (Document.DocumentDate != default)

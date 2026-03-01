@@ -1,4 +1,4 @@
-@page "/paper-settings"
+﻿@page "/paper-settings"
 @inject IPaperSettingService PaperSettingService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -17,7 +17,7 @@
                       DataLoader="@LoadPaperSettingsAsync"
                       FilterApplier="@ApplyPaperSettingFilters"
                       GetEntityDisplayName="@(paper => paper.Name)"
-                      RequiredPermission="PaperSetting.Read"
+                      RequiredPermission="@PermissionRegistry.PaperSetting.Read"
                       RequiredModule="Systems"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"

@@ -1,4 +1,4 @@
-@* 可重用的車輛保養紀錄編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的車輛保養紀錄編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
 @inject IVehicleMaintenanceService VehicleMaintenanceService
@@ -32,7 +32,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(VehicleMaintenanceId.HasValue ? L["Message.UpdateSuccess", L["Entity.VehicleMaintenance"]].ToString() : L["Message.CreateSuccess", L["Entity.VehicleMaintenance"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.VehicleMaintenance"]]"
-                          RequiredPermission="VehicleMaintenance.Read"
+                          RequiredPermission="@PermissionRegistry.VehicleMaintenance.Read"
                           OnEntitySaved="@OnVehicleMaintenanceSaved"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"

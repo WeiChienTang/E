@@ -1,4 +1,4 @@
-@page "/waste-records"
+﻿@page "/waste-records"
 @inject IWasteRecordService WasteRecordService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -17,7 +17,7 @@
                           DataLoader="@LoadWasteRecordsAsync"
                           FilterApplier="@ApplyWasteRecordFilters"
                           GetEntityDisplayName="@(wr => wr.Code ?? $"廢料記錄#{wr.Id}")"
-                          RequiredPermission="WasteRecord.Read"
+                          RequiredPermission="@PermissionRegistry.WasteRecord.Read"
                           RequiredModule="WasteManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

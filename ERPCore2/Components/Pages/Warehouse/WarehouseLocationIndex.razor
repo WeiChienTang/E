@@ -1,4 +1,4 @@
-@page "/warehouseLocations"
+﻿@page "/warehouseLocations"
 @inject IWarehouseLocationService WarehouseLocationService
 @inject IWarehouseService WarehouseService
 @rendermode InteractiveServer
@@ -18,7 +18,7 @@
                         DataLoader="@LoadWarehouseLocationsAsync"
                         FilterApplier="@ApplyWarehouseLocationFilters"
                         GetEntityDisplayName="@(warehouseLocation => $"{warehouseLocation.Warehouse?.Name} - {warehouseLocation.Code}")"
-                        RequiredPermission="WarehouseLocation.Read"
+                        RequiredPermission="@PermissionRegistry.WarehouseLocation.Read"
                         RequiredModule="Warehouse"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

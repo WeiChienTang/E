@@ -1,15 +1,16 @@
 @inject IErrorLogService ErrorLogService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent 
     IsVisible="@IsVisible"
     IsVisibleChanged="@IsVisibleChanged"
-    Title="錯誤記錄詳細資訊"
+    Title="@L["ErrorLog.DetailTitle"]"
     Icon="fas fa-exclamation-triangle text-danger"
     Size="BaseModalComponent.ModalSize.ExtraLarge"
     HeaderColor="BaseModalComponent.HeaderVariant.Danger"
     IsLoading="@isLoading"
-    LoadingMessage="載入錯誤記錄詳細資訊..."
+    LoadingMessage="@L["ErrorLog.LoadingDetail"]"
     ShowFooter="true"
     BodyCssClass="p-3"
     OnClose="@OnClose">
@@ -24,25 +25,25 @@
                                     <div class="card-header">
                                         <h5 class="card-title mb-0">
                                             <i class="fas fa-info-circle"></i>
-                                            基本資訊
+                                            @L["ErrorLog.BasicInfo"]
                                         </h5>
                                     </div>
                                     <div class="card-body">
                                         <div class="row mb-2">
-                                            <div class="col-4"><strong>錯誤ID：</strong></div>
+                                            <div class="col-4"><strong>@L["Label.ErrorId"]</strong></div>
                                             <div class="col-8">
                                                 <code>@errorLog.ErrorId</code>
-                                                <GenericButtonComponent 
-                                                    Text="複製"
+                                                <GenericButtonComponent
+                                                    Text="@L["Button.Copy"]"
                                                     Variant="ButtonVariant.DarkBlue"
                                                     Size="ButtonSize.Small"
                                                     CssClass="ms-2"
-                                                    Title="複製錯誤ID"
+                                                    Title="@(L["Button.Copy"] + " " + L["Label.ErrorId"])"
                                                     OnClick="() => CopyToClipboard(errorLog.ErrorId)" />
                                             </div>
                                         </div>
                                         <div class="row mb-2">
-                                            <div class="col-4"><strong>錯誤等級：</strong></div>
+                                            <div class="col-4"><strong>@L["Label.ErrorLevel"]</strong></div>
                                             <div class="col-8">
                                                 <span class="badge" style="@ErrorLogFieldConfiguration.GetLevelBadgeStyle(errorLog.Level)">
                                                     @ErrorLogFieldConfiguration.GetLevelDisplayText(errorLog.Level)
@@ -50,7 +51,7 @@
                                             </div>
                                         </div>
                                         <div class="row mb-2">
-                                            <div class="col-4"><strong>錯誤來源：</strong></div>
+                                            <div class="col-4"><strong>@L["Label.ErrorSource"]</strong></div>
                                             <div class="col-8">
                                                 <span class="badge bg-secondary">
                                                     @ErrorLogFieldConfiguration.GetSourceDisplayText(errorLog.Source)
@@ -58,30 +59,30 @@
                                             </div>
                                         </div>
                                         <div class="row mb-2">
-                                            <div class="col-4"><strong>錯誤分類：</strong></div>
+                                            <div class="col-4"><strong>@L["Label.ErrorCategory"]</strong></div>
                                             <div class="col-8">@errorLog.Category</div>
                                         </div>
                                         <div class="row mb-2">
-                                            <div class="col-4"><strong>發生時間：</strong></div>
+                                            <div class="col-4"><strong>@L["Label.OccurredAt"]</strong></div>
                                             <div class="col-8">@errorLog.OccurredAt.ToString("yyyy/MM/dd HH:mm:ss")</div>
                                         </div>
                                         <div class="row mb-2">
-                                            <div class="col-4"><strong>狀態：</strong></div>
+                                            <div class="col-4"><strong>@L["Label.ErrorStatus"]</strong></div>
                                             <div class="col-8">
                                                 @if (errorLog.IsResolved)
                                                 {
-                                                    <span class="badge bg-success">已解決</span>
+                                                    <span class="badge bg-success">@L["ErrorLog.Resolved"]</span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="badge bg-warning text-dark">未解決</span>
+                                                    <span class="badge bg-warning text-dark">@L["ErrorLog.Unresolved"]</span>
                                                 }
                                             </div>
                                         </div>
                                         @if (!string.IsNullOrEmpty(errorLog.Module))
                                         {
                                             <div class="row mb-2">
-                                                <div class="col-4"><strong>所屬模組：</strong></div>
+                                                <div class="col-4"><strong>@L["Label.BelongsToModule"]</strong></div>
                                                 <div class="col-8">@errorLog.Module</div>
                                             </div>
                                         }
@@ -95,46 +96,46 @@
                                     <div class="card-header">
                                         <h5 class="card-title mb-0">
                                             <i class="fas fa-cog"></i>
-                                            技術資訊
+                                            @L["ErrorLog.TechInfo"]
                                         </h5>
                                     </div>
                                     <div class="card-body">
                                         @if (!string.IsNullOrEmpty(errorLog.ExceptionType))
                                         {
                                             <div class="row mb-2">
-                                                <div class="col-4"><strong>例外類型：</strong></div>
+                                                <div class="col-4"><strong>@L["Label.ExceptionType"]</strong></div>
                                                 <div class="col-8"><code>@errorLog.ExceptionType</code></div>
                                             </div>
                                         }
                                         @if (!string.IsNullOrEmpty(errorLog.UserId))
                                         {
                                             <div class="row mb-2">
-                                                <div class="col-4"><strong>使用者ID：</strong></div>
+                                                <div class="col-4"><strong>@L["Label.UserIdLabel"]</strong></div>
                                                 <div class="col-8">@errorLog.UserId</div>
                                             </div>
                                         }
                                         @if (!string.IsNullOrEmpty(errorLog.RequestPath))
                                         {
                                             <div class="row mb-2">
-                                                <div class="col-4"><strong>請求路徑：</strong></div>
+                                                <div class="col-4"><strong>@L["Label.RequestPath"]</strong></div>
                                                 <div class="col-8"><code>@errorLog.RequestPath</code></div>
                                             </div>
                                         }
                                         @if (!string.IsNullOrEmpty(errorLog.UserAgent))
                                         {
                                             <div class="row mb-2">
-                                                <div class="col-4"><strong>使用者代理：</strong></div>
+                                                <div class="col-4"><strong>@L["Label.UserAgent"]</strong></div>
                                                 <div class="col-8">
                                                     <small class="text-muted">@errorLog.UserAgent</small>
                                                 </div>
                                             </div>
                                         }
                                         <div class="row mb-2">
-                                            <div class="col-4"><strong>建立時間：</strong></div>
+                                            <div class="col-4"><strong>@L["Label.CreatedAtLabel"]</strong></div>
                                             <div class="col-8">@errorLog.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</div>
                                         </div>
                                         <div class="row mb-2">
-                                            <div class="col-4"><strong>更新時間：</strong></div>
+                                            <div class="col-4"><strong>@L["Label.UpdatedAt"]</strong></div>
                                             <div class="col-8">@errorLog.UpdatedAt?.ToString("yyyy/MM/dd HH:mm:ss")</div>
                                         </div>
                                     </div>
@@ -149,13 +150,13 @@
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h5 class="card-title mb-0">
                                             <i class="fas fa-exclamation-triangle"></i>
-                                            錯誤訊息
+                                            @L["ErrorLog.ErrorMessage"]
                                         </h5>
-                                        <GenericButtonComponent 
-                                            Text="複製"
+                                        <GenericButtonComponent
+                                            Text="@L["Button.Copy"]"
                                             Variant="ButtonVariant.DarkBlue"
                                             Size="ButtonSize.Small"
-                                            Title="複製錯誤訊息"
+                                            Title="@(L["Button.Copy"] + " " + L["ErrorLog.ErrorMessage"])"
                                             OnClick="() => CopyToClipboard(errorLog.Message)" />
                                     </div>
                                     <div class="card-body">
@@ -174,13 +175,13 @@
                                         <div class="card-header d-flex justify-content-between align-items-center">
                                             <h5 class="card-title mb-0">
                                                 <i class="fas fa-list"></i>
-                                                堆疊追蹤
+                                                @L["ErrorLog.StackTrace"]
                                             </h5>
-                                            <GenericButtonComponent 
-                                                Text="複製"
+                                            <GenericButtonComponent
+                                                Text="@L["Button.Copy"]"
                                                 Variant="ButtonVariant.DarkBlue"
                                                 Size="ButtonSize.Small"
-                                                Title="複製堆疊追蹤"
+                                                Title="@(L["Button.Copy"] + " " + L["ErrorLog.StackTrace"])"
                                                 OnClick="() => CopyToClipboard(errorLog.StackTrace)" />
                                         </div>
                                         <div class="card-body">
@@ -200,13 +201,13 @@
                                         <div class="card-header d-flex justify-content-between align-items-center">
                                             <h5 class="card-title mb-0">
                                                 <i class="fas fa-link"></i>
-                                                內部例外
+                                                @L["ErrorLog.InnerException"]
                                             </h5>
-                                            <GenericButtonComponent 
-                                                Text="複製"
+                                            <GenericButtonComponent
+                                                Text="@L["Button.Copy"]"
                                                 Variant="ButtonVariant.DarkBlue"
                                                 Size="ButtonSize.Small"
-                                                Title="複製內部例外"
+                                                Title="@(L["Button.Copy"] + " " + L["ErrorLog.InnerException"])"
                                                 OnClick="() => CopyToClipboard(errorLog.InnerException)" />
                                         </div>
                                         <div class="card-body">
@@ -226,13 +227,13 @@
                                         <div class="card-header d-flex justify-content-between align-items-center">
                                             <h5 class="card-title mb-0">
                                                 <i class="fas fa-database"></i>
-                                                額外資料 (JSON)
+                                                @L["ErrorLog.AdditionalData"]
                                             </h5>
-                                            <GenericButtonComponent 
-                                                Text="複製"
+                                            <GenericButtonComponent
+                                                Text="@L["Button.Copy"]"
                                                 Variant="ButtonVariant.DarkBlue"
                                                 Size="ButtonSize.Small"
-                                                Title="複製額外資料"
+                                                Title="@(L["Button.Copy"] + " " + L["ErrorLog.AdditionalData"])"
                                                 OnClick="() => CopyToClipboard(errorLog.AdditionalData)" />
                                         </div>
                                         <div class="card-body">
@@ -252,22 +253,22 @@
                                         <div class="card-header bg-success text-white">
                                             <h5 class="card-title mb-0">
                                                 <i class="fas fa-check-circle"></i>
-                                                解決資訊
+                                                @L["ErrorLog.ResolutionInfo"]
                                             </h5>
                                         </div>
                                         <div class="card-body">
                                             <div class="row mb-2">
-                                                <div class="col-3"><strong>解決者：</strong></div>
-                                                <div class="col-9">@(errorLog.ResolvedBy ?? "未知")</div>
+                                                <div class="col-3"><strong>@L["ErrorLog.ResolvedBy"]</strong></div>
+                                                <div class="col-9">@(errorLog.ResolvedBy ?? L["Label.Unknown"].ToString())</div>
                                             </div>
                                             <div class="row mb-2">
-                                                <div class="col-3"><strong>解決時間：</strong></div>
-                                                <div class="col-9">@(errorLog.ResolvedAt?.ToString("yyyy/MM/dd HH:mm:ss") ?? "未知")</div>
+                                                <div class="col-3"><strong>@L["ErrorLog.ResolvedAt"]</strong></div>
+                                                <div class="col-9">@(errorLog.ResolvedAt?.ToString("yyyy/MM/dd HH:mm:ss") ?? L["Label.Unknown"].ToString())</div>
                                             </div>
                                             @if (!string.IsNullOrEmpty(errorLog.Resolution))
                                             {
                                                 <div class="row">
-                                                    <div class="col-3"><strong>解決方案：</strong></div>
+                                                    <div class="col-3"><strong>@L["ErrorLog.ResolutionNote"]</strong></div>
                                                     <div class="col-9">
                                                         <div class="bg-light p-2 rounded">@errorLog.Resolution</div>
                                                     </div>
@@ -283,7 +284,7 @@
         {
             <div class="alert alert-warning" role="alert">
                 <i class="fas fa-exclamation-triangle"></i>
-                找不到指定的錯誤記錄
+                @L["ErrorLog.NotFound"]
             </div>
         }
     </BodyContent>
@@ -316,7 +317,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnParametersSetAsync), GetType(), additionalData: "載入錯誤記錄詳細資訊失敗");
-            await NotificationService.ShowErrorAsync("載入錯誤記錄詳細資訊失敗");
+            await NotificationService.ShowErrorAsync(L["ErrorLog.LoadingDetail"].ToString());
         }
     }
 
@@ -334,7 +335,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadErrorLogAsync), GetType(), additionalData: "載入錯誤記錄資料失敗");
-            await NotificationService.ShowErrorAsync("載入錯誤記錄資料失敗");
+            await NotificationService.ShowErrorAsync(L["ErrorLog.LoadingDetail"].ToString());
             errorLog = null;
         }
         finally
@@ -365,12 +366,12 @@
 
             // 在實際應用中，您需要使用 IJSRuntime 來複製到剪貼簿
             // 這裡只是顯示複製成功的提示
-            await NotificationService.ShowSuccessAsync("已複製到剪貼簿");
+            await NotificationService.ShowSuccessAsync(L["Message.CopiedToClipboard"].ToString());
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CopyToClipboard), GetType(), additionalData: "複製到剪貼簿失敗");
-            await NotificationService.ShowErrorAsync("複製到剪貼簿失敗");
+            await NotificationService.ShowErrorAsync(L["Message.ClipboardFailed"].ToString());
         }
     }
 

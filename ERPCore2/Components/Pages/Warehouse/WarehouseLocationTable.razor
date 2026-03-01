@@ -2,6 +2,7 @@
 
 @inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 @if (!WarehouseId.HasValue || WarehouseId.Value <= 0)
 {
@@ -9,7 +10,7 @@
         <div class="card-body text-center py-5">
             <div class="text-muted">
                 <i class="fas fa-inbox fa-2x mb-2"></i>
-                <p>請先儲存倉庫後即可查看庫位資料</p>
+                <p>@L["Warehouse.SaveFirst"]</p>
             </div>
         </div>
     </div>
@@ -23,7 +24,7 @@ else
                                       Items="@LocationItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
-                                      EmptyMessage="尚無庫位資料"
+                                      EmptyMessage="@L["Warehouse.NoLocations"]"
                                       ShowBuiltInActions="false"
                                       ShowRowNumbers="true"
                                       EnableAutoEmptyRow="false" />
@@ -89,7 +90,7 @@ else
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入庫位資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Warehouse.LocationLoadError"].ToString(), ex.Message));
             LocationItems.Clear();
         }
     }
@@ -115,10 +116,10 @@ else
             // 庫位名稱欄位（唯讀顯示）
             new()
             {
-                Title = "庫位名稱",
+                Title = L["Column.LocationName"].ToString(),
                 PropertyName = "Name",
                 ColumnType = InteractiveColumnType.Display,
-                Tooltip = "庫位的名稱"
+                Tooltip = L["Column.LocationName"].ToString()
             }
         };
 

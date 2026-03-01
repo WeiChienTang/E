@@ -51,6 +51,14 @@ public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem
     private int _previousDataVersion = 0;
     private int? _previousSelectedSupplierId = null;
     private bool _isLoadingDetails = false;
+    private bool _previousTableComponentNull = true;
+
+    /// <summary>
+    /// InvokeLoadWithCompletionAsync() 是否已至少完成一次。
+    /// 用於防止 OnAfterRenderAsync 在中間渲染（Intermediate Render）時提早呼叫
+    /// RefreshEmptyRow()，避免污染 InteractiveTableComponent._previousDataLoadCompleted。
+    /// </summary>
+    private bool _hasLoadCompleted = false;
 
     // ===== 抽象方法（子類別必須實作）=====
 
@@ -88,6 +96,25 @@ public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem
 
     // ===== 共用生命週期 =====
 
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        // 偵測 tableComponent 從 null → 非 null 的轉換（例如 @if 條件成立後首次渲染）
+        // 必須加上 _hasLoadCompleted 守衛：
+        //   若在 OnInitializedAsync 中途（await LoadProductsAsync() 等）產生中間渲染，
+        //   tableComponent 會在 InvokeLoadWithCompletionAsync() 執行前就被賦值。
+        //   此時若提早呼叫 RefreshEmptyRow()，會污染 InteractiveTableComponent
+        //   的 _previousDataLoadCompleted = true，導致後續真正的 false→true 轉換
+        //   無法被偵測，空白行永遠不出現。
+        //   加上 _hasLoadCompleted 守衛後，只有在資料真正載入完成後才觸發。
+        bool tableJustAppeared = _previousTableComponentNull && tableComponent != null;
+        _previousTableComponentNull = tableComponent == null;
+
+        if (tableJustAppeared && _hasLoadCompleted)
+            tableComponent!.RefreshEmptyRow();
+
+        return Task.CompletedTask;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         _previousSelectedSupplierId = SelectedSupplierId;
@@ -101,6 +128,14 @@ public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem
             await OnCounterpartyChangedAsync();
 
         await InvokeLoadWithCompletionAsync();
+
+        // OnInitializedAsync 場景：當 tableComponent 在中間渲染時已被賦值（supplier 初始 > 0），
+        // OnAfterRenderAsync 因 _hasLoadCompleted 守衛而未呼叫 RefreshEmptyRow()。
+        // 此時 InvokeLoadWithCompletionAsync() 已完成，_hasLoadCompleted = true，
+        // tableComponent 若已非 null 則在此直接補呼叫；若仍為 null，
+        // 後續首次渲染的 OnAfterRenderAsync 會以 tableJustAppeared && _hasLoadCompleted 觸發。
+        tableComponent?.RefreshEmptyRow();
+
         await OnAfterLoadAsync();
     }
 
@@ -191,6 +226,7 @@ public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem
     /// </summary>
     private async Task InvokeLoadWithCompletionAsync()
     {
+        _hasLoadCompleted = false;
         _dataLoadCompleted = false;
         Items.Clear();
 
@@ -201,6 +237,7 @@ public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem
             _hasUndeletableDetails = hasUndeletable;
 
         _dataLoadCompleted = true;
+        _hasLoadCompleted = true;
         StateHasChanged();
     }
 

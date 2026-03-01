@@ -1,4 +1,4 @@
-@page "/journal-entries"
+﻿@page "/journal-entries"
 @inject IJournalEntryService JournalEntryService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -17,7 +17,7 @@
                           DataLoader="@LoadDataAsync"
                           FilterApplier="@ApplyFilters"
                           GetEntityDisplayName="@(je => $"{je.Code} {je.Description}")"
-                          RequiredPermission="JournalEntry.Read"
+                          RequiredPermission="@PermissionRegistry.JournalEntry.Read"
                           RequiredModule="Accounting"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

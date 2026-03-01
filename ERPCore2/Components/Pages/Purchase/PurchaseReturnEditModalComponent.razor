@@ -1,4 +1,4 @@
-@* 進貨退出編輯模態組件 *@
+﻿@* 進貨退出編輯模態組件 *@
 @using Microsoft.AspNetCore.Components.Rendering
 @using ERPCore2.Services.Reports
 @using ERPCore2.Services.Reports.Interfaces
@@ -43,7 +43,7 @@
                           SaveHandler="@SavePurchaseReturnWithDetails"
                           SaveSuccessMessage="@(PurchaseReturnId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseReturn"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseReturn"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseReturn"]]"
-                          RequiredPermission="PurchaseReturn.Read"
+                          RequiredPermission="@PermissionRegistry.PurchaseReturn.Read"
                           OnEntitySaved="@OnPurchaseReturnSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"

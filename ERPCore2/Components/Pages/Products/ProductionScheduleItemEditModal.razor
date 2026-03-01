@@ -93,7 +93,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadFailed"], ex.Message));
         }
         finally
         {
@@ -256,7 +256,7 @@
                 <div class="card mb-3">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h6 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>@L["Production.ComponentNeeds"]</h6>
-                        <span class="badge bg-secondary">@scheduleDetails.Count 項</span>
+                        <span class="badge bg-secondary">@scheduleDetails.Count @L["Label.ItemCount"]</span>
                     </div>
                     <div class="card-body p-0">
                         @if (scheduleDetails.Any())
@@ -287,7 +287,7 @@
                                                 }
                                                 else
                                                 {
-                                                    <span class="text-muted">未知商品</span>
+                                                    <span class="text-muted">@L["Label.UnknownProduct"]</span>
                                                 }
                                             </td>
                                             <td class="text-end">@detail.RequiredQuantity.ToString("N2")</td>
@@ -370,7 +370,7 @@
             {
                 <div class="text-center text-muted py-5">
                     <i class="bi bi-question-circle fs-1 mb-3 d-block"></i>
-                    找不到排程項目資料
+                    @L["Message.ScheduleItemNotFound"]
                 </div>
             }
         </div>
@@ -413,12 +413,12 @@
             }
             else
             {
-                await NotificationService.ShowErrorAsync($"更新失敗：{result.ErrorMessage}");
+                await NotificationService.ShowErrorAsync(string.Format(L["Message.UpdateFailed"], result.ErrorMessage));
             }
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"操作失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"{L["Message.OperationFailed"]}：{ex.Message}");
         }
         finally
         {
@@ -450,12 +450,12 @@
             }
             else
             {
-                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
+                await NotificationService.ShowErrorAsync($"{L["Message.SaveFailed"]}：{result.ErrorMessage}");
             }
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"{L["Message.SaveFailed"]}：{ex.Message}");
         }
         finally
         {
@@ -480,7 +480,7 @@
         // 重新載入資料以更新狀態
         await LoadDataAsync();
 
-        await NotificationService.ShowSuccessAsync($"完工登錄成功，完成數量：{completion.CompletedQuantity:N2}");
+        await NotificationService.ShowSuccessAsync(string.Format(L["Message.CompletionRecordSuccess"], completion.CompletedQuantity.ToString("N2")));
     }
 
     // ===== 組件領料相關 =====

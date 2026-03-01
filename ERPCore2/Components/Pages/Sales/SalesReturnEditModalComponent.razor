@@ -1,4 +1,4 @@
-@* 銷售退貨編輯模態組件 *@
+﻿@* 銷售退貨編輯模態組件 *@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
 @inject ISalesReturnService SalesReturnService
@@ -49,7 +49,7 @@
                           SaveHandler="@SaveSalesReturnWithDetails"
                           SaveSuccessMessage="@(SalesReturnId.HasValue ? L["Message.UpdateSuccess", L["Entity.SalesReturn"]].ToString() : L["Message.CreateSuccess", L["Entity.SalesReturn"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SalesReturn"]]"
-                          RequiredPermission="SalesReturn.Read"
+                          RequiredPermission="@PermissionRegistry.SalesReturn.Read"
                           OnEntitySaved="@OnSalesReturnSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"

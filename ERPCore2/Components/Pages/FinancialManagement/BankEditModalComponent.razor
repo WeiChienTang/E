@@ -1,4 +1,4 @@
-@* 可重用的銀行編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的銀行編輯組件 - 可在任何頁面中嵌入 *@
 @inject IBankService BankService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(BankId.HasValue ? L["Message.UpdateSuccess", L["Entity.Bank"]].ToString() : L["Message.CreateSuccess", L["Entity.Bank"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Bank"]]"
-                          RequiredPermission="Bank.Read"
+                          RequiredPermission="@PermissionRegistry.Bank.Read"
                           OnEntitySaved="@OnBankSaved"
                           OnCancel="@OnCancel" />
 

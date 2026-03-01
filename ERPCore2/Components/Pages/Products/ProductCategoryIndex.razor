@@ -1,4 +1,4 @@
-@page "/product-categories"
+﻿@page "/product-categories"
 @inject IProductCategoryService ProductCategoryService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -17,7 +17,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.ProductCategory"]"
                         GetEntityDisplayName="@(category => category.Name)"
-                        RequiredPermission="ProductCategory.Read"
+                        RequiredPermission="@PermissionRegistry.ProductCategory.Read"
                         RequiredModule="Products"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

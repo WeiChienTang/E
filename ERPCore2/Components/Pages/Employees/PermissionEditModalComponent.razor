@@ -1,4 +1,4 @@
-@* 可重用的權限明細編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的權限明細編輯組件 - 可在任何頁面中嵌入 *@
 @using System.Linq
 
 @inject IPermissionManagementService PermissionService
@@ -24,7 +24,7 @@
                           SaveHandler="@SavePermission"
                           SaveSuccessMessage="@(PermissionId.HasValue ? L["Message.UpdateSuccess", L["Entity.Permission"]].ToString() : L["Message.CreateSuccess", L["Entity.Permission"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Permission"]]"
-                          RequiredPermission="Permission.Read"
+                          RequiredPermission="@PermissionRegistry.Permission.Read"
                           OnEntitySaved="@OnPermissionSaved"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded" />

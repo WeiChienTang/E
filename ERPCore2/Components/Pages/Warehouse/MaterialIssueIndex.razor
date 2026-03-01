@@ -1,4 +1,4 @@
-@page "/materialIssues"
+﻿@page "/materialIssues"
 @inject IMaterialIssueService MaterialIssueService
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
@@ -25,7 +25,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.MaterialIssue"]"
                         GetEntityDisplayName="@(issue => issue.Code ?? "未命名")"
-                        RequiredPermission="MaterialIssue.Read"
+                        RequiredPermission="@PermissionRegistry.MaterialIssue.Read"
                         RequiredModule="Warehouse"
                         OnAddClick="@HandleAddClick"
                         OnRowClick="@HandleEditClick"

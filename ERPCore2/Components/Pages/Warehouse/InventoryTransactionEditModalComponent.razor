@@ -1,4 +1,4 @@
-@* 可重用的庫存異動記錄編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的庫存異動記錄編輯組件 - 可在任何頁面中嵌入 *@
 @* 重構後支援主/明細結構顯示 *@
 @inject IInventoryTransactionService InventoryTransactionService
 @inject IWarehouseService WarehouseService
@@ -26,7 +26,7 @@
                           FormSections="@formSections"
                           DataLoader="@LoadInventoryTransactionData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                          RequiredPermission="InventoryTransaction.Read"
+                          RequiredPermission="@PermissionRegistry.InventoryTransaction.Read"
                           OnCancel="@OnCancel"
                           ShowSaveButton="false"
                           ShowPrintButton="false"

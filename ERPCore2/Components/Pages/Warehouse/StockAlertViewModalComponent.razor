@@ -10,6 +10,7 @@
 @inject IInventoryStockService InventoryStockService
 @inject ISupplierRecommendationService SupplierRecommendationService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -19,7 +20,7 @@
                    HeaderColor="@GetHeaderColor()"
                    UseWhiteCloseButton="@(AlertType == StockAlertType.OverStock)"
                    IsLoading="@isLoading"
-                   LoadingMessage="正在載入庫存資訊..."
+                   LoadingMessage="@L["Warehouse.LoadingStock"]"
                    BodyCssClass="p-4"
                    OnClose="@HandleClose">
     
@@ -155,7 +156,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入庫存資訊失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Inventory.LoadFailed"].ToString(), ex.Message));
         }
         finally
         {
@@ -172,35 +173,35 @@
         {
             new()
             {
-                Title = "產品編號",
+                Title = L["Column.StockCode"].ToString(),
                 PropertyName = nameof(StockAlertViewItem.Code),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "140px"
             },
             new()
             {
-                Title = "商品名稱",
+                Title = L["Column.ProductName"].ToString(),
                 PropertyName = nameof(StockAlertViewItem.ProductName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "180px"
             },
             new()
             {
-                Title = "倉庫",
+                Title = L["Column.Warehouse"].ToString(),
                 PropertyName = nameof(StockAlertViewItem.WarehouseName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px"
             },
             new()
             {
-                Title = "庫位",
+                Title = L["Column.StorageLocation"].ToString(),
                 PropertyName = nameof(StockAlertViewItem.WarehouseLocationName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px"
             },
             new()
             {
-                Title = "存量",
+                Title = L["Column.StorageQty"].ToString(),
                 PropertyName = nameof(StockAlertViewItem.CurrentStock),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "70px",
@@ -209,7 +210,7 @@
             },
             new()
             {
-                Title = "最低量",
+                Title = L["Column.MinStock"].ToString(),
                 PropertyName = nameof(StockAlertViewItem.MinStockLevel),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "70px",
@@ -218,7 +219,7 @@
             },
             new()
             {
-                Title = "最高量",
+                Title = L["Column.MaxStock"].ToString(),
                 PropertyName = nameof(StockAlertViewItem.MaxStockLevel),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "70px",
@@ -227,7 +228,7 @@
             },
             new()
             {
-                Title = "狀態",
+                Title = L["Column.Status"].ToString(),
                 PropertyName = nameof(StockAlertViewItem.AlertStatus),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px",
@@ -240,7 +241,7 @@
         {
             columns.Add(new InteractiveColumnDefinition
             {
-                Title = "操作",
+                Title = L["Label.Actions"].ToString(),
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "60px",
@@ -249,10 +250,10 @@
                 {
                     var stockItem = (StockAlertViewItem)item;
                     return @<GenericButtonComponent
-                                                  Text="下單"
+                                                  Text="@L["Button.Order"]"
                                                    Variant="ButtonVariant.Green"
                                                    Size="ButtonSize.Small"
-                                                   Title="立即下單"
+                                                   Title="@L["Button.Order"]"
                                                    OnClick="@(async () => await HandleFindSuppliers(stockItem))" />;
                 }
             });
@@ -279,9 +280,9 @@
 
     private string GetTitle()
     {
-        return AlertType == StockAlertType.LowStock 
-            ? "低庫存商品清單" 
-            : "庫存過多商品清單";
+        return AlertType == StockAlertType.LowStock
+            ? L["Warehouse.LowStock"].ToString()
+            : L["Warehouse.OverStock"].ToString();
     }
 
     private string GetAlertCssClass()
@@ -307,9 +308,9 @@
 
     private string GetEmptyMessage()
     {
-        return AlertType == StockAlertType.LowStock 
-            ? "目前沒有缺乏的商品。" 
-            : "目前沒有過量的商品。";
+        return AlertType == StockAlertType.LowStock
+            ? L["Warehouse.NoLowStock"].ToString()
+            : L["Warehouse.NoOverStock"].ToString();
     }
 
     // ===== 事件處理方法 =====
@@ -353,7 +354,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入供應商推薦失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Inventory.SupplierFailed"].ToString(), ex.Message));
         }
         finally
         {
@@ -414,7 +415,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"開啟採購單失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["PurchaseOrder.OpenFailed"].ToString(), ex.Message));
         }
     }
 
@@ -427,24 +428,24 @@
         {
             // 關閉供應商推薦Modal
             showSupplierRecommendationModal = false;
-            
+
             // 開啟空白採購單（讓用戶自行選擇供應商）
             selectedPurchaseOrderId = null;
             showPurchaseOrderModal = true;
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"開啟採購單失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["PurchaseOrder.OpenFailed"].ToString(), ex.Message));
         }
     }
-    
+
     /// <summary>
     /// 處理採購單儲存成功
     /// </summary>
     private async Task HandlePurchaseOrderSaved(PurchaseOrder savedOrder)
     {
         showPurchaseOrderModal = false;
-        await NotificationService.ShowSuccessAsync($"採購單 {savedOrder.Code} 已建立成功");
+        await NotificationService.ShowSuccessAsync(string.Format(L["PurchaseOrder.Created"].ToString(), savedOrder.Code));
         
         // 可選：重新載入庫存資料
         // await LoadStockAlertDataAsync();

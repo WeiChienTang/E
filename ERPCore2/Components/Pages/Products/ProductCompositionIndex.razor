@@ -1,4 +1,4 @@
-@page "/product-compositions"
+﻿@page "/product-compositions"
 @inject IProductCompositionService ProductCompositionService
 @inject IProductService ProductService
 @inject ICompositionCategoryService CompositionCategoryService
@@ -20,7 +20,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.ProductComposition"]"
                         GetEntityDisplayName="@(comp => comp.Code ?? $"物料清單{comp.Id}")"
-                        RequiredPermission="ProductComposition.Read"
+                        RequiredPermission="@PermissionRegistry.ProductComposition.Read"
                         RequiredModule="ProductionManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

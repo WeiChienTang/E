@@ -1,4 +1,4 @@
-@* 可重用的採購單編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的採購單編輯組件 - 可在任何頁面中嵌入 *@
 
 @using ERPCore2.Helpers
 @using ERPCore2.Services.Reports
@@ -44,7 +44,7 @@
                           SaveHandler="@SavePurchaseOrderWrapper"
                           SaveSuccessMessage="@(PurchaseOrderId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseOrder"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseOrder"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseOrder"]]"
-                          RequiredPermission="PurchaseOrder.Read"
+                          RequiredPermission="@PermissionRegistry.PurchaseOrder.Read"
                           OnEntitySaved="@OnPurchaseOrderSaved"
                           OnCancel="@OnCancel"
                           OnTaxMethodChanged="@(() => HandleDetailsChanged(purchaseOrderDetails))"

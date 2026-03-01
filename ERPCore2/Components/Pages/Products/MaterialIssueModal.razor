@@ -119,7 +119,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadFailed"], ex.Message));
         }
         finally
         {
@@ -324,11 +324,11 @@
                             InventoryTransactionTypeEnum.MaterialIssue,
                             transactionNumber,
                             null,
-                            $"生產排程領料 - {scheduleItem?.Product?.Name ?? "未知商品"}");
+                            $"生產排程領料 - {scheduleItem?.Product?.Name ?? L["Label.UnknownProduct"].ToString()}");
 
                         if (!reduceResult.IsSuccess)
                         {
-                            await NotificationService.ShowWarningAsync($"扣減庫存失敗：{item.ProductName} - {reduceResult.ErrorMessage}");
+                            await NotificationService.ShowWarningAsync(string.Format(L["Message.ReduceStockFailed"], item.ProductName, reduceResult.ErrorMessage));
                             continue;
                         }
                     }
@@ -344,7 +344,7 @@
                 }
             }
 
-            await NotificationService.ShowSuccessAsync($"成功領料 {successCount} 項組件，異動單號：{transactionNumber}");
+            await NotificationService.ShowSuccessAsync(string.Format(L["Message.IssueSuccess"], successCount, transactionNumber));
 
             // 通知父組件
             if (OnMaterialIssued.HasDelegate)
@@ -356,7 +356,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"領料失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.IssueFailed"], ex.Message));
         }
         finally
         {

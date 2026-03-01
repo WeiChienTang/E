@@ -1,4 +1,4 @@
-@* 可重用的庫存編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的庫存編輯組件 - 可在任何頁面中嵌入 *@
 @inject IInventoryStockService InventoryStockService
 @inject IProductService ProductService
 @inject IWarehouseService WarehouseService
@@ -28,7 +28,7 @@
                           CustomValidator="@ValidateBeforeSave"
                           SaveSuccessMessage="@(InventoryStockId.HasValue ? L["Message.UpdateSuccess", L["Entity.InventoryStock"]].ToString() : L["Message.CreateSuccess", L["Entity.InventoryStock"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.InventoryStock"]]"
-                          RequiredPermission="InventoryStock.Read"
+                          RequiredPermission="@PermissionRegistry.InventoryStock.Read"
                           OnEntitySaved="@OnInventoryStockSaved"
                           OnCancel="@OnCancel"
                           CustomModules="@GetCustomModules()"

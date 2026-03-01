@@ -1,4 +1,4 @@
-@* 可重用的印表機設定編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的印表機設定編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Models
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject IPrinterTestService PrinterTestService
@@ -23,7 +23,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(PrinterConfigurationId.HasValue ? L["Message.UpdateSuccess", L["Entity.PrinterConfiguration"]].ToString() : L["Message.CreateSuccess", L["Entity.PrinterConfiguration"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PrinterConfiguration"]]"
-                          RequiredPermission="PrinterConfiguration.Read"
+                          RequiredPermission="@PermissionRegistry.PrinterConfiguration.Read"
                           OnEntitySaved="@OnPrinterConfigurationSaved"
                           OnCancel="@OnCancel"
                           CustomActionButtons="@CustomActionButtons" />

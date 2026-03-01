@@ -1,4 +1,4 @@
-@page "/vehicles"
+﻿@page "/vehicles"
 @inject IVehicleService VehicleService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -17,7 +17,7 @@
                           DataLoader="@LoadVehiclesAsync"
                           FilterApplier="@ApplyVehicleFilters"
                           GetEntityDisplayName="@(v => $"{v.LicensePlate} - {v.VehicleName}")"
-                          RequiredPermission="Vehicle.Read"
+                          RequiredPermission="@PermissionRegistry.Vehicle.Read"
                           RequiredModule="Vehicles"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

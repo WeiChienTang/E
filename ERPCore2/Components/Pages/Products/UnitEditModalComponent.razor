@@ -1,4 +1,4 @@
-@* 可重用的單位編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的單位編輯組件 - 可在任何頁面中嵌入 *@
 @inject IUnitService UnitService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(UnitId.HasValue ? L["Message.UpdateSuccess", L["Entity.Unit"]].ToString() : L["Message.CreateSuccess", L["Entity.Unit"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Unit"]]"
-                          RequiredPermission="Unit.Read"
+                          RequiredPermission="@PermissionRegistry.Unit.Read"
                           OnEntitySaved="@OnUnitSaved"
                           OnCancel="@OnCancel" />
 

@@ -1,4 +1,4 @@
-@page "/permissions"
+﻿@page "/permissions"
 
 @inject IPermissionManagementService PermissionService
 @inject INotificationService NotificationService
@@ -19,7 +19,7 @@
                           DataLoader="@LoadPermissionsAsync"
                           FilterApplier="@ApplyPermissionFilters"
                           GetEntityDisplayName="@(permission => permission.Name)"
-                          RequiredPermission="Permission.Read"
+                          RequiredPermission="@PermissionRegistry.Permission.Read"
                           RequiredModule="Employees"
                           ShowActions = "false"
                           OnAddClick="@modalHandler.ShowAddModalAsync"

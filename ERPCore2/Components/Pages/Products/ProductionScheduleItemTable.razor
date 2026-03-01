@@ -17,7 +17,7 @@
         @* 篩選區域 *@
         <div class="mb-2">
             <SearchInputComponent @bind-Value="searchKeyword"
-                                  Placeholder="搜尋編號/產品名/狀態..."
+                                  Placeholder="@L["Placeholder.SearchCodeNameStatus"]"
                                   ButtonSize="btn-sm" />
         </div>
         
@@ -36,7 +36,7 @@
                                        GetRowCssClass="@GetRowCssClass"
                                        EmptyMessage="@L["Message.DragOrderToSchedule"]"
                                        ActionsColumnWidth="60px"
-                                       ActionsHeader="操作"
+                                       ActionsHeader="@L["Label.Actions"]"
                                        EnableDrag="@(!IsReadOnly)"
                                        EnableDrop="true"
                                        DragDropGroup="production-schedule"

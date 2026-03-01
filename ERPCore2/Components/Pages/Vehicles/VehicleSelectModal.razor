@@ -7,16 +7,17 @@
 @using ERPCore2.Helpers
 @inject IVehicleService VehicleService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
-                   Title="選擇配給車輛"
+                   Title="@L["Vehicle.SelectTitle"]"
                    Icon="bi-search"
                    Size="BaseModalComponent.ModalSize.Desktop"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    UseWhiteCloseButton="true"
                    IsLoading="@isLoading"
-                   LoadingMessage="正在載入車輛資訊..."
+                   LoadingMessage="@L["Vehicle.LoadingMessage"]"
                    BodyCssClass="p-4"
                    OnClose="@HandleClose">
     
@@ -24,7 +25,7 @@
         @* 搜尋列 *@
         <SearchInputComponent Value="@searchText"
                              ValueChanged="@HandleSearchChanged"
-                             Placeholder="搜尋車牌號碼、車輛名稱、廠牌、車型..."
+                             Placeholder="@L["Vehicle.SearchPlaceholder"]"
                              CssClass="mb-3" />
 
         @* 車輛列表 *@
@@ -51,12 +52,12 @@
                                              IsReadOnly="true"
                                              EnableRowClick="true"
                                              OnRowClick="@HandleRowClick"
-                                             EmptyMessage="目前沒有可配給的車輛"
+                                             EmptyMessage="@L["Vehicle.NoVehiclesAvailable"]"
                                              CssClass="mb-0" />
                 </div>
             </div>
             <div class="text-muted small mt-2">
-                共 @filteredVehicles.Count 筆車輛，點擊列即可選取
+                @string.Format(L["Vehicle.CountAndHint"].ToString(), filteredVehicles.Count)
             </div>
         }
     </BodyContent>
@@ -133,7 +134,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入車輛列表失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Vehicle.LoadFailed"].ToString(), ex.Message));
             allVehicles = new();
             filteredVehicles = new();
         }
@@ -173,8 +174,8 @@
     private string GetEmptyMessage()
     {
         return string.IsNullOrWhiteSpace(searchText)
-            ? "目前沒有可配給的車輛"
-            : $"找不到符合「{searchText}」的車輛";
+            ? L["Vehicle.NoVehiclesAvailable"].ToString()
+            : string.Format(L["Vehicle.NoMatchSearch"].ToString(), searchText);
     }
 
     // ===== 表格欄位定義 =====
@@ -185,21 +186,21 @@
         {
             new()
             {
-                Title = "車牌號碼",
+                Title = L["Column.LicensePlate"].ToString(),
                 PropertyName = nameof(Vehicle.LicensePlate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px"
             },
             new()
             {
-                Title = "車輛名稱",
+                Title = L["Column.VehicleName"].ToString(),
                 PropertyName = nameof(Vehicle.VehicleName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px"
             },
             new()
             {
-                Title = "車型",
+                Title = L["Column.VehicleType"].ToString(),
                 PropertyName = nameof(Vehicle.VehicleTypeId),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px",
@@ -212,7 +213,7 @@
             },
             new()
             {
-                Title = "廠牌",
+                Title = L["Column.Brand"].ToString(),
                 PropertyName = nameof(Vehicle.Brand),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px",
@@ -220,7 +221,7 @@
             },
             new()
             {
-                Title = "目前配給",
+                Title = L["Column.CurrentAssignment"].ToString(),
                 PropertyName = nameof(Vehicle.CustomerId),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px",
@@ -229,11 +230,11 @@
                     if (item is Vehicle v)
                     {
                         if (v.CustomerId.HasValue)
-                            return $"<span class=\"text-warning\"><i class=\"bi bi-exclamation-triangle me-1\"></i>客戶：{v.Customer?.CompanyName ?? "未知"}</span>";
+                            return $"<span class=\"text-warning\"><i class=\"bi bi-exclamation-triangle me-1\"></i>{L["Vehicle.AssignCustomer"]}{v.Customer?.CompanyName ?? L["Vehicle.Unknown"]}</span>";
                         if (v.SupplierId.HasValue)
-                            return $"<span class=\"text-warning\"><i class=\"bi bi-exclamation-triangle me-1\"></i>廠商：{v.Supplier?.CompanyName ?? "未知"}</span>";
+                            return $"<span class=\"text-warning\"><i class=\"bi bi-exclamation-triangle me-1\"></i>{L["Vehicle.AssignSupplier"]}{v.Supplier?.CompanyName ?? L["Vehicle.Unknown"]}</span>";
                     }
-                    return "<span class=\"text-muted\">未配給</span>";
+                    return $"<span class=\"text-muted\">{L["Vehicle.Unassigned"]}</span>";
                 }
             }
         };

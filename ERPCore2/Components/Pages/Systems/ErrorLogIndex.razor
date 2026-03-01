@@ -1,4 +1,4 @@
-@page "/error-logs"
+﻿@page "/error-logs"
 @inject IErrorLogService ErrorLogService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -18,7 +18,7 @@
                       DataLoader="@LoadErrorLogsAsync"
                       FilterApplier="@ApplyErrorLogFilters"
                       GetEntityDisplayName="@(errorLog => $"[{errorLog.ErrorId}] {errorLog.Message}")"
-                      RequiredPermission="ErrorLog.Read"
+                      RequiredPermission="@PermissionRegistry.ErrorLog.Read"
                       OnAddClick="@(() => Task.CompletedTask)"
                       OnRowClick="@((ErrorLog errorLog) => ShowErrorLogDetailAsync(errorLog.Id))"
                       ShowDefaultActions="true"

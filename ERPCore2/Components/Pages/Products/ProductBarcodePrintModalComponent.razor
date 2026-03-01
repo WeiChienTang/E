@@ -168,7 +168,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入商品資料失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadProductDataFailed"], ex.Message));
             barcodeItems = new();
         }
     }
@@ -259,7 +259,7 @@
             var validation = criteria.Validate();
             if (!validation.IsValid)
             {
-                await NotificationService.ShowErrorAsync($"列印條件錯誤：{validation.GetAllErrors()}");
+                await NotificationService.ShowErrorAsync(string.Format(L["Message.PrintValidationError"], validation.GetAllErrors()));
                 return;
             }
             
@@ -281,7 +281,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"列印失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.PrintFailed"], ex.Message));
         }
     }
     

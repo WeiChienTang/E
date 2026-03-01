@@ -1,4 +1,4 @@
-@page "/suppliers"
+﻿@page "/suppliers"
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -17,7 +17,7 @@
                           DataLoader="@LoadSuppliersAsync"
                           FilterApplier="@ApplySupplierFilters"
                           GetEntityDisplayName="@(supplier => supplier.CompanyName)"
-                          RequiredPermission="Supplier.Read"
+                          RequiredPermission="@PermissionRegistry.Supplier.Read"
                           RequiredModule="Suppliers"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

@@ -1,4 +1,4 @@
-@* 可重用的公司編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的公司編輯組件 - 可在任何頁面中嵌入 *@
 @inject ICompanyService CompanyService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
@@ -23,7 +23,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(CompanyId.HasValue ? L["Message.UpdateSuccess", L["Entity.Company"]].ToString() : L["Message.CreateSuccess", L["Entity.Company"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Company"]]"
-                          RequiredPermission="Company.Read"
+                          RequiredPermission="@PermissionRegistry.Company.Read"
                           OnEntitySaved="@OnCompanySaved"
                           OnCancel="@OnCancel"
                           CustomActionButtons="@LogoManagementButtons" />

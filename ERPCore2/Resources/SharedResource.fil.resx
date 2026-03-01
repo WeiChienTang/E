@@ -2169,4 +2169,416 @@
   <data name="Message.LoadPrepaymentTypeFailed" xml:space="preserve"><value>Nabigo ang pag-load ng mga uri ng prepayment: {0}</value></data>
   <data name="Message.LoadAvailablePrepaymentFailed" xml:space="preserve"><value>Nabigo ang pag-load ng mga available na prepayment: {0}</value></data>
 
+  <!-- ===== Company / Logo ===== -->
+  <data name="Company.CurrentLogo" xml:space="preserve"><value>Kasalukuyang Logo:</value></data>
+  <data name="Company.SelectNewLogo" xml:space="preserve"><value>Pumili ng Bagong Logo na Larawan</value></data>
+  <data name="Company.LogoFormatHint" xml:space="preserve"><value>Suportadong format: JPG, PNG, GIF, SVG | Max laki: 500KB | Inirerekomenda: 200x80px ~ 400x160px</value></data>
+  <data name="Company.LogoPreview" xml:space="preserve"><value>Preview:</value></data>
+  <data name="Company.LogoFileName" xml:space="preserve"><value>Pangalan ng File:</value></data>
+  <data name="Company.LogoFileSize" xml:space="preserve"><value>Laki ng File:</value></data>
+  <data name="Label.Uploading" xml:space="preserve"><value>Ina-upload, mangyaring maghintay...</value></data>
+  <!-- ===== ErrorLog Detail ===== -->
+  <data name="ErrorLog.DetailTitle" xml:space="preserve"><value>Detalye ng Error Log</value></data>
+  <data name="ErrorLog.LoadingDetail" xml:space="preserve"><value>Nino-load ang detalye ng error log...</value></data>
+  <data name="ErrorLog.BasicInfo" xml:space="preserve"><value>Pangunahing Impormasyon</value></data>
+  <data name="ErrorLog.TechInfo" xml:space="preserve"><value>Teknikal na Impormasyon</value></data>
+  <data name="ErrorLog.ErrorMessage" xml:space="preserve"><value>Mensahe ng Error</value></data>
+  <data name="ErrorLog.StackTrace" xml:space="preserve"><value>Stack Trace</value></data>
+  <data name="ErrorLog.InnerException" xml:space="preserve"><value>Inner Exception</value></data>
+  <data name="ErrorLog.AdditionalData" xml:space="preserve"><value>Karagdagang Data (JSON)</value></data>
+  <data name="ErrorLog.ResolutionInfo" xml:space="preserve"><value>Impormasyon ng Resolusyon</value></data>
+  <data name="ErrorLog.NotFound" xml:space="preserve"><value>Hindi mahanap ang tinukoy na error log</value></data>
+  <data name="ErrorLog.Resolved" xml:space="preserve"><value>Nalutas na</value></data>
+  <data name="ErrorLog.Unresolved" xml:space="preserve"><value>Hindi pa Nalutas</value></data>
+  <data name="ErrorLog.ResolvedBy" xml:space="preserve"><value>Nalutas ng:</value></data>
+  <data name="ErrorLog.ResolvedAt" xml:space="preserve"><value>Nalutas Noong:</value></data>
+  <data name="ErrorLog.ResolutionNote" xml:space="preserve"><value>Resolusyon:</value></data>
+  <data name="Label.ErrorId" xml:space="preserve"><value>Error ID:</value></data>
+  <data name="Label.ErrorLevel" xml:space="preserve"><value>Antas ng Error:</value></data>
+  <data name="Label.ErrorSource" xml:space="preserve"><value>Pinagmulan ng Error:</value></data>
+  <data name="Label.ErrorCategory" xml:space="preserve"><value>Kategorya ng Error:</value></data>
+  <data name="Label.OccurredAt" xml:space="preserve"><value>Nangyari Noong:</value></data>
+  <data name="Label.ErrorStatus" xml:space="preserve"><value>Status:</value></data>
+  <data name="Label.BelongsToModule" xml:space="preserve"><value>Module:</value></data>
+  <data name="Label.ExceptionType" xml:space="preserve"><value>Uri ng Exception:</value></data>
+  <data name="Label.UserIdLabel" xml:space="preserve"><value>User ID:</value></data>
+  <data name="Label.RequestPath" xml:space="preserve"><value>Request Path:</value></data>
+  <data name="Label.UserAgent" xml:space="preserve"><value>User Agent:</value></data>
+  <data name="Label.CreatedAtLabel" xml:space="preserve"><value>Nilikha Noong:</value></data>
+  <data name="Label.UpdatedAt" xml:space="preserve"><value>Na-update Noong:</value></data>
+  <data name="Message.CopiedToClipboard" xml:space="preserve"><value>Nakopya sa clipboard</value></data>
+  <!-- ===== Paper Modal ===== -->
+  <data name="Paper.SelectTitle" xml:space="preserve"><value>Pumili ng Format ng Papel</value></data>
+  <data name="Paper.LoadingMessage" xml:space="preserve"><value>Naglo-load ng mga setting ng papel...</value></data>
+  <data name="Paper.LoadFailed" xml:space="preserve"><value>Nabigo ang pag-load ng mga setting ng papel</value></data>
+  <data name="Paper.NoPaperSettings" xml:space="preserve"><value>Walang nakatakdang format ng papel. Mangyaring mano-manong ilagay ang sukat ng papel.</value></data>
+  <data name="Paper.UnitHint" xml:space="preserve"><value>Lahat ng sukat ay nasa sentimetro (cm)</value></data>
+  <data name="Column.Width" xml:space="preserve"><value>Lapad</value></data>
+  <data name="Column.Height" xml:space="preserve"><value>Taas</value></data>
+  <data name="Column.TopMargin" xml:space="preserve"><value>Margin sa Itaas</value></data>
+  <data name="Column.BottomMargin" xml:space="preserve"><value>Margin sa Ibaba</value></data>
+  <data name="Column.LeftMargin" xml:space="preserve"><value>Margin sa Kaliwa</value></data>
+  <data name="Column.RightMargin" xml:space="preserve"><value>Margin sa Kanan</value></data>
+  <!-- ===== Printer Modal ===== -->
+  <data name="Printer.QueryTitle" xml:space="preserve"><value>I-query ang Mga Naka-install na Printer</value></data>
+  <data name="Printer.LoadingMessage" xml:space="preserve"><value>Kino-query ang mga printer ng sistema...</value></data>
+  <data name="Printer.NoPrinterFound" xml:space="preserve"><value>Walang nakitang naka-install na printer</value></data>
+  <data name="Column.PrinterName" xml:space="preserve"><value>Pangalan ng Printer</value></data>
+  <data name="Column.PortName" xml:space="preserve"><value>Port</value></data>
+  <data name="Column.PrinterType" xml:space="preserve"><value>Uri</value></data>
+  <data name="Column.SystemDefault" xml:space="preserve"><value>Default ng Sistema</value></data>
+  <data name="Label.NetworkPrinter" xml:space="preserve"><value>Network</value></data>
+  <data name="Label.LocalPrinter" xml:space="preserve"><value>Lokal</value></data>
+  <data name="Label.DefaultBadge" xml:space="preserve"><value>Default</value></data>
+  <!-- ===== Report Print Setting Modal ===== -->
+  <data name="Report.SetPrintConfig" xml:space="preserve"><value>I-configure ang Mga Setting ng Pag-print ng Ulat</value></data>
+  <data name="Report.LoadingUnconfigured" xml:space="preserve"><value>Nino-load ang mga hindi pa na-configure na ulat...</value></data>
+  <data name="Report.AllConfigured" xml:space="preserve"><value>Lahat ng ulat ay na-configure na. Ang mga ulat na may status na "Disabled" ay nasa pag-unlad o discontinued at hindi maaaring i-configure.</value></data>
+  <data name="Column.ReportId" xml:space="preserve"><value>ID ng Ulat</value></data>
+  <data name="Column.ReportName" xml:space="preserve"><value>Pangalan ng Ulat</value></data>
+  <data name="Label.Printer" xml:space="preserve"><value>Printer</value></data>
+  <data name="Label.Paper" xml:space="preserve"><value>Papel</value></data>
+  <data name="Button.BatchFill" xml:space="preserve"><value>Batch Fill</value></data>
+  <data name="Placeholder.SelectPrinter" xml:space="preserve"><value>Pumili ng Printer</value></data>
+  <data name="Placeholder.SelectPaper" xml:space="preserve"><value>Pumili ng Papel</value></data>
+  <data name="Message.BatchFillSuccess" xml:space="preserve"><value>Na-batch fill ang {0} na setting</value></data>
+  <data name="Message.AllSettingsCleared" xml:space="preserve"><value>Nai-clear ang lahat ng setting</value></data>
+  <data name="Message.NoDataToSave" xml:space="preserve"><value>Walang data na i-save</value></data>
+  <data name="Message.SetAtLeastOne" xml:space="preserve"><value>Mangyaring magtakda ng kahit isang printer o papel</value></data>
+  <data name="Message.SelectAtLeastOnePrinterOrPaper" xml:space="preserve"><value>Mangyaring pumili ng kahit isang printer o papel</value></data>
+  <data name="Message.UpdateReportConfigSuccess" xml:space="preserve"><value>Matagumpay na na-update ang {0} na configuration ng pag-print ng ulat</value></data>
+  <!-- ===== Certificate Tab ===== -->
+  <data name="Certificate.Desc" xml:space="preserve"><value>Nagbibigay-daan sa mga user na mag-download at mag-install ng server certificate. Pagkatapos ng pag-install, hindi na magpapakita ang browser ng babala sa seguridad ng HTTPS.</value></data>
+  <data name="Certificate.Management" xml:space="preserve"><value>Pamamahala ng Server Certificate</value></data>
+  <data name="Certificate.AlreadyExists" xml:space="preserve"><value>Mayroon nang certificate. Para muling buuin (hal., nagbago ang IP ng server), i-click ang pindutan sa ibaba.</value></data>
+  <data name="Certificate.NotExists" xml:space="preserve"><value>Wala pang nabubuong certificate. I-click ang pindutan sa ibaba para awtomatikong buuin at ilapat, walang kailangang manu-manong hakbang.</value></data>
+  <data name="Certificate.ExternalIP" xml:space="preserve"><value>External IP / Hostname (Opsyonal)</value></data>
+  <data name="Certificate.IPPlaceholder" xml:space="preserve"><value>hal.: 59.126.246.98, myserver.example.com (hiwalay ng kuwit)</value></data>
+  <data name="Certificate.IPHint" xml:space="preserve"><value>Kung kumokonekta ang mga user sa pamamagitan ng external IP o domain, ilagay ito dito para masiguro na sinasaklaw ng certificate ang address na iyon.</value></data>
+  <data name="Certificate.OneClickInstaller" xml:space="preserve"><value>One-Click Installer</value></data>
+  <data name="Certificate.InstallerDesc" xml:space="preserve"><value>I-double click ng mga user pagkatapos mag-download at i-click ang "Oo" nang isang beses para makumpleto ang pag-install</value></data>
+  <data name="Certificate.PublicKey" xml:space="preserve"><value>Public Key ng Certificate (.cer)</value></data>
+  <data name="Certificate.PublicKeyDesc" xml:space="preserve"><value>Para sa advanced na paggamit, manu-manong pag-install</value></data>
+  <data name="Certificate.InstallGuide" xml:space="preserve"><value>Mga Hakbang sa Pag-install ng User</value></data>
+  <data name="Button.GenerateCert" xml:space="preserve"><value>I-generate ang Certificate sa Isang Click</value></data>
+  <data name="Button.RegenerateCert" xml:space="preserve"><value>Muling Buuin ang Certificate</value></data>
+  <data name="Button.Download" xml:space="preserve"><value>I-download</value></data>
+  <!-- ===== Module Management Tab ===== -->
+  <data name="Module.ControlDesc" xml:space="preserve"><value>Kontrolin ang mga feature module na magagamit sa sistemang ito. Ang mga disabled na module ay itatago sa lahat ng user (maliban sa SuperAdmin).</value></data>
+  <data name="Label.Enabled" xml:space="preserve"><value>Pinagana</value></data>
+  <data name="Label.Disabled" xml:space="preserve"><value>Hindi Pinagana</value></data>
+  <data name="Label.Toggle" xml:space="preserve"><value>Toggle</value></data>
+  <!-- ===== Vehicle Select Modal ===== -->
+  <data name="Vehicle.SelectTitle" xml:space="preserve"><value>Pumili ng Sasakyan na Itatalaga</value></data>
+  <data name="Vehicle.LoadingMessage" xml:space="preserve"><value>Nino-load ang impormasyon ng sasakyan...</value></data>
+  <data name="Vehicle.SearchPlaceholder" xml:space="preserve"><value>Maghanap ng plaka, pangalan ng sasakyan, brand, uri...</value></data>
+  <data name="Vehicle.NoVehiclesAvailable" xml:space="preserve"><value>Walang sasakyang available para italaga</value></data>
+  <data name="Vehicle.NoMatchSearch" xml:space="preserve"><value>Walang sasakyang tumutugma sa "{0}"</value></data>
+  <data name="Vehicle.CountAndHint" xml:space="preserve"><value>{0} sasakyan. I-click ang hilera para pumili.</value></data>
+  <data name="Column.LicensePlate" xml:space="preserve"><value>Plaka</value></data>
+  <data name="Column.VehicleType" xml:space="preserve"><value>Uri ng Sasakyan</value></data>
+  <data name="Column.Brand" xml:space="preserve"><value>Brand</value></data>
+  <data name="Column.CurrentAssignment" xml:space="preserve"><value>Kasalukuyang Itinalaga</value></data>
+  <data name="Label.NotAssigned" xml:space="preserve"><value>Hindi Itinalaga</value></data>
+  <data name="Label.CustomerLabel" xml:space="preserve"><value>Customer:</value></data>
+  <data name="Label.SupplierLabel" xml:space="preserve"><value>Supplier:</value></data>
+  <data name="Label.UnknownLabel" xml:space="preserve"><value>Hindi Kilala</value></data>
+  <!-- ===== Import Schedule Modal ===== -->
+  <data name="Warehouse.ImportTitle" xml:space="preserve"><value>Mag-import ng Schedule</value></data>
+  <data name="Warehouse.LoadingSchedule" xml:space="preserve"><value>Nino-load ang datos ng schedule...</value></data>
+  <data name="Warehouse.NoImportItems" xml:space="preserve"><value>Walang mga item ng schedule na maaaring i-import (lahat ay nakumpleto na)</value></data>
+  <data name="Warehouse.PendingItems" xml:space="preserve"><value>{0} item na naghihintay na i-import</value></data>
+  <data name="Warehouse.SelectedCount" xml:space="preserve"><value>{0} ang napili</value></data>
+  <data name="Warehouse.ImportHint" xml:space="preserve"><value>Tip: Ang pag-import ay magdadagdag ng imbentaryo sa kaukulang bodega/lokasyon at magtatanda ng mga item ng schedule bilang "Nakumpleto"</value></data>
+  <data name="Warehouse.NoImportMessage" xml:space="preserve"><value>Walang mga item ng schedule na maaaring i-import</value></data>
+  <data name="Warehouse.StockLocations" xml:space="preserve"><value>Mga Kasalukuyang Lokasyon ng Stock</value></data>
+  <data name="Warehouse.NoStockLocations" xml:space="preserve"><value>Walang lokasyon ng stock</value></data>
+  <data name="Button.Import" xml:space="preserve"><value>I-import</value></data>
+  <data name="Column.ScheduledQuantity" xml:space="preserve"><value>Nakatalagang Dami</value></data>
+  <data name="Column.ImportQuantity" xml:space="preserve"><value>Dami ngayon</value></data>
+  <data name="Column.WarehouseLocation" xml:space="preserve"><value>Bodega/Lokasyon</value></data>
+  <!-- ===== Inventory Transaction Table ===== -->
+  <data name="Column.OperationType" xml:space="preserve"><value>Uri ng Operasyon</value></data>
+  <data name="Column.StockBefore" xml:space="preserve"><value>Bago</value></data>
+  <data name="Column.StockAfter" xml:space="preserve"><value>Pagkatapos</value></data>
+  <data name="Inventory.OperationInitial" xml:space="preserve"><value>Paunang</value></data>
+  <data name="Inventory.OperationAdjust" xml:space="preserve"><value>Ayusin</value></data>
+  <data name="Inventory.OperationDelete" xml:space="preserve"><value>Burahin</value></data>
+  <data name="Label.ViewTransactionHistory" xml:space="preserve"><value>Tingnan ang kasaysayan ng transaksyon para sa produktong ito</value></data>
+  <!-- ===== Stock Alert View Modal ===== -->
+  <data name="Warehouse.LowStock" xml:space="preserve"><value>Mga Produktong Mababa ang Stock</value></data>
+  <data name="Warehouse.OverStock" xml:space="preserve"><value>Mga Produktong Sobra ang Stock</value></data>
+  <data name="Warehouse.NoLowStock" xml:space="preserve"><value>Walang mga produktong mababa ang stock sa kasalukuyan.</value></data>
+  <data name="Warehouse.NoOverStock" xml:space="preserve"><value>Walang mga produktong sobra ang stock sa kasalukuyan.</value></data>
+  <data name="Warehouse.LoadingStock" xml:space="preserve"><value>Nino-load ang impormasyon ng stock...</value></data>
+  <data name="Column.Warehouse" xml:space="preserve"><value>Bodega</value></data>
+  <data name="Column.Position" xml:space="preserve"><value>Lokasyon</value></data>
+  <data name="Column.StockLevel" xml:space="preserve"><value>Stock</value></data>
+  <data name="Column.MinStock" xml:space="preserve"><value>Min Level</value></data>
+  <data name="Column.MaxStock" xml:space="preserve"><value>Max Level</value></data>
+  <data name="Button.Order" xml:space="preserve"><value>Umorder</value></data>
+  <data name="Label.Shortage" xml:space="preserve"><value>Kulang ng {0}</value></data>
+  <data name="Label.Excess" xml:space="preserve"><value>Sobra ng {0}</value></data>
+  <data name="Column.Operation" xml:space="preserve"><value>Aksyon</value></data>
+  <!-- ===== Stock Level Alert Modal ===== -->
+  <data name="Warehouse.StockAlertTitle" xml:space="preserve"><value>Itakda ang Mga Antas ng Alert ng Stock</value></data>
+  <data name="Warehouse.LoadingAlerts" xml:space="preserve"><value>Nino-load ang mga detalye ng stock na walang antas ng alert...</value></data>
+  <data name="Warehouse.AllAlertsSet" xml:space="preserve"><value>Lahat ng detalye ng stock ay may nakatakdang antas ng alert.</value></data>
+  <data name="Label.Min" xml:space="preserve"><value>Min</value></data>
+  <data name="Label.Max" xml:space="preserve"><value>Max</value></data>
+  <data name="Column.CurrentStockLevel" xml:space="preserve"><value>Kasalukuyang Dami</value></data>
+  <data name="Column.WarehousePosition" xml:space="preserve"><value>Lokasyon ng Bodega</value></data>
+  <data name="Message.AlertSaveSuccess" xml:space="preserve"><value>Matagumpay na na-update ang {0} na setting ng alert ng stock</value></data>
+  <data name="Message.AlertBatchFillSuccess" xml:space="preserve"><value>Na-batch fill ang {0} na setting ng alert</value></data>
+  <data name="Message.AlertAllCleared" xml:space="preserve"><value>Nai-clear ang lahat ng setting ng alert</value></data>
+  <data name="Message.EnterMinOrMax" xml:space="preserve"><value>Mangyaring maglagay ng kahit isang minimum o maximum na antas</value></data>
+  <data name="Message.MinCannotBeNegative" xml:space="preserve"><value>Ang minimum na antas ay hindi maaaring negatibo</value></data>
+  <data name="Message.MaxCannotBeNegative" xml:space="preserve"><value>Ang maximum na antas ay hindi maaaring negatibo</value></data>
+  <data name="Message.MinCannotExceedMax" xml:space="preserve"><value>Ang minimum na antas ay hindi maaaring lampas sa maximum na antas</value></data>
+  <!-- ===== Warehouse Location Table ===== -->
+  <data name="Warehouse.SaveFirst" xml:space="preserve"><value>Mangyaring i-save muna ang bodega para makita ang datos ng lokasyon</value></data>
+  <data name="Warehouse.NoLocations" xml:space="preserve"><value>Walang datos ng lokasyon</value></data>
+  <data name="Column.LocationName" xml:space="preserve"><value>Pangalan ng Lokasyon</value></data>
+  <!-- ===== Related Document Components ===== -->
+  <data name="RelatedDoc.NoDocuments" xml:space="preserve"><value>Walang kaugnay na dokumento</value></data>
+  <data name="RelatedDoc.LoadingMessage" xml:space="preserve"><value>Nino-load ang mga kaugnay na dokumento...</value></data>
+  <data name="RelatedDoc.NoRelated" xml:space="preserve"><value>Walang kaugnay na talaan</value></data>
+  <data name="RelatedDoc.Product" xml:space="preserve"><value>Produkto:</value></data>
+  <data name="RelatedDoc.TransactionCount" xml:space="preserve"><value>{0} talaan ng transaksyon</value></data>
+  <data name="RelatedDoc.TransactionHistory" xml:space="preserve"><value>Kasaysayan ng Transaksyon ng Imbentaryo</value></data>
+  <data name="RelatedDoc.TransactionHistoryTitle" xml:space="preserve"><value>Kasaysayan ng Transaksyon - {0}</value></data>
+  <data name="RelatedDoc.LoadingHistory" xml:space="preserve"><value>Nino-load ang kasaysayan ng transaksyon...</value></data>
+  <data name="Label.QuantityPrefix" xml:space="preserve"><value>Dami:</value></data>
+  <data name="Label.UnitPricePrefix" xml:space="preserve"><value>Presyo/yunit:</value></data>
+  <data name="Label.ReturnPrefix" xml:space="preserve"><value>Ibalik:</value></data>
+  <data name="Label.SetoffPrefix" xml:space="preserve"><value>Setoff:</value></data>
+  <data name="Label.CurrentAmountPrefix" xml:space="preserve"><value>Ngayon:</value></data>
+  <data name="Label.PurchaseTimeSuffix" xml:space="preserve"><value>beses</value></data>
+  <!-- ===== GenericTableComponent Pagination ===== -->
+  <data name="Pagination.ShowingRange" xml:space="preserve"><value>Ipinapakita ang {0} - {1} ng {2} talaan (Pahina {3} ng {4})</value></data>
+  <data name="Pagination.PerPage" xml:space="preserve"><value>Bawat pahina:</value></data>
+  <data name="Pagination.Records" xml:space="preserve"><value>talaan</value></data>
+  <data name="Pagination.FirstPage" xml:space="preserve"><value>Una</value></data>
+  <data name="Pagination.LastPage" xml:space="preserve"><value>Huli</value></data>
+  <data name="Pagination.PrevPage" xml:space="preserve"><value>Nakaraan</value></data>
+  <data name="Pagination.NextPage" xml:space="preserve"><value>Susunod</value></data>
+  <data name="Pagination.GoToPage" xml:space="preserve"><value>Pumunta sa pahina {0}</value></data>
+
+  <!-- ===== CompanyLogoUpload Messages ===== -->
+  <data name="Message.ClipboardFailed" xml:space="preserve"><value>Nabigo ang pagkopya sa clipboard</value></data>
+  <data name="Message.PreviewFailed" xml:space="preserve"><value>Hindi ma-generate ang preview ng imahe, mangyaring suriin ang format at laki ng file</value></data>
+  <data name="Message.FileSelectError" xml:space="preserve"><value>Error sa pagpili ng file: {0}</value></data>
+  <data name="Message.NoFileSelected" xml:space="preserve"><value>Mangyaring pumili muna ng file para i-upload</value></data>
+  <data name="Message.UploadFailed" xml:space="preserve"><value>Nabigo ang pag-upload: {0}</value></data>
+
+  <!-- ===== InstalledPrinterListModal ===== -->
+  <data name="Printer.UseSelected" xml:space="preserve"><value>Gamitin ang napiling printer</value></data>
+  <data name="Printer.CancelSelect" xml:space="preserve"><value>Kanselahin ang pagpili</value></data>
+  <data name="Printer.NetworkType" xml:space="preserve"><value>Network</value></data>
+  <data name="Printer.LocalType" xml:space="preserve"><value>Local</value></data>
+  <data name="Printer.DefaultBadge" xml:space="preserve"><value>Default</value></data>
+  <data name="Printer.LoadError" xml:space="preserve"><value>Nabigo ang pag-load ng listahan ng printer: {0}</value></data>
+
+  <!-- ===== ReportPrintSettingAlertModal ===== -->
+  <data name="Report.TotalCount" xml:space="preserve"><value>Kabuuan: {0}</value></data>
+  <data name="Report.PrinterInputLabel" xml:space="preserve"><value>Printer</value></data>
+  <data name="Report.PaperInputLabel" xml:space="preserve"><value>Papel</value></data>
+  <data name="Report.SelectPlaceholder" xml:space="preserve"><value>-- Pumili --</value></data>
+  <data name="Report.BatchFill" xml:space="preserve"><value>Batch Fill</value></data>
+  <data name="Report.BatchFillTitle" xml:space="preserve"><value>I-batch set ang printer at papel para sa lahat ng ulat</value></data>
+  <data name="Report.NotConfigured" xml:space="preserve"><value>Hindi naka-configure</value></data>
+  <data name="Report.NoDataToSave" xml:space="preserve"><value>Walang data na i-save</value></data>
+  <data name="Report.NeedAtLeastOne" xml:space="preserve"><value>Mangyaring mag-configure ng kahit isang printer o papel</value></data>
+  <data name="Report.UpdateSuccess" xml:space="preserve"><value>Matagumpay na na-update ang {0} na print configuration ng ulat</value></data>
+  <data name="Report.BatchFillSuccess" xml:space="preserve"><value>Na-batch fill ang {0} na talaan</value></data>
+  <data name="Report.ClearAllDone" xml:space="preserve"><value>Nai-clear na ang lahat ng setting</value></data>
+  <data name="Report.NeedChoicePrinterPaper" xml:space="preserve"><value>Mangyaring pumili ng kahit isang printer o papel</value></data>
+
+  <!-- ===== CertificateTab ===== -->
+  <data name="System.CertDesc" xml:space="preserve"><value>Payagan ang mga user na mag-download at mag-install ng server certificate. Pagkatapos ng pag-install, hindi na magpapakita ng HTTPS security warning ang browser.</value></data>
+  <data name="System.CertManage" xml:space="preserve"><value>Pamamahala ng Server Certificate</value></data>
+  <data name="System.CertExistsNote" xml:space="preserve"><value>Mayroon nang certificate. Para muling gawin (hal. pagbabago ng server IP), i-click ang button sa ibaba.</value></data>
+  <data name="System.NoCertNote" xml:space="preserve"><value>Wala pang na-generate na certificate. I-click ang button sa ibaba para awtomatikong gumawa at mag-apply nang walang manual na hakbang.</value></data>
+  <data name="System.ExternalSAN" xml:space="preserve"><value>External IP / Hostname (opsyonal)</value></data>
+  <data name="System.ExternalSANHint" xml:space="preserve"><value>Kung nagkokonekta ang mga user sa pamamagitan ng external IP o domain, ilagay ito dito para masakop ng certificate ang address na iyon.</value></data>
+  <data name="System.ExternalSANPlaceholder" xml:space="preserve"><value>hal.: 59.126.246.98, myserver.example.com (pinaghiwalay ng kuwit)</value></data>
+  <data name="System.ReGenCert" xml:space="preserve"><value>Muling Gumawa ng Certificate</value></data>
+  <data name="System.GenCert" xml:space="preserve"><value>One-Click na Gumawa ng Certificate</value></data>
+  <data name="System.GenCertTitle" xml:space="preserve"><value>Awtomatikong gumawa ng self-signed SSL certificate (kasama ang lahat ng server IP), walang kailangan na manual na hakbang</value></data>
+  <data name="System.InstallerTitle" xml:space="preserve"><value>One-Click Installer</value></data>
+  <data name="System.InstallerDesc" xml:space="preserve"><value>Mag-double-click pagkatapos ng pag-download at i-click ang "Oo" nang isang beses para makumpleto ang pag-install</value></data>
+  <data name="System.CerPublicKey" xml:space="preserve"><value>Certificate Public Key (.cer)</value></data>
+  <data name="System.CerPublicDesc" xml:space="preserve"><value>Para sa advanced na paggamit, para sa manual na pag-install</value></data>
+  <data name="System.Download" xml:space="preserve"><value>I-download</value></data>
+  <data name="System.InstallStepsTitle" xml:space="preserve"><value>Mga Hakbang sa Pag-install para sa User</value></data>
+  <data name="System.InstallStep1" xml:space="preserve"><value>Ibigay ang link ng "One-Click Installer" sa mga user, o i-download at ipadala sa pamamagitan ng USB / email</value></data>
+  <data name="System.InstallStep2" xml:space="preserve"><value>Mag-double-click ang user sa install-cert.bat</value></data>
+  <data name="System.InstallStep3" xml:space="preserve"><value>Kapag may lumabas na Windows dialog, i-click ang "Oo"</value></data>
+  <data name="System.InstallStep4" xml:space="preserve"><value>Pagkatapos makita ang "Matagumpay na na-install ang certificate", isara ang lahat ng browser</value></data>
+  <data name="System.InstallStep5" xml:space="preserve"><value>Buksan muli ang browser para makakonekta nang normal, nang walang security warning</value></data>
+
+  <!-- ===== ModuleManagementTab ===== -->
+  <data name="System.ModuleControlDesc" xml:space="preserve"><value>Kontrolin ang mga feature module na available sa system na ito. Ang mga disabled na module ay maitatago mula sa lahat ng user (maliban sa SuperAdmin).</value></data>
+  <data name="System.Enabled" xml:space="preserve"><value>Pinagana</value></data>
+  <data name="System.Disabled" xml:space="preserve"><value>Hindi Pinagana</value></data>
+  <data name="System.Toggle" xml:space="preserve"><value>Toggle</value></data>
+
+  <!-- ===== ImportScheduleModal ===== -->
+  <data name="Warehouse.ImportButton" xml:space="preserve"><value>I-import</value></data>
+  <data name="Warehouse.SelectAll" xml:space="preserve"><value>Piliin Lahat</value></data>
+  <data name="Warehouse.DeselectAll" xml:space="preserve"><value>Alisin ang Lahat ng Napili</value></data>
+  <data name="Column.ClosedFlag" xml:space="preserve"><value>Sarado</value></data>
+  <data name="Warehouse.ClosedTooltip" xml:space="preserve"><value>Kapag naka-check, hindi na lalabas ang item na ito sa listahan ng import schedule</value></data>
+
+  <!-- ===== InventoryTransactionTable ===== -->
+  <data name="Inventory.ViewHistory" xml:space="preserve"><value>Tingnan ang kasaysayan ng transaksyon para sa produktong ito</value></data>
+  <data name="Column.StorageLocation" xml:space="preserve"><value>Lokasyon</value></data>
+
+  <!-- ===== StockAlertViewModal ===== -->
+  <data name="Column.StockCode" xml:space="preserve"><value>Kodigo ng Produkto</value></data>
+  <data name="Column.StorageQty" xml:space="preserve"><value>Stock</value></data>
+  <data name="Stats.ClickForDetail" xml:space="preserve"><value>I-click para tingnan ang detalye</value></data>
+
+  <!-- ===== Vehicle Notifications ===== -->
+  <data name="Vehicle.LoadFailed" xml:space="preserve"><value>Nabigo ang pag-load ng listahan ng sasakyan: {0}</value></data>
+  <data name="Vehicle.AssignCustomer" xml:space="preserve"><value>Customer: </value></data>
+  <data name="Vehicle.AssignSupplier" xml:space="preserve"><value>Supplier: </value></data>
+  <data name="Vehicle.Unassigned" xml:space="preserve"><value>Hindi naka-assign</value></data>
+  <data name="Vehicle.Unknown" xml:space="preserve"><value>Hindi kilala</value></data>
+
+  <data name="Column.ImportQty" xml:space="preserve"><value>Kumpletuhin ngayon</value></data>
+
+  <!-- ===== ImportScheduleModal Notifications ===== -->
+  <data name="Warehouse.NeedSelectItem" xml:space="preserve"><value>Pumili ng kahit isang schedule item</value></data>
+  <data name="Warehouse.NeedSelectWH" xml:space="preserve"><value>Ang mga sumusunod na item ay walang napiling bodega/lokasyon: {0}{1}</value></data>
+  <data name="Warehouse.QuantityError" xml:space="preserve"><value>Ang mga sumusunod na item ay dapat may dami na higit sa 0, o markahan bilang sarado: {0}{1}</value></data>
+  <data name="Warehouse.ConfirmClose" xml:space="preserve"><value>Ang {0} na item ay minarkahan bilang "Sarado":\n{1}{2}\n\nAng mga saradong item ay hindi mastock, at hindi na lalabas sa listahan ng import schedule.\nNais mo bang magpatuloy?</value></data>
+  <data name="Warehouse.ConfirmCloseTitle" xml:space="preserve"><value>Kumpirmahin ang Pagsara</value></data>
+  <data name="Warehouse.ImportPartialFail" xml:space="preserve"><value>Matagumpay na na-import ang {0}, nabigo ang {1}\n{2}</value></data>
+  <data name="Warehouse.ImportSuccessMsg" xml:space="preserve"><value>Matagumpay na na-import ang {0} na schedule item sa imbentaryo</value></data>
+  <data name="Warehouse.ImportClosedOnly" xml:space="preserve"><value>Bukod dito, {0} item ang sarado lamang (hindi nastock)</value></data>
+  <data name="Warehouse.LoadScheduleFail" xml:space="preserve"><value>Nabigo ang pag-load ng datos ng schedule: {0}</value></data>
+  <data name="Warehouse.ImportFailed" xml:space="preserve"><value>Nabigo ang pag-import: {0}</value></data>
+  <data name="Warehouse.MoreItems" xml:space="preserve"><value>...at {0} pa</value></data>
+  <data name="Warehouse.MoreFailed" xml:space="preserve"><value>...at {0} pa ang nabigo</value></data>
+  <data name="Warehouse.ClosedItemBuildFail" xml:space="preserve"><value>Nabigo ang paglikha ng rekord ng pagkumpleto</value></data>
+  <data name="Warehouse.StockInFail" xml:space="preserve"><value>Nabigo ang pagpasok ng stock - {0}</value></data>
+
+  <data name="Warehouse.BatchMin" xml:space="preserve"><value>Minimum</value></data>
+  <data name="Warehouse.BatchMax" xml:space="preserve"><value>Maximum</value></data>
+
+  <!-- ===== StockLevelAlertModal Notifications ===== -->
+  <data name="Warehouse.NeedMinOrMax" xml:space="preserve"><value>Mangyaring maglagay ng hindi bababa sa minimum o maximum na antas</value></data>
+  <data name="Warehouse.MinNegative" xml:space="preserve"><value>Ang minimum na antas ay hindi maaaring negatibo</value></data>
+  <data name="Warehouse.MaxNegative" xml:space="preserve"><value>Ang maximum na antas ay hindi maaaring negatibo</value></data>
+  <data name="Warehouse.MinExceedsMax" xml:space="preserve"><value>Ang minimum na antas ay hindi maaaring lumampas sa maximum na antas</value></data>
+  <data name="Warehouse.NoDataSave" xml:space="preserve"><value>Walang datos na dapat i-save</value></data>
+  <data name="Warehouse.ValidationFailed" xml:space="preserve"><value>Nabigo ang pagpapatunay ng datos: {0}</value></data>
+  <data name="Warehouse.UpdateSuccessCount" xml:space="preserve"><value>Matagumpay na na-update ang {0} na setting ng stock alert</value></data>
+  <data name="Warehouse.BatchFillCount" xml:space="preserve"><value>Batch na napunan ang {0} na setting ng alerto</value></data>
+  <data name="Warehouse.ClearSuccess" xml:space="preserve"><value>Nalinis ang lahat ng setting ng alerto</value></data>
+  <data name="Warehouse.SaveError" xml:space="preserve"><value>May naganap na error habang nagse-save: {0}</value></data>
+  <data name="Warehouse.BatchFillError" xml:space="preserve"><value>May naganap na error sa batch fill: {0}</value></data>
+  <data name="Warehouse.ClearError" xml:space="preserve"><value>May naganap na error habang nililinis: {0}</value></data>
+  <data name="Warehouse.LocationLoadError" xml:space="preserve"><value>May naganap na error sa pag-load ng datos ng lokasyon: {0}</value></data>
+  <data name="Warehouse.MinNegativeItem" xml:space="preserve"><value>Ang minimum na antas ng {0} ay hindi maaaring negatibo</value></data>
+  <data name="Warehouse.MaxNegativeItem" xml:space="preserve"><value>Ang maximum na antas ng {0} ay hindi maaaring negatibo</value></data>
+  <data name="Warehouse.MinExceedsMaxItem" xml:space="preserve"><value>Ang minimum na antas ng {0} ay hindi maaaring lumampas sa maximum na antas</value></data>
+
+  <!-- ===== StockAlertViewModal Notifications ===== -->
+  <data name="Inventory.LoadFailed" xml:space="preserve"><value>Nabigo ang pag-load ng impormasyon ng imbentaryo: {0}</value></data>
+  <data name="Inventory.SupplierFailed" xml:space="preserve"><value>Nabigo ang pag-load ng rekomendasyon ng supplier: {0}</value></data>
+  <data name="PurchaseOrder.OpenFailed" xml:space="preserve"><value>Nabigo ang pagbubukas ng purchase order: {0}</value></data>
+  <data name="PurchaseOrder.Created" xml:space="preserve"><value>Matagumpay na nalikha ang purchase order {0}</value></data>
+
+  <!-- ===== RelatedDocument Templates ===== -->
+  <data name="RelatedDoc.Quantity" xml:space="preserve"><value>Dami:</value></data>
+  <data name="RelatedDoc.UnitPrice" xml:space="preserve"><value>Yunit na Presyo:</value></data>
+  <data name="RelatedDoc.ReturnQty" xml:space="preserve"><value>Ibalik:</value></data>
+  <data name="RelatedDoc.Setoff" xml:space="preserve"><value>Setoff:</value></data>
+  <data name="RelatedDoc.CurrentAmount" xml:space="preserve"><value>Kasalukuyan:</value></data>
+  <data name="RelatedDoc.Times" xml:space="preserve"><value> beses</value></data>
+
+  <!-- ===== GenericTableComponent Pagination ===== -->
+  <data name="Pagination.GoToFirst" xml:space="preserve"><value>Pumunta sa unang pahina</value></data>
+  <data name="Pagination.GoToLast" xml:space="preserve"><value>Pumunta sa huling pahina</value></data>
+  <data name="Pagination.NoData" xml:space="preserve"><value>Walang nahanap na datos</value></data>
+
+  <!-- ===== Products Module (MaterialIssue / Completion / ScheduleItem / Picker / Supplier / Barcode) ===== -->
+  <data name="Message.LoadFailed" xml:space="preserve"><value>Nabigo ang pag-load: {0}</value></data>
+  <data name="Message.ReduceStockFailed" xml:space="preserve"><value>Nabigo ang pagbabawas ng stock: {0} - {1}</value></data>
+  <data name="Message.IssueSuccess" xml:space="preserve"><value>Matagumpay na naibigay ang {0} na bahagi, transaksyon no.: {1}</value></data>
+  <data name="Message.IssueFailed" xml:space="preserve"><value>Nabigo ang pag-isyu ng materyales: {0}</value></data>
+  <data name="Message.UpdateScheduleItemFailed" xml:space="preserve"><value>Nabigo ang pag-update ng schedule item: {0}</value></data>
+  <data name="Message.CompletionSuccess" xml:space="preserve"><value>Matagumpay na naitala ang dami ng pagkumpleto: {0}</value></data>
+  <data name="Message.InventoryError" xml:space="preserve"><value>Error sa pagproseso ng imbentaryo: {0}</value></data>
+  <data name="Message.CompletionRecordSuccess" xml:space="preserve"><value>Matagumpay na naitala ang pagkumpleto, dami: {0}</value></data>
+  <data name="Message.UpdateFailed" xml:space="preserve"><value>Nabigo ang pag-update: {0}</value></data>
+  <data name="Message.PrintValidationError" xml:space="preserve"><value>Error sa kundisyon ng pag-print: {0}</value></data>
+  <data name="Message.PrintFailed" xml:space="preserve"><value>Nabigo ang pag-print: {0}</value></data>
+  <data name="Message.LoadProductDataFailed" xml:space="preserve"><value>Nabigo ang pag-load ng datos ng produkto: {0}</value></data>
+  <data name="Label.UnknownProduct" xml:space="preserve"><value>Hindi Kilalang Produkto</value></data>
+  <data name="Label.UnknownSupplier" xml:space="preserve"><value>Hindi Kilalang Supplier</value></data>
+  <data name="Placeholder.SelectOption" xml:space="preserve"><value>-- Pumili --</value></data>
+  <data name="Tooltip.SelectSupplierProduct" xml:space="preserve"><value>Piliin ang supplier para sa produktong ito</value></data>
+  <data name="Tooltip.EnterSupplierCode" xml:space="preserve"><value>Ilagay ang product code o part number ng supplier</value></data>
+  <data name="Tooltip.EnterSupplierPrice" xml:space="preserve"><value>Ilagay ang presyo ng supplier para sa produktong ito</value></data>
+  <data name="Tooltip.EnterLeadTime" xml:space="preserve"><value>Ilagay ang lead time ng supplier sa araw</value></data>
+  <data name="Tooltip.EnterMinOrderQty" xml:space="preserve"><value>Ilagay ang minimum na dami ng order ng supplier</value></data>
+  <data name="Tooltip.SelectUnitForSupplier" xml:space="preserve"><value>Piliin ang yunit ng sukat para sa produkto ng supplier</value></data>
+
+  <!-- ===== CharacterCountTextAreaComponent ===== -->
+  <data name="Label.CharCount" xml:space="preserve"><value>karakter</value></data>
+
+  <!-- ===== GenericSearchFilterComponent ===== -->
+  <data name="Filter.Condition" xml:space="preserve"><value>Mga Kondisyon</value></data>
+  <data name="Placeholder.StartDate" xml:space="preserve"><value>Petsa ng Simula</value></data>
+  <data name="Placeholder.EndDate" xml:space="preserve"><value>Petsa ng Katapusan</value></data>
+  <data name="Placeholder.StartTime" xml:space="preserve"><value>Oras ng Simula</value></data>
+  <data name="Placeholder.EndTime" xml:space="preserve"><value>Oras ng Katapusan</value></data>
+  <data name="Placeholder.MinValue" xml:space="preserve"><value>Pinakamababang Halaga</value></data>
+  <data name="Placeholder.MaxValue" xml:space="preserve"><value>Pinakamataas na Halaga</value></data>
+  <data name="Filter.CustomTypeNote" xml:space="preserve"><value>Ang custom na uri ng filter ay kailangang ipatupad sa parent component</value></data>
+
+  <!-- ===== DetailSectionWrapper ===== -->
+  <data name="Label.PleaseWait" xml:space="preserve"><value>Mangyaring maghintay...</value></data>
+  <data name="Label.LoadingDetailData" xml:space="preserve"><value>Naglo-load ng detalyadong data...</value></data>
+
+  <!-- ===== PurchaseOrderTable ===== -->
+  <data name="Message.SelectSupplierFirst" xml:space="preserve"><value>Pumili ng supplier upang makita ang kanilang mga hindi pa natapos na order ng pagbili</value></data>
+  <data name="Message.NoProducts" xml:space="preserve"><value>Wala pang produkto na idinagdag</value></data>
+  <data name="Button.SmartPurchase" xml:space="preserve"><value>Matalinong Pag-order</value></data>
+  <data name="Tooltip.PurchaseProductSearch" xml:space="preserve"><value>Maghanap at pumili ng produkto (ilagay ang code o pangalan). Hindi maaaring baguhin ang mga produkto na may mga rekord ng pagtanggap</value></data>
+  <data name="Placeholder.PurchaseProductSearch" xml:space="preserve"><value>Ilagay ang code o pangalan ng produkto</value></data>
+  <data name="Message.ProductHasReceiving" xml:space="preserve"><value>Ang produktong ito ay may mga rekord ng pagtanggap at hindi maaaring baguhin</value></data>
+  <data name="Tooltip.PurchaseQuantity" xml:space="preserve"><value>Dami ng pagbili. Hindi maaaring baguhin ang dami ng mga produkto na may rekord ng pagtanggap</value></data>
+  <data name="Message.QuantityHasReceiving" xml:space="preserve"><value>Ang produktong ito ay may mga rekord ng pagtanggap at hindi maaaring baguhin ang dami</value></data>
+  <data name="Tooltip.ReceivedQuantity" xml:space="preserve"><value>Daming natanggap (awtomatikong ina-update mula sa mga order ng pagtanggap)</value></data>
+  <data name="Tooltip.PurchasePrice" xml:space="preserve"><value>Presyo ng pagbili sa bawat yunit</value></data>
+  <data name="Tooltip.TaxRatePercent" xml:space="preserve"><value>Rate ng buwis (%)</value></data>
+  <data name="Tooltip.ReceivingCompleted" xml:space="preserve"><value>Markahan kung kumpleto na ang pagtanggap para sa produktong ito (maaaring markahan nang maaga)</value></data>
+  <data name="Message.FullyReceived" xml:space="preserve"><value>Ganap na natanggap, hindi maaaring i-undo</value></data>
+  <data name="Tooltip.PurchaseRemarks" xml:space="preserve"><value>Opsyonal. Maaaring mag-record ng mga tala para sa item ng pagbili na ito (maaaring i-edit pagkatapos ng pag-apruba)</value></data>
+  <data name="Tooltip.ViewRelatedDocuments" xml:space="preserve"><value>Tingnan ang mga kaugnay na dokumento</value></data>
+  <data name="Message.FullyReceivedCannotUndo" xml:space="preserve"><value>Ang produktong ito ay ganap na natanggap at hindi maaaring i-undo ang status ng pagkumpleto</value></data>
+  <data name="Message.NeedAtLeastOneProduct" xml:space="preserve"><value>Kailangan ng kahit isang produkto</value></data>
+  <data name="Message.PleaseSelectSupplier" xml:space="preserve"><value>Mangyaring pumili muna ng supplier</value></data>
+  <data name="Message.AlreadyHasDetails" xml:space="preserve"><value>Mayroon nang mga detalye; hindi maaaring gamitin ang Matalinong Pag-order</value></data>
+  <data name="Message.NoHistoryPurchase" xml:space="preserve"><value>Ang supplier na ito ay walang kasaysayan ng pagbili</value></data>
+  <data name="Message.LoadLastPurchaseDetailsTooltip" xml:space="preserve"><value>I-load ang mga detalye ng huling pagbili para sa supplier na ito</value></data>
+  <data name="Message.PleaseSelectSupplierForSmartOrder" xml:space="preserve"><value>Mangyaring pumili ng supplier bago gumamit ng Matalinong Pag-order</value></data>
+  <data name="Message.SupplierNoHistoryPurchase" xml:space="preserve"><value>Ang supplier na ito ay walang kasaysayan ng pagbili; hindi maaaring gamitin ang Matalinong Pag-order</value></data>
+  <data name="Message.SmartOrderConfirm" xml:space="preserve"><value>Kumpirmasyon ng Matalinong Pag-order: Aalisin ang mga kasalukuyang detalye at ilo-load ang {0} item mula sa huling pagbili.</value></data>
+  <data name="Message.SmartOrderFailed" xml:space="preserve"><value>Nabigo ang Matalinong Pag-order: {0}</value></data>
+  <data name="Message.SmartOrderSuccess" xml:space="preserve"><value>Matagumpay na na-load ang {0} item mula sa huling pagbili</value></data>
+  <data name="Message.LoadLastPurchaseFailed" xml:space="preserve"><value>Nabigo ang pag-load ng mga detalye ng huling pagbili: {0}</value></data>
+  <data name="Message.NoDetailsToDelete" xml:space="preserve"><value>Walang mga detalye upang i-clear</value></data>
+  <data name="Message.AllDetailsLocked" xml:space="preserve"><value>Lahat ng detalye ay naka-lock (may mga rekord ng pagtanggap), hindi maaaring i-clear</value></data>
+  <data name="Message.ClearDetailsPartial" xml:space="preserve"><value>Na-clear ang {0} item (pinanatili ang {1} naka-lock na item)</value></data>
+  <data name="Message.ClearDetailsSuccess" xml:space="preserve"><value>Na-clear ang {0} item ng detalye ng pagbili</value></data>
+  <data name="Message.ItemNotSaved" xml:space="preserve"><value>Hindi pa nai-save ang item na ito; hindi maaaring tingnan ang mga kaugnay na dokumento</value></data>
+  <data name="Message.LoadRelatedDocFailed" xml:space="preserve"><value>Nabigo ang pag-load ng mga kaugnay na dokumento: {0}</value></data>
+  <data name="Message.HasUndeletableDetailsTooltip" xml:space="preserve"><value>Ang ilang produkto ay may mga rekord ng pagtanggap at hindi maaaring i-clear</value></data>
+  <data name="Tooltip.ClearAllDetails" xml:space="preserve"><value>I-clear ang lahat ng detalye ng produkto</value></data>
+
 </root>

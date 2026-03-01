@@ -1,4 +1,4 @@
-@page "/waste-types"
+﻿@page "/waste-types"
 @inject IWasteTypeService WasteTypeService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -17,7 +17,7 @@
                           DataLoader="@LoadWasteTypesAsync"
                           FilterApplier="@ApplyWasteTypeFilters"
                           GetEntityDisplayName="@(wt => wt.Name)"
-                          RequiredPermission="WasteType.Read"
+                          RequiredPermission="@PermissionRegistry.WasteType.Read"
                           RequiredModule="WasteManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

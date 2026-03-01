@@ -756,7 +756,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDrop), GetType());
-            await NotificationService.ShowErrorAsync("排序更新失敗");
+            await NotificationService.ShowErrorAsync(L["Message.SortUpdateFailed"]);
         }
         finally
         {

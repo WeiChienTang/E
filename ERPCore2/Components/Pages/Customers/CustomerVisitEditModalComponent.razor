@@ -1,4 +1,4 @@
-@* 可重用的客戶拜訪紀錄編輯組件 - 用於客戶 EditModal 的 Tab 頁籤中 *@
+﻿@* 可重用的客戶拜訪紀錄編輯組件 - 用於客戶 EditModal 的 Tab 頁籤中 *@
 @inject ICustomerVisitService CustomerVisitService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
@@ -28,7 +28,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(CustomerVisitId.HasValue ? L["Message.UpdateSuccess", L["Entity.CustomerVisit"]].ToString() : L["Message.CreateSuccess", L["Entity.CustomerVisit"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.CustomerVisit"]]"
-                          RequiredPermission="Customer.Read"
+                          RequiredPermission="@PermissionRegistry.Customer.Read"
                           OnEntitySaved="@OnCustomerVisitSaved"
                           OnCancel="@OnCancel" />
 

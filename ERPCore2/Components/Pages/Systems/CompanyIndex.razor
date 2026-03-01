@@ -1,4 +1,4 @@
-@page "/companies"
+﻿@page "/companies"
 @inject ICompanyService CompanyService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -17,7 +17,7 @@
                       DataLoader="@LoadCompaniesAsync"
                       FilterApplier="@ApplyCompanyFilters"
                       GetEntityDisplayName="@(company => company.CompanyName)"
-                      RequiredPermission="Company.Read"
+                      RequiredPermission="@PermissionRegistry.Company.Read"
                       RequiredModule="Systems"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"

@@ -1,4 +1,4 @@
-@page "/units"
+﻿@page "/units"
 @inject IUnitService UnitService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -17,7 +17,7 @@
                           DataLoader="@LoadUnitsAsync"
                           FilterApplier="@ApplyUnitFilters"
                           GetEntityDisplayName="@(unit => unit.Name)"
-                          RequiredPermission="Unit.Read"
+                          RequiredPermission="@PermissionRegistry.Unit.Read"
                           RequiredModule="Products"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

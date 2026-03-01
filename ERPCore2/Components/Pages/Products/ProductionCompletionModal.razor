@@ -129,7 +129,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadFailed"], ex.Message));
         }
         finally
         {
@@ -274,7 +274,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">@L["Label.Operator"]</label>
                                 <select class="form-select" @bind="operatorEmployeeId">
-                                    <option value="">-- 請選擇 --</option>
+                                    <option value="">@L["Placeholder.SelectOption"]</option>
                                     @foreach (var employee in availableEmployees.Where(e => e.Status == EntityStatus.Active))
                                     {
                                         <option value="@employee.Id">@employee.Name</option>
@@ -284,7 +284,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">@L["Label.StorageWarehouse"]</label>
                                 <select class="form-select" @onchange="OnWarehouseChanged" value="@targetWarehouseId">
-                                    <option value="">-- 請選擇 --</option>
+                                    <option value="">@L["Placeholder.SelectOption"]</option>
                                     @foreach (var warehouse in availableWarehouses.Where(w => w.Status == EntityStatus.Active))
                                     {
                                         <option value="@warehouse.Id">@warehouse.Name</option>
@@ -294,7 +294,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">@L["Label.WarehouseLocation"]</label>
                                 <select class="form-select" @bind="targetWarehouseLocationId" disabled="@(!availableLocations.Any())">
-                                    <option value="">-- 請選擇 --</option>
+                                    <option value="">@L["Placeholder.SelectOption"]</option>
                                     @foreach (var location in availableLocations.Where(l => l.Status == EntityStatus.Active))
                                     {
                                         <option value="@location.Id">@location.Name</option>
@@ -401,7 +401,7 @@
             var completionResult = await ProductionScheduleCompletionService.CreateAsync(completion);
             if (!completionResult.IsSuccess)
             {
-                await NotificationService.ShowErrorAsync($"建立完工記錄失敗：{completionResult.ErrorMessage}");
+                await NotificationService.ShowErrorAsync(string.Format(L["Message.CreateCompletionFailed"], completionResult.ErrorMessage));
                 return;
             }
 
@@ -418,7 +418,7 @@
             var updateResult = await ProductionScheduleItemService.UpdateAsync(scheduleItem);
             if (!updateResult.IsSuccess)
             {
-                await NotificationService.ShowWarningAsync($"更新排程項目失敗：{updateResult.ErrorMessage}");
+                await NotificationService.ShowWarningAsync(string.Format(L["Message.UpdateScheduleItemFailed"], updateResult.ErrorMessage));
             }
 
             // 3. 處理 BOM 組件消耗（建立配置記錄）
@@ -430,7 +430,7 @@
                 await CreateInventoryRecordAsync(completion);
             }
 
-            await NotificationService.ShowSuccessAsync($"成功登錄完工數量：{completionQuantity:N2}");
+            await NotificationService.ShowSuccessAsync(string.Format(L["Message.CompletionSuccess"], completionQuantity.ToString("N2")));
 
             // 通知父組件
             if (OnCompletionRecorded.HasDelegate)
@@ -442,7 +442,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"完工登錄失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.CompletionFailed"], ex.Message));
         }
         finally
         {
@@ -509,16 +509,16 @@
             
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync($"庫存入庫成功：{completion.CompletedQuantity:N2}");
+                await NotificationService.ShowSuccessAsync(string.Format(L["Message.InventoryAddSuccess"], completion.CompletedQuantity.ToString("N2")));
             }
             else
             {
-                await NotificationService.ShowWarningAsync($"庫存入庫失敗：{result.ErrorMessage}");
+                await NotificationService.ShowWarningAsync(string.Format(L["Message.InventoryAddFailed"], result.ErrorMessage));
             }
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"庫存處理異常：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.InventoryError"], ex.Message));
         }
     }
 

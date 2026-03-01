@@ -1,4 +1,4 @@
-@* 盤點單編輯組件 *@
+﻿@* 盤點單編輯組件 *@
 @using ERPCore2.Components.Shared.UI.Form
 @using ERPCore2.Helpers
 @using ERPCore2.Models
@@ -37,7 +37,7 @@
                           SaveHandler="@SaveStockTakingWrapper"
                           SaveSuccessMessage="@(StockTakingId.HasValue ? L["Message.UpdateSuccess", L["Entity.StockTaking"]].ToString() : L["Message.CreateSuccess", L["Entity.StockTaking"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.StockTaking"]]"
-                          RequiredPermission="StockTaking.Read"
+                          RequiredPermission="@PermissionRegistry.StockTaking.Read"
                           OnEntitySaved="@OnStockTakingSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"

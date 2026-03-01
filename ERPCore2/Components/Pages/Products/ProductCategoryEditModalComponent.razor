@@ -1,4 +1,4 @@
-@* 可重用的商品類型編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的商品類型編輯組件 - 可在任何頁面中嵌入 *@
 @inject IProductCategoryService ProductCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(ProductCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.ProductCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.ProductCategory"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductCategory"]]"
-                          RequiredPermission="ProductCategory.Read"
+                          RequiredPermission="@PermissionRegistry.ProductCategory.Read"
                           OnEntitySaved="@OnProductCategorySaved"
                           OnCancel="@OnCancel" />
 

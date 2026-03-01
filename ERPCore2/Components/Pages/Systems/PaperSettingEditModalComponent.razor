@@ -1,4 +1,4 @@
-@* 可重用的紙張設定編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的紙張設定編輯組件 - 可在任何頁面中嵌入 *@
 @inject IPaperSettingService PaperSettingService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(PaperSettingId.HasValue ? L["Message.UpdateSuccess", L["Entity.PaperSetting"]].ToString() : L["Message.CreateSuccess", L["Entity.PaperSetting"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PaperSetting"]]"
-                          RequiredPermission="PaperSetting.Read"
+                          RequiredPermission="@PermissionRegistry.PaperSetting.Read"
                           OnEntitySaved="@OnPaperSettingSaved"
                           OnCancel="@OnCancel"
                           CustomActionButtons="@CustomActionButtons" />

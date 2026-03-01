@@ -1,4 +1,4 @@
-@page "/banks"
+﻿@page "/banks"
 @inject IBankService BankService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -18,7 +18,7 @@
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.Bank"]"
                         GetEntityDisplayName="@(bank => bank.BankName)"
-                        RequiredPermission="Bank.Read"
+                        RequiredPermission="@PermissionRegistry.Bank.Read"
                         RequiredModule="FinancialManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

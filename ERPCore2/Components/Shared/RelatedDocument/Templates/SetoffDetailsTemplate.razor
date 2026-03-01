@@ -1,6 +1,7 @@
 @* 沖款單詳細欄位範本 - 單行行內顯示 *@
 @using ERPCore2.Models
 @using ERPCore2.Helpers
+@inject IStringLocalizer<SharedResource> L
 
 <span class="text-muted">
     <i class="bi bi-calendar3 me-1"></i>@Document.DocumentDate.ToString("yyyy-MM-dd")
@@ -8,13 +9,13 @@
 @if (Document.Amount.HasValue)
 {
     <span class="text-muted">
-        <i class="bi bi-currency-dollar me-1"></i>沖款: @NumberFormatHelper.FormatSmart(Document.Amount.Value)
+        <i class="bi bi-currency-dollar me-1"></i>@L["RelatedDoc.Setoff"] @NumberFormatHelper.FormatSmart(Document.Amount.Value)
     </span>
 }
 else if (Document.CurrentAmount.HasValue)
 {
     <span class="text-muted">
-        <i class="bi bi-currency-dollar me-1"></i>本次: @NumberFormatHelper.FormatSmart(Document.CurrentAmount.Value)
+        <i class="bi bi-currency-dollar me-1"></i>@L["RelatedDoc.CurrentAmount"] @NumberFormatHelper.FormatSmart(Document.CurrentAmount.Value)
     </span>
 }
 @if (!string.IsNullOrEmpty(Document.Remarks))

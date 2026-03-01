@@ -3,16 +3,17 @@
 @using ERPCore2.Components.Shared.UI.Form
 @typeparam TModel
 @implements IDisposable
+@inject IStringLocalizer<SharedResource> L
 
 <div class="card mb-3">    
     <div class="card-header d-flex justify-content-between align-items-center">        
         <h6 class="card-title mb-0">
-            條件
-        </h6>        
-        <div class="d-flex gap-2">            
-            <GenericButtonComponent Variant="ButtonVariant.Red" 
-                                    Text="清除" 
-                                    OnClick="ClearAllFilters" 
+            @L["Filter.Condition"]
+        </h6>
+        <div class="d-flex gap-2">
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                    Text="@L["Button.ClearData"]"
+                                    OnClick="ClearAllFilters"
                                     CssClass="search-clear-btn" />
         </div>
     </div>
@@ -74,7 +75,7 @@
                                         id="@filter.PropertyName"
                                         value="@GetTextValue(filter.PropertyName)"
                                         @onchange="e => HandleSelectChange(filter.PropertyName, e.Value?.ToString())">
-                                    <option value="">@(filter.EmptyOptionText ?? "全部")</option>
+                                    <option value="">@(filter.EmptyOptionText ?? L["Label.All"].ToString())</option>
                                     @if (filter.Options != null)
                                     {
                                         @foreach (var option in filter.Options)
@@ -110,18 +111,18 @@
                                 var dateRange = GetDateRange(filter.PropertyName);
                                 <div class="row g-2">
                                     <div class="col-6">
-                                        <input type="date" 
-                                               class="form-control" 
-                                               placeholder="開始日期"
+                                        <input type="date"
+                                               class="form-control"
+                                               placeholder="@L["Placeholder.StartDate"]"
                                                min="1900-01-01"
                                                max="2099-12-31"
                                                value="@(dateRange.StartDate?.ToString("yyyy-MM-dd"))"
                                                @onchange="e => HandleDateRangeChange(filter.PropertyName, e.Value?.ToString(), true)" />
                                     </div>
                                     <div class="col-6">
-                                        <input type="date" 
-                                               class="form-control" 
-                                               placeholder="結束日期"
+                                        <input type="date"
+                                               class="form-control"
+                                               placeholder="@L["Placeholder.EndDate"]"
                                                min="1900-01-01"
                                                max="2099-12-31"
                                                value="@(dateRange.EndDate?.ToString("yyyy-MM-dd"))"
@@ -129,23 +130,23 @@
                                     </div>
                                 </div>
                                 break;
-                                
+
                             case SearchFilterType.DateTimeRange:
                                 var dateTimeRange = GetDateTimeRange(filter.PropertyName);
                                 <div class="row g-2">
                                     <div class="col-6">
-                                        <input type="datetime-local" 
-                                               class="form-control" 
-                                               placeholder="開始時間"
+                                        <input type="datetime-local"
+                                               class="form-control"
+                                               placeholder="@L["Placeholder.StartTime"]"
                                                min="1900-01-01T00:00"
                                                max="2099-12-31T23:59"
                                                value="@(dateTimeRange.StartDateTime?.ToString("yyyy-MM-ddTHH:mm"))"
                                                @onchange="e => HandleDateTimeRangeChange(filter.PropertyName, e.Value?.ToString(), true)" />
                                     </div>
                                     <div class="col-6">
-                                        <input type="datetime-local" 
-                                               class="form-control" 
-                                               placeholder="結束時間"
+                                        <input type="datetime-local"
+                                               class="form-control"
+                                               placeholder="@L["Placeholder.EndTime"]"
                                                min="1900-01-01T00:00"
                                                max="2099-12-31T23:59"
                                                value="@(dateTimeRange.EndDateTime?.ToString("yyyy-MM-ddTHH:mm"))"
@@ -153,21 +154,21 @@
                                     </div>
                                 </div>
                                 break;
-                                
+
                             case SearchFilterType.NumberRange:
                                 var numberRange = GetNumberRange(filter.PropertyName);
                                 <div class="row g-2">
                                     <div class="col-6">
-                                        <input type="number" 
-                                               class="form-control" 
-                                               placeholder="最小值"
+                                        <input type="number"
+                                               class="form-control"
+                                               placeholder="@L["Placeholder.MinValue"]"
                                                value="@numberRange.Min"
                                                @onchange="e => HandleNumberRangeChange(filter.PropertyName, e.Value?.ToString(), true)" />
                                     </div>
                                     <div class="col-6">
-                                        <input type="number" 
-                                               class="form-control" 
-                                               placeholder="最大值"
+                                        <input type="number"
+                                               class="form-control"
+                                               placeholder="@L["Placeholder.MaxValue"]"
                                                value="@numberRange.Max"
                                                @onchange="e => HandleNumberRangeChange(filter.PropertyName, e.Value?.ToString(), false)" />
                                     </div>
@@ -190,7 +191,7 @@
                                 
                             case SearchFilterType.Custom:
                                 <div class="alert alert-info">
-                                    自定義篩選類型需要在父組件中實作
+                                    @L["Filter.CustomTypeNote"]
                                 </div>
                                 break;
                                 

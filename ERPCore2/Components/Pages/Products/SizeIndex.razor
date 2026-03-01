@@ -1,4 +1,4 @@
-@page "/sizes"
+﻿@page "/sizes"
 @inject ISizeService SizeService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -17,7 +17,7 @@
                           DataLoader="@LoadSizesAsync"
                           FilterApplier="@ApplySizeFilters"
                           GetEntityDisplayName="@(size => size.Name)"
-                          RequiredPermission="Size.Read"
+                          RequiredPermission="@PermissionRegistry.Size.Read"
                           RequiredModule="Products"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

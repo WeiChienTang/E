@@ -1,4 +1,4 @@
-@* 可重用的倉庫編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的倉庫編輯組件 - 可在任何頁面中嵌入 *@
 @inject IWarehouseService WarehouseService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -21,7 +21,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(WarehouseId.HasValue ? L["Message.UpdateSuccess", L["Entity.Warehouse"]].ToString() : L["Message.CreateSuccess", L["Entity.Warehouse"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Warehouse"]]"
-                          RequiredPermission="Warehouse.Read"
+                          RequiredPermission="@PermissionRegistry.Warehouse.Read"
                           OnEntitySaved="@OnWarehouseSaved"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"

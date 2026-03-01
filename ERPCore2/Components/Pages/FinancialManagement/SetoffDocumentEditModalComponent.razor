@@ -1,4 +1,4 @@
-@* 沖款單編輯組件 *@
+﻿@* 沖款單編輯組件 *@
 @inject ISetoffDocumentService SetoffDocumentService
 @inject ISetoffProductDetailService SetoffProductDetailService
 @inject ISetoffPaymentService SetoffPaymentService
@@ -35,7 +35,7 @@
                           UseGenericSave="true"
                           SaveSuccessMessage="@(SetoffDocumentId.HasValue ? L["Message.UpdateSuccess", L["Entity.SetoffDocument"]].ToString() : L["Message.CreateSuccess", L["Entity.SetoffDocument"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SetoffDocument"]]"
-                          RequiredPermission="SetoffDocument.Read"
+                          RequiredPermission="@PermissionRegistry.SetoffDocument.Read"
                           CustomValidator="@ValidateBeforeSave"
                           AfterSave="@SaveSetoffDocumentDetailsAsync"
                           OnEntitySaved="@OnSetoffDocumentSaved"
