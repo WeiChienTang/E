@@ -5,6 +5,7 @@
 @inject IPrepaymentTypeService PrepaymentTypeService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
+@inject IStringLocalizer<SharedResource> L
 
 <div class="card-body p-0">
     <InteractiveTableComponent TItem="SetoffPrepaymentItem" 
@@ -13,7 +14,7 @@
                                 ColumnDefinitions="@GetPrepaymentColumnDefinitions()"
                                 IsReadOnly="@IsReadOnly"
                                 ShowRowNumbers="false"
-                                EmptyMessage="尚未新增預收付款項記錄"
+                                EmptyMessage="@L["Setoff.NoPrepaymentRecords"]"
                                 ShowBuiltInActions="true"
                                 ShowBuiltInDeleteButton="false"
                                 CustomActionsTemplate="@GetCustomActionsTemplate"
@@ -212,7 +213,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入預收付類型失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadPrepaymentTypeFailed"], ex.Message));
             AllPrepaymentTypes = new List<PrepaymentType>();
             FilteredPrepaymentTypes = new List<PrepaymentType>();
         }
@@ -274,7 +275,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入可用預收付款項失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadAvailablePrepaymentFailed"], ex.Message));
             AvailablePrepayments = new List<SetoffPrepayment>();
         }
     }
@@ -364,15 +365,14 @@
         {
             new()
             {
-                Title = "預收付類型",
-                Tooltip = "選擇預收款、預付款或轉沖款類型",
+                Title = L["Setoff.PrepaymentType"],
                 PropertyName = nameof(SetoffPrepaymentItem.PrepaymentTypeId),
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
                 TriggerEmptyRowOnFilled = true,  //  觸發欄位：選擇後自動新增空行
-                Options = new List<InteractiveSelectOption> 
-                { 
-                    new InteractiveSelectOption { Value = 0, Text = "請選擇類型.." } 
+                Options = new List<InteractiveSelectOption>
+                {
+                    new InteractiveSelectOption { Value = 0, Text = L["Placeholder.SelectType"] }
                 }
                 .Concat((FilteredPrepaymentTypes ?? new List<PrepaymentType>()).Select(pt => new InteractiveSelectOption
                 { 
@@ -414,8 +414,7 @@
 
             new()
             {
-                Title = "來源單號",
-                Tooltip = "預收/預付類型：顯示沖款單號；轉沖款類型：選擇要使用的預收付款項來源單據",
+                Title = L["Setoff.SourceDocumentCode"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "250px",
@@ -443,9 +442,9 @@
                     
                     // 轉沖款類型：顯示下拉選單
                     // 建立下拉選單選項
-                    var options = new List<InteractiveSelectOption> 
-                    { 
-                        new InteractiveSelectOption { Value = 0, Text = "請選擇預收付款項.." } 
+                    var options = new List<InteractiveSelectOption>
+                    {
+                        new InteractiveSelectOption { Value = 0, Text = L["Placeholder.SelectPrepayment"] }
                     };
                     
                     // 加入可用的預收付款項
@@ -465,7 +464,7 @@
                         // 使用 SourceDocumentCode 和 Amount 顯示（因為 AvailablePrepayments 中找不到）
                         var displayText = !string.IsNullOrEmpty(prepaymentItem.SourceDocumentCode)
                             ? $"{prepaymentItem.SourceDocumentCode} (金額: {NumberFormatHelper.FormatSmart(prepaymentItem.Amount)})"
-                            : "未知來源";
+                            : L["Setoff.UnknownSource"].ToString();
                         
                         // 插入到第二個位置（"請選擇..."之後）
                         options.Insert(1, new InteractiveSelectOption
@@ -489,8 +488,7 @@
             },
             new()
             {
-                Title = "總金額",
-                Tooltip = "預收/預付類型：本次收付的總金額；轉沖款類型：來源預收付款項的原始總金額",
+                Title = L["Setoff.TotalAmount"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
@@ -528,8 +526,7 @@
             },
             new()
             {
-                Title = "可用餘額",
-                Tooltip = "預收/預付類型（編輯模式）：顯示此預收付款項的剩餘可用金額；轉沖款類型：顯示來源預收付款項的可用餘額（編輯模式下會動態調整）",
+                Title = L["Setoff.AvailableBalance"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
@@ -583,8 +580,7 @@
             },
             new()
             {
-                Title = "金額",
-                Tooltip = "預收/預付類型：輸入本次收付金額；轉沖款類型：輸入本次使用金額",
+                Title = L["Setoff.Amount"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -617,8 +613,7 @@
             },
             new()
             {
-                Title = "備註",
-                Tooltip = "備註說明",
+                Title = L["Label.Remarks"],
                 PropertyName = nameof(SetoffPrepaymentItem.Remarks),
                 ColumnType = InteractiveColumnType.Input,
                 Width = "200px",
@@ -661,7 +656,7 @@
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    IsDisabled="true"
-                                   Title="至少需要保留一個空行"
+                                   Title="@L["Label.KeepOneEmptyRow"]"
                                    StopPropagation="true"
                                    CssClass="btn-square" />
         }
@@ -672,7 +667,7 @@
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    IsDisabled="@IsReadOnly"
-                                   Title="刪除"
+                                   Title="@L["Button.Delete"]"
                                    OnClick="async () => await HandleRemovePrepaymentRecord(item)"
                                    StopPropagation="true"
                                    CssClass="btn-square" />
@@ -683,7 +678,7 @@
             <GenericButtonComponent Variant="ButtonVariant.Blue"
                                    IconClass="bi bi-eye text-white"
                                    Size="ButtonSize.Large"
-                                   Title="查看相關沖款單"
+                                   Title="@L["Setoff.ViewRelatedSetoff"]"
                                    OnClick="async () => await ShowRelatedDocuments(item)"
                                    StopPropagation="true"
                                    CssClass="btn-square" />
@@ -741,7 +736,7 @@
         
         PrepaymentItems.Remove(item);
         
-        await NotificationService.ShowInfoAsync("已移除預收付款項記錄");
+        await NotificationService.ShowInfoAsync(L["Message.PrepaymentRecordRemoved"]);
         await NotifyPrepaymentsChanged();
         StateHasChanged();
     }
@@ -784,13 +779,13 @@
                         
                         // 不允許超過可用餘額，直接設為最大可用金額
                         item.UsedAmount = maxAvailable;
-                        await NotificationService.ShowWarningAsync($"使用金額不能超過可用餘額 {NumberFormatHelper.FormatSmart(maxAvailable)}");
+                        await NotificationService.ShowWarningAsync(string.Format(L["Message.UsedAmountExceedsBalance"], NumberFormatHelper.FormatSmart(maxAvailable)));
                     }
                     else if (amount < 0)
                     {
                         // 不允許負數
                         item.UsedAmount = 0;
-                        await NotificationService.ShowWarningAsync("使用金額不能小於 0");
+                        await NotificationService.ShowWarningAsync(L["Message.UsedAmountBelowZero"]);
                     }
                     else
                     {
@@ -808,7 +803,7 @@
                 if (amount < 0)
                 {
                     item.Amount = 0;
-                    await NotificationService.ShowWarningAsync("金額不能小於 0");
+                    await NotificationService.ShowWarningAsync(L["Message.AmountBelowZero"]);
                 }
                 else
                 {
@@ -887,7 +882,7 @@
             // 檢查是否選擇了預收付類型
             if (!item.PrepaymentTypeId.HasValue || item.PrepaymentTypeId.Value <= 0)
             {
-                errors.Add("請選擇預收付類型");
+                errors.Add(L["Message.SelectPrepaymentType"]);
                 continue;
             }
             
@@ -897,7 +892,7 @@
                 // 轉沖款類型：必須選擇來源預收付款項
                 if (!item.SourcePrepaymentId.HasValue || item.SourcePrepaymentId.Value <= 0)
                 {
-                    errors.Add("轉沖款類型必須選擇來源預收付款項");
+                    errors.Add(L["Message.TransferTypeNeedsSource"]);
                     continue;
                 }
                 
@@ -921,14 +916,14 @@
                             0,
                             IsEditMode());
                         
-                        errors.Add($"來源單號 {sourcePrepayment.SourceDocumentCode} 的使用金額超過可用餘額（最大可用：{NumberFormatHelper.FormatSmart(maxAvailable)}）");
+                        errors.Add(string.Format(L["Message.UsedAmountExceedsBalance"], $"{sourcePrepayment.SourceDocumentCode} (max: {NumberFormatHelper.FormatSmart(maxAvailable)})" ));
                     }
                 }
                 
                 // 轉沖款類型：檢查 UsedAmount 必須大於 0
                 if (item.UsedAmount <= 0)
                 {
-                    errors.Add("使用金額必須大於 0");
+                    errors.Add(L["Message.UsedAmountMustBePositive"]);
                 }
             }
             else if (selectedType != null)
@@ -936,7 +931,7 @@
                 //  預收/預付類型：檢查 Amount 必須大於 0
                 if (item.Amount <= 0)
                 {
-                    errors.Add("金額必須大於 0");
+                    errors.Add(L["Message.AmountMustBePositive"]);
                 }
             }
         }
@@ -979,7 +974,7 @@
         // 檢查是否有有效的 ID
         if (item.Id <= 0)
         {
-            await NotificationService.ShowWarningAsync("此記錄尚未儲存，無法查詢相關單據");
+            await NotificationService.ShowWarningAsync(L["Message.RecordNotSavedCannotQuery"]);
             return;
         }
         

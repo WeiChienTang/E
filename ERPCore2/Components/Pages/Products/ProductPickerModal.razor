@@ -1,8 +1,9 @@
 @* 商品批量選擇器 Modal - 提供篩選+點擊選取，批量加入材料清單 *@
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@(async (bool visible) => { if (!visible) await Close(); })"
-                    Title="選擇清單"
+                    Title="@L["Product.SelectList"]"
                     Icon="bi bi-grid-3x3-gap-fill"
                     HeaderColor="BaseModalComponent.HeaderVariant.Primary"
                     ShowCloseButton="true"
@@ -16,19 +17,19 @@
             <div class="flex-grow-1">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control" placeholder="搜尋商品名稱/編號..."
+                    <input type="text" class="form-control" placeholder="@L["Placeholder.SearchProductNameCode"]"
                            value="@_searchText"
                            @oninput="e => { _searchText = e.Value?.ToString() ?? string.Empty; ApplyFilters(); }" />
                 </div>
             </div>
             <div style="width: 160px;">
-                <input type="text" class="form-control form-control-sm" placeholder="規格篩選..."
+                <input type="text" class="form-control form-control-sm" placeholder="@L["Placeholder.FilterBySpec"]"
                        value="@_specSearch"
                        @oninput="e => { _specSearch = e.Value?.ToString() ?? string.Empty; ApplyFilters(); }" />
             </div>
             <div style="width: 140px;">
                 <select class="form-select form-select-sm" @onchange="OnCategoryChanged">
-                    <option value="">所有類別</option>
+                    <option value="">@L["Label.AllCategories"]</option>
                     @foreach (var cat in AvailableCategories)
                     {
                         <option value="@cat.Id" selected="@(_selectedCategoryId == cat.Id)">@cat.Name</option>
@@ -40,7 +41,7 @@
                     <input class="form-check-input" type="checkbox" id="pickerHideAdded"
                            checked="@_hideAlreadyAdded"
                            @onchange="e => { _hideAlreadyAdded = (bool)(e.Value ?? false); ApplyFilters(); }" />
-                    <label class="form-check-label small text-nowrap" for="pickerHideAdded">隱藏已加入</label>
+                    <label class="form-check-label small text-nowrap" for="pickerHideAdded">@L["Label.HideAdded"]</label>
                 </div>
                 <GenericButtonComponent Text="確認"
                                         Variant="ButtonVariant.Green"
@@ -159,14 +160,14 @@
         {
             new()
             {
-                Title = "商品編號",
+                Title = L["Column.ProductCode"],
                 PropertyName = nameof(Product.Code),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "15%"
             },
             new()
             {
-                Title = "商品名稱",
+                Title = L["Column.ProductName"],
                 PropertyName = nameof(Product.Name),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "30%",
@@ -182,14 +183,14 @@
                         builder.AddMarkupContent(2, "&nbsp;");
                         builder.OpenElement(3, "span");
                         builder.AddAttribute(4, "class", "badge bg-secondary small");
-                        builder.AddContent(5, "已加入");
+                        builder.AddContent(5, L["Label.Added"].ToString());
                         builder.CloseElement();
                     }
                 }
             },
             new()
             {
-                Title = "類別",
+                Title = L["Column.Category"],
                 PropertyName = "CategoryName",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
@@ -206,14 +207,14 @@
             },
             new()
             {
-                Title = "規格",
+                Title = L["Column.Spec"],
                 PropertyName = nameof(Product.Specification),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "25%"
             },
             new()
             {
-                Title = "單位",
+                Title = L["Column.Unit"],
                 PropertyName = "UnitName",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "10%",

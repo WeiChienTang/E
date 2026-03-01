@@ -65,7 +65,6 @@
 
 /* 表格基本樣式 */
 .interactive-table tbody tr {
-    min-height: 44px; /* 確保行有足夠高度 */
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out; /* 添加平滑過渡效果 */
 }
 
@@ -111,10 +110,7 @@
         min-width: unset !important; /* 移除最小寬度限制，完全依賴 inline style 設定 */
         max-width: unset !important; /* 移除最大寬度限制 */
         /* inline style 的寬度會自動生效，不需要額外設定 */
-    } td {
-    vertical-align: middle; /* 所有儲存格內容垂直置中 */
-    min-height: 44px; /* 確保儲存格有足夠高度 */
-}
+    }
 
 /* 表格控件樣式 - 縮減 Padding - 使用 ::deep 確保能夠影響到 CustomTemplate */
 ::deep .interactive-table-container .form-control,

@@ -3,6 +3,7 @@
     專門用於條碼列印功能的表格顯示
 *@
 @using ERPCore2.Models
+@inject IStringLocalizer<SharedResource> L
 
 <div class="table-responsive">
     <InteractiveTableComponent TItem="ProductBarcodeItem"
@@ -21,7 +22,7 @@
                              OnSelectionChanged="@HandleSelectionChanged"
                              GetRowCssClass="@GetRowCssClass"
                              CssClass="barcode-print-table"
-                             EmptyMessage="沒有可列印的商品" />
+                             EmptyMessage="@L["Product.NoPrintableProducts"]" />
 </div>
 
 @code {
@@ -47,9 +48,9 @@
     {
         BuildTableColumns();
     }
-    
+
     // ===== 初始化方法 =====
-    
+
     /// <summary>
     /// 建立表格欄位定義
     /// </summary>
@@ -60,40 +61,36 @@
             // 商品編號
             new InteractiveColumnDefinition
             {
-                Title = "商品編號",
+                Title = L["Column.ProductCode"],
                 PropertyName = nameof(ProductBarcodeItem.Code),
                 ColumnType = InteractiveColumnType.Display,
-                Tooltip = "商品的唯一識別編號",
                 Width = "150px"
             },
-            
+
             // 商品名稱
             new InteractiveColumnDefinition
             {
-                Title = "商品名稱",
+                Title = L["Column.ProductName"],
                 PropertyName = nameof(ProductBarcodeItem.Name),
                 ColumnType = InteractiveColumnType.Display,
-                Tooltip = "商品的名稱",
                 Width = "auto"
             },
-            
+
             // 條碼
             new InteractiveColumnDefinition
             {
-                Title = "條碼號碼",
+                Title = L["Column.Barcode"],
                 PropertyName = nameof(ProductBarcodeItem.Barcode),
                 ColumnType = InteractiveColumnType.Display,
-                Tooltip = "商品的條碼",
                 Width = "200px"
             },
-            
+
             // 列印數量
             new InteractiveColumnDefinition
             {
-                Title = "列印數量",
+                Title = L["Column.PrintQty"],
                 PropertyName = nameof(ProductBarcodeItem.PrintQuantity),
                 ColumnType = InteractiveColumnType.Number,
-                Tooltip = "列印的數量",
                 Width = "120px",
                 MinValue = 1,
                 MaxValue = 100,

@@ -1857,4 +1857,316 @@
   <data name="Button.OpenReturn" xml:space="preserve"><value>Buksan ang Pagbabalik</value></data>
   <data name="Button.OpenOrder" xml:space="preserve"><value>Buksan ang Purchase Order</value></data>
   <data name="Button.OpenSetoff" xml:space="preserve"><value>Buksan ang Setoff</value></data>
+  <data name="Column.CustomerName" xml:space="preserve"><value>Customer</value></data>
+  <data name="Column.QuotationDate" xml:space="preserve"><value>Petsa ng Quotation</value></data>
+  <data name="Column.QuotationCode" xml:space="preserve"><value>Blg. ng Quotation</value></data>
+  <data name="Column.SalesOrderCode" xml:space="preserve"><value>Blg. ng Order</value></data>
+  <data name="Column.DeliveryCode" xml:space="preserve"><value>Blg. ng Pagpapadala</value></data>
+  <data name="Column.DeliveryDate" xml:space="preserve"><value>Petsa ng Pagpapadala</value></data>
+  <data name="Column.SalesReturnDate" xml:space="preserve"><value>Petsa ng Pagbabalik</value></data>
+  <data name="Button.OpenSalesOrder" xml:space="preserve"><value>Buksan ang Sales Order</value></data>
+  <data name="Button.OpenDelivery" xml:space="preserve"><value>Buksan ang Delivery</value></data>
+  <data name="Button.OpenQuotation" xml:space="preserve"><value>Buksan ang Quotation</value></data>
+  <data name="Button.OpenSalesReturn" xml:space="preserve"><value>Buksan ang Sales Return</value></data>
+  <data name="Composition.SelectBOM" xml:space="preserve"><value>Pumili ng BOM Formula</value></data>
+  <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>Pumili ng BOM Formula - {0}</value></data>
+  <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>Maghanap ayon sa code, spec, customer o kategorya...</value></data>
+  <data name="Composition.NoMatch" xml:space="preserve"><value>Walang nahanap na formula</value></data>
+  <data name="Composition.CurrentCustomer" xml:space="preserve"><value>Kasalukuyang Customer</value></data>
+  <data name="Composition.GeneralFormula" xml:space="preserve"><value>Pangkalahatang Formula</value></data>
+  <data name="Composition.CustomerLabel" xml:space="preserve"><value>Customer: {0}</value></data>
+  <data name="Composition.SpecLabel" xml:space="preserve"><value>Spec: {0}</value></data>
+  <data name="Composition.CategoryLabel" xml:space="preserve"><value>Uri: {0}</value></data>
+  <data name="Composition.ComponentCount" xml:space="preserve"><value>Bilang ng Komponente: {0}</value></data>
+  <data name="Composition.CreatedDate" xml:space="preserve"><value>Nilikha: {0}</value></data>
+  <data name="Composition.CustomModeTitle" xml:space="preserve"><value>Custom (Manu-manong Pumili ng Komponente)</value></data>
+  <data name="Composition.CustomModeDesc" xml:space="preserve"><value>Huwag gamitin ang umiiral na formula; manu-manong pumili ng komponente at itakda ang dami</value></data>
+  <data name="Composition.NoBOMInfo" xml:space="preserve"><value>Wala pang BOM formula para sa produktong ito. Mangyaring piliin ang "Custom" mode upang manu-manong likhain ang komposisyon.</value></data>
+  <data name="Composition.EditBOM" xml:space="preserve"><value>I-edit ang BOM Komposisyon</value></data>
+  <data name="Composition.EditBOMWithProduct" xml:space="preserve"><value>I-edit ang BOM Komposisyon - {0}</value></data>
+  <data name="Composition.CustomModeSelectTitle" xml:space="preserve"><value>Custom Mode - Pumili ng Komponente</value></data>
+  <data name="Composition.CustomModeSelectDesc" xml:space="preserve"><value>Pumili ng mga komponente sa ibaba; maaaring i-edit ang dami at yunit ng mga namarkang item sa talahanayan.</value></data>
+  <data name="Composition.SearchComponentPlaceholder" xml:space="preserve"><value>Maghanap ng code o pangalan ng komponente...</value></data>
+  <data name="Composition.NoMatchComponent" xml:space="preserve"><value>Walang nahanap na komponente</value></data>
+  <data name="Composition.PendingCount" xml:space="preserve"><value>{0} komponente ang namarkahan (hindi pa na-load)</value></data>
+  <data name="Composition.AddedCount" xml:space="preserve"><value>{0} komponente ang naidagdag</value></data>
+  <data name="Column.ComponentItem" xml:space="preserve"><value>Item</value></data>
+  <data name="Label.NoRemarks" xml:space="preserve"><value>Walang Pangungusap</value></data>
+  <data name="Composition.EmptyMsgCustom" xml:space="preserve"><value>Pindutin ang "Magdagdag ng Komponente" sa itaas upang pumili</value></data>
+  <data name="Composition.EmptyMsg" xml:space="preserve"><value>Wala pang naidagdag na komponente</value></data>
+  <data name="Message.DuplicateComponent" xml:space="preserve"><value>Duplicate na komponente: {0}. Mangyaring ayusin bago isara.</value></data>
+  <data name="Inventory.CheckTitle" xml:space="preserve"><value>Tsek ng Imbentaryo ng Order</value></data>
+  <data name="Inventory.CheckTitleWithOrder" xml:space="preserve"><value>Tsek ng Imbentaryo - Blg. ng Order {0}</value></data>
+  <data name="Inventory.CannotLoad" xml:space="preserve"><value>Hindi ma-load ang impormasyon ng imbentaryo</value></data>
+  <data name="Inventory.LoadingMessage" xml:space="preserve"><value>Nilo-load ang impormasyon ng imbentaryo...</value></data>
+  <data name="Inventory.Required" xml:space="preserve"><value>Kailangan:</value></data>
+  <data name="Inventory.Stock" xml:space="preserve"><value>Stock:</value></data>
+  <data name="Inventory.Shortage" xml:space="preserve"><value>Kulang:</value></data>
+  <data name="Inventory.SummaryTitle" xml:space="preserve"><value>Buod ng Katayuan ng Imbentaryo</value></data>
+  <data name="Inventory.SummaryNote" xml:space="preserve"><value>※ Data mula sa database; beripikahin ang aktwal na stock sa site</value></data>
+  <data name="Schedule.BatchTransfer" xml:space="preserve"><value>Batch Transfer sa Schedule</value></data>
+  <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>Batch Transfer sa Schedule - {0}</value></data>
+  <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>Impormasyon ng Sales Order</value></data>
+  <data name="Schedule.OrderCodeLabel" xml:space="preserve"><value>Blg. ng Order</value></data>
+  <data name="Schedule.SchedulableCount" xml:space="preserve"><value>Nai-schedule na Detalye</value></data>
+  <data name="Schedule.ScheduleSettings" xml:space="preserve"><value>Mga Setting ng Schedule</value></data>
+  <data name="Schedule.SelectDetails" xml:space="preserve"><value>Pumili ng Detalye para sa Schedule</value></data>
+  <data name="Schedule.ScheduleDate" xml:space="preserve"><value>Petsa ng Schedule</value></data>
+  <data name="Schedule.TargetWarehouse" xml:space="preserve"><value>Target na Bodega</value></data>
+  <data name="Schedule.Creator" xml:space="preserve"><value>Nilikha Ni</value></data>
+  <data name="Schedule.MergeSchedules" xml:space="preserve"><value>Pagsamahin sa isang schedule (inirerekomenda)</value></data>
+  <data name="Schedule.MergeSchedulesDesc" xml:space="preserve"><value>Markahan: pagsamahin ang lahat ng napiling detalye sa isang schedule | Hindi markahan: gumawa ng hiwalay na schedule para sa bawat detalye</value></data>
+  <data name="Schedule.NoSchedulableDetails" xml:space="preserve"><value>Walang available na detalye para sa schedule</value></data>
+  <data name="Schedule.NoSchedulableHint" xml:space="preserve"><value>(Ang produkto ay dapat na namarkahan bilang nai-schedule at may pending na dami)</value></data>
+  <data name="Schedule.SelectAll" xml:space="preserve"><value>Piliin Lahat</value></data>
+  <data name="Schedule.CancelSelectAll" xml:space="preserve"><value>Alisin ang Lahat</value></data>
+  <data name="Column.ScheduleSelect" xml:space="preserve"><value>Piliin</value></data>
+  <data name="Column.OrderedQty" xml:space="preserve"><value>In-order</value></data>
+  <data name="Column.ScheduledQty" xml:space="preserve"><value>Naka-schedule</value></data>
+  <data name="Column.PendingQty" xml:space="preserve"><value>Pending</value></data>
+  <data name="Column.TransferQty" xml:space="preserve"><value>Dami ng Transfer</value></data>
+  <data name="Column.BOMStatus" xml:space="preserve"><value>BOM</value></data>
+  <data name="Column.ComponentStatus" xml:space="preserve"><value>Katayuan ng Komponente</value></data>
+  <data name="Schedule.NotCalculated" xml:space="preserve"><value>Hindi Pa Kinakalkula</value></data>
+  <data name="Schedule.ShortMaterial" xml:space="preserve"><value>Kulang</value></data>
+  <data name="Schedule.Sufficient" xml:space="preserve"><value>Sapat</value></data>
+  <data name="Schedule.NoBOMTitle" xml:space="preserve"><value>Walang BOM para sa detalyeng ito</value></data>
+  <data name="Schedule.SelectedInfo" xml:space="preserve"><value>Napili: {0} item(s)</value></data>
+  <data name="Schedule.TotalQty" xml:space="preserve"><value>Kabuuang Dami ng Schedule: {0}</value></data>
+  <data name="Schedule.HasNoBOMWarning" xml:space="preserve"><value>{0} napiling detalye ang walang BOM na komposisyon.</value></data>
+  <data name="Schedule.HasShortageWarning" xml:space="preserve"><value>May mga komponenteng kulang ang stock. Ibabawas ang stock ng komponente (InProductionStock) kapag nagsimula ang produksyon at ang mga natapos na produkto ay ilalagay sa bodega.</value></data>
+  <data name="Schedule.LoadingMessage" xml:space="preserve"><value>Pinoproseso...</value></data>
+  <data name="Schedule.SelectAtLeastOne" xml:space="preserve"><value>Mangyaring pumili ng hindi bababa sa isang detalye</value></data>
+  <data name="Schedule.NoBOMConfirm" xml:space="preserve"><value>{0} detalye ang walang BOM at hindi lilikha ng mga pangangailangan ng komponente. Ituloy?</value></data>
+  <data name="Schedule.CountSuffix" xml:space="preserve"><value> rekord</value></data>
+  <data name="Message.ConfirmClearAll" xml:space="preserve"><value>Sigurado ka bang nais mong i-clear ang lahat ng detalye?</value></data>
+  <data name="Composition.RemarksTooltip" xml:space="preserve"><value>Opsyonal. Maaaring i-record ang mga pangungusap para sa komponente (maaaring i-edit kahit pagkatapos ng susunod na hakbang).</value></data>
+  <data name="Label.Unknown" xml:space="preserve"><value>Hindi Kilala</value></data>
+
+  <!-- ===== Production ===== -->
+  <data name="Production.MaterialIssue" xml:space="preserve"><value>Pag-isyu ng Materyales</value></data>
+  <data name="Production.MaterialIssueTitle" xml:space="preserve"><value>Pag-isyu ng Materyales - {0}</value></data>
+  <data name="Production.MaterialIssueList" xml:space="preserve"><value>Listahan ng Pag-isyu ng Materyales</value></data>
+  <data name="Production.CompletionRecord" xml:space="preserve"><value>Rekord ng Pagkumpleto ng Produksyon</value></data>
+  <data name="Production.CompletionTitle" xml:space="preserve"><value>Pagkumpleto - {0}</value></data>
+  <data name="Production.CompletionEntry" xml:space="preserve"><value>Entry ng Pagkumpleto</value></data>
+  <data name="Production.BOMConsumptionPreview" xml:space="preserve"><value>Preview ng Pagkonsumo ng BOM Component</value></data>
+  <data name="Production.ComponentNeeds" xml:space="preserve"><value>Mga Pangangailangan ng Component</value></data>
+  <data name="Production.Progress" xml:space="preserve"><value>Pag-unlad ng Produksyon</value></data>
+  <data name="Production.ScheduleItems" xml:space="preserve"><value>Mga Aytem ng Iskedyul</value></data>
+  <data name="Production.ScheduleItemTitle" xml:space="preserve"><value>Aytem ng Iskedyul - {0}</value></data>
+  <data name="Production.ScheduleItemDetails" xml:space="preserve"><value>Detalye ng Aytem ng Iskedyul</value></data>
+  <data name="Production.SelectScheduleDetails" xml:space="preserve"><value>Pumili ng Detalye ng Iskedyul</value></data>
+  <data name="Production.SelectScheduleDetailsTitle" xml:space="preserve"><value>Pumili ng Detalye ng Iskedyul - {0}</value></data>
+  <data name="Production.PendingDetails" xml:space="preserve"><value>Mga Detalyeng Naghihintay sa Iskedyul</value></data>
+  <!-- ===== Product ===== -->
+  <data name="Product.BarcodePrint" xml:space="preserve"><value>Pag-print ng Barcode ng Produkto</value></data>
+  <data name="Product.NoBarcodeItems" xml:space="preserve"><value>Walang barcode ng produkto na maaaring i-print</value></data>
+  <data name="Product.NoPrintableProducts" xml:space="preserve"><value>Walang produkto na maaaring i-print</value></data>
+  <data name="Product.A4BarcodeHint" xml:space="preserve"><value>Tip: Maaaring mag-print ng 24 na barcode sa isang A4 na papel</value></data>
+  <data name="Product.SelectList" xml:space="preserve"><value>Pumili ng Listahan</value></data>
+  <!-- ===== Setoff ===== -->
+  <data name="Setoff.NoPaymentRecords" xml:space="preserve"><value>Walang rekord ng pagbabayad</value></data>
+  <data name="Setoff.NoPrepaymentRecords" xml:space="preserve"><value>Walang rekord ng prepayment</value></data>
+  <data name="Setoff.PaymentMethod" xml:space="preserve"><value>Paraan ng Pagbabayad</value></data>
+  <data name="Setoff.ReceivedAmount" xml:space="preserve"><value>Halagang Natanggap</value></data>
+  <data name="Setoff.PaymentAmount" xml:space="preserve"><value>Halagang Binayad</value></data>
+  <data name="Setoff.AllowanceAmount" xml:space="preserve"><value>Halaga ng Diskwento</value></data>
+  <data name="Setoff.BankCategory" xml:space="preserve"><value>Bangko</value></data>
+  <data name="Setoff.CheckNumber" xml:space="preserve"><value>Numero ng Tseke</value></data>
+  <data name="Setoff.DueDate" xml:space="preserve"><value>Petsa ng Takdang Panahon</value></data>
+  <data name="Setoff.AvailableBalance" xml:space="preserve"><value>Available na Balanse</value></data>
+  <data name="Setoff.PrepaymentType" xml:space="preserve"><value>Uri ng Prepayment</value></data>
+  <data name="Setoff.ViewRelatedSetoff" xml:space="preserve"><value>Tingnan ang Mga Kaugnay na Dokumento ng Setoff</value></data>
+  <!-- ===== Journal ===== -->
+  <data name="Journal.BatchTransfer" xml:space="preserve"><value>Batch na Pag-journalize</value></data>
+  <data name="Journal.TransferAll" xml:space="preserve"><value>I-journalize ang Lahat ({0} rekord)</value></data>
+  <data name="Journal.Transfer" xml:space="preserve"><value>I-journalize</value></data>
+  <data name="Journal.PendingCount" xml:space="preserve"><value>{0} naghihintay</value></data>
+  <data name="Journal.PurchaseReceiving" xml:space="preserve"><value>Pagtanggap ng Pagbili</value></data>
+  <data name="Journal.PurchaseReturn" xml:space="preserve"><value>Pagbabalik ng Pagbili</value></data>
+  <data name="Journal.SalesDelivery" xml:space="preserve"><value>Paghahatid ng Benta</value></data>
+  <data name="Journal.SalesReturn" xml:space="preserve"><value>Pagbabalik ng Benta</value></data>
+  <data name="Journal.SetoffDocument" xml:space="preserve"><value>Dokumento ng Setoff (AR/AP)</value></data>
+  <data name="Journal.NoPendingPurchaseReceiving" xml:space="preserve"><value>Walang pagtanggap ng pagbili na naghihintay sa pag-journalize</value></data>
+  <data name="Journal.NoPendingPurchaseReturn" xml:space="preserve"><value>Walang pagbabalik ng pagbili na naghihintay sa pag-journalize</value></data>
+  <data name="Journal.NoPendingSalesDelivery" xml:space="preserve"><value>Walang paghahatid ng benta na naghihintay sa pag-journalize</value></data>
+  <data name="Journal.NoPendingSalesReturn" xml:space="preserve"><value>Walang pagbabalik ng benta na naghihintay sa pag-journalize</value></data>
+  <data name="Journal.NoPendingSetoff" xml:space="preserve"><value>Walang dokumento ng setoff na naghihintay sa pag-journalize</value></data>
+  <data name="Journal.ReceiptDate" xml:space="preserve"><value>Petsa ng Resibo</value></data>
+  <data name="Journal.ReturnDate" xml:space="preserve"><value>Petsa ng Pagbabalik</value></data>
+  <data name="Journal.DeliveryDate" xml:space="preserve"><value>Petsa ng Paghahatid</value></data>
+  <data name="Journal.SetoffDate" xml:space="preserve"><value>Petsa ng Setoff</value></data>
+  <data name="Journal.PreTaxAmount" xml:space="preserve"><value>Halaga bago ang Buwis</value></data>
+  <data name="Journal.TaxAmount" xml:space="preserve"><value>Halaga ng Buwis</value></data>
+  <data name="Journal.TotalWithTax" xml:space="preserve"><value>Kabuuan kasama ang Buwis</value></data>
+  <data name="Journal.WriteoffAmount" xml:space="preserve"><value>Halagang Na-writeoff</value></data>
+  <data name="Journal.CollectionPayment" xml:space="preserve"><value>Natanggap/Binayad</value></data>
+  <data name="Journal.Allowance" xml:space="preserve"><value>Diskwento</value></data>
+  <data name="Journal.AccountsReceivable" xml:space="preserve"><value>AR</value></data>
+  <data name="Journal.AccountsPayable" xml:space="preserve"><value>AP</value></data>
+  <data name="Journal.TransferSuccess" xml:space="preserve"><value>Matagumpay na na-journalize ang {0}</value></data>
+  <data name="Journal.TransferFailed" xml:space="preserve"><value>Nabigong i-journalize ang {0}: {1}</value></data>
+  <data name="Journal.UnknownDocType" xml:space="preserve"><value>Hindi kilalang uri ng dokumento</value></data>
+  <data name="Journal.BatchSuccess" xml:space="preserve"><value>Kumpleto na ang batch na pag-journalize, {0} ang nagtagumpay</value></data>
+  <data name="Journal.BatchPartialSuccess" xml:space="preserve"><value>Kumpleto na ang batch na pag-journalize: {0} nagtagumpay, {1} nabigo</value></data>
+  <data name="Journal.NoEntryLines" xml:space="preserve"><value>Walang linya ng entry na naidagdag</value></data>
+  <data name="Journal.TotalDebit" xml:space="preserve"><value>Kabuuang Debit: </value></data>
+  <data name="Journal.TotalCredit" xml:space="preserve"><value>Kabuuang Credit: </value></data>
+  <data name="Journal.Balanced" xml:space="preserve"><value>Balanse</value></data>
+  <data name="Journal.Difference" xml:space="preserve"><value>Pagkakaiba</value></data>
+  <data name="Journal.AccountItem" xml:space="preserve"><value>Account</value></data>
+  <data name="Journal.DebitCredit" xml:space="preserve"><value>Dr/Cr</value></data>
+  <data name="Journal.Debit" xml:space="preserve"><value>Debit</value></data>
+  <data name="Journal.Credit" xml:space="preserve"><value>Credit</value></data>
+  <data name="Journal.Description" xml:space="preserve"><value>Paglalarawan</value></data>
+  <!-- ===== Report ===== -->
+  <data name="Report.AccountsReceivableTitle" xml:space="preserve"><value>Kundisyon ng Pag-print ng Ulat ng AR</value></data>
+  <data name="Report.StatisticsDate" xml:space="preserve"><value>Petsa ng Istatistika</value></data>
+  <data name="Report.AccountStatus" xml:space="preserve"><value>Katayuan ng Account</value></data>
+  <data name="Report.IncludeSettled" xml:space="preserve"><value>Isama ang Mga Naaayos na Account</value></data>
+  <data name="Report.OverdueOnly" xml:space="preserve"><value>Mga Overdue lamang</value></data>
+  <data name="Report.ARNoCustomerSelected" xml:space="preserve"><value>Walang napiling customer; mag-iwan ng blangko para i-print ang AR ng lahat ng customer</value></data>
+  <!-- ===== Accounting additions ===== -->
+  <data name="Accounting.Inventory" xml:space="preserve"><value>Imbentaryo</value></data>
+  <data name="Accounting.CreateProductSubAccountTitle" xml:space="preserve"><value>Lumikha ng sub-account ng imbentaryo para sa produktong ito</value></data>
+  <!-- ===== Column additions ===== -->
+  <data name="Column.ComponentProduct" xml:space="preserve"><value>Component</value></data>
+  <data name="Column.RequiredQty" xml:space="preserve"><value>Kinakailangang Dami</value></data>
+  <data name="Column.IssuedQty" xml:space="preserve"><value>Na-isyu na Dami</value></data>
+  <data name="Column.PendingIssueQty" xml:space="preserve"><value>Naghihintay na Isyu</value></data>
+  <data name="Column.CurrentIssueQty" xml:space="preserve"><value>Kasalukuyang Isyu</value></data>
+  <data name="Column.UnitUsage" xml:space="preserve"><value>Paggamit bawat Yunit</value></data>
+  <data name="Column.CurrentConsumption" xml:space="preserve"><value>Kasalukuyang Konsumo</value></data>
+  <data name="Column.Barcode" xml:space="preserve"><value>Barcode</value></data>
+  <data name="Column.PrintQty" xml:space="preserve"><value>Dami ng I-print</value></data>
+  <data name="Column.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Column.SupplierItemCode" xml:space="preserve"><value>Code ng Aytem ng Supplier</value></data>
+  <data name="Column.Price" xml:space="preserve"><value>Presyo</value></data>
+  <data name="Column.LeadTimeDays" xml:space="preserve"><value>Lead Time (araw)</value></data>
+  <data name="Column.MinOrderQty" xml:space="preserve"><value>Min na Dami ng Order</value></data>
+  <data name="Column.Unit" xml:space="preserve"><value>Yunit</value></data>
+  <data name="Column.Status" xml:space="preserve"><value>Katayuan</value></data>
+  <data name="Column.Category" xml:space="preserve"><value>Kategorya</value></data>
+  <data name="Column.Spec" xml:space="preserve"><value>Espesipikasyon</value></data>
+  <data name="Column.OrderQty" xml:space="preserve"><value>Dami ng Order</value></data>
+  <data name="Column.ScheduleQty" xml:space="preserve"><value>Dami ng Iskedyul</value></data>
+  <data name="Column.CompletedQty" xml:space="preserve"><value>Nakumpleto</value></data>
+  <data name="Column.Closing" xml:space="preserve"><value>Isara</value></data>
+  <data name="Column.IssuedMaterial" xml:space="preserve"><value>Na-isyu</value></data>
+  <data name="Column.Stock" xml:space="preserve"><value>Stock</value></data>
+  <data name="Column.OrderDay" xml:space="preserve"><value>Petsa ng Order</value></data>
+  <data name="Column.DeliveryDay" xml:space="preserve"><value>Petsa ng Paghahatid</value></data>
+  <data name="Column.Customer" xml:space="preserve"><value>Customer</value></data>
+  <data name="Column.Type" xml:space="preserve"><value>Uri</value></data>
+  <!-- ===== Label additions ===== -->
+  <data name="Label.Processing" xml:space="preserve"><value>Nagpoproseso...</value></data>
+  <data name="Label.Pending" xml:space="preserve"><value>Naghihintay</value></data>
+  <data name="Label.InProgress" xml:space="preserve"><value>Nasa Proseso</value></data>
+  <data name="Label.Completed" xml:space="preserve"><value>Nakumpleto</value></data>
+  <data name="Label.Discontinued" xml:space="preserve"><value>Itinigil</value></data>
+  <data name="Label.Closed" xml:space="preserve"><value>Sarado</value></data>
+  <data name="Label.NotClosed" xml:space="preserve"><value>Bukas</value></data>
+  <data name="Label.PlannedQty" xml:space="preserve"><value>Planong Dami</value></data>
+  <data name="Label.CompletionQty" xml:space="preserve"><value>Dami ng Pagkumpleto</value></data>
+  <data name="Label.RemainingQty" xml:space="preserve"><value>Natitirang Dami: </value></data>
+  <data name="Label.TotalIssueQty" xml:space="preserve"><value>Kabuuang Isyu Ngayon: </value></data>
+  <data name="Label.ProductionQty" xml:space="preserve"><value>Dami ng Produksyon: </value></data>
+  <data name="Label.Operator" xml:space="preserve"><value>Operator</value></data>
+  <data name="Label.StorageWarehouse" xml:space="preserve"><value>Target na Bodega</value></data>
+  <data name="Label.WarehouseLocation" xml:space="preserve"><value>Lokasyon</value></data>
+  <data name="Label.AutoCreateInventoryRecord" xml:space="preserve"><value>Awtomatikong lumikha ng rekord ng imbentaryo</value></data>
+  <data name="Label.ScheduleCompleted" xml:space="preserve"><value>Kumpleto na ang Iskedyul</value></data>
+  <data name="Label.DropToSchedule" xml:space="preserve"><value>Bitawan para idagdag sa iskedyul</value></data>
+  <data name="Label.HideAdded" xml:space="preserve"><value>Itago ang Mga Naidagdag</value></data>
+  <data name="Label.Added" xml:space="preserve"><value>Naidagdag</value></data>
+  <data name="Label.AllCategories" xml:space="preserve"><value>Lahat ng Kategorya</value></data>
+  <data name="Label.BarcodeSize" xml:space="preserve"><value>Laki ng Barcode: </value></data>
+  <data name="Label.BarcodeSizeLarge" xml:space="preserve"><value>Malaki (70mm x 35mm)</value></data>
+  <data name="Label.BasicInfo" xml:space="preserve"><value>Pangunahing Impormasyon</value></data>
+  <data name="Label.PlannedEndDate" xml:space="preserve"><value>Planong Petsa ng Pagtatapos</value></data>
+  <data name="Label.ActualStartDate" xml:space="preserve"><value>Aktwal na Petsa ng Simula</value></data>
+  <data name="Label.SourceOrder" xml:space="preserve"><value>Source Order</value></data>
+  <data name="Label.SalesOrderDetailId" xml:space="preserve"><value>ID ng Detalye ng Sales Order</value></data>
+  <data name="Label.MaterialIssueCompleted" xml:space="preserve"><value>Kumpleto na ang Isyu</value></data>
+  <data name="Label.PartialIssue" xml:space="preserve"><value>Bahagyang Isyu</value></data>
+  <data name="Label.InsufficientStock" xml:space="preserve"><value>Hindi Sapat ang Stock</value></data>
+  <data name="Label.PendingIssue" xml:space="preserve"><value>Naghihintay na Isyu</value></data>
+  <data name="Label.DateFrom" xml:space="preserve"><value>Hanay ng Petsa (Mula)</value></data>
+  <data name="Label.DateTo" xml:space="preserve"><value>Hanay ng Petsa (Hanggang)</value></data>
+  <data name="Label.AccountsReceivable" xml:space="preserve"><value>Accounts Receivable</value></data>
+  <data name="Label.AccountsPayable" xml:space="preserve"><value>Accounts Payable</value></data>
+  <data name="Label.OrderNumber" xml:space="preserve"><value>Numero ng Order</value></data>
+  <data name="Label.SelectedAndTotal" xml:space="preserve"><value>{0} napili, Kabuuang dami ng iskedyul: {1}</value></data>
+  <!-- ===== Button additions ===== -->
+  <data name="Button.ConfirmIssue" xml:space="preserve"><value>Kumpirmahin ang Isyu</value></data>
+  <data name="Button.ConfirmRecord" xml:space="preserve"><value>Kumpirmahin ang Rekord</value></data>
+  <data name="Button.TakeAll" xml:space="preserve"><value>Kunin Lahat</value></data>
+  <data name="Button.ConfirmAdd" xml:space="preserve"><value>Kumpirmahin ang Pagdagdag ({0})</value></data>
+  <data name="Button.Query" xml:space="preserve"><value>Mag-query</value></data>
+  <data name="Button.ClearFilter" xml:space="preserve"><value>I-clear ang Filter</value></data>
+  <!-- ===== Message additions ===== -->
+  <data name="Message.InsufficientStockWarning" xml:space="preserve"><value>Ilang component ay may kakulangan ng stock. Ayusin ang dami ng isyu o mag-replenish muna.</value></data>
+  <data name="Message.NoBOMComponents" xml:space="preserve"><value>Walang BOM component ang aytem ng iskedyul na ito</value></data>
+  <data name="Message.NoScheduleItemInfo" xml:space="preserve"><value>Hindi ma-load ang impormasyon ng aytem ng iskedyul</value></data>
+  <data name="Message.EnterIssueQty" xml:space="preserve"><value>Mangyaring maglagay ng dami ng isyu</value></data>
+  <data name="Message.StockInsufficientFor" xml:space="preserve"><value>Hindi sapat ang stock para sa mga sumusunod na component: {0}</value></data>
+  <data name="Message.SelectAtLeastOneProduct" xml:space="preserve"><value>Mangyaring pumili ng hindi bababa sa isang produkto</value></data>
+  <data name="Message.BarcodePrintWindowOpened" xml:space="preserve"><value>Nabuksan ang window ng pag-print ng barcode (kabuuan {0} label)</value></data>
+  <data name="Message.NoMatchingProducts" xml:space="preserve"><value>Walang katugmang produkto</value></data>
+  <data name="Message.SupplierAlreadyExists" xml:space="preserve"><value>Mayroon nang supplier na ito, mangyaring pumili ng isa pa</value></data>
+  <data name="Message.NeedAtLeastOneSupplier" xml:space="preserve"><value>Kailangan ng hindi bababa sa isang supplier</value></data>
+  <data name="Message.DuplicateSupplier" xml:space="preserve"><value>Mayroon duplicateng supplier</value></data>
+  <data name="Message.CompletionExceedsRemaining" xml:space="preserve"><value>Hindi maaaring lumampas ang dami ng pagkumpleto sa natitirang dami {0}</value></data>
+  <data name="Message.CompletionFailed" xml:space="preserve"><value>Nabigo ang rekord ng pagkumpleto: {0}</value></data>
+  <data name="Message.InventoryAddSuccess" xml:space="preserve"><value>Matagumpay na naidagdag ang imbentaryo: {0}</value></data>
+  <data name="Message.InventoryAddFailed" xml:space="preserve"><value>Nabigo ang pagdaragdag ng imbentaryo: {0}</value></data>
+  <data name="Message.NoWarehouseForInventory" xml:space="preserve"><value>Hindi matukoy ang target na bodega; hindi na-update ang imbentaryo</value></data>
+  <data name="Message.CreateCompletionFailed" xml:space="preserve"><value>Nabigo ang paglikha ng rekord ng pagkumpleto: {0}</value></data>
+  <data name="Message.ProductionStarted" xml:space="preserve"><value>Nagsimula na ang produksyon</value></data>
+  <data name="Message.ScheduleItemNotFound" xml:space="preserve"><value>Hindi nahanap ang data ng aytem ng iskedyul</value></data>
+  <data name="Message.NoSchedulableDetails" xml:space="preserve"><value>Walang mga detalyeng maaaring i-iskedyul</value></data>
+  <data name="Message.DragOrderToSchedule" xml:space="preserve"><value>I-drag ang order mula sa kaliwa, o i-click ang pindutan ng arrow para idagdag sa iskedyul</value></data>
+  <data name="Message.NoPendingDetails" xml:space="preserve"><value>Walang naghihintay na detalye ng iskedyul</value></data>
+  <data name="Message.NoComponentNeeds" xml:space="preserve"><value>Walang mga pangangailangan ng component</value></data>
+  <data name="Message.PaymentRecordRemoved" xml:space="preserve"><value>Tinanggal ang rekord ng pagbabayad</value></data>
+  <data name="Message.PrepaymentRecordRemoved" xml:space="preserve"><value>Tinanggal ang rekord ng prepayment</value></data>
+  <data name="Message.UsedAmountExceedsBalance" xml:space="preserve"><value>Hindi maaaring lumampas ang halagang ginamit sa available na balanse {0}</value></data>
+  <data name="Message.UsedAmountBelowZero" xml:space="preserve"><value>Hindi maaaring maging mas mababa sa 0 ang halagang ginamit</value></data>
+  <data name="Message.AmountBelowZero" xml:space="preserve"><value>Hindi maaaring maging mas mababa sa 0 ang halaga</value></data>
+  <data name="Message.SelectPrepaymentType" xml:space="preserve"><value>Mangyaring pumili ng uri ng prepayment</value></data>
+  <data name="Message.TransferTypeNeedsSource" xml:space="preserve"><value>Ang uri ng paglipat ay dapat may source na aytem ng prepayment</value></data>
+  <data name="Message.UsedAmountMustBePositive" xml:space="preserve"><value>Ang halagang ginamit ay dapat na mas malaki sa 0</value></data>
+  <data name="Message.AmountMustBePositive" xml:space="preserve"><value>Ang halaga ay dapat na mas malaki sa 0</value></data>
+  <data name="Message.RecordNotSavedCannotQuery" xml:space="preserve"><value>Hindi pa na-save ang rekord na ito; hindi maa-query ang mga kaugnay na dokumento</value></data>
+  <data name="Message.InitARReportFailed" xml:space="preserve"><value>Nabigo ang pag-initialize ng data ng ulat ng AR</value></data>
+  <data name="Message.LoadCustomerFailed" xml:space="preserve"><value>Nabigo ang pag-load ng data ng customer</value></data>
+  <data name="Message.GenerateReportFailed" xml:space="preserve"><value>Nabigo ang paglikha ng ulat</value></data>
+  <!-- ===== Placeholder additions ===== -->
+  <data name="Placeholder.SearchProductNameCode" xml:space="preserve"><value>Hanapin ang pangalan/code ng produkto...</value></data>
+  <data name="Placeholder.FilterBySpec" xml:space="preserve"><value>I-filter ayon sa espesipikasyon...</value></data>
+  <data name="Placeholder.SelectSupplier" xml:space="preserve"><value>Pumili ng Supplier</value></data>
+  <data name="Placeholder.EnterCode" xml:space="preserve"><value>Maglagay ng code</value></data>
+  <data name="Placeholder.SelectUnit" xml:space="preserve"><value>Pumili ng Yunit</value></data>
+  <data name="Placeholder.Optional" xml:space="preserve"><value>Opsyonal</value></data>
+  <data name="Placeholder.SearchAccountCodeName" xml:space="preserve"><value>Maglagay ng code o pangalan ng account</value></data>
+  <data name="Placeholder.DescriptionOptional" xml:space="preserve"><value>Paglalarawan (opsyonal)</value></data>
+  <data name="Placeholder.SearchCustomerName" xml:space="preserve"><value>Maglagay ng pangalan ng customer para hanapin...</value></data>
+  <data name="Placeholder.SelectType" xml:space="preserve"><value>Pumili ng uri..</value></data>
+  <data name="Placeholder.SelectPrepayment" xml:space="preserve"><value>Pumili ng aytem ng prepayment..</value></data>
+  <data name="Placeholder.SearchCodeNameStatus" xml:space="preserve"><value>Hanapin ang code/pangalan/katayuan...</value></data>
+  <data name="Placeholder.SearchProductOrderCustomer" xml:space="preserve"><value>Hanapin ang produkto/order/customer...</value></data>
+  <data name="Placeholder.SelectDefault" xml:space="preserve"><value>Pumili..</value></data>
+  <!-- ===== Setoff additional ===== -->
+  <data name="Setoff.UnknownSource" xml:space="preserve"><value>Hindi Kilalang Pinagmulan</value></data>
+  <data name="Setoff.SourceDocumentCode" xml:space="preserve"><value>Code ng Pinagmulan</value></data>
+  <data name="Setoff.TotalAmount" xml:space="preserve"><value>Kabuuang Halaga</value></data>
+  <data name="Setoff.Amount" xml:space="preserve"><value>Halaga</value></data>
+  <!-- ===== Label additional ===== -->
+  <data name="Label.ItemCount" xml:space="preserve"><value>aytem</value></data>
+  <!-- ===== Message additional ===== -->
+  <data name="Message.LoadBankPaymentMethodFailed" xml:space="preserve"><value>Nabigo ang pag-load ng datos ng bangko at paraan ng pagbabayad: {0}</value></data>
+  <data name="Message.LoadPrepaymentTypeFailed" xml:space="preserve"><value>Nabigo ang pag-load ng mga uri ng prepayment: {0}</value></data>
+  <data name="Message.LoadAvailablePrepaymentFailed" xml:space="preserve"><value>Nabigo ang pag-load ng mga available na prepayment: {0}</value></data>
+
 </root>

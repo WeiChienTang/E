@@ -1876,4 +1876,329 @@
   <data name="Button.OpenReturn" xml:space="preserve"><value>開啟退回單</value></data>
   <data name="Button.OpenOrder" xml:space="preserve"><value>開啟採購訂單</value></data>
   <data name="Button.OpenSetoff" xml:space="preserve"><value>開啟沖款單</value></data>
+  <data name="Column.CustomerName" xml:space="preserve"><value>客戶</value></data>
+  <data name="Column.QuotationDate" xml:space="preserve"><value>報價日期</value></data>
+  <data name="Column.QuotationCode" xml:space="preserve"><value>報價單號</value></data>
+  <data name="Column.SalesOrderCode" xml:space="preserve"><value>訂單單號</value></data>
+  <data name="Column.DeliveryCode" xml:space="preserve"><value>出貨單號</value></data>
+  <data name="Column.DeliveryDate" xml:space="preserve"><value>出貨日期</value></data>
+  <data name="Column.SalesReturnDate" xml:space="preserve"><value>退回日期</value></data>
+  <data name="Button.OpenSalesOrder" xml:space="preserve"><value>開啟銷貨訂單</value></data>
+  <data name="Button.OpenDelivery" xml:space="preserve"><value>開啟出貨單</value></data>
+  <data name="Button.OpenQuotation" xml:space="preserve"><value>開啟報價單</value></data>
+  <data name="Button.OpenSalesReturn" xml:space="preserve"><value>開啟退回單</value></data>
+  <data name="Composition.SelectBOM" xml:space="preserve"><value>選擇 BOM 配方</value></data>
+  <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>選擇 BOM 配方 - {0}</value></data>
+  <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>搜尋配方編號、規格、客戶或類型...</value></data>
+  <data name="Composition.NoMatch" xml:space="preserve"><value>找不到符合條件的配方</value></data>
+  <data name="Composition.CurrentCustomer" xml:space="preserve"><value>當前客戶</value></data>
+  <data name="Composition.GeneralFormula" xml:space="preserve"><value>通用配方</value></data>
+  <data name="Composition.CustomerLabel" xml:space="preserve"><value>客戶: {0}</value></data>
+  <data name="Composition.SpecLabel" xml:space="preserve"><value>規格: {0}</value></data>
+  <data name="Composition.CategoryLabel" xml:space="preserve"><value>類型: {0}</value></data>
+  <data name="Composition.ComponentCount" xml:space="preserve"><value>組件數: {0}</value></data>
+  <data name="Composition.CreatedDate" xml:space="preserve"><value>建立日期: {0}</value></data>
+  <data name="Composition.CustomModeTitle" xml:space="preserve"><value>自定義（手動選擇組件）</value></data>
+  <data name="Composition.CustomModeDesc" xml:space="preserve"><value>不使用既有配方，自行挑選組件並設定數量</value></data>
+  <data name="Composition.NoBOMInfo" xml:space="preserve"><value>此商品尚未建立 BOM 配方，請選擇「自定義」模式手動建立組成。</value></data>
+  <data name="Composition.EditBOM" xml:space="preserve"><value>編輯 BOM 組成</value></data>
+  <data name="Composition.EditBOMWithProduct" xml:space="preserve"><value>編輯 BOM 組成 - {0}</value></data>
+  <data name="Composition.CustomModeSelectTitle" xml:space="preserve"><value>自定義模式 - 選擇組件</value></data>
+  <data name="Composition.CustomModeSelectDesc" xml:space="preserve"><value>請從下方選擇要加入的組件，勾選後可在下方表格編輯數量與單位。</value></data>
+  <data name="Composition.SearchComponentPlaceholder" xml:space="preserve"><value>搜尋組件編號或名稱...</value></data>
+  <data name="Composition.NoMatchComponent" xml:space="preserve"><value>找不到符合條件的組件</value></data>
+  <data name="Composition.PendingCount" xml:space="preserve"><value>已勾選 {0} 個組件（尚未載入）</value></data>
+  <data name="Composition.AddedCount" xml:space="preserve"><value>已加入 {0} 個組件</value></data>
+  <data name="Column.ComponentItem" xml:space="preserve"><value>品項</value></data>
+  <data name="Label.NoRemarks" xml:space="preserve"><value>無備註</value></data>
+  <data name="Composition.EmptyMsgCustom" xml:space="preserve"><value>請點擊上方「新增組件」按鈕選擇要加入的組件</value></data>
+  <data name="Composition.EmptyMsg" xml:space="preserve"><value>尚未新增組件</value></data>
+  <data name="Message.DuplicateComponent" xml:space="preserve"><value>組件重複：{0}，請修正後再關閉</value></data>
+  <data name="Inventory.CheckTitle" xml:space="preserve"><value>訂單庫存檢視</value></data>
+  <data name="Inventory.CheckTitleWithOrder" xml:space="preserve"><value>庫存檢視 - 訂單編號 {0}</value></data>
+  <data name="Inventory.CannotLoad" xml:space="preserve"><value>無法載入庫存資訊</value></data>
+  <data name="Inventory.LoadingMessage" xml:space="preserve"><value>載入庫存資訊中...</value></data>
+  <data name="Inventory.Required" xml:space="preserve"><value>需求:</value></data>
+  <data name="Inventory.Stock" xml:space="preserve"><value>庫存:</value></data>
+  <data name="Inventory.Shortage" xml:space="preserve"><value>缺少:</value></data>
+  <data name="Inventory.SummaryTitle" xml:space="preserve"><value>庫存狀況摘要</value></data>
+  <data name="Inventory.SummaryNote" xml:space="preserve"><value>※ 數據來自資料庫，實際庫存請以現場為準</value></data>
+  <data name="Schedule.BatchTransfer" xml:space="preserve"><value>批次轉排程</value></data>
+  <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>批次轉排程 - {0}</value></data>
+  <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>銷貨訂單資訊</value></data>
+  <data name="Schedule.OrderCodeLabel" xml:space="preserve"><value>訂單單號</value></data>
+  <data name="Schedule.SchedulableCount" xml:space="preserve"><value>可轉排程明細數</value></data>
+  <data name="Schedule.ScheduleSettings" xml:space="preserve"><value>排程設定</value></data>
+  <data name="Schedule.SelectDetails" xml:space="preserve"><value>選擇要轉排程的明細</value></data>
+  <data name="Schedule.ScheduleDate" xml:space="preserve"><value>排程日期</value></data>
+  <data name="Schedule.TargetWarehouse" xml:space="preserve"><value>入庫倉庫</value></data>
+  <data name="Schedule.Creator" xml:space="preserve"><value>製單人員</value></data>
+  <data name="Schedule.MergeSchedules" xml:space="preserve"><value>合併為單一排程單（推薦）</value></data>
+  <data name="Schedule.MergeSchedulesDesc" xml:space="preserve"><value>勾選：所有選中的明細合併為一張排程單 | 不勾選：每筆明細分別建立排程單</value></data>
+  <data name="Schedule.NoSchedulableDetails" xml:space="preserve"><value>沒有可轉排程的明細</value></data>
+  <data name="Schedule.NoSchedulableHint" xml:space="preserve"><value>（明細的商品必須設定為「可轉排程」且有待排程數量）</value></data>
+  <data name="Schedule.SelectAll" xml:space="preserve"><value>全選</value></data>
+  <data name="Schedule.CancelSelectAll" xml:space="preserve"><value>取消全選</value></data>
+  <data name="Column.ScheduleSelect" xml:space="preserve"><value>選擇</value></data>
+  <data name="Column.OrderedQty" xml:space="preserve"><value>訂購</value></data>
+  <data name="Column.ScheduledQty" xml:space="preserve"><value>已排程</value></data>
+  <data name="Column.PendingQty" xml:space="preserve"><value>待排程</value></data>
+  <data name="Column.TransferQty" xml:space="preserve"><value>轉排程數量</value></data>
+  <data name="Column.BOMStatus" xml:space="preserve"><value>BOM</value></data>
+  <data name="Column.ComponentStatus" xml:space="preserve"><value>組件狀態</value></data>
+  <data name="Schedule.NotCalculated" xml:space="preserve"><value>未計算</value></data>
+  <data name="Schedule.ShortMaterial" xml:space="preserve"><value>缺料</value></data>
+  <data name="Schedule.Sufficient" xml:space="preserve"><value>充足</value></data>
+  <data name="Schedule.NoBOMTitle" xml:space="preserve"><value>此明細無 BOM 組成</value></data>
+  <data name="Schedule.SelectedInfo" xml:space="preserve"><value>已選擇：{0} 項明細</value></data>
+  <data name="Schedule.TotalQty" xml:space="preserve"><value>總排程數量：{0}</value></data>
+  <data name="Schedule.HasNoBOMWarning" xml:space="preserve"><value>有 {0} 項選中的明細沒有 BOM 組成。</value></data>
+  <data name="Schedule.HasShortageWarning" xml:space="preserve"><value>部分組件庫存不足。開始生產時將扣除組件庫存（InProductionStock），完成後成品將入庫。</value></data>
+  <data name="Schedule.LoadingMessage" xml:space="preserve"><value>處理中...</value></data>
+  <data name="Schedule.SelectAtLeastOne" xml:space="preserve"><value>請至少選擇一項明細</value></data>
+  <data name="Schedule.NoBOMConfirm" xml:space="preserve"><value>有 {0} 項明細沒有 BOM 組成，這些明細將不會建立組件需求。是否繼續？</value></data>
+  <data name="Schedule.CountSuffix" xml:space="preserve"><value>筆</value></data>
+  <data name="Message.ConfirmClearAll" xml:space="preserve"><value>確定要清除所有明細嗎？</value></data>
+  <data name="Composition.RemarksTooltip" xml:space="preserve"><value>選填。可記錄組件相關的備註資訊（有下一步時仍可編輯）</value></data>
+  <data name="Label.Unknown" xml:space="preserve"><value>未知</value></data>
+
+  <!-- ===== Production (生產) ===== -->
+  <data name="Production.MaterialIssue" xml:space="preserve"><value>組件領料</value></data>
+  <data name="Production.MaterialIssueTitle" xml:space="preserve"><value>組件領料 - {0}</value></data>
+  <data name="Production.MaterialIssueList" xml:space="preserve"><value>組件領料清單</value></data>
+  <data name="Production.CompletionRecord" xml:space="preserve"><value>生產完工登錄</value></data>
+  <data name="Production.CompletionTitle" xml:space="preserve"><value>完工登錄 - {0}</value></data>
+  <data name="Production.CompletionEntry" xml:space="preserve"><value>完工登錄</value></data>
+  <data name="Production.BOMConsumptionPreview" xml:space="preserve"><value>BOM 組件消耗預覽</value></data>
+  <data name="Production.ComponentNeeds" xml:space="preserve"><value>組件需求</value></data>
+  <data name="Production.Progress" xml:space="preserve"><value>生產進度</value></data>
+  <data name="Production.ScheduleItems" xml:space="preserve"><value>排程項目</value></data>
+  <data name="Production.ScheduleItemTitle" xml:space="preserve"><value>排程項目 - {0}</value></data>
+  <data name="Production.ScheduleItemDetails" xml:space="preserve"><value>排程項目詳情</value></data>
+  <data name="Production.SelectScheduleDetails" xml:space="preserve"><value>選擇排程明細</value></data>
+  <data name="Production.SelectScheduleDetailsTitle" xml:space="preserve"><value>選擇排程明細 - {0}</value></data>
+  <data name="Production.PendingDetails" xml:space="preserve"><value>待排程明細</value></data>
+
+  <!-- ===== Product (商品) ===== -->
+  <data name="Product.BarcodePrint" xml:space="preserve"><value>商品條碼列印</value></data>
+  <data name="Product.NoBarcodeItems" xml:space="preserve"><value>目前沒有可列印的商品條碼</value></data>
+  <data name="Product.NoPrintableProducts" xml:space="preserve"><value>沒有可列印的商品</value></data>
+  <data name="Product.A4BarcodeHint" xml:space="preserve"><value>提示：一張 A4 可以印 24 張條碼</value></data>
+  <data name="Product.SelectList" xml:space="preserve"><value>選擇清單</value></data>
+
+  <!-- ===== Setoff (沖款) ===== -->
+  <data name="Setoff.NoPaymentRecords" xml:space="preserve"><value>尚未新增收款記錄</value></data>
+  <data name="Setoff.NoPrepaymentRecords" xml:space="preserve"><value>尚未新增預收付款項記錄</value></data>
+  <data name="Setoff.PaymentMethod" xml:space="preserve"><value>付款方式</value></data>
+  <data name="Setoff.ReceivedAmount" xml:space="preserve"><value>收款金額</value></data>
+  <data name="Setoff.PaymentAmount" xml:space="preserve"><value>付款金額</value></data>
+  <data name="Setoff.AllowanceAmount" xml:space="preserve"><value>折讓金額</value></data>
+  <data name="Setoff.BankCategory" xml:space="preserve"><value>銀行別</value></data>
+  <data name="Setoff.CheckNumber" xml:space="preserve"><value>支票號碼</value></data>
+  <data name="Setoff.DueDate" xml:space="preserve"><value>到期日</value></data>
+  <data name="Setoff.AvailableBalance" xml:space="preserve"><value>可用餘額</value></data>
+  <data name="Setoff.PrepaymentType" xml:space="preserve"><value>預收付類型</value></data>
+  <data name="Setoff.ViewRelatedSetoff" xml:space="preserve"><value>查看相關沖款單</value></data>
+
+  <!-- ===== Journal (傳票/日記帳) ===== -->
+  <data name="Journal.BatchTransfer" xml:space="preserve"><value>批次轉傳票</value></data>
+  <data name="Journal.TransferAll" xml:space="preserve"><value>全部轉傳票（{0} 筆）</value></data>
+  <data name="Journal.Transfer" xml:space="preserve"><value>轉傳票</value></data>
+  <data name="Journal.PendingCount" xml:space="preserve"><value>{0} 筆待轉</value></data>
+  <data name="Journal.PurchaseReceiving" xml:space="preserve"><value>進貨入庫</value></data>
+  <data name="Journal.PurchaseReturn" xml:space="preserve"><value>進貨退回</value></data>
+  <data name="Journal.SalesDelivery" xml:space="preserve"><value>銷貨出貨</value></data>
+  <data name="Journal.SalesReturn" xml:space="preserve"><value>銷貨退回</value></data>
+  <data name="Journal.SetoffDocument" xml:space="preserve"><value>沖款單（應收／應付）</value></data>
+  <data name="Journal.NoPendingPurchaseReceiving" xml:space="preserve"><value>無待轉傳票的進貨入庫單</value></data>
+  <data name="Journal.NoPendingPurchaseReturn" xml:space="preserve"><value>無待轉傳票的進貨退回單</value></data>
+  <data name="Journal.NoPendingSalesDelivery" xml:space="preserve"><value>無待轉傳票的銷貨出貨單</value></data>
+  <data name="Journal.NoPendingSalesReturn" xml:space="preserve"><value>無待轉傳票的銷貨退回單</value></data>
+  <data name="Journal.NoPendingSetoff" xml:space="preserve"><value>無待轉傳票的沖款單</value></data>
+  <data name="Journal.ReceiptDate" xml:space="preserve"><value>進貨日期</value></data>
+  <data name="Journal.ReturnDate" xml:space="preserve"><value>退回日期</value></data>
+  <data name="Journal.DeliveryDate" xml:space="preserve"><value>出貨日期</value></data>
+  <data name="Journal.SetoffDate" xml:space="preserve"><value>沖款日期</value></data>
+  <data name="Journal.PreTaxAmount" xml:space="preserve"><value>未稅金額</value></data>
+  <data name="Journal.TaxAmount" xml:space="preserve"><value>稅額</value></data>
+  <data name="Journal.TotalWithTax" xml:space="preserve"><value>含稅總額</value></data>
+  <data name="Journal.WriteoffAmount" xml:space="preserve"><value>沖銷金額</value></data>
+  <data name="Journal.CollectionPayment" xml:space="preserve"><value>收款/付款</value></data>
+  <data name="Journal.Allowance" xml:space="preserve"><value>折讓</value></data>
+  <data name="Journal.AccountsReceivable" xml:space="preserve"><value>應收</value></data>
+  <data name="Journal.AccountsPayable" xml:space="preserve"><value>應付</value></data>
+  <data name="Journal.TransferSuccess" xml:space="preserve"><value>{0} 轉傳票成功</value></data>
+  <data name="Journal.TransferFailed" xml:space="preserve"><value>{0} 轉傳票失敗：{1}</value></data>
+  <data name="Journal.UnknownDocType" xml:space="preserve"><value>未知的單據類型</value></data>
+  <data name="Journal.BatchSuccess" xml:space="preserve"><value>批次轉傳票完成，共成功 {0} 筆</value></data>
+  <data name="Journal.BatchPartialSuccess" xml:space="preserve"><value>批次轉傳票完成：成功 {0} 筆，失敗 {1} 筆</value></data>
+  <data name="Journal.NoEntryLines" xml:space="preserve"><value>尚未新增分錄行</value></data>
+  <data name="Journal.TotalDebit" xml:space="preserve"><value>借方合計：</value></data>
+  <data name="Journal.TotalCredit" xml:space="preserve"><value>貸方合計：</value></data>
+  <data name="Journal.Balanced" xml:space="preserve"><value>借貸平衡</value></data>
+  <data name="Journal.Difference" xml:space="preserve"><value>差額</value></data>
+  <data name="Journal.AccountItem" xml:space="preserve"><value>會計科目</value></data>
+  <data name="Journal.DebitCredit" xml:space="preserve"><value>借貸</value></data>
+  <data name="Journal.Debit" xml:space="preserve"><value>借（Debit）</value></data>
+  <data name="Journal.Credit" xml:space="preserve"><value>貸（Credit）</value></data>
+  <data name="Journal.Description" xml:space="preserve"><value>說明</value></data>
+
+  <!-- ===== Report (報表) ===== -->
+  <data name="Report.AccountsReceivableTitle" xml:space="preserve"><value>應收帳款報表列印條件</value></data>
+  <data name="Report.StatisticsDate" xml:space="preserve"><value>統計日期</value></data>
+  <data name="Report.AccountStatus" xml:space="preserve"><value>帳款狀態</value></data>
+  <data name="Report.IncludeSettled" xml:space="preserve"><value>包含已結清帳款</value></data>
+  <data name="Report.OverdueOnly" xml:space="preserve"><value>僅顯示逾期帳款</value></data>
+  <data name="Report.ARNoCustomerSelected" xml:space="preserve"><value>尚未選擇客戶，留空表示列印所有客戶的應收帳款</value></data>
+
+  <!-- ===== Accounting additions ===== -->
+  <data name="Accounting.Inventory" xml:space="preserve"><value>存貨</value></data>
+  <data name="Accounting.CreateProductSubAccountTitle" xml:space="preserve"><value>為此商品建立存貨子科目</value></data>
+
+  <!-- ===== Column additions ===== -->
+  <data name="Column.ComponentProduct" xml:space="preserve"><value>組件商品</value></data>
+  <data name="Column.RequiredQty" xml:space="preserve"><value>需求數量</value></data>
+  <data name="Column.IssuedQty" xml:space="preserve"><value>已領數量</value></data>
+  <data name="Column.PendingIssueQty" xml:space="preserve"><value>待領數量</value></data>
+  <data name="Column.CurrentIssueQty" xml:space="preserve"><value>本次領料</value></data>
+  <data name="Column.UnitUsage" xml:space="preserve"><value>單位用量</value></data>
+  <data name="Column.CurrentConsumption" xml:space="preserve"><value>本次消耗</value></data>
+  <data name="Column.Barcode" xml:space="preserve"><value>條碼號碼</value></data>
+  <data name="Column.PrintQty" xml:space="preserve"><value>列印數量</value></data>
+  <data name="Column.Supplier" xml:space="preserve"><value>廠商</value></data>
+  <data name="Column.SupplierItemCode" xml:space="preserve"><value>廠商商品編號</value></data>
+  <data name="Column.Price" xml:space="preserve"><value>報價</value></data>
+  <data name="Column.LeadTimeDays" xml:space="preserve"><value>交期(天)</value></data>
+  <data name="Column.MinOrderQty" xml:space="preserve"><value>最小訂購量</value></data>
+  <data name="Column.Unit" xml:space="preserve"><value>單位</value></data>
+  <data name="Column.Status" xml:space="preserve"><value>狀態</value></data>
+  <data name="Column.Category" xml:space="preserve"><value>類別</value></data>
+  <data name="Column.Spec" xml:space="preserve"><value>規格</value></data>
+  <data name="Column.OrderQty" xml:space="preserve"><value>訂單量</value></data>
+  <data name="Column.ScheduleQty" xml:space="preserve"><value>排程量</value></data>
+  <data name="Column.CompletedQty" xml:space="preserve"><value>已完成</value></data>
+  <data name="Column.Closing" xml:space="preserve"><value>結案</value></data>
+  <data name="Column.IssuedMaterial" xml:space="preserve"><value>已發料</value></data>
+  <data name="Column.Stock" xml:space="preserve"><value>庫存</value></data>
+  <data name="Column.OrderDay" xml:space="preserve"><value>訂單日</value></data>
+  <data name="Column.DeliveryDay" xml:space="preserve"><value>交貨日</value></data>
+  <data name="Column.Customer" xml:space="preserve"><value>客戶</value></data>
+  <data name="Column.Type" xml:space="preserve"><value>類型</value></data>
+
+  <!-- ===== Label additions ===== -->
+  <data name="Label.Processing" xml:space="preserve"><value>處理中...</value></data>
+  <data name="Label.Pending" xml:space="preserve"><value>待生產</value></data>
+  <data name="Label.InProgress" xml:space="preserve"><value>生產中</value></data>
+  <data name="Label.Completed" xml:space="preserve"><value>已完成</value></data>
+  <data name="Label.Discontinued" xml:space="preserve"><value>已停產</value></data>
+  <data name="Label.Closed" xml:space="preserve"><value>已結案</value></data>
+  <data name="Label.NotClosed" xml:space="preserve"><value>未結案</value></data>
+  <data name="Label.PlannedQty" xml:space="preserve"><value>計劃數量</value></data>
+  <data name="Label.CompletionQty" xml:space="preserve"><value>完工數量</value></data>
+  <data name="Label.RemainingQty" xml:space="preserve"><value>剩餘可登錄數量：</value></data>
+  <data name="Label.TotalIssueQty" xml:space="preserve"><value>本次領料總數：</value></data>
+  <data name="Label.ProductionQty" xml:space="preserve"><value>生產數量：</value></data>
+  <data name="Label.Operator" xml:space="preserve"><value>操作人員</value></data>
+  <data name="Label.StorageWarehouse" xml:space="preserve"><value>入庫倉庫</value></data>
+  <data name="Label.WarehouseLocation" xml:space="preserve"><value>倉位</value></data>
+  <data name="Label.AutoCreateInventoryRecord" xml:space="preserve"><value>自動建立入庫記錄</value></data>
+  <data name="Label.ScheduleCompleted" xml:space="preserve"><value>已完成排程</value></data>
+  <data name="Label.DropToSchedule" xml:space="preserve"><value>放開滑鼠以加入排程</value></data>
+  <data name="Label.HideAdded" xml:space="preserve"><value>隱藏已加入</value></data>
+  <data name="Label.Added" xml:space="preserve"><value>已加入</value></data>
+  <data name="Label.AllCategories" xml:space="preserve"><value>所有類別</value></data>
+  <data name="Label.BarcodeSize" xml:space="preserve"><value>條碼尺寸：</value></data>
+  <data name="Label.BarcodeSizeLarge" xml:space="preserve"><value>大 (70mm x 35mm)</value></data>
+  <data name="Label.BasicInfo" xml:space="preserve"><value>基本資訊</value></data>
+  <data name="Label.PlannedEndDate" xml:space="preserve"><value>預計完成日期</value></data>
+  <data name="Label.ActualStartDate" xml:space="preserve"><value>實際開始日期</value></data>
+  <data name="Label.SourceOrder" xml:space="preserve"><value>來源訂單</value></data>
+  <data name="Label.SalesOrderDetailId" xml:space="preserve"><value>銷貨訂單明細 ID</value></data>
+  <data name="Label.MaterialIssueCompleted" xml:space="preserve"><value>已發料完成</value></data>
+  <data name="Label.PartialIssue" xml:space="preserve"><value>部分發料</value></data>
+  <data name="Label.InsufficientStock" xml:space="preserve"><value>庫存不足</value></data>
+  <data name="Label.PendingIssue" xml:space="preserve"><value>待發料</value></data>
+  <data name="Label.DateFrom" xml:space="preserve"><value>日期範圍（由）</value></data>
+  <data name="Label.DateTo" xml:space="preserve"><value>日期範圍（至）</value></data>
+  <data name="Label.AccountsReceivable" xml:space="preserve"><value>應收帳款</value></data>
+  <data name="Label.AccountsPayable" xml:space="preserve"><value>應付帳款</value></data>
+  <data name="Label.OrderNumber" xml:space="preserve"><value>訂單號碼</value></data>
+  <data name="Label.SelectedAndTotal" xml:space="preserve"><value>已選擇 {0} 項，排程數量合計: {1}</value></data>
+
+  <!-- ===== Button additions ===== -->
+  <data name="Button.ConfirmIssue" xml:space="preserve"><value>確認領料</value></data>
+  <data name="Button.ConfirmRecord" xml:space="preserve"><value>確認登錄</value></data>
+  <data name="Button.TakeAll" xml:space="preserve"><value>全部領取</value></data>
+  <data name="Button.ConfirmAdd" xml:space="preserve"><value>確認加入 ({0} 項)</value></data>
+  <data name="Button.Query" xml:space="preserve"><value>查詢</value></data>
+  <data name="Button.ClearFilter" xml:space="preserve"><value>清除篩選</value></data>
+
+  <!-- ===== Message additions ===== -->
+  <data name="Message.InsufficientStockWarning" xml:space="preserve"><value>部分組件庫存不足，請調整領料數量或先進行採購補貨。</value></data>
+  <data name="Message.NoBOMComponents" xml:space="preserve"><value>此排程項目沒有 BOM 組件</value></data>
+  <data name="Message.NoScheduleItemInfo" xml:space="preserve"><value>無法載入排程項目資訊</value></data>
+  <data name="Message.EnterIssueQty" xml:space="preserve"><value>請輸入領料數量</value></data>
+  <data name="Message.StockInsufficientFor" xml:space="preserve"><value>以下組件庫存不足：{0}</value></data>
+  <data name="Message.SelectAtLeastOneProduct" xml:space="preserve"><value>請至少選擇一項商品</value></data>
+  <data name="Message.BarcodePrintWindowOpened" xml:space="preserve"><value>已開啟條碼列印視窗 (共 {0} 張)</value></data>
+  <data name="Message.NoMatchingProducts" xml:space="preserve"><value>無符合條件的商品</value></data>
+  <data name="Message.SupplierAlreadyExists" xml:space="preserve"><value>此廠商已存在，請選擇其他廠商</value></data>
+  <data name="Message.NeedAtLeastOneSupplier" xml:space="preserve"><value>至少需要一個廠商</value></data>
+  <data name="Message.DuplicateSupplier" xml:space="preserve"><value>存在重複的廠商</value></data>
+  <data name="Message.CompletionExceedsRemaining" xml:space="preserve"><value>完工數量不可超過剩餘數量 {0}</value></data>
+  <data name="Message.CompletionFailed" xml:space="preserve"><value>完工登錄失敗：{0}</value></data>
+  <data name="Message.InventoryAddSuccess" xml:space="preserve"><value>庫存入庫成功：{0}</value></data>
+  <data name="Message.InventoryAddFailed" xml:space="preserve"><value>庫存入庫失敗：{0}</value></data>
+  <data name="Message.NoWarehouseForInventory" xml:space="preserve"><value>無法確定入庫倉庫，庫存未更新</value></data>
+  <data name="Message.CreateCompletionFailed" xml:space="preserve"><value>建立完工記錄失敗：{0}</value></data>
+  <data name="Message.ProductionStarted" xml:space="preserve"><value>已開始生產</value></data>
+  <data name="Message.ScheduleItemNotFound" xml:space="preserve"><value>找不到排程項目資料</value></data>
+  <data name="Message.NoSchedulableDetails" xml:space="preserve"><value>無可排程的明細</value></data>
+  <data name="Message.DragOrderToSchedule" xml:space="preserve"><value>從左側拖曳訂單到此處，或點擊箭頭按鈕加入排程</value></data>
+  <data name="Message.NoPendingDetails" xml:space="preserve"><value>沒有待排程的明細</value></data>
+  <data name="Message.NoComponentNeeds" xml:space="preserve"><value>沒有組件需求</value></data>
+  <data name="Message.PaymentRecordRemoved" xml:space="preserve"><value>已移除收款記錄</value></data>
+  <data name="Message.PrepaymentRecordRemoved" xml:space="preserve"><value>已移除預收付款項記錄</value></data>
+  <data name="Message.UsedAmountExceedsBalance" xml:space="preserve"><value>使用金額不能超過可用餘額 {0}</value></data>
+  <data name="Message.UsedAmountBelowZero" xml:space="preserve"><value>使用金額不能小於 0</value></data>
+  <data name="Message.AmountBelowZero" xml:space="preserve"><value>金額不能小於 0</value></data>
+  <data name="Message.SelectPrepaymentType" xml:space="preserve"><value>請選擇預收付類型</value></data>
+  <data name="Message.TransferTypeNeedsSource" xml:space="preserve"><value>轉沖款類型必須選擇來源預收付款項</value></data>
+  <data name="Message.UsedAmountMustBePositive" xml:space="preserve"><value>使用金額必須大於 0</value></data>
+  <data name="Message.AmountMustBePositive" xml:space="preserve"><value>金額必須大於 0</value></data>
+  <data name="Message.RecordNotSavedCannotQuery" xml:space="preserve"><value>此記錄尚未儲存，無法查詢相關單據</value></data>
+  <data name="Message.InitARReportFailed" xml:space="preserve"><value>初始化應收帳款報表資料失敗</value></data>
+  <data name="Message.LoadCustomerFailed" xml:space="preserve"><value>載入客戶資料失敗</value></data>
+  <data name="Message.GenerateReportFailed" xml:space="preserve"><value>產生報表失敗</value></data>
+
+  <!-- ===== Placeholder additions ===== -->
+  <data name="Placeholder.SearchProductNameCode" xml:space="preserve"><value>搜尋商品名稱/編號...</value></data>
+  <data name="Placeholder.FilterBySpec" xml:space="preserve"><value>規格篩選...</value></data>
+  <data name="Placeholder.SelectSupplier" xml:space="preserve"><value>請選擇廠商</value></data>
+  <data name="Placeholder.EnterCode" xml:space="preserve"><value>請輸入編號</value></data>
+  <data name="Placeholder.SelectUnit" xml:space="preserve"><value>請選擇單位</value></data>
+  <data name="Placeholder.Optional" xml:space="preserve"><value>可選填</value></data>
+  <data name="Placeholder.SearchAccountCodeName" xml:space="preserve"><value>請輸入科目編號或名稱</value></data>
+  <data name="Placeholder.DescriptionOptional" xml:space="preserve"><value>說明（選填）</value></data>
+  <data name="Placeholder.SearchCustomerName" xml:space="preserve"><value>請輸入客戶名稱搜尋...</value></data>
+  <data name="Placeholder.SelectType" xml:space="preserve"><value>請選擇類型..</value></data>
+  <data name="Placeholder.SelectPrepayment" xml:space="preserve"><value>請選擇預收付款項..</value></data>
+  <data name="Placeholder.SearchCodeNameStatus" xml:space="preserve"><value>搜尋編號/產品名/狀態...</value></data>
+  <data name="Placeholder.SearchProductOrderCustomer" xml:space="preserve"><value>搜尋商品/訂單/客戶...</value></data>
+  <data name="Placeholder.SelectDefault" xml:space="preserve"><value>請選擇..</value></data>
+
+  <!-- ===== Setoff additional ===== -->
+  <data name="Setoff.UnknownSource" xml:space="preserve"><value>未知來源</value></data>
+  <data name="Setoff.SourceDocumentCode" xml:space="preserve"><value>來源單號</value></data>
+  <data name="Setoff.TotalAmount" xml:space="preserve"><value>總金額</value></data>
+  <data name="Setoff.Amount" xml:space="preserve"><value>金額</value></data>
+
+  <!-- ===== Label additional ===== -->
+  <data name="Label.ItemCount" xml:space="preserve"><value>項</value></data>
+
+  <!-- ===== Message additional ===== -->
+  <data name="Message.LoadBankPaymentMethodFailed" xml:space="preserve"><value>載入銀行和付款方式資料失敗：{0}</value></data>
+  <data name="Message.LoadPrepaymentTypeFailed" xml:space="preserve"><value>載入預收付類型失敗：{0}</value></data>
+  <data name="Message.LoadAvailablePrepaymentFailed" xml:space="preserve"><value>載入可用預收付款項失敗：{0}</value></data>
+
 </root>

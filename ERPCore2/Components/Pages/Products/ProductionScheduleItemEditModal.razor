@@ -8,6 +8,7 @@
 @inject IWarehouseService WarehouseService
 @inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -18,7 +19,7 @@
                    CloseOnBackdropClick="false"
                    CloseOnEscape="true"
                    IsLoading="@isLoading"
-                   LoadingMessage="載入中..."
+                   LoadingMessage="@L["Label.Loading"]"
                    HeaderButtons="@HeaderButtons"
                    BodyContent="@BodyContent" />
 
@@ -124,9 +125,9 @@
     {
         if (scheduleItem?.Product != null)
         {
-            return $"排程項目 - {scheduleItem.Product.Name}";
+            return string.Format(L["Production.ScheduleItemTitle"], scheduleItem.Product.Name);
         }
-        return "排程項目詳情";
+        return L["Production.ScheduleItemDetails"];
     }
 
     private BaseModalComponent.HeaderVariant GetHeaderColor()
@@ -151,12 +152,12 @@
                 {
                     @if (scheduleItem?.ProductionItemStatus == ProductionItemStatus.Pending)
                     {
-                        <GenericButtonComponent Text="組件領料"
+                        <GenericButtonComponent Text="@L["Production.MaterialIssue"]"
                                               Variant="ButtonVariant.DarkBlue"
                                               Size="ButtonSize.Small"
                                               Icon="bi bi-box-arrow-up"
                                               OnClick="@HandleShowMaterialIssueModal" />
-                        <GenericButtonComponent Text="開始生產"
+                        <GenericButtonComponent Text="@L["Button.StartProduction"]"
                                               Variant="ButtonVariant.Yellow"
                                               Size="ButtonSize.Small"
                                               Icon="bi bi-play-fill"
@@ -164,18 +165,18 @@
                     }
                     @if (scheduleItem?.ProductionItemStatus == ProductionItemStatus.InProgress)
                     {
-                        <GenericButtonComponent Text="組件領料"
+                        <GenericButtonComponent Text="@L["Production.MaterialIssue"]"
                                               Variant="ButtonVariant.DarkBlue"
                                               Size="ButtonSize.Small"
                                               Icon="bi bi-box-arrow-up"
                                               OnClick="@HandleShowMaterialIssueModal" />
-                        <GenericButtonComponent Text="完工登錄"
+                        <GenericButtonComponent Text="@L["Production.CompletionEntry"]"
                                               Variant="ButtonVariant.Green"
                                               Size="ButtonSize.Small"
                                               Icon="bi bi-check2-square"
                                               OnClick="@HandleShowCompletionModal" />
                     }
-                    <GenericButtonComponent Text="儲存"
+                    <GenericButtonComponent Text="@L["Button.Save"]"
                                           Variant="ButtonVariant.Blue"
                                           Size="ButtonSize.Small"
                                           OnClick="@HandleSave" />
@@ -193,40 +194,40 @@
                 @* 基本資訊 *@
                 <div class="card mb-3">
                     <div class="card-header bg-light">
-                        <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>基本資訊</h6>
+                        <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>@L["Label.BasicInfo"]</h6>
                     </div>
                     <div class="card-body">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label text-muted small">商品</label>
+                                <label class="form-label text-muted small">@L["Column.Product"]</label>
                                 <div class="fw-bold">
                                     @(scheduleItem.Product?.Name ?? "-")
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label text-muted small">計劃數量</label>
+                                <label class="form-label text-muted small">@L["Label.PlannedQty"]</label>
                                 <div class="fw-bold text-primary">
                                     @scheduleItem.ScheduledQuantity.ToString("N2")
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label text-muted small">已完成數量</label>
+                                <label class="form-label text-muted small">@L["Column.CompletedQty"]</label>
                                 <div class="fw-bold @(scheduleItem.CompletedQuantity >= scheduleItem.ScheduledQuantity ? "text-success" : "text-warning")">
                                     @scheduleItem.CompletedQuantity.ToString("N2")
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label text-muted small">狀態</label>
+                                <label class="form-label text-muted small">@L["Column.Status"]</label>
                                 <div>
                                     @GetStatusBadge(scheduleItem.ProductionItemStatus)
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label text-muted small">預計完成日期</label>
+                                <label class="form-label text-muted small">@L["Label.PlannedEndDate"]</label>
                                 <div>@(scheduleItem.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label text-muted small">實際開始日期</label>
+                                <label class="form-label text-muted small">@L["Label.ActualStartDate"]</label>
                                 <div>@(scheduleItem.ActualStartDate?.ToString("yyyy-MM-dd") ?? "-")</div>
                             </div>
                         </div>
@@ -238,12 +239,12 @@
                 {
                     <div class="card mb-3">
                         <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>來源訂單</h6>
+                            <h6 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>@L["Label.SourceOrder"]</h6>
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label text-muted small">銷貨訂單明細 ID</label>
+                                    <label class="form-label text-muted small">@L["Label.SalesOrderDetailId"]</label>
                                     <div>@scheduleItem.SalesOrderDetailId</div>
                                 </div>
                             </div>
@@ -254,7 +255,7 @@
                 @* 組件需求 *@
                 <div class="card mb-3">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>組件需求</h6>
+                        <h6 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>@L["Production.ComponentNeeds"]</h6>
                         <span class="badge bg-secondary">@scheduleDetails.Count 項</span>
                     </div>
                     <div class="card-body p-0">
@@ -263,11 +264,11 @@
                             <table class="table table-sm table-striped mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 35%">組件商品</th>
-                                        <th style="width: 15%" class="text-end">需求數量</th>
-                                        <th style="width: 15%" class="text-end">已發料</th>
-                                        <th style="width: 15%" class="text-end">庫存</th>
-                                        <th style="width: 20%">狀態</th>
+                                        <th style="width: 35%">@L["Column.ComponentProduct"]</th>
+                                        <th style="width: 15%" class="text-end">@L["Column.RequiredQty"]</th>
+                                        <th style="width: 15%" class="text-end">@L["Column.IssuedMaterial"]</th>
+                                        <th style="width: 15%" class="text-end">@L["Column.Stock"]</th>
+                                        <th style="width: 20%">@L["Column.Status"]</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -298,25 +299,25 @@
                                                 @if (issuedQty >= detail.RequiredQuantity)
                                                 {
                                                     <span class="badge bg-success">
-                                                        <i class="bi bi-check-circle me-1"></i>已發料完成
+                                                        <i class="bi bi-check-circle me-1"></i>@L["Label.MaterialIssueCompleted"]
                                                     </span>
                                                 }
                                                 else if (issuedQty > 0)
                                                 {
                                                     <span class="badge bg-warning text-dark">
-                                                        <i class="bi bi-hourglass-split me-1"></i>部分發料
+                                                        <i class="bi bi-hourglass-split me-1"></i>@L["Label.PartialIssue"]
                                                     </span>
                                                 }
                                                 else if (!isEnough)
                                                 {
                                                     <span class="badge bg-danger">
-                                                        <i class="bi bi-exclamation-triangle me-1"></i>庫存不足
+                                                        <i class="bi bi-exclamation-triangle me-1"></i>@L["Label.InsufficientStock"]
                                                     </span>
                                                 }
                                                 else
                                                 {
                                                     <span class="badge bg-secondary">
-                                                        <i class="bi bi-clock me-1"></i>待發料
+                                                        <i class="bi bi-clock me-1"></i>@L["Label.PendingIssue"]
                                                     </span>
                                                 }
                                             </td>
@@ -329,7 +330,7 @@
                         {
                             <div class="text-center text-muted py-4">
                                 <i class="bi bi-inbox fs-3 mb-2 d-block"></i>
-                                沒有組件需求
+                                @L["Message.NoComponentNeeds"]
                             </div>
                         }
                     </div>
@@ -338,7 +339,7 @@
                 @* 進度區塊 *@
                 <div class="card">
                     <div class="card-header bg-light">
-                        <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>生產進度</h6>
+                        <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>@L["Production.Progress"]</h6>
                     </div>
                     <div class="card-body">
                         @{
@@ -380,10 +381,10 @@
     {
         var (badgeClass, icon, text) = status switch
         {
-            ProductionItemStatus.Pending => ("bg-secondary", "bi-clock", "待處理"),
-            ProductionItemStatus.InProgress => ("bg-warning text-dark", "bi-play-circle", "生產中"),
-            ProductionItemStatus.Completed => ("bg-success", "bi-check-circle", "已完成"),
-            _ => ("bg-secondary", "bi-question-circle", "未知")
+            ProductionItemStatus.Pending => ("bg-secondary", "bi-clock", L["Label.Pending"].ToString()),
+            ProductionItemStatus.InProgress => ("bg-warning text-dark", "bi-play-circle", L["Label.InProgress"].ToString()),
+            ProductionItemStatus.Completed => ("bg-success", "bi-check-circle", L["Label.Completed"].ToString()),
+            _ => ("bg-secondary", "bi-question-circle", L["Label.Unknown"].ToString())
         };
 
         <span class="badge @badgeClass">
@@ -407,7 +408,7 @@
             var result = await ProductionScheduleItemService.UpdateAsync(scheduleItem);
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync("已開始生產");
+                await NotificationService.ShowSuccessAsync(L["Message.ProductionStarted"]);
                 StateHasChanged();
             }
             else
@@ -438,7 +439,7 @@
             var result = await ProductionScheduleItemService.UpdateAsync(scheduleItem);
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync("儲存成功");
+                await NotificationService.ShowSuccessAsync(L["Message.SaveSuccess"]);
 
                 if (OnSaved.HasDelegate)
                 {

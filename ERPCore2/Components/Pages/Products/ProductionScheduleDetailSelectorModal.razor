@@ -2,6 +2,7 @@
 @using ERPCore2.Components.Shared.UI.Button
 @using ERPCore2.Models
 @using ERPCore2.Helpers
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@(async (bool visible) => { if (!visible) await Close(); })"
@@ -56,19 +57,22 @@
         <div class="d-flex w-100 justify-content-between align-items-center">
             <div>
                 <small class="text-muted">
-                    已選擇 <span class="fw-bold text-primary">@SelectedCount</span> 項，
-                    排程數量合計: <span class="fw-bold text-success">@NumberFormatHelper.FormatSmart(TotalScheduleQuantity)</span>
+                    @((MarkupString)string.Format(
+                        L["Label.SelectedAndTotal"].ToString()
+                            .Replace("{0}", $"<span class=\"fw-bold text-primary\">{SelectedCount}</span>")
+                            .Replace("{1}", $"<span class=\"fw-bold text-success\">{NumberFormatHelper.FormatSmart(TotalScheduleQuantity)}</span>")
+                    ))
                 </small>
             </div>
             <div>
                 <button type="button" class="btn btn-secondary btn-sm me-2" @onclick="Close">
-                    <i class="bi bi-x-lg me-1"></i>取消
+                    <i class="bi bi-x-lg me-1"></i>@L["Button.Cancel"]
                 </button>
-                <button type="button" 
-                        class="btn btn-primary btn-sm" 
+                <button type="button"
+                        class="btn btn-primary btn-sm"
                         @onclick="Confirm"
                         disabled="@(!HasSelection)">
-                    <i class="bi bi-check-lg me-1"></i>確認加入 (@SelectedCount 項)
+                    <i class="bi bi-check-lg me-1"></i>@string.Format(L["Button.ConfirmAdd"], SelectedCount)
                 </button>
             </div>
         </div>
@@ -145,7 +149,7 @@
             new InteractiveColumnDefinition
             {
                 PropertyName = "ProductCode",
-                Title = "商品",
+                Title = L["Column.Product"],
                 Width = "30%",
                 ColumnType = InteractiveColumnType.Custom,
                 CustomTemplate = item => builder =>
@@ -165,7 +169,7 @@
             new InteractiveColumnDefinition
             {
                 PropertyName = "OrderQuantity",
-                Title = "訂單數量",
+                Title = L["Column.OrderQty"],
                 Width = "15%",
                 TextAlign = "right",
                 ColumnType = InteractiveColumnType.Display,
@@ -175,7 +179,7 @@
             new InteractiveColumnDefinition
             {
                 PropertyName = "ScheduledQuantity",
-                Title = "已排程",
+                Title = L["Column.ScheduledQty"],
                 Width = "15%",
                 TextAlign = "right",
                 ColumnType = InteractiveColumnType.Custom,
@@ -202,7 +206,7 @@
             new InteractiveColumnDefinition
             {
                 PropertyName = "PendingQuantity",
-                Title = "可排程",
+                Title = L["Column.PendingQty"],
                 Width = "15%",
                 TextAlign = "right",
                 ColumnType = InteractiveColumnType.Custom,
@@ -229,7 +233,7 @@
             new InteractiveColumnDefinition
             {
                 PropertyName = "ScheduleQuantity",
-                Title = "排程數量",
+                Title = L["Column.ScheduleQty"],
                 Width = "20%",
                 TextAlign = "right",
                 ColumnType = InteractiveColumnType.Number,
@@ -311,9 +315,9 @@
     {
         if (OrderInfo != null)
         {
-            return $"選擇排程明細 - {OrderInfo.OrderCode}";
+            return string.Format(L["Production.SelectScheduleDetailsTitle"], OrderInfo.OrderCode);
         }
-        return "選擇排程明細";
+        return L["Production.SelectScheduleDetails"];
     }
     
     private string TruncateName(string name, int maxLength)

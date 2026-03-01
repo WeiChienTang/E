@@ -1,10 +1,11 @@
 @* 銷貨退回 → 沖款記錄 Tab（唯讀） *@
 @inject ISetoffDocumentService SetoffDocumentService
+@inject IStringLocalizer<SharedResource> L
 
 @if (_isLoading)
 {
     <div class="text-muted py-4 px-2">
-        <i class="bi bi-hourglass-split me-2"></i>載入中...
+        <i class="bi bi-hourglass-split me-2"></i>@L["Label.Loading"]
     </div>
 }
 else
@@ -13,11 +14,11 @@ else
         <table class="table table-sm table-hover mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>沖款單號</th>
-                    <th>沖款日期</th>
-                    <th class="text-end">本次沖款金額</th>
-                    <th class="text-end">本次收款金額</th>
-                    <th>已過帳</th>
+                    <th>@L["Column.SetoffCode"]</th>
+                    <th>@L["Column.SetoffDate"]</th>
+                    <th class="text-end">@L["Column.SetoffAmount"]</th>
+                    <th class="text-end">@L["Column.CollectionAmount"]</th>
+                    <th>@L["Column.IsJournalized"]</th>
                     <th style="width:60px"></th>
                 </tr>
             </thead>
@@ -32,16 +33,16 @@ else
                         <td>
                             @if (setoff.IsJournalized)
                             {
-                                <span class="text-success small"><i class="bi bi-check-circle me-1"></i>是</span>
+                                <span class="text-success small"><i class="bi bi-check-circle me-1"></i>@L["Label.Yes"]</span>
                             }
                             else
                             {
-                                <span class="text-muted small"><i class="bi bi-dash-circle me-1"></i>否</span>
+                                <span class="text-muted small"><i class="bi bi-dash-circle me-1"></i>@L["Label.No"]</span>
                             }
                         </td>
                         <td class="text-center">
                             <button type="button" class="btn btn-sm btn-outline-primary"
-                                    title="開啟沖款單"
+                                    title="@L["Button.OpenSetoff"]"
                                     @onclick="@(() => OnOpenSetoff.InvokeAsync(setoff.Id))">
                                 <i class="bi bi-box-arrow-up-right"></i>
                             </button>

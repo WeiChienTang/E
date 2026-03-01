@@ -4,6 +4,7 @@
 @inject IBankService BankService
 @inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <div class="card-body p-0">
     <InteractiveTableComponent TItem="SetoffPaymentItem" 
@@ -11,7 +12,7 @@
                                 ColumnDefinitions="@GetPaymentColumnDefinitions()"
                                 IsReadOnly="@IsReadOnly"
                                 ShowRowNumbers="false"
-                                EmptyMessage="尚未新增收款記錄"
+                                EmptyMessage="@L["Setoff.NoPaymentRecords"]"
                                 ShowBuiltInActions="@(!IsEditMode())"
                                 ShowBuiltInDeleteButton="@(!IsEditMode())"
                                 OnItemDelete="@HandleRemovePaymentRecord"
@@ -144,7 +145,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入銀行和付款方式資料失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadBankPaymentMethodFailed"], ex.Message));
             Banks = new List<Bank>();
             PaymentMethods = new List<PaymentMethod>();
         }
@@ -181,23 +182,24 @@
     private List<InteractiveColumnDefinition> GetPaymentColumnDefinitions()
     {
         // 根據沖款類型決定欄位標題
-        var receivedAmountLabel = SetoffType == SetoffType.AccountsReceivable ? "收款金額" : "付款金額";
-        
+        var receivedAmountLabel = SetoffType == SetoffType.AccountsReceivable
+            ? L["Setoff.ReceivedAmount"].ToString()
+            : L["Setoff.PaymentAmount"].ToString();
+
         var columns = new List<InteractiveColumnDefinition>
         {
 
             new()
             {
-                Title = "付款方式",
-                Tooltip = "選擇本次收付款的方式（現金、匯款、支票等）",
+                Title = L["Setoff.PaymentMethod"],
                 PropertyName = nameof(SetoffPaymentItem.PaymentMethodId),
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
                 IsRequired = false,
                 TriggerEmptyRowOnFilled = true,  // 🔑 觸發欄位：選擇後自動新增空行
-                Options = new List<InteractiveSelectOption> 
-                { 
-                    new InteractiveSelectOption { Value = 0, Text = "請選擇.." } 
+                Options = new List<InteractiveSelectOption>
+                {
+                    new InteractiveSelectOption { Value = 0, Text = L["Placeholder.SelectDefault"] }
                 }
                 .Concat(PaymentMethods.Select(pm => new InteractiveSelectOption
                 { 
@@ -226,7 +228,6 @@
             new()
             {
                 Title = receivedAmountLabel,
-                Tooltip = SetoffType == SetoffType.AccountsReceivable ? "本次實際收到的款項金額" : "本次實際支付的款項金額",
                 PropertyName = nameof(SetoffPaymentItem.ReceivedAmount),
                 ColumnType = InteractiveColumnType.Number,
                 Width = "150px",
@@ -241,8 +242,7 @@
             },
             new()
             {
-                Title = "折讓金額",
-                Tooltip = "本次給予的折讓金額（不計入實際收付款）",
+                Title = L["Setoff.AllowanceAmount"],
                 PropertyName = nameof(SetoffPaymentItem.AllowanceAmount),
                 ColumnType = InteractiveColumnType.Number,
                 Width = "150px",
@@ -258,15 +258,14 @@
 
             new()
             {
-                Title = "銀行別",
-                Tooltip = "選擇收付款的銀行帳戶",
+                Title = L["Setoff.BankCategory"],
                 PropertyName = nameof(SetoffPaymentItem.BankId),
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
                 IsRequired = false,
-                Options = new List<InteractiveSelectOption> 
-                { 
-                    new InteractiveSelectOption { Value = 0, Text = "請選擇.." } 
+                Options = new List<InteractiveSelectOption>
+                {
+                    new InteractiveSelectOption { Value = 0, Text = L["Placeholder.SelectDefault"] }
                 }
                 .Concat(Banks.Select(b => new InteractiveSelectOption
                 { 
@@ -294,8 +293,7 @@
             },
             new()
             {
-                Title = "支票號碼",
-                Tooltip = "若付款方式為支票，請輸入支票號碼",
+                Title = L["Setoff.CheckNumber"],
                 PropertyName = nameof(SetoffPaymentItem.CheckNumber),
                 ColumnType = InteractiveColumnType.Input,
                 Width = "150px",
@@ -314,8 +312,7 @@
             },
             new()
             {
-                Title = "到期日",
-                Tooltip = "若付款方式為支票，請選擇支票到期日",
+                Title = L["Setoff.DueDate"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -334,8 +331,7 @@
             },
             new()
             {
-                Title = "小計",
-                Tooltip = "收款金額 + 折讓金額的總計",
+                Title = L["Column.Subtotal"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -351,8 +347,7 @@
             },
             new()
             {
-                Title = "備註",
-                Tooltip = "備註說明",
+                Title = L["Label.Remarks"],
                 PropertyName = nameof(SetoffPaymentItem.Remarks),
                 ColumnType = InteractiveColumnType.Input,
                 Width = "200px",
@@ -361,9 +356,9 @@
                 {
                     var (itemObj, value) = args;
                     var item = (SetoffPaymentItem)itemObj;
-                    
+
                     item.Remarks = value;
-                    
+
                     // 備註變更時也需要通知父組件，以便正確追蹤變更
                     _ = NotifyPaymentsChanged();
                     StateHasChanged();
@@ -381,7 +376,7 @@
         
         PaymentItems.Remove(item);
         
-        await NotificationService.ShowInfoAsync("已移除收款記錄");
+        await NotificationService.ShowInfoAsync(L["Message.PaymentRecordRemoved"]);
         await NotifyPaymentsChanged();
         StateHasChanged();
     }

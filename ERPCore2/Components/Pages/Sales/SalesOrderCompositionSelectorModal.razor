@@ -1,6 +1,7 @@
 @* 商品配方選擇對話框 - 用於選擇要使用的 BOM 配方或自定義模式（銷貨訂單版本） *@
 @using ERPCore2.Components.Shared.UI.Button
 @using ERPCore2.Data.Entities
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -56,8 +57,8 @@
     private string GetModalTitle()
     {
         return string.IsNullOrEmpty(ProductName)
-            ? "選擇 BOM 配方"
-            : $"選擇 BOM 配方 - {ProductName}";
+            ? L["Composition.SelectBOM"].ToString()
+            : string.Format(L["Composition.SelectBOMWithProduct"].ToString(), ProductName);
     }
 
     private async Task SelectComposition(int compositionId)
@@ -89,18 +90,18 @@
 
         if (composition.Customer != null)
         {
-            info.Add($"客戶: {composition.Customer.CompanyName}");
+            info.Add(string.Format(L["Composition.CustomerLabel"].ToString(), composition.Customer.CompanyName));
         }
         if (!string.IsNullOrEmpty(composition.Specification))
         {
-            info.Add($"規格: {composition.Specification}");
+            info.Add(string.Format(L["Composition.SpecLabel"].ToString(), composition.Specification));
         }
         if (composition.CompositionCategory != null)
         {
-            info.Add($"類型: {composition.CompositionCategory.Name}");
+            info.Add(string.Format(L["Composition.CategoryLabel"].ToString(), composition.CompositionCategory.Name));
         }
 
-        return info.Any() ? string.Join(" | ", info) : "通用配方";
+        return info.Any() ? string.Join(" | ", info) : L["Composition.GeneralFormula"].ToString();
     }
 
     // ===== Body Content =====
@@ -113,7 +114,7 @@
                 <div class="mb-3">
                     <input type="text"
                            class="form-control"
-                           placeholder="搜尋配方編號、規格、客戶或類型..."
+                           placeholder="@L["Composition.SearchPlaceholder"]"
                            @bind="searchTerm"
                            @bind:event="oninput" />
                 </div>
@@ -122,7 +123,7 @@
                 {
                     <div class="alert alert-warning text-center">
                         <i class="bi bi-search me-2"></i>
-                        找不到符合條件的配方
+                        @L["Composition.NoMatch"]
                     </div>
                 }
                 else
@@ -141,15 +142,15 @@
                                             [@composition.Code]
                                             @if (composition.CustomerId == CurrentCustomerId)
                                             {
-                                                <span class="badge bg-info ms-2">當前客戶</span>
+                                                <span class="badge bg-info ms-2">@L["Composition.CurrentCustomer"]</span>
                                             }
                                         </h6>
                                         <p class="mb-1 text-muted small">
                                             @GetCompositionDisplayInfo(composition)
                                         </p>
                                         <small class="text-muted">
-                                            組件數: @(composition.CompositionDetails?.Count ?? 0)
-                                            <span class="ms-2">建立日期: @composition.CreatedAt.ToString("yyyy/MM/dd")</span>
+                                            @string.Format(L["Composition.ComponentCount"].ToString(), composition.CompositionDetails?.Count ?? 0)
+                                            <span class="ms-2">@string.Format(L["Composition.CreatedDate"].ToString(), composition.CreatedAt.ToString("yyyy/MM/dd"))</span>
                                         </small>
                                     </div>
                                     <div class="ms-3">
@@ -171,9 +172,9 @@
                     <div class="flex-grow-1">
                         <h6 class="mb-1">
                             <i class="bi bi-stars me-2"></i>
-                            自定義（手動選擇組件）
+                            @L["Composition.CustomModeTitle"]
                         </h6>
-                        <small class="text-muted">不使用既有配方，自行挑選組件並設定數量</small>
+                        <small class="text-muted">@L["Composition.CustomModeDesc"]</small>
                     </div>
                     <div class="ms-3">
                         <i class="bi bi-chevron-right"></i>
@@ -185,13 +186,13 @@
             {
                 <div class="alert alert-info mt-3">
                     <i class="bi bi-info-circle me-2"></i>
-                    此商品尚未建立 BOM 配方，請選擇「自定義」模式手動建立組成。
+                    @L["Composition.NoBOMInfo"]
                 </div>
             }
 
             <!-- 取消按鈕 -->
             <div class="mt-3 text-end">
-                <GenericButtonComponent Text="取消"
+                <GenericButtonComponent Text="@L["Button.Cancel"].ToString()"
                                       Variant="ButtonVariant.Gray"
                                       Size="ButtonSize.Normal"
                                       OnClick="CloseModal" />

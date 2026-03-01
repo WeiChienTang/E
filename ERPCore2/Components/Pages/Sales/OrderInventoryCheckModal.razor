@@ -4,6 +4,7 @@
 @using ERPCore2.Helpers
 @inject ISalesOrderService SalesOrderService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -14,7 +15,7 @@
                    CloseOnBackdropClick="true"
                    CloseOnEscape="true"
                    IsLoading="@isLoading"
-                   LoadingMessage="載入庫存資訊中..."
+                   LoadingMessage="@L["Inventory.LoadingMessage"]"
                    BodyContent="@BodyContent" />
 
 @code {
@@ -53,7 +54,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入庫存檢查資訊失敗: {ex.Message}");
+            await NotificationService.ShowErrorAsync($"{ex.Message}");
         }
         finally
         {
@@ -66,9 +67,9 @@
     {
         if (!string.IsNullOrEmpty(OrderNumber))
         {
-            return $"庫存檢視 - 訂單編號 {OrderNumber}";
+            return string.Format(L["Inventory.CheckTitleWithOrder"].ToString(), OrderNumber);
         }
-        return "訂單庫存檢視";
+        return L["Inventory.CheckTitle"].ToString();
     }
 
     private void ToggleExpand(int detailId)
@@ -118,7 +119,7 @@
         {
             builder.OpenElement(0, "div");
             builder.AddAttribute(1, "class", "text-center text-muted py-4");
-            builder.AddContent(2, "無法載入庫存資訊");
+            builder.AddContent(2, L["Inventory.CannotLoad"].ToString());
             builder.CloseElement();
             return;
         }
@@ -183,21 +184,21 @@
         builder.OpenElement(19, "span");
         builder.AddAttribute(20, "class", "text-muted small");
         
-        builder.AddContent(21, "需求:");
+        builder.AddContent(21, L["Inventory.Required"].ToString());
         builder.OpenElement(22, "strong");
         builder.AddAttribute(23, "class", "mx-1");
         builder.AddContent(24, NumberFormatHelper.FormatSmart(item.RequiredQuantity));
         builder.CloseElement();
-        
-        builder.AddContent(25, " 庫存:");
+
+        builder.AddContent(25, " " + L["Inventory.Stock"].ToString());
         builder.OpenElement(26, "strong");
         builder.AddAttribute(27, "class", $"mx-1 {item.StatusClass}");
         builder.AddContent(28, NumberFormatHelper.FormatSmart(item.AvailableStock));
         builder.CloseElement();
-        
+
         if (item.ShortageQuantity > 0)
         {
-            builder.AddContent(29, " 缺少:");
+            builder.AddContent(29, " " + L["Inventory.Shortage"].ToString());
             builder.OpenElement(30, "strong");
             builder.AddAttribute(31, "class", "mx-1 text-danger");
             builder.AddContent(32, NumberFormatHelper.FormatSmart(item.ShortageQuantity));
@@ -277,21 +278,21 @@
         builder.OpenElement(20, "span");
         builder.AddAttribute(21, "class", "text-muted");
         
-        builder.AddContent(22, "需求:");
+        builder.AddContent(22, L["Inventory.Required"].ToString());
         builder.OpenElement(23, "strong");
         builder.AddAttribute(24, "class", "mx-1");
         builder.AddContent(25, NumberFormatHelper.FormatSmart(child.RequiredQuantity));
         builder.CloseElement();
-        
-        builder.AddContent(26, " 庫存:");
+
+        builder.AddContent(26, " " + L["Inventory.Stock"].ToString());
         builder.OpenElement(27, "strong");
         builder.AddAttribute(28, "class", $"mx-1 {child.StatusClass}");
         builder.AddContent(29, NumberFormatHelper.FormatSmart(child.AvailableStock));
         builder.CloseElement();
-        
+
         if (child.ShortageQuantity > 0)
         {
-            builder.AddContent(30, " 缺少:");
+            builder.AddContent(30, " " + L["Inventory.Shortage"].ToString());
             builder.OpenElement(31, "strong");
             builder.AddAttribute(32, "class", "mx-1 text-danger");
             builder.AddContent(33, NumberFormatHelper.FormatSmart(child.ShortageQuantity));
@@ -334,11 +335,11 @@
         builder.OpenElement(3, "div");
         builder.AddAttribute(4, "class", "d-flex justify-content-between align-items-center");
         builder.OpenElement(5, "strong");
-        builder.AddContent(6, "庫存狀況摘要");
+        builder.AddContent(6, L["Inventory.SummaryTitle"].ToString());
         builder.CloseElement(); // strong
         builder.OpenElement(7, "small");
         builder.AddAttribute(8, "class", "text-muted");
-        builder.AddContent(9, "※ 數據來自資料庫，實際庫存請以現場為準");
+        builder.AddContent(9, L["Inventory.SummaryNote"].ToString());
         builder.CloseElement(); // small
         builder.CloseElement(); // d-flex
         

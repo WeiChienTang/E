@@ -87,13 +87,10 @@
             dropdown.style.setProperty('display', 'block', 'important');
             dropdown.style.setProperty('opacity', '1', 'important');
             dropdown.style.setProperty('visibility', 'visible', 'important');
-            
-            // 視覺樣式
-            dropdown.style.setProperty('background-color', '#fff', 'important');
-            dropdown.style.setProperty('border', '1px solid #dee2e6', 'important');
-            dropdown.style.setProperty('border-radius', '0.375rem', 'important');
-            dropdown.style.setProperty('box-shadow', '0 0.5rem 1rem rgba(0, 0, 0, 0.15)', 'important');
-            
+
+            // 視覺樣式（background-color、border、border-radius、box-shadow）
+            // 由 app.css 的 .searchable-dropdown.show 規則處理，以支援深色模式 CSS 變數
+
             // iOS 平滑滾動
             dropdown.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
         });

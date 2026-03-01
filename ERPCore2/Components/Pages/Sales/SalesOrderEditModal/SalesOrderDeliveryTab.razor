@@ -1,10 +1,11 @@
 @* 銷貨訂單 → 出貨記錄 Tab（唯讀） *@
 @inject ISalesDeliveryService SalesDeliveryService
+@inject IStringLocalizer<SharedResource> L
 
 @if (_isLoading)
 {
     <div class="text-muted py-4 px-2">
-        <i class="bi bi-hourglass-split me-2"></i>載入中...
+        <i class="bi bi-hourglass-split me-2"></i>@L["Label.Loading"]
     </div>
 }
 else
@@ -13,10 +14,10 @@ else
         <table class="table table-sm table-hover mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>出貨單號</th>
-                    <th>出貨日期</th>
-                    <th>客戶</th>
-                    <th class="text-end">金額（含稅）</th>
+                    <th>@L["Column.DeliveryCode"]</th>
+                    <th>@L["Column.DeliveryDate"]</th>
+                    <th>@L["Column.CustomerName"]</th>
+                    <th class="text-end">@L["Column.AmountWithTax"]</th>
                     <th style="width:60px"></th>
                 </tr>
             </thead>
@@ -30,7 +31,7 @@ else
                         <td class="text-end">@delivery.TotalAmountWithTax.ToString("N0")</td>
                         <td class="text-center">
                             <button type="button" class="btn btn-sm btn-outline-primary"
-                                    title="開啟出貨單"
+                                    title="@L["Button.OpenDelivery"]"
                                     @onclick="@(() => OnOpenDelivery.InvokeAsync(delivery.Id))">
                                 <i class="bi bi-box-arrow-up-right"></i>
                             </button>

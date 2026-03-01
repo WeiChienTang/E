@@ -56,6 +56,21 @@ else
     private bool _isLoading = false;
     private bool _showDeleteModal = false;
     private ProductSupplier? _deletingItem = null;
+    private int? _loadedSupplierId;
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SupplierId != _loadedSupplierId)
+        {
+            _loadedSupplierId = SupplierId;
+            if (SupplierId.HasValue && SupplierId.Value > 0)
+                await LoadAsync(SupplierId.Value);
+            else
+                Clear();
+        }
+    }
 
     // ===== 公開方法（供主組件透過 @ref 呼叫） =====
 
@@ -144,19 +159,6 @@ else
                         : "-";
                 }
             },
-            new()
-            {
-                Title = L["Column.IsPreferred"],
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Display,
-                Width = "55px",
-                TextAlign = "center",
-                DisplayFormatter = item =>
-                {
-                    if (item is not ProductSupplier ps) return "";
-                    return ps.IsPreferred ? "<span class=\"text-warning fw-bold\" title=\"常用廠商\">★</span>" : "";
-                }
-            }
         };
     }
 

@@ -1857,4 +1857,316 @@
   <data name="Button.OpenReturn" xml:space="preserve"><value>Open Return</value></data>
   <data name="Button.OpenOrder" xml:space="preserve"><value>Open Purchase Order</value></data>
   <data name="Button.OpenSetoff" xml:space="preserve"><value>Open Setoff</value></data>
+  <data name="Column.CustomerName" xml:space="preserve"><value>Customer</value></data>
+  <data name="Column.QuotationDate" xml:space="preserve"><value>Quotation Date</value></data>
+  <data name="Column.QuotationCode" xml:space="preserve"><value>Quotation No.</value></data>
+  <data name="Column.SalesOrderCode" xml:space="preserve"><value>Order No.</value></data>
+  <data name="Column.DeliveryCode" xml:space="preserve"><value>Delivery No.</value></data>
+  <data name="Column.DeliveryDate" xml:space="preserve"><value>Delivery Date</value></data>
+  <data name="Column.SalesReturnDate" xml:space="preserve"><value>Return Date</value></data>
+  <data name="Button.OpenSalesOrder" xml:space="preserve"><value>Open Sales Order</value></data>
+  <data name="Button.OpenDelivery" xml:space="preserve"><value>Open Delivery</value></data>
+  <data name="Button.OpenQuotation" xml:space="preserve"><value>Open Quotation</value></data>
+  <data name="Button.OpenSalesReturn" xml:space="preserve"><value>Open Sales Return</value></data>
+  <data name="Composition.SelectBOM" xml:space="preserve"><value>Select BOM Formula</value></data>
+  <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>Select BOM Formula - {0}</value></data>
+  <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>Search by formula code, spec, customer or category...</value></data>
+  <data name="Composition.NoMatch" xml:space="preserve"><value>No matching formulas found</value></data>
+  <data name="Composition.CurrentCustomer" xml:space="preserve"><value>Current Customer</value></data>
+  <data name="Composition.GeneralFormula" xml:space="preserve"><value>General Formula</value></data>
+  <data name="Composition.CustomerLabel" xml:space="preserve"><value>Customer: {0}</value></data>
+  <data name="Composition.SpecLabel" xml:space="preserve"><value>Spec: {0}</value></data>
+  <data name="Composition.CategoryLabel" xml:space="preserve"><value>Type: {0}</value></data>
+  <data name="Composition.ComponentCount" xml:space="preserve"><value>Components: {0}</value></data>
+  <data name="Composition.CreatedDate" xml:space="preserve"><value>Created: {0}</value></data>
+  <data name="Composition.CustomModeTitle" xml:space="preserve"><value>Custom (Select Components Manually)</value></data>
+  <data name="Composition.CustomModeDesc" xml:space="preserve"><value>Do not use existing formula; manually select components and set quantities</value></data>
+  <data name="Composition.NoBOMInfo" xml:space="preserve"><value>No BOM formula created for this product. Please select "Custom" mode to build the composition manually.</value></data>
+  <data name="Composition.EditBOM" xml:space="preserve"><value>Edit BOM Composition</value></data>
+  <data name="Composition.EditBOMWithProduct" xml:space="preserve"><value>Edit BOM Composition - {0}</value></data>
+  <data name="Composition.CustomModeSelectTitle" xml:space="preserve"><value>Custom Mode - Select Components</value></data>
+  <data name="Composition.CustomModeSelectDesc" xml:space="preserve"><value>Select components below; checked items can have quantity and unit edited in the table.</value></data>
+  <data name="Composition.SearchComponentPlaceholder" xml:space="preserve"><value>Search component code or name...</value></data>
+  <data name="Composition.NoMatchComponent" xml:space="preserve"><value>No matching components found</value></data>
+  <data name="Composition.PendingCount" xml:space="preserve"><value>{0} component(s) checked (not yet loaded)</value></data>
+  <data name="Composition.AddedCount" xml:space="preserve"><value>{0} component(s) added</value></data>
+  <data name="Column.ComponentItem" xml:space="preserve"><value>Item</value></data>
+  <data name="Label.NoRemarks" xml:space="preserve"><value>No Remarks</value></data>
+  <data name="Composition.EmptyMsgCustom" xml:space="preserve"><value>Click the "Add Component" button above to select components</value></data>
+  <data name="Composition.EmptyMsg" xml:space="preserve"><value>No components added yet</value></data>
+  <data name="Message.DuplicateComponent" xml:space="preserve"><value>Duplicate component: {0}. Please fix before closing.</value></data>
+  <data name="Inventory.CheckTitle" xml:space="preserve"><value>Order Inventory Check</value></data>
+  <data name="Inventory.CheckTitleWithOrder" xml:space="preserve"><value>Inventory Check - Order No. {0}</value></data>
+  <data name="Inventory.CannotLoad" xml:space="preserve"><value>Unable to load inventory information</value></data>
+  <data name="Inventory.LoadingMessage" xml:space="preserve"><value>Loading inventory information...</value></data>
+  <data name="Inventory.Required" xml:space="preserve"><value>Required:</value></data>
+  <data name="Inventory.Stock" xml:space="preserve"><value>Stock:</value></data>
+  <data name="Inventory.Shortage" xml:space="preserve"><value>Shortage:</value></data>
+  <data name="Inventory.SummaryTitle" xml:space="preserve"><value>Inventory Status Summary</value></data>
+  <data name="Inventory.SummaryNote" xml:space="preserve"><value>※ Data from database; verify actual stock on-site</value></data>
+  <data name="Schedule.BatchTransfer" xml:space="preserve"><value>Batch Transfer to Schedule</value></data>
+  <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>Batch Transfer to Schedule - {0}</value></data>
+  <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>Sales Order Info</value></data>
+  <data name="Schedule.OrderCodeLabel" xml:space="preserve"><value>Order No.</value></data>
+  <data name="Schedule.SchedulableCount" xml:space="preserve"><value>Schedulable Details</value></data>
+  <data name="Schedule.ScheduleSettings" xml:space="preserve"><value>Schedule Settings</value></data>
+  <data name="Schedule.SelectDetails" xml:space="preserve"><value>Select Details to Schedule</value></data>
+  <data name="Schedule.ScheduleDate" xml:space="preserve"><value>Schedule Date</value></data>
+  <data name="Schedule.TargetWarehouse" xml:space="preserve"><value>Target Warehouse</value></data>
+  <data name="Schedule.Creator" xml:space="preserve"><value>Created By</value></data>
+  <data name="Schedule.MergeSchedules" xml:space="preserve"><value>Merge into single schedule (recommended)</value></data>
+  <data name="Schedule.MergeSchedulesDesc" xml:space="preserve"><value>Checked: merge all selected details into one schedule | Unchecked: create separate schedule for each detail</value></data>
+  <data name="Schedule.NoSchedulableDetails" xml:space="preserve"><value>No schedulable details available</value></data>
+  <data name="Schedule.NoSchedulableHint" xml:space="preserve"><value>(Product must be marked as schedulable and have pending quantity)</value></data>
+  <data name="Schedule.SelectAll" xml:space="preserve"><value>Select All</value></data>
+  <data name="Schedule.CancelSelectAll" xml:space="preserve"><value>Deselect All</value></data>
+  <data name="Column.ScheduleSelect" xml:space="preserve"><value>Select</value></data>
+  <data name="Column.OrderedQty" xml:space="preserve"><value>Ordered</value></data>
+  <data name="Column.ScheduledQty" xml:space="preserve"><value>Scheduled</value></data>
+  <data name="Column.PendingQty" xml:space="preserve"><value>Pending</value></data>
+  <data name="Column.TransferQty" xml:space="preserve"><value>Transfer Qty</value></data>
+  <data name="Column.BOMStatus" xml:space="preserve"><value>BOM</value></data>
+  <data name="Column.ComponentStatus" xml:space="preserve"><value>Component Status</value></data>
+  <data name="Schedule.NotCalculated" xml:space="preserve"><value>Not Calculated</value></data>
+  <data name="Schedule.ShortMaterial" xml:space="preserve"><value>Short</value></data>
+  <data name="Schedule.Sufficient" xml:space="preserve"><value>Sufficient</value></data>
+  <data name="Schedule.NoBOMTitle" xml:space="preserve"><value>No BOM for this detail</value></data>
+  <data name="Schedule.SelectedInfo" xml:space="preserve"><value>Selected: {0} item(s)</value></data>
+  <data name="Schedule.TotalQty" xml:space="preserve"><value>Total Schedule Qty: {0}</value></data>
+  <data name="Schedule.HasNoBOMWarning" xml:space="preserve"><value>{0} selected detail(s) have no BOM composition.</value></data>
+  <data name="Schedule.HasShortageWarning" xml:space="preserve"><value>Some components have insufficient stock. Stock will be deducted (InProductionStock) when production starts and finished goods will be stored upon completion.</value></data>
+  <data name="Schedule.LoadingMessage" xml:space="preserve"><value>Processing...</value></data>
+  <data name="Schedule.SelectAtLeastOne" xml:space="preserve"><value>Please select at least one detail</value></data>
+  <data name="Schedule.NoBOMConfirm" xml:space="preserve"><value>{0} detail(s) have no BOM composition and will not create component requirements. Continue?</value></data>
+  <data name="Schedule.CountSuffix" xml:space="preserve"><value> records</value></data>
+  <data name="Message.ConfirmClearAll" xml:space="preserve"><value>Are you sure you want to clear all details?</value></data>
+  <data name="Composition.RemarksTooltip" xml:space="preserve"><value>Optional. Record remarks for this component (editable even after advancing).</value></data>
+  <data name="Label.Unknown" xml:space="preserve"><value>Unknown</value></data>
+
+  <!-- ===== Production ===== -->
+  <data name="Production.MaterialIssue" xml:space="preserve"><value>Material Issue</value></data>
+  <data name="Production.MaterialIssueTitle" xml:space="preserve"><value>Material Issue - {0}</value></data>
+  <data name="Production.MaterialIssueList" xml:space="preserve"><value>Material Issue List</value></data>
+  <data name="Production.CompletionRecord" xml:space="preserve"><value>Production Completion</value></data>
+  <data name="Production.CompletionTitle" xml:space="preserve"><value>Completion - {0}</value></data>
+  <data name="Production.CompletionEntry" xml:space="preserve"><value>Completion Entry</value></data>
+  <data name="Production.BOMConsumptionPreview" xml:space="preserve"><value>BOM Component Consumption Preview</value></data>
+  <data name="Production.ComponentNeeds" xml:space="preserve"><value>Component Requirements</value></data>
+  <data name="Production.Progress" xml:space="preserve"><value>Production Progress</value></data>
+  <data name="Production.ScheduleItems" xml:space="preserve"><value>Schedule Items</value></data>
+  <data name="Production.ScheduleItemTitle" xml:space="preserve"><value>Schedule Item - {0}</value></data>
+  <data name="Production.ScheduleItemDetails" xml:space="preserve"><value>Schedule Item Details</value></data>
+  <data name="Production.SelectScheduleDetails" xml:space="preserve"><value>Select Schedule Details</value></data>
+  <data name="Production.SelectScheduleDetailsTitle" xml:space="preserve"><value>Select Schedule Details - {0}</value></data>
+  <data name="Production.PendingDetails" xml:space="preserve"><value>Pending Schedule Details</value></data>
+  <!-- ===== Product ===== -->
+  <data name="Product.BarcodePrint" xml:space="preserve"><value>Product Barcode Print</value></data>
+  <data name="Product.NoBarcodeItems" xml:space="preserve"><value>No printable product barcodes</value></data>
+  <data name="Product.NoPrintableProducts" xml:space="preserve"><value>No printable products</value></data>
+  <data name="Product.A4BarcodeHint" xml:space="preserve"><value>Hint: One A4 sheet can print 24 barcodes</value></data>
+  <data name="Product.SelectList" xml:space="preserve"><value>Select List</value></data>
+  <!-- ===== Setoff ===== -->
+  <data name="Setoff.NoPaymentRecords" xml:space="preserve"><value>No payment records added</value></data>
+  <data name="Setoff.NoPrepaymentRecords" xml:space="preserve"><value>No prepayment records added</value></data>
+  <data name="Setoff.PaymentMethod" xml:space="preserve"><value>Payment Method</value></data>
+  <data name="Setoff.ReceivedAmount" xml:space="preserve"><value>Received Amount</value></data>
+  <data name="Setoff.PaymentAmount" xml:space="preserve"><value>Payment Amount</value></data>
+  <data name="Setoff.AllowanceAmount" xml:space="preserve"><value>Allowance Amount</value></data>
+  <data name="Setoff.BankCategory" xml:space="preserve"><value>Bank</value></data>
+  <data name="Setoff.CheckNumber" xml:space="preserve"><value>Check Number</value></data>
+  <data name="Setoff.DueDate" xml:space="preserve"><value>Due Date</value></data>
+  <data name="Setoff.AvailableBalance" xml:space="preserve"><value>Available Balance</value></data>
+  <data name="Setoff.PrepaymentType" xml:space="preserve"><value>Prepayment Type</value></data>
+  <data name="Setoff.ViewRelatedSetoff" xml:space="preserve"><value>View Related Setoff Documents</value></data>
+  <!-- ===== Journal ===== -->
+  <data name="Journal.BatchTransfer" xml:space="preserve"><value>Batch Journalize</value></data>
+  <data name="Journal.TransferAll" xml:space="preserve"><value>Journalize All ({0} records)</value></data>
+  <data name="Journal.Transfer" xml:space="preserve"><value>Journalize</value></data>
+  <data name="Journal.PendingCount" xml:space="preserve"><value>{0} pending</value></data>
+  <data name="Journal.PurchaseReceiving" xml:space="preserve"><value>Purchase Receiving</value></data>
+  <data name="Journal.PurchaseReturn" xml:space="preserve"><value>Purchase Return</value></data>
+  <data name="Journal.SalesDelivery" xml:space="preserve"><value>Sales Delivery</value></data>
+  <data name="Journal.SalesReturn" xml:space="preserve"><value>Sales Return</value></data>
+  <data name="Journal.SetoffDocument" xml:space="preserve"><value>Setoff Document (AR/AP)</value></data>
+  <data name="Journal.NoPendingPurchaseReceiving" xml:space="preserve"><value>No pending purchase receiving to journalize</value></data>
+  <data name="Journal.NoPendingPurchaseReturn" xml:space="preserve"><value>No pending purchase returns to journalize</value></data>
+  <data name="Journal.NoPendingSalesDelivery" xml:space="preserve"><value>No pending sales deliveries to journalize</value></data>
+  <data name="Journal.NoPendingSalesReturn" xml:space="preserve"><value>No pending sales returns to journalize</value></data>
+  <data name="Journal.NoPendingSetoff" xml:space="preserve"><value>No pending setoff documents to journalize</value></data>
+  <data name="Journal.ReceiptDate" xml:space="preserve"><value>Receipt Date</value></data>
+  <data name="Journal.ReturnDate" xml:space="preserve"><value>Return Date</value></data>
+  <data name="Journal.DeliveryDate" xml:space="preserve"><value>Delivery Date</value></data>
+  <data name="Journal.SetoffDate" xml:space="preserve"><value>Setoff Date</value></data>
+  <data name="Journal.PreTaxAmount" xml:space="preserve"><value>Pre-Tax Amount</value></data>
+  <data name="Journal.TaxAmount" xml:space="preserve"><value>Tax Amount</value></data>
+  <data name="Journal.TotalWithTax" xml:space="preserve"><value>Total incl. Tax</value></data>
+  <data name="Journal.WriteoffAmount" xml:space="preserve"><value>Writeoff Amount</value></data>
+  <data name="Journal.CollectionPayment" xml:space="preserve"><value>Received/Paid</value></data>
+  <data name="Journal.Allowance" xml:space="preserve"><value>Allowance</value></data>
+  <data name="Journal.AccountsReceivable" xml:space="preserve"><value>AR</value></data>
+  <data name="Journal.AccountsPayable" xml:space="preserve"><value>AP</value></data>
+  <data name="Journal.TransferSuccess" xml:space="preserve"><value>{0} journalized successfully</value></data>
+  <data name="Journal.TransferFailed" xml:space="preserve"><value>{0} journalize failed: {1}</value></data>
+  <data name="Journal.UnknownDocType" xml:space="preserve"><value>Unknown document type</value></data>
+  <data name="Journal.BatchSuccess" xml:space="preserve"><value>Batch journalize complete, {0} succeeded</value></data>
+  <data name="Journal.BatchPartialSuccess" xml:space="preserve"><value>Batch journalize complete: {0} succeeded, {1} failed</value></data>
+  <data name="Journal.NoEntryLines" xml:space="preserve"><value>No entry lines added</value></data>
+  <data name="Journal.TotalDebit" xml:space="preserve"><value>Total Debit: </value></data>
+  <data name="Journal.TotalCredit" xml:space="preserve"><value>Total Credit: </value></data>
+  <data name="Journal.Balanced" xml:space="preserve"><value>Balanced</value></data>
+  <data name="Journal.Difference" xml:space="preserve"><value>Difference</value></data>
+  <data name="Journal.AccountItem" xml:space="preserve"><value>Account</value></data>
+  <data name="Journal.DebitCredit" xml:space="preserve"><value>Dr/Cr</value></data>
+  <data name="Journal.Debit" xml:space="preserve"><value>Debit</value></data>
+  <data name="Journal.Credit" xml:space="preserve"><value>Credit</value></data>
+  <data name="Journal.Description" xml:space="preserve"><value>Description</value></data>
+  <!-- ===== Report ===== -->
+  <data name="Report.AccountsReceivableTitle" xml:space="preserve"><value>Accounts Receivable Report - Print Criteria</value></data>
+  <data name="Report.StatisticsDate" xml:space="preserve"><value>Statistics Date</value></data>
+  <data name="Report.AccountStatus" xml:space="preserve"><value>Account Status</value></data>
+  <data name="Report.IncludeSettled" xml:space="preserve"><value>Include Settled Accounts</value></data>
+  <data name="Report.OverdueOnly" xml:space="preserve"><value>Overdue Only</value></data>
+  <data name="Report.ARNoCustomerSelected" xml:space="preserve"><value>No customer selected; leave empty to print all customers' AR</value></data>
+  <!-- ===== Accounting additions ===== -->
+  <data name="Accounting.Inventory" xml:space="preserve"><value>Inventory</value></data>
+  <data name="Accounting.CreateProductSubAccountTitle" xml:space="preserve"><value>Create inventory sub-account for this product</value></data>
+  <!-- ===== Column additions ===== -->
+  <data name="Column.ComponentProduct" xml:space="preserve"><value>Component</value></data>
+  <data name="Column.RequiredQty" xml:space="preserve"><value>Required Qty</value></data>
+  <data name="Column.IssuedQty" xml:space="preserve"><value>Issued Qty</value></data>
+  <data name="Column.PendingIssueQty" xml:space="preserve"><value>Pending Issue</value></data>
+  <data name="Column.CurrentIssueQty" xml:space="preserve"><value>This Issue</value></data>
+  <data name="Column.UnitUsage" xml:space="preserve"><value>Unit Usage</value></data>
+  <data name="Column.CurrentConsumption" xml:space="preserve"><value>This Consumption</value></data>
+  <data name="Column.Barcode" xml:space="preserve"><value>Barcode</value></data>
+  <data name="Column.PrintQty" xml:space="preserve"><value>Print Qty</value></data>
+  <data name="Column.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Column.SupplierItemCode" xml:space="preserve"><value>Supplier Item Code</value></data>
+  <data name="Column.Price" xml:space="preserve"><value>Price</value></data>
+  <data name="Column.LeadTimeDays" xml:space="preserve"><value>Lead Time (days)</value></data>
+  <data name="Column.MinOrderQty" xml:space="preserve"><value>Min Order Qty</value></data>
+  <data name="Column.Unit" xml:space="preserve"><value>Unit</value></data>
+  <data name="Column.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Column.Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Column.Spec" xml:space="preserve"><value>Spec</value></data>
+  <data name="Column.OrderQty" xml:space="preserve"><value>Order Qty</value></data>
+  <data name="Column.ScheduleQty" xml:space="preserve"><value>Schedule Qty</value></data>
+  <data name="Column.CompletedQty" xml:space="preserve"><value>Completed</value></data>
+  <data name="Column.Closing" xml:space="preserve"><value>Close</value></data>
+  <data name="Column.IssuedMaterial" xml:space="preserve"><value>Issued</value></data>
+  <data name="Column.Stock" xml:space="preserve"><value>Stock</value></data>
+  <data name="Column.OrderDay" xml:space="preserve"><value>Order Date</value></data>
+  <data name="Column.DeliveryDay" xml:space="preserve"><value>Delivery Date</value></data>
+  <data name="Column.Customer" xml:space="preserve"><value>Customer</value></data>
+  <data name="Column.Type" xml:space="preserve"><value>Type</value></data>
+  <!-- ===== Label additions ===== -->
+  <data name="Label.Processing" xml:space="preserve"><value>Processing...</value></data>
+  <data name="Label.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Label.InProgress" xml:space="preserve"><value>In Progress</value></data>
+  <data name="Label.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Label.Discontinued" xml:space="preserve"><value>Discontinued</value></data>
+  <data name="Label.Closed" xml:space="preserve"><value>Closed</value></data>
+  <data name="Label.NotClosed" xml:space="preserve"><value>Open</value></data>
+  <data name="Label.PlannedQty" xml:space="preserve"><value>Planned Qty</value></data>
+  <data name="Label.CompletionQty" xml:space="preserve"><value>Completion Qty</value></data>
+  <data name="Label.RemainingQty" xml:space="preserve"><value>Remaining to record: </value></data>
+  <data name="Label.TotalIssueQty" xml:space="preserve"><value>Total This Issue: </value></data>
+  <data name="Label.ProductionQty" xml:space="preserve"><value>Production Qty: </value></data>
+  <data name="Label.Operator" xml:space="preserve"><value>Operator</value></data>
+  <data name="Label.StorageWarehouse" xml:space="preserve"><value>Target Warehouse</value></data>
+  <data name="Label.WarehouseLocation" xml:space="preserve"><value>Location</value></data>
+  <data name="Label.AutoCreateInventoryRecord" xml:space="preserve"><value>Auto-create inventory record</value></data>
+  <data name="Label.ScheduleCompleted" xml:space="preserve"><value>Schedule Completed</value></data>
+  <data name="Label.DropToSchedule" xml:space="preserve"><value>Release to add to schedule</value></data>
+  <data name="Label.HideAdded" xml:space="preserve"><value>Hide Added</value></data>
+  <data name="Label.Added" xml:space="preserve"><value>Added</value></data>
+  <data name="Label.AllCategories" xml:space="preserve"><value>All Categories</value></data>
+  <data name="Label.BarcodeSize" xml:space="preserve"><value>Barcode Size: </value></data>
+  <data name="Label.BarcodeSizeLarge" xml:space="preserve"><value>Large (70mm x 35mm)</value></data>
+  <data name="Label.BasicInfo" xml:space="preserve"><value>Basic Information</value></data>
+  <data name="Label.PlannedEndDate" xml:space="preserve"><value>Planned End Date</value></data>
+  <data name="Label.ActualStartDate" xml:space="preserve"><value>Actual Start Date</value></data>
+  <data name="Label.SourceOrder" xml:space="preserve"><value>Source Order</value></data>
+  <data name="Label.SalesOrderDetailId" xml:space="preserve"><value>Sales Order Detail ID</value></data>
+  <data name="Label.MaterialIssueCompleted" xml:space="preserve"><value>Issue Complete</value></data>
+  <data name="Label.PartialIssue" xml:space="preserve"><value>Partial Issue</value></data>
+  <data name="Label.InsufficientStock" xml:space="preserve"><value>Insufficient Stock</value></data>
+  <data name="Label.PendingIssue" xml:space="preserve"><value>Pending Issue</value></data>
+  <data name="Label.DateFrom" xml:space="preserve"><value>Date Range (From)</value></data>
+  <data name="Label.DateTo" xml:space="preserve"><value>Date Range (To)</value></data>
+  <data name="Label.AccountsReceivable" xml:space="preserve"><value>Accounts Receivable</value></data>
+  <data name="Label.AccountsPayable" xml:space="preserve"><value>Accounts Payable</value></data>
+  <data name="Label.OrderNumber" xml:space="preserve"><value>Order Number</value></data>
+  <data name="Label.SelectedAndTotal" xml:space="preserve"><value>{0} selected, Total schedule qty: {1}</value></data>
+  <!-- ===== Button additions ===== -->
+  <data name="Button.ConfirmIssue" xml:space="preserve"><value>Confirm Issue</value></data>
+  <data name="Button.ConfirmRecord" xml:space="preserve"><value>Confirm Record</value></data>
+  <data name="Button.TakeAll" xml:space="preserve"><value>Take All</value></data>
+  <data name="Button.ConfirmAdd" xml:space="preserve"><value>Confirm Add ({0})</value></data>
+  <data name="Button.Query" xml:space="preserve"><value>Query</value></data>
+  <data name="Button.ClearFilter" xml:space="preserve"><value>Clear Filter</value></data>
+  <!-- ===== Message additions ===== -->
+  <data name="Message.InsufficientStockWarning" xml:space="preserve"><value>Some components have insufficient stock. Please adjust issue quantities or replenish stock.</value></data>
+  <data name="Message.NoBOMComponents" xml:space="preserve"><value>This schedule item has no BOM components</value></data>
+  <data name="Message.NoScheduleItemInfo" xml:space="preserve"><value>Unable to load schedule item info</value></data>
+  <data name="Message.EnterIssueQty" xml:space="preserve"><value>Please enter issue quantity</value></data>
+  <data name="Message.StockInsufficientFor" xml:space="preserve"><value>Insufficient stock for the following components: {0}</value></data>
+  <data name="Message.SelectAtLeastOneProduct" xml:space="preserve"><value>Please select at least one product</value></data>
+  <data name="Message.BarcodePrintWindowOpened" xml:space="preserve"><value>Barcode print window opened (total {0} labels)</value></data>
+  <data name="Message.NoMatchingProducts" xml:space="preserve"><value>No matching products</value></data>
+  <data name="Message.SupplierAlreadyExists" xml:space="preserve"><value>This supplier already exists, please select another</value></data>
+  <data name="Message.NeedAtLeastOneSupplier" xml:space="preserve"><value>At least one supplier is required</value></data>
+  <data name="Message.DuplicateSupplier" xml:space="preserve"><value>Duplicate suppliers exist</value></data>
+  <data name="Message.CompletionExceedsRemaining" xml:space="preserve"><value>Completion qty cannot exceed remaining qty {0}</value></data>
+  <data name="Message.CompletionFailed" xml:space="preserve"><value>Completion record failed: {0}</value></data>
+  <data name="Message.InventoryAddSuccess" xml:space="preserve"><value>Inventory added successfully: {0}</value></data>
+  <data name="Message.InventoryAddFailed" xml:space="preserve"><value>Inventory add failed: {0}</value></data>
+  <data name="Message.NoWarehouseForInventory" xml:space="preserve"><value>Cannot determine target warehouse; inventory not updated</value></data>
+  <data name="Message.CreateCompletionFailed" xml:space="preserve"><value>Failed to create completion record: {0}</value></data>
+  <data name="Message.ProductionStarted" xml:space="preserve"><value>Production started</value></data>
+  <data name="Message.ScheduleItemNotFound" xml:space="preserve"><value>Schedule item data not found</value></data>
+  <data name="Message.NoSchedulableDetails" xml:space="preserve"><value>No schedulable details</value></data>
+  <data name="Message.DragOrderToSchedule" xml:space="preserve"><value>Drag an order from the left, or click the arrow button to add to schedule</value></data>
+  <data name="Message.NoPendingDetails" xml:space="preserve"><value>No pending schedule details</value></data>
+  <data name="Message.NoComponentNeeds" xml:space="preserve"><value>No component requirements</value></data>
+  <data name="Message.PaymentRecordRemoved" xml:space="preserve"><value>Payment record removed</value></data>
+  <data name="Message.PrepaymentRecordRemoved" xml:space="preserve"><value>Prepayment record removed</value></data>
+  <data name="Message.UsedAmountExceedsBalance" xml:space="preserve"><value>Used amount cannot exceed available balance {0}</value></data>
+  <data name="Message.UsedAmountBelowZero" xml:space="preserve"><value>Used amount cannot be less than 0</value></data>
+  <data name="Message.AmountBelowZero" xml:space="preserve"><value>Amount cannot be less than 0</value></data>
+  <data name="Message.SelectPrepaymentType" xml:space="preserve"><value>Please select a prepayment type</value></data>
+  <data name="Message.TransferTypeNeedsSource" xml:space="preserve"><value>Transfer type must have a source prepayment item</value></data>
+  <data name="Message.UsedAmountMustBePositive" xml:space="preserve"><value>Used amount must be greater than 0</value></data>
+  <data name="Message.AmountMustBePositive" xml:space="preserve"><value>Amount must be greater than 0</value></data>
+  <data name="Message.RecordNotSavedCannotQuery" xml:space="preserve"><value>This record has not been saved; cannot query related documents</value></data>
+  <data name="Message.InitARReportFailed" xml:space="preserve"><value>Failed to initialize AR report data</value></data>
+  <data name="Message.LoadCustomerFailed" xml:space="preserve"><value>Failed to load customer data</value></data>
+  <data name="Message.GenerateReportFailed" xml:space="preserve"><value>Failed to generate report</value></data>
+  <!-- ===== Placeholder additions ===== -->
+  <data name="Placeholder.SearchProductNameCode" xml:space="preserve"><value>Search product name/code...</value></data>
+  <data name="Placeholder.FilterBySpec" xml:space="preserve"><value>Filter by spec...</value></data>
+  <data name="Placeholder.SelectSupplier" xml:space="preserve"><value>Select Supplier</value></data>
+  <data name="Placeholder.EnterCode" xml:space="preserve"><value>Enter code</value></data>
+  <data name="Placeholder.SelectUnit" xml:space="preserve"><value>Select Unit</value></data>
+  <data name="Placeholder.Optional" xml:space="preserve"><value>Optional</value></data>
+  <data name="Placeholder.SearchAccountCodeName" xml:space="preserve"><value>Enter account code or name</value></data>
+  <data name="Placeholder.DescriptionOptional" xml:space="preserve"><value>Description (optional)</value></data>
+  <data name="Placeholder.SearchCustomerName" xml:space="preserve"><value>Enter customer name to search...</value></data>
+  <data name="Placeholder.SelectType" xml:space="preserve"><value>Select type..</value></data>
+  <data name="Placeholder.SelectPrepayment" xml:space="preserve"><value>Select prepayment item..</value></data>
+  <data name="Placeholder.SearchCodeNameStatus" xml:space="preserve"><value>Search code/product/status...</value></data>
+  <data name="Placeholder.SearchProductOrderCustomer" xml:space="preserve"><value>Search product/order/customer...</value></data>
+  <data name="Placeholder.SelectDefault" xml:space="preserve"><value>Please select..</value></data>
+  <!-- ===== Setoff additional ===== -->
+  <data name="Setoff.UnknownSource" xml:space="preserve"><value>Unknown Source</value></data>
+  <data name="Setoff.SourceDocumentCode" xml:space="preserve"><value>Source Document</value></data>
+  <data name="Setoff.TotalAmount" xml:space="preserve"><value>Total Amount</value></data>
+  <data name="Setoff.Amount" xml:space="preserve"><value>Amount</value></data>
+  <!-- ===== Label additional ===== -->
+  <data name="Label.ItemCount" xml:space="preserve"><value>items</value></data>
+  <!-- ===== Message additional ===== -->
+  <data name="Message.LoadBankPaymentMethodFailed" xml:space="preserve"><value>Failed to load bank and payment method data: {0}</value></data>
+  <data name="Message.LoadPrepaymentTypeFailed" xml:space="preserve"><value>Failed to load prepayment types: {0}</value></data>
+  <data name="Message.LoadAvailablePrepaymentFailed" xml:space="preserve"><value>Failed to load available prepayments: {0}</value></data>
+
 </root>

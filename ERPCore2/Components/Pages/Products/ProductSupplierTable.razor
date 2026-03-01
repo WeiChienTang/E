@@ -1,6 +1,7 @@
 @* 商品廠商管理組件 - 管理商品的多個廠商資訊 - 使用 InteractiveTableComponent 統一UI *@
 
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 @typeparam TProductSupplierEntity where TProductSupplierEntity : BaseEntity, new()
 @typeparam TProductEntity where TProductEntity : BaseEntity
 @typeparam TSupplierEntity where TSupplierEntity : BaseEntity
@@ -102,9 +103,9 @@
         return new List<InteractiveColumnDefinition>
         {
             // 廠商選擇欄位
-            new() 
-            { 
-                Title = "廠商", 
+            new()
+            {
+                Title = L["Column.Supplier"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "25%",
@@ -120,7 +121,7 @@
                                     disabled="@IsReadOnly"
                                     title="選擇供應此商品的廠商"
                                     @onchange="@(async (e) => await OnSupplierChanged((productSupplier, e.Value)))">
-                        <option value="">請選擇廠商</option>
+                        <option value="">@L["Placeholder.SelectSupplier"]</option>
                         @foreach (var option in Options)
                         {
                             <option value="@GetOptionId(option)">@GetOptionDisplayText(option)</option>
@@ -130,9 +131,9 @@
             },
             
             // 廠商商品編號 - 文字輸入
-            new() 
-            { 
-                Title = "廠商商品編號", 
+            new()
+            {
+                Title = L["Column.SupplierItemCode"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "20%",
@@ -145,7 +146,7 @@
                     return @<input type="text" 
                                    class="form-control" 
                                    value="@value"
-                                   placeholder="請輸入編號"
+                                   placeholder="@L["Placeholder.EnterCode"]"
                                    title="輸入廠商對此商品的商品編號或料號"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnSupplierProductCodeChanged((productSupplier, e.Value?.ToString())))" />;
@@ -153,9 +154,9 @@
             },
             
             // 報價 - 數字輸入
-            new() 
-            { 
-                Title = "報價", 
+            new()
+            {
+                Title = L["Column.Price"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
@@ -177,9 +178,9 @@
             },
             
             // 交期 - 數字輸入
-            new() 
-            { 
-                Title = "交期(天)", 
+            new()
+            {
+                Title = L["Column.LeadTimeDays"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
@@ -200,9 +201,9 @@
             },
             
             // 最小訂購量 - 數字輸入
-            new() 
-            { 
-                Title = "最小訂購量", 
+            new()
+            {
+                Title = L["Column.MinOrderQty"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
@@ -223,9 +224,9 @@
             },
             
             // 單位選擇欄位
-            new() 
-            { 
-                Title = "單位", 
+            new()
+            {
+                Title = L["Column.Unit"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
@@ -241,7 +242,7 @@
                                     disabled="@IsReadOnly"
                                     title="選擇廠商供應此商品的計量單位"
                                     @onchange="@(async (e) => await OnUnitChanged((productSupplier, e.Value)))">
-                        <option value="">請選擇單位</option>
+                        <option value="">@L["Placeholder.SelectUnit"]</option>
                         @foreach (var unit in UnitOptions)
                         {
                             <option value="@GetUnitOptionId(unit)">@GetUnitOptionDisplayText(unit)</option>
@@ -311,7 +312,7 @@
             var existingSupplierIds = Items.Where(i => i != productSupplier).Select(item => GetSupplierId(item)).Where(id => id.HasValue && id.Value > 0);
             if (existingSupplierIds.Any(id => id!.Value == supplierId))
             {
-                await NotificationService.ShowErrorAsync("此廠商已存在，請選擇其他廠商");
+                await NotificationService.ShowErrorAsync(L["Message.SupplierAlreadyExists"]);
                 SetSupplierId(productSupplier, null);
             }
             else
@@ -418,7 +419,7 @@
         
         if (!nonEmptyItems.Any())
         {
-            errors.Add("至少需要一個廠商");
+            errors.Add(L["Message.NeedAtLeastOneSupplier"]);
         }
         else
         {
@@ -426,7 +427,7 @@
             var supplierIds = nonEmptyItems.Select(item => GetSupplierId(item)).Where(id => id.HasValue).ToList();
             if (supplierIds.Count != supplierIds.Distinct().Count())
             {
-                errors.Add("存在重複的廠商");
+                errors.Add(L["Message.DuplicateSupplier"]);
             }
         }
           

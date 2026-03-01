@@ -5,16 +5,17 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ICompanyModuleService CompanyModuleService
 @inject INavigationPermissionService NavigationPermissionService
+@inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
-<PageTitle>批次轉傳票</PageTitle>
+<PageTitle>@L["Journal.BatchTransfer"]</PageTitle>
 
 @if (!_isModuleEnabled)
 {
     <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 60vh;">
         <i class="bi bi-lock-fill text-secondary" style="font-size: 4rem;"></i>
-        <h4 class="mt-3 text-secondary">此功能未開放</h4>
-        <p class="text-muted">您的系統目前未啟用此功能模組，請聯絡系統管理員。</p>
+        <h4 class="mt-3 text-secondary">@L["Module.NotAvailable"]</h4>
+        <p class="text-muted">@L["Module.DisabledMessage"]</p>
     </div>
 }
 else
@@ -26,11 +27,11 @@ else
         <div class="card-body">
             <div class="row g-3 align-items-end">
                 <div class="col-auto">
-                    <label class="form-label">日期範圍（由）</label>
+                    <label class="form-label">@L["Label.DateFrom"]</label>
                     <input type="date" class="form-control" @bind="filterFrom" />
                 </div>
                 <div class="col-auto">
-                    <label class="form-label">日期範圍（至）</label>
+                    <label class="form-label">@L["Label.DateTo"]</label>
                     <input type="date" class="form-control" @bind="filterTo" />
                 </div>
                 <div class="col-auto">
@@ -39,9 +40,9 @@ else
                         {
                             <span class="spinner-border spinner-border-sm me-1" role="status"></span>
                         }
-                        查詢
+                        @L["Button.Query"]
                     </button>
-                    <button class="btn btn-outline-secondary ms-2" @onclick="ClearFilter">清除篩選</button>
+                    <button class="btn btn-outline-secondary ms-2" @onclick="ClearFilter">@L["Button.ClearFilter"]</button>
                 </div>
                 <div class="col-auto ms-auto">
                     <button class="btn btn-success" @onclick="JournalizeAllAsync"
@@ -49,11 +50,11 @@ else
                         @if (isProcessing)
                         {
                             <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            <span>處理中...</span>
+                            <span>@L["Label.Processing"]</span>
                         }
                         else
                         {
-                            <span>全部轉傳票（@TotalPendingCount 筆）</span>
+                            <span>@string.Format(L["Journal.TransferAll"], TotalPendingCount)</span>
                         }
                     </button>
                 </div>
@@ -65,28 +66,28 @@ else
     <div class="card mb-3">
         <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showPurchaseReceiving = !showPurchaseReceiving)">
             <span class="me-2">@(showPurchaseReceiving ? "▼" : "▶")</span>
-            <strong>進貨入庫</strong>
-            <span class="badge bg-secondary ms-2">@purchaseReceivings.Count 筆待轉</span>
+            <strong>@L["Journal.PurchaseReceiving"]</strong>
+            <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], purchaseReceivings.Count)</span>
         </div>
         @if (showPurchaseReceiving)
         {
             <div class="card-body p-0">
                 @if (purchaseReceivings.Count == 0)
                 {
-                    <p class="text-muted p-3 mb-0">無待轉傳票的進貨入庫單</p>
+                    <p class="text-muted p-3 mb-0">@L["Journal.NoPendingPurchaseReceiving"]</p>
                 }
                 else
                 {
                     <table class="table table-sm table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>單號</th>
-                                <th>進貨日期</th>
-                                <th>供應商</th>
-                                <th class="text-end">未稅金額</th>
-                                <th class="text-end">稅額</th>
-                                <th class="text-end">含稅總額</th>
-                                <th class="text-center">操作</th>
+                                <th>@L["Field.Code"]</th>
+                                <th>@L["Journal.ReceiptDate"]</th>
+                                <th>@L["Field.Supplier"]</th>
+                                <th class="text-end">@L["Journal.PreTaxAmount"]</th>
+                                <th class="text-end">@L["Journal.TaxAmount"]</th>
+                                <th class="text-end">@L["Journal.TotalWithTax"]</th>
+                                <th class="text-center">@L["Label.Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -103,7 +104,7 @@ else
                                         <button class="btn btn-sm btn-outline-primary"
                                                 @onclick="@(() => JournalizeSingleAsync("PurchaseReceiving", doc.Id, doc.Code ?? ""))"
                                                 disabled="@isProcessing">
-                                            轉傳票
+                                            @L["Journal.Transfer"]
                                         </button>
                                     </td>
                                 </tr>
@@ -119,28 +120,28 @@ else
     <div class="card mb-3">
         <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showPurchaseReturn = !showPurchaseReturn)">
             <span class="me-2">@(showPurchaseReturn ? "▼" : "▶")</span>
-            <strong>進貨退回</strong>
-            <span class="badge bg-secondary ms-2">@purchaseReturns.Count 筆待轉</span>
+            <strong>@L["Journal.PurchaseReturn"]</strong>
+            <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], purchaseReturns.Count)</span>
         </div>
         @if (showPurchaseReturn)
         {
             <div class="card-body p-0">
                 @if (purchaseReturns.Count == 0)
                 {
-                    <p class="text-muted p-3 mb-0">無待轉傳票的進貨退回單</p>
+                    <p class="text-muted p-3 mb-0">@L["Journal.NoPendingPurchaseReturn"]</p>
                 }
                 else
                 {
                     <table class="table table-sm table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>單號</th>
-                                <th>退回日期</th>
-                                <th>供應商</th>
-                                <th class="text-end">未稅金額</th>
-                                <th class="text-end">稅額</th>
-                                <th class="text-end">含稅總額</th>
-                                <th class="text-center">操作</th>
+                                <th>@L["Field.Code"]</th>
+                                <th>@L["Journal.ReturnDate"]</th>
+                                <th>@L["Field.Supplier"]</th>
+                                <th class="text-end">@L["Journal.PreTaxAmount"]</th>
+                                <th class="text-end">@L["Journal.TaxAmount"]</th>
+                                <th class="text-end">@L["Journal.TotalWithTax"]</th>
+                                <th class="text-center">@L["Label.Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -157,7 +158,7 @@ else
                                         <button class="btn btn-sm btn-outline-primary"
                                                 @onclick="@(() => JournalizeSingleAsync("PurchaseReturn", doc.Id, doc.Code ?? ""))"
                                                 disabled="@isProcessing">
-                                            轉傳票
+                                            @L["Journal.Transfer"]
                                         </button>
                                     </td>
                                 </tr>
@@ -173,28 +174,28 @@ else
     <div class="card mb-3">
         <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showSalesDelivery = !showSalesDelivery)">
             <span class="me-2">@(showSalesDelivery ? "▼" : "▶")</span>
-            <strong>銷貨出貨</strong>
-            <span class="badge bg-secondary ms-2">@salesDeliveries.Count 筆待轉</span>
+            <strong>@L["Journal.SalesDelivery"]</strong>
+            <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], salesDeliveries.Count)</span>
         </div>
         @if (showSalesDelivery)
         {
             <div class="card-body p-0">
                 @if (salesDeliveries.Count == 0)
                 {
-                    <p class="text-muted p-3 mb-0">無待轉傳票的銷貨出貨單</p>
+                    <p class="text-muted p-3 mb-0">@L["Journal.NoPendingSalesDelivery"]</p>
                 }
                 else
                 {
                     <table class="table table-sm table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>單號</th>
-                                <th>出貨日期</th>
-                                <th>客戶</th>
-                                <th class="text-end">未稅金額</th>
-                                <th class="text-end">稅額</th>
-                                <th class="text-end">含稅總額</th>
-                                <th class="text-center">操作</th>
+                                <th>@L["Field.Code"]</th>
+                                <th>@L["Journal.DeliveryDate"]</th>
+                                <th>@L["Field.Customer"]</th>
+                                <th class="text-end">@L["Journal.PreTaxAmount"]</th>
+                                <th class="text-end">@L["Journal.TaxAmount"]</th>
+                                <th class="text-end">@L["Journal.TotalWithTax"]</th>
+                                <th class="text-center">@L["Label.Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -211,7 +212,7 @@ else
                                         <button class="btn btn-sm btn-outline-primary"
                                                 @onclick="@(() => JournalizeSingleAsync("SalesDelivery", doc.Id, doc.Code ?? ""))"
                                                 disabled="@isProcessing">
-                                            轉傳票
+                                            @L["Journal.Transfer"]
                                         </button>
                                     </td>
                                 </tr>
@@ -227,28 +228,28 @@ else
     <div class="card mb-3">
         <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showSetoffDocument = !showSetoffDocument)">
             <span class="me-2">@(showSetoffDocument ? "▼" : "▶")</span>
-            <strong>沖款單（應收／應付）</strong>
-            <span class="badge bg-secondary ms-2">@setoffDocuments.Count 筆待轉</span>
+            <strong>@L["Journal.SetoffDocument"]</strong>
+            <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], setoffDocuments.Count)</span>
         </div>
         @if (showSetoffDocument)
         {
             <div class="card-body p-0">
                 @if (setoffDocuments.Count == 0)
                 {
-                    <p class="text-muted p-3 mb-0">無待轉傳票的沖款單</p>
+                    <p class="text-muted p-3 mb-0">@L["Journal.NoPendingSetoff"]</p>
                 }
                 else
                 {
                     <table class="table table-sm table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>單號</th>
-                                <th>沖款日期</th>
-                                <th>類型</th>
-                                <th class="text-end">沖銷金額</th>
-                                <th class="text-end">收款/付款</th>
-                                <th class="text-end">折讓</th>
-                                <th class="text-center">操作</th>
+                                <th>@L["Field.Code"]</th>
+                                <th>@L["Journal.SetoffDate"]</th>
+                                <th>@L["Column.Type"]</th>
+                                <th class="text-end">@L["Journal.WriteoffAmount"]</th>
+                                <th class="text-end">@L["Journal.CollectionPayment"]</th>
+                                <th class="text-end">@L["Journal.Allowance"]</th>
+                                <th class="text-center">@L["Label.Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -260,11 +261,11 @@ else
                                     <td>
                                         @if (doc.IsAccountsReceivable)
                                         {
-                                            <span class="badge bg-info text-dark">應收</span>
+                                            <span class="badge bg-info text-dark">@L["Journal.AccountsReceivable"]</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-warning text-dark">應付</span>
+                                            <span class="badge bg-warning text-dark">@L["Journal.AccountsPayable"]</span>
                                         }
                                     </td>
                                     <td class="text-end">@doc.CurrentSetoffAmount.ToString("N2")</td>
@@ -274,7 +275,7 @@ else
                                         <button class="btn btn-sm btn-outline-primary"
                                                 @onclick="@(() => JournalizeSingleAsync("SetoffDocument", doc.Id, doc.Code ?? ""))"
                                                 disabled="@isProcessing">
-                                            轉傳票
+                                            @L["Journal.Transfer"]
                                         </button>
                                     </td>
                                 </tr>
@@ -290,28 +291,28 @@ else
     <div class="card mb-3">
         <div class="card-header d-flex align-items-center" style="cursor:pointer" @onclick="@(() => showSalesReturn = !showSalesReturn)">
             <span class="me-2">@(showSalesReturn ? "▼" : "▶")</span>
-            <strong>銷貨退回</strong>
-            <span class="badge bg-secondary ms-2">@salesReturns.Count 筆待轉</span>
+            <strong>@L["Journal.SalesReturn"]</strong>
+            <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], salesReturns.Count)</span>
         </div>
         @if (showSalesReturn)
         {
             <div class="card-body p-0">
                 @if (salesReturns.Count == 0)
                 {
-                    <p class="text-muted p-3 mb-0">無待轉傳票的銷貨退回單</p>
+                    <p class="text-muted p-3 mb-0">@L["Journal.NoPendingSalesReturn"]</p>
                 }
                 else
                 {
                     <table class="table table-sm table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>單號</th>
-                                <th>退回日期</th>
-                                <th>客戶</th>
-                                <th class="text-end">未稅金額</th>
-                                <th class="text-end">稅額</th>
-                                <th class="text-end">含稅總額</th>
-                                <th class="text-center">操作</th>
+                                <th>@L["Field.Code"]</th>
+                                <th>@L["Journal.ReturnDate"]</th>
+                                <th>@L["Field.Customer"]</th>
+                                <th class="text-end">@L["Journal.PreTaxAmount"]</th>
+                                <th class="text-end">@L["Journal.TaxAmount"]</th>
+                                <th class="text-end">@L["Journal.TotalWithTax"]</th>
+                                <th class="text-center">@L["Label.Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -328,7 +329,7 @@ else
                                         <button class="btn btn-sm btn-outline-primary"
                                                 @onclick="@(() => JournalizeSingleAsync("SalesReturn", doc.Id, doc.Code ?? ""))"
                                                 disabled="@isProcessing">
-                                            轉傳票
+                                            @L["Journal.Transfer"]
                                         </button>
                                     </td>
                                 </tr>
@@ -434,13 +435,13 @@ else
                 "SalesDelivery"     => await AutoGenerationService.JournalizeSalesDeliveryAsync(id, currentUser),
                 "SalesReturn"       => await AutoGenerationService.JournalizeSalesReturnAsync(id, currentUser),
                 "SetoffDocument"    => await AutoGenerationService.JournalizeSetoffDocumentAsync(id, currentUser),
-                _ => (false, "未知的單據類型")
+                _ => (false, L["Journal.UnknownDocType"].ToString())
             };
 
             if (success)
-                await NotificationService.ShowSuccessAsync($"{code} 轉傳票成功");
+                await NotificationService.ShowSuccessAsync(string.Format(L["Journal.TransferSuccess"], code));
             else
-                await NotificationService.ShowErrorAsync($"{code} 轉傳票失敗：{error}");
+                await NotificationService.ShowErrorAsync(string.Format(L["Journal.TransferFailed"], code, error));
         }
         finally
         {
@@ -485,9 +486,9 @@ else
             }
 
             if (failCount == 0)
-                await NotificationService.ShowSuccessAsync($"批次轉傳票完成，共成功 {successCount} 筆");
+                await NotificationService.ShowSuccessAsync(string.Format(L["Journal.BatchSuccess"], successCount));
             else
-                await NotificationService.ShowWarningAsync($"批次轉傳票完成：成功 {successCount} 筆，失敗 {failCount} 筆");
+                await NotificationService.ShowWarningAsync(string.Format(L["Journal.BatchPartialSuccess"], successCount, failCount));
         }
         finally
         {

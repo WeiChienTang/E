@@ -7,6 +7,7 @@
 @inject IProductCompositionService ProductCompositionService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -17,7 +18,7 @@
                    CloseOnBackdropClick="false"
                    CloseOnEscape="true"
                    IsLoading="@isLoading"
-                   LoadingMessage="載入中..."
+                   LoadingMessage="@L["Label.Loading"]"
                    HeaderButtons="@HeaderButtons"
                    BodyContent="@BodyContent" />
 
@@ -292,7 +293,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"{ex.Message}");
             compositionDetails = new List<TCompositionDetail>();
         }
         finally
@@ -305,9 +306,9 @@
 
     private string GetModalTitle()
     {
-        return string.IsNullOrEmpty(ProductName) 
-            ? "編輯 BOM 組成" 
-            : $"編輯 BOM 組成 - {ProductName}";
+        return string.IsNullOrEmpty(ProductName)
+            ? L["Composition.EditBOM"].ToString()
+            : string.Format(L["Composition.EditBOMWithProduct"].ToString(), ProductName);
     }
 
     // ===== Header Buttons =====
@@ -320,7 +321,7 @@
                     // 重新選擇按鈕（僅在有資料時顯示）
                     @if (compositionDetails.Any())
                     {
-                        <GenericButtonComponent Text="重選"
+                        <GenericButtonComponent Text="@L["Button.Reselect"].ToString()"
                                               Variant="ButtonVariant.DarkBlue"
                                               Size="ButtonSize.Small"
                                               OnClick="@HandleReselect" />
@@ -340,15 +341,15 @@
                 <div class="alert alert-info mb-3">
                     <div class="d-flex align-items-center mb-2">
                         <i class="bi bi-stars me-2"></i>
-                        <h6 class="mb-0">自定義模式 - 選擇組件</h6>
+                        <h6 class="mb-0">@L["Composition.CustomModeSelectTitle"]</h6>
                     </div>
-                    <p class="mb-3 small">請從下方選擇要加入的組件，勾選後可在下方表格編輯數量與單位。</p>
+                    <p class="mb-3 small">@L["Composition.CustomModeSelectDesc"]</p>
                     
                     <!-- 搜尋框 -->
                     <div class="mb-2">
                         <input type="text"
                                class="form-control form-control-sm"
-                               placeholder="搜尋組件編號或名稱..."
+                               placeholder="@L["Composition.SearchComponentPlaceholder"]"
                                @bind="componentSearchTerm"
                                @bind:event="oninput" />
                     </div>
@@ -376,18 +377,18 @@
                     {
                         <div class="text-center text-muted small mt-2">
                             <i class="bi bi-search me-1"></i>
-                            找不到符合條件的組件
+                            @L["Composition.NoMatchComponent"]
                         </div>
                     }
                     
                     <!-- 操作按鈕 -->
                     <div class="mt-3 d-flex gap-2 justify-content-end">
-                        <GenericButtonComponent Text="載入"
+                        <GenericButtonComponent Text="@L["Button.LoadData"].ToString()"
                                               Variant="ButtonVariant.Green"
                                               Size="ButtonSize.Small"
                                               IsDisabled="@(!pendingComponentIds.Any())"
                                               OnClick="@ConfirmComponentSelection" />
-                        <GenericButtonComponent Text="清除"
+                        <GenericButtonComponent Text="@L["Button.Cancel"].ToString()"
                                               Variant="ButtonVariant.Red"
                                               Size="ButtonSize.Small"
                                               OnClick="@ClearAllComponents" />
@@ -401,7 +402,7 @@
                 <div class="alert alert-warning mb-3 d-flex align-items-center justify-content-between">
                     <span>
                         <i class="bi bi-check2-square me-2"></i>
-                        已勾選 <strong>@pendingComponentIds.Count</strong> 個組件（尚未載入）
+                        @((MarkupString)string.Format(L["Composition.PendingCount"].ToString(), $"<strong>{pendingComponentIds.Count}</strong>"))
                     </span>
                 </div>
             }
@@ -412,11 +413,11 @@
                 <div class="alert alert-success mb-3 d-flex align-items-center justify-content-between">
                     <span>
                         <i class="bi bi-check-circle me-2"></i>
-                        已加入 <strong>@compositionDetails.Count</strong> 個組件
+                        @((MarkupString)string.Format(L["Composition.AddedCount"].ToString(), $"<strong>{compositionDetails.Count}</strong>"))
                     </span>
                     @if (!IsReadOnly)
                     {
-                        <GenericButtonComponent Text="繼續新增"
+                        <GenericButtonComponent Text="@L["Button.ContinueAdd"].ToString()"
                                               Variant="ButtonVariant.OutlineGreen"
                                               Size="ButtonSize.Small"
                                               IconClass="bi bi-plus-circle"
@@ -456,7 +457,7 @@
         // 組件商品
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "品項",
+            Title = L["Column.ComponentItem"].ToString(),
             PropertyName = "ComponentProductId",
             EmptyCheckPropertyName = "ComponentProduct",  //  檢查物件屬性而非 ID
             ColumnType = InteractiveColumnType.Select,
@@ -497,7 +498,7 @@
         // 數量
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "數量",
+            Title = L["Column.Quantity"].ToString(),
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Number,
             Width = "15%",
@@ -510,7 +511,7 @@
         // 單位（唯讀顯示，跟隨組件商品的預設單位）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "單位",
+            Title = L["Label.Unit"].ToString(),
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "15%",
@@ -527,11 +528,11 @@
         // 備註 - 使用 Custom 類型，確保有下一步時仍可編輯
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "備註",
+            Title = L["Label.Remarks"].ToString(),
             PropertyName = "Remarks",
             ColumnType = InteractiveColumnType.Custom,
             Width = "15%",
-            Tooltip = "選填。可記錄組件相關的備註資訊（有下一步時仍可編輯）",
+            Tooltip = L["Composition.RemarksTooltip"].ToString(),
             CustomTemplate = item =>
             {
                 var detail = (TCompositionDetail)item;
@@ -541,7 +542,7 @@
                 // 備註欄位只受 IsReadOnly 影響
                 if (IsReadOnly)
                 {
-                    var displayText = string.IsNullOrEmpty(remarks) ? "無備註" : remarks;
+                    var displayText = string.IsNullOrEmpty(remarks) ? L["Label.NoRemarks"].ToString() : remarks;
                     return @<div class="d-flex align-items-center" style="min-height: 31px;">
                         <span class="text-muted">@displayText</span>
                     </div>;
@@ -618,13 +619,13 @@
                         var first = g.First();
                         var productProp = first.GetType().GetProperty("ComponentProduct");
                         var product = productProp?.GetValue(first) as Product;
-                        return product?.Name ?? "未知組件";
+                        return product?.Name ?? L["Label.Unknown"].ToString();
                     })
                     .ToList();
 
                 if (duplicates.Any())
                 {
-                    await NotificationService.ShowWarningAsync($"組件重複：{string.Join("、", duplicates)}，請修正後再關閉");
+                    await NotificationService.ShowWarningAsync(string.Format(L["Message.DuplicateComponent"].ToString(), string.Join(", ", duplicates)));
                     // 阻止關閉 Modal（重新打開）
                     await IsVisibleChanged.InvokeAsync(true);
                     return;
@@ -639,7 +640,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"{ex.Message}");
             // 發生錯誤時重新打開 Modal
             await IsVisibleChanged.InvokeAsync(true);
         }
@@ -811,9 +812,9 @@
     {
         if (IsCustomMode)
         {
-            return "請點擊上方「新增組件」按鈕選擇要加入的組件";
+            return L["Composition.EmptyMsgCustom"].ToString();
         }
-        return "尚未新增組件";
+        return L["Composition.EmptyMsg"].ToString();
     }
     
     /// <summary>
@@ -827,8 +828,8 @@
         }
         
         // 顯示確認對話框
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要清除所有明細嗎？");
-        
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", L["Message.ConfirmClearAll"].ToString());
+
         if (confirmed)
         {
             compositionDetails.Clear();
@@ -845,7 +846,7 @@
             
             StateHasChanged();
             
-            await NotificationService.ShowSuccessAsync("已清空所有明細");
+            await NotificationService.ShowSuccessAsync(L["Message.DeleteSuccess"].ToString());
         }
     }
 }

@@ -2,17 +2,18 @@
 @inject ISubAccountService SubAccountService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IStringLocalizer<SharedResource> L
 
 @if (_productId <= 0)
 {
     <div class="text-muted py-3 px-2">
-        <i class="bi bi-info-circle me-2"></i>請先儲存商品資料，再查看會計子科目。
+        <i class="bi bi-info-circle me-2"></i>@L["Accounting.SaveFirst"]
     </div>
 }
 else if (_isLoading)
 {
     <div class="text-muted py-3 px-2">
-        <i class="bi bi-hourglass-split me-2"></i>載入中...
+        <i class="bi bi-hourglass-split me-2"></i>@L["Label.Loading"]
     </div>
 }
 else
@@ -21,25 +22,25 @@ else
         <table class="table table-sm table-hover mb-3">
             <thead class="table-light">
                 <tr>
-                    <th style="width:160px">子科目類型</th>
-                    <th style="width:140px">科目代碼</th>
-                    <th>科目名稱</th>
-                    <th style="width:90px">狀態</th>
+                    <th style="width:160px">@L["Accounting.SubAccountType"]</th>
+                    <th style="width:140px">@L["Accounting.AccountCode"]</th>
+                    <th>@L["Accounting.AccountName"]</th>
+                    <th style="width:90px">@L["Column.Status"]</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>存貨</td>
+                    <td>@L["Accounting.Inventory"]</td>
                     <td class="font-monospace small">@(_subAccount?.Code ?? "—")</td>
                     <td class="small">@(_subAccount?.Name ?? "—")</td>
                     <td>
                         @if (_subAccount != null)
                         {
-                            <span class="text-success small"><i class="bi bi-check-circle me-1"></i>已建立</span>
+                            <span class="text-success small"><i class="bi bi-check-circle me-1"></i>@L["Accounting.Created"]</span>
                         }
                         else
                         {
-                            <span class="text-warning small"><i class="bi bi-exclamation-circle me-1"></i>未建立</span>
+                            <span class="text-warning small"><i class="bi bi-exclamation-circle me-1"></i>@L["Accounting.NotCreated"]</span>
                         }
                     </td>
                 </tr>
@@ -50,11 +51,11 @@ else
     @if (_subAccount == null)
     {
         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                               Text="建立子科目"
+                               Text="@L["Accounting.CreateSubAccount"]"
                                OnClick="HandleCreateAsync"
                                IsLoading="@_isCreating"
                                IsDisabled="@_isCreating"
-                               Title="為此商品建立存貨子科目" />
+                               Title="@L["Accounting.CreateProductSubAccountTitle"]" />
     }
 }
 
@@ -105,7 +106,7 @@ else
         }
         catch (Exception)
         {
-            await NotificationService.ShowErrorAsync("建立子科目時發生錯誤");
+            await NotificationService.ShowErrorAsync(L["Accounting.CreateError"]);
         }
         finally
         {

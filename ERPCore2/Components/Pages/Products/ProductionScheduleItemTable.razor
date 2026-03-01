@@ -4,11 +4,12 @@
 @using ERPCore2.Models
 @using ERPCore2.Helpers
 @using ERPCore2.Models.Enums
+@inject IStringLocalizer<SharedResource> L
 
 <div class="card h-100">
     <div class="card-header bg-warning text-white py-2">
         <div class="d-flex justify-content-between align-items-center">
-            <span class="fw-bold"><i class="bi bi-calendar-check me-2"></i>排程項目</span>
+            <span class="fw-bold"><i class="bi bi-calendar-check me-2"></i>@L["Production.ScheduleItems"]</span>
         </div>
     </div>
     
@@ -33,7 +34,7 @@
                                        IsHoverable="true"
                                        IsBordered="true"
                                        GetRowCssClass="@GetRowCssClass"
-                                       EmptyMessage="從左側拖曳訂單到此處，或點擊箭頭按鈕加入排程"
+                                       EmptyMessage="@L["Message.DragOrderToSchedule"]"
                                        ActionsColumnWidth="60px"
                                        ActionsHeader="操作"
                                        EnableDrag="@(!IsReadOnly)"
@@ -47,7 +48,7 @@
                     <div class="text-center py-4">
                         <i class="bi bi-box-arrow-in-down fa-2x mb-2 text-primary"></i>
                         <br />
-                        <span class="text-primary fw-bold">放開滑鼠以加入排程</span>
+                        <span class="text-primary fw-bold">@L["Label.DropToSchedule"]</span>
                     </div>
                 </DropZoneEmptyTemplate>
             </InteractiveTableComponent>
@@ -126,16 +127,16 @@
     {
         // 判斷是否為「已停產」：已結案 且 已完成 < 排程量
         var isDiscontinued = item.IsClosed && item.CompletedQuantity < item.ScheduleQuantity;
-        
+
         if (isDiscontinued)
-            return "已停產";
-            
+            return L["Label.Discontinued"].ToString();
+
         return item.Status switch
         {
-            ProductionItemStatus.InProgress => "生產中",
-            ProductionItemStatus.Completed => "已完成",
-            ProductionItemStatus.Discontinued => "已停產",
-            _ => "生產中"
+            ProductionItemStatus.InProgress => L["Label.InProgress"].ToString(),
+            ProductionItemStatus.Completed => L["Label.Completed"].ToString(),
+            ProductionItemStatus.Discontinued => L["Label.Discontinued"].ToString(),
+            _ => L["Label.InProgress"].ToString()
         };
     }
     
@@ -147,20 +148,18 @@
         {
             new()
             {
-                Title = "商品編號",
+                Title = L["Column.ProductCode"],
                 PropertyName = nameof(ScheduleItemDto.ProductCode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "14%",
-                Tooltip = "商品的編號",
                 CellCssClass = "text-primary fw-bold span"
             },
             new()
             {
-                Title = "商品名稱",
+                Title = L["Column.ProductName"],
                 PropertyName = nameof(ScheduleItemDto.ProductName),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "18%",
-                Tooltip = "商品的名稱",
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
@@ -169,12 +168,11 @@
             },
             new()
             {
-                Title = "訂單量",
+                Title = L["Column.OrderQty"],
                 PropertyName = nameof(ScheduleItemDto.OrderQuantity),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "50px",
                 TextAlign = "right",
-                Tooltip = "根據訂單所得到的數量",
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
@@ -183,12 +181,11 @@
             },
             new()
             {
-                Title = "排程量",
+                Title = L["Column.ScheduleQty"],
                 PropertyName = nameof(ScheduleItemDto.ScheduleQuantity),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "50px",
                 TextAlign = "right",
-                Tooltip = "可編輯要排程的數量",
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
@@ -197,12 +194,11 @@
             },
             new()
             {
-                Title = "已完成",
+                Title = L["Column.CompletedQty"],
                 PropertyName = nameof(ScheduleItemDto.CompletedQuantity),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "50px",
                 TextAlign = "right",
-                Tooltip = "已完成數量",
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
@@ -215,12 +211,11 @@
             },
             new()
             {
-                Title = "結案",
+                Title = L["Column.Closing"],
                 PropertyName = nameof(ScheduleItemDto.IsClosed),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "30px",
                 TextAlign = "center",
-                Tooltip = "勾選後此項目不會顯示在排程入庫中",
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
@@ -229,12 +224,11 @@
             },
             new()
             {
-                Title = "狀態",
+                Title = L["Column.Status"],
                 PropertyName = nameof(ScheduleItemDto.Status),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "10%",
                 TextAlign = "center",
-                Tooltip = "當前排程的狀態，分為生產中、已完成和已停產",
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
@@ -312,11 +306,11 @@
             // 唯讀模式：顯示圖示
             if (item.IsClosed)
             {
-                <i class="bi bi-check-circle-fill text-secondary" title="已結案"></i>
+                <i class="bi bi-check-circle-fill text-secondary" title="@L["Label.Closed"]"></i>
             }
             else
             {
-                <i class="bi bi-circle text-muted" title="未結案"></i>
+                <i class="bi bi-circle text-muted" title="@L["Label.NotClosed"]"></i>
             }
         }
         else
@@ -326,7 +320,7 @@
                    class="form-check-input"
                    checked="@item.IsClosed"
                    @onchange="e => HandleIsClosedChange(item, e)"
-                   title="@(item.IsClosed ? "點擊取消結案" : "點擊標記結案")" />
+                   title="@(item.IsClosed ? L["Label.NotClosed"].ToString() : L["Label.Closed"].ToString())" />
         }
     };
     
@@ -352,14 +346,14 @@
         // 判斷是否為「已停產」：已結案 且 已完成 < 排程量
         var isDiscontinued = item.IsClosed && item.CompletedQuantity < item.ScheduleQuantity;
         
-        var (cssClass, text) = isDiscontinued 
-            ? ("bg-secondary", "已停產")
+        var (cssClass, text) = isDiscontinued
+            ? ("bg-secondary", L["Label.Discontinued"].ToString())
             : item.Status switch
             {
-                ProductionItemStatus.InProgress => ("bg-warning text-dark", "生產中"),
-                ProductionItemStatus.Completed => ("bg-success", "已完成"),
-                ProductionItemStatus.Discontinued => ("bg-secondary", "已停產"),
-                _ => ("bg-warning text-dark", "生產中")
+                ProductionItemStatus.InProgress => ("bg-warning text-dark", L["Label.InProgress"].ToString()),
+                ProductionItemStatus.Completed => ("bg-success", L["Label.Completed"].ToString()),
+                ProductionItemStatus.Discontinued => ("bg-secondary", L["Label.Discontinued"].ToString()),
+                _ => ("bg-warning text-dark", L["Label.InProgress"].ToString())
             };
         
         <span class="badge @cssClass">@text</span>

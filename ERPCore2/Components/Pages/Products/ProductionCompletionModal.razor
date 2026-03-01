@@ -10,6 +10,7 @@
 @inject IWarehouseLocationService WarehouseLocationService
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -20,7 +21,7 @@
                    CloseOnBackdropClick="false"
                    CloseOnEscape="true"
                    IsLoading="@isLoading"
-                   LoadingMessage="處理中..."
+                   LoadingMessage="@L["Label.Processing"]"
                    HeaderButtons="@HeaderButtons"
                    BodyContent="@BodyContent" />
 
@@ -173,9 +174,9 @@
     {
         if (scheduleItem?.Product != null)
         {
-            return $"完工登錄 - {scheduleItem.Product.Name}";
+            return string.Format(L["Production.CompletionTitle"], scheduleItem.Product.Name);
         }
-        return "生產完工登錄";
+        return L["Production.CompletionRecord"];
     }
 
     // ===== Header Buttons =====
@@ -183,11 +184,11 @@
     {
         <div class="w-100 d-flex align-items-center px-2">
             <div class="d-flex gap-2 ms-auto">
-                <GenericButtonComponent Text="取消"
+                <GenericButtonComponent Text="@L["Button.Cancel"]"
                                       Variant="ButtonVariant.Gray"
                                       Size="ButtonSize.Small"
                                       OnClick="@HandleCancel" />
-                <GenericButtonComponent Text="確認登錄"
+                <GenericButtonComponent Text="@L["Production.CompletionEntry"]"
                                       Variant="ButtonVariant.Green"
                                       Size="ButtonSize.Small"
                                       IsDisabled="@(!CanSubmit || isLoading)"
@@ -215,11 +216,11 @@
                                 </div>
                             </div>
                             <div class="col-md-3 text-center">
-                                <div class="small text-muted">計劃數量</div>
+                                <div class="small text-muted">@L["Label.PlannedQty"]</div>
                                 <div class="h5 mb-0 text-primary">@scheduleItem.ScheduledQuantity.ToString("N2")</div>
                             </div>
                             <div class="col-md-3 text-center">
-                                <div class="small text-muted">已完成</div>
+                                <div class="small text-muted">@L["Label.Completed"]</div>
                                 <div class="h5 mb-0 text-success">@scheduleItem.CompletedQuantity.ToString("N2")</div>
                             </div>
                         </div>
@@ -249,29 +250,29 @@
                 @* 完工登錄表單 *@
                 <div class="card mb-3">
                     <div class="card-header bg-light">
-                        <h6 class="mb-0"><i class="bi bi-pencil-square me-2"></i>完工登錄</h6>
+                        <h6 class="mb-0"><i class="bi bi-pencil-square me-2"></i>@L["Production.CompletionEntry"]</h6>
                     </div>
                     <div class="card-body">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label">完工數量 <span class="text-danger">*</span></label>
+                                <label class="form-label">@L["Label.CompletionQty"] <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input type="number" class="form-control" 
                                            @bind="completionQuantity" 
                                            min="0" 
                                            max="@RemainingQuantity" 
                                            step="1" />
-                                    <button class="btn btn-outline-secondary" type="button" 
+                                    <button class="btn btn-outline-secondary" type="button"
                                             @onclick="() => completionQuantity = RemainingQuantity">
-                                        全部
+                                        @L["Button.TakeAll"]
                                     </button>
                                 </div>
                                 <div class="form-text">
-                                    剩餘可登錄數量：<span class="text-warning fw-bold">@RemainingQuantity.ToString("N2")</span>
+                                    @L["Label.RemainingQty"]：<span class="text-warning fw-bold">@RemainingQuantity.ToString("N2")</span>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">操作人員</label>
+                                <label class="form-label">@L["Label.Operator"]</label>
                                 <select class="form-select" @bind="operatorEmployeeId">
                                     <option value="">-- 請選擇 --</option>
                                     @foreach (var employee in availableEmployees.Where(e => e.Status == EntityStatus.Active))
@@ -281,7 +282,7 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">入庫倉庫</label>
+                                <label class="form-label">@L["Label.StorageWarehouse"]</label>
                                 <select class="form-select" @onchange="OnWarehouseChanged" value="@targetWarehouseId">
                                     <option value="">-- 請選擇 --</option>
                                     @foreach (var warehouse in availableWarehouses.Where(w => w.Status == EntityStatus.Active))
@@ -291,7 +292,7 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">倉位</label>
+                                <label class="form-label">@L["Label.WarehouseLocation"]</label>
                                 <select class="form-select" @bind="targetWarehouseLocationId" disabled="@(!availableLocations.Any())">
                                     <option value="">-- 請選擇 --</option>
                                     @foreach (var location in availableLocations.Where(l => l.Status == EntityStatus.Active))
@@ -301,14 +302,14 @@
                                 </select>
                             </div>
                             <div class="col-12">
-                                <label class="form-label">備註</label>
-                                <textarea class="form-control" rows="2" @bind="remarks" placeholder="可選填"></textarea>
+                                <label class="form-label">@L["Label.Remarks"]</label>
+                                <textarea class="form-control" rows="2" @bind="remarks" placeholder="@L["Placeholder.Optional"]"></textarea>
                             </div>
                             <div class="col-12">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="autoCreateInventory" @bind="autoCreateInventory">
                                     <label class="form-check-label" for="autoCreateInventory">
-                                        自動建立入庫記錄
+                                        @L["Label.AutoCreateInventoryRecord"]
                                     </label>
                                 </div>
                             </div>
@@ -321,16 +322,16 @@
                 {
                     <div class="card">
                         <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="bi bi-list-check me-2"></i>BOM 組件消耗預覽</h6>
+                            <h6 class="mb-0"><i class="bi bi-list-check me-2"></i>@L["Production.BOMConsumptionPreview"]</h6>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-sm table-striped mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>組件商品</th>
-                                            <th class="text-end">單位用量</th>
-                                            <th class="text-end">本次消耗</th>
+                                            <th>@L["Column.ComponentProduct"]</th>
+                                            <th class="text-end">@L["Column.UnitUsage"]</th>
+                                            <th class="text-end">@L["Column.CurrentConsumption"]</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -362,7 +363,7 @@
             {
                 <div class="text-center py-5">
                     <i class="bi bi-inbox display-1 text-muted"></i>
-                    <p class="mt-2 text-muted">無法載入排程項目資訊</p>
+                    <p class="mt-2 text-muted">@L["Message.NoScheduleItemInfo"]</p>
                 </div>
             }
         </div>
@@ -375,7 +376,7 @@
         
         if (completionQuantity > RemainingQuantity)
         {
-            await NotificationService.ShowWarningAsync($"完工數量不可超過剩餘數量 {RemainingQuantity:N2}");
+            await NotificationService.ShowWarningAsync(string.Format(L["Message.CompletionExceedsRemaining"], RemainingQuantity));
             return;
         }
 
@@ -482,7 +483,7 @@
         
         if (!warehouseId.HasValue)
         {
-            await NotificationService.ShowWarningAsync("無法確定入庫倉庫，庫存未更新");
+            await NotificationService.ShowWarningAsync(L["Message.NoWarehouseForInventory"]);
             return;
         }
         

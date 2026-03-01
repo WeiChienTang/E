@@ -15,6 +15,7 @@
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -25,7 +26,7 @@
                    CloseOnBackdropClick="false"
                    CloseOnEscape="true"
                    IsLoading="@isLoading"
-                   LoadingMessage="處理中..."
+                   LoadingMessage="@L["Schedule.LoadingMessage"]"
                    HeaderButtons="@HeaderButtons"
                    BodyContent="@BodyContent" />
 
@@ -161,7 +162,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"{ex.Message}");
         }
         finally
         {
@@ -197,7 +198,7 @@
                 {
                     SalesOrderDetailId = detail.Id,
                     ProductId = detail.ProductId,
-                    ProductName = detail.Product?.Name ?? "未知商品",
+                    ProductName = detail.Product?.Name ?? L["Label.Unknown"].ToString(),
                     ProductCode = detail.Product?.Code ?? "",
                     OrderQuantity = detail.OrderQuantity,
                     ScheduledQuantity = detail.ScheduledQuantity,
@@ -211,7 +212,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入明細失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"{ex.Message}");
         }
     }
 
@@ -259,7 +260,7 @@
             detail.ComponentPreviews.Add(new ComponentPreviewItem
             {
                 ComponentProductId = bomDetail.ComponentProductId,
-                ComponentName = bomDetail.ComponentProduct?.Name ?? "未知商品",
+                ComponentName = bomDetail.ComponentProduct?.Name ?? L["Label.Unknown"].ToString(),
                 ComponentCode = bomDetail.ComponentProduct?.Code,
                 QuantityPerUnit = bomDetail.Quantity,
                 TotalQuantity = totalNeeded,
@@ -309,7 +310,7 @@
 
     private string GetModalTitle()
     {
-        return $"批次轉排程 - {SalesOrderCode ?? "銷貨訂單"}";
+        return string.Format(L["Schedule.BatchTransferWithCode"].ToString(), SalesOrderCode ?? "-");
     }
 
     private string GetCreatedByEmployeeName()
@@ -330,12 +331,12 @@
     {
         <div class="w-100 d-flex align-items-center px-2">
             <div class="d-flex gap-2 ms-auto">
-                <GenericButtonComponent Text="確認"
+                <GenericButtonComponent Text="@L["Button.Confirm"].ToString()"
                                       Variant="ButtonVariant.Green"
                                       Size="ButtonSize.Small"
                                       IsDisabled="@(!CanSubmit)"
                                       OnClick="@HandleSubmit" />
-                <GenericButtonComponent Text="取消"
+                <GenericButtonComponent Text="@L["Button.Cancel"].ToString()"
                                       Variant="ButtonVariant.Red"
                                       Size="ButtonSize.Small"
                                       OnClick="@HandleCancel" />
@@ -350,17 +351,17 @@
             @* 訂單資訊 *@
             <div class="card mb-3">
                 <div class="card-header bg-light py-2">
-                    <i class="bi bi-info-circle me-2"></i>銷貨訂單資訊
+                    <i class="bi bi-info-circle me-2"></i>@L["Schedule.SalesOrderInfo"]
                 </div>
                 <div class="card-body py-2">
                     <div class="row">
                         <div class="col-md-6">
-                            <small class="text-muted">訂單單號</small>
+                            <small class="text-muted">@L["Schedule.OrderCodeLabel"]</small>
                             <div class="fw-bold">@(SalesOrderCode ?? "-")</div>
                         </div>
                         <div class="col-md-6">
-                            <small class="text-muted">可轉排程明細數</small>
-                            <div class="fw-bold text-primary">@schedulableDetails.Count 筆</div>
+                            <small class="text-muted">@L["Schedule.SchedulableCount"]</small>
+                            <div class="fw-bold text-primary">@schedulableDetails.Count @L["Schedule.CountSuffix"]</div>
                         </div>
                     </div>
                 </div>
@@ -369,20 +370,20 @@
             @* 排程設定 *@
             <div class="card mb-3">
                 <div class="card-header bg-light py-2">
-                    <i class="bi bi-gear me-2"></i>排程設定
+                    <i class="bi bi-gear me-2"></i>@L["Schedule.ScheduleSettings"]
                 </div>
                 <div class="card-body py-2">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label small">排程日期</label>
-                            <input type="date" 
-                                   class="form-control form-control-sm" 
+                            <label class="form-label small">@L["Schedule.ScheduleDate"]</label>
+                            <input type="date"
+                                   class="form-control form-control-sm"
                                    @bind="scheduleDate" />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small">入庫倉庫</label>
+                            <label class="form-label small">@L["Schedule.TargetWarehouse"]</label>
                             <select class="form-select form-select-sm" @bind="selectedWarehouseId">
-                                <option value="">-- 請選擇 --</option>
+                                <option value="">-- @L["Column.ScheduleSelect"] --</option>
                                 @foreach (var wh in availableWarehouses)
                                 {
                                     <option value="@wh.Id">@wh.Name</option>
@@ -390,10 +391,10 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small">製單人員</label>
-                            <input type="text" 
-                                   class="form-control form-control-sm" 
-                                   value="@GetCreatedByEmployeeName()" 
+                            <label class="form-label small">@L["Schedule.Creator"]</label>
+                            <input type="text"
+                                   class="form-control form-control-sm"
+                                   value="@GetCreatedByEmployeeName()"
                                    readonly />
                         </div>
                     </div>
@@ -402,10 +403,10 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" @bind="shouldMergeSchedules" id="mergeSchedulesCheck">
                                 <label class="form-check-label small" for="mergeSchedulesCheck">
-                                    合併為單一排程單（推薦）
+                                    @L["Schedule.MergeSchedules"]
                                 </label>
                                 <small class="text-muted d-block">
-                                    勾選：所有選中的明細合併為一張排程單 | 不勾選：每筆明細分別建立排程單
+                                    @L["Schedule.MergeSchedulesDesc"]
                                 </small>
                             </div>
                         </div>
@@ -416,8 +417,8 @@
             @* 明細選擇 *@
             <div class="card mb-3">
                 <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-list-check me-2"></i>選擇要轉排程的明細</span>
-                    <GenericButtonComponent Text="@(IsAllSelected() ? "取消全選" : "全選")"
+                    <span><i class="bi bi-list-check me-2"></i>@L["Schedule.SelectDetails"]</span>
+                    <GenericButtonComponent Text="@(IsAllSelected() ? L["Schedule.CancelSelectAll"].ToString() : L["Schedule.SelectAll"].ToString())"
                                           Variant="ButtonVariant.Blue"
                                           Size="ButtonSize.Small"
                                           OnClick="@ToggleSelectAll" />
@@ -429,14 +430,14 @@
                             <table class="table table-sm table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 5%" class="text-center">選擇</th>
-                                        <th style="width: 30%">商品</th>
-                                        <th class="text-end" style="width: 10%">訂購</th>
-                                        <th class="text-end" style="width: 10%">已排程</th>
-                                        <th class="text-end" style="width: 10%">待排程</th>
-                                        <th style="width: 15%">轉排程數量</th>
-                                        <th class="text-center" style="width: 10%">BOM</th>
-                                        <th class="text-center" style="width: 10%">組件狀態</th>
+                                        <th style="width: 5%" class="text-center">@L["Column.ScheduleSelect"]</th>
+                                        <th style="width: 30%">@L["Column.Product"]</th>
+                                        <th class="text-end" style="width: 10%">@L["Column.OrderedQty"]</th>
+                                        <th class="text-end" style="width: 10%">@L["Column.ScheduledQty"]</th>
+                                        <th class="text-end" style="width: 10%">@L["Column.PendingQty"]</th>
+                                        <th style="width: 15%">@L["Column.TransferQty"]</th>
+                                        <th class="text-center" style="width: 10%">@L["Column.BOMStatus"]</th>
+                                        <th class="text-center" style="width: 10%">@L["Column.ComponentStatus"]</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -474,7 +475,7 @@
                                                 }
                                                 else
                                                 {
-                                                    <span class="badge bg-warning text-dark" title="此明細無 BOM 組成">⚠ 無</span>
+                                                    <span class="badge bg-warning text-dark" title="@L["Schedule.NoBOMTitle"]">⚠ @L["Label.None"]</span>
                                                 }
                                             </td>
                                             <td class="text-center">
@@ -484,15 +485,15 @@
                                                 }
                                                 else if (!detail.ComponentPreviews.Any())
                                                 {
-                                                    <span class="badge bg-secondary">未計算</span>
+                                                    <span class="badge bg-secondary">@L["Schedule.NotCalculated"]</span>
                                                 }
                                                 else if (hasShortage)
                                                 {
-                                                    <span class="badge bg-danger" title="部分組件庫存不足">⚠ 缺料</span>
+                                                    <span class="badge bg-danger" title="@L["Schedule.HasShortageWarning"]">⚠ @L["Schedule.ShortMaterial"]</span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="badge bg-success">✓ 充足</span>
+                                                    <span class="badge bg-success">✓ @L["Schedule.Sufficient"]</span>
                                                 }
                                             </td>
                                         </tr>
@@ -505,8 +506,8 @@
                     {
                         <div class="text-center text-muted py-4">
                             <i class="bi bi-inbox fs-1"></i>
-                            <p class="mt-2">沒有可轉排程的明細</p>
-                            <small>（明細的商品必須設定為「可轉排程」且有待排程數量）</small>
+                            <p class="mt-2">@L["Schedule.NoSchedulableDetails"]</p>
+                            <small>@L["Schedule.NoSchedulableHint"]</small>
                         </div>
                     }
                 </div>
@@ -519,29 +520,29 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <span>
                             <i class="bi bi-check-circle me-2"></i>
-                            <strong>已選擇：</strong>@GetSelectedCount() 項明細
+                            @((MarkupString)string.Format(L["Schedule.SelectedInfo"].ToString(), $"<strong>{GetSelectedCount()}</strong>"))
                         </span>
                         <span>
-                            <strong>總排程數量：</strong>@NumberFormatHelper.FormatSmart(GetTotalScheduleQuantity())
+                            @((MarkupString)string.Format(L["Schedule.TotalQty"].ToString(), $"<strong>{NumberFormatHelper.FormatSmart(GetTotalScheduleQuantity())}</strong>"))
                         </span>
                     </div>
                 </div>
             }
-            
+
             @* 警告訊息 *@
             @if (schedulableDetails.Any(d => d.IsSelected && !d.HasBom))
             {
                 <div class="alert alert-warning mb-3 py-2">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>注意：</strong>有 @schedulableDetails.Count(d => d.IsSelected && !d.HasBom) 項選中的明細沒有 BOM 組成。
+                    @((MarkupString)string.Format(L["Schedule.HasNoBOMWarning"].ToString(), $"<strong>{schedulableDetails.Count(d => d.IsSelected && !d.HasBom)}</strong>"))
                 </div>
             }
-            
+
             @if (schedulableDetails.Any(d => d.IsSelected && d.ComponentPreviews.Any(c => c.Shortage > 0)))
             {
                 <div class="alert alert-warning mb-0 py-2">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>注意：</strong>部分組件庫存不足。開始生產時將扣除組件庫存（InProductionStock），完成後成品將入庫。
+                    @L["Schedule.HasShortageWarning"]
                 </div>
             }
         </div>
@@ -557,15 +558,15 @@
         
         if (!selectedItems.Any())
         {
-            await NotificationService.ShowWarningAsync("請至少選擇一項明細");
+            await NotificationService.ShowWarningAsync(L["Schedule.SelectAtLeastOne"].ToString());
             return;
         }
-        
+
         // 檢查是否有明細沒有 BOM
         var itemsWithoutBom = selectedItems.Where(d => !d.HasBom).ToList();
         if (itemsWithoutBom.Any())
         {
-            var confirmMessage = $"有 {itemsWithoutBom.Count} 項明細沒有 BOM 組成，這些明細將不會建立組件需求。是否繼續？";
+            var confirmMessage = string.Format(L["Schedule.NoBOMConfirm"].ToString(), itemsWithoutBom.Count);
             var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
             if (!confirmed) return;
         }
@@ -586,7 +587,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"轉排程失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"{ex.Message}");
         }
         finally
         {
@@ -619,7 +620,7 @@
             var scheduleResult = await ProductionScheduleService.CreateAsync(schedule);
             if (!scheduleResult.IsSuccess)
             {
-                await NotificationService.ShowErrorAsync($"建立排程失敗：{scheduleResult.ErrorMessage}");
+                await NotificationService.ShowErrorAsync($"{scheduleResult.ErrorMessage}");
                 return;
             }
 
@@ -643,7 +644,7 @@
                 var itemResult = await ProductionScheduleItemService.CreateAsync(scheduleItem);
                 if (!itemResult.IsSuccess)
                 {
-                    await NotificationService.ShowWarningAsync($"建立排程項目失敗（{item.ProductName}）：{itemResult.ErrorMessage}");
+                    await NotificationService.ShowWarningAsync($"{item.ProductName}: {itemResult.ErrorMessage}");
                     continue;
                 }
 
@@ -667,7 +668,7 @@
                         
                     if (!detailsResult.IsSuccess)
                     {
-                        await NotificationService.ShowWarningAsync($"建立組件明細時發生問題（{item.ProductName}）：{detailsResult.ErrorMessage}");
+                        await NotificationService.ShowWarningAsync($"{item.ProductName}: {detailsResult.ErrorMessage}");
                     }
                 }
 
@@ -682,7 +683,7 @@
                 successCount++;
             }
 
-            await NotificationService.ShowSuccessAsync($"成功建立生產排程：{schedule.Code}（包含 {successCount} 項明細）");
+            await NotificationService.ShowSuccessAsync(L["Message.SaveSuccess"].ToString());
 
             // 通知父組件
             if (OnScheduleCreated.HasDelegate)
@@ -694,7 +695,7 @@
         }
         catch (Exception ex)
         {
-            throw new Exception($"建立合併排程失敗：{ex.Message}", ex);
+            throw new Exception(ex.Message, ex);
         }
     }
     
@@ -727,7 +728,7 @@
                 var scheduleResult = await ProductionScheduleService.CreateAsync(schedule);
                 if (!scheduleResult.IsSuccess)
                 {
-                    await NotificationService.ShowWarningAsync($"建立排程失敗（{item.ProductName}）：{scheduleResult.ErrorMessage}");
+                    await NotificationService.ShowWarningAsync($"{item.ProductName}: {scheduleResult.ErrorMessage}");
                     continue;
                 }
 
@@ -748,7 +749,7 @@
                 var itemResult = await ProductionScheduleItemService.CreateAsync(scheduleItem);
                 if (!itemResult.IsSuccess)
                 {
-                    await NotificationService.ShowWarningAsync($"建立排程項目失敗（{item.ProductName}）：{itemResult.ErrorMessage}");
+                    await NotificationService.ShowWarningAsync($"{item.ProductName}: {itemResult.ErrorMessage}");
                     continue;
                 }
 
@@ -772,7 +773,7 @@
                         
                     if (!detailsResult.IsSuccess)
                     {
-                        await NotificationService.ShowWarningAsync($"建立組件明細時發生問題（{item.ProductName}）：{detailsResult.ErrorMessage}");
+                        await NotificationService.ShowWarningAsync($"{item.ProductName}: {detailsResult.ErrorMessage}");
                     }
                 }
 
@@ -788,7 +789,7 @@
                 lastSchedule = schedule;
             }
 
-            await NotificationService.ShowSuccessAsync($"成功建立 {successCount} 張生產排程");
+            await NotificationService.ShowSuccessAsync(L["Message.SaveSuccess"].ToString());
 
             // 通知父組件（傳遞最後一張排程）
             if (OnScheduleCreated.HasDelegate && lastSchedule != null)
@@ -800,7 +801,7 @@
         }
         catch (Exception ex)
         {
-            throw new Exception($"建立分別排程失敗：{ex.Message}", ex);
+            throw new Exception(ex.Message, ex);
         }
     }
 

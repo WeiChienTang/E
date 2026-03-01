@@ -8,6 +8,7 @@
 @inject IInventoryStockDetailService InventoryStockDetailService
 @inject IWarehouseService WarehouseService
 @inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -18,7 +19,7 @@
                    CloseOnBackdropClick="false"
                    CloseOnEscape="true"
                    IsLoading="@isLoading"
-                   LoadingMessage="處理中..."
+                   LoadingMessage="@L["Label.Processing"]"
                    HeaderButtons="@HeaderButtons"
                    BodyContent="@BodyContent" />
 
@@ -131,9 +132,9 @@
     {
         if (scheduleItem?.Product != null)
         {
-            return $"組件領料 - {scheduleItem.Product.Name}";
+            return string.Format(L["Production.MaterialIssueTitle"], scheduleItem.Product.Name);
         }
-        return "組件領料";
+        return L["Production.MaterialIssue"];
     }
 
     // ===== Header Buttons =====
@@ -141,11 +142,11 @@
     {
         <div class="w-100 d-flex align-items-center px-2">
             <div class="d-flex gap-2 ms-auto">
-                <GenericButtonComponent Text="取消"
+                <GenericButtonComponent Text="@L["Button.Cancel"]"
                                       Variant="ButtonVariant.Gray"
                                       Size="ButtonSize.Small"
                                       OnClick="@HandleCancel" />
-                <GenericButtonComponent Text="確認領料"
+                <GenericButtonComponent Text="@L["Button.ConfirmIssue"]"
                                       Variant="ButtonVariant.Yellow"
                                       Size="ButtonSize.Small"
                                       IsDisabled="@(!CanSubmit || isLoading)"
@@ -169,17 +170,17 @@
                                     <i class="bi bi-box me-2"></i>@(scheduleItem.Product?.Name ?? "-")
                                 </h6>
                                 <div class="small text-muted">
-                                    生產數量：<span class="text-primary fw-bold">@scheduleItem.ScheduledQuantity.ToString("N2")</span>
+                                    @L["Label.ProductionQty"]：<span class="text-primary fw-bold">@scheduleItem.ScheduledQuantity.ToString("N2")</span>
                                 </div>
                             </div>
                             <div class="col-md-4 text-end">
                                 @{
                                     var statusBadge = scheduleItem.ProductionItemStatus switch
                                     {
-                                        ProductionItemStatus.Pending => ("bg-secondary", "待生產"),
-                                        ProductionItemStatus.InProgress => ("bg-warning text-dark", "生產中"),
-                                        ProductionItemStatus.Completed => ("bg-success", "已完成"),
-                                        _ => ("bg-info", "未知")
+                                        ProductionItemStatus.Pending => ("bg-secondary", L["Label.Pending"].ToString()),
+                                        ProductionItemStatus.InProgress => ("bg-warning text-dark", L["Label.InProgress"].ToString()),
+                                        ProductionItemStatus.Completed => ("bg-success", L["Label.Completed"].ToString()),
+                                        _ => ("bg-info", L["Label.Unknown"].ToString())
                                     };
                                 }
                                 <span class="badge @statusBadge.Item1">@statusBadge.Item2</span>
@@ -193,23 +194,21 @@
                 {
                     <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <div>
-                            <strong>注意：</strong>部分組件庫存不足，請調整領料數量或先進行採購補貨。
-                        </div>
+                        <div>@L["Message.InsufficientStockWarning"]</div>
                     </div>
                 }
 
                 @* 組件領料清單 *@
                 <div class="card">
                     <div class="card-header bg-light">
-                        <h6 class="mb-0"><i class="bi bi-list-check me-2"></i>組件領料清單</h6>
+                        <h6 class="mb-0"><i class="bi bi-list-check me-2"></i>@L["Production.MaterialIssueList"]</h6>
                     </div>
                     <div class="card-body p-0">
                         @if (!issueItems.Any())
                         {
                             <div class="text-center py-4">
                                 <i class="bi bi-inbox display-4 text-muted"></i>
-                                <p class="mt-2 text-muted">此排程項目沒有 BOM 組件</p>
+                                <p class="mt-2 text-muted">@L["Message.NoBOMComponents"]</p>
                             </div>
                         }
                         else
@@ -218,12 +217,12 @@
                                 <table class="table table-sm table-striped mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>組件商品</th>
-                                            <th class="text-end">需求數量</th>
-                                            <th class="text-end">已領數量</th>
-                                            <th class="text-end">待領數量</th>
-                                            <th class="text-end">可用庫存</th>
-                                            <th class="text-end" style="width: 150px;">本次領料</th>
+                                            <th>@L["Column.ComponentProduct"]</th>
+                                            <th class="text-end">@L["Column.RequiredQty"]</th>
+                                            <th class="text-end">@L["Column.IssuedQty"]</th>
+                                            <th class="text-end">@L["Column.PendingIssueQty"]</th>
+                                            <th class="text-end">@L["Column.AvailableStock"]</th>
+                                            <th class="text-end" style="width: 150px;">@L["Column.CurrentIssueQty"]</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -248,10 +247,10 @@
                                                                min="0"
                                                                max="@item.RemainingToIssue"
                                                                step="1" />
-                                                        <button class="btn btn-outline-secondary btn-sm" 
+                                                        <button class="btn btn-outline-secondary btn-sm"
                                                                 type="button"
                                                                 @onclick="() => item.IssueQuantity = item.RemainingToIssue"
-                                                                title="全部領取">
+                                                                title="@L["Button.TakeAll"]">
                                                             <i class="bi bi-check-all"></i>
                                                         </button>
                                                     </div>
@@ -261,7 +260,7 @@
                                     </tbody>
                                     <tfoot class="table-light">
                                         <tr>
-                                            <td colspan="5" class="text-end fw-bold">本次領料總數：</td>
+                                            <td colspan="5" class="text-end fw-bold">@L["Label.TotalIssueQty"]：</td>
                                             <td class="text-end fw-bold text-primary">
                                                 @issueItems.Sum(x => x.IssueQuantity).ToString("N2")
                                             </td>
@@ -277,7 +276,7 @@
             {
                 <div class="text-center py-5">
                     <i class="bi bi-inbox display-1 text-muted"></i>
-                    <p class="mt-2 text-muted">無法載入排程項目資訊</p>
+                    <p class="mt-2 text-muted">@L["Message.NoScheduleItemInfo"]</p>
                 </div>
             }
         </div>
@@ -288,7 +287,7 @@
     {
         if (!issueItems.Any(x => x.IssueQuantity > 0))
         {
-            await NotificationService.ShowWarningAsync("請輸入領料數量");
+            await NotificationService.ShowWarningAsync(L["Message.EnterIssueQty"]);
             return;
         }
 
@@ -297,7 +296,7 @@
         if (insufficientItems.Any())
         {
             var names = string.Join("、", insufficientItems.Select(x => x.ProductName).Take(3));
-            await NotificationService.ShowWarningAsync($"以下組件庫存不足：{names}");
+            await NotificationService.ShowWarningAsync(string.Format(L["Message.StockInsufficientFor"], names));
             return;
         }
 

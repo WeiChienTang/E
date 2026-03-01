@@ -1369,14 +1369,18 @@
     /// </summary>
     public void RefreshEmptyRow()
     {
-        if (!EnableAutoEmptyRow || !AllowAddNewRow) return;
-        
+        if (!EnableAutoEmptyRow) return;
+
+        // 同步追蹤欄位，防止 OnAfterRenderAsync / OnParametersSet 重複觸發空行檢查
+        _previousDataLoadCompleted = DataLoadCompleted;
+        _previousNonEmptyCount = Items?.Count(item => !IsRowEmpty(item)) ?? 0;
+
         // 重置最後空行的參考
         _lastEmptyRow = default;
-        
-        // 執行空行檢查
+
+        // 執行空行檢查（含新增與清除兩種情境）
         CheckAndAddEmptyRowIfNeeded();
-        
+
         // 手動觸發更新（因為是外部呼叫）
         StateHasChanged();
     }

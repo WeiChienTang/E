@@ -3,12 +3,13 @@
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Models
 @using ERPCore2.Helpers
+@inject IStringLocalizer<SharedResource> L
 
 <div class="card h-100">
     <div class="card-header bg-primary text-white py-2">
         <div class="d-flex justify-content-between align-items-center">
-            <span class="fw-bold"><i class="bi bi-box-seam me-2"></i>待排程明細</span>
-            <span class="text-white-50">@FilteredDetailsList.Count 項</span>
+            <span class="fw-bold"><i class="bi bi-box-seam me-2"></i>@L["Production.PendingDetails"]</span>
+            <span class="text-white-50">@FilteredDetailsList.Count @L["Label.ItemCount"]</span>
         </div>
     </div>
     
@@ -16,7 +17,7 @@
         @* 篩選區域 *@
         <div class="mb-2">
             <SearchInputComponent @bind-Value="searchKeyword"
-                                  Placeholder="搜尋商品/訂單/客戶..."
+                                  Placeholder="@L["Placeholder.SearchProductOrderCustomer"]"
                                   ButtonSize="btn-sm" />
         </div>
         
@@ -106,20 +107,18 @@
         {
             new()
             {
-                Title = "商品編號",
+                Title = L["Column.ProductCode"],
                 PropertyName = nameof(PendingScheduleDetailDto.ProductCode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "14%",
-                Tooltip = "商品的編號",
                 CellCssClass = "text-primary fw-bold span"
             },
             new()
             {
-                Title = "商品名稱",
+                Title = L["Column.ProductName"],
                 PropertyName = nameof(PendingScheduleDetailDto.ProductName),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "20%",
-                Tooltip = "商品的名稱",
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
@@ -128,11 +127,10 @@
             },
             new()
             {
-                Title = "訂單日",
+                Title = L["Column.OrderDay"],
                 PropertyName = nameof(PendingScheduleDetailDto.OrderDate),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "12%",
-                Tooltip = "訂單日期",
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
@@ -141,11 +139,10 @@
             },
             new()
             {
-                Title = "交貨日",
+                Title = L["Column.DeliveryDay"],
                 PropertyName = nameof(PendingScheduleDetailDto.ExpectedDeliveryDate),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "12%",
-                Tooltip = "交貨日期",
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
@@ -158,11 +155,10 @@
             },
             new()
             {
-                Title = "客戶",
+                Title = L["Column.Customer"],
                 PropertyName = nameof(PendingScheduleDetailDto.CustomerName),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "18%",
-                Tooltip = "指定該單的名稱",
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
@@ -171,11 +167,10 @@
             },
             new()
             {
-                Title = "訂單量",
+                Title = L["Column.OrderQty"],
                 PropertyName = nameof(PendingScheduleDetailDto.OrderQuantity),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "14%",
-                Tooltip = "根據訂單所得到的數量",
                 TextAlign = "right",
                 SmartDecimalDisplay = true,
                 CellCssClass = "fw-bold span"
@@ -185,7 +180,7 @@
     
     private string GetEmptyMessage()
     {
-        return IsLoading ? "載入中..." : "沒有待排程的明細";
+        return IsLoading ? L["Label.Loading"].ToString() : L["Message.NoPendingDetails"].ToString();
     }
     
     // ===== 事件處理 =====
