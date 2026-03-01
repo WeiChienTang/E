@@ -46,6 +46,11 @@
                           SaveSuccessMessage="@(SalesDeliveryId.HasValue ? L["Message.UpdateSuccess", L["Entity.SalesDelivery"]].ToString() : L["Message.CreateSuccess", L["Entity.SalesDelivery"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SalesDelivery"]]"
                           RequiredPermission="@PermissionRegistry.SalesDelivery.Read"
+                          ShowApprovalSection="@ShouldShowApprovalSection()"
+                          ApprovalPermission="@PermissionRegistry.SalesDelivery.Approve"
+                          OnApprove="@HandleSalesDeliveryApprove"
+                          OnRejectWithReason="@HandleSalesDeliveryRejectWithReason"
+                          CanPrintCheck="@GetCanPrintCheck()"
                           OnEntitySaved="@OnSalesDeliverySaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
@@ -193,10 +198,16 @@
     // 資料載入狀態標記
     private bool isDataLoaded = false;
 
+    // ===== 審核開關狀態 =====
+    private bool isApprovalEnabled = false;
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            // 載入審核開關設定
+            isApprovalEnabled = await SystemParameterService.IsSalesDeliveryApprovalEnabledAsync();
+
             // 使用 ModalManagerInitHelper 初始化所有 Manager
             modalManagers = ModalManagerInitHelper.CreateBuilder<SalesDelivery, ISalesDeliveryService>(
                     () => editModalComponent,
@@ -999,6 +1010,13 @@
     /// </summary>
     private async Task<bool> ValidateSalesDeliveryDetailsAsync(SalesDelivery salesDelivery)
     {
+        // 審核後不允許儲存
+        if (!ApprovalConfigHelper.CanSaveWhenApproved(isApprovalEnabled, salesDelivery.IsApproved))
+        {
+            await NotificationService.ShowWarningAsync("出貨單已核准，無法修改");
+            return false;
+        }
+
         if (salesDeliveryDetailManager == null)
             return true;
 
@@ -1146,7 +1164,7 @@
                                 ShowWarehouse="true"
                                 ShowWarehouseLocation="false"
                                 OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                                IsReadOnly="false" />
+                                IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)" />
         </DetailSectionWrapper>
     };
     
@@ -1408,4 +1426,84 @@
 
     private string? GetFilterProductName()
         => EntityDisplayHelper.GetDisplayValue(filterProductId, availableProducts, p => $"{p.Code} {p.Name}");
+
+    // ===== 審核相關方法 =====
+
+    private bool ShouldShowApprovalSection()
+        => isApprovalEnabled && SalesDeliveryId.HasValue && SalesDeliveryId.Value > 0;
+
+    private Func<bool>? GetCanPrintCheck()
+        => isApprovalEnabled
+            ? () => ApprovalConfigHelper.CanPerformActionRequiringApproval(
+                  isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false)
+            : null;
+
+    private async Task<bool> HandleSalesDeliveryApprove()
+    {
+        try
+        {
+            if (!SalesDeliveryId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法審核：出貨單ID不存在");
+                return false;
+            }
+
+            var confirmed = await NotificationService.ShowConfirmAsync(
+                "確定要審核通過此出貨單嗎？系統將先儲存當前資料，然後進行審核。審核通過後將無法再修改。",
+                "審核確認");
+            if (!confirmed) return false;
+
+            var entity = editModalComponent?.Entity;
+            if (entity == null) return false;
+
+            var saveResult = await SalesDeliveryService.UpdateAsync(entity);
+            if (!saveResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync("儲存失敗，無法進行審核");
+                return false;
+            }
+
+            await SaveSalesDeliveryDetailsAsync(entity);
+
+            var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!currentUserId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
+                return false;
+            }
+
+            var result = await SalesDeliveryService.ApproveAsync(SalesDeliveryId.Value, currentUserId.Value);
+            if (result.IsSuccess) return true;
+
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "審核通過失敗");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesDeliveryApprove), GetType());
+            return false;
+        }
+    }
+
+    private async Task<bool> HandleSalesDeliveryRejectWithReason(string rejectReason)
+    {
+        try
+        {
+            if (!SalesDeliveryId.HasValue) return false;
+
+            var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!currentUserId.HasValue) return false;
+
+            var result = await SalesDeliveryService.RejectAsync(SalesDeliveryId.Value, currentUserId.Value, rejectReason);
+            if (result.IsSuccess) return true;
+
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "駁回失敗");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesDeliveryRejectWithReason), GetType());
+            return false;
+        }
+    }
 }

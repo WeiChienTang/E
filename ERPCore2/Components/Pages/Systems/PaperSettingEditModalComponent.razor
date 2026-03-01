@@ -156,7 +156,7 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     ps => ps.Code,
                     ps => ps.Name)
-                .AddToSection("紙張大小",
+                .AddToSection(L["Section.PaperSize"],
                     ps => ps.Width,
                     ps => ps.Height,
                     ps => ps.TopMargin,
@@ -224,7 +224,7 @@
             // 刷新表單顯示
             StateHasChanged();
             
-            await NotificationService.ShowSuccessAsync($"已套用「{selectedPaper.Name}」的尺寸設定");
+            await NotificationService.ShowSuccessAsync(string.Format(L["Document.PaperSizeApplied"], selectedPaper.Name));
         }
         catch (Exception ex)
         {

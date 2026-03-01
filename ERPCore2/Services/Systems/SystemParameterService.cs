@@ -225,6 +225,7 @@ namespace ERPCore2.Services
                     ApprovalType.PurchaseReturn => parameter.EnablePurchaseReturnApproval,
                     ApprovalType.SalesOrder => parameter.EnableSalesOrderApproval,
                     ApprovalType.SalesReturn => parameter.EnableSalesReturnApproval,
+                    ApprovalType.SalesDelivery => parameter.EnableSalesDeliveryApproval,
                     ApprovalType.InventoryTransfer => parameter.EnableInventoryTransferApproval,
                     _ => false
                 };
@@ -276,6 +277,12 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<bool> IsSalesReturnApprovalEnabledAsync()
             => await IsApprovalEnabledAsync(ApprovalType.SalesReturn);
+
+        /// <summary>
+        /// 檢查銷貨出貨單是否需要審核
+        /// </summary>
+        public async Task<bool> IsSalesDeliveryApprovalEnabledAsync()
+            => await IsApprovalEnabledAsync(ApprovalType.SalesDelivery);
 
         /// <summary>
         /// 檢查庫存調撥是否需要審核

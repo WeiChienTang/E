@@ -1,22 +1,23 @@
 # 審核機制 — 各模組狀態與待辦項目
 
-> 本文件記錄各模組審核功能的現況、已知問題，以及本輪修正的完整項目清單。
+> 本文件記錄各模組審核功能的現況、已知問題，以及各輪修正的完整項目清單。
+> 最後更新：2026-03-02（本輪修正：補齊 5 個模組的完整審核 UI + Service 方法）
 
 ---
 
 ## 一、各模組詳細現況
 
-### 1-1 報價單（Quotation）✅ 基本完整
+### 1-1 報價單（Quotation）⚠️ 基本可用，細節待補
 
 | 項目 | 狀態 | 備註 |
 |------|------|------|
 | 實體審核欄位 | ✅ | `Quotation.cs` 完整 |
 | EditModal UI | ✅ | `ShowApprovalSection` + `OnApprove` + `OnRejectWithReason` |
-| 核准邏輯 | ⚠️ 簡易版 | 直接呼叫 `UpdateAsync(entity)` 含 `IsApproved=true`，無核准前明細保存 |
-| 駁回邏輯 | ⚠️ 簡易版 | 同上，直接呼叫 `UpdateAsync` |
+| 核准邏輯 | ⚠️ 簡易版 | 直接呼叫 `UpdateAsync(entity)` 含 `IsApproved=true`，無 ApproveAsync |
+| 駁回邏輯 | ⚠️ 簡易版 | 直接呼叫 `UpdateAsync`，無 RejectAsync |
 | Service 方法 | ❌ | 無 `ApproveAsync` / `RejectAsync` 專用方法 |
 | Detail Table 封鎖 | ❌ | `IsReadOnly` 未由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
-| 列印審核檢查 | ❌ | `HandlePrint` 無審核狀態檢查 |
+| 列印審核檢查 | ❌ | 未傳入 `CanPrintCheck` 參數 |
 | 批次審核 | ✅ | `QuotationIndex.razor` 有 `BatchApprovalModalComponent` |
 | Index 審核狀態欄 | ❌ | FieldConfiguration 未加 `IsApproved` 欄位 |
 | PermissionRegistry | ✅ | `Quotation.Approve` 存在 |
@@ -28,71 +29,96 @@
 | 項目 | 狀態 | 備註 |
 |------|------|------|
 | 實體審核欄位 | ✅ | 完整 |
-| EditModal UI | ✅ | `ShowApprovalSection` + `OnApprove` + `OnRejectWithReason` |
+| EditModal UI | ✅ | `ShowApprovalSection` + `OnApprove` + `OnRejectWithReason` + `CanPrintCheck` |
 | 核准邏輯 | ✅ | 先 `SavePurchaseOrderWithDetails(isPreApprovalSave:true)` → 再 `ApproveOrderAsync` |
 | 駁回邏輯 | ✅ | `RejectOrderAsync` Service 方法 |
 | Service 方法 | ✅ | `ApproveOrderAsync` + `RejectOrderAsync` |
 | Detail Table 封鎖 | ❌ | 待確認 `IsReadOnly` 是否由 `ShouldLockFieldByApproval` 控制 |
-| 列印審核檢查 | ❌ | `HandlePrint` 無審核狀態檢查 |
+| 列印審核檢查 | ✅ | 有傳入 `CanPrintCheck` |
 | 批次審核 | ✅ | `PurchaseOrderIndex.razor` 有 `BatchApprovalModalComponent` |
 | Index 審核狀態欄 | ❌ | FieldConfiguration 未加 `IsApproved` 欄位 |
 | PermissionRegistry | ✅ | `PurchaseOrder.Approve` 存在 |
 
 ---
 
-### 1-3 銷貨單（SalesDelivery）⚠️ 實體有欄位，但 UI 完全缺失
+### 1-3 銷貨出貨（SalesDelivery）✅ 本輪完成
 
 | 項目 | 狀態 | 備註 |
 |------|------|------|
-| 實體審核欄位 | ✅ | `SalesDelivery.cs` 完整 |
-| EditModal UI | **❌ 完全缺失** | 未加 `ShowApprovalSection`，僅在新建時設 `IsApproved = false` |
-| SystemParameter 開關 | **❌ 缺失** | `EnableSalesDeliveryApproval` 欄位尚未加入 |
-| ApprovalSettingsTab | **❌ 缺失** | Tab 內無銷貨單開關 |
-| Service 方法 | ❌ | 無 `ApproveAsync` / `RejectAsync` |
-| Detail Table 封鎖 | ❌ | |
-| 列印審核檢查 | ❌ | |
-| 批次審核 | ❌ | |
-| Index 審核狀態欄 | ❌ | |
-| PermissionRegistry | ❌ | 無 `SalesDelivery.Approve` |
+| 實體審核欄位 | ✅ | `SalesDelivery.cs` 本輪前已有欄位 |
+| EditModal UI | ✅ | 本輪加入完整審核 UI |
+| SystemParameter 開關 | ✅ | `EnableSalesDeliveryApproval` 本輪加入（含 Migration） |
+| ApprovalSettingsTab | ✅ | 本輪加入 SalesDelivery 切換開關 |
+| Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
+| Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
+| 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
+| 批次審核 | ❌ | 尚未實作 |
+| Index 審核狀態欄 | ❌ | 尚未實作 |
+| PermissionRegistry | ✅ | `SalesDelivery.Approve` 本輪加入 |
 
 ---
 
-### 1-4 進貨單（PurchaseReceiving）❌ 有已知錯誤
+### 1-4 進貨單（PurchaseReceiving）✅ 本輪完成
 
 | 項目 | 狀態 | 備註 |
 |------|------|------|
-| 實體審核欄位 | **❌ 缺失** | |
-| EditModal 錯誤代碼 | **⛔ 需清除** | L190/205：`isApprovalEnabled = IsPurchaseOrderApprovalEnabledAsync()`（呼叫錯誤的開關方法，欄位完全無用） |
-| Service 方法 | ❌ | |
-| 其餘項目 | ❌ | |
-| PermissionRegistry | ❌ | 無 `PurchaseReceiving.Approve` |
+| 實體審核欄位 | ✅ | 本輪加入（含 Migration） |
+| EditModal UI | ✅ | 本輪加入完整審核 UI；同時修正原有死代碼（錯誤呼叫 PurchaseOrder 開關） |
+| SystemParameter 開關 | ✅ | `EnablePurchaseReceivingApproval` 本輪前已存在 |
+| Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
+| Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
+| 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
+| 批次審核 | ❌ | 尚未實作 |
+| Index 審核狀態欄 | ❌ | 尚未實作 |
+| PermissionRegistry | ✅ | `PurchaseReceiving.Approve` 本輪加入 |
 
 ---
 
-### 1-5 進貨退出（PurchaseReturn）❌ 尚未開始
+### 1-5 進貨退回（PurchaseReturn）✅ 本輪完成
 
-| 項目 | 狀態 |
-|------|------|
-| 所有項目 | ❌ |
-| PermissionRegistry | ❌（無 `PurchaseReturn.Approve`） |
-
----
-
-### 1-6 銷售訂單（SalesOrder）❌ 尚未開始
-
-| 項目 | 狀態 |
-|------|------|
-| 所有項目 | ❌ |
-| PermissionRegistry | ❌（無 `SalesOrder.Approve`） |
+| 項目 | 狀態 | 備註 |
+|------|------|------|
+| 實體審核欄位 | ✅ | 本輪加入（含 Migration） |
+| EditModal UI | ✅ | 本輪加入完整審核 UI |
+| SystemParameter 開關 | ✅ | `EnablePurchaseReturnApproval` 本輪前已存在 |
+| Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
+| Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
+| 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
+| 批次審核 | ❌ | 尚未實作 |
+| Index 審核狀態欄 | ❌ | 尚未實作 |
+| PermissionRegistry | ✅ | `PurchaseReturn.Approve` 本輪加入 |
 
 ---
 
-### 1-7 銷貨退回（SalesReturn）❌ 尚未開始
+### 1-6 銷售訂單（SalesOrder）✅ 本輪完成
 
-| 項目 | 狀態 |
-|------|------|
-| 所有項目 | ❌ |
-| PermissionRegistry | ❌（無 `SalesReturn.Approve`） |
+| 項目 | 狀態 | 備註 |
+|------|------|------|
+| 實體審核欄位 | ✅ | 本輪加入（含 Migration） |
+| EditModal UI | ✅ | 本輪加入完整審核 UI |
+| SystemParameter 開關 | ✅ | `EnableSalesOrderApproval` 本輪前已存在 |
+| Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
+| Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
+| 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
+| 批次審核 | ❌ | 尚未實作 |
+| Index 審核狀態欄 | ❌ | 尚未實作 |
+| PermissionRegistry | ✅ | `SalesOrder.Approve` 本輪加入 |
+
+---
+
+### 1-7 銷貨退回（SalesReturn）✅ 本輪完成
+
+| 項目 | 狀態 | 備註 |
+|------|------|------|
+| 實體審核欄位 | ✅ | 本輪加入（含 Migration） |
+| EditModal UI | ✅ | 本輪加入完整審核 UI |
+| SystemParameter 開關 | ✅ | `EnableSalesReturnApproval` 本輪前已存在 |
+| Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
+| Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
+| 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
+| 批次審核 | ❌ | 尚未實作 |
+| Index 審核狀態欄 | ❌ | 尚未實作 |
+| PermissionRegistry | ✅ | `SalesReturn.Approve` 本輪加入 |
 
 ---
 
@@ -101,114 +127,139 @@
 | 元件/檔案 | 狀態 | 備註 |
 |----------|------|------|
 | `ApprovalConfigHelper` | ✅ 完整 | |
-| `ApprovalSettingsTab.razor` | ✅ 存在，7 個開關 | 缺 SalesDelivery；使用卡片 + switch 樣式 |
+| `ApprovalSettingsTab.razor` | ✅ 8 個開關 | 本輪加入 SalesDelivery；共 8 個模組開關 |
 | `BatchApprovalModalComponent.razor` | ✅ 泛型通用 | |
 | `BatchApprovalTable.razor` | ✅ 泛型通用 | |
 | `RejectConfirmModalComponent.razor` | ✅ 存在 | |
-| `GenericEditModalComponent` 審核參數 | ✅ 支援 | `ShowApprovalSection`、`ApprovalPermission`、`OnApprove`、`OnRejectWithReason` |
-| `GenericEditModalComponent` 列印審核 | ❌ 缺失 | `HandlePrint` 無 `CanPerformActionRequiringApproval` 檢查 |
+| `GenericEditModalComponent` 審核參數 | ✅ 完整 | `ShowApprovalSection`、`ApprovalPermission`、`OnApprove`、`OnRejectWithReason` |
+| `GenericEditModalComponent` 列印審核 | ✅ 本輪加入 | `CanPrintCheck` 參數 + `HandlePrint` 前置檢查 |
 
 ---
 
-## 三、本輪修正項目（優先順序排列）
+## 三、本輪（2026-03-02）已完成項目
 
-### 🔴 第一批：DB 基礎（需要 Migration）
+### ✅ Batch A — 實體欄位 + SystemParameter（含 Migration）
 
-| # | 任務 | 檔案 | 依賴 |
-|---|------|------|------|
-| A1 | 加入 4 個實體的審核欄位 | `PurchaseReceiving.cs`、`PurchaseReturn.cs`、`SalesOrder.cs`、`SalesReturn.cs` | — |
-| A2 | 加入 `EnableSalesDeliveryApproval` 到 SystemParameter | `SystemParameter.cs` | — |
-| A3 | 建立 Migration | — | A1、A2 |
-| A4 | Service 加入 `Include(x => x.ApprovedByUser)` | 4 個 Service | A1 |
+- `PurchaseReceiving.cs`：加入 `IsApproved`、`ApprovedBy`、`ApprovedAt`、`RejectReason`、`ApprovedByUser`
+- `PurchaseReturn.cs`：同上
+- `SalesOrder.cs`：同上
+- `SalesReturn.cs`：同上
+- `SystemParameter.cs`：加入 `EnableSalesDeliveryApproval`
+- Migration：`AddApprovalFieldsToRemainingModules` 執行完畢
 
-> **一次 Migration 包含 A1 + A2 的全部欄位**：`AddApprovalFieldsToRemainingModules`
+### ✅ Batch B — Service 方法
 
----
+5 個 Service 各加入 `ApproveAsync(int id, int approvedBy)` + `RejectAsync(int id, int rejectedBy, string reason)`：
+- `PurchaseReceivingService` / `IPurchaseReceivingService`
+- `PurchaseReturnService` / `IPurchaseReturnService`
+- `SalesOrderService` / `ISalesOrderService`
+- `SalesReturnService` / `ISalesReturnService`
+- `SalesDeliveryService` / `ISalesDeliveryService`
 
-### 🔴 第二批：Service 方法
+同步加入：`ISystemParameterService` 的 `ApprovalType.SalesDelivery` 列舉值與 `IsSalesDeliveryApprovalEnabledAsync()` 方法。
 
-| # | 任務 | 說明 | 參考 |
-|---|------|------|------|
-| B1 | 5 個 Service 加入 `ApproveAsync` + `RejectAsync` | SalesDelivery、PurchaseReceiving、PurchaseReturn、SalesOrder、SalesReturn | `PurchaseOrderService.ApproveOrderAsync` |
+### ✅ Batch C — PermissionRegistry + ApprovalSettingsTab + Resx
 
----
+- `PermissionRegistry.cs`：加入 5 個 `Xxx.Approve` 常數及 `GetAllPermissions()` 定義
+- `ApprovalSettingsTab.razor`：加入 SalesDelivery 切換開關
+- 5 個語言 resx：加入 `Field.EnableSalesDeliveryApproval` 鍵值
 
-### 🟠 第三批：EditModal UI
+### ✅ Batch D — GenericEditModalComponent CanPrintCheck
 
-| # | 任務 | 檔案 | 依賴 |
-|---|------|------|------|
-| C1 | 修正 PurchaseReceiving 錯誤代碼 | `PurchaseReceivingEditModalComponent.razor`（刪除 L190/205） | — |
-| C2 | SalesDelivery 加 `EnableSalesDeliveryApproval` 開關讀取 + `ShowApprovalSection` | `SalesDeliveryEditModalComponent.razor` | A2、B1 |
-| C3 | ApprovalSettingsTab 加 SalesDelivery 開關 | `ApprovalSettingsTab.razor` | A2 |
-| C4 | 4 個新 EditModal 加審核 UI | 4 個 EditModal | A1、B1 |
-| C5 | PermissionRegistry 加 5 個 Approve 權限 | `Models/PermissionRegistry.cs` | — |
+- 加入 `[Parameter] public Func<bool>? CanPrintCheck { get; set; }`
+- `HandlePrint()` 開頭加入 `CanPrintCheck` 檢查
 
----
+### ✅ Batch E+F — 5 個 EditModal 完整審核 UI + Detail Table 封鎖
 
-### 🟠 第四批：GenericEditModal 列印修正
+| EditModal | 注入方式 | isApprovalEnabled 載入位置 |
+|-----------|----------|--------------------------|
+| `PurchaseReceivingEditModalComponent` | UseGenericSave + AfterSave | `LoadSalesReceivingData()` |
+| `SalesDeliveryEditModalComponent` | UseGenericSave + AfterSave | `OnInitializedAsync` |
+| `PurchaseReturnEditModalComponent` | SaveHandler | `OnInitializedAsync`（override 新增） |
+| `SalesOrderEditModalComponent` | SaveHandler | `OnInitializedAsync`（在 ModalManager 初始化**之後** await） |
+| `SalesReturnEditModalComponent` | SaveHandler + CustomValidator | `OnParametersSetAsync`（首次載入時） |
 
-| # | 任務 | 檔案 |
-|---|------|------|
-| D1 | `HandlePrint` 加入 `CanPrintCheck` 參數支援 | `GenericEditModalComponent.razor` |
-| D2 | 7 個 EditModal 傳入 `CanPrintCheck` | 各 EditModal |
+每個 EditModal 均完成：
+- `isApprovalEnabled` 欄位與載入
+- `@inject AuthenticationStateProvider`（原本缺少的補上）
+- GenericEditModalComponent 5 個審核參數
+- `CanSaveWhenApproved` 守衛
+- `ShouldLockFieldByApproval` 控制 Detail Table `IsReadOnly`
+- `ShouldShowApprovalSection()`、`GetCanPrintCheck()`、`HandleXxxApprove()`、`HandleXxxRejectWithReason()` 方法
 
----
+### ✅ Bug 修正
 
-### 🟡 第五批：Detail Table 封鎖
-
-| # | 任務 | 說明 |
-|---|------|------|
-| E1 | 各 EditModal 將 Table 的 `IsReadOnly` 改為 `ApprovalConfigHelper.ShouldLockFieldByApproval(...)` | 確保審核後 Table 不可編輯 |
-
----
-
-### 🟡 第六批：批次審核 + Index 狀態欄
-
-| # | 任務 | 說明 |
-|---|------|------|
-| F1 | 5 個 Index 加 `BatchApprovalModalComponent` | PurchaseReceiving、PurchaseReturn、SalesOrder、SalesReturn、SalesDelivery |
-| F2 | 7 個模組 FieldConfiguration 加 `IsApproved` 狀態欄 | 顯示「已審核 / 未審核 / 已駁回」badge |
+**SalesOrderEditModalComponent NullReferenceException**：`customerModalManager` 等欄位宣告為 `= default!`（實際為 null），當 `OnInitializedAsync` 在 ModalManager 初始化前 `await` 時，Blazor 中間渲染會存取 `customerModalManager.IsModalVisible` 導致 NullReferenceException 無限循環。修正方式：將 `await IsSalesOrderApprovalEnabledAsync()` 移至 ModalManager `.Build()` 之後。
 
 ---
 
-### 🟢 第七批：審核歷史（可延後）
+## 四、尚未完成項目（待下一輪）
+
+### 🟡 A4 — Service Include 查詢
+
+4 個新 Service 的 `GetByIdAsync` / `GetAllAsync` 尚未加入：
+```csharp
+.Include(x => x.ApprovedByUser)
+```
+影響：EditModal「核准人員」顯示為空（功能不中斷，但 UI 資訊不完整）。
+
+### 🟡 F1 — 5 個 Index 批次審核
+
+| Index | 所需工作 |
+|-------|---------|
+| `PurchaseReceivingIndex.razor` | 加入 `BatchApprovalModalComponent` + 批次審核按鈕 |
+| `PurchaseReturnIndex.razor` | 同上 |
+| `SalesOrderIndex.razor` | 同上 |
+| `SalesReturnIndex.razor` | 同上 |
+| `SalesDeliveryIndex.razor` | 同上 |
+
+### 🟡 F2 — 7 個模組 Index 審核狀態欄
+
+所有模組的 `XxxFieldConfiguration.cs` 尚未加入 `IsApproved` 狀態 Badge 欄位。
+
+### 🟡 Quotation/PurchaseOrder 補強
+
+- `QuotationService`：補 `ApproveAsync` / `RejectAsync`（目前直接用 `UpdateAsync` 含 `IsApproved = true`）
+- `PurchaseOrderEditModal` Detail Table：確認是否已由 `ShouldLockFieldByApproval` 控制
+
+### 🟢 G — 審核歷史（可延後）
 
 | # | 任務 |
 |---|------|
-| G1 | 建立 `ApprovalHistory` 實體（EntityType、EntityId、Action、ByUserId、At、Reason）|
+| G1 | 建立 `ApprovalHistory` 實體 |
 | G2 | `IApprovalHistoryService` + `ApprovalHistoryService` |
-| G3 | `ApprovalHistoryTab.razor`（通用，接收 entityType + entityId）|
+| G3 | `ApprovalHistoryTab.razor` |
 | G4 | 各 EditModal 加入「審核歷史」Tab |
 
 ---
 
-## 四、核准前自動儲存的設計決策
+## 五、設計備忘
 
-### 問題背景
+### RejectAsync 欄位行為
 
-現有兩種核准模式不一致：
-
-| 模組 | 模式 | 說明 |
-|------|------|------|
-| Quotation | 簡易版 | 直接設 `IsApproved = true` → `UpdateAsync(entity)` |
-| PurchaseOrder | 完整版 | 先 `SaveWithDetails(isPreApprovalSave: true)` → `ApproveOrderAsync()` |
-
-Quotation 簡易版的風險：若明細有未儲存變更（Detail Table 的異動通常已同步到 entity，但邊界情況下可能有差異），不會在核准時一起保存。
-
-### 統一決策
-
-**所有模組統一使用「完整版」**（同 PurchaseOrder）：
+本輪實作的 `RejectAsync` 採用「清空核准資訊」策略：
 
 ```csharp
-private async Task<bool> HandleXxxApprove()
-{
-    // 1. 驗證
-    // 2. 確認對話框
-    // 3. 先儲存含明細（isPreApprovalSave: true 允許在已核准狀態下儲存）
-    var saveOk = await SaveXxxWithDetails(editModalComponent!.Entity, isPreApprovalSave: true);
-    if (!saveOk) return false;
-    // 4. 呼叫 Service.ApproveAsync(id, userId)
-}
+entity.IsApproved  = false;
+entity.ApprovedBy  = null;   // 清空
+entity.ApprovedAt  = null;   // 清空
+entity.RejectReason = reason; // 保留駁回原因
 ```
 
-其中 `SaveXxxWithDetails(entity, isPreApprovalSave)` 必須在 `CanSaveWhenApproved` 檢查時傳入 `isPreApprovalSave: true`，使 `ApprovalConfigHelper` 允許此次儲存。
+> 注意：實作指南範本中 `ApprovedBy = rejectedBy`、`ApprovedAt = DateTime.Now`（記錄駁回人與時間）。
+> 兩種策略皆可運作，未來統一規範時可選擇其一並全面對齊。
+
+### isApprovalEnabled 的載入時機規則
+
+若 EditModal 在 Razor 模板中有直接存取 `default!` 初始化的 Manager（如 `customerModalManager.IsModalVisible`），則 `await IsSalesOrderApprovalEnabledAsync()` **必須放在** 所有同步初始化完成之後，否則 Blazor 中間渲染時會 NullReferenceException：
+
+```csharp
+protected override async Task OnInitializedAsync()
+{
+    // ✅ 先做同步初始化
+    modalManagers = ModalManagerInitHelper.CreateBuilder(...)...Build();
+    customerModalManager = modalManagers.Get<Customer>(...);
+    // ✅ 同步初始化完成後，才進行第一個 await
+    isApprovalEnabled = await SystemParameterService.IsXxxApprovalEnabledAsync();
+}
+```

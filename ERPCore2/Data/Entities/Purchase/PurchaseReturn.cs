@@ -48,6 +48,21 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "轉傳票時間")]
         public DateTime? JournalizedAt { get; set; }
 
+        // ===== 審核欄位 =====
+        [Display(Name = "是否核准")]
+        public bool IsApproved { get; set; } = false;
+
+        [Display(Name = "核准人員")]
+        [ForeignKey(nameof(ApprovedByUser))]
+        public int? ApprovedBy { get; set; }
+
+        [Display(Name = "核准時間")]
+        public DateTime? ApprovedAt { get; set; }
+
+        [MaxLength(100, ErrorMessage = "駁回原因不可超過100個字元")]
+        [Display(Name = "駁回原因")]
+        public string? RejectReason { get; set; }
+
         // Foreign Keys
         [Required(ErrorMessage = "供應商為必填")]
         [Display(Name = "供應商")]
@@ -60,6 +75,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public Supplier Supplier { get; set; } = null!;
+        public Employee? ApprovedByUser { get; set; }
         public EntityPurchaseReturnReason? ReturnReason { get; set; }
         public ICollection<PurchaseReturnDetail> PurchaseReturnDetails { get; set; } = new List<PurchaseReturnDetail>();
     }

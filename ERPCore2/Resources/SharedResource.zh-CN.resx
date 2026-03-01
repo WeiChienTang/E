@@ -1145,6 +1145,7 @@
   <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>启用进货退回审核</value></data>
   <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>启用销货单审核</value></data>
   <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>启用销货退回审核</value></data>
+  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>启用销货出货审核</value></data>
   <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>启用库存调拨审核</value></data>
   <!-- ===== FormSectionNames keys ===== -->
   <data name="Section.BasicInfo" xml:space="preserve"><value>基本信息</value></data>
@@ -2580,5 +2581,163 @@
   <data name="Message.LoadRelatedDocFailed" xml:space="preserve"><value>加载相关单据失败：{0}</value></data>
   <data name="Message.HasUndeletableDetailsTooltip" xml:space="preserve"><value>部分商品已有进货记录，无法清除明细</value></data>
   <data name="Tooltip.ClearAllDetails" xml:space="preserve"><value>清除所有商品明细</value></data>
+  <data name="Tooltip.SubtotalTaxExclusive" xml:space="preserve"><value>外加税：数量 × 单价 × (1 + 税率%)</value></data>
+  <data name="Tooltip.SubtotalTaxInclusive" xml:space="preserve"><value>含税：数量 × 单价（单价已含税）</value></data>
+  <data name="Tooltip.SubtotalNoTax" xml:space="preserve"><value>免税：数量 × 单价</value></data>
+  <data name="Tooltip.SubtotalDefault" xml:space="preserve"><value>数量 × 单价</value></data>
+
+  <data name="Page.AccountItemTitle" xml:space="preserve"><value>会计科目管理</value></data>
+  <data name="Page.AccountItemSubtitle" xml:space="preserve"><value>管理标准会计科目表（Chart of Accounts）</value></data>
+  <data name="Page.JournalEntryTitle" xml:space="preserve"><value>凭证管理</value></data>
+  <data name="Page.JournalEntrySubtitle" xml:space="preserve"><value>管理会计凭证与分录明细</value></data>
+  <data name="Page.CustomerTitle" xml:space="preserve"><value>客户维护</value></data>
+  <data name="Page.CustomerSubtitle" xml:space="preserve"><value>管理所有客户资料与联系信息</value></data>
+  <data name="Page.CustomerVisitTitle" xml:space="preserve"><value>拜访记录维护</value></data>
+  <data name="Page.CustomerVisitSubtitle" xml:space="preserve"><value>管理客户拜访与联系记录</value></data>
+  <data name="Page.DocumentCategoryTitle" xml:space="preserve"><value>文件分类</value></data>
+  <data name="Page.DocumentCategorySubtitle" xml:space="preserve"><value>管理文档分类与来源设置</value></data>
+  <data name="Page.DocumentTitle" xml:space="preserve"><value>文件存留</value></data>
+  <data name="Page.DocumentSubtitle" xml:space="preserve"><value>管理与访问各类保存文档</value></data>
+  <data name="Page.DepartmentTitle" xml:space="preserve"><value>部门设置</value></data>
+  <data name="Page.DepartmentSubtitle" xml:space="preserve"><value>设置公司组织架构与部门信息</value></data>
+  <data name="Page.EmployeeTitle" xml:space="preserve"><value>员工</value></data>
+  <data name="Page.EmployeeSubtitle" xml:space="preserve"><value>管理员工资料与权限设置</value></data>
+  <data name="Page.EmployeePositionTitle" xml:space="preserve"><value>职位设置</value></data>
+  <data name="Page.EmployeePositionSubtitle" xml:space="preserve"><value>管理所有职位设置资料与职位层级</value></data>
+  <data name="Page.PermissionTitle" xml:space="preserve"><value>权限明细管理</value></data>
+  <data name="Page.PermissionSubtitle" xml:space="preserve"><value>管理系统功能权限明细设置</value></data>
+  <data name="Page.RoleTitle" xml:space="preserve"><value>权限组设置</value></data>
+  <data name="Page.RoleSubtitle" xml:space="preserve"><value>管理系统权限组与权限设置</value></data>
+  <data name="Page.BankTitle" xml:space="preserve"><value>银行设置</value></data>
+  <data name="Page.BankSubtitle" xml:space="preserve"><value>管理银行基本资料与联系信息</value></data>
+  <data name="Page.CurrencyTitle" xml:space="preserve"><value>货币设置</value></data>
+  <data name="Page.CurrencySubtitle" xml:space="preserve"><value>管理系统支持的货币种类与汇率设置</value></data>
+  <data name="Page.PaymentMethodTitle" xml:space="preserve"><value>付款方式管理</value></data>
+  <data name="Page.PaymentMethodSubtitle" xml:space="preserve"><value>管理所有付款方式资料与设置</value></data>
+  <data name="Page.CompositionCategoryTitle" xml:space="preserve"><value>物料清单类型</value></data>
+  <data name="Page.CompositionCategorySubtitle" xml:space="preserve"><value>设置商品物料清单的类型分类</value></data>
+  <data name="Page.MaterialTitle" xml:space="preserve"><value>材质</value></data>
+  <data name="Page.MaterialSubtitle" xml:space="preserve"><value>管理所有材质资料与属性设置</value></data>
+  <data name="Page.ProductCategoryTitle" xml:space="preserve"><value>商品类型</value></data>
+  <data name="Page.ProductCategorySubtitle" xml:space="preserve"><value>管理所有商品类型资料与层次结构</value></data>
+  <data name="Page.ProductCompositionTitle" xml:space="preserve"><value>物料清单</value></data>
+  <data name="Page.ProductCompositionSubtitle" xml:space="preserve"><value>管理商品配方与组件</value></data>
+  <data name="Page.ProductTitle" xml:space="preserve"><value>商品维护</value></data>
+  <data name="Page.ProductSubtitle" xml:space="preserve"><value>管理所有商品资料与库存信息</value></data>
+  <data name="Page.ProductionScheduleTitle" xml:space="preserve"><value>生产排程管理</value></data>
+  <data name="Page.ProductionScheduleSubtitle" xml:space="preserve"><value>管理生产排程计划与执行</value></data>
+  <data name="Page.SizeTitle" xml:space="preserve"><value>尺寸维护</value></data>
+  <data name="Page.SizeSubtitle" xml:space="preserve"><value>管理商品尺寸规格资料</value></data>
+  <data name="Page.UnitTitle" xml:space="preserve"><value>单位维护</value></data>
+  <data name="Page.UnitSubtitle" xml:space="preserve"><value>管理所有计量单位资料与转换关系</value></data>
+  <data name="Page.PurchaseOrderTitle" xml:space="preserve"><value>采购单维护</value></data>
+  <data name="Page.PurchaseOrderSubtitle" xml:space="preserve"><value>管理所有采购单资料</value></data>
+  <data name="Page.PurchaseReceivingTitle" xml:space="preserve"><value>进货管理</value></data>
+  <data name="Page.PurchaseReceivingSubtitle" xml:space="preserve"><value>管理所有进货单资料与进货状态</value></data>
+  <data name="Page.PurchaseReturnTitle" xml:space="preserve"><value>进货退出管理</value></data>
+  <data name="Page.PurchaseReturnSubtitle" xml:space="preserve"><value>管理所有进货退出单资料与退款状态</value></data>
+  <data name="Page.PurchaseReturnReasonTitle" xml:space="preserve"><value>进货退出原因管理</value></data>
+  <data name="Page.PurchaseReturnReasonSubtitle" xml:space="preserve"><value>管理进货退出原因资料</value></data>
+  <data name="Page.QuotationTitle" xml:space="preserve"><value>报价管理</value></data>
+  <data name="Page.QuotationSubtitle" xml:space="preserve"><value>管理所有报价单资料与明细信息</value></data>
+  <data name="Page.SalesDeliveryTitle" xml:space="preserve"><value>销货单管理</value></data>
+  <data name="Page.SalesDeliverySubtitle" xml:space="preserve"><value>管理所有销货单资料与明细信息</value></data>
+  <data name="Page.SalesOrderTitle" xml:space="preserve"><value>销货管理</value></data>
+  <data name="Page.SalesOrderSubtitle" xml:space="preserve"><value>管理所有订单资料与明细信息</value></data>
+  <data name="Page.SalesReturnTitle" xml:space="preserve"><value>退货管理</value></data>
+  <data name="Page.SalesReturnSubtitle" xml:space="preserve"><value>管理所有退货单资料与退货状态</value></data>
+  <data name="Page.SalesReturnReasonTitle" xml:space="preserve"><value>销货退货原因管理</value></data>
+  <data name="Page.SalesReturnReasonSubtitle" xml:space="preserve"><value>管理销货退货原因资料</value></data>
+  <data name="Page.SupplierTitle" xml:space="preserve"><value>供应商维护</value></data>
+  <data name="Page.SupplierSubtitle" xml:space="preserve"><value>管理所有供应商资料与联系信息</value></data>
+  <data name="Page.CompanyTitle" xml:space="preserve"><value>公司设置</value></data>
+  <data name="Page.CompanySubtitle" xml:space="preserve"><value>管理公司基本资料与设置</value></data>
+  <data name="Page.ErrorLogTitle" xml:space="preserve"><value>错误记录</value></data>
+  <data name="Page.ErrorLogSubtitle" xml:space="preserve"><value>系统错误记录查询与监控</value></data>
+  <data name="Page.PaperSettingTitle" xml:space="preserve"><value>纸张设置</value></data>
+  <data name="Page.PaperSettingSubtitle" xml:space="preserve"><value>管理打印用纸张规格与设置</value></data>
+  <data name="Page.PrinterConfigurationTitle" xml:space="preserve"><value>打印机设置</value></data>
+  <data name="Page.PrinterConfigurationSubtitle" xml:space="preserve"><value>管理系统中的打印机连接设置</value></data>
+  <data name="Page.ReportPrintConfigurationTitle" xml:space="preserve"><value>报表打印配置</value></data>
+  <data name="Page.ReportPrintConfigurationSubtitle" xml:space="preserve"><value>管理不同报表的打印设置（报表由系统自动创建，仅可编辑打印机与纸张设置）</value></data>
+  <data name="Page.VehicleTitle" xml:space="preserve"><value>车辆维护</value></data>
+  <data name="Page.VehicleSubtitle" xml:space="preserve"><value>管理公司与客户车辆资料</value></data>
+  <data name="Page.VehicleMaintenanceTitle" xml:space="preserve"><value>保养记录维护</value></data>
+  <data name="Page.VehicleMaintenanceSubtitle" xml:space="preserve"><value>管理车辆保养与维修记录</value></data>
+  <data name="Page.VehicleTypeTitle" xml:space="preserve"><value>车型维护</value></data>
+  <data name="Page.VehicleTypeSubtitle" xml:space="preserve"><value>管理车辆类型分类资料</value></data>
+  <data name="Page.InventoryStockTitle" xml:space="preserve"><value>库存查询</value></data>
+  <data name="Page.InventoryStockSubtitle" xml:space="preserve"><value>管理商品库存与仓库位置</value></data>
+  <data name="Page.InventoryTransactionTitle" xml:space="preserve"><value>库存异动记录</value></data>
+  <data name="Page.InventoryTransactionSubtitle" xml:space="preserve"><value>查询与管理所有库存异动历史记录</value></data>
+  <data name="Page.MaterialIssueTitle" xml:space="preserve"><value>领料管理</value></data>
+  <data name="Page.MaterialIssueSubtitle" xml:space="preserve"><value>管理商品领料单与领料记录</value></data>
+  <data name="Page.StockTakingTitle" xml:space="preserve"><value>盘点管理</value></data>
+  <data name="Page.StockTakingSubtitle" xml:space="preserve"><value>管理库存盘点单与盘点记录</value></data>
+  <data name="Page.WarehouseTitle" xml:space="preserve"><value>仓库维护</value></data>
+  <data name="Page.WarehouseSubtitle" xml:space="preserve"><value>管理所有仓库资料与基本信息</value></data>
+  <data name="Page.WarehouseLocationTitle" xml:space="preserve"><value>仓库内位置管理</value></data>
+  <data name="Page.WarehouseLocationSubtitle" xml:space="preserve"><value>管理所有仓库内位置资料与基本信息</value></data>
+  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>废料记录</value></data>
+  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>管理废料收料记录</value></data>
+  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>废料类型维护</value></data>
+  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>管理废料类型分类资料</value></data>
+  <data name="AccountType.Asset" xml:space="preserve"><value>资产</value></data>
+  <data name="AccountType.Liability" xml:space="preserve"><value>负债</value></data>
+  <data name="AccountType.Equity" xml:space="preserve"><value>权益</value></data>
+  <data name="AccountType.Revenue" xml:space="preserve"><value>营业收入</value></data>
+  <data name="AccountType.Cost" xml:space="preserve"><value>营业成本</value></data>
+  <data name="AccountType.Expense" xml:space="preserve"><value>营业费用</value></data>
+  <data name="AccountType.NonOperating" xml:space="preserve"><value>营业外收益及费损</value></data>
+  <data name="AccountType.ComprehensiveIncome" xml:space="preserve"><value>综合损益总额</value></data>
+  <data name="AccountDirection.Debit" xml:space="preserve"><value>借方（Debit）</value></data>
+  <data name="AccountDirection.Credit" xml:space="preserve"><value>贷方（Credit）</value></data>
+  <data name="AccountLevel.L1" xml:space="preserve"><value>第1层（大分类）</value></data>
+  <data name="AccountLevel.L2" xml:space="preserve"><value>第2层（子分类）</value></data>
+  <data name="AccountLevel.L3" xml:space="preserve"><value>第3层（中分类）</value></data>
+  <data name="AccountLevel.L4" xml:space="preserve"><value>第4层（明细科目）</value></data>
+  <data name="Toggle.Enabled" xml:space="preserve"><value>启用</value></data>
+  <data name="Toggle.Disabled" xml:space="preserve"><value>停用</value></data>
+  <data name="Toggle.Switch" xml:space="preserve"><value>开关</value></data>
+  <data name="ApprovalSettings.Description" xml:space="preserve"><value>控制各单据类型的审核流程。启用后，相关单据需经审核才能生效。</value></data>
+  <data name="SubAccount.BatchCreateTitle" xml:space="preserve"><value>批量补建子科目</value></data>
+  <data name="SubAccount.BatchCreateDesc" xml:space="preserve"><value>为现有客户、供应商、商品补建子科目（已有子科目者略过）。执行前请先确认上方统制科目代码设置正确并已保存。</value></data>
+  <data name="SubAccount.CreateCustomer" xml:space="preserve"><value>补建客户</value></data>
+  <data name="SubAccount.CreateSupplier" xml:space="preserve"><value>补建供应商</value></data>
+  <data name="SubAccount.CreateProduct" xml:space="preserve"><value>补建商品</value></data>
+  <data name="SubAccount.CreateCustomerTitle" xml:space="preserve"><value>为所有现有客户补建子科目</value></data>
+  <data name="SubAccount.CreateSupplierTitle" xml:space="preserve"><value>为所有现有供应商补建子科目</value></data>
+  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>为所有现有商品补建子科目</value></data>
+  <data name="SubAccount.CreateResult" xml:space="preserve"><value>{0}子科目补建完成：建立 {1} 笔，略过 {2} 笔</value></data>
+  <data name="SubAccount.CreateResultWithErrors" xml:space="preserve"><value>{0}子科目补建完成：建立 {1} 笔，略过 {2} 笔，错误 {3} 笔（{4}{5}）</value></data>
+  <data name="SubAccount.CreateError" xml:space="preserve"><value>批量补建{0}子科目时发生错误：{1}</value></data>
+  <data name="SubAccount.CreateErrorNotify" xml:space="preserve"><value>批量补建{0}子科目失败</value></data>
+  <data name="SubAccount.Ellipsis" xml:space="preserve"><value>…</value></data>
+  <data name="SystemParam.Title" xml:space="preserve"><value>系统参数设置</value></data>
+  <data name="SystemParam.SaveTitle" xml:space="preserve"><value>保存系统参数设置</value></data>
+  <data name="SystemParam.RefreshTitle" xml:space="preserve"><value>刷新数据</value></data>
+  <data name="SystemParam.ResetTitle" xml:space="preserve"><value>将所有参数恢复为出厂默认值</value></data>
+  <data name="SystemParam.CloseTitle" xml:space="preserve"><value>关闭</value></data>
+  <data name="SystemParam.CreatedAt" xml:space="preserve"><value>创建时间：</value></data>
+  <data name="SystemParam.CreatedBy" xml:space="preserve"><value>创建者：</value></data>
+  <data name="SystemParam.UpdatedAt" xml:space="preserve"><value>最后更新：</value></data>
+  <data name="SystemParam.UpdatedBy" xml:space="preserve"><value>最后修改者：</value></data>
+  <data name="SystemParam.System" xml:space="preserve"><value>系统</value></data>
+  <data name="SystemParam.ResetConfirmTitle" xml:space="preserve"><value>恢复默认确认</value></data>
+  <data name="SystemParam.ResetConfirmMessage" xml:space="preserve"><value>确定要将系统参数重置为默认配置吗？现有的自定义配置将被清除。</value></data>
+  <data name="SystemParam.ResetConfirmButton" xml:space="preserve"><value>确定恢复</value></data>
+  <data name="SystemParam.SaveSuccess" xml:space="preserve"><value>系统参数已成功保存！</value></data>
+  <data name="SystemParam.SaveFailed" xml:space="preserve"><value>保存系统参数失败：{0}</value></data>
+  <data name="SystemParam.ResetSuccess" xml:space="preserve"><value>已重置为默认配置</value></data>
+  <data name="SystemParam.ResetFailed" xml:space="preserve"><value>恢复默认失败：{0}</value></data>
+  <data name="SystemParam.DataReloaded" xml:space="preserve"><value>数据已重新加载</value></data>
+  <data name="Section.PrintSettings" xml:space="preserve"><value>打印设置</value></data>
+  <data name="Section.PaperSize" xml:space="preserve"><value>纸张大小</value></data>
+  <data name="Section.DocumentInfo" xml:space="preserve"><value>文件信息</value></data>
+  <data name="Document.FileSelected" xml:space="preserve"><value>已选择：{0} ({1})</value></data>
+  <data name="Document.CurrentFile" xml:space="preserve"><value>当前文件：{0}</value></data>
+  <data name="Document.SupportedFormats" xml:space="preserve"><value>支持格式：PDF、Word、Excel、图片（最大 20MB）</value></data>
+  <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>使用分类默认</value></data>
+  <data name="Document.PaperSizeApplied" xml:space="preserve"><value>已应用「{0}」的尺寸设置</value></data>
 
 </root>

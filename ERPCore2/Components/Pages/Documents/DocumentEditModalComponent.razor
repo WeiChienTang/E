@@ -46,16 +46,22 @@
             @if (selectedFile != null)
             {
                 <div class="text-success small mt-1">
-                    已選擇：@selectedFile.Name (@FileUploadHelper.GetFileSizeString(selectedFile.Size))
+                    @string.Format(L["Document.FileSelected"], selectedFile.Name, FileUploadHelper.GetFileSizeString(selectedFile.Size))
                 </div>
             }
             else if (!string.IsNullOrEmpty(currentFileName))
             {
-                <div class="text-muted small mt-1">
-                    目前檔案：@currentFileName
+                <div class="d-flex align-items-center gap-2 mt-1">
+                    <span class="text-muted small">@string.Format(L["Document.CurrentFile"], currentFileName)</span>
+                    @if (!string.IsNullOrEmpty(currentFilePath))
+                    {
+                        <a href="@currentFilePath" download="@currentFileName" class="btn btn-sm btn-outline-secondary py-0">
+                            <i class="bi bi-download me-1"></i>@L["Button.Download"]
+                        </a>
+                    }
                 </div>
             }
-            <div class="form-text">支援格式：PDF、Word、Excel、圖片（最大 20MB）</div>
+            <div class="form-text">@L["Document.SupportedFormats"]</div>
         </div>
     </CustomFormContent>
 </GenericEditModalComponent>
@@ -76,6 +82,7 @@
     private IBrowserFile? selectedFile = null;
     private string? uploadError = null;
     private string? currentFileName = null;
+    private string? currentFilePath = null;
 
     // 下拉選項
     private List<SelectOption> categoryOptions = new();
@@ -93,6 +100,7 @@
             selectedFile = null;
             uploadError = null;
             currentFileName = null;
+            currentFilePath = null;
 
             // 載入分類選項
             var categories = await DocumentCategoryService.GetAllAsync();
@@ -103,6 +111,7 @@
                 .ToList();
 
             InitializeFormFields();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -113,11 +122,14 @@
     private async Task<Document?> LoadData()
     {
         var doc = await EditDataLoaderHelper.LoadOrCreateAsync<Document, IDocumentService>(
-            DocumentId, DocumentService, NotificationService, "文件", "DOC", PrefilledValues,
+            DocumentId, DocumentService, NotificationService, L["Entity.Document"], "DOC", PrefilledValues,
             d => d.Title = string.Empty);
 
         if (doc != null && doc.Id > 0)
+        {
             currentFileName = doc.FileName;
+            currentFilePath = doc.FilePath;
+        }
 
         return doc;
     }
@@ -215,7 +227,7 @@
                     IsRequired = false,
                     Options = new List<SelectOption>
                     {
-                        new() { Value = "", Text = "使用分類預設" },
+                        new() { Value = "", Text = L["Document.UseDefaultAccessLevel"] },
                         new() { Value = "1", Text = L["Label.DocumentAccessLevel.Normal"] },
                         new() { Value = "2", Text = L["Label.DocumentAccessLevel.Sensitive"] }
                     },
@@ -255,7 +267,7 @@
                     d => d.Title,
                     d => d.DocumentCategoryId,
                     d => d.AccessLevel)
-                .AddToSection("DocumentInfo",
+                .AddToSection(L["Section.DocumentInfo"],
                     d => d.IssuedBy,
                     d => d.IssuedDate,
                     d => d.ExpiryDate)

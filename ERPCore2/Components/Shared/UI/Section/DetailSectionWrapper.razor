@@ -19,7 +19,7 @@
             break;
         case LoadingVariant.Text:
             <div class="text-center py-3">
-                <span class="text-muted">@(EntityLoadingMessage ?? "請稍候...")</span>
+                <span class="text-muted">@(EntityLoadingMessage ?? L["Label.PleaseWait"].ToString())</span>
             </div>
             break;
         case LoadingVariant.Silent:
@@ -30,7 +30,7 @@ else if (!IsDetailDataReady)
 {
     <div class="d-flex justify-content-center align-items-center py-4">
         <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-        <span class="text-muted">@(DetailLoadingMessage ?? "載入明細資料中...")</span>
+        <span class="text-muted">@(DetailLoadingMessage ?? L["Label.LoadingDetailData"].ToString())</span>
     </div>
 }
 else if (!IsDataAvailable)

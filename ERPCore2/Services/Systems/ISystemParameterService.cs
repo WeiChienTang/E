@@ -19,6 +19,8 @@ namespace ERPCore2.Services
         SalesOrder,
         /// <summary>銷貨退回</summary>
         SalesReturn,
+        /// <summary>銷貨出貨</summary>
+        SalesDelivery,
         /// <summary>庫存調撥</summary>
         InventoryTransfer
     }
@@ -85,6 +87,11 @@ namespace ERPCore2.Services
         /// 檢查銷貨退回是否需要審核
         /// </summary>
         Task<bool> IsSalesReturnApprovalEnabledAsync();
+
+        /// <summary>
+        /// 檢查銷貨出貨單是否需要審核
+        /// </summary>
+        Task<bool> IsSalesDeliveryApprovalEnabledAsync();
 
         /// <summary>
         /// 檢查庫存調撥是否需要審核

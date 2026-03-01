@@ -12,7 +12,7 @@
 
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@IsVisibleChanged"
-                    Title="系統參數設定"
+                    Title="@L["SystemParam.Title"]"
                     Icon="bi-gear-fill"
                     Size="BaseModalComponent.ModalSize.Desktop"
                     HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
@@ -28,21 +28,21 @@
                                OnClick="HandleSaveAsync"
                                IsDisabled="@(isSaving || isLoading)"
                                IsLoading="@isSaving"
-                               Title="儲存系統參數設定" />
+                               Title="@L["SystemParam.SaveTitle"]" />
         <GenericButtonComponent Variant="ButtonVariant.Green"
                                Text="@L["Button.Refresh"]"
                                OnClick="ReloadData"
                                IsDisabled="@(isSaving || isLoading)"
-                               Title="重整資料" />
+                               Title="@L["SystemParam.RefreshTitle"]" />
         <GenericButtonComponent Variant="ButtonVariant.Orange"
                                Text="@L["Button.ResetToDefault"]"
                                OnClick="HandleResetToDefault"
                                IsDisabled="@(isSaving || isLoading)"
-                               Title="將所有參數恢復為出廠預設值" />
+                               Title="@L["SystemParam.ResetTitle"]" />
         <GenericButtonComponent Variant="ButtonVariant.Red"
                                Text="@L["Button.Cancel"]"
                                OnClick="HandleClose"
-                               Title="關閉" />
+                               Title="@L["SystemParam.CloseTitle"]" />
     </HeaderButtons>
     <BodyContent>
         <GenericFormComponent TModel="SystemParameter"
@@ -56,12 +56,12 @@
         {
             <div class="mt-4 pt-3 border-top">
                 <div class="text-muted small d-flex flex-wrap gap-3">
-                    <span><strong>建立時間：</strong>@systemParameter.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
-                    <span><strong>創建者：</strong>@(systemParameter.CreatedBy ?? "系統")</span>
+                    <span><strong>@L["SystemParam.CreatedAt"]</strong>@systemParameter.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                    <span><strong>@L["SystemParam.CreatedBy"]</strong>@(systemParameter.CreatedBy ?? L["SystemParam.System"].ToString())</span>
                     @if (systemParameter.UpdatedAt.HasValue)
                     {
-                        <span><strong>最後更新：</strong>@systemParameter.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
-                        <span><strong>最後修改者：</strong>@(systemParameter.UpdatedBy ?? "系統")</span>
+                        <span><strong>@L["SystemParam.UpdatedAt"]</strong>@systemParameter.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                        <span><strong>@L["SystemParam.UpdatedBy"]</strong>@(systemParameter.UpdatedBy ?? L["SystemParam.System"].ToString())</span>
                     }
                 </div>
             </div>
@@ -72,10 +72,10 @@
 @* 恢復預設確認對話框 *@
 <GenericConfirmModalComponent IsVisible="@isResetConfirmVisible"
                               IsVisibleChanged="@((value) => isResetConfirmVisible = value)"
-                              Title="恢復預設確認"
+                              Title="@L["SystemParam.ResetConfirmTitle"]"
                               Icon="bi-arrow-counterclockwise"
-                              Message="確定要將系統參數重置為預設配置嗎？現有的自訂配置將被清除。"
-                              ConfirmButtonText="確定恢復"
+                              Message="@L["SystemParam.ResetConfirmMessage"]"
+                              ConfirmButtonText="@L["SystemParam.ResetConfirmButton"]"
                               ConfirmButtonVariant="ButtonVariant.Orange"
                               HeaderColor="BaseModalComponent.HeaderVariant.Warning"
                               OnConfirm="ConfirmResetToDefault" />
@@ -269,14 +269,14 @@
                     await moduleManagementTab.SaveAsync();
                 }
 
-                await NotificationService.ShowSuccessAsync("系統參數已成功儲存！");
+                await NotificationService.ShowSuccessAsync(L["SystemParam.SaveSuccess"]);
             }
             else
             {
                 var errorMsg = !string.IsNullOrEmpty(result.ErrorMessage)
                     ? result.ErrorMessage
-                    : "儲存失敗";
-                await NotificationService.ShowErrorAsync($"儲存系統參數失敗：{errorMsg}");
+                    : L["SystemParam.SaveFailed"].ToString();
+                await NotificationService.ShowErrorAsync(string.Format(L["SystemParam.SaveFailed"], errorMsg));
             }
         }
         catch (Exception ex)
@@ -295,7 +295,7 @@
     private async Task ReloadData()
     {
         await LoadSystemParameterAsync();
-        await NotificationService.ShowSuccessAsync("資料已重新載入");
+        await NotificationService.ShowSuccessAsync(L["SystemParam.DataReloaded"]);
     }
 
     // ===== 關閉 =====
@@ -328,15 +328,15 @@
 
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync("已重置為預設配置");
+                await NotificationService.ShowSuccessAsync(L["SystemParam.ResetSuccess"]);
                 await LoadSystemParameterAsync();
             }
             else
             {
                 var errorMsg = !string.IsNullOrEmpty(result.ErrorMessage)
                     ? result.ErrorMessage
-                    : "重置失敗";
-                await NotificationService.ShowErrorAsync($"恢復預設失敗：{errorMsg}");
+                    : L["SystemParam.ResetFailed"].ToString();
+                await NotificationService.ShowErrorAsync(string.Format(L["SystemParam.ResetFailed"], errorMsg));
             }
         }
         catch (Exception ex)

@@ -47,6 +47,16 @@ namespace ERPCore2.Services
         // 報表和統計
         Task<PurchaseReturnStatistics> GetStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null);
         Task<decimal> GetTotalReturnAmountAsync(int supplierId, DateTime? startDate = null, DateTime? endDate = null);
+
+        /// <summary>
+        /// 核准採購退回單
+        /// </summary>
+        Task<ServiceResult> ApproveAsync(int id, int approvedBy);
+
+        /// <summary>
+        /// 駁回採購退回單
+        /// </summary>
+        Task<ServiceResult> RejectAsync(int id, int rejectedBy, string reason);
     }
 
     /// <summary>

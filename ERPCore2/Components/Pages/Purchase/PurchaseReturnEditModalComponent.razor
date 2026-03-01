@@ -14,6 +14,7 @@
 @inject ISetoffDocumentService SetoffDocumentService
 @inject IPurchaseReturnReportService PurchaseReturnReportService
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject ERPCore2.Data.Context.AppDbContext DbContext
@@ -44,6 +45,11 @@
                           SaveSuccessMessage="@(PurchaseReturnId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseReturn"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseReturn"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseReturn"]]"
                           RequiredPermission="@PermissionRegistry.PurchaseReturn.Read"
+                          ShowApprovalSection="@ShouldShowApprovalSection()"
+                          ApprovalPermission="@PermissionRegistry.PurchaseReturn.Approve"
+                          OnApprove="@HandlePurchaseReturnApprove"
+                          OnRejectWithReason="@HandlePurchaseReturnRejectWithReason"
+                          CanPrintCheck="@GetCanPrintCheck()"
                           OnEntitySaved="@OnPurchaseReturnSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
@@ -142,6 +148,9 @@
     // ===== 系統參數 - 稅率快取（避免重複查詢資料庫） =====
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
 
+    // ===== 審核開關狀態 =====
+    private bool isApprovalEnabled = false;
+
     // ===== 鎖定狀態 =====
     private bool hasUndeletableDetails = false;
     private bool isDetailDataReady = false;
@@ -151,6 +160,11 @@
     private bool isDataLoaded = false;  // 資料載入狀態標記
 
     // ===== 生命週期 =====
+    protected override async Task OnInitializedAsync()
+    {
+        isApprovalEnabled = await SystemParameterService.IsPurchaseReturnApprovalEnabledAsync();
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         try
@@ -1087,7 +1101,8 @@
                                  IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
                                  OnReturnDetailsChanged="@HandleReturnDetailsChanged"
                                  OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
-                                 OnOpenRelatedDocument="@HandleOpenRelatedDocument" />
+                                 OnOpenRelatedDocument="@HandleOpenRelatedDocument"
+                                 IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)" />
         </DetailSectionWrapper>
     };
 
@@ -1129,6 +1144,13 @@
     {
         try
         {
+            // 審核後不允許儲存
+            if (!ApprovalConfigHelper.CanSaveWhenApproved(isApprovalEnabled, purchaseReturn.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("採購退回單已核准，無法修改");
+                return false;
+            }
+
             // 首先呼叫明細管理器的驗證方法
             if (purchaseReturnDetailManager != null)
             {
@@ -1265,6 +1287,84 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledReceiving), GetType(), 
                 additionalData: $"開啟預填進貨退出Modal失敗 - SupplierId: {supplierId}, ReceivingId: {purchaseReceivingId}");
             await NotificationService.ShowErrorAsync("開啟進貨退出時發生錯誤");
+        }
+    }
+
+    // ===== 審核相關方法 =====
+
+    private bool ShouldShowApprovalSection()
+        => isApprovalEnabled && PurchaseReturnId.HasValue && PurchaseReturnId.Value > 0;
+
+    private Func<bool>? GetCanPrintCheck()
+        => isApprovalEnabled
+            ? () => ApprovalConfigHelper.CanPerformActionRequiringApproval(
+                  isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false)
+            : null;
+
+    private async Task<bool> HandlePurchaseReturnApprove()
+    {
+        try
+        {
+            if (!PurchaseReturnId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法審核：採購退回單ID不存在");
+                return false;
+            }
+
+            var confirmed = await NotificationService.ShowConfirmAsync(
+                "確定要審核通過此採購退回單嗎？系統將先儲存當前資料，然後進行審核。審核通過後將無法再修改。",
+                "審核確認");
+            if (!confirmed) return false;
+
+            var entity = editModalComponent?.Entity;
+            if (entity == null) return false;
+
+            var saveOk = await SavePurchaseReturnWithDetails(entity);
+            if (!saveOk)
+            {
+                await NotificationService.ShowErrorAsync("儲存失敗，無法進行審核");
+                return false;
+            }
+
+            var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!currentUserId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
+                return false;
+            }
+
+            var result = await PurchaseReturnService.ApproveAsync(PurchaseReturnId.Value, currentUserId.Value);
+            if (result.IsSuccess) return true;
+
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "審核通過失敗");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseReturnApprove), GetType());
+            return false;
+        }
+    }
+
+    private async Task<bool> HandlePurchaseReturnRejectWithReason(string rejectReason)
+    {
+        try
+        {
+            if (!PurchaseReturnId.HasValue) return false;
+
+            var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!currentUserId.HasValue) return false;
+
+            var result = await PurchaseReturnService.RejectAsync(PurchaseReturnId.Value, currentUserId.Value, rejectReason);
+            if (result.IsSuccess) return true;
+
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "駁回失敗");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseReturnRejectWithReason), GetType());
+            return false;
         }
     }
 }

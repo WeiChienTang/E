@@ -64,7 +64,7 @@
 
     private Task<AccountItem?> LoadAccountItemData()
         => EditDataLoaderHelper.LoadOrCreateAsync<AccountItem, IAccountItemService>(
-            AccountItemId, AccountItemService, NotificationService, "會計科目", "ACC", PrefilledValues,
+            AccountItemId, AccountItemService, NotificationService, L["Entity.AccountItem"], "ACC", PrefilledValues,
             a =>
             {
                 a.AccountLevel = 4;
@@ -133,14 +133,14 @@
                     HelpText = "科目所屬的會計大類",
                     Options = new List<SelectOption>
                     {
-                        new SelectOption { Text = "資產", Value = ((int)ERPCore2.Models.Enums.AccountType.Asset).ToString() },
-                        new SelectOption { Text = "負債", Value = ((int)ERPCore2.Models.Enums.AccountType.Liability).ToString() },
-                        new SelectOption { Text = "權益", Value = ((int)ERPCore2.Models.Enums.AccountType.Equity).ToString() },
-                        new SelectOption { Text = "營業收入", Value = ((int)ERPCore2.Models.Enums.AccountType.Revenue).ToString() },
-                        new SelectOption { Text = "營業成本", Value = ((int)ERPCore2.Models.Enums.AccountType.Cost).ToString() },
-                        new SelectOption { Text = "營業費用", Value = ((int)ERPCore2.Models.Enums.AccountType.Expense).ToString() },
-                        new SelectOption { Text = "營業外收益及費損", Value = ((int)ERPCore2.Models.Enums.AccountType.NonOperatingIncomeAndExpense).ToString() },
-                        new SelectOption { Text = "綜合損益總額", Value = ((int)ERPCore2.Models.Enums.AccountType.ComprehensiveIncome).ToString() }
+                        new SelectOption { Text = L["AccountType.Asset"], Value = ((int)ERPCore2.Models.Enums.AccountType.Asset).ToString() },
+                        new SelectOption { Text = L["AccountType.Liability"], Value = ((int)ERPCore2.Models.Enums.AccountType.Liability).ToString() },
+                        new SelectOption { Text = L["AccountType.Equity"], Value = ((int)ERPCore2.Models.Enums.AccountType.Equity).ToString() },
+                        new SelectOption { Text = L["AccountType.Revenue"], Value = ((int)ERPCore2.Models.Enums.AccountType.Revenue).ToString() },
+                        new SelectOption { Text = L["AccountType.Cost"], Value = ((int)ERPCore2.Models.Enums.AccountType.Cost).ToString() },
+                        new SelectOption { Text = L["AccountType.Expense"], Value = ((int)ERPCore2.Models.Enums.AccountType.Expense).ToString() },
+                        new SelectOption { Text = L["AccountType.NonOperating"], Value = ((int)ERPCore2.Models.Enums.AccountType.NonOperatingIncomeAndExpense).ToString() },
+                        new SelectOption { Text = L["AccountType.ComprehensiveIncome"], Value = ((int)ERPCore2.Models.Enums.AccountType.ComprehensiveIncome).ToString() }
                     }
                 },
                 new()
@@ -152,8 +152,8 @@
                     HelpText = "借方：資產、成本、費用類；貸方：負債、權益、收入類",
                     Options = new List<SelectOption>
                     {
-                        new SelectOption { Text = "借方（Debit）", Value = ((int)ERPCore2.Models.Enums.AccountDirection.Debit).ToString() },
-                        new SelectOption { Text = "貸方（Credit）", Value = ((int)ERPCore2.Models.Enums.AccountDirection.Credit).ToString() }
+                        new SelectOption { Text = L["AccountDirection.Debit"], Value = ((int)ERPCore2.Models.Enums.AccountDirection.Debit).ToString() },
+                        new SelectOption { Text = L["AccountDirection.Credit"], Value = ((int)ERPCore2.Models.Enums.AccountDirection.Credit).ToString() }
                     }
                 },
                 new()
@@ -165,10 +165,10 @@
                     HelpText = "1=大分類、2=子分類、3=中分類、4=明細科目",
                     Options = new List<SelectOption>
                     {
-                        new SelectOption { Text = "第1層（大分類）", Value = "1" },
-                        new SelectOption { Text = "第2層（子分類）", Value = "2" },
-                        new SelectOption { Text = "第3層（中分類）", Value = "3" },
-                        new SelectOption { Text = "第4層（明細科目）", Value = "4" }
+                        new SelectOption { Text = L["AccountLevel.L1"], Value = "1" },
+                        new SelectOption { Text = L["AccountLevel.L2"], Value = "2" },
+                        new SelectOption { Text = L["AccountLevel.L3"], Value = "3" },
+                        new SelectOption { Text = L["AccountLevel.L4"], Value = "4" }
                     }
                 },
                 new()

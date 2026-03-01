@@ -1145,6 +1145,7 @@
   <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>仕入返品承認を有効にする</value></data>
   <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>受注承認を有効にする</value></data>
   <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>売上返品承認を有効にする</value></data>
+  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>出荷承認を有効にする</value></data>
   <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>在庫振替承認を有効にする</value></data>
   <!-- ===== FormSectionNames keys ===== -->
   <data name="Section.BasicInfo" xml:space="preserve"><value>基本情報</value></data>
@@ -2580,5 +2581,163 @@
   <data name="Message.LoadRelatedDocFailed" xml:space="preserve"><value>関連伝票の読み込みに失敗しました：{0}</value></data>
   <data name="Message.HasUndeletableDetailsTooltip" xml:space="preserve"><value>一部の商品に入荷記録があり、クリアできません</value></data>
   <data name="Tooltip.ClearAllDetails" xml:space="preserve"><value>すべての商品明細をクリア</value></data>
+  <data name="Tooltip.SubtotalTaxExclusive" xml:space="preserve"><value>外税：数量 × 単価 × (1 + 税率%)</value></data>
+  <data name="Tooltip.SubtotalTaxInclusive" xml:space="preserve"><value>内税：数量 × 単価（単価に税込み）</value></data>
+  <data name="Tooltip.SubtotalNoTax" xml:space="preserve"><value>非課税：数量 × 単価</value></data>
+  <data name="Tooltip.SubtotalDefault" xml:space="preserve"><value>数量 × 単価</value></data>
+
+  <data name="Page.AccountItemTitle" xml:space="preserve"><value>会計科目管理</value></data>
+  <data name="Page.AccountItemSubtitle" xml:space="preserve"><value>標準勘定科目表（Chart of Accounts）を管理する</value></data>
+  <data name="Page.JournalEntryTitle" xml:space="preserve"><value>伝票管理</value></data>
+  <data name="Page.JournalEntrySubtitle" xml:space="preserve"><value>会計伝票と仕訳明細を管理する</value></data>
+  <data name="Page.CustomerTitle" xml:space="preserve"><value>顧客管理</value></data>
+  <data name="Page.CustomerSubtitle" xml:space="preserve"><value>すべての顧客データと連絡先情報を管理する</value></data>
+  <data name="Page.CustomerVisitTitle" xml:space="preserve"><value>訪問記録管理</value></data>
+  <data name="Page.CustomerVisitSubtitle" xml:space="preserve"><value>顧客への訪問と連絡記録を管理する</value></data>
+  <data name="Page.DocumentCategoryTitle" xml:space="preserve"><value>ファイル分類</value></data>
+  <data name="Page.DocumentCategorySubtitle" xml:space="preserve"><value>文書分類とソース設定を管理する</value></data>
+  <data name="Page.DocumentTitle" xml:space="preserve"><value>ファイル保存</value></data>
+  <data name="Page.DocumentSubtitle" xml:space="preserve"><value>各種保存文書を管理・アクセスする</value></data>
+  <data name="Page.DepartmentTitle" xml:space="preserve"><value>部門設定</value></data>
+  <data name="Page.DepartmentSubtitle" xml:space="preserve"><value>会社の組織構造と部門情報を設定する</value></data>
+  <data name="Page.EmployeeTitle" xml:space="preserve"><value>従業員</value></data>
+  <data name="Page.EmployeeSubtitle" xml:space="preserve"><value>従業員データと権限設定を管理する</value></data>
+  <data name="Page.EmployeePositionTitle" xml:space="preserve"><value>職位設定</value></data>
+  <data name="Page.EmployeePositionSubtitle" xml:space="preserve"><value>すべての職位設定データと職位レベルを管理する</value></data>
+  <data name="Page.PermissionTitle" xml:space="preserve"><value>権限明細管理</value></data>
+  <data name="Page.PermissionSubtitle" xml:space="preserve"><value>システム機能権限の明細設定を管理する</value></data>
+  <data name="Page.RoleTitle" xml:space="preserve"><value>権限グループ設定</value></data>
+  <data name="Page.RoleSubtitle" xml:space="preserve"><value>システム権限グループと権限設定を管理する</value></data>
+  <data name="Page.BankTitle" xml:space="preserve"><value>銀行設定</value></data>
+  <data name="Page.BankSubtitle" xml:space="preserve"><value>銀行の基本情報と連絡先情報を管理する</value></data>
+  <data name="Page.CurrencyTitle" xml:space="preserve"><value>通貨設定</value></data>
+  <data name="Page.CurrencySubtitle" xml:space="preserve"><value>システムがサポートする通貨種類と為替レート設定を管理する</value></data>
+  <data name="Page.PaymentMethodTitle" xml:space="preserve"><value>支払方法管理</value></data>
+  <data name="Page.PaymentMethodSubtitle" xml:space="preserve"><value>すべての支払方法データと設定を管理する</value></data>
+  <data name="Page.CompositionCategoryTitle" xml:space="preserve"><value>部品表タイプ</value></data>
+  <data name="Page.CompositionCategorySubtitle" xml:space="preserve"><value>商品部品表のタイプ分類を設定する</value></data>
+  <data name="Page.MaterialTitle" xml:space="preserve"><value>素材</value></data>
+  <data name="Page.MaterialSubtitle" xml:space="preserve"><value>すべての素材データと属性設定を管理する</value></data>
+  <data name="Page.ProductCategoryTitle" xml:space="preserve"><value>商品タイプ</value></data>
+  <data name="Page.ProductCategorySubtitle" xml:space="preserve"><value>すべての商品タイプデータと階層構造を管理する</value></data>
+  <data name="Page.ProductCompositionTitle" xml:space="preserve"><value>部品表</value></data>
+  <data name="Page.ProductCompositionSubtitle" xml:space="preserve"><value>商品の製造レシピとコンポーネントを管理する</value></data>
+  <data name="Page.ProductTitle" xml:space="preserve"><value>商品管理</value></data>
+  <data name="Page.ProductSubtitle" xml:space="preserve"><value>すべての商品データと在庫情報を管理する</value></data>
+  <data name="Page.ProductionScheduleTitle" xml:space="preserve"><value>生産スケジュール管理</value></data>
+  <data name="Page.ProductionScheduleSubtitle" xml:space="preserve"><value>生産スケジュール計画と実行を管理する</value></data>
+  <data name="Page.SizeTitle" xml:space="preserve"><value>サイズ管理</value></data>
+  <data name="Page.SizeSubtitle" xml:space="preserve"><value>商品サイズ仕様データを管理する</value></data>
+  <data name="Page.UnitTitle" xml:space="preserve"><value>単位管理</value></data>
+  <data name="Page.UnitSubtitle" xml:space="preserve"><value>すべての計量単位データと換算関係を管理する</value></data>
+  <data name="Page.PurchaseOrderTitle" xml:space="preserve"><value>発注書管理</value></data>
+  <data name="Page.PurchaseOrderSubtitle" xml:space="preserve"><value>すべての発注書データを管理する</value></data>
+  <data name="Page.PurchaseReceivingTitle" xml:space="preserve"><value>仕入管理</value></data>
+  <data name="Page.PurchaseReceivingSubtitle" xml:space="preserve"><value>すべての仕入伝票データと仕入状況を管理する</value></data>
+  <data name="Page.PurchaseReturnTitle" xml:space="preserve"><value>仕入返品管理</value></data>
+  <data name="Page.PurchaseReturnSubtitle" xml:space="preserve"><value>すべての仕入返品伝票データと返金状況を管理する</value></data>
+  <data name="Page.PurchaseReturnReasonTitle" xml:space="preserve"><value>仕入返品理由管理</value></data>
+  <data name="Page.PurchaseReturnReasonSubtitle" xml:space="preserve"><value>仕入返品理由データを管理する</value></data>
+  <data name="Page.QuotationTitle" xml:space="preserve"><value>見積管理</value></data>
+  <data name="Page.QuotationSubtitle" xml:space="preserve"><value>すべての見積書データと明細情報を管理する</value></data>
+  <data name="Page.SalesDeliveryTitle" xml:space="preserve"><value>出荷伝票管理</value></data>
+  <data name="Page.SalesDeliverySubtitle" xml:space="preserve"><value>すべての出荷伝票データと明細情報を管理する</value></data>
+  <data name="Page.SalesOrderTitle" xml:space="preserve"><value>受注管理</value></data>
+  <data name="Page.SalesOrderSubtitle" xml:space="preserve"><value>すべての受注データと明細情報を管理する</value></data>
+  <data name="Page.SalesReturnTitle" xml:space="preserve"><value>返品管理</value></data>
+  <data name="Page.SalesReturnSubtitle" xml:space="preserve"><value>すべての返品伝票データと返品状況を管理する</value></data>
+  <data name="Page.SalesReturnReasonTitle" xml:space="preserve"><value>売上返品理由管理</value></data>
+  <data name="Page.SalesReturnReasonSubtitle" xml:space="preserve"><value>売上返品理由データを管理する</value></data>
+  <data name="Page.SupplierTitle" xml:space="preserve"><value>仕入先管理</value></data>
+  <data name="Page.SupplierSubtitle" xml:space="preserve"><value>すべての仕入先データと連絡先情報を管理する</value></data>
+  <data name="Page.CompanyTitle" xml:space="preserve"><value>会社設定</value></data>
+  <data name="Page.CompanySubtitle" xml:space="preserve"><value>会社の基本情報と設定を管理する</value></data>
+  <data name="Page.ErrorLogTitle" xml:space="preserve"><value>エラーログ</value></data>
+  <data name="Page.ErrorLogSubtitle" xml:space="preserve"><value>システムエラーログの照会と監視</value></data>
+  <data name="Page.PaperSettingTitle" xml:space="preserve"><value>用紙設定</value></data>
+  <data name="Page.PaperSettingSubtitle" xml:space="preserve"><value>印刷用用紙規格と設定を管理する</value></data>
+  <data name="Page.PrinterConfigurationTitle" xml:space="preserve"><value>プリンター設定</value></data>
+  <data name="Page.PrinterConfigurationSubtitle" xml:space="preserve"><value>システム内のプリンター接続設定を管理する</value></data>
+  <data name="Page.ReportPrintConfigurationTitle" xml:space="preserve"><value>帳票印刷設定</value></data>
+  <data name="Page.ReportPrintConfigurationSubtitle" xml:space="preserve"><value>各帳票の印刷設定を管理する（帳票はシステムが自動作成、プリンターと用紙の設定のみ編集可能）</value></data>
+  <data name="Page.VehicleTitle" xml:space="preserve"><value>車両管理</value></data>
+  <data name="Page.VehicleSubtitle" xml:space="preserve"><value>会社と顧客の車両データを管理する</value></data>
+  <data name="Page.VehicleMaintenanceTitle" xml:space="preserve"><value>整備記録管理</value></data>
+  <data name="Page.VehicleMaintenanceSubtitle" xml:space="preserve"><value>車両整備とメンテナンス記録を管理する</value></data>
+  <data name="Page.VehicleTypeTitle" xml:space="preserve"><value>車種管理</value></data>
+  <data name="Page.VehicleTypeSubtitle" xml:space="preserve"><value>車両タイプ分類データを管理する</value></data>
+  <data name="Page.InventoryStockTitle" xml:space="preserve"><value>在庫照会</value></data>
+  <data name="Page.InventoryStockSubtitle" xml:space="preserve"><value>商品在庫と倉庫位置を管理する</value></data>
+  <data name="Page.InventoryTransactionTitle" xml:space="preserve"><value>在庫異動記録</value></data>
+  <data name="Page.InventoryTransactionSubtitle" xml:space="preserve"><value>すべての在庫異動履歴を照会・管理する</value></data>
+  <data name="Page.MaterialIssueTitle" xml:space="preserve"><value>出庫管理</value></data>
+  <data name="Page.MaterialIssueSubtitle" xml:space="preserve"><value>商品出庫伝票と出庫記録を管理する</value></data>
+  <data name="Page.StockTakingTitle" xml:space="preserve"><value>棚卸管理</value></data>
+  <data name="Page.StockTakingSubtitle" xml:space="preserve"><value>棚卸伝票と棚卸記録を管理する</value></data>
+  <data name="Page.WarehouseTitle" xml:space="preserve"><value>倉庫管理</value></data>
+  <data name="Page.WarehouseSubtitle" xml:space="preserve"><value>すべての倉庫データと基本情報を管理する</value></data>
+  <data name="Page.WarehouseLocationTitle" xml:space="preserve"><value>倉庫内位置管理</value></data>
+  <data name="Page.WarehouseLocationSubtitle" xml:space="preserve"><value>すべての倉庫内位置データと基本情報を管理する</value></data>
+  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>廃棄物記録</value></data>
+  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>廃棄物受入記録を管理する</value></data>
+  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>廃棄物タイプ管理</value></data>
+  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>廃棄物タイプ分類データを管理する</value></data>
+  <data name="AccountType.Asset" xml:space="preserve"><value>資産</value></data>
+  <data name="AccountType.Liability" xml:space="preserve"><value>負債</value></data>
+  <data name="AccountType.Equity" xml:space="preserve"><value>資本</value></data>
+  <data name="AccountType.Revenue" xml:space="preserve"><value>営業収益</value></data>
+  <data name="AccountType.Cost" xml:space="preserve"><value>売上原価</value></data>
+  <data name="AccountType.Expense" xml:space="preserve"><value>営業費用</value></data>
+  <data name="AccountType.NonOperating" xml:space="preserve"><value>営業外収益及び費用</value></data>
+  <data name="AccountType.ComprehensiveIncome" xml:space="preserve"><value>包括利益合計</value></data>
+  <data name="AccountDirection.Debit" xml:space="preserve"><value>借方（Debit）</value></data>
+  <data name="AccountDirection.Credit" xml:space="preserve"><value>貸方（Credit）</value></data>
+  <data name="AccountLevel.L1" xml:space="preserve"><value>第1層（大分類）</value></data>
+  <data name="AccountLevel.L2" xml:space="preserve"><value>第2層（小分類）</value></data>
+  <data name="AccountLevel.L3" xml:space="preserve"><value>第3層（中分類）</value></data>
+  <data name="AccountLevel.L4" xml:space="preserve"><value>第4層（明細科目）</value></data>
+  <data name="Toggle.Enabled" xml:space="preserve"><value>有効</value></data>
+  <data name="Toggle.Disabled" xml:space="preserve"><value>無効</value></data>
+  <data name="Toggle.Switch" xml:space="preserve"><value>切替</value></data>
+  <data name="ApprovalSettings.Description" xml:space="preserve"><value>各伝票タイプの承認フローを制御します。有効にすると、関連する伝票は承認を経てから有効になります。</value></data>
+  <data name="SubAccount.BatchCreateTitle" xml:space="preserve"><value>一括補充サブ勘定科目作成</value></data>
+  <data name="SubAccount.BatchCreateDesc" xml:space="preserve"><value>既存の顧客、仕入先、商品のサブ勘定科目を補充作成します（既にサブ科目がある場合はスキップ）。実行前に上記の統制科目コードの設定が正しく保存されていることを確認してください。</value></data>
+  <data name="SubAccount.CreateCustomer" xml:space="preserve"><value>顧客補充</value></data>
+  <data name="SubAccount.CreateSupplier" xml:space="preserve"><value>仕入先補充</value></data>
+  <data name="SubAccount.CreateProduct" xml:space="preserve"><value>商品補充</value></data>
+  <data name="SubAccount.CreateCustomerTitle" xml:space="preserve"><value>すべての既存顧客のサブ勘定科目を補充作成</value></data>
+  <data name="SubAccount.CreateSupplierTitle" xml:space="preserve"><value>すべての既存仕入先のサブ勘定科目を補充作成</value></data>
+  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>すべての既存商品のサブ勘定科目を補充作成</value></data>
+  <data name="SubAccount.CreateResult" xml:space="preserve"><value>{0}サブ勘定科目補充完了：{1} 件作成、{2} 件スキップ</value></data>
+  <data name="SubAccount.CreateResultWithErrors" xml:space="preserve"><value>{0}サブ勘定科目補充完了：{1} 件作成、{2} 件スキップ、{3} 件エラー（{4}{5}）</value></data>
+  <data name="SubAccount.CreateError" xml:space="preserve"><value>{0}サブ勘定科目の一括補充中にエラーが発生しました：{1}</value></data>
+  <data name="SubAccount.CreateErrorNotify" xml:space="preserve"><value>{0}サブ勘定科目の一括補充に失敗しました</value></data>
+  <data name="SubAccount.Ellipsis" xml:space="preserve"><value>…</value></data>
+  <data name="SystemParam.Title" xml:space="preserve"><value>システムパラメーター設定</value></data>
+  <data name="SystemParam.SaveTitle" xml:space="preserve"><value>システムパラメーターを保存</value></data>
+  <data name="SystemParam.RefreshTitle" xml:space="preserve"><value>データを更新</value></data>
+  <data name="SystemParam.ResetTitle" xml:space="preserve"><value>すべてのパラメーターを出荷時設定に戻す</value></data>
+  <data name="SystemParam.CloseTitle" xml:space="preserve"><value>閉じる</value></data>
+  <data name="SystemParam.CreatedAt" xml:space="preserve"><value>作成日時：</value></data>
+  <data name="SystemParam.CreatedBy" xml:space="preserve"><value>作成者：</value></data>
+  <data name="SystemParam.UpdatedAt" xml:space="preserve"><value>最終更新：</value></data>
+  <data name="SystemParam.UpdatedBy" xml:space="preserve"><value>最終更新者：</value></data>
+  <data name="SystemParam.System" xml:space="preserve"><value>システム</value></data>
+  <data name="SystemParam.ResetConfirmTitle" xml:space="preserve"><value>デフォルト設定への復元確認</value></data>
+  <data name="SystemParam.ResetConfirmMessage" xml:space="preserve"><value>システムパラメーターをデフォルト設定にリセットしますか？現在のカスタム設定は削除されます。</value></data>
+  <data name="SystemParam.ResetConfirmButton" xml:space="preserve"><value>復元する</value></data>
+  <data name="SystemParam.SaveSuccess" xml:space="preserve"><value>システムパラメーターが正常に保存されました！</value></data>
+  <data name="SystemParam.SaveFailed" xml:space="preserve"><value>システムパラメーターの保存に失敗しました：{0}</value></data>
+  <data name="SystemParam.ResetSuccess" xml:space="preserve"><value>デフォルト設定にリセットされました</value></data>
+  <data name="SystemParam.ResetFailed" xml:space="preserve"><value>デフォルトへの復元に失敗しました：{0}</value></data>
+  <data name="SystemParam.DataReloaded" xml:space="preserve"><value>データが再読み込みされました</value></data>
+  <data name="Section.PrintSettings" xml:space="preserve"><value>印刷設定</value></data>
+  <data name="Section.PaperSize" xml:space="preserve"><value>用紙サイズ</value></data>
+  <data name="Section.DocumentInfo" xml:space="preserve"><value>文書情報</value></data>
+  <data name="Document.FileSelected" xml:space="preserve"><value>選択済み：{0} ({1})</value></data>
+  <data name="Document.CurrentFile" xml:space="preserve"><value>現在のファイル：{0}</value></data>
+  <data name="Document.SupportedFormats" xml:space="preserve"><value>対応形式：PDF、Word、Excel、画像（最大 20MB）</value></data>
+  <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>分類デフォルトを使用</value></data>
+  <data name="Document.PaperSizeApplied" xml:space="preserve"><value>「{0}」のサイズ設定を適用しました</value></data>
 
 </root>

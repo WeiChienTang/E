@@ -19,6 +19,7 @@
 @inject IJSRuntime JSRuntime
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IStringLocalizer<SharedResource> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @implements IDisposable
 
 @using ERPCore2.FieldConfiguration
@@ -50,6 +51,11 @@
                           SaveSuccessMessage="@(SalesReturnId.HasValue ? L["Message.UpdateSuccess", L["Entity.SalesReturn"]].ToString() : L["Message.CreateSuccess", L["Entity.SalesReturn"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SalesReturn"]]"
                           RequiredPermission="@PermissionRegistry.SalesReturn.Read"
+                          ShowApprovalSection="@ShouldShowApprovalSection()"
+                          ApprovalPermission="@PermissionRegistry.SalesReturn.Approve"
+                          OnApprove="@HandleSalesReturnApprove"
+                          OnRejectWithReason="@HandleSalesReturnRejectWithReason"
+                          CanPrintCheck="@GetCanPrintCheck()"
                           OnEntitySaved="@OnSalesReturnSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
@@ -146,6 +152,7 @@
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
+    private bool isApprovalEnabled = false;
 
     // ===== 必要方法 =====
     protected override async Task OnParametersSetAsync()
@@ -154,6 +161,7 @@
         {
             if (IsVisible && !isDataLoaded)
             {
+                isApprovalEnabled = await SystemParameterService.IsSalesReturnApprovalEnabledAsync();
                 await LoadAdditionalDataAsync();
                 await InitializeFormFieldsAsync();
                 isDataLoaded = true;
@@ -1009,6 +1017,12 @@
     {
         try
         {
+            if (!ApprovalConfigHelper.CanSaveWhenApproved(isApprovalEnabled, salesReturn.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("銷貨退回單已核准，無法修改");
+                return false;
+            }
+
             // 驗證必填欄位
             if (salesReturn.CustomerId <= 0)
             {
@@ -1203,7 +1217,8 @@
                               OnDetailsChanged="@HandleReturnDetailsChanged"
                               OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                               OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                              IsEditMode="@SalesReturnId.HasValue" />
+                              IsEditMode="@SalesReturnId.HasValue"
+                              IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)" />
         </DetailSectionWrapper>
     };
     
@@ -1353,6 +1368,99 @@
         {
             await NotificationService.ShowErrorAsync($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
             throw new Exception($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
+        }
+    }
+
+    // ===== 審核功能 =====
+
+    private bool ShouldShowApprovalSection()
+        => isApprovalEnabled && SalesReturnId.HasValue && SalesReturnId.Value > 0;
+
+    private Func<bool>? GetCanPrintCheck()
+        => isApprovalEnabled
+            ? () => ApprovalConfigHelper.CanPerformActionRequiringApproval(
+                  isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false)
+            : null;
+
+    private async Task<bool> HandleSalesReturnApprove()
+    {
+        try
+        {
+            var entity = editModalComponent?.Entity;
+            if (entity == null || !SalesReturnId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("找不到銷貨退回單資料");
+                return false;
+            }
+
+            var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!userId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得目前使用者資訊");
+                return false;
+            }
+
+            if (!await ValidateSalesReturnDetailsAsync(entity))
+                return false;
+
+            var saveResult = await SalesReturnService.SaveWithDetailsAsync(entity, salesReturnDetails);
+            if (saveResult == null || !saveResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(saveResult?.ErrorMessage ?? "儲存銷貨退回單失敗");
+                return false;
+            }
+
+            if (saveResult.Data != null)
+            {
+                await UpdateInventoryByDifferenceAsync(saveResult.Data.Id);
+            }
+
+            var approveResult = await SalesReturnService.ApproveAsync(entity.Id, userId.Value);
+            if (!approveResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(approveResult.ErrorMessage ?? "核准失敗");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesReturnApprove), GetType());
+            return false;
+        }
+    }
+
+    private async Task<bool> HandleSalesReturnRejectWithReason(string rejectReason)
+    {
+        try
+        {
+            if (!SalesReturnId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("找不到銷貨退回單資料");
+                return false;
+            }
+
+            var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!userId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得目前使用者資訊");
+                return false;
+            }
+
+            var rejectResult = await SalesReturnService.RejectAsync(SalesReturnId.Value, userId.Value, rejectReason);
+            if (!rejectResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(rejectResult.ErrorMessage ?? "駁回失敗");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesReturnRejectWithReason), GetType());
+            return false;
         }
     }
 

@@ -1145,6 +1145,7 @@
   <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>Enable Purchase Return Approval</value></data>
   <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>Enable Sales Order Approval</value></data>
   <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>Enable Sales Return Approval</value></data>
+  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>Enable Sales Delivery Approval</value></data>
   <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>Enable Inventory Transfer Approval</value></data>
   <!-- ===== FormSectionNames keys ===== -->
   <data name="Section.BasicInfo" xml:space="preserve"><value>Basic Info</value></data>
@@ -2594,5 +2595,176 @@
   <data name="Message.LoadRelatedDocFailed" xml:space="preserve"><value>Failed to load related documents: {0}</value></data>
   <data name="Message.HasUndeletableDetailsTooltip" xml:space="preserve"><value>Some products have receiving records and cannot be cleared</value></data>
   <data name="Tooltip.ClearAllDetails" xml:space="preserve"><value>Clear all product details</value></data>
+  <data name="Tooltip.SubtotalTaxExclusive" xml:space="preserve"><value>Tax Exclusive: Qty × Price × (1 + Tax%)</value></data>
+  <data name="Tooltip.SubtotalTaxInclusive" xml:space="preserve"><value>Tax Inclusive: Qty × Price (price includes tax)</value></data>
+  <data name="Tooltip.SubtotalNoTax" xml:space="preserve"><value>No Tax: Qty × Price</value></data>
+  <data name="Tooltip.SubtotalDefault" xml:space="preserve"><value>Qty × Price</value></data>
+
+  <!-- ===== Page Titles and Subtitles ===== -->
+  <data name="Page.AccountItemTitle" xml:space="preserve"><value>Account Items</value></data>
+  <data name="Page.AccountItemSubtitle" xml:space="preserve"><value>Manage the standard Chart of Accounts</value></data>
+  <data name="Page.JournalEntryTitle" xml:space="preserve"><value>Journal Entries</value></data>
+  <data name="Page.JournalEntrySubtitle" xml:space="preserve"><value>Manage journal entries and transaction lines</value></data>
+  <data name="Page.CustomerTitle" xml:space="preserve"><value>Customers</value></data>
+  <data name="Page.CustomerSubtitle" xml:space="preserve"><value>Manage all customer data and contact information</value></data>
+  <data name="Page.CustomerVisitTitle" xml:space="preserve"><value>Customer Visits</value></data>
+  <data name="Page.CustomerVisitSubtitle" xml:space="preserve"><value>Manage customer visit and contact records</value></data>
+  <data name="Page.DocumentCategoryTitle" xml:space="preserve"><value>Document Categories</value></data>
+  <data name="Page.DocumentCategorySubtitle" xml:space="preserve"><value>Manage document categories and source settings</value></data>
+  <data name="Page.DocumentTitle" xml:space="preserve"><value>Documents</value></data>
+  <data name="Page.DocumentSubtitle" xml:space="preserve"><value>Manage and access all stored documents</value></data>
+  <data name="Page.DepartmentTitle" xml:space="preserve"><value>Departments</value></data>
+  <data name="Page.DepartmentSubtitle" xml:space="preserve"><value>Set up company organizational structure and department info</value></data>
+  <data name="Page.EmployeeTitle" xml:space="preserve"><value>Employees</value></data>
+  <data name="Page.EmployeeSubtitle" xml:space="preserve"><value>Manage employee data and permission settings</value></data>
+  <data name="Page.EmployeePositionTitle" xml:space="preserve"><value>Positions</value></data>
+  <data name="Page.EmployeePositionSubtitle" xml:space="preserve"><value>Manage all position data and hierarchy levels</value></data>
+  <data name="Page.PermissionTitle" xml:space="preserve"><value>Permission Details</value></data>
+  <data name="Page.PermissionSubtitle" xml:space="preserve"><value>Manage system function permission details</value></data>
+  <data name="Page.RoleTitle" xml:space="preserve"><value>Roles</value></data>
+  <data name="Page.RoleSubtitle" xml:space="preserve"><value>Manage system roles and permission settings</value></data>
+  <data name="Page.BankTitle" xml:space="preserve"><value>Banks</value></data>
+  <data name="Page.BankSubtitle" xml:space="preserve"><value>Manage bank information and contact details</value></data>
+  <data name="Page.CurrencyTitle" xml:space="preserve"><value>Currencies</value></data>
+  <data name="Page.CurrencySubtitle" xml:space="preserve"><value>Manage supported currencies and exchange rate settings</value></data>
+  <data name="Page.PaymentMethodTitle" xml:space="preserve"><value>Payment Methods</value></data>
+  <data name="Page.PaymentMethodSubtitle" xml:space="preserve"><value>Manage all payment method data and settings</value></data>
+  <data name="Page.CompositionCategoryTitle" xml:space="preserve"><value>BOM Categories</value></data>
+  <data name="Page.CompositionCategorySubtitle" xml:space="preserve"><value>Set up bill of materials type categories</value></data>
+  <data name="Page.MaterialTitle" xml:space="preserve"><value>Materials</value></data>
+  <data name="Page.MaterialSubtitle" xml:space="preserve"><value>Manage all material data and attribute settings</value></data>
+  <data name="Page.ProductCategoryTitle" xml:space="preserve"><value>Product Categories</value></data>
+  <data name="Page.ProductCategorySubtitle" xml:space="preserve"><value>Manage all product category data and hierarchy</value></data>
+  <data name="Page.ProductCompositionTitle" xml:space="preserve"><value>Bill of Materials</value></data>
+  <data name="Page.ProductCompositionSubtitle" xml:space="preserve"><value>Manage product formulas and components</value></data>
+  <data name="Page.ProductTitle" xml:space="preserve"><value>Products</value></data>
+  <data name="Page.ProductSubtitle" xml:space="preserve"><value>Manage all product data and inventory information</value></data>
+  <data name="Page.ProductionScheduleTitle" xml:space="preserve"><value>Production Schedule</value></data>
+  <data name="Page.ProductionScheduleSubtitle" xml:space="preserve"><value>Manage production schedule plans and execution</value></data>
+  <data name="Page.SizeTitle" xml:space="preserve"><value>Sizes</value></data>
+  <data name="Page.SizeSubtitle" xml:space="preserve"><value>Manage product size specification data</value></data>
+  <data name="Page.UnitTitle" xml:space="preserve"><value>Units</value></data>
+  <data name="Page.UnitSubtitle" xml:space="preserve"><value>Manage all measurement unit data and conversions</value></data>
+  <data name="Page.PurchaseOrderTitle" xml:space="preserve"><value>Purchase Orders</value></data>
+  <data name="Page.PurchaseOrderSubtitle" xml:space="preserve"><value>Manage all purchase order data</value></data>
+  <data name="Page.PurchaseReceivingTitle" xml:space="preserve"><value>Purchase Receiving</value></data>
+  <data name="Page.PurchaseReceivingSubtitle" xml:space="preserve"><value>Manage all receiving orders and receiving status</value></data>
+  <data name="Page.PurchaseReturnTitle" xml:space="preserve"><value>Purchase Returns</value></data>
+  <data name="Page.PurchaseReturnSubtitle" xml:space="preserve"><value>Manage all purchase return orders and refund status</value></data>
+  <data name="Page.PurchaseReturnReasonTitle" xml:space="preserve"><value>Purchase Return Reasons</value></data>
+  <data name="Page.PurchaseReturnReasonSubtitle" xml:space="preserve"><value>Manage purchase return reason data</value></data>
+  <data name="Page.QuotationTitle" xml:space="preserve"><value>Quotations</value></data>
+  <data name="Page.QuotationSubtitle" xml:space="preserve"><value>Manage all quotation data and detail information</value></data>
+  <data name="Page.SalesDeliveryTitle" xml:space="preserve"><value>Sales Deliveries</value></data>
+  <data name="Page.SalesDeliverySubtitle" xml:space="preserve"><value>Manage all sales delivery data and detail information</value></data>
+  <data name="Page.SalesOrderTitle" xml:space="preserve"><value>Sales Orders</value></data>
+  <data name="Page.SalesOrderSubtitle" xml:space="preserve"><value>Manage all order data and detail information</value></data>
+  <data name="Page.SalesReturnTitle" xml:space="preserve"><value>Sales Returns</value></data>
+  <data name="Page.SalesReturnSubtitle" xml:space="preserve"><value>Manage all return order data and return status</value></data>
+  <data name="Page.SalesReturnReasonTitle" xml:space="preserve"><value>Sales Return Reasons</value></data>
+  <data name="Page.SalesReturnReasonSubtitle" xml:space="preserve"><value>Manage sales return reason data</value></data>
+  <data name="Page.SupplierTitle" xml:space="preserve"><value>Suppliers</value></data>
+  <data name="Page.SupplierSubtitle" xml:space="preserve"><value>Manage all supplier data and contact information</value></data>
+  <data name="Page.CompanyTitle" xml:space="preserve"><value>Company Settings</value></data>
+  <data name="Page.CompanySubtitle" xml:space="preserve"><value>Manage company basic information and settings</value></data>
+  <data name="Page.ErrorLogTitle" xml:space="preserve"><value>Error Logs</value></data>
+  <data name="Page.ErrorLogSubtitle" xml:space="preserve"><value>Query and monitor system error records</value></data>
+  <data name="Page.PaperSettingTitle" xml:space="preserve"><value>Paper Settings</value></data>
+  <data name="Page.PaperSettingSubtitle" xml:space="preserve"><value>Manage paper specifications and print settings</value></data>
+  <data name="Page.PrinterConfigurationTitle" xml:space="preserve"><value>Printer Configuration</value></data>
+  <data name="Page.PrinterConfigurationSubtitle" xml:space="preserve"><value>Manage printer connection settings in the system</value></data>
+  <data name="Page.ReportPrintConfigurationTitle" xml:space="preserve"><value>Report Print Configuration</value></data>
+  <data name="Page.ReportPrintConfigurationSubtitle" xml:space="preserve"><value>Manage print settings for different reports (reports are auto-created; only printer and paper settings can be edited)</value></data>
+  <data name="Page.VehicleTitle" xml:space="preserve"><value>Vehicles</value></data>
+  <data name="Page.VehicleSubtitle" xml:space="preserve"><value>Manage company and customer vehicle data</value></data>
+  <data name="Page.VehicleMaintenanceTitle" xml:space="preserve"><value>Vehicle Maintenance</value></data>
+  <data name="Page.VehicleMaintenanceSubtitle" xml:space="preserve"><value>Manage vehicle maintenance and repair records</value></data>
+  <data name="Page.VehicleTypeTitle" xml:space="preserve"><value>Vehicle Types</value></data>
+  <data name="Page.VehicleTypeSubtitle" xml:space="preserve"><value>Manage vehicle type classification data</value></data>
+  <data name="Page.InventoryStockTitle" xml:space="preserve"><value>Inventory</value></data>
+  <data name="Page.InventoryStockSubtitle" xml:space="preserve"><value>Manage product inventory and warehouse locations</value></data>
+  <data name="Page.InventoryTransactionTitle" xml:space="preserve"><value>Inventory Transactions</value></data>
+  <data name="Page.InventoryTransactionSubtitle" xml:space="preserve"><value>Query and manage all inventory transaction history</value></data>
+  <data name="Page.MaterialIssueTitle" xml:space="preserve"><value>Material Issues</value></data>
+  <data name="Page.MaterialIssueSubtitle" xml:space="preserve"><value>Manage material issue orders and records</value></data>
+  <data name="Page.StockTakingTitle" xml:space="preserve"><value>Stock Taking</value></data>
+  <data name="Page.StockTakingSubtitle" xml:space="preserve"><value>Manage stock taking orders and records</value></data>
+  <data name="Page.WarehouseTitle" xml:space="preserve"><value>Warehouses</value></data>
+  <data name="Page.WarehouseSubtitle" xml:space="preserve"><value>Manage all warehouse data and basic information</value></data>
+  <data name="Page.WarehouseLocationTitle" xml:space="preserve"><value>Warehouse Locations</value></data>
+  <data name="Page.WarehouseLocationSubtitle" xml:space="preserve"><value>Manage all warehouse location data and basic information</value></data>
+  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>Waste Records</value></data>
+  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>Manage waste receiving records</value></data>
+  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>Waste Types</value></data>
+  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>Manage waste type classification data</value></data>
+
+  <!-- ===== AccountItem Options ===== -->
+  <data name="AccountType.Asset" xml:space="preserve"><value>Asset</value></data>
+  <data name="AccountType.Liability" xml:space="preserve"><value>Liability</value></data>
+  <data name="AccountType.Equity" xml:space="preserve"><value>Equity</value></data>
+  <data name="AccountType.Revenue" xml:space="preserve"><value>Revenue</value></data>
+  <data name="AccountType.Cost" xml:space="preserve"><value>Cost of Goods Sold</value></data>
+  <data name="AccountType.Expense" xml:space="preserve"><value>Operating Expense</value></data>
+  <data name="AccountType.NonOperating" xml:space="preserve"><value>Non-Operating Income and Expense</value></data>
+  <data name="AccountType.ComprehensiveIncome" xml:space="preserve"><value>Total Comprehensive Income</value></data>
+  <data name="AccountDirection.Debit" xml:space="preserve"><value>Debit</value></data>
+  <data name="AccountDirection.Credit" xml:space="preserve"><value>Credit</value></data>
+  <data name="AccountLevel.L1" xml:space="preserve"><value>Level 1 (Major Category)</value></data>
+  <data name="AccountLevel.L2" xml:space="preserve"><value>Level 2 (Sub Category)</value></data>
+  <data name="AccountLevel.L3" xml:space="preserve"><value>Level 3 (Mid Category)</value></data>
+  <data name="AccountLevel.L4" xml:space="preserve"><value>Level 4 (Detail Account)</value></data>
+
+  <!-- ===== ApprovalSettings Toggle ===== -->
+  <data name="Toggle.Enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="Toggle.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Toggle.Switch" xml:space="preserve"><value>Toggle</value></data>
+  <data name="ApprovalSettings.Description" xml:space="preserve"><value>Control the approval workflow for each document type. When enabled, related documents require approval before taking effect.</value></data>
+
+  <!-- ===== SubAccount BatchCreate ===== -->
+  <data name="SubAccount.BatchCreateTitle" xml:space="preserve"><value>Batch Create Sub-Accounts</value></data>
+  <data name="SubAccount.BatchCreateDesc" xml:space="preserve"><value>Create sub-accounts for existing customers, suppliers, and products (skips those that already have sub-accounts). Confirm control account codes above are correct and saved before proceeding.</value></data>
+  <data name="SubAccount.CreateCustomer" xml:space="preserve"><value>Create for Customers</value></data>
+  <data name="SubAccount.CreateSupplier" xml:space="preserve"><value>Create for Suppliers</value></data>
+  <data name="SubAccount.CreateProduct" xml:space="preserve"><value>Create for Products</value></data>
+  <data name="SubAccount.CreateCustomerTitle" xml:space="preserve"><value>Create sub-accounts for all existing customers</value></data>
+  <data name="SubAccount.CreateSupplierTitle" xml:space="preserve"><value>Create sub-accounts for all existing suppliers</value></data>
+  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>Create sub-accounts for all existing products</value></data>
+  <data name="SubAccount.CreateResult" xml:space="preserve"><value>{0} sub-account creation complete: created {1}, skipped {2}</value></data>
+  <data name="SubAccount.CreateResultWithErrors" xml:space="preserve"><value>{0} sub-account creation complete: created {1}, skipped {2}, errors {3} ({4}{5})</value></data>
+  <data name="SubAccount.CreateError" xml:space="preserve"><value>Error during batch creation of {0} sub-accounts: {1}</value></data>
+  <data name="SubAccount.CreateErrorNotify" xml:space="preserve"><value>Batch creation of {0} sub-accounts failed</value></data>
+  <data name="SubAccount.Ellipsis" xml:space="preserve"><value>…</value></data>
+
+  <!-- ===== SystemParameter Modal ===== -->
+  <data name="SystemParam.Title" xml:space="preserve"><value>System Parameter Settings</value></data>
+  <data name="SystemParam.SaveTitle" xml:space="preserve"><value>Save system parameter settings</value></data>
+  <data name="SystemParam.RefreshTitle" xml:space="preserve"><value>Refresh data</value></data>
+  <data name="SystemParam.ResetTitle" xml:space="preserve"><value>Reset all parameters to factory defaults</value></data>
+  <data name="SystemParam.CloseTitle" xml:space="preserve"><value>Close</value></data>
+  <data name="SystemParam.CreatedAt" xml:space="preserve"><value>Created At: </value></data>
+  <data name="SystemParam.CreatedBy" xml:space="preserve"><value>Created By: </value></data>
+  <data name="SystemParam.UpdatedAt" xml:space="preserve"><value>Last Updated: </value></data>
+  <data name="SystemParam.UpdatedBy" xml:space="preserve"><value>Last Modified By: </value></data>
+  <data name="SystemParam.System" xml:space="preserve"><value>System</value></data>
+  <data name="SystemParam.ResetConfirmTitle" xml:space="preserve"><value>Confirm Reset to Defaults</value></data>
+  <data name="SystemParam.ResetConfirmMessage" xml:space="preserve"><value>Are you sure you want to reset system parameters to their default configuration? All custom settings will be cleared.</value></data>
+  <data name="SystemParam.ResetConfirmButton" xml:space="preserve"><value>Confirm Reset</value></data>
+  <data name="SystemParam.SaveSuccess" xml:space="preserve"><value>System parameters saved successfully!</value></data>
+  <data name="SystemParam.SaveFailed" xml:space="preserve"><value>Failed to save system parameters: {0}</value></data>
+  <data name="SystemParam.ResetSuccess" xml:space="preserve"><value>Reset to default configuration</value></data>
+  <data name="SystemParam.ResetFailed" xml:space="preserve"><value>Failed to reset to defaults: {0}</value></data>
+  <data name="SystemParam.DataReloaded" xml:space="preserve"><value>Data reloaded successfully</value></data>
+
+  <!-- ===== Section names for PrintSettings / PaperSize ===== -->
+  <data name="Section.PrintSettings" xml:space="preserve"><value>Print Settings</value></data>
+  <data name="Section.PaperSize" xml:space="preserve"><value>Paper Size</value></data>
+  <data name="Section.DocumentInfo" xml:space="preserve"><value>Document Information</value></data>
+
+  <!-- ===== Document edit modal ===== -->
+  <data name="Document.FileSelected" xml:space="preserve"><value>Selected: {0} ({1})</value></data>
+  <data name="Document.CurrentFile" xml:space="preserve"><value>Current file: {0}</value></data>
+  <data name="Document.SupportedFormats" xml:space="preserve"><value>Supported formats: PDF, Word, Excel, Images (max 20MB)</value></data>
+  <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>Use category default</value></data>
+  <data name="Document.PaperSizeApplied" xml:space="preserve"><value>Applied size settings from "{0}"</value></data>
 
 </root>

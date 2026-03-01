@@ -27,6 +27,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
+                    .Include(pr => pr.ApprovedByUser)
                     .AsQueryable()
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.Code)
@@ -49,6 +50,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
+                    .Include(pr => pr.ApprovedByUser)
                     .FirstOrDefaultAsync(pr => pr.Id == id);
             }
             catch (Exception ex)
@@ -70,6 +72,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturns
                     .AsNoTracking()  // 🔑 不追蹤實體，確保每次都載入最新資料
                     .Include(pr => pr.Supplier)
+                    .Include(pr => pr.ApprovedByUser)
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.Product)
                             .ThenInclude(p => p.Unit)
@@ -1327,6 +1330,53 @@ namespace ERPCore2.Services
                 return new List<PurchaseReturn>();
             }
         }
+
+        #region 審核作業
+
+        public async Task<ServiceResult> ApproveAsync(int id, int approvedBy)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            using var transaction = await context.Database.BeginTransactionAsync();
+            try
+            {
+                var entity = await context.PurchaseReturns.FirstOrDefaultAsync(x => x.Id == id);
+                if (entity == null) return ServiceResult.Failure("找不到採購退回單");
+                if (entity.IsApproved) return ServiceResult.Failure("採購退回單已核准，無需重複核准");
+
+                entity.IsApproved = true;
+                entity.ApprovedBy = approvedBy;
+                entity.ApprovedAt = DateTime.Now;
+                entity.RejectReason = null;
+                entity.UpdatedAt = DateTime.Now;
+
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return ServiceResult.Success();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<ServiceResult> RejectAsync(int id, int rejectedBy, string reason)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var entity = await context.PurchaseReturns.FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null) return ServiceResult.Failure("找不到採購退回單");
+
+            entity.IsApproved = false;
+            entity.ApprovedBy = null;
+            entity.ApprovedAt = null;
+            entity.RejectReason = reason;
+            entity.UpdatedAt = DateTime.Now;
+
+            await context.SaveChangesAsync();
+            return ServiceResult.Success();
+        }
+
+        #endregion
     }
 }
 

@@ -54,6 +54,12 @@ namespace ERPCore2.Data.Entities
         public bool EnableSalesReturnApproval { get; set; } = false;
 
         /// <summary>
+        /// 是否啟用出貨單審核
+        /// </summary>
+        [Display(Name = "啟用出貨單審核")]
+        public bool EnableSalesDeliveryApproval { get; set; } = false;
+
+        /// <summary>
         /// 是否啟用庫存調撥審核
         /// </summary>
         [Display(Name = "啟用庫存調撥審核")]

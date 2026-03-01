@@ -302,14 +302,14 @@
 
             if (isCurrentUserSuperAdmin)
             {
-                sectionBuilder = sectionBuilder.AddToSection("列印設定",
+                sectionBuilder = sectionBuilder.AddToSection(L["Section.PrintSettings"],
                     rpc => rpc.PrinterConfigurationId,
                     rpc => rpc.PaperSettingId,
                     rpc => rpc.Status);
             }
             else
             {
-                sectionBuilder = sectionBuilder.AddToSection("列印設定",
+                sectionBuilder = sectionBuilder.AddToSection(L["Section.PrintSettings"],
                     rpc => rpc.PrinterConfigurationId,
                     rpc => rpc.PaperSettingId);
             }

@@ -73,5 +73,15 @@ namespace ERPCore2.Services
         /// 依銷貨出貨單 ID 取得來源銷貨訂單（跨出貨明細查詢）
         /// </summary>
         Task<List<SalesOrder>> GetBySalesDeliveryIdAsync(int salesDeliveryId);
+
+        /// <summary>
+        /// 核准銷貨訂單
+        /// </summary>
+        Task<ServiceResult> ApproveAsync(int id, int approvedBy);
+
+        /// <summary>
+        /// 駁回銷貨訂單
+        /// </summary>
+        Task<ServiceResult> RejectAsync(int id, int rejectedBy, string reason);
     }
 }

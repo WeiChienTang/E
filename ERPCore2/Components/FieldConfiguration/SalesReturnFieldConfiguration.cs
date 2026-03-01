@@ -23,16 +23,19 @@ namespace ERPCore2.FieldConfiguration
         private readonly List<Warehouse> _warehouses;
         private readonly List<EntitySalesReturnReason> _returnReasons;
         private readonly INotificationService? _notificationService;
+        private readonly bool _enableApproval;
 
         public SalesReturnFieldConfiguration(
-            List<SalesDelivery> salesDeliveries, 
-            List<Warehouse> warehouses, 
+            List<SalesDelivery> salesDeliveries,
+            List<Warehouse> warehouses,
             List<EntitySalesReturnReason> returnReasons,
+            bool enableApproval = false,
             INotificationService? notificationService = null)
         {
             _salesDeliveries = salesDeliveries;
             _warehouses = warehouses;
             _returnReasons = returnReasons;
+            _enableApproval = enableApproval;
             _notificationService = notificationService;
         }
 
@@ -40,7 +43,7 @@ namespace ERPCore2.FieldConfiguration
         {
             try
             {
-                return new Dictionary<string, FieldDefinition<SalesReturn>>
+                var fields = new Dictionary<string, FieldDefinition<SalesReturn>>
                 {
                     {
                         nameof(SalesReturn.Code),
@@ -117,6 +120,40 @@ namespace ERPCore2.FieldConfiguration
                         }
                     }
                 };
+
+                if (_enableApproval)
+                {
+                    fields.Add(nameof(SalesReturn.IsApproved),
+                        new FieldDefinition<SalesReturn>
+                        {
+                            PropertyName = nameof(SalesReturn.IsApproved),
+                            DisplayName = Dn("Field.ApprovalStatus", "核准狀態"),
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 6,
+                            Options = new List<SelectOption>
+                            {
+                                new SelectOption { Text = "已核准", Value = "true" },
+                                new SelectOption { Text = "未核准", Value = "false" }
+                            },
+                            CustomTemplate = item => builder =>
+                            {
+                                var sr = (SalesReturn)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", sr.IsApproved ? "badge bg-success" : "badge bg-warning");
+                                builder.AddContent(2, sr.IsApproved ? "已核准" : "待核准");
+                                builder.CloseElement();
+                            },
+                            FilterFunction = (model, query) =>
+                            {
+                                var value = model.GetFilterValue(nameof(SalesReturn.IsApproved))?.ToString();
+                                if (!string.IsNullOrWhiteSpace(value) && bool.TryParse(value, out bool boolValue))
+                                    query = query.Where(sr => sr.IsApproved == boolValue);
+                                return query;
+                            }
+                        });
+                }
+
+                return fields;
             }
             catch (Exception ex)
             {

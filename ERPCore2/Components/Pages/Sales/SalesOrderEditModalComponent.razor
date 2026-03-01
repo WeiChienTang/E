@@ -19,6 +19,7 @@
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IDbContextFactory<AppDbContext> DbContextFactory
 @inject IStringLocalizer<SharedResource> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <GenericEditModalComponent TEntity="SalesOrder" 
                           TService="ISalesOrderService"
@@ -44,6 +45,11 @@
                           SaveSuccessMessage="@(SalesOrderId.HasValue ? L["Message.UpdateSuccess", L["Entity.SalesOrder"]].ToString() : L["Message.CreateSuccess", L["Entity.SalesOrder"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SalesOrder"]]"
                           RequiredPermission="@PermissionRegistry.SalesOrder.Read"
+                          ShowApprovalSection="@ShouldShowApprovalSection()"
+                          ApprovalPermission="@PermissionRegistry.SalesOrder.Approve"
+                          OnApprove="@HandleSalesOrderApprove"
+                          OnRejectWithReason="@HandleSalesOrderRejectWithReason"
+                          CanPrintCheck="@GetCanPrintCheck()"
                           OnEntitySaved="@OnSalesOrderSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
@@ -225,6 +231,7 @@
     private bool hasUndeletableDetails = false;
     private bool isDetailDataReady = false;
     private bool isDataLoaded = false;  // 資料載入狀態標記
+    private bool isApprovalEnabled = false;
     
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -232,6 +239,8 @@
         try
         {
             // 使用 ModalManagerInitHelper 初始化所有 Manager
+            // 注意：必須在 await 前完成，否則 Blazor 中間渲染時 modalManagers 仍為 null
+            // 導致 customerModalManager.IsModalVisible 等屬性存取 NullReferenceException
             modalManagers = ModalManagerInitHelper.CreateBuilder<SalesOrder, ISalesOrderService>(
                     () => editModalComponent,
                     NotificationService,
@@ -243,13 +252,15 @@
                 .AddManager<Employee>(nameof(SalesOrder.EmployeeId), "業務員")
                 .AddManager<Product>("FilterProductId", "商品")
                 .Build();
-            
+
             // 取得個別 Manager 供組件使用
             customerModalManager = modalManagers.Get<Customer>(nameof(SalesOrder.CustomerId));
             companyModalManager = modalManagers.Get<Company>(nameof(SalesOrder.CompanyId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(SalesOrder.EmployeeId));
             productModalManager = modalManagers.Get<Product>("FilterProductId");
-            
+
+            // 審核開關在 Modal 管理器初始化後才 await，確保前面同步程式碼已完成
+            isApprovalEnabled = await SystemParameterService.IsSalesOrderApprovalEnabledAsync();
         }
         catch (Exception)
         {
@@ -690,7 +701,7 @@
                              FilterProductId="@filterProductId"
                              FilterProductName="@GetFilterProductName()"
                              TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                             IsReadOnly="false"
+                             IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)"
                              SourceQuotationId="@PrefilledQuotationId"
                              OnDetailsChanged="@HandleDetailsChanged"
                              OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
@@ -1491,6 +1502,12 @@
                 return false;
             }
 
+            if (!ApprovalConfigHelper.CanSaveWhenApproved(isApprovalEnabled, salesOrder.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("銷貨訂單已核准，無法修改");
+                return false;
+            }
+
             // 1. 先進行明細驗證 (檢查單價是否為0)
             if (salesOrderDetailManager != null)
             {
@@ -1899,22 +1916,22 @@
                 await NotificationService.ShowWarningAsync("找不到指定的報價單", "載入失敗");
                 return;
             }
-            
+
             // 設定報價單篩選ID（虛擬欄位，不儲存至資料庫）
             filterQuotationId = quotationId;
-            
+
             // 設定客戶ID
             salesOrder.CustomerId = quotation.CustomerId;
-            
+
             // 設定公司ID
             salesOrder.CompanyId = quotation.CompanyId;
-            
+
             // 設定業務員ID
             salesOrder.EmployeeId = quotation.EmployeeId;
-            
+
             // 設定稅別
             salesOrder.TaxCalculationMethod = quotation.TaxCalculationMethod;
-            
+
             // 注意：明細的載入將由父組件（QuotationEditModalComponent）的 HandleCreateSalesOrderFromQuotation 處理
             // 這裡不直接處理明細轉換，只設定審核狀態和客戶
             salesOrderDetails.Clear();
@@ -1923,6 +1940,94 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataFromQuotation), GetType(),
                 additionalData: new { QuotationId = quotationId });
+        }
+    }
+
+    // ===== 審核功能 =====
+
+    private bool ShouldShowApprovalSection()
+        => isApprovalEnabled && SalesOrderId.HasValue && SalesOrderId.Value > 0;
+
+    private Func<bool>? GetCanPrintCheck()
+        => isApprovalEnabled
+            ? () => ApprovalConfigHelper.CanPerformActionRequiringApproval(
+                  isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false)
+            : null;
+
+    private async Task<bool> HandleSalesOrderApprove()
+    {
+        try
+        {
+            var entity = editModalComponent?.Entity;
+            if (entity == null || !SalesOrderId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("找不到銷貨訂單資料");
+                return false;
+            }
+
+            var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!userId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得目前使用者資訊");
+                return false;
+            }
+
+            var updateResult = await SalesOrderService.UpdateAsync(entity);
+            if (!updateResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(updateResult.ErrorMessage ?? "儲存銷貨訂單失敗");
+                return false;
+            }
+
+            await SaveSalesOrderDetails(entity.Id, true, await SalesOrderDetailService.GetBySalesOrderIdAsync(entity.Id));
+            await SaveSalesOrderCompositionDetails(entity.Id);
+
+            var approveResult = await SalesOrderService.ApproveAsync(entity.Id, userId.Value);
+            if (!approveResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(approveResult.ErrorMessage ?? "核准失敗");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesOrderApprove), GetType());
+            return false;
+        }
+    }
+
+    private async Task<bool> HandleSalesOrderRejectWithReason(string rejectReason)
+    {
+        try
+        {
+            if (!SalesOrderId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("找不到銷貨訂單資料");
+                return false;
+            }
+
+            var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!userId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得目前使用者資訊");
+                return false;
+            }
+
+            var rejectResult = await SalesOrderService.RejectAsync(SalesOrderId.Value, userId.Value, rejectReason);
+            if (!rejectResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(rejectResult.ErrorMessage ?? "駁回失敗");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesOrderRejectWithReason), GetType());
+            return false;
         }
     }
 }

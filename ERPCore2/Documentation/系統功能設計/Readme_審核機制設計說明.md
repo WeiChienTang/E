@@ -1,6 +1,7 @@
 # 審核機制設計說明（總綱）
 
 > 本文件為 ERPCore2 單據審核機制（Approval Workflow）的**總綱**，說明設計原則、核心元件與各模組現況摘要。詳細內容請參閱子文件。
+> 最後更新：2026-03-02
 
 ---
 
@@ -34,11 +35,11 @@ SystemParameter 不存放指定審核人員。需要審核權限請在 `Permissi
 |------|------|------|
 | `ApprovalConfigHelper` | `Helpers/EditModal/ApprovalConfigHelper.cs` | **唯一**審核邏輯入口，不可在元件直接硬寫判斷 |
 | `SystemParameter` | `Data/Entities/Systems/SystemParameter.cs` | 各模組審核開關儲存 |
-| `ApprovalSettingsTab` | `Components/Pages/Systems/SystemParameter/ApprovalSettingsTab.razor` | 系統參數 UI — 審核開關切換 |
+| `ApprovalSettingsTab` | `Components/Pages/Systems/SystemParameter/ApprovalSettingsTab.razor` | 系統參數 UI — 審核開關切換（8 個模組） |
 | `BatchApprovalModalComponent` | `Components/Pages/Purchase/BatchApprovalModalComponent.razor` | 通用批次審核 Modal（泛型 `TEntity`） |
 | `BatchApprovalTable` | `Components/Pages/Purchase/BatchApprovalTable.razor` | 批次審核 Modal 內部表格 |
 | `RejectConfirmModalComponent` | `Components/Pages/Purchase/RejectConfirmModalComponent.razor` | 駁回原因輸入 Modal |
-| `GenericEditModalComponent` | `Components/Shared/Modal/GenericEditModalComponent.razor` | 核准/駁回按鈕區塊（`ShowApprovalSection` 系列參數） |
+| `GenericEditModalComponent` | `Components/Shared/Modal/GenericEditModalComponent.razor` | 核准/駁回按鈕區塊（`ShowApprovalSection` 系列參數）+ `CanPrintCheck` 列印守衛 |
 
 ### ApprovalConfigHelper 邏輯摘要
 
@@ -71,11 +72,13 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
 |------|---------|-------------|------------|---------|------------|
 | 報價單 | ✅ | ✅ 完整 | ❌（用 UpdateAsync） | ✅ QuotationIndex | ❌ |
 | 採購訂單 | ✅ | ✅ 完整 | ✅ ApproveOrderAsync | ✅ PurchaseOrderIndex | ❌ |
-| **銷貨單** | ✅ | **❌ UI 缺失** | ❌ | ❌ | ❌ |
-| 進貨單 | ❌ | ❌ | ❌ | ❌ | ❌ |
-| 進貨退出 | ❌ | ❌ | ❌ | ❌ | ❌ |
-| 銷售訂單 | ❌ | ❌ | ❌ | ❌ | ❌ |
-| 銷貨退回 | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **進貨單** | ✅ | ✅ 完整 | ✅ ApproveAsync | ❌ | ❌ |
+| **進貨退回** | ✅ | ✅ 完整 | ✅ ApproveAsync | ❌ | ❌ |
+| **銷售訂單** | ✅ | ✅ 完整 | ✅ ApproveAsync | ❌ | ❌ |
+| **銷貨出貨** | ✅ | ✅ 完整 | ✅ ApproveAsync | ❌ | ❌ |
+| **銷貨退回** | ✅ | ✅ 完整 | ✅ ApproveAsync | ❌ | ❌ |
+
+> **粗體**：本輪（2026-03-02）完成。
 
 **SystemParameter 審核開關現況**
 
@@ -88,7 +91,7 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
 | `EnableSalesOrderApproval` | ✅ | ✅ |
 | `EnableSalesReturnApproval` | ✅ | ✅ |
 | `EnableInventoryTransferApproval` | ✅ | ✅ |
-| `EnableSalesDeliveryApproval` | **❌ 尚未加入** | ❌ |
+| `EnableSalesDeliveryApproval` | ✅ | ✅ |
 
 ---
 
@@ -96,7 +99,7 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
 
 | 文件 | 說明 |
 |------|------|
-| [README_審核_各模組狀態.md](README_審核_各模組狀態.md) | 各模組詳細現況、待辦清單、本輪修正項目 |
+| [README_審核_各模組狀態.md](README_審核_各模組狀態.md) | 各模組詳細現況、本輪完成項目、待辦清單 |
 | [README_審核_新模組實作指南.md](README_審核_新模組實作指南.md) | 完整步驟：為新模組加入審核功能 |
 
 ---
@@ -115,7 +118,7 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
      │
      ├─ 按「核准」（HandleApproveAsync）
      │       ↓
-     │   SaveEntityWithDetails(isPreApprovalSave: true)  ← 先儲存含明細
+     │   UpdateAsync(entity) + SaveXxxDetailsAsync(entity)  ← 先儲存含明細
      │       ↓
      │   EntityService.ApproveAsync(id, userId)
      │       ↓
@@ -142,12 +145,12 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
 
 ### Q: 開啟審核後，歷史資料 IsApproved = false 怎麼辦？
 
-欄位仍可編輯，但轉單/列印需先手動核准。批次核准請使用各模組 Index 的「批次審核」按鈕。
+欄位仍可編輯，但轉單/列印需先手動核准。批次核准請使用各模組 Index 的「批次審核」按鈕（報價單、採購訂單已有；其他 5 個模組待實作）。
 
 ### Q: 核准後發現資料有誤？
 
 按「駁回」→ 輸入原因 → 欄位解鎖 → 修改 → 重新核准。
 
-### Q: 銷貨單（SalesDelivery）的審核狀態？
+### Q: 為什麼 SalesOrderEditModal 在 OnInitializedAsync 要先初始化 ModalManager 再 await？
 
-實體已有審核欄位，但 EditModal UI 尚未實作，`EnableSalesDeliveryApproval` 欄位也尚未加入 SystemParameter。屬於**本輪修正項目**。詳見 [README_審核_各模組狀態.md](README_審核_各模組狀態.md)。
+因為 Razor 模板直接存取 `customerModalManager.IsModalVisible`（非 null-conditional），若在 ModalManager 初始化前發生 `await` 掛起，Blazor 中間渲染會 NullReferenceException。規則：有 `= default!` Manager 的 EditModal，`await` 必須在 `.Build()` 之後。詳見 [README_審核_各模組狀態.md](README_審核_各模組狀態.md) 第五節。

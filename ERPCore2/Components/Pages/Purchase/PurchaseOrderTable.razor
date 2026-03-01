@@ -16,7 +16,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5">
             <div class="supplier-warning">
-                <p class="text-muted">選擇廠商後即可查看該廠商的未完成進貨商品</p>
+                <p class="text-muted">@L["Message.SelectSupplierFirst"]</p>
             </div>
         </div>
     </div>
@@ -31,7 +31,7 @@ else
                                       Items="@Items"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
-                                      EmptyMessage="尚未新增商品"
+                                      EmptyMessage="@L["Message.NoProducts"]"
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="false"
                                       ActionsColumnWidth = "60px"
@@ -46,18 +46,18 @@ else
         <div class="card-footer">
             <div class="table-action-bar">
                 <div class="btn-group-left">
-                    <GenericButtonComponent Text="智能下單"
+                    <GenericButtonComponent Text="@L["Button.SmartPurchase"]"
                                           Variant="ButtonVariant.DarkBlue"
                                           OnClick="SmartPurchaseOrder"
                                           IsDisabled="@(!CanUseSmartPurchase)"
                                           Title="@GetSmartPurchaseTooltip()" />
                 </div>
                 <div class="btn-group-right">
-                    <GenericButtonComponent Text="清除明細"
+                    <GenericButtonComponent Text="@L["Button.ClearDetails"]"
                                           Variant="ButtonVariant.Red"
                                           OnClick="ClearAllDetails"
                                           IsDisabled="@_hasUndeletableDetails"
-                                          Title="@(_hasUndeletableDetails ? "部分商品已有進貨記錄，無法清除明細" : "清除所有商品明細")" />
+                                          Title="@(_hasUndeletableDetails ? L["Message.HasUndeletableDetailsTooltip"].ToString() : L["Tooltip.ClearAllDetails"].ToString())" />
                 </div>
             </div>
         </div>
@@ -253,8 +253,8 @@ else
             TriggerEmptyRowOnFilled = true,
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "250px",
-            Tooltip = "搜尋並選擇商品（輸入編號或名稱）。已有進貨記錄的商品將無法變更",
-            Placeholder = "請輸入商品編號或名稱",
+            Tooltip = L["Tooltip.PurchaseProductSearch"].ToString(),
+            Placeholder = L["Placeholder.PurchaseProductSearch"].ToString(),
             SearchValuePropertyName = nameof(ProductItem.ProductSearchValue),
             FilteredItemsPropertyName = nameof(ProductItem.FilteredProducts),
             ShowDropdownPropertyName = nameof(ProductItem.ShowProductDropdown),
@@ -274,7 +274,7 @@ else
             {
                 var productItem = (ProductItem)item;
                 return !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true)
-                    ? "此商品已有進貨記錄，無法修改商品選擇" : null;
+                    ? L["Message.ProductHasReceiving"].ToString() : null;
             },
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
             {
@@ -320,7 +320,7 @@ else
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
-            Tooltip = "採購的商品數量。已有進貨記錄的商品將無法修改數量",
+            Tooltip = L["Tooltip.PurchaseQuantity"].ToString(),
             IsDisabledFunc = item =>
             {
                 var productItem = (ProductItem)item;
@@ -330,7 +330,7 @@ else
             {
                 var productItem = (ProductItem)item;
                 return !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true)
-                    ? "此商品已有進貨記錄，無法修改數量" : null;
+                    ? L["Message.QuantityHasReceiving"].ToString() : null;
             },
             CustomTemplate = item =>
             {
@@ -358,7 +358,7 @@ else
             Width = "80px",
             IsReadOnly = true,
             ExcludeFromEmptyCheck = true,
-            Tooltip = "已完成入庫的數量（從入庫單自動更新）",
+            Tooltip = L["Tooltip.ReceivedQuantity"].ToString(),
             DisplayFormatter = item =>
             {
                 if (item is not ProductItem productItem) return "-";
@@ -374,7 +374,7 @@ else
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             UseThousandsSeparator = true,
-            Tooltip = "採購的商品單價",
+            Tooltip = L["Tooltip.PurchasePrice"].ToString(),
             IsDisabledFunc = item =>
             {
                 var productItem = (ProductItem)item;
@@ -408,7 +408,7 @@ else
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "80px",
                 ExcludeFromEmptyCheck = true,
-                Tooltip = "稅率（%）",
+                Tooltip = L["Tooltip.TaxRatePercent"].ToString(),
                 CustomTemplate = item =>
                 {
                     var productItem = (ProductItem)item;
@@ -456,13 +456,13 @@ else
             Width = "80px",
             ExcludeFromEmptyCheck = true,
             HideOnMobile = true,
-            Tooltip = "標記此商品的進貨是否已完成（可手動提前標記）",
+            Tooltip = L["Tooltip.ReceivingCompleted"].ToString(),
             CustomTemplate = item =>
             {
                 var productItem = (ProductItem)item;
                 var isFullyReceived = productItem.ReceivedQuantity >= productItem.Quantity && productItem.Quantity > 0;
                 var isDisabled = IsReadOnly || isFullyReceived;
-                var tooltip = isFullyReceived ? "已完全進貨，無法取消" : null;
+                var tooltip = isFullyReceived ? L["Message.FullyReceived"].ToString() : null;
                 return @<div class="form-check form-switch d-flex justify-content-center align-items-center" style="min-height: 31px;">
                     <input class="form-check-input"
                            type="checkbox"
@@ -476,7 +476,7 @@ else
             {
                 var productItem = (ProductItem)item;
                 var isFullyReceived = productItem.ReceivedQuantity >= productItem.Quantity && productItem.Quantity > 0;
-                return isFullyReceived ? "已完全進貨，無法取消" : null;
+                return isFullyReceived ? L["Message.FullyReceived"].ToString() : null;
             },
             OnCheckboxChanged = EventCallback.Factory.Create<(object, bool)>(this, async args =>
             {
@@ -494,7 +494,7 @@ else
             Width = "300px",
             HideOnMobile = true,
             ExcludeFromEmptyCheck = true,
-            Tooltip = "選填。可記錄採購相關的備註資訊（核准後仍可編輯）",
+            Tooltip = L["Tooltip.PurchaseRemarks"].ToString(),
             CustomTemplate = item =>
             {
                 var productItem = (ProductItem)item;
@@ -502,7 +502,7 @@ else
 
                 if (isFieldReadOnly)
                 {
-                    var displayText = string.IsNullOrEmpty(productItem.Remarks) ? "無備註" : productItem.Remarks;
+                    var displayText = string.IsNullOrEmpty(productItem.Remarks) ? L["Label.NoRemarks"].ToString() : productItem.Remarks;
                     return @<div class="d-flex align-items-center" style="min-height: 31px;">
                         <span class="text-muted">@displayText</span>
                     </div>;
@@ -527,7 +527,7 @@ else
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    IsDisabled="@IsReadOnly"
-                                   Title="刪除"
+                                   Title="@L["Button.Delete"]"
                                    OnClick="async () => await HandleItemDelete(item)"
                                    StopPropagation="true"
                                    CssClass="btn-square" />
@@ -538,7 +538,7 @@ else
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    IsDisabled="true"
-                                   Title="至少需要保留一個空行"
+                                   Title="@L["Label.KeepOneEmptyRow"]"
                                    StopPropagation="true"
                                    CssClass="btn-square" />
         }
@@ -547,7 +547,7 @@ else
             <GenericButtonComponent Variant="ButtonVariant.Blue"
                                    IconClass="bi bi-eye text-white"
                                    Size="ButtonSize.Large"
-                                   Title="查看相關單據"
+                                   Title="@L["Tooltip.ViewRelatedDocuments"]"
                                    OnClick="async () => await ShowRelatedDocuments(item)"
                                    StopPropagation="true"
                                    CssClass="btn-square" />
@@ -643,7 +643,7 @@ else
 
         if (isFullyReceived && item.IsReceivingCompleted && !newValue)
         {
-            await NotificationService.ShowWarningAsync("此商品已全數入庫，無法取消完成狀態");
+            await NotificationService.ShowWarningAsync(L["Message.FullyReceivedCannotUndo"]);
             return;
         }
 
@@ -706,10 +706,10 @@ else
 
     private string GetSubtotalTooltip() => TaxCalculationMethod switch
     {
-        TaxCalculationMethod.TaxExclusive => "外加稅：數量 × 單價 × (1 + 稅率%)",
-        TaxCalculationMethod.TaxInclusive => "內含稅：數量 × 單價（單價已含稅）",
-        TaxCalculationMethod.NoTax => "免稅：數量 × 單價",
-        _ => "數量 × 單價"
+        TaxCalculationMethod.TaxExclusive => L["Tooltip.SubtotalTaxExclusive"].ToString(),
+        TaxCalculationMethod.TaxInclusive => L["Tooltip.SubtotalTaxInclusive"].ToString(),
+        TaxCalculationMethod.NoTax => L["Tooltip.SubtotalNoTax"].ToString(),
+        _ => L["Tooltip.SubtotalDefault"].ToString()
     };
 
     private decimal GetTotalAmount()
@@ -721,7 +721,7 @@ else
         var validItemsCount = Items.Count(item => item.SelectedProduct != null);
         if (validItemsCount < 1)
         {
-            await NotificationService.ShowErrorAsync("至少需要一個商品");
+            await NotificationService.ShowErrorAsync(L["Message.NeedAtLeastOneProduct"]);
             return false;
         }
         return true;
@@ -738,19 +738,19 @@ else
     private string GetSmartPurchaseTooltip()
     {
         if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
-            return "請先選擇廠商";
+            return L["Message.PleaseSelectSupplier"].ToString();
         if (Items.Any(item => item.SelectedProduct != null))
-            return "目前已有明細資料，無法使用智能下單";
+            return L["Message.AlreadyHasDetails"].ToString();
         if (!_hasLastPurchaseRecord)
-            return "此廠商沒有歷史採購記錄";
-        return "載入該廠商上次採購的商品明細";
+            return L["Message.NoHistoryPurchase"].ToString();
+        return L["Message.LoadLastPurchaseDetailsTooltip"].ToString();
     }
 
     private async Task SmartPurchaseOrder()
     {
         if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
         {
-            await NotificationService.ShowWarningAsync("請先選擇廠商後再使用智能下單");
+            await NotificationService.ShowWarningAsync(L["Message.PleaseSelectSupplierForSmartOrder"]);
             return;
         }
 
@@ -760,7 +760,7 @@ else
 
             if (!lastPurchaseDetails.Any())
             {
-                await NotificationService.ShowInfoAsync("該廠商沒有歷史採購記錄，無法使用智能下單");
+                await NotificationService.ShowInfoAsync(L["Message.SupplierNoHistoryPurchase"]);
                 return;
             }
 
@@ -768,14 +768,14 @@ else
             if (hasExistingData)
             {
                 await NotificationService.ShowWarningAsync(
-                    $"智能下單確認: 此操作將清空現有的商品明細並載入 {lastPurchaseDetails.Count} 項上次採購的商品。");
+                    string.Format(L["Message.SmartOrderConfirm"], lastPurchaseDetails.Count));
             }
 
             await LoadLastPurchaseDetailsInternal(lastPurchaseDetails);
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"智能下單失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.SmartOrderFailed"], ex.Message));
         }
     }
 
@@ -811,12 +811,12 @@ else
             _dataLoadCompleted = true;
             StateHasChanged();
 
-            await NotificationService.ShowSuccessAsync($"成功載入 {lastPurchaseDetails.Count} 項上次採購的商品明細");
+            await NotificationService.ShowSuccessAsync(string.Format(L["Message.SmartOrderSuccess"], lastPurchaseDetails.Count));
         }
         catch (Exception ex)
         {
             _dataLoadCompleted = true;
-            await NotificationService.ShowErrorAsync($"載入上次採購明細失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadLastPurchaseFailed"], ex.Message));
         }
     }
 
@@ -826,7 +826,7 @@ else
     {
         if (!Items.Any(item => item.SelectedProduct != null))
         {
-            await NotificationService.ShowWarningAsync("目前沒有可清除的明細");
+            await NotificationService.ShowWarningAsync(L["Message.NoDetailsToDelete"]);
             return;
         }
 
@@ -840,7 +840,7 @@ else
 
         if (!clearableItems.Any())
         {
-            await NotificationService.ShowWarningAsync("所有明細都已被鎖定（已有進貨記錄），無法清除");
+            await NotificationService.ShowWarningAsync(L["Message.AllDetailsLocked"]);
             return;
         }
 
@@ -854,11 +854,11 @@ else
         if (lockedItems.Any())
         {
             await NotificationService.ShowSuccessAsync(
-                $"已清除 {clearableItems.Count} 筆明細（保留 {lockedItems.Count} 筆已被鎖定的明細）");
+                string.Format(L["Message.ClearDetailsPartial"], clearableItems.Count, lockedItems.Count));
         }
         else
         {
-            await NotificationService.ShowSuccessAsync($"已清除 {clearableItems.Count} 筆採購明細");
+            await NotificationService.ShowSuccessAsync(string.Format(L["Message.ClearDetailsSuccess"], clearableItems.Count));
         }
     }
 
@@ -868,11 +868,11 @@ else
     {
         if (item.ExistingDetailEntity == null || item.ExistingDetailEntity.Id <= 0)
         {
-            await NotificationService.ShowWarningAsync("此項目尚未儲存，無法查看相關單據", "提示");
+            await NotificationService.ShowWarningAsync(L["Message.ItemNotSaved"]);
             return;
         }
 
-        selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
+        selectedProductName = item.SelectedProduct?.Name ?? L["Label.UnknownProduct"].ToString();
         showRelatedDocumentsModal = true;
         isLoadingRelatedDocuments = true;
         relatedDocuments = null;
@@ -884,7 +884,7 @@ else
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入相關單據失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadRelatedDocFailed"], ex.Message));
         }
         finally
         {
@@ -902,7 +902,7 @@ else
         else
         {
             await NotificationService.ShowInfoAsync(
-                $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", "提示");
+                $"{document.TypeDisplayName}: {document.DocumentNumber}");
         }
     }
 

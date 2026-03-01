@@ -1,6 +1,7 @@
 # 審核機制 — 新模組實作指南
 
 > 本文件提供為任意模組加入完整審核功能的逐步操作指南。以 PurchaseOrder 為最完整參考實作。
+> 最後更新：2026-03-02
 
 ---
 
@@ -140,15 +141,16 @@ public async Task<ServiceResult> RejectAsync(int id, int rejectedBy, string reas
     var entity = await context.XxxSet.FirstOrDefaultAsync(x => x.Id == id);
     if (entity == null) return ServiceResult.Failure("找不到資料");
 
-    entity.IsApproved = false;
-    entity.ApprovedBy = rejectedBy;
-    entity.ApprovedAt = DateTime.Now;
+    entity.IsApproved  = false;
+    entity.ApprovedBy  = null;   // 清空核准資訊（策略 A：本輪採用）
+    entity.ApprovedAt  = null;   // 或保留 rejectedBy/DateTime.Now 記錄駁回人（策略 B）
     entity.RejectReason = reason;
-    entity.UpdatedAt = DateTime.Now;
+    entity.UpdatedAt   = DateTime.Now;
 
     await context.SaveChangesAsync();
     return ServiceResult.Success();
 }
+// 注意：兩種策略皆可，未來統一時選擇其一並全面對齊即可。
 ```
 
 ---
@@ -161,11 +163,49 @@ public async Task<ServiceResult> RejectAsync(int id, int rejectedBy, string reas
 private bool isApprovalEnabled = false;
 ```
 
-在 `LoadXxxData()` 或 `InitializeFormFieldsAsync()` 中載入：
+載入方式依 EditModal 結構而定：
+
+**方式 A：EditModal 有 `OnInitializedAsync` 且無 `default!` Manager 存取衝突**
+
 ```csharp
-var systemParam = await SystemParameterService.GetSystemParameterAsync();
-isApprovalEnabled = systemParam?.EnableXxxApproval ?? false;
+protected override async Task OnInitializedAsync()
+{
+    // ⚠️ 若有 customerModalManager = default! 等欄位被模板存取，
+    //    必須先完成同步初始化再 await，否則 Blazor 中間渲染會 NullReferenceException
+    modalManagers = ModalManagerInitHelper.CreateBuilder(...)...Build();
+    customerModalManager = modalManagers.Get<Customer>(...);
+    // ✅ 同步初始化完成後才進行第一個 await
+    isApprovalEnabled = await SystemParameterService.IsXxxApprovalEnabledAsync();
+}
 ```
+
+**方式 B：EditModal 使用 `OnParametersSetAsync` 載入資料（無 OnInitializedAsync 者）**
+
+```csharp
+protected override async Task OnParametersSetAsync()
+{
+    if (IsVisible && !isDataLoaded)
+    {
+        isApprovalEnabled = await SystemParameterService.IsXxxApprovalEnabledAsync();
+        await LoadAdditionalDataAsync();
+        await InitializeFormFieldsAsync();
+        isDataLoaded = true;
+    }
+}
+```
+
+**方式 C：在 `LoadAdditionalDataAsync()` 中載入（與其他資料並行）**
+
+```csharp
+private async Task LoadAdditionalDataAsync()
+{
+    // ... 載入其他資料 ...
+    isApprovalEnabled = await SystemParameterService.IsXxxApprovalEnabledAsync();
+}
+```
+
+> **重要**：使用 `ISystemParameterService.IsXxxApprovalEnabledAsync()` 方法（各模組各有對應方法），
+> 避免使用 `GetSystemParameterAsync()` 後再手動取 `?.EnableXxxApproval`。
 
 ### 7-2 GenericEditModalComponent 加入審核參數
 
@@ -395,14 +435,21 @@ new FieldConfiguration<XxxEntity>
 
 完成後逐項驗證：
 
+**EditModal 基本功能**
 - [ ] 新增模式開啟後看不到核准/駁回按鈕（`XxxId.HasValue = false`）
-- [ ] 編輯模式、審核關閉 → 無按鈕、欄位可編輯
+- [ ] 編輯模式、審核關閉 → 無按鈕、欄位可編輯、列印可用
 - [ ] 編輯模式、審核開啟、未審核 → 顯示核准/駁回按鈕、欄位可編輯
-- [ ] 按核准 → 確認對話框 → 儲存明細 → 設為已核准 → 按鈕消失、欄位變唯讀
-- [ ] 按駁回 → 輸入原因 → 設為未核准 + 原因 → 欄位恢復可編輯
+- [ ] 按核准 → 先儲存含明細 → `ApproveAsync` → 按鈕消失、欄位變唯讀、Detail Table 封鎖
+- [ ] 按駁回 → 輸入原因 → `RejectAsync` → 欄位恢復可編輯
 - [ ] 已核准時按儲存 → 顯示警告，無法儲存
 - [ ] 已核准時按列印 → 允許（`CanPerformActionRequiringApproval = true`）
-- [ ] 未審核時按列印（審核開啟）→ 顯示警告，無法列印
+- [ ] 未審核時按列印（審核開啟）→ 顯示警告，無法列印（`CanPrintCheck` 已傳入）
 - [ ] Detail Table 在已核准時完全唯讀（無法新增/刪除/修改明細）
+
+**Index 功能（待實作）**
 - [ ] 批次審核 Modal 正常載入待審核清單並可核准
 - [ ] Index 審核狀態 badge 正確顯示
+
+**`default!` Manager 陷阱檢查**
+- [ ] 若 EditModal Razor 模板中有 `xxxModalManager.IsModalVisible`（非 null-conditional 存取），
+      確認 `isApprovalEnabled` 的 `await` 在所有 Manager 初始化**之後**

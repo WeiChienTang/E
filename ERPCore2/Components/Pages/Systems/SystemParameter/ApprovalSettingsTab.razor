@@ -3,7 +3,7 @@
 @inject IStringLocalizer<SharedResource> L
 
 <div class="mt-2">
-    <p class="text-muted mb-3">控制各單據類型的審核流程。啟用後，相關單據需經審核才能生效。</p>
+    <p class="text-muted mb-3">@L["ApprovalSettings.Description"]</p>
     <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 mb-3">
         @foreach (var setting in approvalSettings)
         {
@@ -14,7 +14,7 @@
                         <div class="d-flex justify-content-between align-items-start">
                             <strong class="small">@setting.Label</strong>
                             <span class="badge @(isEnabled ? "bg-success" : "bg-secondary") ms-1 flex-shrink-0">
-                                @(isEnabled ? "啟用" : "停用")
+                                @(isEnabled ? L["Toggle.Enabled"].ToString() : L["Toggle.Disabled"].ToString())
                             </span>
                         </div>
                         <div class="form-check form-switch mt-auto mb-0">
@@ -24,7 +24,7 @@
                                    id="approval_@setting.Key"
                                    checked="@isEnabled"
                                    @onchange="@((e) => { setting.SetValue((bool)(e.Value ?? false)); StateHasChanged(); })" />
-                            <label class="form-check-label small" for="approval_@setting.Key">開關</label>
+                            <label class="form-check-label small" for="approval_@setting.Key">@L["Toggle.Switch"]</label>
                         </div>
                     </div>
                 </div>
@@ -50,7 +50,8 @@
             new("purchaseReceiving", L["Field.EnablePurchaseReceivingApproval"], () => Model.EnablePurchaseReceivingApproval, v => Model.EnablePurchaseReceivingApproval = v),
             new("purchaseReturn",    L["Field.EnablePurchaseReturnApproval"],    () => Model.EnablePurchaseReturnApproval,    v => Model.EnablePurchaseReturnApproval = v),
             new("salesOrder",        L["Field.EnableSalesOrderApproval"],        () => Model.EnableSalesOrderApproval,       v => Model.EnableSalesOrderApproval = v),
-            new("salesReturn",       L["Field.EnableSalesReturnApproval"],       () => Model.EnableSalesReturnApproval,      v => Model.EnableSalesReturnApproval = v),
+            new("salesReturn",       L["Field.EnableSalesReturnApproval"],       () => Model.EnableSalesReturnApproval,       v => Model.EnableSalesReturnApproval = v),
+            new("salesDelivery",     L["Field.EnableSalesDeliveryApproval"],     () => Model.EnableSalesDeliveryApproval,     v => Model.EnableSalesDeliveryApproval = v),
             new("inventoryTransfer", L["Field.EnableInventoryTransferApproval"], () => Model.EnableInventoryTransferApproval, v => Model.EnableInventoryTransferApproval = v),
         };
     }

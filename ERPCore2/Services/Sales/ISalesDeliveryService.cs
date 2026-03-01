@@ -50,6 +50,16 @@ namespace ERPCore2.Services
         /// 依銷貨退回單 ID 取得原始出貨單（跨退回明細查詢）
         /// </summary>
         Task<List<SalesDelivery>> GetBySalesReturnIdAsync(int salesReturnId);
+
+        /// <summary>
+        /// 核准銷貨出貨單
+        /// </summary>
+        Task<ServiceResult> ApproveAsync(int id, int approvedBy);
+
+        /// <summary>
+        /// 駁回銷貨出貨單
+        /// </summary>
+        Task<ServiceResult> RejectAsync(int id, int rejectedBy, string reason);
     }
 
     /// <summary>

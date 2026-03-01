@@ -19,14 +19,17 @@ namespace ERPCore2.FieldConfiguration
         private readonly List<PurchaseOrder> _purchaseOrders;
         private readonly List<Warehouse> _warehouses;
         private readonly INotificationService? _notificationService;
+        private readonly bool _enableApproval;
 
         public PurchaseReceivingFieldConfiguration(
-            List<PurchaseOrder> purchaseOrders, 
-            List<Warehouse> warehouses, 
+            List<PurchaseOrder> purchaseOrders,
+            List<Warehouse> warehouses,
+            bool enableApproval = false,
             INotificationService? notificationService = null)
         {
             _purchaseOrders = purchaseOrders;
             _warehouses = warehouses;
+            _enableApproval = enableApproval;
             _notificationService = notificationService;
         }
 
@@ -34,7 +37,7 @@ namespace ERPCore2.FieldConfiguration
         {
             try
             {
-                return new Dictionary<string, FieldDefinition<PurchaseReceiving>>
+                var fields = new Dictionary<string, FieldDefinition<PurchaseReceiving>>
                 {
                     {
                         nameof(PurchaseReceiving.Code),
@@ -106,6 +109,40 @@ namespace ERPCore2.FieldConfiguration
                         }
                     }
                 };
+
+                if (_enableApproval)
+                {
+                    fields.Add(nameof(PurchaseReceiving.IsApproved),
+                        new FieldDefinition<PurchaseReceiving>
+                        {
+                            PropertyName = nameof(PurchaseReceiving.IsApproved),
+                            DisplayName = Dn("Field.ApprovalStatus", "核准狀態"),
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 6,
+                            Options = new List<SelectOption>
+                            {
+                                new SelectOption { Text = "已核准", Value = "true" },
+                                new SelectOption { Text = "未核准", Value = "false" }
+                            },
+                            CustomTemplate = item => builder =>
+                            {
+                                var pr = (PurchaseReceiving)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", pr.IsApproved ? "badge bg-success" : "badge bg-warning");
+                                builder.AddContent(2, pr.IsApproved ? "已核准" : "待核准");
+                                builder.CloseElement();
+                            },
+                            FilterFunction = (model, query) =>
+                            {
+                                var value = model.GetFilterValue(nameof(PurchaseReceiving.IsApproved))?.ToString();
+                                if (!string.IsNullOrWhiteSpace(value) && bool.TryParse(value, out bool boolValue))
+                                    query = query.Where(pr => pr.IsApproved == boolValue);
+                                return query;
+                            }
+                        });
+                }
+
+                return fields;
             }
             catch (Exception ex)
             {

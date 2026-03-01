@@ -12,27 +12,27 @@
 
 @* 批次補建子科目 *@
 <div class="mt-4 pt-3 border-top">
-    <h6 class="mb-3"><i class="bi bi-diagram-3 me-2"></i>批次補建子科目</h6>
-    <p class="text-muted mb-3">為現有客戶、廠商、商品補建子科目（已有子科目者略過）。執行前請先確認上方統制科目代碼設定正確並已儲存。</p>
+    <h6 class="mb-3"><i class="bi bi-diagram-3 me-2"></i>@L["SubAccount.BatchCreateTitle"]</h6>
+    <p class="text-muted mb-3">@L["SubAccount.BatchCreateDesc"]</p>
     <div class="d-flex flex-wrap gap-2 mb-3">
         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                               Text="補建客戶"
+                               Text="@L["SubAccount.CreateCustomer"]"
                                OnClick="HandleBatchCreateCustomerAsync"
                                IsDisabled="@(isBatchCreating || IsDisabled)"
                                IsLoading="@IsBatchCreatingCustomer"
-                               Title="為所有現有客戶補建子科目" />
+                               Title="@L["SubAccount.CreateCustomerTitle"]" />
         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                               Text="補建廠商"
+                               Text="@L["SubAccount.CreateSupplier"]"
                                OnClick="HandleBatchCreateSupplierAsync"
                                IsDisabled="@(isBatchCreating || IsDisabled)"
                                IsLoading="@IsBatchCreatingSupplier"
-                               Title="為所有現有廠商補建子科目" />
+                               Title="@L["SubAccount.CreateSupplierTitle"]" />
         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                               Text="補建商品"
+                               Text="@L["SubAccount.CreateProduct"]"
                                OnClick="HandleBatchCreateProductAsync"
                                IsDisabled="@(isBatchCreating || IsDisabled)"
                                IsLoading="@IsBatchCreatingProduct"
-                               Title="為所有現有商品補建子科目" />
+                               Title="@L["SubAccount.CreateProductTitle"]" />
     </div>
     @if (!string.IsNullOrEmpty(batchResultMessage))
     {
@@ -139,19 +139,19 @@
     private async Task HandleBatchCreateCustomerAsync()
     {
         await ExecuteBatchCreateAsync("customer", async (createdBy) =>
-            await SubAccountService.BatchCreateForAllCustomersAsync(createdBy), "客戶");
+            await SubAccountService.BatchCreateForAllCustomersAsync(createdBy), L["Entity.Customer"].ToString());
     }
 
     private async Task HandleBatchCreateSupplierAsync()
     {
         await ExecuteBatchCreateAsync("supplier", async (createdBy) =>
-            await SubAccountService.BatchCreateForAllSuppliersAsync(createdBy), "廠商");
+            await SubAccountService.BatchCreateForAllSuppliersAsync(createdBy), L["Entity.Supplier"].ToString());
     }
 
     private async Task HandleBatchCreateProductAsync()
     {
         await ExecuteBatchCreateAsync("product", async (createdBy) =>
-            await SubAccountService.BatchCreateForAllProductsAsync(createdBy), "商品");
+            await SubAccountService.BatchCreateForAllProductsAsync(createdBy), L["Entity.Product"].ToString());
     }
 
     private async Task ExecuteBatchCreateAsync(
@@ -171,23 +171,23 @@
 
             if (errors.Count == 0)
             {
-                batchResultMessage = $"{entityLabel}子科目補建完成：建立 {created} 筆，略過 {skipped} 筆";
+                batchResultMessage = string.Format(L["SubAccount.CreateResult"], entityLabel, created, skipped);
                 batchResultCssClass = "alert-success";
                 batchResultIcon = "bi-check-circle";
             }
             else
             {
-                batchResultMessage = $"{entityLabel}子科目補建完成：建立 {created} 筆，略過 {skipped} 筆，錯誤 {errors.Count} 筆（{string.Join("；", errors.Take(3))}{(errors.Count > 3 ? "…" : "")}）";
+                batchResultMessage = string.Format(L["SubAccount.CreateResultWithErrors"], entityLabel, created, skipped, errors.Count, string.Join("；", errors.Take(3)), errors.Count > 3 ? L["SubAccount.Ellipsis"].ToString() : "");
                 batchResultCssClass = "alert-warning";
                 batchResultIcon = "bi-exclamation-triangle";
             }
         }
         catch (Exception ex)
         {
-            batchResultMessage = $"批次補建{entityLabel}子科目時發生錯誤：{ex.Message}";
+            batchResultMessage = string.Format(L["SubAccount.CreateError"], entityLabel, ex.Message);
             batchResultCssClass = "alert-danger";
             batchResultIcon = "bi-x-circle";
-            await NotificationService.ShowErrorAsync($"批次補建{entityLabel}子科目失敗");
+            await NotificationService.ShowErrorAsync(string.Format(L["SubAccount.CreateErrorNotify"], entityLabel));
         }
         finally
         {

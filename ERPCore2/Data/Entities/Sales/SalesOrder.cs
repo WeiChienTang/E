@@ -55,6 +55,21 @@ namespace ERPCore2.Data.Entities
         [MaxLength(200, ErrorMessage = "交貨條件不可超過200個字元")]
         public string? DeliveryTerms { get; set; }
 
+        // ===== 審核欄位 =====
+        [Display(Name = "是否核准")]
+        public bool IsApproved { get; set; } = false;
+
+        [Display(Name = "核准人員")]
+        [ForeignKey(nameof(ApprovedByUser))]
+        public int? ApprovedBy { get; set; }
+
+        [Display(Name = "核准時間")]
+        public DateTime? ApprovedAt { get; set; }
+
+        [MaxLength(100, ErrorMessage = "駁回原因不可超過100個字元")]
+        [Display(Name = "駁回原因")]
+        public string? RejectReason { get; set; }
+
         // Foreign Keys
         [Required(ErrorMessage = "公司為必填")]
         [Display(Name = "公司")]
@@ -74,6 +89,7 @@ namespace ERPCore2.Data.Entities
         public Company Company { get; set; } = null!;
         public Customer Customer { get; set; } = null!;
         public Employee? Employee { get; set; }
+        public Employee? ApprovedByUser { get; set; }
         public ICollection<SalesOrderDetail> SalesOrderDetails { get; set; } = new List<SalesOrderDetail>();
     }
 }

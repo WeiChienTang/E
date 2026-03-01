@@ -6,14 +6,12 @@
 @inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
-<PageTitle>庫存異動記錄</PageTitle>
-
-<GenericIndexPageComponent TEntity="InventoryTransaction" 
+<GenericIndexPageComponent TEntity="InventoryTransaction"
                           TService="IInventoryTransactionService"
                           Service="@InventoryTransactionService"
                           EntityBasePath="/inventoryTransactions"
-                          PageTitle="庫存異動記錄"
-                          PageSubtitle="查詢與管理所有庫存異動歷史記錄"
+                          PageTitle="@L["Page.InventoryTransactionTitle"]"
+                          PageSubtitle="@L["Page.InventoryTransactionSubtitle"]"
                           EntityName="@L["Entity.InventoryTransaction"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"

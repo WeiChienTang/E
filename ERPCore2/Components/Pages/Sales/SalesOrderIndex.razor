@@ -3,17 +3,19 @@
 @inject ISalesOrderService SalesOrderService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
+@inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="SalesOrder" 
                       TService="ISalesOrderService"
                       Service="@SalesOrderService"
                       EntityBasePath="/sales-orders"
-                      PageTitle="銷貨管理"
-                      PageSubtitle="管理所有訂單資料與明細資訊"
+                      PageTitle="@L["Page.SalesOrderTitle"]"
+                      PageSubtitle="@L["Page.SalesOrderSubtitle"]"
                       EntityName="@L["Entity.SalesOrder"]"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
@@ -25,6 +27,8 @@
                       RequiredModule="Sales"
                       ShowBatchPrintButton="true"
                       OnBatchPrintClick="@HandleBatchPrintAsync"
+                      ShowBatchApprovalButton="@isApprovalEnabled"
+                      OnBatchApprovalClick="@HandleBatchApprovalAsync"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
                       @ref="indexComponent" />
@@ -35,6 +39,18 @@
                            SalesOrderId="@editingSalesOrderId"
                            OnSalesOrderSaved="@modalHandler.OnEntitySavedAsync"
                            OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@* 批次審核 Modal *@
+<BatchApprovalModalComponent TEntity="SalesOrder"
+                            IsVisible="@showBatchApprovalModal"
+                            IsVisibleChanged="@((bool visible) => showBatchApprovalModal = visible)"
+                            Title="銷貨訂單批次審核"
+                            EntityName="@L["Entity.SalesOrder"]"
+                            LoadPendingItems="@LoadPendingSalesOrdersAsync"
+                            OnApproveItem="@ApproveSingleSalesOrderAsync"
+                            OnApproveAll="@ApproveAllSalesOrdersAsync"
+                            OnViewClick="@HandleApprovalViewClick"
+                            OnApprovalCompleted="@HandleApprovalCompleted" />
 
 @* 批次列印篩選 Modal - 使用 GenericReportFilterModalComponent 統一架構 *@
 <GenericReportFilterModalComponent IsVisible="@showBatchPrintModal"
@@ -50,6 +66,10 @@
     private bool showEditModal = false;
     private int? editingSalesOrderId = null;
     
+    // 審核相關狀態
+    private bool isApprovalEnabled = false;
+    private bool showBatchApprovalModal = false;
+
     // 批次列印 Modal 相關狀態
     private bool showBatchPrintModal = false;
 
@@ -102,7 +122,8 @@
             await LoadEmployeesAsync();
             
             // 建立欄位配置（在載入相關資料後，並傳遞 NotificationService）
-            fieldConfiguration = new SalesOrderFieldConfiguration(customers, employees, NotificationService);
+            isApprovalEnabled = await SystemParameterService.IsSalesOrderApprovalEnabledAsync();
+            fieldConfiguration = new SalesOrderFieldConfiguration(customers, employees, isApprovalEnabled, NotificationService);
             fieldConfiguration.SetLocalizer(L);
 
             // 使用欄位配置建立篩選器和表格欄位
@@ -158,5 +179,99 @@
     {
         showBatchPrintModal = false;
         StateHasChanged();
+    }
+
+    // ===== 批次審核相關方法 =====
+
+    private async Task HandleBatchApprovalAsync()
+    {
+        try
+        {
+            showBatchApprovalModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchApprovalAsync), GetType(), additionalData: "開啟批次審核視窗失敗");
+            await NotificationService.ShowErrorAsync("開啟批次審核視窗失敗");
+        }
+    }
+
+    private async Task<List<SalesOrder>> LoadPendingSalesOrdersAsync()
+    {
+        try
+        {
+            var all = await SalesOrderService.GetAllAsync();
+            return all.Where(so => !so.IsApproved).ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPendingSalesOrdersAsync), GetType(), additionalData: "載入待審核銷貨訂單失敗");
+            await NotificationService.ShowErrorAsync("載入待審核銷貨訂單失敗");
+            return new List<SalesOrder>();
+        }
+    }
+
+    private async Task<bool> ApproveSingleSalesOrderAsync(SalesOrder entity)
+    {
+        try
+        {
+            var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!userId.HasValue) return false;
+            var result = await SalesOrderService.ApproveAsync(entity.Id, userId.Value);
+            return result.IsSuccess;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveSingleSalesOrderAsync), GetType(), additionalData: new { EntityId = entity.Id });
+            return false;
+        }
+    }
+
+    private async Task<(int successCount, int failCount)> ApproveAllSalesOrdersAsync(List<SalesOrder> items)
+    {
+        int successCount = 0, failCount = 0;
+        var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+        if (!userId.HasValue) return (0, items.Count);
+        foreach (var item in items)
+        {
+            try
+            {
+                var result = await SalesOrderService.ApproveAsync(item.Id, userId.Value);
+                if (result.IsSuccess) successCount++; else failCount++;
+            }
+            catch (Exception ex)
+            {
+                failCount++;
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveAllSalesOrdersAsync), GetType(), additionalData: new { EntityId = item.Id });
+            }
+        }
+        return (successCount, failCount);
+    }
+
+    private async Task HandleApprovalViewClick(SalesOrder entity)
+    {
+        try
+        {
+            await modalHandler.ShowEditModalAsync(entity);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApprovalViewClick), GetType(), additionalData: new { EntityId = entity.Id });
+            await NotificationService.ShowErrorAsync("開啟查看視窗失敗");
+        }
+    }
+
+    private async Task HandleApprovalCompleted()
+    {
+        try
+        {
+            if (indexComponent != null)
+                await indexComponent.Refresh();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApprovalCompleted), GetType(), additionalData: "刷新列表失敗");
+        }
     }
 }

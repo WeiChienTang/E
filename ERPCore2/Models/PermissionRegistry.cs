@@ -278,16 +278,19 @@ public static class PermissionRegistry
     public static class SalesOrder
     {
         public const string Read = "SalesOrder.Read";
+        public const string Approve = "SalesOrder.Approve";
     }
 
     public static class SalesDelivery
     {
         public const string Read = "SalesDelivery.Read";
+        public const string Approve = "SalesDelivery.Approve";
     }
 
     public static class SalesReturn
     {
         public const string Read = "SalesReturn.Read";
+        public const string Approve = "SalesReturn.Approve";
     }
 
     public static class SalesReturnReason
@@ -304,11 +307,13 @@ public static class PermissionRegistry
     public static class PurchaseReceiving
     {
         public const string Read = "PurchaseReceiving.Read";
+        public const string Approve = "PurchaseReceiving.Approve";
     }
 
     public static class PurchaseReturn
     {
         public const string Read = "PurchaseReturn.Read";
+        public const string Approve = "PurchaseReturn.Approve";
     }
 
     public static class PurchaseReturnReason
@@ -340,8 +345,13 @@ public static class PermissionRegistry
         new(Role.Read,              "檢視角色",             PermissionLevel.Sensitive, "檢視系統角色與權限群組設定"),
         new(Company.Read,           "檢視公司",             PermissionLevel.Sensitive, "檢視公司基本資料與相關資訊"),
         new(SystemControl.Read,     "檢視系統控制",          PermissionLevel.Sensitive, "檢視系統設定與控制功能"),
-        new(PurchaseOrder.Approve,  "審核採購訂單",          PermissionLevel.Sensitive, "審核與核准採購訂單權限"),
-        new(Quotation.Approve,      "審核報價單",            PermissionLevel.Sensitive, "審核與核准報價單"),
+        new(PurchaseOrder.Approve,    "審核採購訂單",   PermissionLevel.Sensitive, "審核與核准採購訂單權限"),
+        new(PurchaseReceiving.Approve,"審核採購進貨單", PermissionLevel.Sensitive, "審核與核准採購進貨單"),
+        new(PurchaseReturn.Approve,   "審核採購退回單", PermissionLevel.Sensitive, "審核與核准採購退回單"),
+        new(Quotation.Approve,        "審核報價單",     PermissionLevel.Sensitive, "審核與核准報價單"),
+        new(SalesOrder.Approve,       "審核銷貨訂單",   PermissionLevel.Sensitive, "審核與核准銷貨訂單"),
+        new(SalesDelivery.Approve,    "審核銷貨出貨單", PermissionLevel.Sensitive, "審核與核准銷貨出貨單"),
+        new(SalesReturn.Approve,      "審核銷貨退回單", PermissionLevel.Sensitive, "審核與核准銷貨退回單"),
         new(Document.Sensitive,     "瀏覽敏感文件",          PermissionLevel.Sensitive, "瀏覽與下載敏感存取層級的文件"),
         new(Document.Manage,        "管理文件",              PermissionLevel.Sensitive, "上傳、編輯、刪除文件及管理檔案分類"),
 

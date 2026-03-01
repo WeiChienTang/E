@@ -110,6 +110,16 @@ namespace ERPCore2.Services
         /// <param name="updatedBy">更新人員ID（選填）</param>
         /// <returns>更新結果</returns>
         Task<ServiceResult> UpdateInventoryByDifferenceAsync(int id, int updatedBy = 0);
+
+        /// <summary>
+        /// 核准銷貨退回單
+        /// </summary>
+        Task<ServiceResult> ApproveAsync(int id, int approvedBy);
+
+        /// <summary>
+        /// 駁回銷貨退回單
+        /// </summary>
+        Task<ServiceResult> RejectAsync(int id, int rejectedBy, string reason);
     }
 
     /// <summary>

@@ -521,7 +521,13 @@
 
     // 駁回確認 Modal 相關參數
     [Parameter] public Func<string, Task<bool>>? OnRejectWithReason { get; set; }
-    
+
+    /// <summary>
+    /// 列印前審核狀態檢查。回傳 false 則阻止列印並顯示警告。
+    /// 審核關閉時傳 null（不限制）；審核開啟時傳 () => ApprovalConfigHelper.CanPerformActionRequiringApproval(...)。
+    /// </summary>
+    [Parameter] public Func<bool>? CanPrintCheck { get; set; }
+
     // ===== 內部狀態 =====
     
     // 改為 public 以便子元件檢查父元件載入狀態
@@ -1085,6 +1091,13 @@
     
     private async Task HandlePrint()
     {
+        // 審核狀態檢查：若審核開啟且尚未通過，禁止列印
+        if (CanPrintCheck != null && !CanPrintCheck())
+        {
+            await NotificationService.ShowWarningAsync($"請先審核通過後才能列印{EntityName}");
+            return;
+        }
+
         // 如果有內建報表服務，使用內建列印流程
         if (ReportService != null)
         {

@@ -99,6 +99,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivings
                     .Include(pr => pr.Supplier)
+                    .Include(pr => pr.ApprovedByUser)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
                     .Include(pr => pr.PurchaseReceivingDetails)
@@ -138,6 +139,7 @@ namespace ERPCore2.Services
                 
                 return await context.PurchaseReceivings
                     .Include(pr => pr.Supplier)
+                    .Include(pr => pr.ApprovedByUser)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
                             .ThenInclude(p => p.Unit)
@@ -1397,6 +1399,53 @@ namespace ERPCore2.Services
                 });
                 return new List<PurchaseReceiving>();
             }
+        }
+
+        #endregion
+
+        #region 審核作業
+
+        public async Task<ServiceResult> ApproveAsync(int id, int approvedBy)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            using var transaction = await context.Database.BeginTransactionAsync();
+            try
+            {
+                var entity = await context.PurchaseReceivings.FirstOrDefaultAsync(x => x.Id == id);
+                if (entity == null) return ServiceResult.Failure("找不到進貨單");
+                if (entity.IsApproved) return ServiceResult.Failure("進貨單已核准，無需重複核准");
+
+                entity.IsApproved = true;
+                entity.ApprovedBy = approvedBy;
+                entity.ApprovedAt = DateTime.Now;
+                entity.RejectReason = null;
+                entity.UpdatedAt = DateTime.Now;
+
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return ServiceResult.Success();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<ServiceResult> RejectAsync(int id, int rejectedBy, string reason)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var entity = await context.PurchaseReceivings.FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null) return ServiceResult.Failure("找不到進貨單");
+
+            entity.IsApproved = false;
+            entity.ApprovedBy = null;
+            entity.ApprovedAt = null;
+            entity.RejectReason = reason;
+            entity.UpdatedAt = DateTime.Now;
+
+            await context.SaveChangesAsync();
+            return ServiceResult.Success();
         }
 
         #endregion

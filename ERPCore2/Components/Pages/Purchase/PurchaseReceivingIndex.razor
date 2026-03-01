@@ -4,17 +4,19 @@
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IWarehouseService WarehouseService
 @inject ISupplierService SupplierService
+@inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="PurchaseReceiving" 
                           TService="IPurchaseReceivingService"
                           Service="@PurchaseReceivingService"
                           EntityBasePath="/purchase/receiving"
-                          PageTitle="進貨管理"
-                          PageSubtitle="管理所有進貨單資料與進貨狀態"
+                          PageTitle="@L["Page.PurchaseReceivingTitle"]"
+                          PageSubtitle="@L["Page.PurchaseReceivingSubtitle"]"
                           EntityName="@L["Entity.PurchaseReceivingDoc"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
@@ -27,6 +29,8 @@
                           RequiredModule="Purchase"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
+                          ShowBatchApprovalButton="@isApprovalEnabled"
+                          OnBatchApprovalClick="@HandleBatchApprovalAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
@@ -37,6 +41,18 @@
                                     PurchaseReceivingId="@editingPurchaseReceivingId"
                                     OnPurchaseReceivingSaved="@modalHandler.OnEntitySavedAsync"
                                     OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@* 批次審核 Modal *@
+<BatchApprovalModalComponent TEntity="PurchaseReceiving"
+                            IsVisible="@showBatchApprovalModal"
+                            IsVisibleChanged="@((bool visible) => showBatchApprovalModal = visible)"
+                            Title="進貨單批次審核"
+                            EntityName="@L["Entity.PurchaseReceivingDoc"]"
+                            LoadPendingItems="@LoadPendingPurchaseReceivingsAsync"
+                            OnApproveItem="@ApproveSinglePurchaseReceivingAsync"
+                            OnApproveAll="@ApproveAllPurchaseReceivingsAsync"
+                            OnViewClick="@HandleApprovalViewClick"
+                            OnApprovalCompleted="@HandleApprovalCompleted" />
 
 @* 批次列印篩選 Modal - 使用 GenericReportFilterModalComponent 統一架構 *@
 <GenericReportFilterModalComponent IsVisible="@showBatchPrintModal"
@@ -52,6 +68,10 @@
     private bool showEditModal = false;
     private int? editingPurchaseReceivingId = null;
     
+    // 審核相關狀態
+    private bool isApprovalEnabled = false;
+    private bool showBatchApprovalModal = false;
+
     // 批次列印 Modal 相關狀態
     private bool showBatchPrintModal = false;
     
@@ -91,7 +111,8 @@
             await LoadSuppliersAsync();
             
             // 建立欄位配置
-            fieldConfiguration = new PurchaseReceivingFieldConfiguration(purchaseOrders, warehouses, NotificationService);
+            isApprovalEnabled = await SystemParameterService.IsPurchaseReceivingApprovalEnabledAsync();
+            fieldConfiguration = new PurchaseReceivingFieldConfiguration(purchaseOrders, warehouses, isApprovalEnabled, NotificationService);
             fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
@@ -197,5 +218,99 @@
     {
         showBatchPrintModal = false;
         StateHasChanged();
+    }
+
+    // ===== 批次審核相關方法 =====
+
+    private async Task HandleBatchApprovalAsync()
+    {
+        try
+        {
+            showBatchApprovalModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchApprovalAsync), GetType(), additionalData: "開啟批次審核視窗失敗");
+            await NotificationService.ShowErrorAsync("開啟批次審核視窗失敗");
+        }
+    }
+
+    private async Task<List<PurchaseReceiving>> LoadPendingPurchaseReceivingsAsync()
+    {
+        try
+        {
+            var all = await PurchaseReceivingService.GetAllAsync();
+            return all.Where(pr => !pr.IsApproved).ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPendingPurchaseReceivingsAsync), GetType(), additionalData: "載入待審核進貨單失敗");
+            await NotificationService.ShowErrorAsync("載入待審核進貨單失敗");
+            return new List<PurchaseReceiving>();
+        }
+    }
+
+    private async Task<bool> ApproveSinglePurchaseReceivingAsync(PurchaseReceiving entity)
+    {
+        try
+        {
+            var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!userId.HasValue) return false;
+            var result = await PurchaseReceivingService.ApproveAsync(entity.Id, userId.Value);
+            return result.IsSuccess;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveSinglePurchaseReceivingAsync), GetType(), additionalData: new { EntityId = entity.Id });
+            return false;
+        }
+    }
+
+    private async Task<(int successCount, int failCount)> ApproveAllPurchaseReceivingsAsync(List<PurchaseReceiving> items)
+    {
+        int successCount = 0, failCount = 0;
+        var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+        if (!userId.HasValue) return (0, items.Count);
+        foreach (var item in items)
+        {
+            try
+            {
+                var result = await PurchaseReceivingService.ApproveAsync(item.Id, userId.Value);
+                if (result.IsSuccess) successCount++; else failCount++;
+            }
+            catch (Exception ex)
+            {
+                failCount++;
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveAllPurchaseReceivingsAsync), GetType(), additionalData: new { EntityId = item.Id });
+            }
+        }
+        return (successCount, failCount);
+    }
+
+    private async Task HandleApprovalViewClick(PurchaseReceiving entity)
+    {
+        try
+        {
+            await modalHandler.ShowEditModalAsync(entity);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApprovalViewClick), GetType(), additionalData: new { EntityId = entity.Id });
+            await NotificationService.ShowErrorAsync("開啟查看視窗失敗");
+        }
+    }
+
+    private async Task HandleApprovalCompleted()
+    {
+        try
+        {
+            if (indexComponent != null)
+                await indexComponent.Refresh();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApprovalCompleted), GetType(), additionalData: "刷新列表失敗");
+        }
     }
 }

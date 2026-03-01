@@ -22,6 +22,7 @@ namespace ERPCore2.FieldConfiguration
         private readonly List<Warehouse> _warehouses;
         private readonly List<Employee> _employees;
         private readonly INotificationService? _notificationService;
+        private readonly bool _enableApproval;
 
         public PurchaseReturnFieldConfiguration(
             List<Supplier> suppliers,
@@ -29,6 +30,7 @@ namespace ERPCore2.FieldConfiguration
             List<PurchaseReceiving> purchaseReceivings,
             List<Warehouse> warehouses,
             List<Employee> employees,
+            bool enableApproval = false,
             INotificationService? notificationService = null)
         {
             _suppliers = suppliers;
@@ -36,6 +38,7 @@ namespace ERPCore2.FieldConfiguration
             _purchaseReceivings = purchaseReceivings;
             _warehouses = warehouses;
             _employees = employees;
+            _enableApproval = enableApproval;
             _notificationService = notificationService;
         }
 
@@ -43,7 +46,7 @@ namespace ERPCore2.FieldConfiguration
         {
             try
             {
-                return new Dictionary<string, FieldDefinition<PurchaseReturn>>
+                var fields = new Dictionary<string, FieldDefinition<PurchaseReturn>>
                 {
                     {
                         nameof(PurchaseReturn.Code),
@@ -117,14 +120,48 @@ namespace ERPCore2.FieldConfiguration
                     }
 
                 };
+
+                if (_enableApproval)
+                {
+                    fields.Add(nameof(PurchaseReturn.IsApproved),
+                        new FieldDefinition<PurchaseReturn>
+                        {
+                            PropertyName = nameof(PurchaseReturn.IsApproved),
+                            DisplayName = Dn("Field.ApprovalStatus", "核准狀態"),
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 7,
+                            Options = new List<SelectOption>
+                            {
+                                new SelectOption { Text = "已核准", Value = "true" },
+                                new SelectOption { Text = "未核准", Value = "false" }
+                            },
+                            CustomTemplate = item => builder =>
+                            {
+                                var pr = (PurchaseReturn)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", pr.IsApproved ? "badge bg-success" : "badge bg-warning");
+                                builder.AddContent(2, pr.IsApproved ? "已核准" : "待核准");
+                                builder.CloseElement();
+                            },
+                            FilterFunction = (model, query) =>
+                            {
+                                var value = model.GetFilterValue(nameof(PurchaseReturn.IsApproved))?.ToString();
+                                if (!string.IsNullOrWhiteSpace(value) && bool.TryParse(value, out bool boolValue))
+                                    query = query.Where(pr => pr.IsApproved == boolValue);
+                                return query;
+                            }
+                        });
+                }
+
+                return fields;
             }
             catch (Exception ex)
             {
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), 
-                        additionalData: new { 
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(),
+                        additionalData: new {
                             SuppliersCount = _suppliers?.Count ?? 0,
                             PurchaseOrdersCount = _purchaseOrders?.Count ?? 0,
                             PurchaseReceivingsCount = _purchaseReceivings?.Count ?? 0,

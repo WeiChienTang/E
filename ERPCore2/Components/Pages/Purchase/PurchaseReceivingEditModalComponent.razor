@@ -19,6 +19,7 @@
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject IPurchaseReceivingReportService PurchaseReceivingReportService
 @inject ActionButtonHelper ActionButtonHelper
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject ERPCore2.Data.Context.AppDbContext DbContext
@@ -51,6 +52,11 @@
                           SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseReceiving"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseReceiving"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseReceiving"]]"
                           RequiredPermission="@PermissionRegistry.PurchaseReceiving.Read"
+                          ShowApprovalSection="@ShouldShowApprovalSection()"
+                          ApprovalPermission="@PermissionRegistry.PurchaseReceiving.Approve"
+                          OnApprove="@HandlePurchaseReceivingApprove"
+                          OnRejectWithReason="@HandlePurchaseReceivingRejectWithReason"
+                          CanPrintCheck="@GetCanPrintCheck()"
                           OnEntitySaved="@OnPurchaseReceivingSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
@@ -187,7 +193,7 @@
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
     
     // ===== 審核開關狀態 =====
-    private bool isApprovalEnabled = true; // 是否啟用採購單審核功能（從系統參數載入）
+    private bool isApprovalEnabled = false; // 是否啟用進貨單審核功能（從系統參數載入）
 
     // ===== 建構函數 =====
     public PurchaseReceivingEditModalComponent()
@@ -202,7 +208,7 @@
         try
         {
             // 載入審核開關設定（優先執行,影響後續邏輯）
-            isApprovalEnabled = await SystemParameterService.IsPurchaseOrderApprovalEnabledAsync();
+            isApprovalEnabled = await SystemParameterService.IsPurchaseReceivingApprovalEnabledAsync();
             
             // 使用 ModalManagerInitHelper 初始化 Modal 管理器
             modalManagers = ModalManagerInitHelper.CreateBuilder<PurchaseReceiving, IPurchaseReceivingService>(
@@ -1265,6 +1271,13 @@
     {
         try
         {
+            // 審核後不允許儲存
+            if (!ApprovalConfigHelper.CanSaveWhenApproved(isApprovalEnabled, purchaseReceiving.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("進貨單已核准，無法修改");
+                return false;
+            }
+
             // 如果明細管理組件存在，執行驗證
             if (purchaseReceivingDetailManager != null)
             {
@@ -1526,7 +1539,7 @@
                                     ShowWarehouseLocation="true"
                                     Warehouses="@warehouses"
                                     WarehouseLocations="@warehouseLocations"
-                                    IsReadOnly="false" />
+                                    IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)" />
         </DetailSectionWrapper>
     };
     
@@ -1679,6 +1692,89 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledOrder), GetType(), 
                 additionalData: $"開啟預填進貨單Modal失敗 - SupplierId: {supplierId}, OrderId: {purchaseOrderId}");
             await NotificationService.ShowErrorAsync("開啟進貨單時發生錯誤");
+        }
+    }
+
+    // ===== 審核相關方法 =====
+
+    private bool ShouldShowApprovalSection()
+        => isApprovalEnabled && PurchaseReceivingId.HasValue && PurchaseReceivingId.Value > 0;
+
+    private Func<bool>? GetCanPrintCheck()
+        => isApprovalEnabled
+            ? () => ApprovalConfigHelper.CanPerformActionRequiringApproval(
+                  isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false)
+            : null;
+
+    private async Task<bool> HandlePurchaseReceivingApprove()
+    {
+        try
+        {
+            if (!PurchaseReceivingId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法審核：進貨單ID不存在");
+                return false;
+            }
+
+            var confirmed = await NotificationService.ShowConfirmAsync(
+                "確定要審核通過此進貨單嗎？系統將先儲存當前資料，然後進行審核。審核通過後將無法再修改。",
+                "審核確認");
+            if (!confirmed) return false;
+
+            var entity = editModalComponent?.Entity;
+            if (entity == null) return false;
+
+            // 儲存主檔
+            var saveResult = await PurchaseReceivingService.UpdateAsync(entity);
+            if (!saveResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync("儲存失敗，無法進行審核");
+                return false;
+            }
+
+            // 儲存明細
+            await SavePurchaseReceivingDetailsAsync(entity);
+
+            // 核准
+            var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!currentUserId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
+                return false;
+            }
+
+            var result = await PurchaseReceivingService.ApproveAsync(PurchaseReceivingId.Value, currentUserId.Value);
+            if (result.IsSuccess) return true;
+
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "審核通過失敗");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseReceivingApprove), GetType());
+            return false;
+        }
+    }
+
+    private async Task<bool> HandlePurchaseReceivingRejectWithReason(string rejectReason)
+    {
+        try
+        {
+            if (!PurchaseReceivingId.HasValue) return false;
+
+            var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!currentUserId.HasValue) return false;
+
+            var result = await PurchaseReceivingService.RejectAsync(PurchaseReceivingId.Value, currentUserId.Value, rejectReason);
+            if (result.IsSuccess) return true;
+
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "駁回失敗");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseReceivingRejectWithReason), GetType());
+            return false;
         }
     }
 

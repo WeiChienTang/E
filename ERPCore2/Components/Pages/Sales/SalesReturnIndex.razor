@@ -6,17 +6,19 @@
 @inject IWarehouseService WarehouseService
 @inject ISalesReturnReasonService SalesReturnReasonService
 @inject ICustomerService CustomerService
+@inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="SalesReturn" 
                           TService="ISalesReturnService"
                           Service="@SalesReturnService"
                           EntityBasePath="/salesReturns"
-                          PageTitle="退貨管理"
-                          PageSubtitle="管理所有退貨單資料與退貨狀態"
+                          PageTitle="@L["Page.SalesReturnTitle"]"
+                          PageSubtitle="@L["Page.SalesReturnSubtitle"]"
                           EntityName="@L["Entity.SalesReturnDoc"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
@@ -29,6 +31,8 @@
                           RequiredModule="Sales"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
+                          ShowBatchApprovalButton="@isApprovalEnabled"
+                          OnBatchApprovalClick="@HandleBatchApprovalAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
@@ -39,6 +43,18 @@
                                SalesReturnId="@editingSalesReturnId"
                                OnSalesReturnSaved="@modalHandler.OnEntitySavedAsync"
                                OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@* 批次審核 Modal *@
+<BatchApprovalModalComponent TEntity="SalesReturn"
+                            IsVisible="@showBatchApprovalModal"
+                            IsVisibleChanged="@((bool visible) => showBatchApprovalModal = visible)"
+                            Title="銷貨退貨單批次審核"
+                            EntityName="@L["Entity.SalesReturnDoc"]"
+                            LoadPendingItems="@LoadPendingSalesReturnsAsync"
+                            OnApproveItem="@ApproveSingleSalesReturnAsync"
+                            OnApproveAll="@ApproveAllSalesReturnsAsync"
+                            OnViewClick="@HandleApprovalViewClick"
+                            OnApprovalCompleted="@HandleApprovalCompleted" />
 
 @* 批次列印篩選 Modal - 使用 GenericReportFilterModalComponent 統一架構 *@
 <GenericReportFilterModalComponent IsVisible="@showBatchPrintModal"
@@ -54,6 +70,10 @@
     private bool showEditModal = false;
     private int? editingSalesReturnId = null;
     
+    // 審核相關狀態
+    private bool isApprovalEnabled = false;
+    private bool showBatchApprovalModal = false;
+
     // 批次列印 Modal 相關狀態
     private bool showBatchPrintModal = false;
 
@@ -110,7 +130,8 @@
             await LoadCustomersAsync();
             
             // 建立欄位配置
-            fieldConfiguration = new SalesReturnFieldConfiguration(salesDeliveries, warehouses, returnReasons, NotificationService);
+            isApprovalEnabled = await SystemParameterService.IsSalesReturnApprovalEnabledAsync();
+            fieldConfiguration = new SalesReturnFieldConfiguration(salesDeliveries, warehouses, returnReasons, isApprovalEnabled, NotificationService);
             fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
@@ -213,6 +234,100 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchPrintSuccess), GetType(), additionalData: "列印成功回呼處理失敗");
+        }
+    }
+
+    // ===== 批次審核相關方法 =====
+
+    private async Task HandleBatchApprovalAsync()
+    {
+        try
+        {
+            showBatchApprovalModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchApprovalAsync), GetType(), additionalData: "開啟批次審核視窗失敗");
+            await NotificationService.ShowErrorAsync("開啟批次審核視窗失敗");
+        }
+    }
+
+    private async Task<List<SalesReturn>> LoadPendingSalesReturnsAsync()
+    {
+        try
+        {
+            var all = await SalesReturnService.GetAllAsync();
+            return all.Where(sr => !sr.IsApproved).ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPendingSalesReturnsAsync), GetType(), additionalData: "載入待審核退貨單失敗");
+            await NotificationService.ShowErrorAsync("載入待審核退貨單失敗");
+            return new List<SalesReturn>();
+        }
+    }
+
+    private async Task<bool> ApproveSingleSalesReturnAsync(SalesReturn entity)
+    {
+        try
+        {
+            var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!userId.HasValue) return false;
+            var result = await SalesReturnService.ApproveAsync(entity.Id, userId.Value);
+            return result.IsSuccess;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveSingleSalesReturnAsync), GetType(), additionalData: new { EntityId = entity.Id });
+            return false;
+        }
+    }
+
+    private async Task<(int successCount, int failCount)> ApproveAllSalesReturnsAsync(List<SalesReturn> items)
+    {
+        int successCount = 0, failCount = 0;
+        var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+        if (!userId.HasValue) return (0, items.Count);
+        foreach (var item in items)
+        {
+            try
+            {
+                var result = await SalesReturnService.ApproveAsync(item.Id, userId.Value);
+                if (result.IsSuccess) successCount++; else failCount++;
+            }
+            catch (Exception ex)
+            {
+                failCount++;
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveAllSalesReturnsAsync), GetType(), additionalData: new { EntityId = item.Id });
+            }
+        }
+        return (successCount, failCount);
+    }
+
+    private async Task HandleApprovalViewClick(SalesReturn entity)
+    {
+        try
+        {
+            await modalHandler.ShowEditModalAsync(entity);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApprovalViewClick), GetType(), additionalData: new { EntityId = entity.Id });
+            await NotificationService.ShowErrorAsync("開啟查看視窗失敗");
+        }
+    }
+
+    private async Task HandleApprovalCompleted()
+    {
+        try
+        {
+            if (indexComponent != null)
+                await indexComponent.Refresh();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApprovalCompleted), GetType(), additionalData: "刷新列表失敗");
         }
     }
 }

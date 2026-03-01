@@ -1145,6 +1145,7 @@
   <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Pagbabalik ng Binili</value></data>
   <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Sales Order</value></data>
   <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Pagbabalik ng Benta</value></data>
+  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Paghahatid ng Benta</value></data>
   <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Paglipat ng Imbentaryo</value></data>
   <!-- ===== FormSectionNames keys ===== -->
   <data name="Section.BasicInfo" xml:space="preserve"><value>Pangunahing Impormasyon</value></data>
@@ -2580,5 +2581,163 @@
   <data name="Message.LoadRelatedDocFailed" xml:space="preserve"><value>Nabigo ang pag-load ng mga kaugnay na dokumento: {0}</value></data>
   <data name="Message.HasUndeletableDetailsTooltip" xml:space="preserve"><value>Ang ilang produkto ay may mga rekord ng pagtanggap at hindi maaaring i-clear</value></data>
   <data name="Tooltip.ClearAllDetails" xml:space="preserve"><value>I-clear ang lahat ng detalye ng produkto</value></data>
+  <data name="Tooltip.SubtotalTaxExclusive" xml:space="preserve"><value>Tax Exclusive: Dami × Presyo × (1 + Buwis%)</value></data>
+  <data name="Tooltip.SubtotalTaxInclusive" xml:space="preserve"><value>Tax Inclusive: Dami × Presyo (presyo ay kasama na ang buwis)</value></data>
+  <data name="Tooltip.SubtotalNoTax" xml:space="preserve"><value>Walang Buwis: Dami × Presyo</value></data>
+  <data name="Tooltip.SubtotalDefault" xml:space="preserve"><value>Dami × Presyo</value></data>
+
+  <data name="Page.AccountItemTitle" xml:space="preserve"><value>Pamamahala ng Account Items</value></data>
+  <data name="Page.AccountItemSubtitle" xml:space="preserve"><value>Pamahalaan ang pamantayang Chart of Accounts</value></data>
+  <data name="Page.JournalEntryTitle" xml:space="preserve"><value>Pamamahala ng Journal Entries</value></data>
+  <data name="Page.JournalEntrySubtitle" xml:space="preserve"><value>Pamahalaan ang mga journal entry at detalye ng transaksyon</value></data>
+  <data name="Page.CustomerTitle" xml:space="preserve"><value>Pagpapanatili ng Customer</value></data>
+  <data name="Page.CustomerSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng customer at impormasyon sa pakikipag-ugnayan</value></data>
+  <data name="Page.CustomerVisitTitle" xml:space="preserve"><value>Pagpapanatili ng Rekord ng Pagbisita</value></data>
+  <data name="Page.CustomerVisitSubtitle" xml:space="preserve"><value>Pamahalaan ang mga rekord ng pagbisita at pakikipag-ugnayan sa customer</value></data>
+  <data name="Page.DocumentCategoryTitle" xml:space="preserve"><value>Kategorya ng File</value></data>
+  <data name="Page.DocumentCategorySubtitle" xml:space="preserve"><value>Pamahalaan ang kategorya ng dokumento at mga setting ng pinagmulan</value></data>
+  <data name="Page.DocumentTitle" xml:space="preserve"><value>Pag-iimbak ng File</value></data>
+  <data name="Page.DocumentSubtitle" xml:space="preserve"><value>Pamahalaan at ma-access ang iba't ibang nakaimbak na dokumento</value></data>
+  <data name="Page.DepartmentTitle" xml:space="preserve"><value>Setting ng Departamento</value></data>
+  <data name="Page.DepartmentSubtitle" xml:space="preserve"><value>I-set up ang istruktura ng organisasyon at impormasyon ng departamento</value></data>
+  <data name="Page.EmployeeTitle" xml:space="preserve"><value>Empleyado</value></data>
+  <data name="Page.EmployeeSubtitle" xml:space="preserve"><value>Pamahalaan ang data ng empleyado at mga setting ng pahintulot</value></data>
+  <data name="Page.EmployeePositionTitle" xml:space="preserve"><value>Setting ng Posisyon</value></data>
+  <data name="Page.EmployeePositionSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng posisyon at antas ng posisyon</value></data>
+  <data name="Page.PermissionTitle" xml:space="preserve"><value>Pamamahala ng Detalye ng Pahintulot</value></data>
+  <data name="Page.PermissionSubtitle" xml:space="preserve"><value>Pamahalaan ang mga detalye ng setting ng pahintulot ng sistema</value></data>
+  <data name="Page.RoleTitle" xml:space="preserve"><value>Setting ng Grupo ng Pahintulot</value></data>
+  <data name="Page.RoleSubtitle" xml:space="preserve"><value>Pamahalaan ang mga grupo ng pahintulot at setting ng pahintulot ng sistema</value></data>
+  <data name="Page.BankTitle" xml:space="preserve"><value>Setting ng Bangko</value></data>
+  <data name="Page.BankSubtitle" xml:space="preserve"><value>Pamahalaan ang pangunahing impormasyon at impormasyon sa pakikipag-ugnayan ng bangko</value></data>
+  <data name="Page.CurrencyTitle" xml:space="preserve"><value>Setting ng Pera</value></data>
+  <data name="Page.CurrencySubtitle" xml:space="preserve"><value>Pamahalaan ang mga uri ng pera at setting ng palitan na sinusuportahan ng sistema</value></data>
+  <data name="Page.PaymentMethodTitle" xml:space="preserve"><value>Pamamahala ng Paraan ng Pagbabayad</value></data>
+  <data name="Page.PaymentMethodSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data at setting ng paraan ng pagbabayad</value></data>
+  <data name="Page.CompositionCategoryTitle" xml:space="preserve"><value>Uri ng Bill of Materials</value></data>
+  <data name="Page.CompositionCategorySubtitle" xml:space="preserve"><value>I-set up ang uri ng kategorya ng bill of materials ng produkto</value></data>
+  <data name="Page.MaterialTitle" xml:space="preserve"><value>Materyales</value></data>
+  <data name="Page.MaterialSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng materyales at setting ng katangian</value></data>
+  <data name="Page.ProductCategoryTitle" xml:space="preserve"><value>Uri ng Produkto</value></data>
+  <data name="Page.ProductCategorySubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng uri ng produkto at istruktura ng hierarchy</value></data>
+  <data name="Page.ProductCompositionTitle" xml:space="preserve"><value>Bill of Materials</value></data>
+  <data name="Page.ProductCompositionSubtitle" xml:space="preserve"><value>Pamahalaan ang recipe at mga bahagi ng produkto</value></data>
+  <data name="Page.ProductTitle" xml:space="preserve"><value>Pagpapanatili ng Produkto</value></data>
+  <data name="Page.ProductSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng produkto at impormasyon ng imbentaryo</value></data>
+  <data name="Page.ProductionScheduleTitle" xml:space="preserve"><value>Pamamahala ng Schedule ng Produksyon</value></data>
+  <data name="Page.ProductionScheduleSubtitle" xml:space="preserve"><value>Pamahalaan ang plano at pagpapatupad ng schedule ng produksyon</value></data>
+  <data name="Page.SizeTitle" xml:space="preserve"><value>Pagpapanatili ng Sukat</value></data>
+  <data name="Page.SizeSubtitle" xml:space="preserve"><value>Pamahalaan ang data ng espesipikasyon ng sukat ng produkto</value></data>
+  <data name="Page.UnitTitle" xml:space="preserve"><value>Pagpapanatili ng Unit</value></data>
+  <data name="Page.UnitSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng unit ng pagsukat at mga relasyon ng conversion</value></data>
+  <data name="Page.PurchaseOrderTitle" xml:space="preserve"><value>Pagpapanatili ng Purchase Order</value></data>
+  <data name="Page.PurchaseOrderSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng purchase order</value></data>
+  <data name="Page.PurchaseReceivingTitle" xml:space="preserve"><value>Pamamahala ng Pagbili</value></data>
+  <data name="Page.PurchaseReceivingSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng resibo ng pagbili at katayuan ng pagbili</value></data>
+  <data name="Page.PurchaseReturnTitle" xml:space="preserve"><value>Pamamahala ng Pagbabalik ng Pagbili</value></data>
+  <data name="Page.PurchaseReturnSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng pagbabalik ng pagbili at katayuan ng refund</value></data>
+  <data name="Page.PurchaseReturnReasonTitle" xml:space="preserve"><value>Pamamahala ng Dahilan ng Pagbabalik ng Pagbili</value></data>
+  <data name="Page.PurchaseReturnReasonSubtitle" xml:space="preserve"><value>Pamahalaan ang data ng dahilan ng pagbabalik ng pagbili</value></data>
+  <data name="Page.QuotationTitle" xml:space="preserve"><value>Pamamahala ng Quotation</value></data>
+  <data name="Page.QuotationSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng quotation at impormasyon ng detalye</value></data>
+  <data name="Page.SalesDeliveryTitle" xml:space="preserve"><value>Pamamahala ng Sales Delivery</value></data>
+  <data name="Page.SalesDeliverySubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng sales delivery at impormasyon ng detalye</value></data>
+  <data name="Page.SalesOrderTitle" xml:space="preserve"><value>Pamamahala ng Sales Order</value></data>
+  <data name="Page.SalesOrderSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng order at impormasyon ng detalye</value></data>
+  <data name="Page.SalesReturnTitle" xml:space="preserve"><value>Pamamahala ng Pagbabalik</value></data>
+  <data name="Page.SalesReturnSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng pagbabalik at katayuan ng pagbabalik</value></data>
+  <data name="Page.SalesReturnReasonTitle" xml:space="preserve"><value>Pamamahala ng Dahilan ng Pagbabalik ng Benta</value></data>
+  <data name="Page.SalesReturnReasonSubtitle" xml:space="preserve"><value>Pamahalaan ang data ng dahilan ng pagbabalik ng benta</value></data>
+  <data name="Page.SupplierTitle" xml:space="preserve"><value>Pagpapanatili ng Supplier</value></data>
+  <data name="Page.SupplierSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng supplier at impormasyon sa pakikipag-ugnayan</value></data>
+  <data name="Page.CompanyTitle" xml:space="preserve"><value>Setting ng Kumpanya</value></data>
+  <data name="Page.CompanySubtitle" xml:space="preserve"><value>Pamahalaan ang pangunahing impormasyon at setting ng kumpanya</value></data>
+  <data name="Page.ErrorLogTitle" xml:space="preserve"><value>Log ng Error</value></data>
+  <data name="Page.ErrorLogSubtitle" xml:space="preserve"><value>Pagtatanong at pagmamatyag ng log ng error ng sistema</value></data>
+  <data name="Page.PaperSettingTitle" xml:space="preserve"><value>Setting ng Papel</value></data>
+  <data name="Page.PaperSettingSubtitle" xml:space="preserve"><value>Pamahalaan ang mga espesipikasyon at setting ng papel para sa pag-print</value></data>
+  <data name="Page.PrinterConfigurationTitle" xml:space="preserve"><value>Setting ng Printer</value></data>
+  <data name="Page.PrinterConfigurationSubtitle" xml:space="preserve"><value>Pamahalaan ang mga setting ng koneksyon ng printer sa sistema</value></data>
+  <data name="Page.ReportPrintConfigurationTitle" xml:space="preserve"><value>Pagsasaayos ng Pag-print ng Ulat</value></data>
+  <data name="Page.ReportPrintConfigurationSubtitle" xml:space="preserve"><value>Pamahalaan ang mga setting ng pag-print para sa iba't ibang ulat (awtomatikong nililikha ng sistema, maaaring i-edit lamang ang printer at papel)</value></data>
+  <data name="Page.VehicleTitle" xml:space="preserve"><value>Pagpapanatili ng Sasakyan</value></data>
+  <data name="Page.VehicleSubtitle" xml:space="preserve"><value>Pamahalaan ang data ng sasakyan ng kumpanya at customer</value></data>
+  <data name="Page.VehicleMaintenanceTitle" xml:space="preserve"><value>Pagpapanatili ng Rekord ng Maintenance</value></data>
+  <data name="Page.VehicleMaintenanceSubtitle" xml:space="preserve"><value>Pamahalaan ang mga rekord ng maintenance at pagkukumpuni ng sasakyan</value></data>
+  <data name="Page.VehicleTypeTitle" xml:space="preserve"><value>Pagpapanatili ng Uri ng Sasakyan</value></data>
+  <data name="Page.VehicleTypeSubtitle" xml:space="preserve"><value>Pamahalaan ang data ng kategorya ng uri ng sasakyan</value></data>
+  <data name="Page.InventoryStockTitle" xml:space="preserve"><value>Pagtatanong ng Imbentaryo</value></data>
+  <data name="Page.InventoryStockSubtitle" xml:space="preserve"><value>Pamahalaan ang imbentaryo ng produkto at lokasyon ng bodega</value></data>
+  <data name="Page.InventoryTransactionTitle" xml:space="preserve"><value>Rekord ng Pagbabago ng Imbentaryo</value></data>
+  <data name="Page.InventoryTransactionSubtitle" xml:space="preserve"><value>Magtanong at pamahalaan ang lahat ng kasaysayan ng pagbabago ng imbentaryo</value></data>
+  <data name="Page.MaterialIssueTitle" xml:space="preserve"><value>Pamamahala ng Issuance ng Materyales</value></data>
+  <data name="Page.MaterialIssueSubtitle" xml:space="preserve"><value>Pamahalaan ang mga slip ng issuance ng materyales at mga rekord ng issuance</value></data>
+  <data name="Page.StockTakingTitle" xml:space="preserve"><value>Pamamahala ng Inventory Count</value></data>
+  <data name="Page.StockTakingSubtitle" xml:space="preserve"><value>Pamahalaan ang mga slip ng inventory count at mga rekord ng pagbibilang</value></data>
+  <data name="Page.WarehouseTitle" xml:space="preserve"><value>Pagpapanatili ng Bodega</value></data>
+  <data name="Page.WarehouseSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng bodega at pangunahing impormasyon</value></data>
+  <data name="Page.WarehouseLocationTitle" xml:space="preserve"><value>Pamamahala ng Lokasyon sa Loob ng Bodega</value></data>
+  <data name="Page.WarehouseLocationSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng lokasyon sa loob ng bodega at pangunahing impormasyon</value></data>
+  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>Rekord ng Basura</value></data>
+  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>Pamahalaan ang mga rekord ng pagtanggap ng basura</value></data>
+  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>Pagpapanatili ng Uri ng Basura</value></data>
+  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>Pamahalaan ang data ng kategorya ng uri ng basura</value></data>
+  <data name="AccountType.Asset" xml:space="preserve"><value>Asset</value></data>
+  <data name="AccountType.Liability" xml:space="preserve"><value>Liability</value></data>
+  <data name="AccountType.Equity" xml:space="preserve"><value>Equity</value></data>
+  <data name="AccountType.Revenue" xml:space="preserve"><value>Kita sa Operasyon</value></data>
+  <data name="AccountType.Cost" xml:space="preserve"><value>Gastos sa Pagbebenta</value></data>
+  <data name="AccountType.Expense" xml:space="preserve"><value>Gastos sa Operasyon</value></data>
+  <data name="AccountType.NonOperating" xml:space="preserve"><value>Kita at Gastos sa Labas ng Operasyon</value></data>
+  <data name="AccountType.ComprehensiveIncome" xml:space="preserve"><value>Kabuuang Komprehensibong Kita</value></data>
+  <data name="AccountDirection.Debit" xml:space="preserve"><value>Debit</value></data>
+  <data name="AccountDirection.Credit" xml:space="preserve"><value>Credit</value></data>
+  <data name="AccountLevel.L1" xml:space="preserve"><value>Antas 1 (Pangunahing Kategorya)</value></data>
+  <data name="AccountLevel.L2" xml:space="preserve"><value>Antas 2 (Sub-kategorya)</value></data>
+  <data name="AccountLevel.L3" xml:space="preserve"><value>Antas 3 (Gitnang Kategorya)</value></data>
+  <data name="AccountLevel.L4" xml:space="preserve"><value>Antas 4 (Detalyadong Account)</value></data>
+  <data name="Toggle.Enabled" xml:space="preserve"><value>Pinagana</value></data>
+  <data name="Toggle.Disabled" xml:space="preserve"><value>Hindi Pinagana</value></data>
+  <data name="Toggle.Switch" xml:space="preserve"><value>I-toggle</value></data>
+  <data name="ApprovalSettings.Description" xml:space="preserve"><value>Kontrolin ang proseso ng pag-apruba para sa bawat uri ng dokumento. Kapag pinagana, ang mga kaugnay na dokumento ay kailangan ng pag-apruba bago magkabisa.</value></data>
+  <data name="SubAccount.BatchCreateTitle" xml:space="preserve"><value>Batch na Paglikha ng Sub-Account</value></data>
+  <data name="SubAccount.BatchCreateDesc" xml:space="preserve"><value>Lumikha ng mga sub-account para sa mga kasalukuyang customer, supplier, at produkto (lilaktawan ang mga may sub-account na). Bago magsagawa, tiyakin na ang mga setting ng control account code sa itaas ay tama at naka-save na.</value></data>
+  <data name="SubAccount.CreateCustomer" xml:space="preserve"><value>Lumikha para sa Customer</value></data>
+  <data name="SubAccount.CreateSupplier" xml:space="preserve"><value>Lumikha para sa Supplier</value></data>
+  <data name="SubAccount.CreateProduct" xml:space="preserve"><value>Lumikha para sa Produkto</value></data>
+  <data name="SubAccount.CreateCustomerTitle" xml:space="preserve"><value>Lumikha ng sub-account para sa lahat ng kasalukuyang customer</value></data>
+  <data name="SubAccount.CreateSupplierTitle" xml:space="preserve"><value>Lumikha ng sub-account para sa lahat ng kasalukuyang supplier</value></data>
+  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>Lumikha ng sub-account para sa lahat ng kasalukuyang produkto</value></data>
+  <data name="SubAccount.CreateResult" xml:space="preserve"><value>Natapos ang paglikha ng {0} sub-account: {1} nilikha, {2} nilaktawan</value></data>
+  <data name="SubAccount.CreateResultWithErrors" xml:space="preserve"><value>Natapos ang paglikha ng {0} sub-account: {1} nilikha, {2} nilaktawan, {3} may error ({4}{5})</value></data>
+  <data name="SubAccount.CreateError" xml:space="preserve"><value>Nagkaroon ng error sa batch na paglikha ng {0} sub-account: {1}</value></data>
+  <data name="SubAccount.CreateErrorNotify" xml:space="preserve"><value>Nabigo ang batch na paglikha ng {0} sub-account</value></data>
+  <data name="SubAccount.Ellipsis" xml:space="preserve"><value>…</value></data>
+  <data name="SystemParam.Title" xml:space="preserve"><value>Mga Setting ng Parameter ng Sistema</value></data>
+  <data name="SystemParam.SaveTitle" xml:space="preserve"><value>I-save ang Mga Setting ng Parameter ng Sistema</value></data>
+  <data name="SystemParam.RefreshTitle" xml:space="preserve"><value>I-refresh ang Data</value></data>
+  <data name="SystemParam.ResetTitle" xml:space="preserve"><value>Ibalik ang lahat ng parameter sa factory default</value></data>
+  <data name="SystemParam.CloseTitle" xml:space="preserve"><value>Isara</value></data>
+  <data name="SystemParam.CreatedAt" xml:space="preserve"><value>Petsa ng Paglikha:</value></data>
+  <data name="SystemParam.CreatedBy" xml:space="preserve"><value>Nilikha ng:</value></data>
+  <data name="SystemParam.UpdatedAt" xml:space="preserve"><value>Huling Na-update:</value></data>
+  <data name="SystemParam.UpdatedBy" xml:space="preserve"><value>Huling Binago ng:</value></data>
+  <data name="SystemParam.System" xml:space="preserve"><value>Sistema</value></data>
+  <data name="SystemParam.ResetConfirmTitle" xml:space="preserve"><value>Kumpirmasyon ng Pagbabalik sa Default</value></data>
+  <data name="SystemParam.ResetConfirmMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong i-reset ang mga parameter ng sistema sa default na configuration? Ang mga kasalukuyang custom na configuration ay mabubura.</value></data>
+  <data name="SystemParam.ResetConfirmButton" xml:space="preserve"><value>Kumpirmahin ang Pagbabalik</value></data>
+  <data name="SystemParam.SaveSuccess" xml:space="preserve"><value>Matagumpay na na-save ang mga parameter ng sistema!</value></data>
+  <data name="SystemParam.SaveFailed" xml:space="preserve"><value>Nabigo ang pag-save ng mga parameter ng sistema: {0}</value></data>
+  <data name="SystemParam.ResetSuccess" xml:space="preserve"><value>Na-reset na sa default na configuration</value></data>
+  <data name="SystemParam.ResetFailed" xml:space="preserve"><value>Nabigo ang pagbabalik sa default: {0}</value></data>
+  <data name="SystemParam.DataReloaded" xml:space="preserve"><value>Na-reload na ang data</value></data>
+  <data name="Section.PrintSettings" xml:space="preserve"><value>Mga Setting ng Pag-print</value></data>
+  <data name="Section.PaperSize" xml:space="preserve"><value>Sukat ng Papel</value></data>
+  <data name="Section.DocumentInfo" xml:space="preserve"><value>Impormasyon ng Dokumento</value></data>
+  <data name="Document.FileSelected" xml:space="preserve"><value>Napili: {0} ({1})</value></data>
+  <data name="Document.CurrentFile" xml:space="preserve"><value>Kasalukuyang File: {0}</value></data>
+  <data name="Document.SupportedFormats" xml:space="preserve"><value>Mga Sinusuportahang Format: PDF, Word, Excel, Imahe (Max 20MB)</value></data>
+  <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>Gamitin ang Default ng Kategorya</value></data>
+  <data name="Document.PaperSizeApplied" xml:space="preserve"><value>Na-apply na ang setting ng sukat ng "{0}"</value></data>
 
 </root>
