@@ -62,6 +62,14 @@ namespace ERPCore2.Data.Entities
 
         // ===== 通知設定 =====
 
+        /// <summary>是否啟用行事曆功能（預設開啟）</summary>
+        [Display(Name = "啟用行事曆")]
+        public bool EnableCalendar { get; set; } = true;
+
+        /// <summary>是否啟用便條貼功能（預設開啟）</summary>
+        [Display(Name = "啟用便條貼")]
+        public bool EnableStickyNote { get; set; } = true;
+
         /// <summary>是否在 QuickAction 按鈕顯示行事曆提醒徽章（預設開啟）</summary>
         [Display(Name = "顯示行事曆提醒徽章")]
         public bool ShowCalendarBadge { get; set; } = true;

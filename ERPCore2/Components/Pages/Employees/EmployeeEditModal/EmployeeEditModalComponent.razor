@@ -120,6 +120,7 @@
     private EmployeeVehicleTab? vehicleTab;
     private EmployeeToolTab? toolTab;
     private EmployeeTrainingTab? trainingTab;
+    private EmployeePermissionTab? permissionTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -136,6 +137,11 @@
     private RenderFragment CreateTrainingTabContent() => __builder =>
     {
         <EmployeeTrainingTab @ref="trainingTab" EmployeeId="@EmployeeId" />
+    };
+
+    private RenderFragment CreatePermissionTabContent() => __builder =>
+    {
+        <EmployeePermissionTab @ref="permissionTab" EmployeeId="@EmployeeId" />
     };
 
     // ===== 生命週期 =====
@@ -216,6 +222,7 @@
                 vehicleTab?.Clear();
                 toolTab?.Clear();
                 trainingTab?.Clear();
+                permissionTab?.Clear();
 
                 return new Employee
                 {
@@ -253,12 +260,14 @@
                 if (vehicleTab != null) await vehicleTab.LoadAsync(loadedEntityId);
                 if (toolTab != null) await toolTab.LoadAsync(loadedEntityId);
                 if (trainingTab != null) await trainingTab.LoadAsync(loadedEntityId);
+                if (permissionTab != null) await permissionTab.LoadAsync(loadedEntityId);
             }
             else
             {
                 vehicleTab?.Clear();
                 toolTab?.Clear();
                 trainingTab?.Clear();
+                permissionTab?.Clear();
             }
             StateHasChanged();
         }
@@ -320,6 +329,7 @@
                 if (vehicleTab != null) await vehicleTab.ReloadAsync(editModalComponent.Entity.Id);
                 if (toolTab != null) await toolTab.LoadAsync(editModalComponent.Entity.Id);
                 if (trainingTab != null) await trainingTab.LoadAsync(editModalComponent.Entity.Id);
+                if (permissionTab != null) await permissionTab.LoadAsync(editModalComponent.Entity.Id);
                 await OnEmployeeSaved.InvokeAsync(editModalComponent.Entity);
             }
         }
@@ -394,6 +404,7 @@
             var layout = builder
                 .GroupIntoCustomTab(L["Tab.PersonalTools"].ToString(), "bi-tools", CreateToolTabContent())
                 .GroupIntoCustomTab(L["Tab.Training"].ToString(), "bi-mortarboard", CreateTrainingTabContent())
+                .GroupIntoCustomTab(L["Tab.Permissions"].ToString(), "bi-shield-lock", CreatePermissionTabContent())
                 .BuildAll();
 
             formSections = layout.FieldSections;

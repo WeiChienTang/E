@@ -35,6 +35,17 @@
                 <span class="text-danger ms-1">*</span>
             </div>
 
+            <InputFile OnChange="@HandleFilesSelected"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                       multiple
+                       class="form-control" />
+            <div class="form-text mb-2">@L["Document.SupportedFormats"]</div>
+
+            @if (!string.IsNullOrEmpty(fileError))
+            {
+                <div class="text-danger small mb-2">@fileError</div>
+            }
+
             <InteractiveTableComponent TItem="DocumentFileViewModel"
                                       Items="@fileViewModels"
                                       ColumnDefinitions="@GetFileColumnDefinitions()"
@@ -47,19 +58,6 @@
                                       IsStriped="false"
                                       GetRowCssClass="@((item, idx) => item.IsDeleted ? "table-danger text-muted" : "")"
                                       EnableAutoEmptyRow="false" />
-
-            @if (!string.IsNullOrEmpty(fileError))
-            {
-                <div class="text-danger small mt-1">@fileError</div>
-            }
-
-            <div class="mt-2">
-                <InputFile OnChange="@HandleFilesSelected"
-                           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                           multiple
-                           class="form-control" />
-                <div class="form-text">@L["Document.SupportedFormats"]</div>
-            </div>
         </div>
     </CustomFormContent>
 </GenericEditModalComponent>

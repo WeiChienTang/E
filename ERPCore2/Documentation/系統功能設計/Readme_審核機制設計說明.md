@@ -1,7 +1,7 @@
 # 審核機制設計說明（總綱）
 
 > 本文件為 ERPCore2 單據審核機制（Approval Workflow）的**總綱**，說明設計原則、核心元件與各模組現況摘要。詳細內容請參閱子文件。
-> 最後更新：2026-03-02（全 7 模組 Detail Table 封鎖 + CanPrintCheck 均已完成）
+> 最後更新：2026-03-02（全 7 模組完整；警告訊息精簡；審核權限整合說明補充）
 
 ---
 
@@ -139,7 +139,64 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
 
 ---
 
-## 六、常見問題
+## 六、審核權限整合說明
+
+> 詳見 [Readme_權限設計說明.md](../Readme_權限設計說明.md)
+
+### 6-1 審核權限的位置
+
+每個模組的 `Xxx.Approve` 審核權限集中定義於 `Models/PermissionRegistry.cs`：
+
+```csharp
+// 範例（Quotation 模組）
+public static class Quotation
+{
+    public const string Approve = "Quotation.Approve";
+    // ...
+}
+```
+
+所有 7 個模組的 `Approve` 權限均已在 `GetAllPermissions()` 中以 `PermissionLevel.Sensitive` 等級登錄：
+
+| 模組 | 常數 | 等級 |
+|------|------|------|
+| 報價單 | `PermissionRegistry.Quotation.Approve` | Sensitive |
+| 採購訂單 | `PermissionRegistry.PurchaseOrder.Approve` | Sensitive |
+| 進貨單 | `PermissionRegistry.PurchaseReceiving.Approve` | Sensitive |
+| 進貨退回 | `PermissionRegistry.PurchaseReturn.Approve` | Sensitive |
+| 銷售訂單 | `PermissionRegistry.SalesOrder.Approve` | Sensitive |
+| 銷貨出貨 | `PermissionRegistry.SalesDelivery.Approve` | Sensitive |
+| 銷貨退回 | `PermissionRegistry.SalesReturn.Approve` | Sensitive |
+
+### 6-2 權限如何生效
+
+`GenericEditModalComponent` 使用 `<PermissionCheck>` 包裹核准／駁回按鈕區塊：
+
+```razor
+<PermissionCheck Permission="@ApprovalPermission">
+    @* 核准、駁回按鈕 *@
+</PermissionCheck>
+```
+
+`ApprovalPermission` 由各 EditModal 傳入，**必須使用 PermissionRegistry 常數**（非原始字串），以享有編譯期型別檢查並避免拼寫錯誤：
+
+```razor
+@* ✅ 正確 *@
+ApprovalPermission="@PermissionRegistry.SalesOrder.Approve"
+
+@* ❌ 錯誤（原始字串，無編譯期保護） *@
+ApprovalPermission="SalesOrder.Approve"
+```
+
+### 6-3 角色授權設定
+
+在系統管理 → 角色管理中，對應角色需開啟 `Xxx.Approve` 權限，該使用者才會看到「核准」與「駁回」按鈕。
+
+沒有 `Approve` 權限的使用者，`<PermissionCheck>` 會直接隱藏按鈕，整個審核操作區塊不可見。
+
+---
+
+## 八、常見問題
 
 ### Q: 開啟審核後，歷史資料 IsApproved = false 怎麼辦？
 

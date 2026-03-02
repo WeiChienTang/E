@@ -26,7 +26,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "DCAT-GOV",
                     Name = "政府公文",
-                    Source = DocumentSource.Government,
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -37,7 +36,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "DCAT-VND",
                     Name = "廠商合約",
-                    Source = DocumentSource.Vendor,
                     DefaultAccessLevel = DocumentAccessLevel.Sensitive,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -48,7 +46,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "DCAT-CST",
                     Name = "客戶文件",
-                    Source = DocumentSource.Customer,
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -59,7 +56,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "DCAT-INT",
                     Name = "內部文件",
-                    Source = DocumentSource.Internal,
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
@@ -70,7 +66,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "DCAT-OTH",
                     Name = "其他文件",
-                    Source = DocumentSource.Other,
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,

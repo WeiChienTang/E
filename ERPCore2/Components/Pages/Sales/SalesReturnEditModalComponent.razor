@@ -930,8 +930,19 @@
     /// </summary>
     private RenderFragment? GetWarningMessage() => __builder =>
     {
-            <GenericLockedFieldMessage IsVisible="@(isDetailDataReady && hasUndeletableDetails)"
-                    Message="@EditModalMessages.UndeletableDetailsWarning"/>
+        if (!isDetailDataReady) return;
+
+        if (isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)
+        {
+            <GenericLockedFieldMessage IsVisible="true"
+                                      Message="@EditModalMessages.ApprovedWarning"
+                                      Compact="true" />
+            return;
+        }
+
+        <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
+                                  Message="@EditModalMessages.UndeletableDetailsWarning"
+                                  Compact="true" />
     };
 
     /// <summary>

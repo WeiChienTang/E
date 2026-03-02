@@ -1,21 +1,21 @@
-﻿@* 可重用的客戶拜訪紀錄編輯組件 - 用於客戶 EditModal 的 Tab 頁籤中 *@
-@inject ICustomerVisitService CustomerVisitService
-@inject ICustomerService CustomerService
+@* 可重用的廠商拜訪紀錄編輯組件 - 用於廠商 EditModal 的 Tab 頁籤中 *@
+@inject ISupplierVisitService SupplierVisitService
+@inject ISupplierService SupplierService
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="CustomerVisit"
-                          TService="ICustomerVisitService"
+<GenericEditModalComponent TEntity="SupplierVisit"
+                          TService="ISupplierVisitService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
-                          @bind-Id="@CustomerVisitId"
-                          Service="@CustomerVisitService"
-                          EntityName="@L["Entity.CustomerVisit"]"
-                          EntityNamePlural="@L["Entity.CustomerVisit"]"
-                          ModalTitle="@(CustomerVisitId.HasValue ? L["Message.EditTitle", L["Entity.CustomerVisit"]].ToString() : L["Message.CreateTitle", L["Entity.CustomerVisit"]].ToString())"
+                          @bind-Id="@SupplierVisitId"
+                          Service="@SupplierVisitService"
+                          EntityName="@L["Entity.SupplierVisit"]"
+                          EntityNamePlural="@L["Entity.SupplierVisit"]"
+                          ModalTitle="@(SupplierVisitId.HasValue ? L["Message.EditTitle", L["Entity.SupplierVisit"]].ToString() : L["Message.CreateTitle", L["Entity.SupplierVisit"]].ToString())"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
@@ -26,19 +26,19 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadVisitData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(CustomerVisitId.HasValue ? L["Message.UpdateSuccess", L["Entity.CustomerVisit"]].ToString() : L["Message.CreateSuccess", L["Entity.CustomerVisit"]].ToString())"
-                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.CustomerVisit"]]"
-                          RequiredPermission="@PermissionRegistry.Customer.Read"
-                          OnEntitySaved="@OnCustomerVisitSaved"
+                          SaveSuccessMessage="@(SupplierVisitId.HasValue ? L["Message.UpdateSuccess", L["Entity.SupplierVisit"]].ToString() : L["Message.CreateSuccess", L["Entity.SupplierVisit"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SupplierVisit"]]"
+                          RequiredPermission="@PermissionRegistry.Supplier.Read"
+                          OnEntitySaved="@OnSupplierVisitSaved"
                           OnCancel="@OnCancel" />
 
-@* 客戶編輯 Modal *@
-<CustomerEditModalComponent @ref="customerEditModal"
-                           IsVisible="@customerModalManager.IsModalVisible"
-                           IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
-                           CustomerId="@customerModalManager.SelectedEntityId"
-                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
-                           OnCancel="@customerModalManager.HandleModalCancelAsync" />
+@* 廠商編輯 Modal *@
+<SupplierEditModalComponent @ref="supplierEditModal"
+                           IsVisible="@supplierModalManager.IsModalVisible"
+                           IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
+                           SupplierId="@supplierModalManager.SelectedEntityId"
+                           OnSupplierSaved="@supplierModalManager.OnSavedAsync"
+                           OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
 @* 員工編輯 Modal *@
 <EmployeeEditModalComponent @ref="employeeEditModal"
@@ -52,13 +52,13 @@
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    [Parameter] public int? CustomerVisitId { get; set; }
-    [Parameter] public int? PrefilledCustomerId { get; set; }
-    [Parameter] public EventCallback<CustomerVisit> OnCustomerVisitSaved { get; set; }
+    [Parameter] public int? SupplierVisitId { get; set; }
+    [Parameter] public int? PrefilledSupplierId { get; set; }
+    [Parameter] public EventCallback<SupplierVisit> OnSupplierVisitSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
     // ===== 內部狀態 =====
-    private GenericEditModalComponent<CustomerVisit, ICustomerVisitService>? editModalComponent;
+    private GenericEditModalComponent<SupplierVisit, ISupplierVisitService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
 
@@ -66,15 +66,15 @@
     private AutoCompleteConfig? autoCompleteConfig;
 
     // 選項資料
-    private List<Customer> availableCustomers = new();
+    private List<Supplier> availableSuppliers = new();
     private List<Employee> availableEmployees = new();
 
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
 
-    // 客戶編輯 Modal
-    private CustomerEditModalComponent? customerEditModal;
-    private RelatedEntityModalManager<Customer> customerModalManager = default!;
+    // 廠商編輯 Modal
+    private SupplierEditModalComponent? supplierEditModal;
+    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
 
     // 員工編輯 Modal
     private EmployeeEditModalComponent? employeeEditModal;
@@ -87,22 +87,22 @@
     {
         try
         {
-            modalManagers = ModalManagerInitHelper.CreateBuilder<CustomerVisit, ICustomerVisitService>(
+            modalManagers = ModalManagerInitHelper.CreateBuilder<SupplierVisit, ISupplierVisitService>(
                     () => editModalComponent,
                     NotificationService,
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
-                .AddManager<Customer>(nameof(CustomerVisit.CustomerId), "客戶")
-                .AddManager<Employee>(nameof(CustomerVisit.EmployeeId), "員工")
+                .AddManager<Supplier>(nameof(SupplierVisit.SupplierId), "廠商")
+                .AddManager<Employee>(nameof(SupplierVisit.EmployeeId), "員工")
                 .Build();
 
-            customerModalManager = modalManagers.Get<Customer>(nameof(CustomerVisit.CustomerId));
-            employeeModalManager = modalManagers.Get<Employee>(nameof(CustomerVisit.EmployeeId));
+            supplierModalManager = modalManagers.Get<Supplier>(nameof(SupplierVisit.SupplierId));
+            employeeModalManager = modalManagers.Get<Employee>(nameof(SupplierVisit.EmployeeId));
         }
         catch (Exception)
         {
-            await NotificationService.ShowErrorAsync("初始化拜訪紀錄編輯組件時發生錯誤");
+            await NotificationService.ShowErrorAsync("初始化廠商拜訪紀錄編輯組件時發生錯誤");
         }
     }
 
@@ -120,26 +120,26 @@
         }
     }
 
-    private async Task<CustomerVisit?> LoadVisitData()
+    private async Task<SupplierVisit?> LoadVisitData()
     {
         try
         {
-            if (!CustomerVisitId.HasValue)
+            if (!SupplierVisitId.HasValue)
             {
-                var newVisit = new CustomerVisit
+                var newVisit = new SupplierVisit
                 {
                     VisitDate = DateTime.Today,
                     VisitType = VisitType.Phone,
                     Status = EntityStatus.Active
                 };
 
-                if (PrefilledCustomerId.HasValue)
-                    newVisit.CustomerId = PrefilledCustomerId.Value;
+                if (PrefilledSupplierId.HasValue)
+                    newVisit.SupplierId = PrefilledSupplierId.Value;
 
                 return newVisit;
             }
 
-            return await CustomerVisitService.GetByIdAsync(CustomerVisitId.Value);
+            return await SupplierVisitService.GetByIdAsync(SupplierVisitId.Value);
         }
         catch (Exception ex)
         {
@@ -156,19 +156,19 @@
             {
                 new()
                 {
-                    PropertyName = nameof(CustomerVisit.CustomerId),
-                    Label = L["Entity.Customer"],
+                    PropertyName = nameof(SupplierVisit.SupplierId),
+                    Label = L["Entity.Supplier"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Customer"]],
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Supplier"]],
                     IsRequired = true,
                     MinSearchLength = 0,
-                    HelpText = "此次拜訪的客戶",
-                    IsVisible = !PrefilledCustomerId.HasValue,
-                    ActionButtons = await GetCustomerActionButtonsAsync()
+                    HelpText = "此次拜訪的廠商",
+                    IsVisible = !PrefilledSupplierId.HasValue,
+                    ActionButtons = await GetSupplierActionButtonsAsync()
                 },
                 new()
                 {
-                    PropertyName = nameof(CustomerVisit.VisitDate),
+                    PropertyName = nameof(SupplierVisit.VisitDate),
                     Label = L["Field.VisitDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
@@ -176,7 +176,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(CustomerVisit.VisitType),
+                    PropertyName = nameof(SupplierVisit.VisitType),
                     Label = L["Field.VisitMethod"],
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
@@ -187,11 +187,11 @@
                         {
                             Text = e switch
                             {
-                                VisitType.Phone => "電話",
-                                VisitType.OnSite => "現場拜訪",
-                                VisitType.VideoConference => "視訊會議",
-                                VisitType.Email => "Email",
-                                VisitType.Other => "其他",
+                                VisitType.Phone => L["VisitType.Phone"],
+                                VisitType.OnSite => L["VisitType.OnSite"],
+                                VisitType.VideoConference => L["VisitType.VideoConference"],
+                                VisitType.Email => L["VisitType.Email"],
+                                VisitType.Other => L["VisitType.Other"],
                                 _ => e.ToString()
                             },
                             Value = ((int)e).ToString()
@@ -200,7 +200,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(CustomerVisit.EmployeeId),
+                    PropertyName = nameof(SupplierVisit.EmployeeId),
                     Label = L["Field.SalesPerson"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.SalesPerson"]],
@@ -211,7 +211,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(CustomerVisit.Purpose),
+                    PropertyName = nameof(SupplierVisit.Purpose),
                     Label = L["Field.VisitPurpose"],
                     FieldType = FormFieldType.Text,
                     Placeholder = L["Placeholder.PleaseInput", L["Field.VisitPurpose"]],
@@ -221,7 +221,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(CustomerVisit.Content),
+                    PropertyName = nameof(SupplierVisit.Content),
                     Label = L["Field.VisitContent"],
                     FieldType = FormFieldType.TextArea,
                     Placeholder = L["Placeholder.PleaseInput", L["Field.VisitContent"]],
@@ -231,18 +231,18 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(CustomerVisit.NextFollowUpDate),
+                    PropertyName = nameof(SupplierVisit.NextFollowUpDate),
                     Label = L["Field.NextFollowUpDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "預計下次追蹤或拜訪的日期"
                 },
-                FormFieldConfigurationHelper.CreateRemarksField<CustomerVisit>()
+                FormFieldConfigurationHelper.CreateRemarksField<SupplierVisit>()
             };
 
-            formSections = FormSectionHelper<CustomerVisit>.Create()
+            formSections = FormSectionHelper<SupplierVisit>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
-                    v => v.CustomerId,
+                    v => v.SupplierId,
                     v => v.VisitDate,
                     v => v.VisitType,
                     v => v.EmployeeId,
@@ -264,30 +264,30 @@
     {
         try
         {
-            availableCustomers = await CustomerService.GetAllAsync();
+            availableSuppliers = await SupplierService.GetAllAsync();
 
             var allEmployees = await EmployeeService.GetAllAsync();
             availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
 
-            autoCompleteConfig = new AutoCompleteConfigBuilder<CustomerVisit>()
-                .AddField(nameof(CustomerVisit.CustomerId), "CompanyName", availableCustomers)
-                .AddField(nameof(CustomerVisit.EmployeeId), "Name", availableEmployees)
+            autoCompleteConfig = new AutoCompleteConfigBuilder<SupplierVisit>()
+                .AddField(nameof(SupplierVisit.SupplierId), "CompanyName", availableSuppliers)
+                .AddField(nameof(SupplierVisit.EmployeeId), "Name", availableEmployees)
                 .Build();
         }
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("載入拜訪紀錄編輯相關資料時發生錯誤");
-            availableCustomers = new List<Customer>();
+            availableSuppliers = new List<Supplier>();
             availableEmployees = new List<Employee>();
         }
     }
 
-    private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
+    private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
     {
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent,
-            customerModalManager,
-            nameof(CustomerVisit.CustomerId)
+            supplierModalManager,
+            nameof(SupplierVisit.SupplierId)
         );
     }
 
@@ -296,7 +296,7 @@
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent,
             employeeModalManager,
-            nameof(CustomerVisit.EmployeeId)
+            nameof(SupplierVisit.EmployeeId)
         );
     }
 }

@@ -87,5 +87,10 @@ namespace ERPCore2.Data.Entities
         /// 所屬車輛列表
         /// </summary>
         public ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
+
+        /// <summary>
+        /// 拜訪紀錄列表
+        /// </summary>
+        public ICollection<SupplierVisit> SupplierVisits { get; set; } = new List<SupplierVisit>();
     }
 }

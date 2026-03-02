@@ -13,9 +13,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "分類名稱")]
         public string Name { get; set; } = string.Empty;
 
-        [Display(Name = "來源類型")]
-        public DocumentSource Source { get; set; } = DocumentSource.Internal;
-
         [Display(Name = "預設存取層級")]
         public DocumentAccessLevel DefaultAccessLevel { get; set; } = DocumentAccessLevel.Normal;
 

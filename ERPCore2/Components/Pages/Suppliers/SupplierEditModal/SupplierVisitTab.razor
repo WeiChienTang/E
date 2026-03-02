@@ -1,20 +1,20 @@
-@* 客戶拜訪紀錄 Tab - 自包含元件，主組件透過 @ref 協調 *@
-@inject ICustomerVisitService CustomerVisitService
+@* 廠商拜訪紀錄 Tab - 自包含元件，主組件透過 @ref 協調 *@
+@inject ISupplierVisitService SupplierVisitService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
 @* 拜訪紀錄列表 *@
-<CustomerVisitTable Visits="@customerVisits"
+<SupplierVisitTable Visits="@supplierVisits"
                    OnAddVisit="@HandleAddVisit"
                    OnEditVisit="@HandleEditVisit"
                    OnDeleteVisit="@HandleDeleteVisitRequest" />
 
 @* 拜訪紀錄編輯 Modal *@
-<CustomerVisitEditModalComponent IsVisible="@isVisitModalVisible"
+<SupplierVisitEditModalComponent IsVisible="@isVisitModalVisible"
                                  IsVisibleChanged="@HandleVisitModalVisibilityChanged"
-                                 CustomerVisitId="@editingVisitId"
-                                 PrefilledCustomerId="@CustomerId"
-                                 OnCustomerVisitSaved="@OnVisitSavedWrapper"
+                                 SupplierVisitId="@editingVisitId"
+                                 PrefilledSupplierId="@SupplierId"
+                                 OnSupplierVisitSaved="@OnVisitSavedWrapper"
                                  OnCancel="@HandleVisitModalCancel" />
 
 @* 刪除確認 Modal *@
@@ -31,26 +31,26 @@
                               OnCancel="@(() => showDeleteVisitModal = false)" />
 
 @code {
-    /// <summary>目前客戶 ID（供新增拜訪紀錄時預填）</summary>
-    [Parameter] public int? CustomerId { get; set; }
+    /// <summary>目前廠商 ID（供新增拜訪紀錄時預填）</summary>
+    [Parameter] public int? SupplierId { get; set; }
 
     // ===== 內部狀態 =====
-    private List<CustomerVisit> customerVisits = new();
+    private List<SupplierVisit> supplierVisits = new();
     private bool isVisitModalVisible = false;
     private int? editingVisitId = null;
     private bool showDeleteVisitModal = false;
-    private CustomerVisit? deletingVisit = null;
-    private int? _loadedCustomerId;
+    private SupplierVisit? deletingVisit = null;
+    private int? _loadedSupplierId;
 
     // ===== 生命週期 =====
 
     protected override async Task OnParametersSetAsync()
     {
-        if (CustomerId != _loadedCustomerId)
+        if (SupplierId != _loadedSupplierId)
         {
-            _loadedCustomerId = CustomerId;
-            if (CustomerId.HasValue && CustomerId.Value > 0)
-                await LoadAsync(CustomerId.Value);
+            _loadedSupplierId = SupplierId;
+            if (SupplierId.HasValue && SupplierId.Value > 0)
+                await LoadAsync(SupplierId.Value);
             else
                 Clear();
         }
@@ -58,17 +58,17 @@
 
     // ===== 公開方法（供主組件透過 @ref 呼叫） =====
 
-    /// <summary>載入指定客戶的拜訪紀錄</summary>
-    public async Task LoadAsync(int customerId)
+    /// <summary>載入指定廠商的拜訪紀錄</summary>
+    public async Task LoadAsync(int supplierId)
     {
-        customerVisits = await CustomerVisitService.GetByCustomerAsync(customerId);
+        supplierVisits = await SupplierVisitService.GetBySupplierAsync(supplierId);
         StateHasChanged();
     }
 
     /// <summary>清除拜訪紀錄（切換至新增模式時使用）</summary>
     public void Clear()
     {
-        customerVisits = new();
+        supplierVisits = new();
         StateHasChanged();
     }
 
@@ -81,14 +81,14 @@
         StateHasChanged();
     }
 
-    private void HandleEditVisit(CustomerVisit visit)
+    private void HandleEditVisit(SupplierVisit visit)
     {
         editingVisitId = visit.Id;
         isVisitModalVisible = true;
         StateHasChanged();
     }
 
-    private void HandleDeleteVisitRequest(CustomerVisit visit)
+    private void HandleDeleteVisitRequest(SupplierVisit visit)
     {
         deletingVisit = visit;
         showDeleteVisitModal = true;
@@ -101,10 +101,10 @@
 
         try
         {
-            var result = await CustomerVisitService.DeleteAsync(deletingVisit.Id);
+            var result = await SupplierVisitService.DeleteAsync(deletingVisit.Id);
             if (result.IsSuccess)
             {
-                customerVisits.RemoveAll(v => v.Id == deletingVisit.Id);
+                supplierVisits.RemoveAll(v => v.Id == deletingVisit.Id);
                 await NotificationService.ShowSuccessAsync(L["Message.VisitDeleted"]);
             }
             else
@@ -124,13 +124,13 @@
         }
     }
 
-    private void OnVisitSavedWrapper(CustomerVisit savedVisit)
+    private void OnVisitSavedWrapper(SupplierVisit savedVisit)
     {
-        var existingIndex = customerVisits.FindIndex(v => v.Id == savedVisit.Id);
+        var existingIndex = supplierVisits.FindIndex(v => v.Id == savedVisit.Id);
         if (existingIndex >= 0)
-            customerVisits[existingIndex] = savedVisit;
+            supplierVisits[existingIndex] = savedVisit;
         else
-            customerVisits.Insert(0, savedVisit);
+            supplierVisits.Insert(0, savedVisit);
 
         isVisitModalVisible = false;
         StateHasChanged();

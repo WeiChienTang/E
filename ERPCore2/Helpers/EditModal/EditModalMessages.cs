@@ -7,21 +7,27 @@ namespace ERPCore2.Helpers.EditModal;
 public static class EditModalMessages
 {
     /// <summary>
+    /// 通用審核通過的欄位鎖定警告（緊湊模式用）
+    /// </summary>
+    public const string ApprovedWarning =
+        "已審核通過 — 主檔欄位已鎖定，如需修改請先執行「駁回」";
+
+    /// <summary>
     /// 明細有其他動作時的欄位鎖定警告
     /// 適用於：採購單、進貨單、銷貨單、出貨單等所有有明細關聯的單據
     /// </summary>
     public const string UndeletableDetailsWarning =
-        "因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。";
+        "部分明細有關聯操作 — 主檔欄位已鎖定";
 
     /// <summary>
     /// 採購單審核通過的欄位鎖定警告
     /// </summary>
     public const string PurchaseOrderApprovedWarning =
-        "採購單已審核通過，主檔欄位已鎖定。您仍可修改明細的「完成進貨」狀態並儲存。";
+        "採購單已審核 — 欄位已鎖定（仍可修改明細完成進貨狀態）";
 
     /// <summary>
     /// 銷貨單審核通過的欄位鎖定警告
     /// </summary>
     public const string SalesOrderApprovedWarning =
-        "銷貨訂單已審核通過，主檔欄位已鎖定。您仍可修改明細的「完成出貨」狀態並儲存。";
+        "銷貨訂單已審核 — 欄位已鎖定（仍可修改明細完成出貨狀態）";
 }

@@ -220,3 +220,120 @@ main {
     border-color: #30363d;
     border-left-color: #58a6ff;
 }
+
+/* ===== 便條貼 & 行事曆專屬浮動按鈕 ===== */
+.personal-tools-btns {
+    position: fixed;
+    bottom: 24px;
+    right: 84px; /* 24(QA right) + 48(QA width) + 12(gap) */
+    z-index: 1050;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+}
+
+.personal-tool-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+/* 灰色（沒有內容）狀態 */
+.tool-btn-inactive {
+    background: var(--bg-primary);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+.tool-btn-inactive:hover {
+    transform: scale(1.12);
+    color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 有色（有內容）共用基底 */
+.tool-btn-active {
+    color: white;
+    border-color: transparent;
+}
+
+.tool-btn-active:hover {
+    transform: scale(1.12);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* 便條貼：黃色 */
+.tool-btn-note {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+/* 行事曆：藍色 */
+.tool-btn-calendar {
+    background: linear-gradient(135deg, var(--primary-blue, #0d6efd) 0%, var(--primary-blue-alt, #0b5ed7) 100%);
+}
+
+/* 數字徽章 */
+.personal-tool-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #dc3545;
+    color: white;
+    border-radius: 10px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 16px;
+    text-align: center;
+    border: 2px solid white;
+    pointer-events: none;
+    line-height: 1.4;
+}
+
+[data-bs-theme=dark] .personal-tool-badge {
+    border-color: #0d1117;
+}
+
+/* 深色模式：灰色狀態調整 */
+[data-bs-theme=dark] .tool-btn-inactive {
+    background: #21262d;
+    border-color: #30363d;
+}
+
+/* 響應式 */
+@media (max-width: 640px) {
+    .personal-tools-btns {
+        bottom: 16px;
+        right: 76px; /* 16 + 48 + 12 */
+        gap: 10px;
+    }
+
+    .personal-tool-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 360px) {
+    .personal-tools-btns {
+        right: 70px;
+        gap: 8px;
+    }
+
+    .personal-tool-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+    }
+}

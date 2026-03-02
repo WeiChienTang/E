@@ -7,27 +7,27 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 客戶拜訪紀錄服務實作
+    /// 廠商拜訪紀錄服務實作
     /// </summary>
-    public class CustomerVisitService : GenericManagementService<CustomerVisit>, ICustomerVisitService
+    public class SupplierVisitService : GenericManagementService<SupplierVisit>, ISupplierVisitService
     {
-        public CustomerVisitService(
+        public SupplierVisitService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<CustomerVisit>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<SupplierVisit>> logger) : base(contextFactory, logger)
         {
         }
 
-        public CustomerVisitService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public SupplierVisitService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
-        public override async Task<List<CustomerVisit>> GetAllAsync()
+        public override async Task<List<SupplierVisit>> GetAllAsync()
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.CustomerVisits
-                    .Include(v => v.Customer)
+                return await context.SupplierVisits
+                    .Include(v => v.Supplier)
                     .Include(v => v.Employee)
                     .OrderByDescending(v => v.VisitDate)
                     .ToListAsync();
@@ -39,13 +39,13 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<CustomerVisit?> GetByIdAsync(int id)
+        public override async Task<SupplierVisit?> GetByIdAsync(int id)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.CustomerVisits
-                    .Include(v => v.Customer)
+                return await context.SupplierVisits
+                    .Include(v => v.Supplier)
                     .Include(v => v.Employee)
                     .FirstOrDefaultAsync(v => v.Id == id);
             }
@@ -56,7 +56,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<CustomerVisit>> SearchAsync(string searchTerm)
+        public override async Task<List<SupplierVisit>> SearchAsync(string searchTerm)
         {
             try
             {
@@ -66,8 +66,8 @@ namespace ERPCore2.Services
                 var lowerSearchTerm = searchTerm.ToLower();
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.CustomerVisits
-                    .Include(v => v.Customer)
+                return await context.SupplierVisits
+                    .Include(v => v.Supplier)
                     .Include(v => v.Employee)
                     .Where(v => (v.Purpose != null && v.Purpose.ToLower().Contains(lowerSearchTerm)) ||
                                 (v.Content != null && v.Content.ToLower().Contains(lowerSearchTerm)))
@@ -81,14 +81,14 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<ServiceResult> ValidateAsync(CustomerVisit entity)
+        public override async Task<ServiceResult> ValidateAsync(SupplierVisit entity)
         {
             try
             {
                 var errors = new List<string>();
 
-                if (entity.CustomerId <= 0)
-                    errors.Add("請選擇客戶");
+                if (entity.SupplierId <= 0)
+                    errors.Add("請選擇廠商");
 
                 if (entity.VisitDate == default)
                     errors.Add("請輸入拜訪日期");
@@ -104,20 +104,20 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<CustomerVisit>> GetByCustomerAsync(int customerId)
+        public async Task<List<SupplierVisit>> GetBySupplierAsync(int supplierId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.CustomerVisits
+                return await context.SupplierVisits
                     .Include(v => v.Employee)
-                    .Where(v => v.CustomerId == customerId)
+                    .Where(v => v.SupplierId == supplierId)
                     .OrderByDescending(v => v.VisitDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCustomerAsync), GetType(), _logger, new { CustomerId = customerId });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierAsync), GetType(), _logger, new { SupplierId = supplierId });
                 throw;
             }
         }

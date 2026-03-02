@@ -652,6 +652,7 @@
   <data name="Entity.SalesReturnReason" xml:space="preserve"><value>Dahilan ng Pagbabalik</value></data>
   <data name="Entity.Customer" xml:space="preserve"><value>Kliyente</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>Pagbisita sa Kliyente</value></data>
+  <data name="Entity.SupplierVisit" xml:space="preserve"><value>Pagbisita sa Supplier</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>Supplier</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>Produkto</value></data>
   <data name="Entity.ProductCategory" xml:space="preserve"><value>Kategorya ng Produkto</value></data>
@@ -862,6 +863,7 @@
   <data name="Tab.VehicleInfo" xml:space="preserve"><value>Impormasyon ng Sasakyan</value></data>
   <data name="Tab.PersonalTools" xml:space="preserve"><value>Personal na Kagamitan</value></data>
   <data name="Tab.Training" xml:space="preserve"><value>Pagsasanay</value></data>
+  <data name="Tab.Permissions" xml:space="preserve"><value>Mga Pahintulot</value></data>
   <!-- ===== Employee Label keys ===== -->
   <data name="Label.TrainingRecords" xml:space="preserve"><value>Mga Rekord ng Pagsasanay</value></data>
   <data name="Label.LicenseManagement" xml:space="preserve"><value>Pamamahala ng Lisensya</value></data>
@@ -869,6 +871,9 @@
   <data name="Label.Valid" xml:space="preserve"><value>Wasto</value></data>
   <data name="Label.Expired" xml:space="preserve"><value>Nag-expire na</value></data>
   <data name="Label.ExpiringSoon" xml:space="preserve"><value>Malapit nang Mag-expire</value></data>
+  <data name="Label.CurrentRole" xml:space="preserve"><value>Kasalukuyang Papel</value></data>
+  <data name="Label.NormalPermissions" xml:space="preserve"><value>Mga Normal na Pahintulot</value></data>
+  <data name="Label.SensitivePermissions" xml:space="preserve"><value>Mga Sensitibong Pahintulot</value></data>
   <!-- ===== Employee Button keys ===== -->
   <data name="Button.AddTrainingRecord" xml:space="preserve"><value>Magdagdag ng Rekord ng Pagsasanay</value></data>
   <data name="Button.AddLicense" xml:space="preserve"><value>Magdagdag ng Lisensya</value></data>
@@ -877,6 +882,7 @@
   <data name="Message.NoTrainingRecords" xml:space="preserve"><value>Walang rekord ng pagsasanay</value></data>
   <data name="Message.NoLicenseRecords" xml:space="preserve"><value>Walang rekord ng lisensya</value></data>
   <data name="Message.NoToolRecords" xml:space="preserve"><value>Walang rekord ng kagamitan</value></data>
+  <data name="Message.NoRoleAssigned" xml:space="preserve"><value>Walang papel na itinalaga sa empleyadong ito. Hindi maipakita ang mga pahintulot.</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>hal.: Pumasa, Mahusay, Bumagsak</value></data>
   <!-- ===== Vehicle Button/Message keys ===== -->
@@ -1730,6 +1736,7 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Customer</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>Walang kaugnay na mga transaksyon</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>Wala pang mga rekord ng pagbisita</value></data>
+  <data name="Supplier.NoVisits" xml:space="preserve"><value>Wala pang mga rekord ng pagbisita</value></data>
   <data name="Customer.NetSales" xml:space="preserve"><value>Net na Benta</value></data>
   <data name="Customer.Delivery" xml:space="preserve"><value>Pagpapadala</value></data>
   <data name="Customer.Deliveries" xml:space="preserve"><value>Mga Order ng Pagpapadala</value></data>
@@ -1762,6 +1769,7 @@
   <data name="Column.Select" xml:space="preserve"><value>Piliin</value></data>
   <data name="Column.PermissionName" xml:space="preserve"><value>Pangalan ng Pahintulot</value></data>
   <data name="Column.PermissionCode" xml:space="preserve"><value>Kodigo ng Pahintulot</value></data>
+  <data name="Column.PermissionLevel" xml:space="preserve"><value>Antas</value></data>
 
   <!-- ===== VisitType ===== -->
   <data name="VisitType.Phone" xml:space="preserve"><value>Telepono</value></data>
@@ -1776,6 +1784,8 @@
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>Kumpirmahin ang Pag-alis</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>I-clear ang Mga Detalye</value></data>
   <data name="Button.DisableAccount" xml:space="preserve"><value>I-disable ang Account</value></data>
+  <data name="Button.EnableAll" xml:space="preserve"><value>I-enable Lahat</value></data>
+  <data name="Button.DisableAll" xml:space="preserve"><value>I-disable Lahat</value></data>
   <data name="Button.OpenEdit" xml:space="preserve"><value>Buksan ang Edit</value></data>
   <data name="Button.Copy" xml:space="preserve"><value>Kopyahin</value></data>
   <data name="Button.SelectAll" xml:space="preserve"><value>Piliin Lahat</value></data>
@@ -1836,6 +1846,8 @@
   <data name="Employee.RoleRequiredHint" xml:space="preserve"><value>Itakda ang mga pahintulot sa operasyon ng sistema ng empleyadong ito (kinakailangan kapag may account)</value></data>
 
   <!-- ===== Permission Management (new) ===== -->
+  <data name="Permission.Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Permission.Sensitive" xml:space="preserve"><value>Sensitibo</value></data>
   <data name="Permission.RoleManagement" xml:space="preserve"><value>Pamamahala ng Grupo ng Pahintulot</value></data>
   <data name="Permission.NotCreated" xml:space="preserve"><value>Wala pang mga grupo ng pahintulot na nalikha</value></data>
   <data name="Permission.AdminHasAll" xml:space="preserve"><value>Ang grupo ng pahintulot ng admin ay may lahat ng pahintulot.</value></data>
@@ -2782,6 +2794,8 @@
   <data name="Message.AtLeastOneFile" xml:space="preserve"><value>Kailangan ng kahit isang kalakip</value></data>
   <!-- ===== 通知設定 ===== -->
   <data name="Preference.Notifications" xml:space="preserve"><value>Mga Abiso</value></data>
+  <data name="Preference.EnableCalendar" xml:space="preserve"><value>Paganahin ang Kalendaryo</value></data>
+  <data name="Preference.EnableStickyNote" xml:space="preserve"><value>Paganahin ang Sticky Notes</value></data>
   <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>Ipakita ang Calendar Badge</value></data>
   <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>Ipakita ang Note Badge</value></data>
   <data name="Preference.DefaultReminder" xml:space="preserve"><value>Default na Oras ng Paalala</value></data>

@@ -652,6 +652,7 @@
   <data name="Entity.SalesReturnReason" xml:space="preserve"><value>Return Reason</value></data>
   <data name="Entity.Customer" xml:space="preserve"><value>Customer</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>Customer Visit</value></data>
+  <data name="Entity.SupplierVisit" xml:space="preserve"><value>Supplier Visit</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>Supplier</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>Product</value></data>
   <data name="Entity.ProductCategory" xml:space="preserve"><value>Product Category</value></data>
@@ -862,6 +863,7 @@
   <data name="Tab.VehicleInfo" xml:space="preserve"><value>Vehicle Info</value></data>
   <data name="Tab.PersonalTools" xml:space="preserve"><value>Personal Tools</value></data>
   <data name="Tab.Training" xml:space="preserve"><value>Training</value></data>
+  <data name="Tab.Permissions" xml:space="preserve"><value>Permissions</value></data>
   <!-- ===== Employee Label keys ===== -->
   <data name="Label.TrainingRecords" xml:space="preserve"><value>Training Records</value></data>
   <data name="Label.LicenseManagement" xml:space="preserve"><value>License Management</value></data>
@@ -869,6 +871,9 @@
   <data name="Label.Valid" xml:space="preserve"><value>Valid</value></data>
   <data name="Label.Expired" xml:space="preserve"><value>Expired</value></data>
   <data name="Label.ExpiringSoon" xml:space="preserve"><value>Expiring Soon</value></data>
+  <data name="Label.CurrentRole" xml:space="preserve"><value>Current Role</value></data>
+  <data name="Label.NormalPermissions" xml:space="preserve"><value>Normal Permissions</value></data>
+  <data name="Label.SensitivePermissions" xml:space="preserve"><value>Sensitive Permissions</value></data>
   <!-- ===== Employee Button keys ===== -->
   <data name="Button.AddTrainingRecord" xml:space="preserve"><value>Add Training Record</value></data>
   <data name="Button.AddLicense" xml:space="preserve"><value>Add License</value></data>
@@ -877,6 +882,7 @@
   <data name="Message.NoTrainingRecords" xml:space="preserve"><value>No training records</value></data>
   <data name="Message.NoLicenseRecords" xml:space="preserve"><value>No license records</value></data>
   <data name="Message.NoToolRecords" xml:space="preserve"><value>No tool records</value></data>
+  <data name="Message.NoRoleAssigned" xml:space="preserve"><value>No role has been assigned to this employee. Permissions cannot be displayed.</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>e.g.: Pass, Excellent, Fail</value></data>
   <!-- ===== Vehicle Button/Message keys ===== -->
@@ -1730,6 +1736,7 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>Customer Analysis Charts</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>No related transaction records</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>No visit records yet</value></data>
+  <data name="Supplier.NoVisits" xml:space="preserve"><value>No visit records yet</value></data>
   <data name="Customer.NetSales" xml:space="preserve"><value>Net Sales</value></data>
   <data name="Customer.Delivery" xml:space="preserve"><value>Delivery</value></data>
   <data name="Customer.Deliveries" xml:space="preserve"><value>Delivery Orders</value></data>
@@ -1762,6 +1769,7 @@
   <data name="Column.Select" xml:space="preserve"><value>Select</value></data>
   <data name="Column.PermissionName" xml:space="preserve"><value>Permission Name</value></data>
   <data name="Column.PermissionCode" xml:space="preserve"><value>Permission Code</value></data>
+  <data name="Column.PermissionLevel" xml:space="preserve"><value>Level</value></data>
 
   <!-- ===== VisitType ===== -->
   <data name="VisitType.Phone" xml:space="preserve"><value>Phone</value></data>
@@ -1776,6 +1784,8 @@
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>Confirm Remove</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>Clear Details</value></data>
   <data name="Button.DisableAccount" xml:space="preserve"><value>Disable Account</value></data>
+  <data name="Button.EnableAll" xml:space="preserve"><value>Enable All</value></data>
+  <data name="Button.DisableAll" xml:space="preserve"><value>Disable All</value></data>
   <data name="Button.OpenEdit" xml:space="preserve"><value>Open Edit</value></data>
   <data name="Button.Copy" xml:space="preserve"><value>Copy</value></data>
   <data name="Button.SelectAll" xml:space="preserve"><value>Select All</value></data>
@@ -1836,6 +1846,8 @@
   <data name="Employee.RoleRequiredHint" xml:space="preserve"><value>Set this employee's system operation permissions (required when account is set)</value></data>
 
   <!-- ===== Permission Management (new) ===== -->
+  <data name="Permission.Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Permission.Sensitive" xml:space="preserve"><value>Sensitive</value></data>
   <data name="Permission.RoleManagement" xml:space="preserve"><value>Permission Group Management</value></data>
   <data name="Permission.NotCreated" xml:space="preserve"><value>No permission groups created yet</value></data>
   <data name="Permission.AdminHasAll" xml:space="preserve"><value>The admin permission group has all permissions.</value></data>
@@ -2809,6 +2821,8 @@
   <data name="Message.AtLeastOneFile" xml:space="preserve"><value>At least one attachment is required</value></data>
   <!-- ===== 通知設定 ===== -->
   <data name="Preference.Notifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Preference.EnableCalendar" xml:space="preserve"><value>Enable Calendar</value></data>
+  <data name="Preference.EnableStickyNote" xml:space="preserve"><value>Enable Sticky Notes</value></data>
   <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>Show Calendar Reminder Badge</value></data>
   <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>Show Note Count Badge</value></data>
   <data name="Preference.DefaultReminder" xml:space="preserve"><value>Default Reminder Time</value></data>

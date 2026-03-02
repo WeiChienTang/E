@@ -13,28 +13,22 @@
 
 <div class="quick-action-menu @(isExpanded ? "expanded" : "")">
 
-    @* 主按鈕（含通知紅點）*@
-    <div class="quick-action-btn-wrapper">
-        <button class="quick-action-main-btn"
-                @onclick="ToggleMenu"
-                title="@L["QuickAction.MenuTooltip"]"
-                aria-label="@L["QuickAction.MenuAriaLabel"]"
-                aria-expanded="@isExpanded">
-            <span class="bi @(isExpanded ? "bi-x-lg" : "bi-lightning-charge-fill")"></span>
-        </button>
-        @if (!isExpanded && ((ShowCalendarBadge && CalendarBadgeCount > 0) || (ShowNoteBadge && NoteBadgeCount > 0)))
-        {
-            <span class="quick-action-dot"></span>
-        }
-    </div>
+    @* 主按鈕 *@
+    <button class="quick-action-main-btn"
+            @onclick="ToggleMenu"
+            title="@L["QuickAction.MenuTooltip"]"
+            aria-label="@L["QuickAction.MenuAriaLabel"]"
+            aria-expanded="@isExpanded">
+        <span class="bi @(isExpanded ? "bi-x-lg" : "bi-lightning-charge-fill")"></span>
+    </button>
 
     @* 展開的功能選單 *@
     @if (isExpanded)
     {
         <div class="quick-action-items">
-            
+
             @* 頁面搜尋 *@
-            <button class="quick-action-item" 
+            <button class="quick-action-item"
                     @onclick="HandlePageSearchClick"
                     title="@L["QuickAction.PageSearchTooltip"]">
                 <span class="bi bi-search"></span>
@@ -42,7 +36,7 @@
             </button>
 
             @* 報表搜尋 *@
-            <button class="quick-action-item" 
+            <button class="quick-action-item"
                     @onclick="HandleReportSearchClick"
                     title="@L["QuickAction.ReportSearchTooltip"]">
                 <span class="bi bi-printer"></span>
@@ -50,7 +44,7 @@
             </button>
 
             @* 快捷鍵說明 *@
-            <button class="quick-action-item" 
+            <button class="quick-action-item"
                     @onclick="HandleShortcutKeysClick"
                     title="@L["QuickAction.ShortcutKeys"]">
                 <span class="bi bi-keyboard"></span>
@@ -60,7 +54,7 @@
             @* 預留：通知中心 *@
             @if (showNotifications)
             {
-                <button class="quick-action-item" 
+                <button class="quick-action-item"
                         @onclick="HandleNotificationsClick"
                         title="@L["QuickAction.NotificationsTitle"]">
                     <span class="bi bi-bell"></span>
@@ -75,7 +69,7 @@
             @* 預留：最近頁面 *@
             @if (showRecentPages)
             {
-                <button class="quick-action-item" 
+                <button class="quick-action-item"
                         @onclick="HandleRecentPagesClick"
                         title="@L["QuickAction.RecentPages"]">
                     <span class="bi bi-clock-history"></span>
@@ -93,30 +87,6 @@
                     <span class="quick-action-label">@L["QuickAction.Settings"]</span>
                 </button>
             }
-
-            @* 便條貼 *@
-            <button class="quick-action-item"
-                    @onclick="HandleStickyNotesClick"
-                    title="@L["QuickAction.StickyNotesTooltip"]">
-                <span class="bi bi-sticky"></span>
-                <span class="quick-action-label">@L["QuickAction.StickyNotes"]</span>
-                @if (ShowNoteBadge && NoteBadgeCount > 0)
-                {
-                    <span class="quick-action-badge">@(NoteBadgeCount > 9 ? "9+" : NoteBadgeCount.ToString())</span>
-                }
-            </button>
-
-            @* 行事曆 *@
-            <button class="quick-action-item"
-                    @onclick="HandleCalendarClick"
-                    title="@L["QuickAction.CalendarTooltip"]">
-                <span class="bi bi-calendar3"></span>
-                <span class="quick-action-label">@L["QuickAction.Calendar"]</span>
-                @if (ShowCalendarBadge && CalendarBadgeCount > 0)
-                {
-                    <span class="quick-action-badge">@(CalendarBadgeCount > 9 ? "9+" : CalendarBadgeCount.ToString())</span>
-                }
-            </button>
 
             @* 關於本系統 *@
             <button class="quick-action-item"
@@ -155,34 +125,6 @@
     /// </summary>
     [Parameter]
     public EventCallback OnReportSearchClick { get; set; }
-
-    /// <summary>
-    /// 當點擊便條貼時觸發
-    /// </summary>
-    [Parameter]
-    public EventCallback OnStickyNotesClick { get; set; }
-
-    /// <summary>
-    /// 當點擊行事曆時觸發
-    /// </summary>
-    [Parameter]
-    public EventCallback OnCalendarClick { get; set; }
-
-    /// <summary>今日尚未到期的行事曆事項數（顯示在徽章上）</summary>
-    [Parameter]
-    public int CalendarBadgeCount { get; set; } = 0;
-
-    /// <summary>便條貼總數（顯示在徽章上）</summary>
-    [Parameter]
-    public int NoteBadgeCount { get; set; } = 0;
-
-    /// <summary>是否顯示行事曆徽章（由使用者偏好設定控制）</summary>
-    [Parameter]
-    public bool ShowCalendarBadge { get; set; } = false;
-
-    /// <summary>是否顯示便條貼徽章（由使用者偏好設定控制）</summary>
-    [Parameter]
-    public bool ShowNoteBadge { get; set; } = false;
 
     /// <summary>
     /// 是否顯示通知功能（預留）
@@ -316,24 +258,6 @@
         if (OnReportSearchClick.HasDelegate)
         {
             await OnReportSearchClick.InvokeAsync();
-        }
-    }
-
-    private async Task HandleStickyNotesClick()
-    {
-        CloseMenu();
-        if (OnStickyNotesClick.HasDelegate)
-        {
-            await OnStickyNotesClick.InvokeAsync();
-        }
-    }
-
-    private async Task HandleCalendarClick()
-    {
-        CloseMenu();
-        if (OnCalendarClick.HasDelegate)
-        {
-            await OnCalendarClick.InvokeAsync();
         }
     }
 

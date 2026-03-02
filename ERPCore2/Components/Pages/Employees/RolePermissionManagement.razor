@@ -1,5 +1,6 @@
 @* 權限組權限管理 Modal 組件 - 不使用路由，純 Modal 彈窗 *@
 @using ERPCore2.Data.Entities
+@using ERPCore2.Data.Navigation
 @inject IRoleService RoleService
 @inject IPermissionManagementService PermissionManagementService
 @inject INotificationService NotificationService
@@ -32,8 +33,8 @@
             {
                 <div class="row align-items-end">
                     <div class="col-md-8">
-                        <select id="roleSelect" 
-                                class="form-select" 
+                        <select id="roleSelect"
+                                class="form-select"
                                 @onchange="HandleRoleSelectionChanged"
                                 disabled="@isSaving">
                             <option value="">@L["Placeholder.SelectRole"]</option>
@@ -45,7 +46,7 @@
                             }
                         </select>
                     </div>
-                    
+
                     @* 操作按鈕組 *@
                     @if (selectedRole != null)
                     {
@@ -121,70 +122,190 @@
                 }
                 else
                 {
-                    @* 操作說明（僅非管理員權限組顯示） *@
+                    @* 操作說明 *@
                     @if (!IsAdminRole(selectedRole))
                     {
-                    <GenericLockedFieldMessage IsVisible="true"
-                                            Message="@L["Permission.SelectAllHint"]"
-                                            Type="GenericLockedFieldMessage.MessageType.Info"
-                                            IconClass="bi bi-lightbulb" />
+                        <GenericLockedFieldMessage IsVisible="true"
+                                                Message="@L["Permission.SelectAllHint"]"
+                                                Type="GenericLockedFieldMessage.MessageType.Info"
+                                                IconClass="bi bi-lightbulb" />
                     }
                     else
                     {
-                    <GenericLockedFieldMessage IsVisible="true"
-                                            Message="@L["Permission.AdminHasAll"]"
-                                            Type="GenericLockedFieldMessage.MessageType.Info"
-                                            IconClass="bi bi-lightbulb" />
-                    }                    
-                    @* 權限搜尋框 *@
-                    <div class="mb-3">
-                        <SearchInputComponent @bind-Value="permissionSearchKeyword"
-                                              Placeholder="@L["Placeholder.SearchPermission"]" />
-                    </div>
-                    
-                    @* 一般權限表格 *@
-                    <div class="mb-4">
-                        <InteractiveTableComponent TItem="Permission"
-                                                  Items="@GetNormalPermissions()"
-                                                  ColumnDefinitions="@normalPermissionColumns"
-                                                  ShowHeader="true"
-                                                  ShowRowNumbers="false"
-                                                  ShowActions="false"
-                                                  IsStriped="true"
-                                                  IsHoverable="true"
-                                                  IsBordered="true"
-                                                  IsReadOnly="@IsAdminRole(selectedRole)"
-                                                  EmptyMessage="@L["Permission.NoPermissions"]"
-                                                  GetRowCssClass="@GetPermissionRowClass"
-                                                  EnableRowClick="@(!IsAdminRole(selectedRole))"
-                                                  OnRowClick="@HandlePermissionRowClick" />
-                    </div>
-                    
-                    @* 系統權限表格（如果有） *@
-                    @if (permissions.Any(p => IsSystemPermission(p)))
-                    {
-                        <div class="mt-4">
+                        <GenericLockedFieldMessage IsVisible="true"
+                                                Message="@L["Permission.AdminHasAll"]"
+                                                Type="GenericLockedFieldMessage.MessageType.Info"
+                                                IconClass="bi bi-lightbulb" />
+                    }
 
+                    @* 搜尋框 + 統計列 *@
+                    <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                        <div class="flex-grow-1">
+                            <SearchInputComponent @bind-Value="permissionSearchKeyword"
+                                                  Placeholder="@L["Placeholder.SearchPermission"]" />
+                        </div>
+                        <div class="text-muted small text-nowrap d-flex gap-3">
+                            @{
+                                var normalSelected = GetSelectedNormalCount();
+                                var normalTotal = GetNormalCount();
+                                var sysTotal = GetSystemCount();
+                                var sysSelected = GetSelectedSystemCount();
+                            }
+                            <span>
+                                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                一般：@normalSelected / @normalTotal
+                            </span>
+                            @if (sysTotal > 0)
+                            {
+                                <span class="@(sysSelected > 0 ? "text-danger fw-semibold" : "")">
+                                    <i class="bi bi-shield-exclamation me-1"></i>
+                                    敏感：@sysSelected / @sysTotal
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    @* 一般權限 — 按模組分組 *@
+                    @if (GetNormalPermissionGroups() is var normalGroups && normalGroups.Any())
+                    {
+                        <div class="mb-3">
+                            @foreach (var group in normalGroups)
+                            {
+                                var groupKey = group.Key;
+                                var isCollapsed = collapsedGroups.GetValueOrDefault(groupKey, false);
+                                var selectedCount = group.Value.Count(p => permissionSelections.GetValueOrDefault(p.Id, false));
+                                var totalCount = group.Value.Count;
+                                var allSelected = totalCount > 0 && selectedCount == totalCount;
+                                var isAdmin = IsAdminRole(selectedRole);
+
+                                <div class="card mb-1 shadow-sm">
+                                    <div class="card-header d-flex align-items-center gap-2 py-2"
+                                         style="cursor: pointer;"
+                                         @onclick="() => ToggleGroupCollapse(groupKey)">
+                                        @if (!isAdmin)
+                                        {
+                                            <input type="checkbox"
+                                                   class="form-check-input mt-0 flex-shrink-0"
+                                                   checked="@allSelected"
+                                                   @onclick:stopPropagation="true"
+                                                   @onchange="e => HandleGroupSelectAll(groupKey, false, e.Value is bool b && b)" />
+                                        }
+                                        <span class="fw-semibold">@groupKey</span>
+                                        <span class="badge @(selectedCount > 0 ? "bg-primary" : "bg-secondary") ms-auto">
+                                            @selectedCount / @totalCount
+                                        </span>
+                                        <i class="bi @(isCollapsed ? "bi-chevron-down" : "bi-chevron-up") text-muted"></i>
+                                    </div>
+
+                                    @if (!isCollapsed)
+                                    {
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover mb-0">
+                                                <tbody>
+                                                    @foreach (var permission in group.Value)
+                                                    {
+                                                        var isChecked = permissionSelections.GetValueOrDefault(permission.Id, false);
+                                                        <tr class="@(isChecked ? "table-success" : "") @(!isAdmin ? "cursor-pointer user-select-none" : "")"
+                                                            @onclick="() => HandlePermissionRowClick(permission)">
+                                                            <td style="width: 50px;" class="text-center align-middle">
+                                                                <input type="checkbox"
+                                                                       class="form-check-input"
+                                                                       checked="@isChecked"
+                                                                       disabled="@isAdmin"
+                                                                       @onclick:stopPropagation="true"
+                                                                       @onchange="e => HandlePermissionCheckboxChanged(permission, e.Value is bool b2 && b2)" />
+                                                            </td>
+                                                            <td class="align-middle">
+                                                                @permission.Name
+                                                                <span class="badge @GetActionBadgeClass(permission.Code) ms-1">@GetActionLabel(permission.Code)</span>
+                                                            </td>
+                                                            <td class="font-monospace small text-muted align-middle d-none d-md-table-cell">@permission.Code</td>
+                                                            <td class="small text-muted align-middle d-none d-lg-table-cell">@(string.IsNullOrEmpty(permission.Remarks) ? "-" : permission.Remarks)</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light text-muted">@L["Permission.NoPermissions"]</div>
+                    }
+
+                    @* 系統敏感權限 — 按模組分組 *@
+                    @if (GetSystemPermissionGroups() is var systemGroups && systemGroups.Any())
+                    {
+                        <div class="mt-3">
                             <GenericLockedFieldMessage IsVisible="true"
                                 Message="@("以下為敏感權限，" + (IsAdminRole(selectedRole) ? L["Permission.AdminHasAll"].ToString() : L["Permission.SensitiveDanger"].ToString()))"
                                 Type="GenericLockedFieldMessage.MessageType.Danger"
                                 IconClass="bi bi-exclamation-triangle" />
 
-                            <InteractiveTableComponent TItem="Permission"
-                                                      Items="@GetSystemPermissions()"
-                                                      ColumnDefinitions="@systemPermissionColumns"
-                                                      ShowHeader="true"
-                                                      ShowRowNumbers="false"
-                                                      ShowActions="false"
-                                                      IsStriped="true"
-                                                      IsHoverable="true"
-                                                      IsBordered="true"
-                                                      IsReadOnly="@IsAdminRole(selectedRole)"
-                                                      CssClass="table-danger"
-                                                      EmptyMessage="@L["Permission.NoSystemPermissions"]"
-                                                      GetRowCssClass="@GetPermissionRowClass"
-                                                      EnableRowClick="@(!IsAdminRole(selectedRole))"
-                                                      OnRowClick="@HandlePermissionRowClick" />
+                            @foreach (var group in systemGroups)
+                            {
+                                var groupKey = "sys_" + group.Key;
+                                var isCollapsed = collapsedGroups.GetValueOrDefault(groupKey, true);
+                                var selectedCount = group.Value.Count(p => permissionSelections.GetValueOrDefault(p.Id, false));
+                                var totalCount = group.Value.Count;
+                                var allSelected = totalCount > 0 && selectedCount == totalCount;
+                                var isAdmin = IsAdminRole(selectedRole);
+
+                                <div class="card mb-1 border-danger shadow-sm">
+                                    <div class="card-header d-flex align-items-center gap-2 py-2 bg-danger-subtle"
+                                         style="cursor: pointer;"
+                                         @onclick="() => ToggleGroupCollapse(groupKey)">
+                                        @if (!isAdmin)
+                                        {
+                                            <input type="checkbox"
+                                                   class="form-check-input mt-0 flex-shrink-0"
+                                                   checked="@allSelected"
+                                                   @onclick:stopPropagation="true"
+                                                   @onchange="e => HandleGroupSelectAll(groupKey, true, e.Value is bool b && b)" />
+                                        }
+                                        <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                                        <span class="fw-semibold text-danger">@group.Key</span>
+                                        <span class="badge @(selectedCount > 0 ? "bg-danger" : "bg-secondary") ms-auto">
+                                            @selectedCount / @totalCount
+                                        </span>
+                                        <i class="bi @(isCollapsed ? "bi-chevron-down" : "bi-chevron-up") text-muted"></i>
+                                    </div>
+
+                                    @if (!isCollapsed)
+                                    {
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover table-danger mb-0">
+                                                <tbody>
+                                                    @foreach (var permission in group.Value)
+                                                    {
+                                                        var isChecked = permissionSelections.GetValueOrDefault(permission.Id, false);
+                                                        <tr class="@(isChecked ? "table-success" : "") @(!isAdmin ? "cursor-pointer user-select-none" : "")"
+                                                            @onclick="() => HandlePermissionRowClick(permission)">
+                                                            <td style="width: 50px;" class="text-center align-middle">
+                                                                <input type="checkbox"
+                                                                       class="form-check-input"
+                                                                       checked="@isChecked"
+                                                                       disabled="@isAdmin"
+                                                                       @onclick:stopPropagation="true"
+                                                                       @onchange="e => HandlePermissionCheckboxChanged(permission, e.Value is bool b2 && b2)" />
+                                                            </td>
+                                                            <td class="align-middle">
+                                                                <span class="text-danger fw-bold">@permission.Name</span>
+                                                                <span class="badge @GetActionBadgeClass(permission.Code) ms-1">@GetActionLabel(permission.Code)</span>
+                                                            </td>
+                                                            <td class="font-monospace small text-danger align-middle d-none d-md-table-cell">@permission.Code</td>
+                                                            <td class="small text-danger align-middle d-none d-lg-table-cell">@(string.IsNullOrEmpty(permission.Remarks) ? "-" : permission.Remarks)</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </div>
                     }
                 }
@@ -195,60 +316,48 @@
 
 @code {
     // ===== 參數 =====
-    
-    /// <summary>
-    /// Modal 是否顯示（由外部控制）
-    /// </summary>
+
     [Parameter]
     public bool IsVisible { get; set; }
-    
-    /// <summary>
-    /// Modal 顯示狀態變更事件
-    /// </summary>
+
     [Parameter]
     public EventCallback<bool> IsVisibleChanged { get; set; }
-    
+
     // ===== 內部狀態 =====
-    
-    // 資料模型
+
     private List<Role> roles = new();
     private List<Permission> permissions = new();
     private Role? selectedRole;
     private Dictionary<int, bool> permissionSelections = new();
-    
-    // 搜尋狀態
+    private Dictionary<string, bool> collapsedGroups = new();
+    // 權限 Code 前綴 → 導航分類名稱（如 "Customer" → "客戶關係管理"）
+    private Dictionary<string, string> permissionPrefixToCategory = new();
+
     private string permissionSearchKeyword = string.Empty;
-    
-    // 載入狀態
+
     private bool isLoadingRoles = true;
     private bool isLoadingPermissions = false;
     private bool isSaving = false;
-    
-    // 表格欄位定義
-    private List<InteractiveColumnDefinition> normalPermissionColumns = new();
-    private List<InteractiveColumnDefinition> systemPermissionColumns = new();
-    
+
     // ===== 生命週期 =====
-    
+
     protected override async Task OnParametersSetAsync()
     {
-        // 當 Modal 被開啟時，初始化資料
         if (IsVisible && !roles.Any())
         {
             await LoadDataAsync();
         }
     }
-    
+
     private async Task LoadDataAsync()
     {
         try
         {
-            InitializeColumnDefinitions();
             await LoadRolesAsync();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(),
                 additionalData: "初始化權限組權限管理資料失敗");
             await NotificationService.ShowErrorAsync("初始化資料失敗");
         }
@@ -257,142 +366,15 @@
             isLoadingRoles = false;
         }
     }
-    
-    private void InitializeColumnDefinitions()
-    {
-        // 一般權限表格欄位定義（顯示選擇欄）
-        normalPermissionColumns = new List<InteractiveColumnDefinition>
-        {
-            new()
-            {
-                Title = L["Column.Select"],
-                PropertyName = nameof(Permission.Id),
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "80px",
-                CellCssClass = "text-center",
-                HeaderCssClass = "text-center",
-                CustomTemplate = permission => builder =>
-                {
-                    var p = (Permission)permission;
-                    var isChecked = permissionSelections.GetValueOrDefault(p.Id, false);
-                    var isDisabled = IsAdminRole(selectedRole);
 
-                    builder.OpenElement(0, "div");
-                    builder.AddAttribute(1, "class", "form-check form-switch d-flex justify-content-center");
-
-                    builder.OpenElement(2, "input");
-                    builder.AddAttribute(3, "class", "form-check-input");
-                    builder.AddAttribute(4, "type", "checkbox");
-                    builder.AddAttribute(5, "checked", isChecked);
-                    builder.AddAttribute(6, "disabled", isDisabled);
-                    builder.AddAttribute(7, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(
-                        this, async e => await HandlePermissionCheckboxChanged(p, e.Value is bool b && b)));
-                    builder.CloseElement();
-
-                    builder.CloseElement();
-                }
-            },
-            new()
-            {
-                Title = L["Column.PermissionName"],
-                PropertyName = nameof(Permission.Name),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "25%"
-            },
-            new()
-            {
-                Title = L["Column.PermissionCode"],
-                PropertyName = nameof(Permission.Code),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "30%",
-                CellCssClass = "font-monospace",
-                HideOnMobile = true
-            },
-            new()
-            {
-                Title = L["Label.Remarks"],
-                PropertyName = nameof(Permission.Remarks),
-                ColumnType = InteractiveColumnType.Display,
-                DisplayFormatter = item =>
-                {
-                    var permission = item as Permission;
-                    return string.IsNullOrEmpty(permission?.Remarks) ? "-" : permission.Remarks;
-                }
-            }
-        };
-        
-        // 系統權限表格欄位定義（與一般權限相同，但樣式不同）
-        systemPermissionColumns = new List<InteractiveColumnDefinition>
-        {
-            new()
-            {
-                Title = L["Column.Select"],
-                PropertyName = nameof(Permission.Id),
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "80px",
-                CellCssClass = "text-center",
-                HeaderCssClass = "text-center",
-                CustomTemplate = permission => builder =>
-                {
-                    var p = (Permission)permission;
-                    var isChecked = permissionSelections.GetValueOrDefault(p.Id, false);
-                    var isDisabled = IsAdminRole(selectedRole);
-
-                    builder.OpenElement(0, "div");
-                    builder.AddAttribute(1, "class", "form-check form-switch d-flex justify-content-center");
-
-                    builder.OpenElement(2, "input");
-                    builder.AddAttribute(3, "class", "form-check-input");
-                    builder.AddAttribute(4, "type", "checkbox");
-                    builder.AddAttribute(5, "checked", isChecked);
-                    builder.AddAttribute(6, "disabled", isDisabled);
-                    builder.AddAttribute(7, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(
-                        this, async e => await HandlePermissionCheckboxChanged(p, e.Value is bool b && b)));
-                    builder.CloseElement();
-
-                    builder.CloseElement();
-                }
-            },
-            new()
-            {
-                Title = L["Column.PermissionName"],
-                PropertyName = nameof(Permission.Name),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "25%",
-                CellCssClass = "text-danger fw-bold"
-            },
-            new()
-            {
-                Title = L["Column.PermissionCode"],
-                PropertyName = nameof(Permission.Code),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "30%",
-                CellCssClass = "font-monospace text-danger",
-                HideOnMobile = true
-            },
-            new()
-            {
-                Title = L["Label.Remarks"],
-                PropertyName = nameof(Permission.Remarks),
-                ColumnType = InteractiveColumnType.Display,
-                CellCssClass = "text-danger",
-                DisplayFormatter = item =>
-                {
-                    var permission = item as Permission;
-                    return string.IsNullOrEmpty(permission?.Remarks) ? "-" : permission.Remarks;
-                }
-            }
-        };
-    }
-    
     private async Task LoadRolesAsync()
     {
         try
         {
             roles = (await DataLoaderHelper.LoadAsync(
-                RoleService.GetAllAsync, 
-                "權限組", 
-                NotificationService, 
+                RoleService.GetAllAsync,
+                "權限組",
+                NotificationService,
                 GetType()))
                 .OrderBy(r => r.Name)
                 .ToList();
@@ -404,24 +386,22 @@
             roles = new List<Role>();
         }
     }
-    
+
     private async Task LoadPermissionsAsync()
     {
         if (selectedRole == null) return;
-        
+
         try
         {
             isLoadingPermissions = true;
             StateHasChanged();
-            
-            // 載入所有權限
+
             var allPermissions = await PermissionManagementService.GetAllAsync();
             if (allPermissions != null)
             {
                 permissions = allPermissions.OrderBy(p => p.Code).ToList();
             }
-            
-            // 載入權限組已有的權限
+
             var roleData = await RoleService.GetByIdAsync(selectedRole.Id);
             if (roleData != null)
             {
@@ -429,14 +409,17 @@
                     .Where(rp => rp.Status == EntityStatus.Active)
                     .Select(rp => rp.Permission)
                     .ToList();
-                
-                // 初始化權限選擇狀態
+
                 permissionSelections.Clear();
                 foreach (var permission in permissions)
                 {
                     permissionSelections[permission.Id] = rolePermissions.Any(rp => rp.Id == permission.Id);
                 }
             }
+
+            // 依導航設定建立「Code 前綴 → 分類」對應表，切換時重建
+            BuildPermissionCategoryMapping();
+            collapsedGroups.Clear();
         }
         catch (Exception ex)
         {
@@ -449,21 +432,14 @@
             StateHasChanged();
         }
     }
-    
+
     // ===== 事件處理 =====
-    
-    /// <summary>
-    /// 處理 Modal 顯示狀態變更（當使用者關閉 Modal 時）
-    /// </summary>
+
     private async Task HandleModalVisibilityChanged(bool visible)
     {
-        // 通知父組件狀態變更
         await IsVisibleChanged.InvokeAsync(visible);
     }
-    
-    /// <summary>
-    /// 處理權限組選擇變更
-    /// </summary>
+
     private async Task HandleRoleSelectionChanged(ChangeEventArgs e)
     {
         try
@@ -480,6 +456,7 @@
             {
                 selectedRole = null;
                 permissionSelections.Clear();
+                collapsedGroups.Clear();
                 StateHasChanged();
             }
         }
@@ -488,131 +465,85 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleRoleSelectionChanged), GetType());
         }
     }
-    
-    /// <summary>
-    /// 處理權限勾選框變更
-    /// </summary>
+
     private async Task HandlePermissionCheckboxChanged(Permission permission, bool isChecked)
     {
-        if (selectedRole == null || IsAdminRole(selectedRole))
-        {
-            return;
-        }
-        
+        if (selectedRole == null || IsAdminRole(selectedRole)) return;
         permissionSelections[permission.Id] = isChecked;
         StateHasChanged();
-        
         await Task.CompletedTask;
     }
-    
-    /// <summary>
-    /// 處理權限行點擊（切換選取狀態）
-    /// </summary>
+
     private async Task HandlePermissionRowClick(Permission permission)
     {
-        if (selectedRole == null || IsAdminRole(selectedRole))
-        {
-            return;
-        }
-        
-        var currentValue = permissionSelections.GetValueOrDefault(permission.Id, false);
-        permissionSelections[permission.Id] = !currentValue;
+        if (selectedRole == null || IsAdminRole(selectedRole)) return;
+        permissionSelections[permission.Id] = !permissionSelections.GetValueOrDefault(permission.Id, false);
         StateHasChanged();
-        
         await Task.CompletedTask;
     }
-    
-    /// <summary>
-    /// 全選權限 - 僅選擇一般權限
-    /// </summary>
+
     private void SelectAllPermissions()
     {
-        if (selectedRole == null || IsAdminRole(selectedRole))
-        {
-            return;
-        }
-        
+        if (selectedRole == null || IsAdminRole(selectedRole)) return;
         foreach (var permission in permissions)
         {
-            // 只自動選擇一般權限，系統權限需要使用者手動點擊
             if (!IsSystemPermission(permission))
-            {
                 permissionSelections[permission.Id] = true;
-            }
         }
         StateHasChanged();
     }
-    
-    /// <summary>
-    /// 清除所有權限 - 僅清除一般權限
-    /// </summary>
+
     private void ClearAllPermissions()
     {
-        if (selectedRole == null || IsAdminRole(selectedRole))
-        {
-            return;
-        }
-        
+        if (selectedRole == null || IsAdminRole(selectedRole)) return;
         foreach (var permission in permissions)
         {
-            // 只自動清除一般權限，系統權限需要使用者手動點擊
             if (!IsSystemPermission(permission))
-            {
                 permissionSelections[permission.Id] = false;
-            }
         }
         StateHasChanged();
     }
-    
-    /// <summary>
-    /// 複製其他權限組的權限
-    /// </summary>
+
     private async Task CopyPermissionsFromRole(int sourceRoleId)
     {
-        if (selectedRole == null || isSaving)
-        {
-            return;
-        }
-        
+        if (selectedRole == null || isSaving) return;
+
         try
         {
             isSaving = true;
             StateHasChanged();
-            
+
             var sourceRole = roles.FirstOrDefault(r => r.Id == sourceRoleId);
             if (sourceRole == null)
             {
                 await NotificationService.ShowErrorAsync("來源權限組不存在");
                 return;
             }
-            
-            // 檢查來源權限組是否為管理員權限組
+
             if (IsAdminRole(sourceRole))
             {
                 await NotificationService.ShowWarningAsync("無法複製管理員權限組的權限");
                 return;
             }
-            
-            // 取得來源權限組的權限
+
             var sourceRoleData = await RoleService.GetByIdAsync(sourceRoleId);
             if (sourceRoleData == null)
             {
                 await NotificationService.ShowErrorAsync("載入來源權限組權限時發生錯誤");
                 return;
             }
-            
-            // 更新權限選擇狀態
+
             permissionSelections.Clear();
             var sourcePermissionIds = sourceRoleData.RolePermissions
                 .Where(rp => rp.Status == EntityStatus.Active)
                 .Select(rp => rp.PermissionId)
                 .ToHashSet();
-            
+
             foreach (var permission in permissions)
             {
                 permissionSelections[permission.Id] = sourcePermissionIds.Contains(permission.Id);
             }
-            
+
             StateHasChanged();
             await NotificationService.ShowSuccessAsync($"已成功複製權限組「{sourceRole.Name}」的權限設定");
         }
@@ -627,10 +558,7 @@
             StateHasChanged();
         }
     }
-    
-    /// <summary>
-    /// 儲存權限組權限
-    /// </summary>
+
     private async Task SaveRolePermissions()
     {
         if (selectedRole == null)
@@ -638,48 +566,45 @@
             await NotificationService.ShowWarningAsync("請先選擇一個權限組");
             return;
         }
-        
-        // 檢查是否為管理員權限組
+
         if (IsAdminRole(selectedRole))
         {
             await NotificationService.ShowWarningAsync("管理員權限組的權限無法修改");
             return;
         }
-        
+
         try
         {
             isSaving = true;
             StateHasChanged();
-            
+
             var selectedPermissionIds = permissionSelections
                 .Where(kvp => kvp.Value)
                 .Select(kvp => kvp.Key)
                 .ToList();
-            
-            // 檢查是否授予了系統權限，需要確認
+
             var selectedPermissions = permissions
                 .Where(p => selectedPermissionIds.Contains(p.Id))
                 .ToList();
-            
+
             var systemPermissions = selectedPermissions
                 .Where(p => IsSystemPermission(p))
                 .ToList();
-            
-            // 如果包含系統權限，顯示確認對話框
+
             if (systemPermissions.Any())
             {
                 var systemPermissionNames = systemPermissions.Select(p => $"• {p.Name} ({p.Code})").ToList();
                 var permissionList = string.Join("\n", systemPermissionNames);
-                
+
                 var confirmMessage = $"您即將為權限組「{selectedRole.Name}」授予以下敏感權限：\n\n{permissionList}\n\n" +
                                    "⚠️ 警告：\n" +
                                    "• 敏感權限可能影響系統安全性和穩定性\n" +
                                    "• 擁有這些權限的用戶可以執行敏感的系統操作\n" +
                                    "• 包括但不限於：系統設定修改、權限管理、權限組管理、審核功能等\n\n" +
                                    "請確認您了解這些權限的影響，是否繼續執行授權？";
-                
+
                 var confirmed = await NotificationService.ShowConfirmAsync(confirmMessage, "敏感權限授權確認");
-                
+
                 if (!confirmed)
                 {
                     isSaving = false;
@@ -687,19 +612,16 @@
                     return;
                 }
             }
-            
+
             var result = await RoleService.AssignPermissionsToRoleAsync(selectedRole.Id, selectedPermissionIds);
-            
+
             if (result.IsSuccess)
             {
-                // 根據是否包含系統權限顯示不同的成功訊息
-                var successMessage = systemPermissions.Any() 
+                var successMessage = systemPermissions.Any()
                     ? $"已成功更新權限組「{selectedRole.Name}」的權限（包含 {systemPermissions.Count} 個系統權限）"
                     : $"已成功更新權限組「{selectedRole.Name}」的權限";
-                
+
                 await NotificationService.ShowSuccessAsync(successMessage);
-                
-                // 重新載入權限組權限
                 await LoadPermissionsAsync();
             }
             else
@@ -718,89 +640,163 @@
             StateHasChanged();
         }
     }
-    
-    // ===== 輔助方法 =====
-    
+
+    // ===== 分組輔助方法 =====
+
+    private void ToggleGroupCollapse(string groupKey)
+    {
+        var defaultCollapsed = groupKey.StartsWith("sys_");
+        collapsedGroups[groupKey] = !collapsedGroups.GetValueOrDefault(groupKey, defaultCollapsed);
+        StateHasChanged();
+    }
+
     /// <summary>
-    /// 判斷是否為管理員權限組
+    /// 處理群組全選/取消全選
     /// </summary>
+    private void HandleGroupSelectAll(string groupKey, bool isSystem, bool select)
+    {
+        if (selectedRole == null || IsAdminRole(selectedRole)) return;
+
+        // 系統權限的 groupKey 帶有 "sys_" 前綴，取得實際模組名
+        var moduleKey = isSystem ? groupKey.Substring(4) : groupKey;
+        var groups = isSystem ? GetSystemPermissionGroups() : GetNormalPermissionGroups();
+
+        if (groups.TryGetValue(moduleKey, out var groupPerms))
+        {
+            foreach (var p in groupPerms)
+                permissionSelections[p.Id] = select;
+        }
+        StateHasChanged();
+    }
+
+    private Dictionary<string, List<Permission>> GetNormalPermissionGroups()
+    {
+        return BuildGroupedDictionary(permissions.Where(p => !IsSystemPermission(p)));
+    }
+
+    private Dictionary<string, List<Permission>> GetSystemPermissionGroups()
+    {
+        return BuildGroupedDictionary(permissions.Where(p => IsSystemPermission(p)));
+    }
+
+    /// <summary>
+    /// 篩選並分組：搜尋同時比對 Name、Code、Remarks
+    /// </summary>
+    private Dictionary<string, List<Permission>> BuildGroupedDictionary(IEnumerable<Permission> source)
+    {
+        if (!string.IsNullOrWhiteSpace(permissionSearchKeyword))
+        {
+            var keyword = permissionSearchKeyword.Trim().ToLower();
+            source = source.Where(p =>
+                (p.Name?.ToLower().Contains(keyword) ?? false) ||
+                (p.Code?.ToLower().Contains(keyword) ?? false) ||
+                (p.Remarks?.ToLower().Contains(keyword) ?? false));
+        }
+
+        return source
+            .GroupBy(p => GetGroupCategory(p.Code))
+            .OrderBy(g => g.Key)
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    /// <summary>
+    /// 從 NavigationConfig 的導航分類來分組（如 "Sales"、"Quotation" → "銷售管理"）
+    /// </summary>
+    private string GetGroupCategory(string? code)
+    {
+        if (string.IsNullOrEmpty(code)) return "其他";
+        var prefix = code.Split('.')[0];
+        return permissionPrefixToCategory.TryGetValue(prefix, out var category) ? category : prefix;
+    }
+
+    /// <summary>
+    /// 掃描 NavigationConfig，從 RequiredPermission 建立「Code 前綴 → 導航分類」對應表
+    /// </summary>
+    private void BuildPermissionCategoryMapping()
+    {
+        permissionPrefixToCategory.Clear();
+
+        // 第一步：從 NavigationConfig 自動建立對應
+        foreach (var item in NavigationConfig.GetFlattenedNavigationItems()
+            .Where(i => !string.IsNullOrEmpty(i.RequiredPermission) && !string.IsNullOrEmpty(i.Category)))
+        {
+            var prefix = item.RequiredPermission!.Split('.')[0];
+            permissionPrefixToCategory.TryAdd(prefix, item.Category!);
+        }
+
+        // 第二步：補充 NavigationConfig 未直接對應的前綴
+        // （這些權限存在於 PermissionRegistry，但 NavigationConfig 沒有對應的導航項目）
+        var supplemental = new Dictionary<string, string>
+        {
+            { "System",                        "系統管理" },
+            { "User",                          "人力管理" },
+            { "EmployeeEdit_Account_Password", "人力管理" },
+            { "ErrorLog",                      "系統管理" },
+            { "CustomerType",                  "客戶關係管理" },
+            { "ProductPricing",                "商品管理" },
+            { "MasterData",                    "商品管理" },
+            { "Material",                      "商品管理" },
+            { "Weather",                       "商品管理" },
+            { "Color",                         "商品管理" },
+            { "Inventory",                     "庫存管理" },
+            { "InventoryTransaction",          "庫存管理" },
+            { "InventoryTransactionType",      "庫存管理" },
+            { "InventoryReservation",          "庫存管理" },
+            { "Sales",                         "銷售管理" },
+        };
+
+        foreach (var kvp in supplemental)
+            permissionPrefixToCategory.TryAdd(kvp.Key, kvp.Value);
+    }
+
+    /// <summary>
+    /// 從 Code 取出動作標籤（e.g. "Customer.Read" → "Read"）
+    /// </summary>
+    private string GetActionLabel(string? code)
+    {
+        if (string.IsNullOrEmpty(code)) return "";
+        var parts = code.Split('.');
+        return parts.Length > 1 ? parts[1] : "";
+    }
+
+    /// <summary>
+    /// 依動作類型回傳 Bootstrap badge 樣式
+    /// </summary>
+    private string GetActionBadgeClass(string? code)
+    {
+        var action = GetActionLabel(code).ToLower();
+        return action switch
+        {
+            "read" or "view" or "list"       => "bg-info text-dark",
+            "write" or "edit" or "update"    => "bg-warning text-dark",
+            "create" or "add"                => "bg-success",
+            "delete" or "remove"             => "bg-danger",
+            "approve" or "reject" or "audit" => "bg-primary",
+            "export" or "print"              => "bg-secondary",
+            "manage" or "admin"              => "bg-dark",
+            _                                => "bg-secondary"
+        };
+    }
+
+    private int GetNormalCount() => permissions.Count(p => !IsSystemPermission(p));
+    private int GetSystemCount() => permissions.Count(p => IsSystemPermission(p));
+    private int GetSelectedNormalCount() => permissions.Count(p => !IsSystemPermission(p) && permissionSelections.GetValueOrDefault(p.Id, false));
+    private int GetSelectedSystemCount() => permissions.Count(p => IsSystemPermission(p) && permissionSelections.GetValueOrDefault(p.Id, false));
+
+    // ===== 原有輔助方法 =====
+
     private bool IsAdminRole(Role? role)
     {
         if (role == null) return false;
         var roleName = role.Name?.Trim().ToLower();
         return roleName == "管理員" || roleName == "admin";
     }
-    
-    /// <summary>
-    /// 判斷是否為敏感權限（系統權限）
-    /// </summary>
+
     private bool IsSystemPermission(Permission permission)
     {
         return permission.Level == PermissionLevel.Sensitive;
     }
-    
-    /// <summary>
-    /// 取得一般權限列表
-    /// </summary>
-    private List<Permission> GetNormalPermissions()
-    {
-        var result = permissions.Where(p => !IsSystemPermission(p));
-        
-        // 套用搜尋篩選
-        if (!string.IsNullOrWhiteSpace(permissionSearchKeyword))
-        {
-            var keyword = permissionSearchKeyword.Trim().ToLower();
-            result = result.Where(p => 
-                (p.Name?.ToLower().Contains(keyword) ?? false));
-        }
-        
-        return result.ToList();
-    }
-    
-    /// <summary>
-    /// 取得系統權限列表
-    /// </summary>
-    private List<Permission> GetSystemPermissions()
-    {
-        var result = permissions.Where(p => IsSystemPermission(p));
-        
-        // 套用搜尋篩選
-        if (!string.IsNullOrWhiteSpace(permissionSearchKeyword))
-        {
-            var keyword = permissionSearchKeyword.Trim().ToLower();
-            result = result.Where(p => 
-                (p.Name?.ToLower().Contains(keyword) ?? false));
-        }
-        
-        return result.ToList();
-    }
-    
-    /// <summary>
-    /// 取得權限行的 CSS 類別
-    /// </summary>
-    private string GetPermissionRowClass(Permission permission, int index)
-    {
-        var classes = new List<string>();
-        
-        // 選中的權限加上背景色
-        if (permissionSelections.GetValueOrDefault(permission.Id, false))
-        {
-            classes.Add("table-success");
-        }
-        
-        // 可點擊的行加上游標樣式
-        if (!IsAdminRole(selectedRole))
-        {
-            classes.Add("cursor-pointer");
-            classes.Add("user-select-none");
-        }
-        
-        return string.Join(" ", classes);
-    }
-    
-    /// <summary>
-    /// 取得複製按鈕的額外屬性
-    /// </summary>
+
     private Dictionary<string, object> GetCopyButtonAttributes()
     {
         var attributes = new Dictionary<string, object>
@@ -808,57 +804,36 @@
             { "data-bs-toggle", "dropdown" },
             { "aria-expanded", "false" }
         };
-        
+
         if (IsAdminRole(selectedRole))
-        {
             attributes.Add("title", L["Permission.AdminCannotCopy"].ToString());
-        }
 
         return attributes;
     }
 
-    /// <summary>
-    /// 取得全選按鈕的額外屬性
-    /// </summary>
     private Dictionary<string, object> GetSelectAllButtonAttributes()
     {
         var tooltip = IsAdminRole(selectedRole)
             ? L["Permission.AdminCannotModify"].ToString()
             : L["Permission.SelectAllTooltip"].ToString();
 
-        return new Dictionary<string, object>
-        {
-            { "title", tooltip }
-        };
+        return new Dictionary<string, object> { { "title", tooltip } };
     }
 
-    /// <summary>
-    /// 取得全清按鈕的額外屬性
-    /// </summary>
     private Dictionary<string, object> GetClearAllButtonAttributes()
     {
         var tooltip = IsAdminRole(selectedRole)
             ? L["Permission.AdminCannotModify"].ToString()
             : L["Permission.ClearAllTooltip"].ToString();
 
-        return new Dictionary<string, object>
-        {
-            { "title", tooltip }
-        };
+        return new Dictionary<string, object> { { "title", tooltip } };
     }
 
-    /// <summary>
-    /// 取得儲存按鈕的額外屬性
-    /// </summary>
     private Dictionary<string, object> GetSaveButtonAttributes()
     {
         var attributes = new Dictionary<string, object>();
-
         if (IsAdminRole(selectedRole))
-        {
             attributes.Add("title", L["Permission.AdminCannotModify"].ToString());
-        }
-
         return attributes;
     }
 }

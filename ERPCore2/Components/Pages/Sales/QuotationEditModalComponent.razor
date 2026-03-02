@@ -57,7 +57,7 @@
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Quotation"]]"
                           GetReportDocumentName="@(e => $"報價單-{e.Code}")"
                           ShowApprovalSection="@ShouldShowApprovalSection()"
-                          ApprovalPermission="Quotation.Approve"
+                          ApprovalPermission="@PermissionRegistry.Quotation.Approve"
                           OnApprove="@HandleQuotationApprove"
                           OnRejectWithReason="@HandleQuotationRejectWithReason"
                           CanPrintCheck="@GetCanPrintCheck()"
@@ -1053,17 +1053,19 @@
     /// </summary>
     private RenderFragment? GetWarningMessage() => __builder =>
     {
-        // 只在資料準備就緒後才顯示訊息
-        if (!isDetailDataReady)
+        if (!isDetailDataReady) return;
+
+        if (isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)
+        {
+            <GenericLockedFieldMessage IsVisible="true"
+                                      Message="@EditModalMessages.ApprovedWarning"
+                                      Compact="true" />
             return;
+        }
 
-        // 審核通過的警告訊息
-        <GenericLockedFieldMessage IsVisible="@(isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)"
-                                  Message="報價單已審核通過，主檔欄位已鎖定。" />
-
-        // 明細已轉單的警告訊息
-        <GenericLockedFieldMessage IsVisible="@(hasUndeletableDetails && !(isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true))"
-                                  Message="@EditModalMessages.UndeletableDetailsWarning"/>
+        <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
+                                  Message="@EditModalMessages.UndeletableDetailsWarning"
+                                  Compact="true" />
     };
     
 

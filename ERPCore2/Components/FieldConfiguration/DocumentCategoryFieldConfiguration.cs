@@ -54,37 +54,13 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(DocumentCategory.Source),
-                        new FieldDefinition<DocumentCategory>
-                        {
-                            PropertyName = nameof(DocumentCategory.Source),
-                            DisplayName = Dn("Field.DocumentSource", "來源類型"),
-                            ShowInFilter = false,
-                            TableOrder = 2,
-                            CustomTemplate = obj =>
-                            {
-                                var item = obj as DocumentCategory;
-                                var text = (item?.Source) switch
-                                {
-                                    DocumentSource.Government => L?["Label.DocumentSource.Government"].ToString() ?? "政府/法規",
-                                    DocumentSource.Vendor => L?["Label.DocumentSource.Vendor"].ToString() ?? "廠商",
-                                    DocumentSource.Customer => L?["Label.DocumentSource.Customer"].ToString() ?? "客戶",
-                                    DocumentSource.Internal => L?["Label.DocumentSource.Internal"].ToString() ?? "內部文件",
-                                    DocumentSource.Other => L?["Label.DocumentSource.Other"].ToString() ?? "其他",
-                                    _ => item?.Source.ToString() ?? "-"
-                                };
-                                return builder => builder.AddContent(0, text);
-                            }
-                        }
-                    },
-                    {
                         nameof(DocumentCategory.DefaultAccessLevel),
                         new FieldDefinition<DocumentCategory>
                         {
                             PropertyName = nameof(DocumentCategory.DefaultAccessLevel),
                             DisplayName = Dn("Field.DefaultAccessLevel", "預設存取層級"),
                             ShowInFilter = false,
-                            TableOrder = 3,
+                            TableOrder = 2,
                             CustomTemplate = obj =>
                             {
                                 var item = obj as DocumentCategory;

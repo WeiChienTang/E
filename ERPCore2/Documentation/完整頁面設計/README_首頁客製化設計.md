@@ -322,9 +322,11 @@ Home.razor
 | 功能 | 說明 |
 |------|------|
 | `_registry` | 靜態字典，映射 QuickActionId → (元件類型, Id參數名, 額外參數) |
+| `_quickActionPermissions` | 靜態字典，從 `NavigationConfig.GetQuickActionWidgetItems()` 衍生，映射 QuickActionId → RequiredPermission |
 | `ConfiguredActionIds` | Parameter，接收已配置的 QuickAction Id 清單進行預渲染 |
 | `Open(actionId)` | 公開方法，根據 QuickActionId 開啟對應 Modal |
 | 延遲開啟機制 | 確保 firstRender 在 IsVisible=false 時完成，避免 ActionButtons 問題 |
+| **權限守衛** | `OnParametersSetAsync` 呼叫 `NavigationPermissionService.CanAccessAsync` 檢查每個 QuickAction 的 `RequiredPermission`，未授權者不加入 `_activeActionIds`，Modal 不渲染也無法開啟 |
 
 ---
 
@@ -375,6 +377,7 @@ new NavigationItem
 
 - `RequiredPermission` 應使用已存在於 PermissionSeeder 的權限碼（通常是 `.Read`），否則所有使用者都無法看到此項目
 - QuickAction Modal **不可使用 `@if` 包裹**，否則 ActionButtons 會失效
+- `QuickActionModalHost` 的權限守衛自動繼承 NavigationItem 上的 `RequiredPermission`，新增快速功能時**無需**在 QuickActionModalHost 額外設定權限
 
 ---
 
@@ -479,6 +482,7 @@ public void OpenSupplierCharts()
 ## 效能考量
 
 - **Modal 常駐渲染**：QuickAction 的 Modal 不使用 `@if` 條件渲染（避免 `setupButtonTabNavigation` 問題），但 `IsVisible = false` 時 BaseModalComponent 不會顯示任何內容
+- **權限快取**：`OnParametersSetAsync` 中的 `NavigationPermissionService.CanAccessAsync` 使用 10 分鐘記憶體快取，大量 QuickAction 預渲染時不會重複查詢資料庫
 - **Include 載入**：`GetEmployeePanelsAsync` 使用 `Include` 一次載入面板與項目
 - **新用戶初始化**：`InitializeDefaultDashboardAsync` 建立預設面板結構，只需一次查詢觸發
 - **平行載入**：開啟 Picker Modal 時，三種類型的可用項目使用 `Task.WhenAll` 平行載入

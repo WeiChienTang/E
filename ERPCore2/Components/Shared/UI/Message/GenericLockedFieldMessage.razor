@@ -2,9 +2,19 @@
 
 @if (IsVisible)
 {
-    <div class="alert @GetAlertClass() @CssClass mb-2 py-2" role="alert">
-        <i class="@IconClass me-2"></i>@Message
-    </div>
+    @if (Compact)
+    {
+        <div class="d-flex align-items-center gap-2 border-start border-3 border-warning ps-2 mb-2">
+            <i class="fas fa-lock text-warning small flex-shrink-0"></i>
+            <span class="small text-body-secondary">@Message</span>
+        </div>
+    }
+    else
+    {
+        <div class="alert @GetAlertClass() @CssClass mb-2 py-2" role="alert">
+            <i class="@IconClass me-2"></i>@Message
+        </div>
+    }
 }
 
 @code {
@@ -27,6 +37,11 @@
     /// 圖示 CSS 類別（Font Awesome）
     /// </summary>
     [Parameter] public string? IconClass { get; set; } = null;
+
+    /// <summary>
+    /// 緊湊模式：以左側邊框小字樣式顯示，取代全寬 Bootstrap alert，節省版面空間
+    /// </summary>
+    [Parameter] public bool Compact { get; set; } = false;
 
     /// <summary>
     /// 額外的 CSS 類別

@@ -668,6 +668,7 @@
   <data name="Entity.SalesReturnReason" xml:space="preserve"><value>退貨原因</value></data>
   <data name="Entity.Customer" xml:space="preserve"><value>客戶</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>拜訪紀錄</value></data>
+  <data name="Entity.SupplierVisit" xml:space="preserve"><value>廠商拜訪紀錄</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>廠商</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>商品</value></data>
   <data name="Entity.ProductCategory" xml:space="preserve"><value>商品類型</value></data>
@@ -880,6 +881,7 @@
   <data name="Tab.VehicleInfo" xml:space="preserve"><value>車輛資訊</value></data>
   <data name="Tab.PersonalTools" xml:space="preserve"><value>個人工具</value></data>
   <data name="Tab.Training" xml:space="preserve"><value>教育訓練</value></data>
+  <data name="Tab.Permissions" xml:space="preserve"><value>權限</value></data>
   <!-- ===== Employee Label keys ===== -->
   <data name="Label.TrainingRecords" xml:space="preserve"><value>受訓紀錄</value></data>
   <data name="Label.LicenseManagement" xml:space="preserve"><value>證照管理</value></data>
@@ -887,6 +889,9 @@
   <data name="Label.Valid" xml:space="preserve"><value>有效</value></data>
   <data name="Label.Expired" xml:space="preserve"><value>已到期</value></data>
   <data name="Label.ExpiringSoon" xml:space="preserve"><value>即將到期</value></data>
+  <data name="Label.CurrentRole" xml:space="preserve"><value>目前角色</value></data>
+  <data name="Label.NormalPermissions" xml:space="preserve"><value>一般權限</value></data>
+  <data name="Label.SensitivePermissions" xml:space="preserve"><value>敏感權限</value></data>
   <!-- ===== Employee Button keys ===== -->
   <data name="Button.AddTrainingRecord" xml:space="preserve"><value>新增受訓紀錄</value></data>
   <data name="Button.AddLicense" xml:space="preserve"><value>新增證照</value></data>
@@ -895,6 +900,7 @@
   <data name="Message.NoTrainingRecords" xml:space="preserve"><value>尚無受訓紀錄</value></data>
   <data name="Message.NoLicenseRecords" xml:space="preserve"><value>尚無證照紀錄</value></data>
   <data name="Message.NoToolRecords" xml:space="preserve"><value>尚無工具配給紀錄</value></data>
+  <data name="Message.NoRoleAssigned" xml:space="preserve"><value>此員工尚未指派角色，無法顯示權限</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>例：通過、優秀、不合格</value></data>
   <!-- ===== Vehicle Button/Message keys ===== -->
@@ -1749,6 +1755,7 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>客戶分析圖表</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>沒有相關交易紀錄</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>尚無拜訪紀錄</value></data>
+  <data name="Supplier.NoVisits" xml:space="preserve"><value>尚無拜訪紀錄</value></data>
   <data name="Customer.NetSales" xml:space="preserve"><value>淨銷售額</value></data>
   <data name="Customer.Delivery" xml:space="preserve"><value>出貨</value></data>
   <data name="Customer.Deliveries" xml:space="preserve"><value>出貨單</value></data>
@@ -1781,6 +1788,7 @@
   <data name="Column.Select" xml:space="preserve"><value>選擇</value></data>
   <data name="Column.PermissionName" xml:space="preserve"><value>權限名稱</value></data>
   <data name="Column.PermissionCode" xml:space="preserve"><value>權限編號</value></data>
+  <data name="Column.PermissionLevel" xml:space="preserve"><value>等級</value></data>
 
   <!-- ===== VisitType 拜訪方式 ===== -->
   <data name="VisitType.Phone" xml:space="preserve"><value>電話</value></data>
@@ -1795,6 +1803,8 @@
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>確認移除</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>清除明細</value></data>
   <data name="Button.DisableAccount" xml:space="preserve"><value>停用帳號</value></data>
+  <data name="Button.EnableAll" xml:space="preserve"><value>全部開啟</value></data>
+  <data name="Button.DisableAll" xml:space="preserve"><value>全部關閉</value></data>
   <data name="Button.OpenEdit" xml:space="preserve"><value>開啟編輯</value></data>
   <data name="Button.Copy" xml:space="preserve"><value>複製</value></data>
   <data name="Button.SelectAll" xml:space="preserve"><value>全選</value></data>
@@ -1855,6 +1865,8 @@
   <data name="Employee.RoleRequiredHint" xml:space="preserve"><value>設定此員工在系統中的操作權限（有帳號時必填）</value></data>
 
   <!-- ===== Permission 權限管理（新增） ===== -->
+  <data name="Permission.Normal" xml:space="preserve"><value>一般</value></data>
+  <data name="Permission.Sensitive" xml:space="preserve"><value>敏感</value></data>
   <data name="Permission.RoleManagement" xml:space="preserve"><value>權限組管理</value></data>
   <data name="Permission.NotCreated" xml:space="preserve"><value>尚未建立任何權限組</value></data>
   <data name="Permission.AdminHasAll" xml:space="preserve"><value>管理員權限組擁有所有權限。</value></data>
@@ -2841,6 +2853,8 @@
   <data name="Message.AtLeastOneFile" xml:space="preserve"><value>至少須上傳一個附件</value></data>
   <!-- ===== 通知設定 ===== -->
   <data name="Preference.Notifications" xml:space="preserve"><value>通知設定</value></data>
+  <data name="Preference.EnableCalendar" xml:space="preserve"><value>啟用行事曆</value></data>
+  <data name="Preference.EnableStickyNote" xml:space="preserve"><value>啟用便條貼</value></data>
   <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>顯示行事曆提醒徽章</value></data>
   <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>顯示便條貼計數徽章</value></data>
   <data name="Preference.DefaultReminder" xml:space="preserve"><value>預設提醒時間</value></data>

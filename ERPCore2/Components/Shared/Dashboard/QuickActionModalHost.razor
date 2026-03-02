@@ -5,12 +5,16 @@
     1. 所有 EditModal 透過靜態註冊表（Registry）統一管理
     2. Modal 預先渲染（IsVisible=false），確保 firstRender 不觸發 setupButtonTabNavigation
     3. 避免 @if 包裹造成 firstRender + IsVisible 同時為 true 的 ActionButtons 問題
+    4. OnParametersSetAsync 檢查權限，未授權的 actionId 不加入 _activeActionIds
 
     新增快速功能只需兩步：
     1. 在 NavigationConfig.cs 為 NavigationItem 設定 QuickActionId
     2. 在此組件的 _registry 新增一行註冊
     Home.razor 不需要任何修改。
 *@
+@using ERPCore2.Services
+@using ERPCore2.Data.Navigation
+@inject INavigationPermissionService NavigationPermissionService
 
 @foreach (var actionId in _activeActionIds.ToList())
 {
@@ -127,6 +131,15 @@
         ["NewReportPrintConfiguration"] = new(typeof(ReportPrintConfigurationEditModalComponent), "ReportPrintConfigurationId"),
     };
 
+    /// <summary>
+    /// QuickAction 權限對照表 - 映射 QuickActionId → RequiredPermission（來自 NavigationConfig）
+    /// null 表示無權限限制（任何已登入使用者均可使用）
+    /// </summary>
+    private static readonly Dictionary<string, string?> _quickActionPermissions =
+        NavigationConfig.GetQuickActionWidgetItems()
+            .Where(i => i.ActionId != null)
+            .ToDictionary(i => i.ActionId!, i => i.RequiredPermission, StringComparer.OrdinalIgnoreCase);
+
     // ===== 內部狀態 =====
 
     /// <summary>已啟動的 Modal Id 清單（已渲染或準備渲染）</summary>
@@ -140,13 +153,19 @@
 
     // ===== 生命週期 =====
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         // 預先註冊所有已配置的快速功能（確保 firstRender 在 IsVisible=false 時完成）
+        // 有 RequiredPermission 的項目需通過權限檢查才能加入
         foreach (var actionId in ConfiguredActionIds)
         {
             if (_registry.ContainsKey(actionId) && !_activeActionIds.Contains(actionId))
             {
+                if (_quickActionPermissions.TryGetValue(actionId, out var perm) && !string.IsNullOrEmpty(perm))
+                {
+                    if (!await NavigationPermissionService.CanAccessAsync(perm))
+                        continue;
+                }
                 _activeActionIds.Add(actionId);
                 _visibilityState[actionId] = false;
             }
@@ -184,7 +203,12 @@
         }
         else
         {
-            // 首次啟動：先渲染（IsVisible=false），下一個 render cycle 再顯示
+            // 首次啟動（非預渲染路徑）：若有 RequiredPermission 但未在 _activeActionIds，
+            // 表示 OnParametersSetAsync 已因權限不足略過此 actionId，拒絕開啟
+            if (_quickActionPermissions.TryGetValue(actionId, out var perm) && !string.IsNullOrEmpty(perm))
+                return;
+
+            // 先渲染（IsVisible=false），下一個 render cycle 再顯示
             _activeActionIds.Add(actionId);
             _visibilityState[actionId] = false;
             _pendingOpenActionId = actionId;

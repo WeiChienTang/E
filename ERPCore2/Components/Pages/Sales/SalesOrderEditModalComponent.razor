@@ -1077,13 +1077,19 @@
     /// </summary>
     private RenderFragment? GetWarningMessage() => __builder =>
     {
-        // 只在資料準備就緒後才顯示訊息
-        if (!isDetailDataReady)
-            return;
+        if (!isDetailDataReady) return;
 
-        // 明細已轉單的警告訊息
+        if (isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)
+        {
+            <GenericLockedFieldMessage IsVisible="true"
+                                      Message="@EditModalMessages.SalesOrderApprovedWarning"
+                                      Compact="true" />
+            return;
+        }
+
         <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
-                                  Message="@EditModalMessages.UndeletableDetailsWarning" />
+                                  Message="@EditModalMessages.UndeletableDetailsWarning"
+                                  Compact="true" />
     };
 
     private string GetSelectedCustomerName()

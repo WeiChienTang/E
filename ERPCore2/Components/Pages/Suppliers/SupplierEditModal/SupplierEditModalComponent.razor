@@ -106,6 +106,7 @@
     private SupplierVehicleTab? vehicleTab;
     private SupplierProductTab? supplierProductTab;
     private SupplierAccountingTab? accountingTab;
+    private SupplierVisitTab? visitTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -122,6 +123,11 @@
     private RenderFragment CreateAccountingTabContent() => __builder =>
     {
         <SupplierAccountingTab @ref="accountingTab" />
+    };
+
+    private RenderFragment CreateVisitTabContent() => __builder =>
+    {
+        <SupplierVisitTab @ref="visitTab" SupplierId="@SupplierId" />
     };
 
     // ===== 生命週期 =====
@@ -172,12 +178,14 @@
                 if (vehicleTab != null)         await vehicleTab.LoadAsync(loadedEntityId);
                 if (supplierProductTab != null) await supplierProductTab.LoadAsync(loadedEntityId);
                 if (accountingTab != null)      await accountingTab.LoadAsync(loadedEntityId);
+                if (visitTab != null)           await visitTab.LoadAsync(loadedEntityId);
             }
             else
             {
                 vehicleTab?.Clear();
                 supplierProductTab?.Clear();
                 accountingTab?.Clear();
+                visitTab?.Clear();
             }
             StateHasChanged();
         }
@@ -212,6 +220,7 @@
             {
                 vehicleTab?.Clear();
                 supplierProductTab?.Clear();
+                visitTab?.Clear();
 
                 var newSupplier = new Supplier
                 {
@@ -523,6 +532,7 @@
 
             var layout = builder
                 .GroupIntoCustomTab(L["Tab.SupplierProducts"].ToString(), "bi-box-seam", CreateSupplierProductTabContent())
+                .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent())
                 .BuildAll();
 
             formSections = layout.FieldSections;

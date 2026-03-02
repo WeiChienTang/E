@@ -1,9 +1,9 @@
-@* 可重用的客戶拜訪紀錄列表面板 - 用於客戶 EditModal 的 Tab 頁籤中 *@
+@* 可重用的廠商拜訪紀錄列表面板 - 用於廠商 EditModal 的 Tab 頁籤中 *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
 @inject IStringLocalizer<SharedResource> L
 
-<div class="customer-visit-table-panel">
+<div class="supplier-visit-table-panel">
     @* 工具列 *@
     <div class="d-flex justify-content-between align-items-center mb-2 px-1">
         @if (!IsReadOnly)
@@ -21,8 +21,8 @@
     </div>
 
     @* 拜訪紀錄表格 *@
-    <InteractiveTableComponent TItem="CustomerVisit"
-                              Items="@(Visits ?? new List<CustomerVisit>())"
+    <InteractiveTableComponent TItem="SupplierVisit"
+                              Items="@(Visits ?? new List<SupplierVisit>())"
                               ColumnDefinitions="@GetColumnDefinitions()"
                               ShowHeader="true"
                               ShowRowNumbers="true"
@@ -33,14 +33,14 @@
                               ShowBuiltInActions="@(!IsReadOnly)"
                               ShowBuiltInDeleteButton="false"
                               EnableAutoEmptyRow="false"
-                              EmptyMessage="@L["Customer.NoVisits"]"
+                              EmptyMessage="@L["Supplier.NoVisits"]"
                               CustomActionsTemplate="@GetActionsTemplate()"
                               ActionsColumnWidth="80px" />
 </div>
 
 @code {
     /// <summary>拜訪紀錄清單</summary>
-    [Parameter] public List<CustomerVisit>? Visits { get; set; }
+    [Parameter] public List<SupplierVisit>? Visits { get; set; }
 
     /// <summary>是否唯讀模式</summary>
     [Parameter] public bool IsReadOnly { get; set; } = false;
@@ -49,10 +49,10 @@
     [Parameter] public EventCallback OnAddVisit { get; set; }
 
     /// <summary>點擊編輯的回調</summary>
-    [Parameter] public EventCallback<CustomerVisit> OnEditVisit { get; set; }
+    [Parameter] public EventCallback<SupplierVisit> OnEditVisit { get; set; }
 
     /// <summary>點擊刪除的回調</summary>
-    [Parameter] public EventCallback<CustomerVisit> OnDeleteVisit { get; set; }
+    [Parameter] public EventCallback<SupplierVisit> OnDeleteVisit { get; set; }
 
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
     {
@@ -61,12 +61,12 @@
             new InteractiveColumnDefinition
             {
                 Title = L["Column.VisitDate"],
-                PropertyName = nameof(CustomerVisit.VisitDate),
+                PropertyName = nameof(SupplierVisit.VisitDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",
                 DisplayFormatter = item =>
                 {
-                    if (item is CustomerVisit v)
+                    if (item is SupplierVisit v)
                         return v.VisitDate.ToString("yyyy-MM-dd");
                     return "-";
                 }
@@ -74,12 +74,12 @@
             new InteractiveColumnDefinition
             {
                 Title = L["Column.VisitMethod"],
-                PropertyName = nameof(CustomerVisit.VisitType),
+                PropertyName = nameof(SupplierVisit.VisitType),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "80px",
                 DisplayFormatter = item =>
                 {
-                    if (item is CustomerVisit v)
+                    if (item is SupplierVisit v)
                         return v.VisitType switch
                         {
                             VisitType.Phone => L["VisitType.Phone"],
@@ -95,12 +95,12 @@
             new InteractiveColumnDefinition
             {
                 Title = L["Column.SalesEmployee"],
-                PropertyName = nameof(CustomerVisit.EmployeeId),
+                PropertyName = nameof(SupplierVisit.EmployeeId),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "90px",
                 DisplayFormatter = item =>
                 {
-                    if (item is CustomerVisit v && v.Employee != null)
+                    if (item is SupplierVisit v && v.Employee != null)
                         return v.Employee.Name ?? "-";
                     return "-";
                 }
@@ -108,7 +108,7 @@
             new InteractiveColumnDefinition
             {
                 Title = L["Column.VisitPurpose"],
-                PropertyName = nameof(CustomerVisit.Purpose),
+                PropertyName = nameof(SupplierVisit.Purpose),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px",
                 NullDisplayText = "-"
@@ -116,12 +116,12 @@
             new InteractiveColumnDefinition
             {
                 Title = L["Column.NextFollowUp"],
-                PropertyName = nameof(CustomerVisit.NextFollowUpDate),
+                PropertyName = nameof(SupplierVisit.NextFollowUpDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",
                 DisplayFormatter = item =>
                 {
-                    if (item is CustomerVisit v && v.NextFollowUpDate.HasValue)
+                    if (item is SupplierVisit v && v.NextFollowUpDate.HasValue)
                         return v.NextFollowUpDate.Value.ToString("yyyy-MM-dd");
                     return "-";
                 }
@@ -129,7 +129,7 @@
         };
     }
 
-    private RenderFragment<CustomerVisit>? GetActionsTemplate()
+    private RenderFragment<SupplierVisit>? GetActionsTemplate()
     {
         if (IsReadOnly) return null;
 

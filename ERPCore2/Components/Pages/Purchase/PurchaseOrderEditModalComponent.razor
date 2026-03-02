@@ -57,7 +57,7 @@
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.PurchaseOrder"]]"
                           GetReportDocumentName="@(e => $"採購單-{e.Code}")"
                           ShowApprovalSection="@ShouldShowApprovalSection()"
-                          ApprovalPermission="PurchaseOrder.Approve"
+                          ApprovalPermission="@PermissionRegistry.PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnRejectWithReason="@HandlePurchaseOrderRejectWithReason"
                           CanPrintCheck="@GetCanPrintCheck()"
@@ -1121,13 +1121,17 @@
     /// </summary>
     private RenderFragment? GetWarningMessage() => __builder =>
     {
-        @* 審核通過的訊息 *@
-        <GenericLockedFieldMessage IsVisible="@(isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)"
-                                  Message="@EditModalMessages.PurchaseOrderApprovedWarning" />
+        if (isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)
+        {
+            <GenericLockedFieldMessage IsVisible="true"
+                                      Message="@EditModalMessages.PurchaseOrderApprovedWarning"
+                                      Compact="true" />
+            return;
+        }
 
-        @* 明細有其他動作的訊息 *@
         <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
-                                  Message="@EditModalMessages.UndeletableDetailsWarning" />
+                                  Message="@EditModalMessages.UndeletableDetailsWarning"
+                                  Compact="true" />
     };
     
     /// <summary>

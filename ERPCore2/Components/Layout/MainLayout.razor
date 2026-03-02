@@ -104,10 +104,11 @@
 
 @* 個人化設定 Modal *@
 <PersonalPreferenceModalComponent IsVisible="@showPersonalPreference"
-                                  IsVisibleChanged="@((bool visible) => showPersonalPreference = visible)" />
+                                  IsVisibleChanged="@((bool visible) => showPersonalPreference = visible)"
+                                  OnSaved="@HandlePreferenceSaved" />
 
 @* 行事曆提醒 Toast（到期事項通知） *@
-@if (_dueReminders.Any() && (_currentPreference?.ShowCalendarBadge ?? true))
+@if (_dueReminders.Any() && (_currentPreference?.EnableCalendar ?? true) && (_currentPreference?.ShowCalendarBadge ?? true))
 {
     <div class="calendar-reminder-container">
         @foreach (var ev in _dueReminders)
@@ -128,25 +129,58 @@
     </div>
 }
 
+@* 便條貼與行事曆專屬浮動按鈕（右下角，QuickAction 左側）*@
+<div class="personal-tools-btns">
+
+    @* 行事曆按鈕：啟用時顯示 *@
+    @if (_currentPreference?.EnableCalendar ?? true)
+    {
+        <button class="personal-tool-btn @(NotificationService.UpcomingEventCount > 0 ? "tool-btn-active tool-btn-calendar" : "tool-btn-inactive")"
+                @onclick="OpenCalendar"
+                title="@L["QuickAction.Calendar"]">
+            <span class="bi bi-calendar3"></span>
+            @if ((_currentPreference?.ShowCalendarBadge ?? true) && NotificationService.UpcomingEventCount > 0)
+            {
+                <span class="personal-tool-badge">@(NotificationService.UpcomingEventCount > 9 ? "9+" : NotificationService.UpcomingEventCount.ToString())</span>
+            }
+        </button>
+    }
+
+    @* 便條貼按鈕：啟用時顯示 *@
+    @if (_currentPreference?.EnableStickyNote ?? true)
+    {
+        <button class="personal-tool-btn @(NotificationService.StickyNoteCount > 0 ? "tool-btn-active tool-btn-note" : "tool-btn-inactive")"
+                @onclick="OpenStickyNotes"
+                title="@L["QuickAction.StickyNotes"]">
+            <span class="bi bi-sticky"></span>
+            @if ((_currentPreference?.ShowNoteBadge ?? true) && NotificationService.StickyNoteCount > 0)
+            {
+                <span class="personal-tool-badge">@(NotificationService.StickyNoteCount > 9 ? "9+" : NotificationService.StickyNoteCount.ToString())</span>
+            }
+        </button>
+    }
+
+</div>
+
 @* 快速功能表（右下角浮動按鈕） *@
 <QuickActionMenu @rendermode="InteractiveServer"
                 OnPageSearchClick="@OpenPageSearch"
                 OnReportSearchClick="@OpenReportSearch"
-                OnShortcutKeysClick="@OpenShortcutKeys"
-                OnStickyNotesClick="@OpenStickyNotes"
-                OnCalendarClick="@OpenCalendar"
-                CalendarBadgeCount="@NotificationService.UpcomingEventCount"
-                NoteBadgeCount="@NotificationService.StickyNoteCount"
-                ShowCalendarBadge="@(_currentPreference?.ShowCalendarBadge ?? true)"
-                ShowNoteBadge="@(_currentPreference?.ShowNoteBadge ?? true)" />
+                OnShortcutKeysClick="@OpenShortcutKeys" />
 
 @* 便條貼面板 *@
-<StickyNoteDrawer IsVisible="@showStickyNotes"
-                  IsVisibleChanged="@((bool v) => showStickyNotes = v)" />
+@if (_currentPreference?.EnableStickyNote ?? true)
+{
+    <StickyNoteDrawer IsVisible="@showStickyNotes"
+                      IsVisibleChanged="@((bool v) => showStickyNotes = v)" />
+}
 
 @* 行事曆面板 *@
-<CalendarDrawer IsVisible="@showCalendar"
-                IsVisibleChanged="@((bool v) => showCalendar = v)" />
+@if (_currentPreference?.EnableCalendar ?? true)
+{
+    <CalendarDrawer IsVisible="@showCalendar"
+                    IsVisibleChanged="@((bool v) => showCalendar = v)" />
+}
 
 @* 模組停用提示 Modal（圖表、報表觸發被停用模組時顯示） *@
 <BaseModalComponent IsVisible="@_showModuleDisabledModal"
@@ -488,6 +522,25 @@
     }
     
     /// <summary>
+    /// 個人化設定儲存後，重新載入偏好以立即套用啟用/停用狀態
+    /// </summary>
+    private async Task HandlePreferenceSaved()
+    {
+        try
+        {
+            if (_currentEmployeeId > 0)
+            {
+                _currentPreference = await EmployeePreferenceService.GetByEmployeeIdAsync(_currentEmployeeId);
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // 忽略重新載入偏好失敗
+        }
+    }
+
+    /// <summary>
     /// 開啟快速功能表（由快捷鍵觸發，JS 直接點擊主按鈕，此方法保留作為文件記錄）
     /// 實際行為由 keyboard-shortcuts.js 呼叫 .quick-action-main-btn?.click() 完成
     /// </summary>
@@ -690,6 +743,22 @@
     /// </summary>
     private async Task RunNotificationTimerAsync()
     {
+        // 立即做一次檢查，不等第一分鐘
+        try
+        {
+            var initialDue = await NotificationService.GetDueRemindersAsync();
+            if (initialDue.Any())
+            {
+                foreach (var ev in initialDue)
+                {
+                    if (!_dueReminders.Any(r => r.Id == ev.Id))
+                        _dueReminders.Add(ev);
+                }
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch { }
+
         _notificationTimer = new PeriodicTimer(TimeSpan.FromMinutes(1));
         try
         {
@@ -722,7 +791,12 @@
     /// </summary>
     private void HandleNotificationChanged()
     {
-        _ = InvokeAsync(StateHasChanged);
+        _ = InvokeAsync(async () =>
+        {
+            // 強制刷新快取（RefreshIfNeededAsync 會看到 dirty flag 並查 DB）
+            try { await NotificationService.GetDueRemindersAsync(); } catch { }
+            StateHasChanged();
+        });
     }
 
     /// <summary>

@@ -4,6 +4,10 @@
 
 <div class="mt-2">
     <p class="text-muted mb-3">@L["ApprovalSettings.Description"]</p>
+    <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-sm btn-success" @onclick="EnableAll">@L["Button.EnableAll"]</button>
+        <button class="btn btn-sm btn-secondary" @onclick="DisableAll">@L["Button.DisableAll"]</button>
+    </div>
     <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 mb-3">
         @foreach (var setting in approvalSettings)
         {
@@ -40,6 +44,18 @@
     private List<ApprovalSettingItem> approvalSettings = new();
 
     private record ApprovalSettingItem(string Key, string Label, Func<bool> GetValue, Action<bool> SetValue);
+
+    private void EnableAll()
+    {
+        foreach (var setting in approvalSettings)
+            setting.SetValue(true);
+    }
+
+    private void DisableAll()
+    {
+        foreach (var setting in approvalSettings)
+            setting.SetValue(false);
+    }
 
     protected override void OnInitialized()
     {

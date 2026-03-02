@@ -14,13 +14,16 @@ namespace ERPCore2.Services
     public class RoleService : GenericManagementService<Role>, IRoleService
     {
         private readonly IPermissionService _permissionService;
+        private readonly INavigationPermissionService? _navigationPermissionService;
 
         public RoleService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<Role>> logger,
-            IPermissionService permissionService) : base(contextFactory, logger)
+            IPermissionService permissionService,
+            INavigationPermissionService navigationPermissionService) : base(contextFactory, logger)
         {
             _permissionService = permissionService;
+            _navigationPermissionService = navigationPermissionService;
         }
 
         public RoleService(IDbContextFactory<AppDbContext> contextFactory, IPermissionService permissionService) : base(contextFactory)
@@ -615,10 +618,11 @@ namespace ERPCore2.Services
                     .Select(e => e.Id)
                     .ToListAsync();
 
-                // 清除每個員工的權限快取
+                // 清除每個員工的權限快取（PermissionService + NavigationPermissionService 雙層快取）
                 foreach (var employeeId in employeeIds)
                 {
                     await _permissionService.RefreshEmployeePermissionCacheAsync(employeeId);
+                    _navigationPermissionService?.ClearEmployeePermissionCache(employeeId);
                 }
 
                 return ServiceResult.Success();

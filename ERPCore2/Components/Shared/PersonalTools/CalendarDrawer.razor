@@ -151,14 +151,68 @@
                     @foreach (var ev in dayEvents)
                     {
                         var evId = ev.Id;
-                        <div class="event-item event-color-@ev.Color.ToString().ToLower()">
-                            <div class="event-time">
-                                @(ev.EventTime.HasValue ? ev.EventTime.Value.ToString("HH:mm") : L["Calendar.AllDay"].ToString())
-                            </div>
-                            <div class="event-title">@ev.Title</div>
-                            <button class="event-delete-btn" @onclick="() => DeleteEvent(evId)" title="@L["Button.Delete"]">
-                                <span class="bi bi-trash3"></span>
-                            </button>
+                        <div class="event-item event-color-@ev.Color.ToString().ToLower() @(activeEditEventId == evId ? "editing" : "")"
+                             @onclick="() => ToggleEditEvent(ev)">
+
+                            @if (activeEditEventId == evId)
+                            {
+                                @* 行內編輯模式 *@
+                                <div class="event-edit-form" @onclick:stopPropagation>
+                                    <input type="text"
+                                           class="event-input"
+                                           placeholder="@L["Calendar.EventTitle"]"
+                                           @bind="editEventTitle"
+                                           maxlength="200" />
+                                    <div class="event-form-row">
+                                        <input type="date"
+                                               class="event-input"
+                                               value="@editEventDateStr"
+                                               @onchange="e => editEventDateStr = e.Value?.ToString() ?? string.Empty" />
+                                        <input type="time"
+                                               class="event-input"
+                                               value="@editEventTimeStr"
+                                               @onchange="e => editEventTimeStr = e.Value?.ToString() ?? string.Empty"
+                                               placeholder="@L["Calendar.AllDay"]" />
+                                    </div>
+                                    <div class="event-form-row">
+                                        <select class="event-input event-select"
+                                                @bind="editEventReminderMinutes">
+                                            <option value="-1">@L["Calendar.ReminderUseDefault"]</option>
+                                            <option value="0">@L["Preference.NoReminder"]</option>
+                                            <option value="5">@L["Preference.Reminder5"]</option>
+                                            <option value="15">@L["Preference.Reminder15"]</option>
+                                            <option value="30">@L["Preference.Reminder30"]</option>
+                                            <option value="60">@L["Preference.Reminder60"]</option>
+                                        </select>
+                                    </div>
+                                    <div class="event-form-row">
+                                        <div class="color-picker">
+                                            @foreach (var c in ColorOptions)
+                                            {
+                                                <button class="color-dot color-@c.Key.ToString().ToLower() @(editEventColor == c.Key ? "selected" : "")"
+                                                        @onclick="() => editEventColor = c.Key"
+                                                        title="@c.Value"></button>
+                                            }
+                                        </div>
+                                        <div class="edit-btn-group">
+                                            <button class="btn-delete" @onclick="() => DeleteEvent(evId)" title="@L["Button.Delete"]">
+                                                <span class="bi bi-trash3"></span>
+                                            </button>
+                                            <button class="btn-cancel" @onclick="CancelEditEvent">@L["Button.Cancel"]</button>
+                                            <button class="btn-save" @onclick="() => SaveEditEvent(evId)" disabled="@(string.IsNullOrWhiteSpace(editEventTitle))">@L["Button.Save"]</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                @* 預覽模式 *@
+                                <div class="event-time">
+                                    @(ev.EventTime.HasValue ? ev.EventTime.Value.ToString("HH:mm") : L["Calendar.AllDay"].ToString())
+                                </div>
+                                <div class="event-title">@ev.Title</div>
+                                <span class="bi bi-pencil-square event-edit-hint"></span>
+                            }
                         </div>
                     }
                 }
@@ -190,6 +244,14 @@
     private string newEventTimeStr = string.Empty;
     private CalendarEventColor newEventColor = CalendarEventColor.Blue;
     private int newEventReminderMinutes = -1; // -1 = 使用預設值
+
+    // 行內編輯
+    private int activeEditEventId = 0;
+    private string editEventTitle = string.Empty;
+    private string editEventDateStr = string.Empty;
+    private string editEventTimeStr = string.Empty;
+    private CalendarEventColor editEventColor = CalendarEventColor.Blue;
+    private int editEventReminderMinutes = -1;
 
     // 顏色選項
     private static readonly Dictionary<CalendarEventColor, string> ColorOptions = new()
@@ -262,6 +324,7 @@
     {
         selectedDate = date;
         isAddingEvent = false;
+        activeEditEventId = 0;
         newEventDateStr = date.ToString("yyyy-MM-dd");
         newEventTitle = string.Empty;
         newEventTimeStr = string.Empty;
@@ -335,8 +398,66 @@
         var result = await CalendarEventService.DeleteAsync(eventId, employeeId);
         if (result.IsSuccess)
         {
+            activeEditEventId = 0;
             NotificationService.InvalidateEvents();
             await LoadMonthEvents();
+        }
+    }
+
+    // ===== 行內編輯 =====
+
+    private void ToggleEditEvent(CalendarEvent ev)
+    {
+        if (activeEditEventId == ev.Id)
+        {
+            activeEditEventId = 0;
+            return;
+        }
+
+        isAddingEvent = false;
+        activeEditEventId = ev.Id;
+        editEventTitle = ev.Title;
+        editEventDateStr = ev.EventDate.ToString("yyyy-MM-dd");
+        editEventTimeStr = ev.EventTime?.ToString("HH:mm") ?? string.Empty;
+        editEventColor = ev.Color;
+        editEventReminderMinutes = ev.ReminderMinutes ?? -1;
+    }
+
+    private void CancelEditEvent()
+    {
+        activeEditEventId = 0;
+    }
+
+    private async Task SaveEditEvent(int eventId)
+    {
+        if (string.IsNullOrWhiteSpace(editEventTitle)) return;
+
+        if (!DateTime.TryParse(editEventDateStr, out var parsedDate)) return;
+        var date = DateOnly.FromDateTime(parsedDate);
+        TimeOnly? time = null;
+        if (!string.IsNullOrEmpty(editEventTimeStr) && TimeOnly.TryParse(editEventTimeStr, out var parsedTime))
+        {
+            time = parsedTime;
+        }
+
+        var reminderMinutes = editEventReminderMinutes == -1 ? (int?)null : editEventReminderMinutes;
+        var result = await CalendarEventService.UpdateAsync(eventId, employeeId, editEventTitle, date, time, editEventColor, reminderMinutes);
+        if (result.IsSuccess)
+        {
+            activeEditEventId = 0;
+            NotificationService.InvalidateEvents();
+
+            if (date.Month == currentDate.Month && date.Year == currentDate.Year)
+            {
+                await LoadMonthEvents();
+            }
+            else
+            {
+                currentDate = new DateOnly(date.Year, date.Month, 1);
+                selectedDate = date;
+                BuildCalendarCells();
+                await LoadMonthEvents();
+            }
         }
     }
 

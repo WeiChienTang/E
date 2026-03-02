@@ -21,7 +21,9 @@ PermissionRegistry.cs（靜態定義，開發者維護）
          │
          ├─── PermissionCheckMiddleware.cs ──→ 系統管理路由保護（Middleware 層）
          │
-         └─── 各頁面 RequiredPermission ──→ PagePermissionCheck 元件（頁面層）
+         ├─── 各頁面 RequiredPermission ──→ PagePermissionCheck 元件（頁面層）
+         │
+         └─── QuickActionModalHost.razor ──→ 快速功能 Modal 權限守衛（首頁層）
 ```
 
 ---
@@ -35,6 +37,8 @@ PermissionRegistry.cs（靜態定義，開發者維護）
 | `Services/Auth/PermissionCheckMiddleware.cs` | Middleware 層路由保護 |
 | `Data/Navigation/NavigationConfig.cs` | 導覽項目的權限宣告 |
 | `Components/Shared/UI/Auth/PagePermissionCheck.razor` | 頁面層權限遮罩元件 |
+| `Components/Shared/Dashboard/QuickActionModalHost.razor` | 首頁快速功能 Modal 權限守衛 |
+| `Services/Employees/RoleService.cs` | 角色權限指派，負責雙層快取清除 |
 
 ---
 
@@ -174,9 +178,62 @@ new NavigationItem
 
 ---
 
+## 權限快取機制
+
+### 雙層快取架構
+
+系統有兩個獨立的權限快取層，各自負責不同的查詢路徑：
+
+| 快取層 | 服務 | Cache Key | TTL | 清除方法 |
+|--------|------|-----------|-----|---------|
+| 第一層 | `PermissionService` | `employee_permissions_{id}` | 30 分鐘 | `RefreshEmployeePermissionCacheAsync(employeeId)` |
+| 第二層 | `NavigationPermissionService` | `all_nav_perms_{id}` | 10 分鐘 | `ClearEmployeePermissionCache(employeeId)` |
+| | | `is_superadmin_{id}` | 10 分鐘 | （同上，一起清除） |
+
+`PagePermissionCheck` 元件（頁面層）呼叫的是 **第二層**（`NavigationPermissionService.CanAccessAsync`）。
+
+### 快取清除時機
+
+`RoleService.AssignPermissionsToRoleAsync` 儲存角色權限後，會透過 `ClearRoleEmployeePermissionCacheAsync` **同時清除兩層快取**：
+
+```csharp
+foreach (var employeeId in employeeIds)
+{
+    await _permissionService.RefreshEmployeePermissionCacheAsync(employeeId);      // 第一層
+    _navigationPermissionService?.ClearEmployeePermissionCache(employeeId);        // 第二層
+}
+```
+
+> **重要**：若只清除第一層快取，`PagePermissionCheck` 仍會讀取第二層的舊快取，導致角色權限修改後最長 10 分鐘內無法生效。
+
+---
+
+## 快速功能（QuickAction）權限保護
+
+`QuickActionModalHost.razor` 在首頁提供額外的 Modal 層權限守衛：
+
+### 保護機制
+
+`OnParametersSetAsync` 在預渲染每個 Modal 前，讀取 `_quickActionPermissions`（從 `NavigationConfig.GetQuickActionWidgetItems()` 衍生）進行權限檢查：
+
+```csharp
+// 有 RequiredPermission 的 QuickAction，未授權則不加入 _activeActionIds
+if (!await NavigationPermissionService.CanAccessAsync(perm))
+    continue;
+```
+
+未通過檢查的 Modal 不會被 DynamicComponent 渲染，`Open()` 也會同步拒絕開啟。
+
+### 多層防護
+
+即便 QuickActionModalHost 的守衛失效，每個 EditModal 仍透過 `GenericEditModalComponent` 內建的 `RequiredPermission` 參數作為最後一道防線（預設拒絕無 `System.Admin` 的使用者）。
+
+---
+
 ## 設計原則
 
 1. **單一來源**：所有權限 Code 只在 `PermissionRegistry.cs` 定義一次
 2. **編譯時期安全**：字串拼錯會產生編譯錯誤，而非靜默失效
 3. **自動同步**：新增權限後重啟即可，Seeder 負責補差異
 4. **僅追加**：Seeder 只新增不存在的 Code，不修改現有記錄，不影響已指派的角色權限
+5. **雙層快取同步清除**：`RoleService` 同時清除兩層快取，確保角色權限修改立即生效

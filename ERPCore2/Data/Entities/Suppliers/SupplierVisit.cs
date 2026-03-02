@@ -4,17 +4,17 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 客戶拜訪紀錄
+    /// 廠商拜訪紀錄
     /// </summary>
-    public class CustomerVisit : BaseEntity
+    public class SupplierVisit : BaseEntity
     {
-        /// <summary>所屬客戶 ID</summary>
-        [Required(ErrorMessage = "請選擇客戶")]
-        [Display(Name = "客戶")]
-        public int CustomerId { get; set; }
+        /// <summary>所屬廠商 ID</summary>
+        [Required(ErrorMessage = "請選擇廠商")]
+        [Display(Name = "廠商")]
+        public int SupplierId { get; set; }
 
-        /// <summary>所屬客戶</summary>
-        public Customer? Customer { get; set; }
+        /// <summary>所屬廠商</summary>
+        public Supplier? Supplier { get; set; }
 
         /// <summary>拜訪日期</summary>
         [Required(ErrorMessage = "請輸入拜訪日期")]

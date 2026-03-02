@@ -7,6 +7,10 @@
 
 <div class="mt-2">
     <p class="text-muted mb-3">@L["System.ModuleControlDesc"]</p>
+    <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-sm btn-success" disabled="@(isModuleSaving || IsDisabled)" @onclick="EnableAll">@L["Button.EnableAll"]</button>
+        <button class="btn btn-sm btn-secondary" disabled="@(isModuleSaving || IsDisabled)" @onclick="DisableAll">@L["Button.DisableAll"]</button>
+    </div>
     <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 mb-3">
         @foreach (var module in companyModules)
         {
@@ -46,6 +50,18 @@
 
     private List<CompanyModule> companyModules = new();
     private bool isModuleSaving = false;
+
+    private void EnableAll()
+    {
+        foreach (var module in companyModules)
+            module.IsEnabled = true;
+    }
+
+    private void DisableAll()
+    {
+        foreach (var module in companyModules)
+            module.IsEnabled = false;
+    }
 
     protected override async Task OnInitializedAsync()
     {

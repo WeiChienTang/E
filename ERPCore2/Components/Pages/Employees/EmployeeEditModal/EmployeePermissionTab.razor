@@ -1,0 +1,194 @@
+@* 員工權限 Tab - 唯讀顯示員工目前角色所擁有的權限 *@
+@inject IEmployeeService EmployeeService
+@inject IRoleService RoleService
+@inject IStringLocalizer<SharedResource> L
+
+@* ===== 目前角色 ===== *@
+<div class="mb-3 px-1 d-flex align-items-center gap-2">
+    <span class="fw-semibold text-secondary">
+        <i class="bi bi-person-badge me-1"></i>@L["Label.CurrentRole"]：
+    </span>
+    @if (currentRole != null)
+    {
+        <span class="badge bg-dark fs-6">@currentRole.Name</span>
+    }
+    else
+    {
+        <span class="text-muted fst-italic">-</span>
+    }
+</div>
+
+@if (currentRole == null)
+{
+    @* 未指派角色 *@
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-person-x d-block mb-2" style="font-size:2rem;"></i>
+        <span>@L["Message.NoRoleAssigned"]</span>
+    </div>
+}
+else
+{
+    @* ===== 一般權限區段 ===== *@
+    <div class="mb-4">
+        <div class="d-flex align-items-center gap-2 mb-2 px-1">
+            <h6 class="mb-0 fw-semibold text-secondary">
+                <i class="bi bi-shield me-1"></i>@L["Label.NormalPermissions"]
+            </h6>
+            <span class="badge bg-secondary">@normalPermissions.Count</span>
+        </div>
+
+        <InteractiveTableComponent TItem="Permission"
+                                  Items="@normalPermissions"
+                                  ColumnDefinitions="@GetPermissionColumnDefinitions()"
+                                  ShowHeader="true"
+                                  ShowRowNumbers="true"
+                                  IsStriped="true"
+                                  IsHoverable="true"
+                                  IsBordered="true"
+                                  IsReadOnly="true"
+                                  ShowBuiltInActions="false"
+                                  EnableAutoEmptyRow="false"
+                                  EmptyMessage="@L["Label.NoPermission"]" />
+    </div>
+
+    @* ===== 敏感權限區段 ===== *@
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-2 px-1">
+            <h6 class="mb-0 fw-semibold text-secondary">
+                <i class="bi bi-shield-exclamation me-1 text-warning"></i>@L["Label.SensitivePermissions"]
+            </h6>
+            <span class="badge bg-warning text-dark">@sensitivePermissions.Count</span>
+        </div>
+
+        <InteractiveTableComponent TItem="Permission"
+                                  Items="@sensitivePermissions"
+                                  ColumnDefinitions="@GetPermissionColumnDefinitions()"
+                                  ShowHeader="true"
+                                  ShowRowNumbers="true"
+                                  IsStriped="true"
+                                  IsHoverable="true"
+                                  IsBordered="true"
+                                  IsReadOnly="true"
+                                  ShowBuiltInActions="false"
+                                  EnableAutoEmptyRow="false"
+                                  EmptyMessage="@L["Label.NoPermission"]" />
+    </div>
+}
+
+@code {
+    [Parameter] public int? EmployeeId { get; set; }
+
+    private Role? currentRole = null;
+    private List<Permission> normalPermissions = new();
+    private List<Permission> sensitivePermissions = new();
+    private int? _lastLoadedEmployeeId;
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (EmployeeId.HasValue && EmployeeId != _lastLoadedEmployeeId)
+        {
+            _lastLoadedEmployeeId = EmployeeId;
+            await LoadAsync(EmployeeId.Value);
+        }
+        else if (!EmployeeId.HasValue && _lastLoadedEmployeeId.HasValue)
+        {
+            _lastLoadedEmployeeId = null;
+            Clear();
+        }
+    }
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    /// <summary>載入指定員工的角色與權限資料</summary>
+    public async Task LoadAsync(int employeeId)
+    {
+        _lastLoadedEmployeeId = employeeId;
+        try
+        {
+            var employee = await EmployeeService.GetByIdAsync(employeeId);
+            if (employee?.RoleId == null)
+            {
+                currentRole = null;
+                normalPermissions = new();
+                sensitivePermissions = new();
+                StateHasChanged();
+                return;
+            }
+
+            currentRole = await RoleService.GetByIdAsync(employee.RoleId.Value);
+            if (currentRole == null)
+            {
+                normalPermissions = new();
+                sensitivePermissions = new();
+                StateHasChanged();
+                return;
+            }
+
+            var activePermissions = currentRole.RolePermissions
+                .Where(rp => rp.Status == EntityStatus.Active && rp.Permission != null)
+                .Select(rp => rp.Permission!)
+                .ToList();
+
+            normalPermissions = activePermissions
+                .Where(p => p.Level == PermissionLevel.Normal)
+                .OrderBy(p => p.Name)
+                .ToList();
+
+            sensitivePermissions = activePermissions
+                .Where(p => p.Level == PermissionLevel.Sensitive)
+                .OrderBy(p => p.Name)
+                .ToList();
+        }
+        catch (Exception)
+        {
+            currentRole = null;
+            normalPermissions = new();
+            sensitivePermissions = new();
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>清除資料（切換至新增模式時使用）</summary>
+    public void Clear()
+    {
+        currentRole = null;
+        normalPermissions = new();
+        sensitivePermissions = new();
+        StateHasChanged();
+    }
+
+    // ===== 欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetPermissionColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = L["Column.PermissionName"],
+                PropertyName = nameof(Permission.Name),
+                ColumnType = InteractiveColumnType.Display,
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Column.PermissionLevel"],
+                PropertyName = nameof(Permission.Level),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px",
+                DisplayFormatter = item =>
+                {
+                    if (item is Permission p)
+                        return p.Level == PermissionLevel.Normal
+                            ? L["Permission.Normal"].ToString()
+                            : L["Permission.Sensitive"].ToString();
+                    return "-";
+                }
+            }
+        };
+    }
+}

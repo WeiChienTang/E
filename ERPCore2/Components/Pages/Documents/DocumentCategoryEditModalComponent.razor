@@ -74,22 +74,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(DocumentCategory.Source),
-                    Label = L["Field.DocumentSource"],
-                    FieldType = FormFieldType.Select,
-                    IsRequired = true,
-                    Options = new List<SelectOption>
-                    {
-                        new() { Value = "1", Text = L["Label.DocumentSource.Government"] },
-                        new() { Value = "2", Text = L["Label.DocumentSource.Vendor"] },
-                        new() { Value = "3", Text = L["Label.DocumentSource.Customer"] },
-                        new() { Value = "4", Text = L["Label.DocumentSource.Internal"] },
-                        new() { Value = "99", Text = L["Label.DocumentSource.Other"] }
-                    },
-                    HelpText = "文件的來源分類"
-                },
-                new()
-                {
                     PropertyName = nameof(DocumentCategory.DefaultAccessLevel),
                     Label = L["Field.DefaultAccessLevel"],
                     FieldType = FormFieldType.Select,
@@ -108,7 +92,6 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     c => c.Code,
                     c => c.Name,
-                    c => c.Source,
                     c => c.DefaultAccessLevel)
                 .AddToSection(FormSectionNames.AdditionalData,
                     c => c.Remarks)

@@ -652,6 +652,7 @@
   <data name="Entity.SalesReturnReason" xml:space="preserve"><value>返品理由</value></data>
   <data name="Entity.Customer" xml:space="preserve"><value>得意先</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>訪問記録</value></data>
+  <data name="Entity.SupplierVisit" xml:space="preserve"><value>仕入先訪問記録</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>仕入先</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>商品</value></data>
   <data name="Entity.ProductCategory" xml:space="preserve"><value>商品カテゴリ</value></data>
@@ -862,6 +863,7 @@
   <data name="Tab.VehicleInfo" xml:space="preserve"><value>車両情報</value></data>
   <data name="Tab.PersonalTools" xml:space="preserve"><value>個人工具</value></data>
   <data name="Tab.Training" xml:space="preserve"><value>教育訓練</value></data>
+  <data name="Tab.Permissions" xml:space="preserve"><value>権限</value></data>
   <!-- ===== Employee Label keys ===== -->
   <data name="Label.TrainingRecords" xml:space="preserve"><value>受講記録</value></data>
   <data name="Label.LicenseManagement" xml:space="preserve"><value>資格管理</value></data>
@@ -869,6 +871,9 @@
   <data name="Label.Valid" xml:space="preserve"><value>有効</value></data>
   <data name="Label.Expired" xml:space="preserve"><value>期限切れ</value></data>
   <data name="Label.ExpiringSoon" xml:space="preserve"><value>もうすぐ期限切れ</value></data>
+  <data name="Label.CurrentRole" xml:space="preserve"><value>現在の役割</value></data>
+  <data name="Label.NormalPermissions" xml:space="preserve"><value>通常の権限</value></data>
+  <data name="Label.SensitivePermissions" xml:space="preserve"><value>機密の権限</value></data>
   <!-- ===== Employee Button keys ===== -->
   <data name="Button.AddTrainingRecord" xml:space="preserve"><value>受講記録追加</value></data>
   <data name="Button.AddLicense" xml:space="preserve"><value>資格追加</value></data>
@@ -877,6 +882,7 @@
   <data name="Message.NoTrainingRecords" xml:space="preserve"><value>受講記録なし</value></data>
   <data name="Message.NoLicenseRecords" xml:space="preserve"><value>資格記録なし</value></data>
   <data name="Message.NoToolRecords" xml:space="preserve"><value>工具貸出記録なし</value></data>
+  <data name="Message.NoRoleAssigned" xml:space="preserve"><value>この従業員に役割が割り当てられていません。権限を表示できません。</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>例：合格、優秀、不合格</value></data>
   <!-- ===== Vehicle Button/Message keys ===== -->
@@ -1730,6 +1736,7 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>顧客分析チャート</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>訪問記録がありません</value></data>
+  <data name="Supplier.NoVisits" xml:space="preserve"><value>訪問記録がありません</value></data>
   <data name="Customer.NetSales" xml:space="preserve"><value>純売上</value></data>
   <data name="Customer.Delivery" xml:space="preserve"><value>出荷</value></data>
   <data name="Customer.Deliveries" xml:space="preserve"><value>出荷伝票</value></data>
@@ -1762,6 +1769,7 @@
   <data name="Column.Select" xml:space="preserve"><value>選択</value></data>
   <data name="Column.PermissionName" xml:space="preserve"><value>権限名</value></data>
   <data name="Column.PermissionCode" xml:space="preserve"><value>権限コード</value></data>
+  <data name="Column.PermissionLevel" xml:space="preserve"><value>レベル</value></data>
 
   <!-- ===== VisitType 訪問方法 ===== -->
   <data name="VisitType.Phone" xml:space="preserve"><value>電話</value></data>
@@ -1776,6 +1784,8 @@
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>削除確認</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>明細をクリア</value></data>
   <data name="Button.DisableAccount" xml:space="preserve"><value>アカウント無効化</value></data>
+  <data name="Button.EnableAll" xml:space="preserve"><value>すべて有効</value></data>
+  <data name="Button.DisableAll" xml:space="preserve"><value>すべて無効</value></data>
   <data name="Button.OpenEdit" xml:space="preserve"><value>編集を開く</value></data>
   <data name="Button.Copy" xml:space="preserve"><value>コピー</value></data>
   <data name="Button.SelectAll" xml:space="preserve"><value>全選択</value></data>
@@ -1836,6 +1846,8 @@
   <data name="Employee.RoleRequiredHint" xml:space="preserve"><value>この従業員のシステム操作権限を設定します（アカウントがある場合は必須）</value></data>
 
   <!-- ===== Permission 権限管理（新規） ===== -->
+  <data name="Permission.Normal" xml:space="preserve"><value>一般</value></data>
+  <data name="Permission.Sensitive" xml:space="preserve"><value>機密</value></data>
   <data name="Permission.RoleManagement" xml:space="preserve"><value>権限グループ管理</value></data>
   <data name="Permission.NotCreated" xml:space="preserve"><value>権限グループがまだ作成されていません</value></data>
   <data name="Permission.AdminHasAll" xml:space="preserve"><value>管理者権限グループはすべての権限を持っています。</value></data>
@@ -2782,6 +2794,8 @@
   <data name="Message.AtLeastOneFile" xml:space="preserve"><value>少なくとも1つの添付ファイルが必要です</value></data>
   <!-- ===== 通知設定 ===== -->
   <data name="Preference.Notifications" xml:space="preserve"><value>通知設定</value></data>
+  <data name="Preference.EnableCalendar" xml:space="preserve"><value>カレンダーを有効化</value></data>
+  <data name="Preference.EnableStickyNote" xml:space="preserve"><value>付箋を有効化</value></data>
   <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>カレンダーバッジを表示</value></data>
   <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>メモバッジを表示</value></data>
   <data name="Preference.DefaultReminder" xml:space="preserve"><value>既定リマインダー時間</value></data>

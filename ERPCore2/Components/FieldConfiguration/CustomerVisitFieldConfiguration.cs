@@ -109,18 +109,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(CustomerVisit.Purpose), v => v.Purpose, allowNull: true)
                         }
-                    },
-                    {
-                        nameof(CustomerVisit.Result),
-                        new FieldDefinition<CustomerVisit>
-                        {
-                            PropertyName = nameof(CustomerVisit.Result),
-                            DisplayName = Dn("Field.VisitResult", "結果摘要"),
-                            ShowInFilter = false,
-                            TableOrder = 6,
-                            NullDisplayText = "-",
-                            FilterFunction = (model, query) => query
-                        }
                     }
                 };
             }

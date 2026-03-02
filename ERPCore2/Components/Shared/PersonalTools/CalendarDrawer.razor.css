@@ -319,6 +319,52 @@
     border-left: 3px solid transparent;
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.event-item:hover {
+    background-color: var(--bg-primary);
+}
+
+.event-item.editing {
+    flex-direction: column;
+    align-items: stretch;
+    cursor: default;
+}
+
+.event-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.event-edit-hint {
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition: opacity 0.15s;
+    margin-left: auto;
+}
+
+.event-item:hover .event-edit-hint {
+    opacity: 1;
+}
+
+.btn-delete {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 13px;
+    border-radius: 4px;
+    transition: color 0.15s;
+}
+
+.btn-delete:hover {
+    color: #ef4444;
 }
 
 .event-item.event-color-yellow { border-left-color: #eab308; }
