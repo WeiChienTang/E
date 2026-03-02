@@ -150,7 +150,9 @@ else
                 background:#1a1a2e; color:#7ec8e3; font-size:0.7rem;
                 font-family:monospace; padding:0.25rem 0.6rem;
                 border-radius:4px; border:1px solid #30363d;
-                pointer-events:none; letter-spacing:0.03em; opacity:0.85;">
+                cursor:pointer; letter-spacing:0.03em; opacity:0.85; user-select:text;"
+         title="點擊複製頁面名稱"
+         @onclick="CopyDebugPageNameAsync">
         🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong> | @DebugPageName
     </div>
 }
@@ -316,6 +318,15 @@ else
 
     // ===== 內建導航方法 =====
     
+    /// <summary>
+    /// 複製 Debug 頁面名稱到剪貼簿（方式二：點擊 Debug Badge）
+    /// </summary>
+    private async Task CopyDebugPageNameAsync()
+    {
+        if (!string.IsNullOrEmpty(DebugPageName))
+            await JSRuntime.InvokeVoidAsync("DebugHelper.copyText", DebugPageName);
+    }
+
     private async Task HandleAddClick()
     {
         // 先執行外部提供的事件處理

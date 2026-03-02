@@ -1,6 +1,5 @@
 ﻿@page "/products"
 @using ERPCore2.Models
-@using ERPCore2.Models.Reports
 @inject IProductService ProductService
 @inject ISizeService SizeService
 @rendermode InteractiveServer
@@ -22,8 +21,6 @@
                           GetEntityDisplayName="@(product => product.Name)"
                           RequiredPermission="@PermissionRegistry.Product.Read"
                           RequiredModule="Products"
-                          ShowBarcodePrintButton="true"
-                          OnBarcodePrintClick="@HandleBarcodePrintClick"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           DebugPageName="ProductIndex"
@@ -37,12 +34,6 @@
                           OnProductSaved="@modalHandler.OnEntitySavedAsync"
                           OnCancel="@modalHandler.OnModalCancelAsync" />
 
-@* 條碼列印 Modal - 使用 GenericReportFilterModalComponent 統一架構 *@
-<GenericReportFilterModalComponent IsVisible="@showBarcodePrintModal"
-                                  IsVisibleChanged="@((bool visible) => showBarcodePrintModal = visible)"
-                                  ReportId="@ReportIds.ProductBarcode"
-                                  OnPrintSuccess="@HandleBarcodePrintSuccess" />
-
 @code {
     // 組件參考
     private GenericIndexPageComponent<Product, IProductService> indexComponent = default!;
@@ -50,7 +41,6 @@
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingProductId = null;
-    private bool showBarcodePrintModal = false;
     
     // Modal 處理器
     private ModalHandler<Product, GenericIndexPageComponent<Product, IProductService>> modalHandler = default!;
@@ -159,27 +149,5 @@
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyProductFilters), GetType());
     }
-    
-    // ===== 條碼列印相關方法 =====
-    
-    private void HandleBarcodePrintClick()
-    {
-        showBarcodePrintModal = true;
-        StateHasChanged();
-    }
-    
-    /// <summary>
-    /// 處理條碼列印成功回呼
-    /// </summary>
-    private async Task HandleBarcodePrintSuccess()
-    {
-        try
-        {
-            await NotificationService.ShowSuccessAsync("已開啟條碼列印視窗");
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBarcodePrintSuccess), GetType(), additionalData: "列印成功回呼處理失敗");
-        }
-    }
 }
+

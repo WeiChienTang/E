@@ -892,6 +892,7 @@
     /// </summary>
     public async Task RefreshEntityAsync()
     {
+        ConsoleHelper.WriteDebug($"RefreshEntityAsync called. Entity.Id={Entity?.Id}, DataLoader={DataLoader != null}");
         if (DataLoader != null && Entity != null && Entity.Id > 0)
         {
             var reloadedEntity = await DataLoader();
@@ -900,8 +901,17 @@
                 Entity = reloadedEntity;
                 editContext = new EditContext(Entity);
                 await LoadStatusMessageData(); // 重新載入狀態訊息
+                ConsoleHelper.WriteDebug($"RefreshEntityAsync: Entity updated, calling StateHasChanged");
                 StateHasChanged();
             }
+            else
+            {
+                ConsoleHelper.WriteWarning($"RefreshEntityAsync: DataLoader returned null!");
+            }
+        }
+        else
+        {
+            ConsoleHelper.WriteWarning($"RefreshEntityAsync: skipped — DataLoader={DataLoader != null}, Entity={Entity?.Id}");
         }
     }
     
@@ -1254,17 +1264,22 @@
             IsApproving = true;
             StateHasChanged();
 
+            ConsoleHelper.WriteDebug($"HandleApproveConfirm: calling OnApprove...");
             var success = await OnApprove();
-            
+            ConsoleHelper.WriteDebug($"HandleApproveConfirm: OnApprove returned success={success}");
+
             if (success)
             {
                 await ShowSuccessMessage("審核通過");
-                
+
                 // 重新載入實體資料以確保狀態同步
+                ConsoleHelper.WriteDebug($"HandleApproveConfirm: calling RefreshEntityAsync...");
                 await RefreshEntityAsync();
+                ConsoleHelper.WriteDebug($"HandleApproveConfirm: RefreshEntityAsync complete.");
             }
             else
             {
+                ConsoleHelper.WriteWarning($"HandleApproveConfirm: OnApprove returned false — NOT calling RefreshEntityAsync");
                 await ShowErrorMessage("審核通過失敗");
             }
         }

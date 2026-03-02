@@ -438,9 +438,14 @@ namespace ERPCore2.Services
                     order.UpdatedAt = DateTime.Now;
                     // TODO: 根據當前登入使用者設置 UpdatedBy
                     // order.UpdatedBy = currentUser.Name;
-                    
+
+                    ConsoleHelper.WriteTitle($"ApproveOrderAsync: saving orderId={orderId}");
+                    ConsoleHelper.WriteDebug($"Setting ApprovedBy={order.ApprovedBy}, ApprovedAt={order.ApprovedAt:yyyy-MM-dd HH:mm}, IsApproved={order.IsApproved}");
+
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
+
+                    ConsoleHelper.WriteSuccess($"ApproveOrderAsync: committed successfully");
                     return ServiceResult.Success();
                 }
                 catch

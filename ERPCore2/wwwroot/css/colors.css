@@ -224,9 +224,67 @@
 html.debug-props .field-debug-name {
   display: inline;
   color: #f8c8a0;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 html.debug-i18n .field-debug-i18n {
   display: inline;
   color: #90ee90;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* ── Debug 方式五：InteractiveTableComponent 欄位標頭 Debug 標記 ── */
+/* col-debug-name (橘色) 和 col-debug-i18n (綠色) 預設隱藏，快捷鍵切換後顯示 */
+.col-debug-name,
+.col-debug-i18n {
+  display: none;
+  font-size: 0.55rem;
+  font-family: monospace;
+  padding: 0 0.25rem;
+  border-radius: 3px;
+  margin-left: 0.25rem;
+  vertical-align: middle;
+  background: #1a1a2e;
+  border: 1px solid #30363d;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  user-select: none;
+}
+
+html.debug-props .col-debug-name {
+  display: inline;
+  color: #f8c8a0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+html.debug-i18n .col-debug-i18n {
+  display: inline;
+  color: #90ee90;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* 方式五：表格名稱 Badge（預設隱藏）*/
+.table-debug-name {
+  display: none;
+  font-size: 0.6rem;
+  font-family: monospace;
+  color: #7ec8e3;
+  background: #1a1a2e;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  margin-bottom: 0.25rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+html.debug-props .table-debug-name,
+html.debug-i18n .table-debug-name {
+  display: block;
+  pointer-events: auto;
+  cursor: pointer;
 }

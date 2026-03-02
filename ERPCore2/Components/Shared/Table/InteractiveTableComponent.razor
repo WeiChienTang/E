@@ -8,6 +8,10 @@
 @typeparam TItem
 
 <div class="table-responsive table-container-hover interactive-table-container">
+    @if (!string.IsNullOrEmpty(DebugTableName))
+    {
+        <div class="table-debug-name">@DebugTableName</div>
+    }
     <table class="table @GetTableClass() interactive-table">
         @if (ShowHeader && ColumnDefinitions != null && ColumnDefinitions.Any())
         {
@@ -51,6 +55,11 @@
                             @if (column.IsRequired)
                             {
                                 <span class="text-danger ms-1">*</span>
+                            }
+                            @if (!string.IsNullOrEmpty(column.PropertyName))
+                            {
+                                <span class="col-debug-name">@column.PropertyName</span>
+                                <span class="col-debug-i18n">Column.@column.PropertyName</span>
                             }
                         </th>
                     }
@@ -544,6 +553,9 @@
 
     // 資料變更通知（任何儲存格編輯、刪除、拖放後觸發，供父元件做 dirty 標記用）
     [Parameter] public EventCallback OnDataChanged { get; set; }
+
+    // Debug 輔助（方式五）：SuperAdmin 快捷鍵模式下顯示表格名稱，供開發者快速識別組件來源
+    [Parameter] public string? DebugTableName { get; set; }
     #endregion
 
     #region 私有欄位

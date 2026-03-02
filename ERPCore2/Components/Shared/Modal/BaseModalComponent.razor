@@ -139,7 +139,9 @@
                 @if (_isSuperAdmin && !string.IsNullOrEmpty(DebugComponentName))
                 {
                     <div class="px-3 py-1 border-top"
-                         style="background:#1a1a2e; color:#7ec8e3; font-size:0.7rem; font-family:monospace; letter-spacing:0.03em;">
+                         style="background:#1a1a2e; color:#7ec8e3; font-size:0.7rem; font-family:monospace; letter-spacing:0.03em; cursor:pointer; user-select:text;"
+                         title="點擊複製組件名稱"
+                         @onclick="CopyDebugComponentNameAsync">
                         🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong> | @DebugComponentName
                     </div>
                 }
@@ -700,6 +702,15 @@
         };
     }
     
+    /// <summary>
+    /// 複製 Debug 組件名稱到剪貼簿（方式一：點擊 Debug Bar）
+    /// </summary>
+    private async Task CopyDebugComponentNameAsync()
+    {
+        if (!string.IsNullOrEmpty(DebugComponentName))
+            await JSRuntime.InvokeVoidAsync("DebugHelper.copyText", DebugComponentName);
+    }
+
     /// <summary>
     /// 記錄錯誤
     /// </summary>

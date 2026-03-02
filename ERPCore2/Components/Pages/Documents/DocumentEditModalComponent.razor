@@ -31,34 +31,10 @@
     <CustomFormContent>
         @* 附件檔案區域 *@
         <div class="col-12 mt-3">
-            <div class="fw-semibold mb-2">
-                @L["Document.AttachmentFiles"]
-                <span class="text-danger ms-1">*</span>
-            </div>
-
-            <InputFile OnChange="@HandleFilesSelected"
-                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                       multiple
-                       class="form-control" />
-            <div class="form-text mb-2">@L["Document.SupportedFormats"]</div>
-
-            @if (!string.IsNullOrEmpty(fileError))
-            {
-                <div class="text-danger small mb-2">@fileError</div>
-            }
-
-            <InteractiveTableComponent TItem="DocumentFileViewModel"
-                                      Items="@fileViewModels"
-                                      ColumnDefinitions="@GetFileColumnDefinitions()"
-                                      ShowRowNumbers="true"
-                                      IsReadOnly="false"
-                                      ShowActions="true"
-                                      ActionsTemplate="@GetFileActionsTemplate"
-                                      ActionsColumnWidth="100px"
-                                      EmptyMessage="@L["Document.NoAttachments"]"
-                                      IsStriped="false"
-                                      GetRowCssClass="@((item, idx) => item.IsDeleted ? "table-danger text-muted" : "")"
-                                      EnableAutoEmptyRow="false" />
+            <DocumentFileTable Items="@fileViewModels"
+                               FileError="@fileError"
+                               OnFilesSelected="@HandleFilesSelected"
+                               OnRemoveFile="@RemoveFile" />
         </div>
     </CustomFormContent>
 </GenericEditModalComponent>
@@ -81,76 +57,6 @@
 
     // 下拉選項
     private List<SelectOption> categoryOptions = new();
-
-    // 附件 ViewModel（橋接 IBrowserFile 與已儲存的 DocumentFile）
-    private class DocumentFileViewModel
-    {
-        public int? Id { get; set; }
-        public string DisplayName { get; set; } = string.Empty;
-        public string FileName { get; set; } = string.Empty;
-        public string? FilePath { get; set; }
-        public long FileSize { get; set; }
-        public string? MimeType { get; set; }
-        public IBrowserFile? PendingFile { get; set; }
-        public bool IsDeleted { get; set; }
-        public int SortOrder { get; set; }
-        public bool IsPending => PendingFile != null;
-    }
-
-    private List<InteractiveColumnDefinition> GetFileColumnDefinitions() => new()
-    {
-        new()
-        {
-            PropertyName = nameof(DocumentFileViewModel.DisplayName),
-            Title = L["Field.FileDisplayName"],
-            ColumnType = InteractiveColumnType.Input,
-            Placeholder = L["Field.FileDisplayName"],
-            Width = "200px",
-            IsReadOnly = false
-        },
-        new()
-        {
-            PropertyName = nameof(DocumentFileViewModel.FileName),
-            Title = L["Field.FileName"],
-            ColumnType = InteractiveColumnType.Display,
-            Width = "200px"
-        },
-        new()
-        {
-            PropertyName = nameof(DocumentFileViewModel.FileSize),
-            Title = L["Field.FileSize"],
-            ColumnType = InteractiveColumnType.Display,
-            DisplayFormatter = obj =>
-            {
-                var vm = obj as DocumentFileViewModel;
-                if (vm == null) return "-";
-                var size = FileUploadHelper.GetFileSizeString(vm.FileSize);
-                return vm.IsPending ? $"{size} ({L["Label.PendingUpload"]})" : size;
-            },
-            Width = "100px",
-            TextAlign = "right"
-        }
-    };
-
-    private RenderFragment<DocumentFileViewModel> GetFileActionsTemplate => item => __builder =>
-    {
-        if (!item.IsDeleted)
-        {
-            if (!item.IsPending && !string.IsNullOrEmpty(item.FilePath))
-            {
-                <a href="@item.FilePath" download="@item.FileName"
-                   class="btn btn-sm btn-outline-secondary me-1"
-                   title="@L["Button.Download"]">
-                    <i class="bi bi-download"></i>
-                </a>
-            }
-            <button type="button" class="btn btn-sm btn-outline-danger"
-                    title="@L["Button.Delete"]"
-                    @onclick="() => RemoveFile(item)">
-                <i class="bi bi-trash"></i>
-            </button>
-        }
-    };
 
     protected override void OnParametersSet()
     {

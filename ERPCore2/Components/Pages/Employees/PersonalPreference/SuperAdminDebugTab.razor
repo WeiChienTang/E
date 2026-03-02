@@ -23,7 +23,7 @@
         <div class="shortcut-row shortcut-row--fixed">
             <div class="shortcut-label">
                 <span>方式四：PropertyName 顯示</span>
-                <small class="text-muted ms-2">在表單欄位 Label 旁顯示 C# 屬性名稱</small>
+                <small class="text-muted ms-2">在表單欄位 Label 旁顯示 C# 屬性名稱；同時在表格欄位標頭顯示欄位 PropertyName</small>
             </div>
             <div class="shortcut-display">
                 <div class="shortcut-keys-display">
@@ -41,7 +41,7 @@
         <div class="shortcut-row shortcut-row--fixed">
             <div class="shortcut-label">
                 <span>方式三：i18n Key 顯示</span>
-                <small class="text-muted ms-2">在表單欄位 Label 旁顯示推斷的資源鍵（Field.PropertyName），慣例推斷，非 100% 準確</small>
+                <small class="text-muted ms-2">在表單欄位 Label 旁顯示推斷的資源鍵（Field.PropertyName）；同時在表格欄位標頭顯示慣例 i18n 鍵（Column.PropertyName）</small>
             </div>
             <div class="shortcut-display">
                 <div class="shortcut-keys-display">
@@ -51,6 +51,22 @@
             <div class="shortcut-actions">
                 <span class="debug-color-badge" style="color:#90ee90;">
                     <span class="debug-color-dot" style="background:#90ee90;"></span>綠色
+                </span>
+            </div>
+        </div>
+
+        @* 方式五：InteractiveTableComponent 表格名稱 Badge *@
+        <div class="shortcut-row shortcut-row--fixed">
+            <div class="shortcut-label">
+                <span>方式五：表格名稱 Badge</span>
+                <small class="text-muted ms-2">方式三或方式四啟用時，在每個表格上方顯示 DebugTableName（藍色），點擊複製</small>
+            </div>
+            <div class="shortcut-display">
+                <span class="text-muted small fst-italic">隨三/四顯示</span>
+            </div>
+            <div class="shortcut-actions">
+                <span class="debug-color-badge" style="color:#7ec8e3;">
+                    <span class="debug-color-dot" style="background:#7ec8e3;"></span>藍色
                 </span>
             </div>
         </div>
