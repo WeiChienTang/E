@@ -7,6 +7,7 @@
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="PurchaseOrder" 
@@ -188,16 +189,14 @@
     {
         try
         {
-            order.IsApproved = true;
-            order.ApprovedAt = DateTime.Now;
-            // TODO: 設定 ApprovedBy 為當前使用者
-            
-            await PurchaseOrderService.UpdateAsync(order);
-            return true;
+            var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!userId.HasValue) return false;
+            var result = await PurchaseOrderService.ApproveOrderAsync(order.Id, userId.Value);
+            return result.IsSuccess;
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveSinglePurchaseOrderAsync), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveSinglePurchaseOrderAsync), GetType(),
                 additionalData: new { OrderId = order.Id, OrderNumber = order.Code });
             return false;
         }
@@ -208,27 +207,20 @@
     /// </summary>
     private async Task<(int successCount, int failCount)> ApproveAllPurchaseOrdersAsync(List<PurchaseOrder> orders)
     {
-        int successCount = 0;
-        int failCount = 0;
-
+        int successCount = 0, failCount = 0;
+        var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+        if (!userId.HasValue) return (0, orders.Count);
         foreach (var order in orders)
         {
             try
             {
-                if (!order.IsApproved)
-                {
-                    order.IsApproved = true;
-                    order.ApprovedAt = DateTime.Now;
-                    // TODO: 設定 ApprovedBy 為當前使用者
-                    
-                    await PurchaseOrderService.UpdateAsync(order);
-                    successCount++;
-                }
+                var result = await PurchaseOrderService.ApproveOrderAsync(order.Id, userId.Value);
+                if (result.IsSuccess) successCount++; else failCount++;
             }
             catch (Exception ex)
             {
                 failCount++;
-                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveAllPurchaseOrdersAsync), GetType(), 
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveAllPurchaseOrdersAsync), GetType(),
                     additionalData: new { OrderId = order.Id, OrderNumber = order.Code });
             }
         }

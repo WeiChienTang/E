@@ -70,15 +70,13 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
 
 | 模組 | 實體欄位 | EditModal UI | Service方法 | 批次審核 | Index狀態欄 |
 |------|---------|-------------|------------|---------|------------|
-| 報價單 | ✅ | ✅ 完整 | ❌（用 UpdateAsync） | ✅ QuotationIndex | ❌ |
-| 採購訂單 | ✅ | ✅ 完整 | ✅ ApproveOrderAsync | ✅ PurchaseOrderIndex | ❌ |
-| **進貨單** | ✅ | ✅ 完整 | ✅ ApproveAsync | ❌ | ❌ |
-| **進貨退回** | ✅ | ✅ 完整 | ✅ ApproveAsync | ❌ | ❌ |
-| **銷售訂單** | ✅ | ✅ 完整 | ✅ ApproveAsync | ❌ | ❌ |
-| **銷貨出貨** | ✅ | ✅ 完整 | ✅ ApproveAsync | ❌ | ❌ |
-| **銷貨退回** | ✅ | ✅ 完整 | ✅ ApproveAsync | ❌ | ❌ |
-
-> **粗體**：本輪（2026-03-02）完成。
+| 報價單 | ✅ | ✅ 完整 | ✅ ApproveAsync | ✅ QuotationIndex | ✅ |
+| 採購訂單 | ✅ | ✅ 完整 | ✅ ApproveOrderAsync | ✅ PurchaseOrderIndex | ✅ |
+| 進貨單 | ✅ | ✅ 完整 | ✅ ApproveAsync | ✅ | ✅ |
+| 進貨退回 | ✅ | ✅ 完整 | ✅ ApproveAsync | ✅ | ✅ |
+| 銷售訂單 | ✅ | ✅ 完整 | ✅ ApproveAsync | ✅ | ✅ |
+| 銷貨出貨 | ✅ | ✅ 完整 | ✅ ApproveAsync | ✅ | ✅ |
+| 銷貨退回 | ✅ | ✅ 完整 | ✅ ApproveAsync | ✅ | ✅ |
 
 **SystemParameter 審核開關現況**
 
@@ -145,7 +143,7 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
 
 ### Q: 開啟審核後，歷史資料 IsApproved = false 怎麼辦？
 
-欄位仍可編輯，但轉單/列印需先手動核准。批次核准請使用各模組 Index 的「批次審核」按鈕（報價單、採購訂單已有；其他 5 個模組待實作）。
+欄位仍可編輯，但轉單/列印需先手動核准。批次核准請使用各模組 Index 的「批次審核」按鈕（報價單、採購訂單、進貨單、進貨退回、銷售訂單、銷貨出貨、銷貨退回均已實作）。
 
 ### Q: 核准後發現資料有誤？
 

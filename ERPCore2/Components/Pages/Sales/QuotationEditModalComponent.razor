@@ -1304,17 +1304,19 @@
                 return false;
             }
 
-            // 更新審核狀態
-            quotation.IsApproved = true;
-            quotation.ApprovedBy = currentUserId.Value;
-            quotation.ApprovedAt = DateTime.Now;
-            quotation.RejectReason = null; // 清除駁回原因
-
-            // 儲存
-            var result = await QuotationService.UpdateAsync(quotation);
-            if (!result.IsSuccess)
+            // 先儲存主檔與明細（含金額計算）
+            var saveResult = await SaveQuotationWithDetails(quotation);
+            if (!saveResult)
             {
-                await NotificationService.ShowErrorAsync($"審核失敗：{result.ErrorMessage}");
+                await NotificationService.ShowErrorAsync("審核前儲存失敗，請確認資料後再試");
+                return false;
+            }
+
+            // 呼叫 ApproveAsync 設定審核欄位
+            var approveResult = await QuotationService.ApproveAsync(QuotationId.Value, currentUserId.Value);
+            if (!approveResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync($"審核失敗：{approveResult.ErrorMessage}");
                 return false;
             }
 
@@ -1365,14 +1367,8 @@
                 return false;
             }
 
-            // 更新駁回狀態
-            quotation.IsApproved = false;
-            quotation.ApprovedBy = currentUserId.Value;
-            quotation.ApprovedAt = DateTime.Now;
-            quotation.RejectReason = rejectReason;
-
-            // 儲存
-            var result = await QuotationService.UpdateAsync(quotation);
+            // 呼叫 RejectAsync 清空審核欄位並記錄駁回原因
+            var result = await QuotationService.RejectAsync(QuotationId.Value, currentUserId.Value, rejectReason);
             if (!result.IsSuccess)
             {
                 await NotificationService.ShowErrorAsync($"駁回失敗：{result.ErrorMessage}");

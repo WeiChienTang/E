@@ -1657,6 +1657,32 @@
   <data name="QuickAction.SettingsTitle" xml:space="preserve"><value>快速設定</value></data>
   <data name="QuickAction.About" xml:space="preserve"><value>關於</value></data>
   <data name="QuickAction.AboutTitle" xml:space="preserve"><value>關於本系統</value></data>
+  <data name="QuickAction.StickyNotes" xml:space="preserve"><value>便條貼</value></data>
+  <data name="QuickAction.StickyNotesTooltip" xml:space="preserve"><value>便條貼 (Alt + N)</value></data>
+  <data name="QuickAction.Calendar" xml:space="preserve"><value>行事曆</value></data>
+  <data name="QuickAction.CalendarTooltip" xml:space="preserve"><value>行事曆 (Alt + C)</value></data>
+  <data name="Shortcut.OpenStickyNotes" xml:space="preserve"><value>開啟便條貼面板</value></data>
+  <data name="Shortcut.OpenCalendar" xml:space="preserve"><value>開啟行事曆面板</value></data>
+  <data name="StickyNote.Title" xml:space="preserve"><value>便條貼</value></data>
+  <data name="StickyNote.NewNote" xml:space="preserve"><value>新增便條</value></data>
+  <data name="StickyNote.SaveSuccess" xml:space="preserve"><value>便條已儲存</value></data>
+  <data name="StickyNote.DeleteConfirm" xml:space="preserve"><value>確定要刪除此便條嗎？</value></data>
+  <data name="StickyNote.SearchPlaceholder" xml:space="preserve"><value>搜尋便條...</value></data>
+  <data name="StickyNote.EmptyMessage" xml:space="preserve"><value>尚無便條，點擊「+」開始記錄</value></data>
+  <data name="StickyNote.NoResults" xml:space="preserve"><value>找不到符合的便條</value></data>
+  <data name="StickyNote.Placeholder" xml:space="preserve"><value>在此輸入備忘內容...</value></data>
+  <data name="StickyNote.ColorLabel" xml:space="preserve"><value>顏色</value></data>
+  <data name="Calendar.Title" xml:space="preserve"><value>行事曆</value></data>
+  <data name="Calendar.NewEvent" xml:space="preserve"><value>新增事項</value></data>
+  <data name="Calendar.Today" xml:space="preserve"><value>今日</value></data>
+  <data name="Calendar.AllDay" xml:space="preserve"><value>全天</value></data>
+  <data name="Calendar.MonthView" xml:space="preserve"><value>月</value></data>
+  <data name="Calendar.WeekView" xml:space="preserve"><value>週</value></data>
+  <data name="Calendar.EventTitle" xml:space="preserve"><value>事項名稱</value></data>
+  <data name="Calendar.EventDate" xml:space="preserve"><value>日期</value></data>
+  <data name="Calendar.EventTime" xml:space="preserve"><value>時間（空白=全天）</value></data>
+  <data name="Calendar.EmptyDay" xml:space="preserve"><value>今日無事項</value></data>
+  <data name="Calendar.DeleteConfirm" xml:space="preserve"><value>確定要刪除此事項嗎？</value></data>
   <data name="QuickAction.NotificationsDev" xml:space="preserve"><value>通知功能開發中...</value></data>
   <data name="QuickAction.RecentPagesDev" xml:space="preserve"><value>最近使用功能開發中...</value></data>
   <data name="QuickAction.SettingsDev" xml:space="preserve"><value>快速設定功能開發中...</value></data>

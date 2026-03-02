@@ -7,6 +7,7 @@
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Quotation" 
@@ -206,16 +207,14 @@
     {
         try
         {
-            quotation.IsApproved = true;
-            quotation.ApprovedAt = DateTime.Now;
-            // TODO: 設定 ApprovedBy 為當前使用者
-            
-            await QuotationService.UpdateAsync(quotation);
-            return true;
+            var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (!userId.HasValue) return false;
+            var result = await QuotationService.ApproveAsync(quotation.Id, userId.Value);
+            return result.IsSuccess;
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveSingleQuotationAsync), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveSingleQuotationAsync), GetType(),
                 additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.Code });
             return false;
         }
@@ -226,27 +225,20 @@
     /// </summary>
     private async Task<(int successCount, int failCount)> ApproveAllQuotationsAsync(List<Quotation> quotations)
     {
-        int successCount = 0;
-        int failCount = 0;
-
+        int successCount = 0, failCount = 0;
+        var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+        if (!userId.HasValue) return (0, quotations.Count);
         foreach (var quotation in quotations)
         {
             try
             {
-                if (!quotation.IsApproved)
-                {
-                    quotation.IsApproved = true;
-                    quotation.ApprovedAt = DateTime.Now;
-                    // TODO: 設定 ApprovedBy 為當前使用者
-                    
-                    await QuotationService.UpdateAsync(quotation);
-                    successCount++;
-                }
+                var result = await QuotationService.ApproveAsync(quotation.Id, userId.Value);
+                if (result.IsSuccess) successCount++; else failCount++;
             }
             catch (Exception ex)
             {
                 failCount++;
-                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveAllQuotationsAsync), GetType(), 
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveAllQuotationsAsync), GetType(),
                     additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.Code });
             }
         }

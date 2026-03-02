@@ -66,5 +66,15 @@ namespace ERPCore2.Services
         /// <param name="criteria">批次列印篩選條件</param>
         /// <returns>符合條件的報價單列表</returns>
         Task<List<Quotation>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria);
+
+        /// <summary>
+        /// 核准報價單
+        /// </summary>
+        Task<ServiceResult> ApproveAsync(int id, int approvedBy);
+
+        /// <summary>
+        /// 駁回報價單
+        /// </summary>
+        Task<ServiceResult> RejectAsync(int id, int rejectedBy, string reason);
     }
 }

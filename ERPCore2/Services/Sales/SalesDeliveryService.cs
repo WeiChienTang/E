@@ -40,6 +40,7 @@ namespace ERPCore2.Services
                     .Include(sd => sd.Customer)
                     .Include(sd => sd.Employee)
                     .Include(sd => sd.Warehouse)
+                    .Include(sd => sd.ApprovedByUser)
                     .OrderByDescending(sd => sd.DeliveryDate)
                     .ThenBy(sd => sd.Code)
                     .ToListAsync();
@@ -63,6 +64,7 @@ namespace ERPCore2.Services
                     .Include(sd => sd.Customer)
                     .Include(sd => sd.Employee)
                     .Include(sd => sd.Warehouse)
+                    .Include(sd => sd.ApprovedByUser)
                     .Include(sd => sd.DeliveryDetails)
                         .ThenInclude(sdd => sdd.Product)
                     .FirstOrDefaultAsync(sd => sd.Id == id);

@@ -88,6 +88,22 @@
                 </button>
             }
 
+            @* 便條貼 *@
+            <button class="quick-action-item"
+                    @onclick="HandleStickyNotesClick"
+                    title="@L["QuickAction.StickyNotesTooltip"]">
+                <span class="bi bi-sticky"></span>
+                <span class="quick-action-label">@L["QuickAction.StickyNotes"]</span>
+            </button>
+
+            @* 行事曆 *@
+            <button class="quick-action-item"
+                    @onclick="HandleCalendarClick"
+                    title="@L["QuickAction.CalendarTooltip"]">
+                <span class="bi bi-calendar3"></span>
+                <span class="quick-action-label">@L["QuickAction.Calendar"]</span>
+            </button>
+
             @* 關於本系統 *@
             <button class="quick-action-item"
                     @onclick="HandleAboutClick"
@@ -125,6 +141,18 @@
     /// </summary>
     [Parameter]
     public EventCallback OnReportSearchClick { get; set; }
+
+    /// <summary>
+    /// 當點擊便條貼時觸發
+    /// </summary>
+    [Parameter]
+    public EventCallback OnStickyNotesClick { get; set; }
+
+    /// <summary>
+    /// 當點擊行事曆時觸發
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCalendarClick { get; set; }
 
     /// <summary>
     /// 是否顯示通知功能（預留）
@@ -258,6 +286,24 @@
         if (OnReportSearchClick.HasDelegate)
         {
             await OnReportSearchClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleStickyNotesClick()
+    {
+        CloseMenu();
+        if (OnStickyNotesClick.HasDelegate)
+        {
+            await OnStickyNotesClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleCalendarClick()
+    {
+        CloseMenu();
+        if (OnCalendarClick.HasDelegate)
+        {
+            await OnCalendarClick.InvokeAsync();
         }
     }
 

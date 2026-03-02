@@ -1638,6 +1638,32 @@
   <data name="QuickAction.SettingsTitle" xml:space="preserve"><value>Quick Settings</value></data>
   <data name="QuickAction.About" xml:space="preserve"><value>About</value></data>
   <data name="QuickAction.AboutTitle" xml:space="preserve"><value>About This System</value></data>
+  <data name="QuickAction.StickyNotes" xml:space="preserve"><value>Sticky Notes</value></data>
+  <data name="QuickAction.StickyNotesTooltip" xml:space="preserve"><value>Sticky Notes (Alt + N)</value></data>
+  <data name="QuickAction.Calendar" xml:space="preserve"><value>Calendar</value></data>
+  <data name="QuickAction.CalendarTooltip" xml:space="preserve"><value>Calendar (Alt + C)</value></data>
+  <data name="Shortcut.OpenStickyNotes" xml:space="preserve"><value>Open Sticky Notes</value></data>
+  <data name="Shortcut.OpenCalendar" xml:space="preserve"><value>Open Calendar</value></data>
+  <data name="StickyNote.Title" xml:space="preserve"><value>Sticky Notes</value></data>
+  <data name="StickyNote.NewNote" xml:space="preserve"><value>New Note</value></data>
+  <data name="StickyNote.SaveSuccess" xml:space="preserve"><value>Note saved</value></data>
+  <data name="StickyNote.DeleteConfirm" xml:space="preserve"><value>Delete this note?</value></data>
+  <data name="StickyNote.SearchPlaceholder" xml:space="preserve"><value>Search notes...</value></data>
+  <data name="StickyNote.EmptyMessage" xml:space="preserve"><value>No notes yet. Click "+" to start</value></data>
+  <data name="StickyNote.NoResults" xml:space="preserve"><value>No matching notes found</value></data>
+  <data name="StickyNote.Placeholder" xml:space="preserve"><value>Enter note here...</value></data>
+  <data name="StickyNote.ColorLabel" xml:space="preserve"><value>Color</value></data>
+  <data name="Calendar.Title" xml:space="preserve"><value>Calendar</value></data>
+  <data name="Calendar.NewEvent" xml:space="preserve"><value>New Event</value></data>
+  <data name="Calendar.Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Calendar.AllDay" xml:space="preserve"><value>All Day</value></data>
+  <data name="Calendar.MonthView" xml:space="preserve"><value>Month</value></data>
+  <data name="Calendar.WeekView" xml:space="preserve"><value>Week</value></data>
+  <data name="Calendar.EventTitle" xml:space="preserve"><value>Event Title</value></data>
+  <data name="Calendar.EventDate" xml:space="preserve"><value>Date</value></data>
+  <data name="Calendar.EventTime" xml:space="preserve"><value>Time (empty = all day)</value></data>
+  <data name="Calendar.EmptyDay" xml:space="preserve"><value>No events today</value></data>
+  <data name="Calendar.DeleteConfirm" xml:space="preserve"><value>Delete this event?</value></data>
   <data name="QuickAction.NotificationsDev" xml:space="preserve"><value>Notification feature under development...</value></data>
   <data name="QuickAction.RecentPagesDev" xml:space="preserve"><value>Recent pages feature under development...</value></data>
   <data name="QuickAction.SettingsDev" xml:space="preserve"><value>Quick settings feature under development...</value></data>

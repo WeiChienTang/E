@@ -111,6 +111,8 @@ namespace ERPCore2.Data.Context
       public DbSet<CompanyModule> CompanyModules { get; set; }
       public DbSet<DocumentCategory> DocumentCategories { get; set; }
       public DbSet<Document> Documents { get; set; }
+      public DbSet<StickyNote> StickyNotes { get; set; }
+      public DbSet<CalendarEvent> CalendarEvents { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1378,6 +1380,26 @@ namespace ERPCore2.Data.Context
                               .WithMany(c => c.Documents)
                               .HasForeignKey(d => d.DocumentCategoryId)
                               .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  // 便條貼（個人工具）
+                  modelBuilder.Entity<StickyNote>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        entity.HasOne(e => e.Employee)
+                              .WithMany()
+                              .HasForeignKey(e => e.EmployeeId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  // 行事曆事項（個人工具）
+                  modelBuilder.Entity<CalendarEvent>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        entity.HasOne(e => e.Employee)
+                              .WithMany()
+                              .HasForeignKey(e => e.EmployeeId)
+                              .OnDelete(DeleteBehavior.Cascade);
                   });
 
             }

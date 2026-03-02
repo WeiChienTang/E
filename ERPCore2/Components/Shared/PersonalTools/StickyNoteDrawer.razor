@@ -1,0 +1,359 @@
+@using ERPCore2.Services.PersonalTools
+@inject IStickyNoteService StickyNoteService
+@inject INavigationPermissionService NavigationPermissionService
+@inject IStringLocalizer<SharedResource> L
+
+@* 便條貼 - 右側滑入面板 *@
+
+@if (IsVisible)
+{
+    @* 遮罩層（點擊關閉） *@
+    <div class="sticky-note-backdrop" @onclick="Close"></div>
+}
+
+<div class="sticky-note-drawer @(IsVisible ? "open" : "")">
+    @* 面板主體 *@
+    <div class="sticky-note-panel">
+
+        @* 標題列 *@
+        <div class="drawer-header">
+            <div class="drawer-title">
+                <span class="bi bi-sticky me-2"></span>
+                <span>@L["StickyNote.Title"]</span>
+            </div>
+            <button class="drawer-close-btn" @onclick="Close" title="@L["Button.Close"]">
+                <span class="bi bi-x-lg"></span>
+            </button>
+        </div>
+
+        @* 搜尋列 + 新增按鈕 *@
+        <div class="drawer-toolbar">
+            <div class="search-wrapper flex-grow-1">
+                <span class="bi bi-search search-icon"></span>
+                <input type="text"
+                       class="search-input"
+                       placeholder="@L["StickyNote.SearchPlaceholder"]"
+                       value="@searchKeyword"
+                       @oninput="OnSearchInput" />
+                @if (!string.IsNullOrEmpty(searchKeyword))
+                {
+                    <button class="clear-search-btn" @onclick="ClearSearch">
+                        <span class="bi bi-x"></span>
+                    </button>
+                }
+            </div>
+            <button class="btn-new-note" @onclick="StartNewNote" title="@L["StickyNote.NewNote"]">
+                <span class="bi bi-plus-lg"></span>
+            </button>
+        </div>
+
+        @* 新增便條表單（展開時顯示） *@
+        @if (isAddingNew)
+        {
+            <div class="note-edit-form new-note-form">
+                <textarea class="note-textarea"
+                          placeholder="@L["StickyNote.Placeholder"]"
+                          @bind="newContent"
+                          @bind:event="oninput"
+                          maxlength="1000"
+                          rows="3"
+                          autofocus></textarea>
+                <div class="char-count">@newContent.Length / 1000</div>
+                <div class="note-edit-actions">
+                    <div class="color-picker">
+                        @foreach (var c in ColorOptions)
+                        {
+                            <button class="color-dot color-@c.Key.ToString().ToLower() @(newColor == c.Key ? "selected" : "")"
+                                    @onclick="() => newColor = c.Key"
+                                    title="@c.Value"></button>
+                        }
+                    </div>
+                    <div class="edit-btn-group">
+                        <button class="btn-cancel" @onclick="CancelNew">@L["Button.Cancel"]</button>
+                        <button class="btn-save" @onclick="SaveNew" disabled="@(string.IsNullOrWhiteSpace(newContent))">@L["Button.Save"]</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* 便條清單 *@
+        <div class="notes-list">
+            @if (isLoading)
+            {
+                <div class="drawer-loading">
+                    <div class="spinner-border spinner-border-sm me-2"></div>
+                    <span>@L["Label.Loading"]</span>
+                </div>
+            }
+            else if (!filteredNotes.Any())
+            {
+                <div class="drawer-empty">
+                    <span class="bi bi-sticky empty-icon"></span>
+                    <p>@(string.IsNullOrEmpty(searchKeyword) ? L["StickyNote.EmptyMessage"].ToString() : L["StickyNote.NoResults"].ToString())</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var note in filteredNotes)
+                {
+                    var noteId = note.Id;
+                    <div class="note-item note-color-@note.Color.ToString().ToLower() @(activeEditId == noteId ? "editing" : "")"
+                         @onclick="() => ToggleEdit(noteId)">
+
+                        @if (activeEditId == noteId)
+                        {
+                            @* 行內編輯模式 *@
+                            <div class="note-edit-form" @onclick:stopPropagation>
+                                <textarea class="note-textarea"
+                                          @bind="editContent"
+                                          @bind:event="oninput"
+                                          maxlength="1000"
+                                          rows="3"></textarea>
+                                <div class="char-count">@editContent.Length / 1000</div>
+                                <div class="note-edit-actions">
+                                    <div class="color-picker">
+                                        @foreach (var c in ColorOptions)
+                                        {
+                                            <button class="color-dot color-@c.Key.ToString().ToLower() @(editColor == c.Key ? "selected" : "")"
+                                                    @onclick="() => editColor = c.Key"
+                                                    title="@c.Value"></button>
+                                        }
+                                    </div>
+                                    <div class="edit-btn-group">
+                                        <button class="btn-delete" @onclick="() => ConfirmDelete(noteId)" title="@L["Button.Delete"]">
+                                            <span class="bi bi-trash3"></span>
+                                        </button>
+                                        <button class="btn-cancel" @onclick="CancelEdit">@L["Button.Cancel"]</button>
+                                        <button class="btn-save" @onclick="() => SaveEdit(noteId)" disabled="@(string.IsNullOrWhiteSpace(editContent))">@L["Button.Save"]</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            @* 預覽模式 *@
+                            <div class="note-preview">
+                                <p class="note-content">@note.Content</p>
+                                <span class="note-time">@FormatTime(note.UpdatedAt ?? note.CreatedAt)</span>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+    </div>
+</div>
+
+@* 刪除確認 *@
+@if (showDeleteConfirm)
+{
+    <div class="delete-confirm-overlay" @onclick="CancelDelete">
+        <div class="delete-confirm-box" @onclick:stopPropagation>
+            <p>@L["StickyNote.DeleteConfirm"]</p>
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-sm btn-secondary" @onclick="CancelDelete">@L["Button.Cancel"]</button>
+                <button class="btn btn-sm btn-danger" @onclick="ExecuteDelete">@L["Button.Delete"]</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // ===== 狀態 =====
+    private List<StickyNote> allNotes = new();
+    private List<StickyNote> filteredNotes = new();
+    private bool isLoading = false;
+    private int employeeId = 0;
+
+    // 搜尋
+    private string searchKeyword = string.Empty;
+
+    // 新增
+    private bool isAddingNew = false;
+    private string newContent = string.Empty;
+    private StickyNoteColor newColor = StickyNoteColor.Yellow;
+
+    // 行內編輯
+    private int activeEditId = 0;
+    private string editContent = string.Empty;
+    private StickyNoteColor editColor = StickyNoteColor.Yellow;
+
+    // 刪除確認
+    private bool showDeleteConfirm = false;
+    private int pendingDeleteId = 0;
+
+    // 顏色選項（value = 顯示名稱）
+    private static readonly Dictionary<StickyNoteColor, string> ColorOptions = new()
+    {
+        { StickyNoteColor.Yellow, "黃色" },
+        { StickyNoteColor.Green,  "綠色" },
+        { StickyNoteColor.Blue,   "藍色" },
+        { StickyNoteColor.Red,    "紅色" }
+    };
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && employeeId == 0)
+        {
+            employeeId = await NavigationPermissionService.GetCurrentEmployeeIdAsync();
+        }
+        if (IsVisible && allNotes.Count == 0 && employeeId > 0)
+        {
+            await LoadNotes();
+        }
+    }
+
+    // ===== 資料操作 =====
+
+    private async Task LoadNotes()
+    {
+        isLoading = true;
+        StateHasChanged();
+        allNotes = await StickyNoteService.GetByEmployeeIdAsync(employeeId);
+        ApplyFilter();
+        isLoading = false;
+    }
+
+    private void ApplyFilter()
+    {
+        filteredNotes = string.IsNullOrWhiteSpace(searchKeyword)
+            ? allNotes.ToList()
+            : allNotes.Where(n => n.Content.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        searchKeyword = e.Value?.ToString() ?? string.Empty;
+        ApplyFilter();
+        await Task.CompletedTask;
+    }
+
+    private void ClearSearch()
+    {
+        searchKeyword = string.Empty;
+        ApplyFilter();
+    }
+
+    // ===== 新增 =====
+
+    private void StartNewNote()
+    {
+        isAddingNew = true;
+        newContent = string.Empty;
+        newColor = StickyNoteColor.Yellow;
+        activeEditId = 0;
+    }
+
+    private void CancelNew()
+    {
+        isAddingNew = false;
+        newContent = string.Empty;
+    }
+
+    private async Task SaveNew()
+    {
+        if (string.IsNullOrWhiteSpace(newContent)) return;
+
+        var result = await StickyNoteService.CreateAsync(employeeId, newContent, newColor);
+        if (result.IsSuccess)
+        {
+            isAddingNew = false;
+            newContent = string.Empty;
+            await LoadNotes();
+        }
+    }
+
+    // ===== 行內編輯 =====
+
+    private void ToggleEdit(int noteId)
+    {
+        if (activeEditId == noteId)
+        {
+            activeEditId = 0;
+            return;
+        }
+
+        isAddingNew = false;
+        activeEditId = noteId;
+        var note = allNotes.FirstOrDefault(n => n.Id == noteId);
+        if (note != null)
+        {
+            editContent = note.Content;
+            editColor = note.Color;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        activeEditId = 0;
+    }
+
+    private async Task SaveEdit(int noteId)
+    {
+        if (string.IsNullOrWhiteSpace(editContent)) return;
+
+        var result = await StickyNoteService.UpdateAsync(noteId, employeeId, editContent, editColor);
+        if (result.IsSuccess)
+        {
+            activeEditId = 0;
+            await LoadNotes();
+        }
+    }
+
+    // ===== 刪除 =====
+
+    private void ConfirmDelete(int noteId)
+    {
+        pendingDeleteId = noteId;
+        showDeleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+        pendingDeleteId = 0;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (pendingDeleteId == 0) return;
+
+        var result = await StickyNoteService.DeleteAsync(pendingDeleteId, employeeId);
+        if (result.IsSuccess)
+        {
+            activeEditId = 0;
+            showDeleteConfirm = false;
+            pendingDeleteId = 0;
+            await LoadNotes();
+        }
+    }
+
+    // ===== 面板開關 =====
+
+    private async Task Close()
+    {
+        isAddingNew = false;
+        activeEditId = 0;
+        showDeleteConfirm = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    // ===== 輔助方法 =====
+
+    private static string FormatTime(DateTime time)
+    {
+        var diff = DateTime.Now - time;
+        if (diff.TotalMinutes < 1) return "剛剛";
+        if (diff.TotalHours < 1) return $"{(int)diff.TotalMinutes} 分鐘前";
+        if (diff.TotalDays < 1) return $"{(int)diff.TotalHours} 小時前";
+        if (diff.TotalDays < 2) return "昨天";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} 天前";
+        return time.ToString("M/d");
+    }
+}

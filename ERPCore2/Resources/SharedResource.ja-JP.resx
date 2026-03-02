@@ -1638,6 +1638,32 @@
   <data name="QuickAction.SettingsTitle" xml:space="preserve"><value>クイック設定</value></data>
   <data name="QuickAction.About" xml:space="preserve"><value>バージョン情報</value></data>
   <data name="QuickAction.AboutTitle" xml:space="preserve"><value>このシステムについて</value></data>
+  <data name="QuickAction.StickyNotes" xml:space="preserve"><value>付箋</value></data>
+  <data name="QuickAction.StickyNotesTooltip" xml:space="preserve"><value>付箋 (Alt + N)</value></data>
+  <data name="QuickAction.Calendar" xml:space="preserve"><value>カレンダー</value></data>
+  <data name="QuickAction.CalendarTooltip" xml:space="preserve"><value>カレンダー (Alt + C)</value></data>
+  <data name="Shortcut.OpenStickyNotes" xml:space="preserve"><value>付箋を開く</value></data>
+  <data name="Shortcut.OpenCalendar" xml:space="preserve"><value>カレンダーを開く</value></data>
+  <data name="StickyNote.Title" xml:space="preserve"><value>付箋</value></data>
+  <data name="StickyNote.NewNote" xml:space="preserve"><value>新しいメモ</value></data>
+  <data name="StickyNote.SaveSuccess" xml:space="preserve"><value>メモを保存しました</value></data>
+  <data name="StickyNote.DeleteConfirm" xml:space="preserve"><value>このメモを削除しますか？</value></data>
+  <data name="StickyNote.SearchPlaceholder" xml:space="preserve"><value>メモを検索...</value></data>
+  <data name="StickyNote.EmptyMessage" xml:space="preserve"><value>メモがありません。「+」をクリックして追加</value></data>
+  <data name="StickyNote.NoResults" xml:space="preserve"><value>一致するメモが見つかりません</value></data>
+  <data name="StickyNote.Placeholder" xml:space="preserve"><value>ここにメモを入力...</value></data>
+  <data name="StickyNote.ColorLabel" xml:space="preserve"><value>カラー</value></data>
+  <data name="Calendar.Title" xml:space="preserve"><value>カレンダー</value></data>
+  <data name="Calendar.NewEvent" xml:space="preserve"><value>新しい予定</value></data>
+  <data name="Calendar.Today" xml:space="preserve"><value>今日</value></data>
+  <data name="Calendar.AllDay" xml:space="preserve"><value>終日</value></data>
+  <data name="Calendar.MonthView" xml:space="preserve"><value>月</value></data>
+  <data name="Calendar.WeekView" xml:space="preserve"><value>週</value></data>
+  <data name="Calendar.EventTitle" xml:space="preserve"><value>タイトル</value></data>
+  <data name="Calendar.EventDate" xml:space="preserve"><value>日付</value></data>
+  <data name="Calendar.EventTime" xml:space="preserve"><value>時間（空=終日）</value></data>
+  <data name="Calendar.EmptyDay" xml:space="preserve"><value>今日の予定はありません</value></data>
+  <data name="Calendar.DeleteConfirm" xml:space="preserve"><value>この予定を削除しますか？</value></data>
   <data name="QuickAction.NotificationsDev" xml:space="preserve"><value>通知機能は開発中です...</value></data>
   <data name="QuickAction.RecentPagesDev" xml:space="preserve"><value>最近使用機能は開発中です...</value></data>
   <data name="QuickAction.SettingsDev" xml:space="preserve"><value>クイック設定機能は開発中です...</value></data>

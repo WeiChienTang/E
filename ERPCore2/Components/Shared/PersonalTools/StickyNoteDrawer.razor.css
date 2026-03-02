@@ -1,0 +1,384 @@
+/* ===== 遮罩層 ===== */
+.sticky-note-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 1050;
+    animation: fadeIn 0.2s ease;
+}
+
+/* ===== 面板容器 ===== */
+.sticky-note-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100dvh;
+    width: 400px;
+    z-index: 1051;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.sticky-note-drawer.open {
+    transform: translateX(0);
+    pointer-events: all;
+}
+
+.sticky-note-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-primary);
+    border-left: 1px solid var(--border-color);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+}
+
+/* ===== 標題列 ===== */
+.drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    flex-shrink: 0;
+}
+
+.drawer-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+}
+
+.drawer-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.drawer-close-btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+/* ===== 工具列（搜尋 + 新增） ===== */
+.drawer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 10px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    pointer-events: none;
+}
+
+.search-input {
+    width: 100%;
+    padding: 7px 32px 7px 32px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 13px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    border-color: var(--primary-blue);
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 6px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.btn-new-note {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--primary-blue);
+    background-color: var(--primary-blue);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+}
+
+.btn-new-note:hover {
+    opacity: 0.85;
+}
+
+/* ===== 便條清單 ===== */
+.notes-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.drawer-loading,
+.drawer-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 16px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    gap: 8px;
+}
+
+.empty-icon {
+    font-size: 40px;
+    opacity: 0.4;
+}
+
+/* ===== 便條項目 ===== */
+.note-item {
+    border-radius: 8px;
+    border-left: 4px solid transparent;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    border: 1px solid var(--border-color);
+}
+
+.note-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateX(-2px);
+}
+
+/* 顏色主題 */
+.note-item.note-color-yellow { border-left-color: #eab308; background-color: #fefce8; }
+.note-item.note-color-green  { border-left-color: #22c55e; background-color: #f0fdf4; }
+.note-item.note-color-blue   { border-left-color: #3b82f6; background-color: #eff6ff; }
+.note-item.note-color-red    { border-left-color: #ef4444; background-color: #fef2f2; }
+
+/* 預覽模式 */
+.note-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.note-content {
+    margin: 0;
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.note-time {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+/* ===== 編輯表單（共用） ===== */
+.note-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.new-note-form {
+    margin: 0 8px 8px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-secondary);
+    flex-shrink: 0;
+}
+
+.note-textarea {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 13px;
+    resize: vertical;
+    min-height: 72px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.note-textarea:focus {
+    border-color: var(--primary-blue);
+}
+
+.char-count {
+    text-align: right;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: -4px;
+}
+
+.note-edit-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ===== 顏色選擇器 ===== */
+.color-picker {
+    display: flex;
+    gap: 6px;
+}
+
+.color-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+}
+
+.color-dot:hover {
+    transform: scale(1.2);
+}
+
+.color-dot.selected {
+    border-color: var(--text-primary);
+    transform: scale(1.15);
+}
+
+.color-dot.color-yellow { background-color: #eab308; }
+.color-dot.color-green  { background-color: #22c55e; }
+.color-dot.color-blue   { background-color: #3b82f6; }
+.color-dot.color-red    { background-color: #ef4444; }
+
+/* ===== 編輯按鈕群組 ===== */
+.edit-btn-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.btn-save, .btn-cancel, .btn-delete {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid;
+    transition: opacity 0.2s;
+}
+
+.btn-save {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: white;
+}
+
+.btn-save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-cancel {
+    background-color: transparent;
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+.btn-delete {
+    background-color: transparent;
+    border-color: #ef4444;
+    color: #ef4444;
+    padding: 4px 8px;
+}
+
+.btn-save:hover:not(:disabled),
+.btn-cancel:hover,
+.btn-delete:hover {
+    opacity: 0.8;
+}
+
+/* ===== 刪除確認彈窗 ===== */
+.delete-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1060;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-confirm-box {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px 24px;
+    max-width: 320px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.delete-confirm-box p {
+    margin: 0 0 16px;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+/* ===== 響應式 ===== */
+@media (max-width: 480px) {
+    .sticky-note-drawer {
+        width: 100%;
+    }
+}
+
+/* ===== 動畫 ===== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* ===== 深色模式 ===== */
+[data-bs-theme=dark] .note-item.note-color-yellow { background-color: #3a3010; border-left-color: #ca8a04; }
+[data-bs-theme=dark] .note-item.note-color-green  { background-color: #0f2e1a; border-left-color: #16a34a; }
+[data-bs-theme=dark] .note-item.note-color-blue   { background-color: #0d1f3c; border-left-color: #2563eb; }
+[data-bs-theme=dark] .note-item.note-color-red    { background-color: #3a0e0e; border-left-color: #dc2626; }
+[data-bs-theme=dark] .note-content { color: #d1d5db; }

@@ -1,0 +1,350 @@
+@using ERPCore2.Services.PersonalTools
+@inject ICalendarEventService CalendarEventService
+@inject INavigationPermissionService NavigationPermissionService
+@inject IStringLocalizer<SharedResource> L
+
+@* 行事曆 - 右側滑入面板 *@
+
+@if (IsVisible)
+{
+    <div class="calendar-backdrop" @onclick="Close"></div>
+}
+
+<div class="calendar-drawer @(IsVisible ? "open" : "")">
+    <div class="calendar-panel">
+
+        @* 標題列 *@
+        <div class="drawer-header">
+            <div class="drawer-title">
+                <span class="bi bi-calendar3 me-2"></span>
+                <span>@L["Calendar.Title"]</span>
+            </div>
+            <button class="drawer-close-btn" @onclick="Close" title="@L["Button.Close"]">
+                <span class="bi bi-x-lg"></span>
+            </button>
+        </div>
+
+        @* 迷你月曆 *@
+        <div class="mini-calendar">
+            @* 月份導航 *@
+            <div class="calendar-nav">
+                <button class="nav-btn" @onclick="PrevMonth" title="上個月">
+                    <span class="bi bi-chevron-left"></span>
+                </button>
+                <span class="month-title">@currentDate.ToString("yyyy 年 M 月")</span>
+                <button class="nav-btn" @onclick="NextMonth" title="下個月">
+                    <span class="bi bi-chevron-right"></span>
+                </button>
+                <button class="today-btn" @onclick="GoToToday">@L["Calendar.Today"]</button>
+            </div>
+
+            @* 星期標題列 *@
+            <div class="weekday-header">
+                @foreach (var day in new[] { "日", "一", "二", "三", "四", "五", "六" })
+                {
+                    <div class="weekday-cell">@day</div>
+                }
+            </div>
+
+            @* 日期格 *@
+            <div class="calendar-grid">
+                @foreach (var cell in calendarCells)
+                {
+                    var cellDate = cell;
+                    var isCurrentMonth = cellDate.Month == currentDate.Month;
+                    var isToday = cellDate == today;
+                    var isSelected = cellDate == selectedDate;
+                    var hasEvents = monthEvents.Any(e => e.EventDate == cellDate);
+
+                    <button class="day-cell @(isCurrentMonth ? "" : "other-month") @(isToday ? "today" : "") @(isSelected ? "selected" : "")"
+                            @onclick="() => SelectDate(cellDate)">
+                        <span class="day-num">@cellDate.Day</span>
+                        @if (hasEvents)
+                        {
+                            <span class="event-dot"></span>
+                        }
+                    </button>
+                }
+            </div>
+        </div>
+
+        @* 選取日期的事項清單 *@
+        <div class="agenda-section">
+            <div class="agenda-header">
+                <span class="agenda-date-label">
+                    @selectedDate.ToString("M/d") @GetWeekdayName(selectedDate)
+                    @if (selectedDate == today) { <span class="today-badge">今日</span> }
+                </span>
+                <button class="btn-add-event" @onclick="StartAddEvent" title="@L["Calendar.NewEvent"]">
+                    <span class="bi bi-plus-lg"></span>
+                    <span>@L["Calendar.NewEvent"]</span>
+                </button>
+            </div>
+
+            @* 新增事項表單 *@
+            @if (isAddingEvent)
+            {
+                <div class="event-add-form">
+                    <input type="text"
+                           class="event-input"
+                           placeholder="@L["Calendar.EventTitle"]"
+                           @bind="newEventTitle"
+                           maxlength="200" />
+                    <div class="event-form-row">
+                        <input type="date"
+                               class="event-input"
+                               value="@newEventDateStr"
+                               @onchange="e => newEventDateStr = e.Value?.ToString() ?? string.Empty" />
+                        <input type="time"
+                               class="event-input"
+                               value="@newEventTimeStr"
+                               @onchange="e => newEventTimeStr = e.Value?.ToString() ?? string.Empty"
+                               placeholder="@L["Calendar.AllDay"]" />
+                    </div>
+                    <div class="event-form-row">
+                        <div class="color-picker">
+                            @foreach (var c in ColorOptions)
+                            {
+                                <button class="color-dot color-@c.Key.ToString().ToLower() @(newEventColor == c.Key ? "selected" : "")"
+                                        @onclick="() => newEventColor = c.Key"
+                                        title="@c.Value"></button>
+                            }
+                        </div>
+                        <div class="edit-btn-group">
+                            <button class="btn-cancel" @onclick="CancelAddEvent">@L["Button.Cancel"]</button>
+                            <button class="btn-save" @onclick="SaveEvent" disabled="@(string.IsNullOrWhiteSpace(newEventTitle))">@L["Button.Save"]</button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* 選取日期的事項 *@
+            <div class="events-list">
+                @{
+                    var dayEvents = monthEvents.Where(e => e.EventDate == selectedDate).OrderBy(e => e.EventTime).ToList();
+                }
+                @if (isLoading)
+                {
+                    <div class="event-loading">
+                        <div class="spinner-border spinner-border-sm me-2"></div>
+                        <span>@L["Label.Loading"]</span>
+                    </div>
+                }
+                else if (!dayEvents.Any())
+                {
+                    <div class="event-empty">@L["Calendar.EmptyDay"]</div>
+                }
+                else
+                {
+                    @foreach (var ev in dayEvents)
+                    {
+                        var evId = ev.Id;
+                        <div class="event-item event-color-@ev.Color.ToString().ToLower()">
+                            <div class="event-time">
+                                @(ev.EventTime.HasValue ? ev.EventTime.Value.ToString("HH:mm") : L["Calendar.AllDay"].ToString())
+                            </div>
+                            <div class="event-title">@ev.Title</div>
+                            <button class="event-delete-btn" @onclick="() => DeleteEvent(evId)" title="@L["Button.Delete"]">
+                                <span class="bi bi-trash3"></span>
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // ===== 狀態 =====
+    private int employeeId = 0;
+    private bool isLoading = false;
+
+    // 月曆狀態
+    private DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly currentDate;      // 目前顯示的月份
+    private DateOnly selectedDate;     // 目前選取的日期
+    private List<DateOnly> calendarCells = new();
+    private List<CalendarEvent> monthEvents = new();
+
+    // 新增事項
+    private bool isAddingEvent = false;
+    private string newEventTitle = string.Empty;
+    private string newEventDateStr = DateTime.Today.ToString("yyyy-MM-dd");
+    private string newEventTimeStr = string.Empty;
+    private CalendarEventColor newEventColor = CalendarEventColor.Blue;
+
+    // 顏色選項
+    private static readonly Dictionary<CalendarEventColor, string> ColorOptions = new()
+    {
+        { CalendarEventColor.Yellow, "黃色" },
+        { CalendarEventColor.Green,  "綠色" },
+        { CalendarEventColor.Blue,   "藍色" },
+        { CalendarEventColor.Red,    "紅色" }
+    };
+
+    // ===== 生命週期 =====
+
+    protected override void OnInitialized()
+    {
+        currentDate = new DateOnly(today.Year, today.Month, 1);
+        selectedDate = today;
+        BuildCalendarCells();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && employeeId == 0)
+        {
+            employeeId = await NavigationPermissionService.GetCurrentEmployeeIdAsync();
+        }
+        if (IsVisible && monthEvents.Count == 0 && employeeId > 0)
+        {
+            await LoadMonthEvents();
+        }
+    }
+
+    // ===== 月曆邏輯 =====
+
+    private void BuildCalendarCells()
+    {
+        calendarCells.Clear();
+        var firstDay = new DateOnly(currentDate.Year, currentDate.Month, 1);
+        var startOffset = (int)firstDay.DayOfWeek; // 0=日, 1=一...
+        var start = firstDay.AddDays(-startOffset);
+
+        for (int i = 0; i < 42; i++)
+        {
+            calendarCells.Add(start.AddDays(i));
+        }
+    }
+
+    private async Task PrevMonth()
+    {
+        currentDate = currentDate.AddMonths(-1);
+        BuildCalendarCells();
+        await LoadMonthEvents();
+    }
+
+    private async Task NextMonth()
+    {
+        currentDate = currentDate.AddMonths(1);
+        BuildCalendarCells();
+        await LoadMonthEvents();
+    }
+
+    private async Task GoToToday()
+    {
+        selectedDate = today;
+        currentDate = new DateOnly(today.Year, today.Month, 1);
+        BuildCalendarCells();
+        await LoadMonthEvents();
+    }
+
+    private void SelectDate(DateOnly date)
+    {
+        selectedDate = date;
+        isAddingEvent = false;
+        newEventDateStr = date.ToString("yyyy-MM-dd");
+        newEventTitle = string.Empty;
+        newEventTimeStr = string.Empty;
+    }
+
+    private async Task LoadMonthEvents()
+    {
+        if (employeeId == 0) return;
+
+        isLoading = true;
+        StateHasChanged();
+        monthEvents = await CalendarEventService.GetByMonthAsync(employeeId, currentDate.Year, currentDate.Month);
+        isLoading = false;
+    }
+
+    // ===== 新增事項 =====
+
+    private void StartAddEvent()
+    {
+        isAddingEvent = true;
+        newEventTitle = string.Empty;
+        newEventDateStr = selectedDate.ToString("yyyy-MM-dd");
+        newEventTimeStr = string.Empty;
+        newEventColor = CalendarEventColor.Blue;
+    }
+
+    private void CancelAddEvent()
+    {
+        isAddingEvent = false;
+    }
+
+    private async Task SaveEvent()
+    {
+        if (string.IsNullOrWhiteSpace(newEventTitle)) return;
+
+        if (!DateTime.TryParse(newEventDateStr, out var parsedDate)) return;
+        var date = DateOnly.FromDateTime(parsedDate);
+        TimeOnly? time = null;
+        if (!string.IsNullOrEmpty(newEventTimeStr) && TimeOnly.TryParse(newEventTimeStr, out var parsedTime))
+        {
+            time = parsedTime;
+        }
+
+        var result = await CalendarEventService.CreateAsync(employeeId, newEventTitle, date, time, newEventColor);
+        if (result.IsSuccess)
+        {
+            isAddingEvent = false;
+            newEventTitle = string.Empty;
+
+            // 若新增的日期在目前月份，重新整理
+            if (date.Month == currentDate.Month && date.Year == currentDate.Year)
+            {
+                await LoadMonthEvents();
+            }
+            else
+            {
+                // 跳到該月份
+                currentDate = new DateOnly(date.Year, date.Month, 1);
+                selectedDate = date;
+                BuildCalendarCells();
+                await LoadMonthEvents();
+            }
+        }
+    }
+
+    private async Task DeleteEvent(int eventId)
+    {
+        var result = await CalendarEventService.DeleteAsync(eventId, employeeId);
+        if (result.IsSuccess)
+        {
+            await LoadMonthEvents();
+        }
+    }
+
+    // ===== 面板開關 =====
+
+    private async Task Close()
+    {
+        isAddingEvent = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    // ===== 輔助方法 =====
+
+    private static string GetWeekdayName(DateOnly date)
+    {
+        return date.DayOfWeek switch
+        {
+            DayOfWeek.Sunday => "（日）",
+            DayOfWeek.Monday => "（一）",
+            DayOfWeek.Tuesday => "（二）",
+            DayOfWeek.Wednesday => "（三）",
+            DayOfWeek.Thursday => "（四）",
+            DayOfWeek.Friday => "（五）",
+            DayOfWeek.Saturday => "（六）",
+            _ => string.Empty
+        };
+    }
+}

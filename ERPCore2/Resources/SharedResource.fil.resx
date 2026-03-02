@@ -1638,6 +1638,32 @@
   <data name="QuickAction.SettingsTitle" xml:space="preserve"><value>Mabilis na Mga Setting</value></data>
   <data name="QuickAction.About" xml:space="preserve"><value>Tungkol sa</value></data>
   <data name="QuickAction.AboutTitle" xml:space="preserve"><value>Tungkol sa Sistemang Ito</value></data>
+  <data name="QuickAction.StickyNotes" xml:space="preserve"><value>Sticky Notes</value></data>
+  <data name="QuickAction.StickyNotesTooltip" xml:space="preserve"><value>Sticky Notes (Alt + N)</value></data>
+  <data name="QuickAction.Calendar" xml:space="preserve"><value>Kalendaryo</value></data>
+  <data name="QuickAction.CalendarTooltip" xml:space="preserve"><value>Kalendaryo (Alt + C)</value></data>
+  <data name="Shortcut.OpenStickyNotes" xml:space="preserve"><value>Buksan ang Sticky Notes</value></data>
+  <data name="Shortcut.OpenCalendar" xml:space="preserve"><value>Buksan ang Kalendaryo</value></data>
+  <data name="StickyNote.Title" xml:space="preserve"><value>Sticky Notes</value></data>
+  <data name="StickyNote.NewNote" xml:space="preserve"><value>Bagong Tala</value></data>
+  <data name="StickyNote.SaveSuccess" xml:space="preserve"><value>Na-save ang tala</value></data>
+  <data name="StickyNote.DeleteConfirm" xml:space="preserve"><value>Burahin ang talang ito?</value></data>
+  <data name="StickyNote.SearchPlaceholder" xml:space="preserve"><value>Maghanap ng tala...</value></data>
+  <data name="StickyNote.EmptyMessage" xml:space="preserve"><value>Walang tala pa. I-click ang "+" para magsimula</value></data>
+  <data name="StickyNote.NoResults" xml:space="preserve"><value>Walang nahanap na tala</value></data>
+  <data name="StickyNote.Placeholder" xml:space="preserve"><value>Ilagay ang tala dito...</value></data>
+  <data name="StickyNote.ColorLabel" xml:space="preserve"><value>Kulay</value></data>
+  <data name="Calendar.Title" xml:space="preserve"><value>Kalendaryo</value></data>
+  <data name="Calendar.NewEvent" xml:space="preserve"><value>Bagong Kaganapan</value></data>
+  <data name="Calendar.Today" xml:space="preserve"><value>Ngayon</value></data>
+  <data name="Calendar.AllDay" xml:space="preserve"><value>Buong Araw</value></data>
+  <data name="Calendar.MonthView" xml:space="preserve"><value>Buwan</value></data>
+  <data name="Calendar.WeekView" xml:space="preserve"><value>Linggo</value></data>
+  <data name="Calendar.EventTitle" xml:space="preserve"><value>Pamagat ng Kaganapan</value></data>
+  <data name="Calendar.EventDate" xml:space="preserve"><value>Petsa</value></data>
+  <data name="Calendar.EventTime" xml:space="preserve"><value>Oras (blangko = buong araw)</value></data>
+  <data name="Calendar.EmptyDay" xml:space="preserve"><value>Walang kaganapan ngayon</value></data>
+  <data name="Calendar.DeleteConfirm" xml:space="preserve"><value>Burahin ang kaganapang ito?</value></data>
   <data name="QuickAction.NotificationsDev" xml:space="preserve"><value>Ang feature ng notification ay nasa development...</value></data>
   <data name="QuickAction.RecentPagesDev" xml:space="preserve"><value>Ang feature ng recent pages ay nasa development...</value></data>
   <data name="QuickAction.SettingsDev" xml:space="preserve"><value>Ang feature ng quick settings ay nasa development...</value></data>

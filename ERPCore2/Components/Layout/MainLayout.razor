@@ -1,5 +1,6 @@
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Report
+@using ERPCore2.Components.Shared.PersonalTools
 @using ERPCore2.Components.Pages.Reports
 @using ERPCore2.Components.Pages.Employees
 @using ERPCore2.Helpers
@@ -106,7 +107,17 @@
 <QuickActionMenu @rendermode="InteractiveServer"
                 OnPageSearchClick="@OpenPageSearch"
                 OnReportSearchClick="@OpenReportSearch"
-                OnShortcutKeysClick="@OpenShortcutKeys" />
+                OnShortcutKeysClick="@OpenShortcutKeys"
+                OnStickyNotesClick="@OpenStickyNotes"
+                OnCalendarClick="@OpenCalendar" />
+
+@* 便條貼面板 *@
+<StickyNoteDrawer IsVisible="@showStickyNotes"
+                  IsVisibleChanged="@((bool v) => showStickyNotes = v)" />
+
+@* 行事曆面板 *@
+<CalendarDrawer IsVisible="@showCalendar"
+                IsVisibleChanged="@((bool v) => showCalendar = v)" />
 
 @* 模組停用提示 Modal（圖表、報表觸發被停用模組時顯示） *@
 <BaseModalComponent IsVisible="@_showModuleDisabledModal"
@@ -159,6 +170,12 @@
 
     // 個人化設定 Modal 狀態
     private bool showPersonalPreference = false;
+
+    // 便條貼面板狀態
+    private bool showStickyNotes = false;
+
+    // 行事曆面板狀態
+    private bool showCalendar = false;
     
     // 當前登入員工 ID（供 OnAfterRenderAsync 套用縮放偏好使用）
     private int _currentEmployeeId = 0;
@@ -303,6 +320,56 @@
                         window.altRRegistered = true;
                     }
                 ");
+
+                // 註冊 Alt+N 快捷鍵開啟便條貼
+                await JSRuntime.InvokeVoidAsync("eval", @"
+                    if (!window.altNRegistered) {
+                        document.addEventListener('keydown', function(e) {
+                            if (e.altKey && (e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.shiftKey) {
+                                e.preventDefault();
+                                var stickyBtn = document.querySelector('.quick-action-item[title*=""便條貼""]');
+                                if (stickyBtn) {
+                                    stickyBtn.click();
+                                    return;
+                                }
+                                var quickActionBtn = document.querySelector('.quick-action-main-btn');
+                                if (quickActionBtn) {
+                                    quickActionBtn.click();
+                                    setTimeout(function() {
+                                        var stickyBtn = document.querySelector('.quick-action-item[title*=""便條貼""]');
+                                        if (stickyBtn) stickyBtn.click();
+                                    }, 100);
+                                }
+                            }
+                        });
+                        window.altNRegistered = true;
+                    }
+                ");
+
+                // 註冊 Alt+C 快捷鍵開啟行事曆
+                await JSRuntime.InvokeVoidAsync("eval", @"
+                    if (!window.altCRegistered) {
+                        document.addEventListener('keydown', function(e) {
+                            if (e.altKey && (e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.shiftKey) {
+                                e.preventDefault();
+                                var calBtn = document.querySelector('.quick-action-item[title*=""行事曆""]');
+                                if (calBtn) {
+                                    calBtn.click();
+                                    return;
+                                }
+                                var quickActionBtn = document.querySelector('.quick-action-main-btn');
+                                if (quickActionBtn) {
+                                    quickActionBtn.click();
+                                    setTimeout(function() {
+                                        var calBtn = document.querySelector('.quick-action-item[title*=""行事曆""]');
+                                        if (calBtn) calBtn.click();
+                                    }, 100);
+                                }
+                            }
+                        });
+                        window.altCRegistered = true;
+                    }
+                ");
             }
             catch
             {
@@ -368,6 +435,40 @@
         catch
         {
             // 忽略開啟快捷鍵說明失敗
+        }
+    }
+
+    /// <summary>
+    /// 開啟便條貼面板（與行事曆互斥）
+    /// </summary>
+    private void OpenStickyNotes()
+    {
+        try
+        {
+            showCalendar = false;
+            showStickyNotes = !showStickyNotes;
+            StateHasChanged();
+        }
+        catch
+        {
+            // 忽略開啟便條貼失敗
+        }
+    }
+
+    /// <summary>
+    /// 開啟行事曆面板（與便條貼互斥）
+    /// </summary>
+    private void OpenCalendar()
+    {
+        try
+        {
+            showStickyNotes = false;
+            showCalendar = !showCalendar;
+            StateHasChanged();
+        }
+        catch
+        {
+            // 忽略開啟行事曆失敗
         }
     }
     
