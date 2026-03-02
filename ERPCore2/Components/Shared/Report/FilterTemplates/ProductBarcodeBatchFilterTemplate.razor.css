@@ -1,0 +1,10 @@
+.print-settings-card {
+    background-color: var(--bg-primary);
+    border-color: var(--border-color);
+}
+
+.print-settings-header {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-bottom-color: var(--border-color);
+}

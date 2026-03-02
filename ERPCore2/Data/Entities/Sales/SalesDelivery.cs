@@ -88,6 +88,9 @@ namespace ERPCore2.Data.Entities
             IsApproved ? "已核准" :
             !string.IsNullOrEmpty(RejectReason) ? "已駁回" : "待審核";
 
+        [NotMapped]
+        public string? ApprovedAtText => ApprovedAt?.ToString("yyyy-MM-dd HH:mm");
+
         [Display(Name = "已轉傳票")]
         public bool IsJournalized { get; set; } = false;
 

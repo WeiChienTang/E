@@ -22,6 +22,7 @@
                         RequiredPermission="@PermissionRegistry.Document.Read"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
+                        DebugPageName="DocumentIndex"
                         @ref="indexComponent"/>
 
 <DocumentEditModalComponent IsVisible="@showEditModal"

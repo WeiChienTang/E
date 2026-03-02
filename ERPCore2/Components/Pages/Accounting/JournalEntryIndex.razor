@@ -21,6 +21,7 @@
                           RequiredModule="Accounting"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
+                          DebugPageName="JournalEntryIndex"
                           @ref="indexComponent" />
 
 <JournalEntryEditModalComponent IsVisible="@showEditModal"

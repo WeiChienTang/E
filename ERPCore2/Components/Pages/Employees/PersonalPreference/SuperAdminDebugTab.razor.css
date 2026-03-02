@@ -1,0 +1,133 @@
+/* ===== SuperAdmin Debug Tab 樣式 ===== */
+
+/* SuperAdmin 標識 Badge */
+.debug-identity-badge {
+    background: #1a1a2e;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    font-family: monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+}
+
+.debug-superadmin-label {
+    color: #f8c8a0;
+}
+
+.debug-subtitle {
+    color: #7ec8e3;
+    margin-left: 0.5rem;
+}
+
+/* 顏色指示標記 */
+.debug-color-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: monospace;
+    font-size: 0.75rem;
+    background: #1a1a2e;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 2px 8px;
+    white-space: nowrap;
+}
+
+.debug-color-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ── 以下為 shortcut-editor-table 樣式（從 ShortcutKeysTab.razor.css 複製，scoped 至此組件）── */
+
+.shortcut-editor-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.625rem 0.875rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.shortcut-row:last-child {
+    border-bottom: none;
+}
+
+.shortcut-row--fixed {
+    background-color: var(--bg-secondary);
+    opacity: 0.85;
+}
+
+.shortcut-label {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.shortcut-label span {
+    font-weight: 500;
+}
+
+.shortcut-display {
+    flex: 0 0 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shortcut-keys-display {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+kbd {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 0.8rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+    background-color: #1a1a2e;
+    color: #e8e8e8;
+    border: 1px solid #444;
+    border-radius: 4px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+    white-space: nowrap;
+}
+
+[data-bs-theme=dark] kbd {
+    background-color: var(--bg-tertiary, #21262d);
+    color: var(--text-primary);
+    border-color: var(--bs-border-color);
+}
+
+.shortcut-actions {
+    flex: 0 0 130px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+}
+
+/* 深色模式適配 */
+[data-bs-theme=dark] .shortcut-row--fixed {
+    background-color: var(--bg-secondary);
+}
+
+[data-bs-theme=dark] .debug-identity-badge {
+    border-color: #30363d;
+}

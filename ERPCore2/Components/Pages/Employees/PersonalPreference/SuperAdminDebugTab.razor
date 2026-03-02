@@ -1,0 +1,100 @@
+@* SuperAdmin 開發工具 Tab — Debug 快捷鍵與開發輔助資訊（僅 SuperAdmin 可見）*@
+@* 此 Tab 由 PersonalPreferenceModalComponent 在確認 IsSuperAdmin 後才加入 Tab 清單 *@
+
+<div class="p-2">
+
+    @* SuperAdmin 標識 Badge *@
+    <div class="debug-identity-badge mb-4">
+        🔧 <strong class="debug-superadmin-label">SuperAdmin</strong>
+        <span class="debug-subtitle">開發工具 — 此 Tab 僅 SuperAdmin 可見，不影響一般使用者</span>
+    </div>
+
+    @* ── Debug 快捷鍵（需手動切換）── *@
+    <div class="section-header mb-2">
+        <span class="section-title">Debug 快捷鍵（手動切換）</span>
+    </div>
+    <p class="text-muted small mb-3">
+        快捷鍵在 SuperAdmin 登入時自動啟用。預設隱藏，按下快捷鍵後即顯示；再按一次關閉。重新整理頁面後自動重設為隱藏。
+    </p>
+
+    <div class="shortcut-editor-table mb-4">
+
+        @* 方式四：PropertyName *@
+        <div class="shortcut-row shortcut-row--fixed">
+            <div class="shortcut-label">
+                <span>方式四：PropertyName 顯示</span>
+                <small class="text-muted ms-2">在表單欄位 Label 旁顯示 C# 屬性名稱</small>
+            </div>
+            <div class="shortcut-display">
+                <div class="shortcut-keys-display">
+                    <kbd>Shift</kbd><kbd>Alt</kbd><kbd>P</kbd>
+                </div>
+            </div>
+            <div class="shortcut-actions">
+                <span class="debug-color-badge" style="color:#f8c8a0;">
+                    <span class="debug-color-dot" style="background:#f8c8a0;"></span>橘色
+                </span>
+            </div>
+        </div>
+
+        @* 方式三：i18n Key *@
+        <div class="shortcut-row shortcut-row--fixed">
+            <div class="shortcut-label">
+                <span>方式三：i18n Key 顯示</span>
+                <small class="text-muted ms-2">在表單欄位 Label 旁顯示推斷的資源鍵（Field.PropertyName），慣例推斷，非 100% 準確</small>
+            </div>
+            <div class="shortcut-display">
+                <div class="shortcut-keys-display">
+                    <kbd>Shift</kbd><kbd>Alt</kbd><kbd>K</kbd>
+                </div>
+            </div>
+            <div class="shortcut-actions">
+                <span class="debug-color-badge" style="color:#90ee90;">
+                    <span class="debug-color-dot" style="background:#90ee90;"></span>綠色
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+    @* ── 自動顯示功能（登入即啟用）── *@
+    <div class="section-header mb-2">
+        <span class="section-title">自動顯示功能（SuperAdmin 登入即啟用）</span>
+    </div>
+    <p class="text-muted small mb-3">
+        以下功能不需要快捷鍵，SuperAdmin 登入後自動出現，一般使用者完全不可見。
+    </p>
+
+    <div class="shortcut-editor-table mb-4">
+
+        @* 方式一：Modal 組件名稱 *@
+        <div class="shortcut-row shortcut-row--fixed">
+            <div class="shortcut-label">
+                <span>方式一：Modal 組件名稱</span>
+                <small class="text-muted ms-2">在每個 Modal 底部顯示對應的 .razor 檔案名稱</small>
+            </div>
+            <div class="shortcut-display">
+                <span class="text-muted small fst-italic">自動顯示</span>
+            </div>
+            <div class="shortcut-actions">
+                <span class="text-muted small fst-italic">深色 Bar</span>
+            </div>
+        </div>
+
+        @* 方式二：頁面組件名稱 *@
+        <div class="shortcut-row shortcut-row--fixed">
+            <div class="shortcut-label">
+                <span>方式二：頁面組件名稱</span>
+                <small class="text-muted ms-2">在 Index 列表頁面左下角顯示對應的 .razor 頁面名稱</small>
+            </div>
+            <div class="shortcut-display">
+                <span class="text-muted small fst-italic">自動顯示</span>
+            </div>
+            <div class="shortcut-actions">
+                <span class="text-muted small fst-italic">左下 Badge</span>
+            </div>
+        </div>
+
+    </div>
+
+</div>

@@ -21,6 +21,7 @@
                       RequiredModule="Customers"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
+                      DebugPageName="CustomerIndex"
                       @ref="indexComponent" />
 
 <CustomerEditModalComponent IsVisible="@showEditModal"

@@ -143,6 +143,18 @@ else
 </div>
 </PagePermissionCheck>
 
+@* ===== Debug Badge (僅 SuperAdmin 可見) ===== *@
+@if (_isSuperAdmin && !string.IsNullOrEmpty(DebugPageName))
+{
+    <div style="position:fixed; bottom:1rem; left:1rem; z-index:999;
+                background:#1a1a2e; color:#7ec8e3; font-size:0.7rem;
+                font-family:monospace; padding:0.25rem 0.6rem;
+                border-radius:4px; border:1px solid #30363d;
+                pointer-events:none; letter-spacing:0.03em; opacity:0.85;">
+        🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong> | @DebugPageName
+    </div>
+}
+
 } @* end else (module enabled) *@
 
 @code {
@@ -170,6 +182,9 @@ else
 
     // 公司層級模組檢查參數
     [Parameter] public string RequiredModule { get; set; } = "";
+
+    // Debug 資訊（僅 SuperAdmin 可見）
+    [Parameter] public string? DebugPageName { get; set; }
     
     // 頁面行為設定
     [Parameter] public RefreshMode PageRefreshMode { get; set; } = RefreshMode.Smooth;
@@ -775,6 +790,7 @@ else
     // 狀態管理
     private bool isLoading = true;
     private bool _isModuleEnabled = true; // 公司層級模組是否啟用（預設 true，避免閃爍）
+    private bool _isSuperAdmin = false;
     
     // ===== 公開屬性 (供外部存取) =====
     public SearchFilterModel SearchModel => searchModel;
@@ -790,6 +806,12 @@ else
     protected override async Task OnInitializedAsync()
     {
         pageSize = DefaultPageSize;
+
+        // SuperAdmin 查詢（有快取，效能無虞）
+        if (!string.IsNullOrEmpty(DebugPageName))
+        {
+            _isSuperAdmin = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+        }
 
         // 公司層級模組檢查（在頁面初始化時執行，阻擋直接輸入網址存取）
         // 只有 IsSuperAdmin=true 的帳號可繞過公司模組限制，System.Admin 權限持有者亦受模組限制

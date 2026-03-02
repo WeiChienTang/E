@@ -21,6 +21,7 @@
                         RequiredPermission="@PermissionRegistry.Document.Manage"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
+                        DebugPageName="DocumentCategoryIndex"
                         @ref="indexComponent"/>
 
 <DocumentCategoryEditModalComponent IsVisible="@showEditModal"

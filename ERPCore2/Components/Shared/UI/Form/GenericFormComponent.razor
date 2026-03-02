@@ -203,7 +203,7 @@
                     }
                     @if (field.LabelHelpItems?.Any() == true)
                     {
-                        <button type="button" 
+                        <button type="button"
                                 class="btn btn-link p-0 ms-1 align-baseline label-help-btn"
                                 style="font-size: 0.85em; line-height: 1;"
                                 data-bs-toggle="popover"
@@ -215,6 +215,9 @@
                             <i class="bi bi-question-circle text-secondary"></i>
                         </button>
                     }
+                    @* Debug：方式四（Shift+Alt+P）PropertyName，方式三（Shift+Alt+K）i18n Key 推斷，僅 SuperAdmin 可見 *@
+                    <span class="field-debug-name" aria-hidden="true">@field.PropertyName</span>
+                    <span class="field-debug-i18n" aria-hidden="true">Field.@field.PropertyName</span>
                 </label>
             }
             

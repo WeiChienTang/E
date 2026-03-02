@@ -699,7 +699,7 @@
                 },
                 new FormFieldDefinition()
                 {
-                    PropertyName = "ApprovedByUser.FullName",
+                    PropertyName = "ApprovedByUser.Name",
                     Label = L["Approval.ApprovedBy"],
                     FieldType = FormFieldType.Text,
                     IsReadOnly = true,
@@ -708,9 +708,9 @@
                 },
                 new FormFieldDefinition()
                 {
-                    PropertyName = nameof(SalesReturn.ApprovedAt),
+                    PropertyName = "ApprovedAtText",
                     Label = L["Approval.ApprovedAt"],
-                    FieldType = FormFieldType.DateTime,
+                    FieldType = FormFieldType.Text,
                     IsReadOnly = true,
                     IsDisabled = true,
                     ContainerCssClass = "col-md-4"
@@ -743,8 +743,8 @@
                 .AddCustomFieldsIf(isApprovalEnabled && SalesReturnId.HasValue && SalesReturnId.Value > 0,
                     FormSectionNames.ApprovalInfo,
                     "ApprovalStatusText",
-                    "ApprovedByUser.FullName",
-                    nameof(SalesReturn.ApprovedAt),
+                    "ApprovedByUser.Name",
+                    "ApprovedAtText",
                     nameof(SalesReturn.RejectReason))
                 .Build();
         }

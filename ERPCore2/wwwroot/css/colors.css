@@ -201,3 +201,32 @@
   --bs-link-color: var(--primary-blue);
   --bs-link-hover-color: var(--primary-blue-hover);
 }
+
+/* ── Debug 方式三 / 四：欄位標籤 Debug 標記（預設隱藏，SuperAdmin 快捷鍵切換）── */
+/* 方式四：Shift+Alt+P 切換 PropertyName，html.debug-props 時顯示（橘色） */
+/* 方式三：Shift+Alt+K 切換 i18n Key，html.debug-i18n 時顯示（綠色） */
+.field-debug-name,
+.field-debug-i18n {
+  display: none;
+  font-size: 0.6rem;
+  font-family: monospace;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+  background: #1a1a2e;
+  border: 1px solid #30363d;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  user-select: none;
+}
+
+html.debug-props .field-debug-name {
+  display: inline;
+  color: #f8c8a0;
+}
+
+html.debug-i18n .field-debug-i18n {
+  display: inline;
+  color: #90ee90;
+}

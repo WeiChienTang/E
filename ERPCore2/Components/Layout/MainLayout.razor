@@ -352,6 +352,20 @@
             {
                 // 忽略初始化錯誤
             }
+
+            try
+            {
+                // 初始化 Debug 快捷鍵（僅 SuperAdmin：方式三 Shift+Alt+K，方式四 Shift+Alt+P）
+                var isSuperAdmin = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+                if (isSuperAdmin)
+                {
+                    await JSRuntime.InvokeVoidAsync("DebugHelper.initDebugShortcuts");
+                }
+            }
+            catch
+            {
+                // 忽略初始化錯誤
+            }
         }
     }
 
