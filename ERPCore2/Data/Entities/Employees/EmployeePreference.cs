@@ -37,8 +37,57 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "主題")]
         public AppTheme Theme { get; set; } = AppTheme.Light;
 
+        // ===== 快捷鍵自訂 =====
+        // null = 使用系統預設值；預設值定義於 ShortcutDefaults
+
+        /// <summary>頁面搜尋快捷鍵（預設 Alt+S）</summary>
+        [MaxLength(20)]
+        public string? ShortcutPageSearch { get; set; }
+
+        /// <summary>報表搜尋快捷鍵（預設 Alt+R）</summary>
+        [MaxLength(20)]
+        public string? ShortcutReportSearch { get; set; }
+
+        /// <summary>便條貼快捷鍵（預設 Alt+N）</summary>
+        [MaxLength(20)]
+        public string? ShortcutStickyNotes { get; set; }
+
+        /// <summary>行事曆快捷鍵（預設 Alt+C）</summary>
+        [MaxLength(20)]
+        public string? ShortcutCalendar { get; set; }
+
+        /// <summary>快速功能表快捷鍵（預設 Alt+Q）</summary>
+        [MaxLength(20)]
+        public string? ShortcutQuickAction { get; set; }
+
+        // ===== 通知設定 =====
+
+        /// <summary>是否在 QuickAction 按鈕顯示行事曆提醒徽章（預設開啟）</summary>
+        [Display(Name = "顯示行事曆提醒徽章")]
+        public bool ShowCalendarBadge { get; set; } = true;
+
+        /// <summary>是否在 QuickAction 按鈕顯示便條貼計數徽章（預設開啟）</summary>
+        [Display(Name = "顯示便條貼計數徽章")]
+        public bool ShowNoteBadge { get; set; } = true;
+
+        /// <summary>行事曆事項的預設提醒時間（分鐘）。0 = 不提醒</summary>
+        [Display(Name = "預設提醒時間（分鐘）")]
+        public int DefaultReminderMinutes { get; set; } = 15;
+
         // 導航屬性
         public Employee? Employee { get; set; }
+    }
+
+    /// <summary>
+    /// 快捷鍵預設值常數
+    /// </summary>
+    public static class ShortcutDefaults
+    {
+        public const string PageSearch   = "Alt+S";
+        public const string ReportSearch = "Alt+R";
+        public const string StickyNotes  = "Alt+N";
+        public const string Calendar     = "Alt+C";
+        public const string QuickAction  = "Alt+Q";
     }
 
     /// <summary>

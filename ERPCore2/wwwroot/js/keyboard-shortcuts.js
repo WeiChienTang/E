@@ -1,125 +1,209 @@
 /**
  * 全域鍵盤快捷鍵管理
- * 處理系統級的快捷鍵，避免與輸入元素和 Modal 衝突
+ * 支援可設定的快捷鍵組合，並提供快捷鍵擷取功能
  */
 window.KeyboardShortcuts = {
-    dotNetHelper: null,
+    _dotNetHelper: null,
+
+    // 目前生效的快捷鍵組合（由 initialize / configure 設定）
+    _shortcuts: {
+        pageSearch:   { modifier: 'alt', key: 's' },
+        reportSearch: { modifier: 'alt', key: 'r' },
+        stickyNotes:  { modifier: 'alt', key: 'n' },
+        calendar:     { modifier: 'alt', key: 'c' },
+        quickAction:  { modifier: 'alt', key: 'q' }
+    },
 
     /**
      * 初始化快捷鍵監聽器
-     * @param {object} dotNetHelper - .NET 物件參考，用於呼叫 C# 方法
+     * @param {object} dotNetHelper - MainLayout 的 DotNetObjectReference
+     * @param {object} config - 快捷鍵設定，如 { pageSearch: 'Alt+S', ... }
      */
-    initialize: function (dotNetHelper) {
-        this.dotNetHelper = dotNetHelper;
-        this.handleKeyDown = this.handleKeyDown.bind(this);
-        document.addEventListener('keydown', this.handleKeyDown);
+    initialize: function (dotNetHelper, config) {
+        this._dotNetHelper = dotNetHelper;
+        if (config) {
+            this._applyConfig(config);
+        }
+        this._boundHandler = this._handleKeyDown.bind(this);
+        document.addEventListener('keydown', this._boundHandler);
+    },
+
+    /**
+     * 動態更新快捷鍵設定（儲存後立即套用，不需重整頁面）
+     * @param {object} config - 快捷鍵設定，如 { pageSearch: 'Alt+G', ... }
+     */
+    configure: function (config) {
+        if (config) {
+            this._applyConfig(config);
+        }
+    },
+
+    /**
+     * 解析並套用設定物件到 _shortcuts
+     */
+    _applyConfig: function (config) {
+        const actions = ['pageSearch', 'reportSearch', 'stickyNotes', 'calendar', 'quickAction'];
+        for (const action of actions) {
+            if (config[action]) {
+                const parsed = this._parseCombo(config[action]);
+                if (parsed) {
+                    this._shortcuts[action] = parsed;
+                }
+            }
+        }
+    },
+
+    /**
+     * 解析 "Alt+S" → { modifier: 'alt', key: 's' }
+     */
+    _parseCombo: function (combo) {
+        if (!combo) return null;
+        const parts = combo.split('+').map(p => p.trim().toLowerCase());
+        if (parts.length === 2) {
+            const modifier = parts[0];
+            const key = parts[1];
+            if ((modifier === 'alt' || modifier === 'ctrl') && key.length === 1) {
+                return { modifier, key };
+            }
+        }
+        return null;
+    },
+
+    /**
+     * 比對鍵盤事件是否符合指定的快捷鍵
+     */
+    _matchesShortcut: function (event, shortcut) {
+        const isAlt  = shortcut.modifier === 'alt'  && event.altKey  && !event.ctrlKey;
+        const isCtrl = shortcut.modifier === 'ctrl' && event.ctrlKey && !event.altKey;
+        return (isAlt || isCtrl) && !event.shiftKey &&
+               event.key.toLowerCase() === shortcut.key;
     },
 
     /**
      * 處理鍵盤按下事件
-     * @param {KeyboardEvent} event - 鍵盤事件
      */
-    handleKeyDown: function (event) {
-        // 1. 檢查是否在輸入元素中 - 避免干擾使用者輸入
-        if (this.isInputElement(event.target)) {
-            return;
-        }
+    _handleKeyDown: function (event) {
+        // 在輸入框中不觸發
+        if (this._isInputElement(event.target)) return;
+        // 有 Modal 開啟時不觸發
+        if (this._hasOpenModal()) return;
 
-        // 2. 檢查是否有 Modal 已開啟 - 避免多重 Modal 衝突
-        if (this.hasOpenModal()) {
-            return;
-        }
+        const s = this._shortcuts;
 
-        // 3. 檢查 Alt + S 快捷鍵 (不含 Ctrl 和 Shift)
-        if (event.altKey && 
-            (event.key === 's' || event.key === 'S') && 
-            !event.ctrlKey && 
-            !event.shiftKey) {
-            
-            // 阻止預設行為（避免瀏覽器的 Alt + S 行為）
-            event.preventDefault();
-            event.stopPropagation();
+        if (this._matchesShortcut(event, s.pageSearch)) {
+            event.preventDefault(); event.stopPropagation();
+            this._dotNetHelper?.invokeMethodAsync('OpenPageSearch')
+                .catch(e => console.error('[KeyboardShortcuts] OpenPageSearch 失敗:', e));
 
-            // 呼叫 C# 方法開啟頁面搜尋
-            if (this.dotNetHelper) {
-                this.dotNetHelper.invokeMethodAsync('OpenPageSearch')
-                    .catch(error => {
-                        console.error('[KeyboardShortcuts] 開啟頁面搜尋失敗:', error);
-                    });
-            }
-        }
-    },
+        } else if (this._matchesShortcut(event, s.reportSearch)) {
+            event.preventDefault(); event.stopPropagation();
+            this._dotNetHelper?.invokeMethodAsync('OpenReportSearch')
+                .catch(e => console.error('[KeyboardShortcuts] OpenReportSearch 失敗:', e));
 
-    /**
-     * 檢查元素是否為輸入類型（避免干擾使用者輸入）
-     * @param {HTMLElement} element - 要檢查的元素
-     * @returns {boolean} 是否為輸入元素
-     */
-    isInputElement: function (element) {
-        if (!element) return false;
+        } else if (this._matchesShortcut(event, s.stickyNotes)) {
+            event.preventDefault(); event.stopPropagation();
+            this._dotNetHelper?.invokeMethodAsync('OpenStickyNotes')
+                .catch(e => console.error('[KeyboardShortcuts] OpenStickyNotes 失敗:', e));
 
-        const tagName = element.tagName.toLowerCase();
-        
-        // 檢查標準輸入元素
-        if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
-            return true;
-        }
+        } else if (this._matchesShortcut(event, s.calendar)) {
+            event.preventDefault(); event.stopPropagation();
+            this._dotNetHelper?.invokeMethodAsync('OpenCalendar')
+                .catch(e => console.error('[KeyboardShortcuts] OpenCalendar 失敗:', e));
 
-        // 檢查可編輯元素（contenteditable）
-        if (element.contentEditable === 'true' || element.isContentEditable) {
-            return true;
+        } else if (this._matchesShortcut(event, s.quickAction)) {
+            event.preventDefault(); event.stopPropagation();
+            // QuickActionMenu 管理自身狀態，直接點擊主按鈕
+            document.querySelector('.quick-action-main-btn')?.click();
         }
-
-        return false;
-    },
-
-    /**
-     * 檢查是否有 Bootstrap Modal 已開啟
-     * @returns {boolean} 是否有 Modal 開啟
-     */
-    hasOpenModal: function () {
-        // 方法 1: 檢查 body class
-        if (document.body.classList.contains('modal-open')) {
-            return true;
-        }
-        
-        // 方法 2: 檢查 .modal.show 和實際 display 狀態
-        const modalWithShow = document.querySelector('.modal.show');
-        if (modalWithShow) {
-            const style = window.getComputedStyle(modalWithShow);
-            if (style.display === 'block' || style.display === 'flex') {
-                return true;
-            }
-        }
-        
-        // 方法 3: 檢查所有 modal 的實際顯示狀態
-        const allModals = document.querySelectorAll('.modal');
-        for (let modal of allModals) {
-            const style = window.getComputedStyle(modal);
-            if (style.display !== 'none' && style.visibility !== 'hidden') {
-                return true;
-            }
-        }
-        
-        // 方法 4: 檢查 backdrop
-        const backdrop = document.querySelector('.modal-backdrop.show');
-        if (backdrop) {
-            const style = window.getComputedStyle(backdrop);
-            if (style.display !== 'none') {
-                return true;
-            }
-        }
-        
-        return false;
     },
 
     /**
      * 清理資源並移除事件監聽器
      */
     dispose: function () {
-        if (this.handleKeyDown) {
-            document.removeEventListener('keydown', this.handleKeyDown);
+        if (this._boundHandler) {
+            document.removeEventListener('keydown', this._boundHandler);
+            this._boundHandler = null;
         }
-        this.dotNetHelper = null;
+        this._dotNetHelper = null;
+        cancelShortcutCapture();
+    },
+
+    // ===== 內部工具方法 =====
+
+    _isInputElement: function (element) {
+        if (!element) return false;
+        const tag = element.tagName.toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+        if (element.contentEditable === 'true' || element.isContentEditable) return true;
+        return false;
+    },
+
+    _hasOpenModal: function () {
+        if (document.body.classList.contains('modal-open')) return true;
+        const modalWithShow = document.querySelector('.modal.show');
+        if (modalWithShow) {
+            const style = window.getComputedStyle(modalWithShow);
+            if (style.display === 'block' || style.display === 'flex') return true;
+        }
+        const allModals = document.querySelectorAll('.modal');
+        for (let modal of allModals) {
+            const style = window.getComputedStyle(modal);
+            if (style.display !== 'none' && style.visibility !== 'hidden') return true;
+        }
+        const backdrop = document.querySelector('.modal-backdrop.show');
+        if (backdrop) {
+            const style = window.getComputedStyle(backdrop);
+            if (style.display !== 'none') return true;
+        }
+        return false;
+    }
+};
+
+// ===== 快捷鍵擷取（供 ShortcutKeysTab 使用） =====
+
+/**
+ * 進入快捷鍵擷取模式：下一次 Alt/Ctrl + 字母 將回傳給 C#
+ * @param {object} dotNetRef  - ShortcutKeysTab 的 DotNetObjectReference
+ * @param {string} method     - 要呼叫的 [JSInvokable] 方法名稱
+ * @param {string} actionId   - 傳回給 C# 的動作識別碼
+ */
+window.startShortcutCapture = function (dotNetRef, method, actionId) {
+    cancelShortcutCapture(); // 先取消任何進行中的擷取
+
+    window._shortcutCaptureHandler = function (event) {
+        // Escape = 取消
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            cancelShortcutCapture();
+            dotNetRef.invokeMethodAsync(method, null, actionId);
+            return;
+        }
+
+        // 只擷取 Alt+字母 或 Ctrl+字母
+        if ((event.altKey || event.ctrlKey) && !event.shiftKey) {
+            const key = event.key;
+            if (key.length === 1 && /^[a-zA-Z]$/.test(key)) {
+                event.preventDefault();
+                event.stopPropagation();
+                const modifier = event.altKey ? 'Alt' : 'Ctrl';
+                const combo = `${modifier}+${key.toUpperCase()}`;
+                cancelShortcutCapture();
+                dotNetRef.invokeMethodAsync(method, combo, actionId);
+            }
+        }
+    };
+
+    document.addEventListener('keydown', window._shortcutCaptureHandler, true);
+};
+
+/**
+ * 取消快捷鍵擷取模式
+ */
+window.cancelShortcutCapture = function () {
+    if (window._shortcutCaptureHandler) {
+        document.removeEventListener('keydown', window._shortcutCaptureHandler, true);
+        window._shortcutCaptureHandler = null;
     }
 };

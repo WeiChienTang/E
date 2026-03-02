@@ -298,3 +298,27 @@
         transition: none;
     }
 }
+
+/* ===== 主按鈕包裝器（通知紅點用） ===== */
+.quick-action-btn-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* ===== 通知紅點（主按鈕右上角） ===== */
+.quick-action-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background-color: #f85149;
+    border-radius: 50%;
+    border: 2px solid white;
+    pointer-events: none;
+    z-index: 1060;
+}
+
+[data-bs-theme=dark] .quick-action-dot {
+    border-color: #161b22;
+}

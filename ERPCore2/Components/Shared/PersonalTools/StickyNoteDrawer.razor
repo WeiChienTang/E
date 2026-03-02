@@ -2,6 +2,7 @@
 @inject IStickyNoteService StickyNoteService
 @inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
+@inject IPersonalNotificationService NotificationService
 
 @* 便條貼 - 右側滑入面板 *@
 
@@ -265,6 +266,7 @@
         {
             isAddingNew = false;
             newContent = string.Empty;
+            NotificationService.InvalidateNotes();
             await LoadNotes();
         }
     }
@@ -302,6 +304,7 @@
         if (result.IsSuccess)
         {
             activeEditId = 0;
+            NotificationService.InvalidateNotes();
             await LoadNotes();
         }
     }
@@ -330,6 +333,7 @@
             activeEditId = 0;
             showDeleteConfirm = false;
             pendingDeleteId = 0;
+            NotificationService.InvalidateNotes();
             await LoadNotes();
         }
     }

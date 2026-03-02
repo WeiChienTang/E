@@ -277,6 +277,7 @@
   <data name="Preference.Display" xml:space="preserve">
     <value>顯示設定</value>
   </data>
+  <data name="Preference.ShortcutKeys" xml:space="preserve"><value>快捷鍵</value></data>
   <data name="Preference.FontSize" xml:space="preserve">
     <value>字型大小</value>
   </data>
@@ -1629,6 +1630,14 @@
   <data name="Shortcut.CloseModal" xml:space="preserve"><value>關閉當前 Modal 視窗</value></data>
   <data name="Shortcut.CategoryNavigation" xml:space="preserve"><value>導航</value></data>
   <data name="Shortcut.CategoryWindowControl" xml:space="preserve"><value>視窗控制</value></data>
+  <data name="Shortcut.TabHelpText" xml:space="preserve"><value>點擊「變更」後，按下 Alt 或 Ctrl + 字母鍵設定快捷鍵；按 Esc 取消</value></data>
+  <data name="Shortcut.ChangeButton" xml:space="preserve"><value>變更</value></data>
+  <data name="Shortcut.ResetButton" xml:space="preserve"><value>重設</value></data>
+  <data name="Shortcut.ResetAllButton" xml:space="preserve"><value>重設全部</value></data>
+  <data name="Shortcut.PressKey" xml:space="preserve"><value>請按下快捷鍵...</value></data>
+  <data name="Shortcut.DefaultLabel" xml:space="preserve"><value>預設：</value></data>
+  <data name="Shortcut.ConflictError" xml:space="preserve"><value>與「{0}」的快捷鍵衝突，請選擇其他組合</value></data>
+  <data name="Shortcut.Fixed" xml:space="preserve"><value>固定不可更改</value></data>
 
   <!-- ===== Search 搜尋 ===== -->
   <data name="Search.GoTo" xml:space="preserve"><value>前往</value></data>
@@ -2824,5 +2833,23 @@
   <data name="Document.SupportedFormats" xml:space="preserve"><value>支援格式：PDF、Word、Excel、圖片（最大 20MB）</value></data>
   <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>使用分類預設</value></data>
   <data name="Document.PaperSizeApplied" xml:space="preserve"><value>已套用「{0}」的尺寸設定</value></data>
+  <data name="Document.AttachmentFiles" xml:space="preserve"><value>附件檔案</value></data>
+  <data name="Document.NoAttachments" xml:space="preserve"><value>尚未上傳附件</value></data>
+  <data name="Field.AttachmentCount" xml:space="preserve"><value>附件數量</value></data>
+  <data name="Field.FileDisplayName" xml:space="preserve"><value>附件名稱</value></data>
+  <data name="Label.PendingUpload" xml:space="preserve"><value>待上傳</value></data>
+  <data name="Message.AtLeastOneFile" xml:space="preserve"><value>至少須上傳一個附件</value></data>
+  <!-- ===== 通知設定 ===== -->
+  <data name="Preference.Notifications" xml:space="preserve"><value>通知設定</value></data>
+  <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>顯示行事曆提醒徽章</value></data>
+  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>顯示便條貼計數徽章</value></data>
+  <data name="Preference.DefaultReminder" xml:space="preserve"><value>預設提醒時間</value></data>
+  <data name="Preference.NoReminder" xml:space="preserve"><value>不提醒</value></data>
+  <data name="Preference.Reminder5" xml:space="preserve"><value>5 分鐘前</value></data>
+  <data name="Preference.Reminder15" xml:space="preserve"><value>15 分鐘前</value></data>
+  <data name="Preference.Reminder30" xml:space="preserve"><value>30 分鐘前</value></data>
+  <data name="Preference.Reminder60" xml:space="preserve"><value>1 小時前</value></data>
+  <data name="Calendar.Reminder" xml:space="preserve"><value>提醒</value></data>
+  <data name="Calendar.ReminderUseDefault" xml:space="preserve"><value>使用預設值</value></data>
 
 </root>

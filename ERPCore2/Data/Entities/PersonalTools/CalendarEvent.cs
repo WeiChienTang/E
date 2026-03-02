@@ -71,6 +71,12 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "來源 ID")]
         public int? SourceId { get; set; }
 
+        /// <summary>
+        /// 提醒時間（分鐘）。null = 使用個人偏好設定的預設值，0 = 不提醒
+        /// </summary>
+        [Display(Name = "提醒")]
+        public int? ReminderMinutes { get; set; }
+
         // 導航屬性
         public Employee? Employee { get; set; }
     }

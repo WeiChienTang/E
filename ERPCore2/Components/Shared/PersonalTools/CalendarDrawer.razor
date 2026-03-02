@@ -2,6 +2,7 @@
 @inject ICalendarEventService CalendarEventService
 @inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
+@inject IPersonalNotificationService NotificationService
 
 @* 行事曆 - 右側滑入面板 *@
 
@@ -102,6 +103,17 @@
                                placeholder="@L["Calendar.AllDay"]" />
                     </div>
                     <div class="event-form-row">
+                        <select class="event-input event-select"
+                                @bind="newEventReminderMinutes">
+                            <option value="-1">@L["Calendar.ReminderUseDefault"]</option>
+                            <option value="0">@L["Preference.NoReminder"]</option>
+                            <option value="5">@L["Preference.Reminder5"]</option>
+                            <option value="15">@L["Preference.Reminder15"]</option>
+                            <option value="30">@L["Preference.Reminder30"]</option>
+                            <option value="60">@L["Preference.Reminder60"]</option>
+                        </select>
+                    </div>
+                    <div class="event-form-row">
                         <div class="color-picker">
                             @foreach (var c in ColorOptions)
                             {
@@ -177,6 +189,7 @@
     private string newEventDateStr = DateTime.Today.ToString("yyyy-MM-dd");
     private string newEventTimeStr = string.Empty;
     private CalendarEventColor newEventColor = CalendarEventColor.Blue;
+    private int newEventReminderMinutes = -1; // -1 = 使用預設值
 
     // 顏色選項
     private static readonly Dictionary<CalendarEventColor, string> ColorOptions = new()
@@ -273,6 +286,7 @@
         newEventDateStr = selectedDate.ToString("yyyy-MM-dd");
         newEventTimeStr = string.Empty;
         newEventColor = CalendarEventColor.Blue;
+        newEventReminderMinutes = -1;
     }
 
     private void CancelAddEvent()
@@ -292,11 +306,13 @@
             time = parsedTime;
         }
 
-        var result = await CalendarEventService.CreateAsync(employeeId, newEventTitle, date, time, newEventColor);
+        var reminderMinutes = newEventReminderMinutes == -1 ? (int?)null : newEventReminderMinutes;
+        var result = await CalendarEventService.CreateAsync(employeeId, newEventTitle, date, time, newEventColor, reminderMinutes);
         if (result.IsSuccess)
         {
             isAddingEvent = false;
             newEventTitle = string.Empty;
+            NotificationService.InvalidateEvents();
 
             // 若新增的日期在目前月份，重新整理
             if (date.Month == currentDate.Month && date.Year == currentDate.Year)
@@ -319,6 +335,7 @@
         var result = await CalendarEventService.DeleteAsync(eventId, employeeId);
         if (result.IsSuccess)
         {
+            NotificationService.InvalidateEvents();
             await LoadMonthEvents();
         }
     }

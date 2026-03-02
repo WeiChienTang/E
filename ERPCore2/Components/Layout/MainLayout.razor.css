@@ -146,3 +146,77 @@ main {
 .blazor-error-boundary::after {
     content: "An error has occurred."
 }
+
+/* ===== 行事曆提醒 Toast ===== */
+.calendar-reminder-container {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1070;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 340px;
+}
+
+.calendar-reminder-toast {
+    display: flex;
+    align-items: center;
+    background: var(--bg-primary, #fff);
+    border: 1px solid var(--border-color, #dee2e6);
+    border-left: 4px solid var(--primary-blue, #0d6efd);
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 0.875rem;
+    animation: toastSlideIn 0.3s ease-out;
+}
+
+.reminder-title {
+    font-weight: 500;
+    color: var(--text-primary, #212529);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reminder-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #6c757d);
+    flex-shrink: 0;
+}
+
+.reminder-dismiss-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary, #6c757d);
+    padding: 0 0 0 8px;
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.reminder-dismiss-btn:hover {
+    opacity: 1;
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+[data-bs-theme=dark] .calendar-reminder-toast {
+    background: #21262d;
+    border-color: #30363d;
+    border-left-color: #58a6ff;
+}

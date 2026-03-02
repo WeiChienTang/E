@@ -1,3 +1,14 @@
+.section-header {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-blue);
+}
+
 .theme-option-btn {
     display: flex;
     flex-direction: column;
@@ -11,7 +22,11 @@
 .theme-icon {
     font-size: 1.25rem;
     line-height: 1;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
 }
 
 .theme-label {

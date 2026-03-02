@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260302020518_AddEmployeePreferenceShortcuts")]
+    partial class AddEmployeePreferenceShortcuts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -235,9 +238,6 @@ namespace ERPCore2.Migrations
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<int?>("ReminderMinutes")
-                        .HasColumnType("int");
 
                     b.Property<int?>("SourceId")
                         .HasColumnType("int");
@@ -923,14 +923,16 @@ namespace ERPCore2.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("FileName")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("FilePath")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<long?>("FileSize")
+                    b.Property<long>("FileSize")
                         .HasColumnType("bigint");
 
                     b.Property<string>("IssuedBy")
@@ -1024,74 +1026,6 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("DocumentCategories");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.DocumentFile", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("DocumentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("MimeType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DocumentId");
-
-                    b.ToTable("DocumentFiles");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Employee", b =>
@@ -1464,9 +1398,6 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("DefaultReminderMinutes")
-                        .HasColumnType("int");
-
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
 
@@ -1496,12 +1427,6 @@ namespace ERPCore2.Migrations
                     b.Property<string>("ShortcutStickyNotes")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
-                    b.Property<bool>("ShowCalendarBadge")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("ShowNoteBadge")
-                        .HasColumnType("bit");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -7080,17 +7005,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("DocumentCategory");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.DocumentFile", b =>
-                {
-                    b.HasOne("ERPCore2.Data.Entities.Document", "Document")
-                        .WithMany("DocumentFiles")
-                        .HasForeignKey("DocumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Document");
-                });
-
             modelBuilder.Entity("ERPCore2.Data.Entities.Employee", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Department", "Department")
@@ -8575,11 +8489,6 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.Department", b =>
                 {
                     b.Navigation("Employees");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.Document", b =>
-                {
-                    b.Navigation("DocumentFiles");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.DocumentCategory", b =>

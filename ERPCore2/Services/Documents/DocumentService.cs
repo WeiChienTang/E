@@ -20,6 +20,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Documents
                     .Include(d => d.DocumentCategory)
+                    .Include(d => d.DocumentFiles)
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
             }
@@ -44,8 +45,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Documents
                     .Include(d => d.DocumentCategory)
+                    .Include(d => d.DocumentFiles)
                     .Where(d => d.Title.Contains(searchTerm) ||
-                               d.FileName.Contains(searchTerm) ||
                                (d.IssuedBy != null && d.IssuedBy.Contains(searchTerm)) ||
                                (d.Code != null && d.Code.Contains(searchTerm)))
                     .OrderByDescending(d => d.CreatedAt)
@@ -63,6 +64,28 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<Document?> GetWithFilesAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Documents
+                    .Include(d => d.DocumentCategory)
+                    .Include(d => d.DocumentFiles.OrderBy(f => f.SortOrder))
+                    .FirstOrDefaultAsync(d => d.Id == id);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetWithFilesAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetWithFilesAsync),
+                    ServiceType = GetType().Name,
+                    Id = id
+                });
+                return null;
+            }
+        }
+
         public async Task<List<Document>> GetByCategoryAsync(int categoryId)
         {
             try
@@ -70,6 +93,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Documents
                     .Include(d => d.DocumentCategory)
+                    .Include(d => d.DocumentFiles)
                     .Where(d => d.DocumentCategoryId == categoryId)
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
@@ -125,9 +149,6 @@ namespace ERPCore2.Services
 
                 if (entity.DocumentCategoryId <= 0)
                     errors.Add("請選擇檔案分類");
-
-                if (string.IsNullOrWhiteSpace(entity.FilePath))
-                    errors.Add("請上傳檔案");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

@@ -1,30 +1,30 @@
 # 審核機制 — 各模組狀態與待辦項目
 
 > 本文件記錄各模組審核功能的現況、已知問題，以及各輪修正的完整項目清單。
-> 最後更新：2026-03-02（本輪修正：補齊 5 個模組的完整審核 UI + Service 方法 + 批次審核 + Index 狀態欄）
+> 最後更新：2026-03-02（本輪補強：Quotation + PurchaseOrder Detail Table 封鎖 + CanPrintCheck）
 
 ---
 
 ## 一、各模組詳細現況
 
-### 1-1 報價單（Quotation）✅ 本輪補強完成
+### 1-1 報價單（Quotation）✅ 全部完成
 
 | 項目 | 狀態 | 備註 |
 |------|------|------|
 | 實體審核欄位 | ✅ | `Quotation.cs` 完整 |
-| EditModal UI | ✅ | `ShowApprovalSection` + `OnApprove` + `OnRejectWithReason` |
+| EditModal UI | ✅ | `ShowApprovalSection` + `OnApprove` + `OnRejectWithReason` + `CanPrintCheck` |
 | 核准邏輯 | ✅ | 先 `SaveQuotationWithDetails(entity)` → 再 `ApproveAsync(id, userId)` |
 | 駁回邏輯 | ✅ | 呼叫 `RejectAsync(id, userId, reason)` |
-| Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入；`GetAllAsync` 加入 `Include(ApprovedByUser)` |
-| Detail Table 封鎖 | ❌ | `IsReadOnly` 未由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
-| 列印審核檢查 | ❌ | 未傳入 `CanPrintCheck` 參數 |
+| Service 方法 | ✅ | `ApproveAsync` + `RejectAsync`；`GetAllAsync` 加入 `Include(ApprovedByUser)` |
+| Detail Table 封鎖 | ✅ | `IsReadOnly` 由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
+| 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
 | 批次審核 | ✅ | `QuotationIndex.razor` 使用 `ApproveAsync(id, userId)` |
 | Index 審核狀態欄 | ✅ | `QuotationFieldConfiguration` 已有 `IsApproved` Badge 欄位 |
 | PermissionRegistry | ✅ | `Quotation.Approve` 存在 |
 
 ---
 
-### 1-2 採購訂單（PurchaseOrder）✅ 最完整的參考實作
+### 1-2 採購訂單（PurchaseOrder）✅ 全部完成（最完整的參考實作）
 
 | 項目 | 狀態 | 備註 |
 |------|------|------|
@@ -33,8 +33,8 @@
 | 核准邏輯 | ✅ | 先 `SavePurchaseOrderWithDetails(isPreApprovalSave:true)` → 再 `ApproveOrderAsync` |
 | 駁回邏輯 | ✅ | `RejectOrderAsync` Service 方法 |
 | Service 方法 | ✅ | `ApproveOrderAsync` + `RejectOrderAsync` |
-| Detail Table 封鎖 | ❌ | 待確認 `IsReadOnly` 是否由 `ShouldLockFieldByApproval` 控制 |
-| 列印審核檢查 | ✅ | 有傳入 `CanPrintCheck` |
+| Detail Table 封鎖 | ✅ | `IsReadOnly` 由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
+| 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
 | 批次審核 | ✅ | `PurchaseOrderIndex.razor` 使用 `ApproveOrderAsync(id, userId)` |
 | Index 審核狀態欄 | ✅ | `PurchaseOrderFieldConfiguration` 已有 `IsApproved` Badge 欄位 |
 | PermissionRegistry | ✅ | `PurchaseOrder.Approve` 存在 |
@@ -214,21 +214,25 @@
 
 Badge 顯示：`已核准（bg-success）` / `待核准（bg-warning）`；只在 `_enableApproval = true` 時加入欄位。
 
+### ✅ Quotation + PurchaseOrder 補強（2026-03-02 第二輪）
+
+**報價單（QuotationEditModalComponent）**：
+- `CanPrintCheck="@GetCanPrintCheck()"` 加入 `GenericEditModalComponent` 呼叫
+- `QuotationTable` 的 `IsReadOnly` 改由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制
+- 新增 `GetCanPrintCheck()` 方法
+
+**採購訂單（PurchaseOrderEditModalComponent）**：
+- `CanPrintCheck="@GetCanPrintCheck()"` 加入 `GenericEditModalComponent` 呼叫
+- `PurchaseOrderTable` 的 `IsReadOnly` 改由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制
+- 新增 `GetCanPrintCheck()` 方法
+
+**A4 — Service Include**（確認完成）：
+- 所有 5 個新 Service 的 `GetAllAsync` / `GetByIdAsync` 均已加入 `.Include(x => x.ApprovedByUser)`
+- `SalesDeliveryService` 本輪補加；其他 4 個（PurchaseReceiving/PurchaseReturn/SalesOrder/SalesReturn）在 E 批次時已一併加入
+
 ---
 
 ## 四、尚未完成項目（待下一輪）
-
-### 🟡 A4 — Service Include 查詢
-
-4 個新 Service 的 `GetByIdAsync` / `GetAllAsync` 尚未加入：
-```csharp
-.Include(x => x.ApprovedByUser)
-```
-影響：EditModal「核准人員」顯示為空（功能不中斷，但 UI 資訊不完整）。
-
-### 🟡 PurchaseOrder Detail Table 封鎖（待確認）
-
-- `PurchaseOrderEditModal` Detail Table：確認 `IsReadOnly` 是否已由 `ShouldLockFieldByApproval` 控制
 
 ### 🟢 G — 審核歷史（可延後）
 

@@ -111,6 +111,7 @@ namespace ERPCore2.Data.Context
       public DbSet<CompanyModule> CompanyModules { get; set; }
       public DbSet<DocumentCategory> DocumentCategories { get; set; }
       public DbSet<Document> Documents { get; set; }
+      public DbSet<DocumentFile> DocumentFiles { get; set; }
       public DbSet<StickyNote> StickyNotes { get; set; }
       public DbSet<CalendarEvent> CalendarEvents { get; set; }
 
@@ -1380,6 +1381,15 @@ namespace ERPCore2.Data.Context
                               .WithMany(c => c.Documents)
                               .HasForeignKey(d => d.DocumentCategoryId)
                               .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  // 文件附件關聯
+                  modelBuilder.Entity<DocumentFile>(entity =>
+                  {
+                        entity.HasOne(df => df.Document)
+                              .WithMany(d => d.DocumentFiles)
+                              .HasForeignKey(df => df.DocumentId)
+                              .OnDelete(DeleteBehavior.Cascade);
                   });
 
                   // 便條貼（個人工具）

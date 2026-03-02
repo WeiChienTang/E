@@ -48,7 +48,7 @@ public static class NavigationConfig
                         NameKey = "Nav.Documents",
                         Description = "瀏覽與管理保存的各類文件",
                         Route = "/documents",
-                        IconClass = "",
+                        IconClass = "bi bi-caret-right-fill",
                         Category = "檔案管理",
                         RequiredPermission = PermissionRegistry.Document.Read,
                         SearchKeywords = new List<string> { "檔案列表", "文件列表", "文件管理", "document" },

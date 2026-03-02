@@ -256,6 +256,7 @@
   <data name="Preference.Display" xml:space="preserve">
     <value>表示設定</value>
   </data>
+  <data name="Preference.ShortcutKeys" xml:space="preserve"><value>ショートカット</value></data>
   <data name="Preference.FontSize" xml:space="preserve">
     <value>フォントサイズ</value>
   </data>
@@ -1610,6 +1611,14 @@
   <data name="Shortcut.CloseModal" xml:space="preserve"><value>現在のModalウィンドウを閉じる</value></data>
   <data name="Shortcut.CategoryNavigation" xml:space="preserve"><value>ナビゲーション</value></data>
   <data name="Shortcut.CategoryWindowControl" xml:space="preserve"><value>ウィンドウ制御</value></data>
+  <data name="Shortcut.TabHelpText" xml:space="preserve"><value>「変更」をクリックして、Alt または Ctrl + アルファベットキーを押してショートカットを設定。Esc でキャンセル</value></data>
+  <data name="Shortcut.ChangeButton" xml:space="preserve"><value>変更</value></data>
+  <data name="Shortcut.ResetButton" xml:space="preserve"><value>リセット</value></data>
+  <data name="Shortcut.ResetAllButton" xml:space="preserve"><value>すべてリセット</value></data>
+  <data name="Shortcut.PressKey" xml:space="preserve"><value>ショートカットキーを押してください...</value></data>
+  <data name="Shortcut.DefaultLabel" xml:space="preserve"><value>デフォルト：</value></data>
+  <data name="Shortcut.ConflictError" xml:space="preserve"><value>「{0}」のショートカットと競合しています。別の組み合わせを選択してください</value></data>
+  <data name="Shortcut.Fixed" xml:space="preserve"><value>固定、変更不可</value></data>
 
   <!-- ===== Search 検索 ===== -->
   <data name="Search.GoTo" xml:space="preserve"><value>移動</value></data>
@@ -2765,5 +2774,23 @@
   <data name="Document.SupportedFormats" xml:space="preserve"><value>対応形式：PDF、Word、Excel、画像（最大 20MB）</value></data>
   <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>分類デフォルトを使用</value></data>
   <data name="Document.PaperSizeApplied" xml:space="preserve"><value>「{0}」のサイズ設定を適用しました</value></data>
+  <data name="Document.AttachmentFiles" xml:space="preserve"><value>添付ファイル</value></data>
+  <data name="Document.NoAttachments" xml:space="preserve"><value>添付ファイルなし</value></data>
+  <data name="Field.AttachmentCount" xml:space="preserve"><value>添付数</value></data>
+  <data name="Field.FileDisplayName" xml:space="preserve"><value>添付名称</value></data>
+  <data name="Label.PendingUpload" xml:space="preserve"><value>アップロード待ち</value></data>
+  <data name="Message.AtLeastOneFile" xml:space="preserve"><value>少なくとも1つの添付ファイルが必要です</value></data>
+  <!-- ===== 通知設定 ===== -->
+  <data name="Preference.Notifications" xml:space="preserve"><value>通知設定</value></data>
+  <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>カレンダーバッジを表示</value></data>
+  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>メモバッジを表示</value></data>
+  <data name="Preference.DefaultReminder" xml:space="preserve"><value>既定リマインダー時間</value></data>
+  <data name="Preference.NoReminder" xml:space="preserve"><value>リマインダーなし</value></data>
+  <data name="Preference.Reminder5" xml:space="preserve"><value>5分前</value></data>
+  <data name="Preference.Reminder15" xml:space="preserve"><value>15分前</value></data>
+  <data name="Preference.Reminder30" xml:space="preserve"><value>30分前</value></data>
+  <data name="Preference.Reminder60" xml:space="preserve"><value>1時間前</value></data>
+  <data name="Calendar.Reminder" xml:space="preserve"><value>リマインダー</value></data>
+  <data name="Calendar.ReminderUseDefault" xml:space="preserve"><value>デフォルトを使用</value></data>
 
 </root>

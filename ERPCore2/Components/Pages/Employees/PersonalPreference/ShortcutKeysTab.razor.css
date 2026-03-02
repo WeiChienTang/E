@@ -1,0 +1,120 @@
+/* ===== 快捷鍵設定 Tab 樣式 ===== */
+
+/* 整體表格容器 */
+.shortcut-editor-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+/* 每一行 */
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.625rem 0.875rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    transition: background-color 0.15s ease;
+}
+
+.shortcut-row:last-child {
+    border-bottom: none;
+}
+
+.shortcut-row:hover:not(.shortcut-row--fixed) {
+    background-color: var(--bg-secondary);
+}
+
+/* 擷取模式高亮 */
+.shortcut-row--capturing {
+    background-color: rgba(var(--bs-warning-rgb), 0.08);
+}
+
+/* 固定快捷鍵（Esc）行 */
+.shortcut-row--fixed {
+    background-color: var(--bg-secondary);
+    opacity: 0.75;
+}
+
+/* 功能名稱欄 */
+.shortcut-label {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.shortcut-label span {
+    font-weight: 500;
+}
+
+/* 快捷鍵顯示欄 */
+.shortcut-display {
+    flex: 0 0 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shortcut-keys-display {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* kbd 樣式（與 ShortcutKeysModalComponent 一致） */
+kbd {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 0.8rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+    background-color: #1a1a2e;
+    color: #e8e8e8;
+    border: 1px solid #444;
+    border-radius: 4px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+    white-space: nowrap;
+}
+
+[data-bs-theme=dark] kbd {
+    background-color: var(--bg-tertiary, #21262d);
+    color: var(--text-primary);
+    border-color: var(--bs-border-color);
+}
+
+/* 擷取中 badge 動畫 */
+.capturing-badge {
+    animation: pulse-warning 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.6; }
+}
+
+/* 操作按鈕欄 */
+.shortcut-actions {
+    flex: 0 0 130px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+}
+
+/* 深色模式適配 */
+[data-bs-theme=dark] .shortcut-row:hover:not(.shortcut-row--fixed) {
+    background-color: var(--bg-tertiary);
+}
+
+[data-bs-theme=dark] .shortcut-row--fixed {
+    background-color: var(--bg-secondary);
+}
+
+[data-bs-theme=dark] .shortcut-row--capturing {
+    background-color: rgba(255, 193, 7, 0.1);
+}

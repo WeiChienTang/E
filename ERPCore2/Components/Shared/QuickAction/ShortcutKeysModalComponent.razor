@@ -45,61 +45,82 @@
     [Parameter]
     public EventCallback<bool> IsVisibleChanged { get; set; }
 
+    /// <summary>
+    /// 目前使用者的偏好設定，用於顯示自訂後的快捷鍵組合（null = 全部使用預設值）
+    /// </summary>
+    [Parameter]
+    public EmployeePreference? UserPreference { get; set; }
+
     // ===== 私有欄位 =====
     private List<ShortcutKeyInfo> shortcutKeys = new();
 
     // ===== 生命週期方法 =====
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
+        // 每次 UserPreference 更新時重建清單（儲存後立即反映）
         InitializeShortcutKeys();
     }
 
     // ===== 私有方法 =====
 
     /// <summary>
-    /// 初始化快捷鍵列表
+    /// 從使用者偏好（若有）或系統預設值建立快捷鍵清單
     /// </summary>
     private void InitializeShortcutKeys()
     {
+        var nav = L["Shortcut.CategoryNavigation"].ToString();
+        var win = L["Shortcut.CategoryWindowControl"].ToString();
+
         shortcutKeys = new List<ShortcutKeyInfo>
         {
             new ShortcutKeyInfo
             {
-                Keys = "Alt + S",
+                Keys = FormatCombo(UserPreference?.ShortcutPageSearch ?? ShortcutDefaults.PageSearch),
                 Description = L["Shortcut.OpenPageSearch"].ToString(),
-                Category = L["Shortcut.CategoryNavigation"].ToString()
+                Category = nav
             },
             new ShortcutKeyInfo
             {
-                Keys = "Ctrl + R",
+                Keys = FormatCombo(UserPreference?.ShortcutReportSearch ?? ShortcutDefaults.ReportSearch),
                 Description = L["Shortcut.OpenReportSelector"].ToString(),
-                Category = L["Shortcut.CategoryNavigation"].ToString()
+                Category = nav
             },
             new ShortcutKeyInfo
             {
-                Keys = "Alt + Q",
+                Keys = FormatCombo(UserPreference?.ShortcutQuickAction ?? ShortcutDefaults.QuickAction),
                 Description = L["Shortcut.OpenQuickActionMenu"].ToString(),
-                Category = L["Shortcut.CategoryNavigation"].ToString()
+                Category = nav
             },
             new ShortcutKeyInfo
             {
-                Keys = "Alt + N",
+                Keys = FormatCombo(UserPreference?.ShortcutStickyNotes ?? ShortcutDefaults.StickyNotes),
                 Description = L["Shortcut.OpenStickyNotes"].ToString(),
-                Category = L["Shortcut.CategoryNavigation"].ToString()
+                Category = nav
             },
             new ShortcutKeyInfo
             {
-                Keys = "Alt + C",
+                Keys = FormatCombo(UserPreference?.ShortcutCalendar ?? ShortcutDefaults.Calendar),
                 Description = L["Shortcut.OpenCalendar"].ToString(),
-                Category = L["Shortcut.CategoryNavigation"].ToString()
+                Category = nav
             },
             new ShortcutKeyInfo
             {
                 Keys = "Esc",
                 Description = L["Shortcut.CloseModal"].ToString(),
-                Category = L["Shortcut.CategoryWindowControl"].ToString()
+                Category = win
             },
         };
+    }
+
+    /// <summary>
+    /// 將 "Alt+S" 格式化為 "Alt + S"（含空格，方便 kbd 分割顯示）
+    /// </summary>
+    private static string FormatCombo(string combo)
+    {
+        var parts = combo.Split('+');
+        return parts.Length == 2
+            ? $"{parts[0].Trim()} + {parts[1].Trim()}"
+            : combo;
     }
 
     /// <summary>

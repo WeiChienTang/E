@@ -121,16 +121,17 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(Document.FileSize),
+                        "AttachmentCount",
                         new FieldDefinition<Document>
                         {
-                            PropertyName = nameof(Document.FileSize),
-                            DisplayName = Dn("Field.FileSize", "檔案大小"),
+                            PropertyName = "AttachmentCount",
+                            DisplayName = Dn("Field.AttachmentCount", "附件數量"),
                             ShowInFilter = false,
                             TableOrder = 6,
                             CustomTemplate = obj =>
                             {
-                                var text = FileUploadHelper.GetFileSizeString((obj as Document)?.FileSize ?? 0);
+                                var count = (obj as Document)?.DocumentFiles?.Count ?? 0;
+                                var text = $"{count} 個附件";
                                 return builder => builder.AddContent(0, text);
                             }
                         }

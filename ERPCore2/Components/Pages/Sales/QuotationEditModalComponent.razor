@@ -60,6 +60,7 @@
                           ApprovalPermission="Quotation.Approve"
                           OnApprove="@HandleQuotationApprove"
                           OnRejectWithReason="@HandleQuotationRejectWithReason"
+                          CanPrintCheck="@GetCanPrintCheck()"
                           OnEntityLoaded="@HandleEntityLoaded">
 </GenericEditModalComponent>
 
@@ -881,7 +882,7 @@
                                     SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId > 0 ? editModalComponent.Entity.CustomerId : (int?)null)"
                                     SelectedSupplierId="@(editModalComponent?.Entity?.CustomerId > 0 ? editModalComponent.Entity.CustomerId : (int?)null)"
                                     TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                                    IsReadOnly="false"
+                                    IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)"
                                     OnOpenRelatedDocument="@HandleOpenRelatedDocument"
                                     Title="報價明細"
                                     EmptyMessage="尚未新增報價商品" />
@@ -1266,7 +1267,13 @@
     {
         return isApprovalEnabled && QuotationId.HasValue;
     }
-    
+
+    private Func<bool>? GetCanPrintCheck()
+        => isApprovalEnabled
+            ? () => ApprovalConfigHelper.CanPerformActionRequiringApproval(
+                  isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false)
+            : null;
+
     /// <summary>
     /// 處理報價單審核通過
     /// </summary>

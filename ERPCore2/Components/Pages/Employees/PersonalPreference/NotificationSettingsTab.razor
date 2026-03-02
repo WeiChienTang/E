@@ -1,0 +1,70 @@
+@* 通知設定 Tab — 徽章顯示 + 預設提醒時間 *@
+@inject IStringLocalizer<SharedResource> L
+
+<div class="p-2">
+
+    @* 徽章顯示 *@
+    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.ShowCalendarBadge"]</div>
+    <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" role="switch"
+               id="showCalendarBadge"
+               @bind="(Model ?? _fallback).ShowCalendarBadge" />
+        <label class="form-check-label" for="showCalendarBadge">
+            @L["Preference.ShowCalendarBadge"]
+        </label>
+    </div>
+
+    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.ShowNoteBadge"]</div>
+    <div class="form-check form-switch mb-4">
+        <input class="form-check-input" type="checkbox" role="switch"
+               id="showNoteBadge"
+               @bind="(Model ?? _fallback).ShowNoteBadge" />
+        <label class="form-check-label" for="showNoteBadge">
+            @L["Preference.ShowNoteBadge"]
+        </label>
+    </div>
+
+    @* 預設提醒時間 *@
+    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.DefaultReminder"]</div>
+    <div class="d-flex gap-2 flex-wrap">
+        @foreach (var option in _reminderOptions)
+        {
+            var isSelected = (Model ?? _fallback).DefaultReminderMinutes == option.Value;
+            <button type="button"
+                    class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") reminder-option-btn"
+                    @onclick="() => SelectReminder(option.Value)">
+                @option.Label
+            </button>
+        }
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public EmployeePreference? Model { get; set; }
+
+    private readonly EmployeePreference _fallback = new();
+
+    private record ReminderOption(int Value, string Label);
+
+    private List<ReminderOption> _reminderOptions = new();
+
+    protected override void OnInitialized()
+    {
+        _reminderOptions = new List<ReminderOption>
+        {
+            new(0,  L["Preference.NoReminder"]),
+            new(5,  L["Preference.Reminder5"]),
+            new(15, L["Preference.Reminder15"]),
+            new(30, L["Preference.Reminder30"]),
+            new(60, L["Preference.Reminder60"]),
+        };
+    }
+
+    private void SelectReminder(int value)
+    {
+        (Model ?? _fallback).DefaultReminderMinutes = value;
+        StateHasChanged();
+    }
+}

@@ -302,10 +302,12 @@ namespace ERPCore2.Data
             // 檔案存留服務
             services.AddScoped<IDocumentCategoryService, DocumentCategoryService>();
             services.AddScoped<IDocumentService, DocumentService>();
+            services.AddScoped<IDocumentFileService, DocumentFileService>();
 
             // 個人工具服務
             services.AddScoped<ERPCore2.Services.PersonalTools.IStickyNoteService, ERPCore2.Services.PersonalTools.StickyNoteService>();
             services.AddScoped<ERPCore2.Services.PersonalTools.ICalendarEventService, ERPCore2.Services.PersonalTools.CalendarEventService>();
+            services.AddScoped<ERPCore2.Services.PersonalTools.IPersonalNotificationService, ERPCore2.Services.PersonalTools.PersonalNotificationService>();
         }
 
         /// <summary>

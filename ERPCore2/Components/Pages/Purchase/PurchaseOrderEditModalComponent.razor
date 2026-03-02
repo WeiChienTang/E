@@ -60,6 +60,7 @@
                           ApprovalPermission="PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnRejectWithReason="@HandlePurchaseOrderRejectWithReason"
+                          CanPrintCheck="@GetCanPrintCheck()"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           OnEntityLoaded="@HandleEntityLoaded">
@@ -531,7 +532,7 @@
                                                    DataVersion="@_detailsDataVersion"
                                                    IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
                                                    OnDetailsChanged="@HandleDetailsChanged"
-                                                   IsReadOnly="false"
+                                                   IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)"
                                                    IsApproved="@(editModalComponent?.Entity?.IsApproved ?? false)"
                                                    TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
                                                    OnHasUndeletableDetailsChanged="@(async (hasUndeletable) => await HandleHasUndeletableDetailsChanged(hasUndeletable))"
@@ -990,11 +991,17 @@
     private bool ShouldShowApprovalSection()
     {
         // 新邏輯：只有在啟用審核 + 編輯現有單據時才顯示
-        return isApprovalEnabled && 
-               PurchaseOrderId.HasValue && 
+        return isApprovalEnabled &&
+               PurchaseOrderId.HasValue &&
                PurchaseOrderId.Value > 0;
     }
-    
+
+    private Func<bool>? GetCanPrintCheck()
+        => isApprovalEnabled
+            ? () => ApprovalConfigHelper.CanPerformActionRequiringApproval(
+                  isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false)
+            : null;
+
     /// <summary>
     /// 處理採購單審核通過
     /// </summary>

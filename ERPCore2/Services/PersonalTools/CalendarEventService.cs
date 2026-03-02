@@ -70,7 +70,8 @@ namespace ERPCore2.Services.PersonalTools
             string title,
             DateOnly date,
             TimeOnly? time,
-            CalendarEventColor color)
+            CalendarEventColor color,
+            int? reminderMinutes = null)
         {
             try
             {
@@ -89,6 +90,7 @@ namespace ERPCore2.Services.PersonalTools
                     EventTime = time,
                     Color = color,
                     EventType = CalendarEventType.Personal,
+                    ReminderMinutes = reminderMinutes,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
@@ -110,7 +112,8 @@ namespace ERPCore2.Services.PersonalTools
             string title,
             DateOnly date,
             TimeOnly? time,
-            CalendarEventColor color)
+            CalendarEventColor color,
+            int? reminderMinutes = null)
         {
             try
             {
@@ -131,6 +134,7 @@ namespace ERPCore2.Services.PersonalTools
                 calEvent.EventDate = date;
                 calEvent.EventTime = time;
                 calEvent.Color = color;
+                calEvent.ReminderMinutes = reminderMinutes;
                 calEvent.UpdatedAt = DateTime.Now;
 
                 await context.SaveChangesAsync();

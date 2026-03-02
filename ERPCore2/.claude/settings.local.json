@@ -102,7 +102,9 @@
       "Bash(sed 's/L\\\\[\"\"//')",
       "Bash(sed 's/\"\"\\\\]//')",
       "Bash(comm -23 /tmp/used_keys_clean.txt /tmp/resx_keys_default.txt)",
-      "Bash(powershell -Command \":*)"
+      "Bash(powershell -Command \":*)",
+      "Bash(del \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Migrations\\\\20260302014715_AddEmployeePreferenceShortcuts.cs\")",
+      "Bash(del \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Migrations\\\\20260302014715_AddEmployeePreferenceShortcuts.Designer.cs\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

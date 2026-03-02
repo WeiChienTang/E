@@ -256,6 +256,7 @@
   <data name="Preference.Display" xml:space="preserve">
     <value>Display</value>
   </data>
+  <data name="Preference.ShortcutKeys" xml:space="preserve"><value>Shortcuts</value></data>
   <data name="Preference.FontSize" xml:space="preserve">
     <value>Font Size</value>
   </data>
@@ -1610,6 +1611,14 @@
   <data name="Shortcut.CloseModal" xml:space="preserve"><value>Close Current Modal Window</value></data>
   <data name="Shortcut.CategoryNavigation" xml:space="preserve"><value>Navigation</value></data>
   <data name="Shortcut.CategoryWindowControl" xml:space="preserve"><value>Window Control</value></data>
+  <data name="Shortcut.TabHelpText" xml:space="preserve"><value>Click "Change", then press Alt or Ctrl + a letter key to set the shortcut; press Esc to cancel</value></data>
+  <data name="Shortcut.ChangeButton" xml:space="preserve"><value>Change</value></data>
+  <data name="Shortcut.ResetButton" xml:space="preserve"><value>Reset</value></data>
+  <data name="Shortcut.ResetAllButton" xml:space="preserve"><value>Reset All</value></data>
+  <data name="Shortcut.PressKey" xml:space="preserve"><value>Press a shortcut key...</value></data>
+  <data name="Shortcut.DefaultLabel" xml:space="preserve"><value>Default:</value></data>
+  <data name="Shortcut.ConflictError" xml:space="preserve"><value>Conflicts with "{0}" shortcut, please choose another combination</value></data>
+  <data name="Shortcut.Fixed" xml:space="preserve"><value>Fixed, cannot be changed</value></data>
 
   <!-- ===== Search ===== -->
   <data name="Search.GoTo" xml:space="preserve"><value>Go To</value></data>
@@ -2792,5 +2801,23 @@
   <data name="Document.SupportedFormats" xml:space="preserve"><value>Supported formats: PDF, Word, Excel, Images (max 20MB)</value></data>
   <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>Use category default</value></data>
   <data name="Document.PaperSizeApplied" xml:space="preserve"><value>Applied size settings from "{0}"</value></data>
+  <data name="Document.AttachmentFiles" xml:space="preserve"><value>Attachment Files</value></data>
+  <data name="Document.NoAttachments" xml:space="preserve"><value>No attachments uploaded</value></data>
+  <data name="Field.AttachmentCount" xml:space="preserve"><value>Attachments</value></data>
+  <data name="Field.FileDisplayName" xml:space="preserve"><value>Attachment Name</value></data>
+  <data name="Label.PendingUpload" xml:space="preserve"><value>Pending Upload</value></data>
+  <data name="Message.AtLeastOneFile" xml:space="preserve"><value>At least one attachment is required</value></data>
+  <!-- ===== 通知設定 ===== -->
+  <data name="Preference.Notifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>Show Calendar Reminder Badge</value></data>
+  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>Show Note Count Badge</value></data>
+  <data name="Preference.DefaultReminder" xml:space="preserve"><value>Default Reminder Time</value></data>
+  <data name="Preference.NoReminder" xml:space="preserve"><value>No Reminder</value></data>
+  <data name="Preference.Reminder5" xml:space="preserve"><value>5 min before</value></data>
+  <data name="Preference.Reminder15" xml:space="preserve"><value>15 min before</value></data>
+  <data name="Preference.Reminder30" xml:space="preserve"><value>30 min before</value></data>
+  <data name="Preference.Reminder60" xml:space="preserve"><value>1 hour before</value></data>
+  <data name="Calendar.Reminder" xml:space="preserve"><value>Reminder</value></data>
+  <data name="Calendar.ReminderUseDefault" xml:space="preserve"><value>Use Default</value></data>
 
 </root>

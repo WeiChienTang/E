@@ -27,7 +27,8 @@ namespace ERPCore2.Services.PersonalTools
             string title,
             DateOnly date,
             TimeOnly? time,
-            CalendarEventColor color);
+            CalendarEventColor color,
+            int? reminderMinutes = null);
 
         /// <summary>
         /// 更新事項
@@ -38,7 +39,8 @@ namespace ERPCore2.Services.PersonalTools
             string title,
             DateOnly date,
             TimeOnly? time,
-            CalendarEventColor color);
+            CalendarEventColor color,
+            int? reminderMinutes = null);
 
         /// <summary>
         /// 刪除事項（確保只能刪除自己的）

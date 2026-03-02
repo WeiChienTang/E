@@ -56,7 +56,7 @@
     private bool isLoading = false;
     private int? currentEmployeeId = null;
 
-    // 語言偏好 + 字型縮放 + 主題
+    // 語言偏好 + 字型縮放 + 主題 + 快捷鍵
     private EmployeePreference employeePreference = new();
     private UILanguage _originalLanguage = UILanguage.ZhTW;   // 記錄載入時的語言，用於判斷是否需要 reload
     private ContentZoom _originalZoom = ContentZoom.Medium;    // 記錄載入時的縮放，用於判斷是否需要套用
@@ -93,15 +93,27 @@
         <DisplayTab Model="@employeePreference" />
     };
 
+    private RenderFragment CreateShortcutKeysTabContent() => __builder =>
+    {
+        <ShortcutKeysTab Model="@employeePreference" />
+    };
+
+    private RenderFragment CreateNotificationTabContent() => __builder =>
+    {
+        <NotificationSettingsTab Model="@employeePreference" />
+    };
+
     // ===== 生命週期 =====
 
     protected override void OnInitialized()
     {
         tabDefinitions = new List<FormTabDefinition>
         {
-            new() { Label = L["Preference.PersonalData"], Icon = "bi bi-person", SectionNames = new(), CustomContent = CreatePersonalDataTabContent() },
-            new() { Label = L["Preference.LanguageRegion"], Icon = "bi bi-translate", SectionNames = new(), CustomContent = CreateLanguageRegionTabContent() },
-            new() { Label = L["Preference.Display"], Icon = "bi bi-type", SectionNames = new(), CustomContent = CreateDisplayTabContent() }
+            new() { Label = L["Preference.PersonalData"],   Icon = "bi bi-person",    SectionNames = new(), CustomContent = CreatePersonalDataTabContent() },
+            new() { Label = L["Preference.LanguageRegion"], Icon = "bi bi-translate",  SectionNames = new(), CustomContent = CreateLanguageRegionTabContent() },
+            new() { Label = L["Preference.Display"],        Icon = "bi bi-type",       SectionNames = new(), CustomContent = CreateDisplayTabContent() },
+            new() { Label = L["Preference.ShortcutKeys"],   Icon = "bi bi-keyboard",   SectionNames = new(), CustomContent = CreateShortcutKeysTabContent() },
+            new() { Label = L["Preference.Notifications"],  Icon = "bi bi-bell",       SectionNames = new(), CustomContent = CreateNotificationTabContent() }
         };
     }
 
@@ -200,6 +212,17 @@
 
             if (OnSaved.HasDelegate)
                 await OnSaved.InvokeAsync();
+
+            // 快捷鍵：立即套用（不需 reload）
+            var shortcutConfig = new Dictionary<string, string>
+            {
+                ["pageSearch"]   = employeePreference.ShortcutPageSearch   ?? ShortcutDefaults.PageSearch,
+                ["reportSearch"] = employeePreference.ShortcutReportSearch  ?? ShortcutDefaults.ReportSearch,
+                ["stickyNotes"]  = employeePreference.ShortcutStickyNotes   ?? ShortcutDefaults.StickyNotes,
+                ["calendar"]     = employeePreference.ShortcutCalendar      ?? ShortcutDefaults.Calendar,
+                ["quickAction"]  = employeePreference.ShortcutQuickAction   ?? ShortcutDefaults.QuickAction
+            };
+            await JSRuntime.InvokeVoidAsync("KeyboardShortcuts.configure", shortcutConfig);
 
             // 字型縮放若有變更，即時套用（寫 cookie + 更新 CSS variable，不需 reload）
             if (employeePreference.Zoom != _originalZoom)

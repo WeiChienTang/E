@@ -59,6 +59,14 @@ namespace ERPCore2.Services
                     existing.Language = preference.Language;
                     existing.Zoom = preference.Zoom;
                     existing.Theme = preference.Theme;
+                    existing.ShortcutPageSearch   = preference.ShortcutPageSearch;
+                    existing.ShortcutReportSearch  = preference.ShortcutReportSearch;
+                    existing.ShortcutStickyNotes   = preference.ShortcutStickyNotes;
+                    existing.ShortcutCalendar      = preference.ShortcutCalendar;
+                    existing.ShortcutQuickAction        = preference.ShortcutQuickAction;
+                    existing.ShowCalendarBadge          = preference.ShowCalendarBadge;
+                    existing.ShowNoteBadge              = preference.ShowNoteBadge;
+                    existing.DefaultReminderMinutes     = preference.DefaultReminderMinutes;
                     existing.UpdatedAt = DateTime.Now;
                 }
 

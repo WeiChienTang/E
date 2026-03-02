@@ -1,0 +1,283 @@
+@* 快捷鍵設定 Tab — 讓使用者自訂系統快捷鍵組合 *@
+@inject IStringLocalizer<SharedResource> L
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<div class="p-2">
+
+    <p class="text-muted small mb-3">@L["Shortcut.TabHelpText"]</p>
+
+    @if (!string.IsNullOrEmpty(_conflictError))
+    {
+        <div class="alert alert-warning d-flex align-items-center mb-3 py-2">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>@_conflictError</span>
+            <button type="button" class="btn-close btn-sm ms-auto"
+                    @onclick="() => _conflictError = string.Empty"></button>
+        </div>
+    }
+
+    <div class="shortcut-editor-table">
+
+        @foreach (var item in _shortcutItems)
+        {
+            var capturedItem = item;
+            <div class="shortcut-row @(capturedItem.IsCapturing ? "shortcut-row--capturing" : "")">
+
+                <div class="shortcut-label">
+                    <span>@capturedItem.Label</span>
+                    @if (capturedItem.CurrentShortcut != capturedItem.DefaultShortcut)
+                    {
+                        <small class="text-muted ms-2">
+                            (@L["Shortcut.DefaultLabel"] @capturedItem.DefaultShortcut)
+                        </small>
+                    }
+                </div>
+
+                <div class="shortcut-display">
+                    @if (capturedItem.IsCapturing)
+                    {
+                        <span class="badge bg-warning text-dark px-3 py-2 capturing-badge">
+                            <i class="bi bi-keyboard me-1"></i>@L["Shortcut.PressKey"]
+                        </span>
+                    }
+                    else
+                    {
+                        <div class="shortcut-keys-display">
+                            @foreach (var part in capturedItem.CurrentShortcut.Split('+'))
+                            {
+                                <kbd>@part.Trim()</kbd>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="shortcut-actions">
+                    @if (!capturedItem.IsCapturing)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                @onclick="() => StartCapture(capturedItem)">
+                            @L["Shortcut.ChangeButton"]
+                        </button>
+                        @if (capturedItem.CurrentShortcut != capturedItem.DefaultShortcut)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-1"
+                                    @onclick="() => ResetToDefault(capturedItem)">
+                                @L["Shortcut.ResetButton"]
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                @onclick="() => CancelCapture(capturedItem)">
+                            @L["Button.Cancel"]
+                        </button>
+                    }
+                </div>
+
+            </div>
+        }
+
+        @* ESC — 固定快捷鍵，不可更改 *@
+        <div class="shortcut-row shortcut-row--fixed">
+            <div class="shortcut-label">
+                <span>@L["Shortcut.CloseModal"]</span>
+            </div>
+            <div class="shortcut-display">
+                <div class="shortcut-keys-display"><kbd>Esc</kbd></div>
+            </div>
+            <div class="shortcut-actions">
+                <span class="text-muted small fst-italic">@L["Shortcut.Fixed"]</span>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-3 pt-3 border-top d-flex justify-content-end">
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                @onclick="ResetAll">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>@L["Shortcut.ResetAllButton"]
+        </button>
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public EmployeePreference? Model { get; set; }
+
+    private readonly EmployeePreference _fallback = new();
+    private DotNetObjectReference<ShortcutKeysTab>? _dotNetRef;
+    private List<ShortcutItem> _shortcutItems = new();
+    private string _conflictError = string.Empty;
+    private EmployeePreference? _lastModel;
+
+    // ===== 內部資料類別 =====
+
+    private class ShortcutItem
+    {
+        public string ActionId      { get; }
+        public string Label         { get; }
+        public string DefaultShortcut { get; }
+        public string CurrentShortcut { get; set; }
+        public bool   IsCapturing   { get; set; }
+
+        public ShortcutItem(string actionId, string label, string defaultShortcut, string? currentValue)
+        {
+            ActionId       = actionId;
+            Label          = label;
+            DefaultShortcut = defaultShortcut;
+            CurrentShortcut = string.IsNullOrEmpty(currentValue) ? defaultShortcut : currentValue;
+        }
+    }
+
+    // ===== 生命週期 =====
+
+    protected override void OnInitialized()
+    {
+        _dotNetRef = DotNetObjectReference.Create(this);
+    }
+
+    protected override void OnParametersSet()
+    {
+        // 只在 Model 參照變更時（Modal 重新開啟）才重建清單
+        if (Model != _lastModel)
+        {
+            _lastModel = Model;
+            InitializeItems();
+        }
+    }
+
+    private void InitializeItems()
+    {
+        var m = Model ?? _fallback;
+        _shortcutItems = new List<ShortcutItem>
+        {
+            new(nameof(EmployeePreference.ShortcutPageSearch),
+                L["Shortcut.OpenPageSearch"].ToString(),
+                ShortcutDefaults.PageSearch,
+                m.ShortcutPageSearch),
+
+            new(nameof(EmployeePreference.ShortcutReportSearch),
+                L["Shortcut.OpenReportSelector"].ToString(),
+                ShortcutDefaults.ReportSearch,
+                m.ShortcutReportSearch),
+
+            new(nameof(EmployeePreference.ShortcutStickyNotes),
+                L["Shortcut.OpenStickyNotes"].ToString(),
+                ShortcutDefaults.StickyNotes,
+                m.ShortcutStickyNotes),
+
+            new(nameof(EmployeePreference.ShortcutCalendar),
+                L["Shortcut.OpenCalendar"].ToString(),
+                ShortcutDefaults.Calendar,
+                m.ShortcutCalendar),
+
+            new(nameof(EmployeePreference.ShortcutQuickAction),
+                L["Shortcut.OpenQuickActionMenu"].ToString(),
+                ShortcutDefaults.QuickAction,
+                m.ShortcutQuickAction),
+        };
+    }
+
+    // ===== 事件處理 =====
+
+    private async Task StartCapture(ShortcutItem item)
+    {
+        // 取消其他進行中的擷取
+        foreach (var i in _shortcutItems)
+            i.IsCapturing = false;
+
+        item.IsCapturing = true;
+        _conflictError = string.Empty;
+        StateHasChanged();
+
+        await JSRuntime.InvokeVoidAsync("startShortcutCapture",
+            _dotNetRef, nameof(OnShortcutCaptured), item.ActionId);
+    }
+
+    [JSInvokable]
+    public void OnShortcutCaptured(string? combo, string actionId)
+    {
+        var item = _shortcutItems.FirstOrDefault(i => i.ActionId == actionId);
+        if (item == null) return;
+
+        item.IsCapturing = false;
+
+        if (combo != null)
+        {
+            // 衝突偵測
+            var conflict = _shortcutItems.FirstOrDefault(i =>
+                i.ActionId != actionId &&
+                string.Equals(i.CurrentShortcut, combo, StringComparison.OrdinalIgnoreCase));
+
+            if (conflict != null)
+            {
+                _conflictError = string.Format(L["Shortcut.ConflictError"].ToString(), conflict.Label);
+            }
+            else
+            {
+                item.CurrentShortcut = combo;
+                WriteToModel(actionId, combo);
+                _conflictError = string.Empty;
+            }
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CancelCapture(ShortcutItem item)
+    {
+        item.IsCapturing = false;
+        await JSRuntime.InvokeVoidAsync("cancelShortcutCapture");
+        StateHasChanged();
+    }
+
+    private void ResetToDefault(ShortcutItem item)
+    {
+        item.CurrentShortcut = item.DefaultShortcut;
+        WriteToModel(item.ActionId, null); // null = 使用預設（儲存 null 到 DB）
+        _conflictError = string.Empty;
+        StateHasChanged();
+    }
+
+    private void ResetAll()
+    {
+        foreach (var item in _shortcutItems)
+        {
+            item.CurrentShortcut = item.DefaultShortcut;
+            WriteToModel(item.ActionId, null);
+        }
+        _conflictError = string.Empty;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 將 combo 寫回 Model（null 表示使用預設，儲存 null 到 DB）
+    /// </summary>
+    private void WriteToModel(string actionId, string? combo)
+    {
+        var m = Model ?? _fallback;
+        switch (actionId)
+        {
+            case nameof(EmployeePreference.ShortcutPageSearch):
+                m.ShortcutPageSearch = combo; break;
+            case nameof(EmployeePreference.ShortcutReportSearch):
+                m.ShortcutReportSearch = combo; break;
+            case nameof(EmployeePreference.ShortcutStickyNotes):
+                m.ShortcutStickyNotes = combo; break;
+            case nameof(EmployeePreference.ShortcutCalendar):
+                m.ShortcutCalendar = combo; break;
+            case nameof(EmployeePreference.ShortcutQuickAction):
+                m.ShortcutQuickAction = combo; break;
+        }
+    }
+
+    // ===== IDisposable =====
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
+    }
+}

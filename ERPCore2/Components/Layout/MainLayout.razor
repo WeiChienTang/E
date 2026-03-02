@@ -1,5 +1,6 @@
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Report
+@using ERPCore2.Data.Entities
 @using ERPCore2.Components.Shared.PersonalTools
 @using ERPCore2.Components.Pages.Reports
 @using ERPCore2.Components.Pages.Employees
@@ -16,6 +17,7 @@
 @inject INavigationSearchService NavigationSearchService
 @inject IReportSearchService ReportSearchService
 @inject IEmployeePreferenceService EmployeePreferenceService
+@inject ERPCore2.Services.PersonalTools.IPersonalNotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 @implements IAsyncDisposable
@@ -69,7 +71,8 @@
 
 @* 快捷鍵說明 Modal *@
 <ShortcutKeysModalComponent IsVisible="@showShortcutKeys"
-                           IsVisibleChanged="@((bool visible) => showShortcutKeys = visible)" />
+                           IsVisibleChanged="@((bool visible) => showShortcutKeys = visible)"
+                           UserPreference="@_currentPreference" />
 
 @* 應收帳款報表 Modal（舊版，將逐步替換為 GenericReportFilterModalComponent） *@
 <AccountsReceivableReportPage IsVisible="@showAccountsReceivableReport"
@@ -103,13 +106,39 @@
 <PersonalPreferenceModalComponent IsVisible="@showPersonalPreference"
                                   IsVisibleChanged="@((bool visible) => showPersonalPreference = visible)" />
 
+@* 行事曆提醒 Toast（到期事項通知） *@
+@if (_dueReminders.Any() && (_currentPreference?.ShowCalendarBadge ?? true))
+{
+    <div class="calendar-reminder-container">
+        @foreach (var ev in _dueReminders)
+        {
+            var evId = ev.Id;
+            <div class="calendar-reminder-toast">
+                <span class="bi bi-alarm me-2"></span>
+                <span class="reminder-title">@ev.Title</span>
+                @if (ev.EventTime.HasValue)
+                {
+                    <span class="reminder-time ms-2">@ev.EventTime.Value.ToString("HH:mm")</span>
+                }
+                <button class="reminder-dismiss-btn ms-auto" @onclick="() => DismissReminder(evId)" title="@L["Button.Close"]">
+                    <span class="bi bi-x"></span>
+                </button>
+            </div>
+        }
+    </div>
+}
+
 @* 快速功能表（右下角浮動按鈕） *@
 <QuickActionMenu @rendermode="InteractiveServer"
                 OnPageSearchClick="@OpenPageSearch"
                 OnReportSearchClick="@OpenReportSearch"
                 OnShortcutKeysClick="@OpenShortcutKeys"
                 OnStickyNotesClick="@OpenStickyNotes"
-                OnCalendarClick="@OpenCalendar" />
+                OnCalendarClick="@OpenCalendar"
+                CalendarBadgeCount="@NotificationService.UpcomingEventCount"
+                NoteBadgeCount="@NotificationService.StickyNoteCount"
+                ShowCalendarBadge="@(_currentPreference?.ShowCalendarBadge ?? true)"
+                ShowNoteBadge="@(_currentPreference?.ShowNoteBadge ?? true)" />
 
 @* 便條貼面板 *@
 <StickyNoteDrawer IsVisible="@showStickyNotes"
@@ -180,6 +209,17 @@
     // 當前登入員工 ID（供 OnAfterRenderAsync 套用縮放偏好使用）
     private int _currentEmployeeId = 0;
 
+    // 當前員工偏好（供快捷鍵說明 Modal 讀取）
+    private EmployeePreference? _currentPreference;
+
+    // 快捷鍵 JS 參考（需要在 DisposeAsync 釋放）
+    private DotNetObjectReference<MainLayout>? _dotNetRef;
+
+    // 通知 Timer 與 Toast 狀態
+    private PeriodicTimer? _notificationTimer;
+    private CancellationTokenSource _timerCts = new();
+    private List<ERPCore2.Data.Entities.CalendarEvent> _dueReminders = new();
+
     // Action 處理器註册表
     private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;
 
@@ -244,8 +284,14 @@
                 try
                 {
                     var preference = await EmployeePreferenceService.GetByEmployeeIdAsync(_currentEmployeeId);
+                    _currentPreference = preference;
                     await JSRuntime.InvokeVoidAsync("setContentZoom", (int)preference.Zoom);
                     await JSRuntime.InvokeVoidAsync("setAppTheme", (int)preference.Theme);
+
+                    // 初始化通知快取服務（載入便條數 + 今日事項，後續 Timer 純記憶體比對）
+                    await NotificationService.InitializeAsync(_currentEmployeeId, preference);
+                    NotificationService.OnChanged += HandleNotificationChanged;
+                    _ = RunNotificationTimerAsync();
                 }
                 catch
                 {
@@ -255,121 +301,17 @@
 
             try
             {
-                // 註冊 Alt+S 快捷鍵開啟頁面搜尋
-                await JSRuntime.InvokeVoidAsync("eval", @"
-                    if (!window.altSRegistered) {
-                        document.addEventListener('keydown', function(e) {
-                            if (e.altKey && (e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.shiftKey) {
-                                e.preventDefault();
-                                
-                                // 嘗試直接點擊頁面搜尋按鈕（如果快速功能表已展開）
-                                var pageSearchBtn = document.querySelector('.quick-action-item[title*=""頁面搜尋""]');
-                                if (pageSearchBtn) {
-                                    pageSearchBtn.click();
-                                    return;
-                                }
-                                
-                                // 如果功能表未展開，先展開再點擊頁面搜尋
-                                var quickActionBtn = document.querySelector('.quick-action-main-btn');
-                                if (quickActionBtn) {
-                                    quickActionBtn.click();
-                                    
-                                    // 等待 DOM 更新後再點擊頁面搜尋按鈕
-                                    setTimeout(function() {
-                                        var pageSearchBtn = document.querySelector('.quick-action-item[title*=""頁面搜尋""]');
-                                        if (pageSearchBtn) {
-                                            pageSearchBtn.click();
-                                        }
-                                    }, 100);
-                                }
-                            }
-                        });
-                        window.altSRegistered = true;
-                    }
-                ");
-                
-                // 註冊 Alt+R 快捷鍵開啟報表搜尋
-                await JSRuntime.InvokeVoidAsync("eval", @"
-                    if (!window.altRRegistered) {
-                        document.addEventListener('keydown', function(e) {
-                            if (e.altKey && (e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.shiftKey) {
-                                e.preventDefault();
-                                
-                                // 嘗試直接點擊報表搜尋按鈕（如果快速功能表已展開）
-                                var reportSearchBtn = document.querySelector('.quick-action-item[title*=""報表搜尋""]');
-                                if (reportSearchBtn) {
-                                    reportSearchBtn.click();
-                                    return;
-                                }
-                                
-                                // 如果功能表未展開，先展開再點擊報表搜尋
-                                var quickActionBtn = document.querySelector('.quick-action-main-btn');
-                                if (quickActionBtn) {
-                                    quickActionBtn.click();
-                                    
-                                    // 等待 DOM 更新後再點擊報表搜尋按鈕
-                                    setTimeout(function() {
-                                        var reportSearchBtn = document.querySelector('.quick-action-item[title*=""報表搜尋""]');
-                                        if (reportSearchBtn) {
-                                            reportSearchBtn.click();
-                                        }
-                                    }, 100);
-                                }
-                            }
-                        });
-                        window.altRRegistered = true;
-                    }
-                ");
-
-                // 註冊 Alt+N 快捷鍵開啟便條貼
-                await JSRuntime.InvokeVoidAsync("eval", @"
-                    if (!window.altNRegistered) {
-                        document.addEventListener('keydown', function(e) {
-                            if (e.altKey && (e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.shiftKey) {
-                                e.preventDefault();
-                                var stickyBtn = document.querySelector('.quick-action-item[title*=""便條貼""]');
-                                if (stickyBtn) {
-                                    stickyBtn.click();
-                                    return;
-                                }
-                                var quickActionBtn = document.querySelector('.quick-action-main-btn');
-                                if (quickActionBtn) {
-                                    quickActionBtn.click();
-                                    setTimeout(function() {
-                                        var stickyBtn = document.querySelector('.quick-action-item[title*=""便條貼""]');
-                                        if (stickyBtn) stickyBtn.click();
-                                    }, 100);
-                                }
-                            }
-                        });
-                        window.altNRegistered = true;
-                    }
-                ");
-
-                // 註冊 Alt+C 快捷鍵開啟行事曆
-                await JSRuntime.InvokeVoidAsync("eval", @"
-                    if (!window.altCRegistered) {
-                        document.addEventListener('keydown', function(e) {
-                            if (e.altKey && (e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.shiftKey) {
-                                e.preventDefault();
-                                var calBtn = document.querySelector('.quick-action-item[title*=""行事曆""]');
-                                if (calBtn) {
-                                    calBtn.click();
-                                    return;
-                                }
-                                var quickActionBtn = document.querySelector('.quick-action-main-btn');
-                                if (quickActionBtn) {
-                                    quickActionBtn.click();
-                                    setTimeout(function() {
-                                        var calBtn = document.querySelector('.quick-action-item[title*=""行事曆""]');
-                                        if (calBtn) calBtn.click();
-                                    }, 100);
-                                }
-                            }
-                        });
-                        window.altCRegistered = true;
-                    }
-                ");
+                // 初始化可設定的快捷鍵系統
+                var shortcutConfig = new Dictionary<string, string>
+                {
+                    ["pageSearch"]   = _currentPreference?.ShortcutPageSearch   ?? ShortcutDefaults.PageSearch,
+                    ["reportSearch"] = _currentPreference?.ShortcutReportSearch  ?? ShortcutDefaults.ReportSearch,
+                    ["stickyNotes"]  = _currentPreference?.ShortcutStickyNotes   ?? ShortcutDefaults.StickyNotes,
+                    ["calendar"]     = _currentPreference?.ShortcutCalendar      ?? ShortcutDefaults.Calendar,
+                    ["quickAction"]  = _currentPreference?.ShortcutQuickAction   ?? ShortcutDefaults.QuickAction
+                };
+                _dotNetRef = DotNetObjectReference.Create(this);
+                await JSRuntime.InvokeVoidAsync("KeyboardShortcuts.initialize", _dotNetRef, shortcutConfig);
             }
             catch
             {
@@ -441,7 +383,8 @@
     /// <summary>
     /// 開啟便條貼面板（與行事曆互斥）
     /// </summary>
-    private void OpenStickyNotes()
+    [JSInvokable]
+    public void OpenStickyNotes()
     {
         try
         {
@@ -458,7 +401,8 @@
     /// <summary>
     /// 開啟行事曆面板（與便條貼互斥）
     /// </summary>
-    private void OpenCalendar()
+    [JSInvokable]
+    public void OpenCalendar()
     {
         try
         {
@@ -543,6 +487,16 @@
         }
     }
     
+    /// <summary>
+    /// 開啟快速功能表（由快捷鍵觸發，JS 直接點擊主按鈕，此方法保留作為文件記錄）
+    /// 實際行為由 keyboard-shortcuts.js 呼叫 .quick-action-main-btn?.click() 完成
+    /// </summary>
+    [JSInvokable]
+    public void OpenQuickAction()
+    {
+        // QuickActionMenu 管理自身的展開/收合狀態，由 JS 直接點擊主按鈕觸發
+    }
+
     /// <summary>
     /// 開啟報表中心 Modal
     /// </summary>
@@ -729,11 +683,73 @@
         }
     }
 
+    // ===== 通知 Timer 方法 =====
+
+    /// <summary>
+    /// 每分鐘檢查到期提醒（純記憶體，不查 DB）
+    /// </summary>
+    private async Task RunNotificationTimerAsync()
+    {
+        _notificationTimer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+        try
+        {
+            while (await _notificationTimer.WaitForNextTickAsync(_timerCts.Token))
+            {
+                var due = await NotificationService.GetDueRemindersAsync();
+                if (due.Any())
+                {
+                    foreach (var ev in due)
+                    {
+                        if (!_dueReminders.Any(r => r.Id == ev.Id))
+                            _dueReminders.Add(ev);
+                    }
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Timer 被取消，正常結束
+        }
+        catch
+        {
+            // 忽略其他 Timer 錯誤
+        }
+    }
+
+    /// <summary>
+    /// 通知服務快取變更時（CRUD 後）由此更新 UI
+    /// </summary>
+    private void HandleNotificationChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// 關閉單筆提醒 Toast
+    /// </summary>
+    private void DismissReminder(int eventId)
+    {
+        _dueReminders.RemoveAll(r => r.Id == eventId);
+    }
+
     /// <summary>
     /// 清理資源
     /// </summary>
     public async ValueTask DisposeAsync()
     {
+        // 停止通知 Timer
+        try
+        {
+            _timerCts.Cancel();
+            _notificationTimer?.Dispose();
+            NotificationService.OnChanged -= HandleNotificationChanged;
+        }
+        catch
+        {
+            // 忽略 Timer 清理錯誤
+        }
+
         try
         {
             // 清理 JavaScript 快捷鍵監聽器
@@ -743,5 +759,6 @@
         {
             // 忽略清理錯誤
         }
+        _dotNetRef?.Dispose();
     }
 }

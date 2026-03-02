@@ -6,5 +6,6 @@ namespace ERPCore2.Services
     {
         Task<List<Document>> GetByCategoryAsync(int categoryId);
         Task<bool> IsDocumentCodeExistsAsync(string code, int? excludeId = null);
+        Task<Document?> GetWithFilesAsync(int id);
     }
 }

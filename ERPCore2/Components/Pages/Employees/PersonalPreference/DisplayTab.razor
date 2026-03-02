@@ -4,7 +4,9 @@
 <div class="p-2">
 
     @* 主題顏色 *@
-    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.Theme"]</div>
+    <div class="section-header mb-3">
+        <span class="section-title">@L["Preference.Theme"]</span>
+    </div>
     <div class="d-flex gap-2 flex-wrap mb-4">
         @foreach (var option in _themeOptions)
         {
@@ -20,7 +22,9 @@
     </div>
 
     @* 字型縮放 *@
-    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.FontSize"]</div>
+    <div class="section-header mb-3">
+        <span class="section-title">@L["Preference.FontSize"]</span>
+    </div>
     <div class="d-flex gap-2 flex-wrap">
         @foreach (var option in _zoomOptions)
         {

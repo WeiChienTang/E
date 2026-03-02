@@ -256,6 +256,7 @@
   <data name="Preference.Display" xml:space="preserve">
     <value>Display</value>
   </data>
+  <data name="Preference.ShortcutKeys" xml:space="preserve"><value>Mga Shortcut</value></data>
   <data name="Preference.FontSize" xml:space="preserve">
     <value>Laki ng Font</value>
   </data>
@@ -1610,6 +1611,14 @@
   <data name="Shortcut.CloseModal" xml:space="preserve"><value>Isara ang Kasalukuyang Modal Window</value></data>
   <data name="Shortcut.CategoryNavigation" xml:space="preserve"><value>Navigation</value></data>
   <data name="Shortcut.CategoryWindowControl" xml:space="preserve"><value>Kontrol ng Window</value></data>
+  <data name="Shortcut.TabHelpText" xml:space="preserve"><value>I-click ang "Baguhin", pagkatapos pindutin ang Alt o Ctrl + isang letra para itakda ang shortcut; pindutin ang Esc para kanselahin</value></data>
+  <data name="Shortcut.ChangeButton" xml:space="preserve"><value>Baguhin</value></data>
+  <data name="Shortcut.ResetButton" xml:space="preserve"><value>I-reset</value></data>
+  <data name="Shortcut.ResetAllButton" xml:space="preserve"><value>I-reset Lahat</value></data>
+  <data name="Shortcut.PressKey" xml:space="preserve"><value>Pindutin ang shortcut key...</value></data>
+  <data name="Shortcut.DefaultLabel" xml:space="preserve"><value>Default:</value></data>
+  <data name="Shortcut.ConflictError" xml:space="preserve"><value>Nagtatalo sa shortcut ng "{0}", mangyaring pumili ng ibang kombinasyon</value></data>
+  <data name="Shortcut.Fixed" xml:space="preserve"><value>Naayos, hindi mababago</value></data>
 
   <!-- ===== Search ===== -->
   <data name="Search.GoTo" xml:space="preserve"><value>Pumunta</value></data>
@@ -2765,5 +2774,23 @@
   <data name="Document.SupportedFormats" xml:space="preserve"><value>Mga Sinusuportahang Format: PDF, Word, Excel, Imahe (Max 20MB)</value></data>
   <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>Gamitin ang Default ng Kategorya</value></data>
   <data name="Document.PaperSizeApplied" xml:space="preserve"><value>Na-apply na ang setting ng sukat ng "{0}"</value></data>
+  <data name="Document.AttachmentFiles" xml:space="preserve"><value>Mga Kalakip na File</value></data>
+  <data name="Document.NoAttachments" xml:space="preserve"><value>Walang kalakip na file</value></data>
+  <data name="Field.AttachmentCount" xml:space="preserve"><value>Bilang ng Kalakip</value></data>
+  <data name="Field.FileDisplayName" xml:space="preserve"><value>Pangalan ng Kalakip</value></data>
+  <data name="Label.PendingUpload" xml:space="preserve"><value>Naghihintay ng Upload</value></data>
+  <data name="Message.AtLeastOneFile" xml:space="preserve"><value>Kailangan ng kahit isang kalakip</value></data>
+  <!-- ===== 通知設定 ===== -->
+  <data name="Preference.Notifications" xml:space="preserve"><value>Mga Abiso</value></data>
+  <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>Ipakita ang Calendar Badge</value></data>
+  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>Ipakita ang Note Badge</value></data>
+  <data name="Preference.DefaultReminder" xml:space="preserve"><value>Default na Oras ng Paalala</value></data>
+  <data name="Preference.NoReminder" xml:space="preserve"><value>Walang Paalala</value></data>
+  <data name="Preference.Reminder5" xml:space="preserve"><value>5 min bago</value></data>
+  <data name="Preference.Reminder15" xml:space="preserve"><value>15 min bago</value></data>
+  <data name="Preference.Reminder30" xml:space="preserve"><value>30 min bago</value></data>
+  <data name="Preference.Reminder60" xml:space="preserve"><value>1 oras bago</value></data>
+  <data name="Calendar.Reminder" xml:space="preserve"><value>Paalala</value></data>
+  <data name="Calendar.ReminderUseDefault" xml:space="preserve"><value>Gumamit ng Default</value></data>
 
 </root>

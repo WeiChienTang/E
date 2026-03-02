@@ -1,5 +1,6 @@
-﻿@* 檔案存留編輯組件 *@
+@* 檔案存留編輯組件 *@
 @inject IDocumentService DocumentService
+@inject IDocumentFileService DocumentFileService
 @inject IDocumentCategoryService DocumentCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -27,41 +28,38 @@
                           OnEntitySaved="@OnDocumentSaved"
                           OnCancel="@OnCancel">
     <CustomFormContent>
-        @* 檔案上傳區域 *@
-        <div class="col-12 mt-2">
-            <label class="form-label fw-semibold">
-                @L["Button.UploadFile"]
-                @if (!DocumentId.HasValue)
-                {
-                    <span class="text-danger ms-1">*</span>
-                }
-            </label>
-            <InputFile OnChange="@HandleFileSelected"
-                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                       class="form-control" />
-            @if (!string.IsNullOrEmpty(uploadError))
+        @* 附件檔案區域 *@
+        <div class="col-12 mt-3">
+            <div class="fw-semibold mb-2">
+                @L["Document.AttachmentFiles"]
+                <span class="text-danger ms-1">*</span>
+            </div>
+
+            <InteractiveTableComponent TItem="DocumentFileViewModel"
+                                      Items="@fileViewModels"
+                                      ColumnDefinitions="@GetFileColumnDefinitions()"
+                                      ShowRowNumbers="true"
+                                      IsReadOnly="false"
+                                      ShowActions="true"
+                                      ActionsTemplate="@GetFileActionsTemplate"
+                                      ActionsColumnWidth="100px"
+                                      EmptyMessage="@L["Document.NoAttachments"]"
+                                      IsStriped="false"
+                                      GetRowCssClass="@((item, idx) => item.IsDeleted ? "table-danger text-muted" : "")"
+                                      EnableAutoEmptyRow="false" />
+
+            @if (!string.IsNullOrEmpty(fileError))
             {
-                <div class="text-danger small mt-1">@uploadError</div>
+                <div class="text-danger small mt-1">@fileError</div>
             }
-            @if (selectedFile != null)
-            {
-                <div class="text-success small mt-1">
-                    @string.Format(L["Document.FileSelected"], selectedFile.Name, FileUploadHelper.GetFileSizeString(selectedFile.Size))
-                </div>
-            }
-            else if (!string.IsNullOrEmpty(currentFileName))
-            {
-                <div class="d-flex align-items-center gap-2 mt-1">
-                    <span class="text-muted small">@string.Format(L["Document.CurrentFile"], currentFileName)</span>
-                    @if (!string.IsNullOrEmpty(currentFilePath))
-                    {
-                        <a href="@currentFilePath" download="@currentFileName" class="btn btn-sm btn-outline-secondary py-0">
-                            <i class="bi bi-download me-1"></i>@L["Button.Download"]
-                        </a>
-                    }
-                </div>
-            }
-            <div class="form-text">@L["Document.SupportedFormats"]</div>
+
+            <div class="mt-2">
+                <InputFile OnChange="@HandleFilesSelected"
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                           multiple
+                           class="form-control" />
+                <div class="form-text">@L["Document.SupportedFormats"]</div>
+            </div>
         </div>
     </CustomFormContent>
 </GenericEditModalComponent>
@@ -78,14 +76,82 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
 
-    // 檔案上傳狀態
-    private IBrowserFile? selectedFile = null;
-    private string? uploadError = null;
-    private string? currentFileName = null;
-    private string? currentFilePath = null;
+    // 附件管理狀態
+    private List<DocumentFileViewModel> fileViewModels = new();
+    private string? fileError = null;
 
     // 下拉選項
     private List<SelectOption> categoryOptions = new();
+
+    // 附件 ViewModel（橋接 IBrowserFile 與已儲存的 DocumentFile）
+    private class DocumentFileViewModel
+    {
+        public int? Id { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+        public string FileName { get; set; } = string.Empty;
+        public string? FilePath { get; set; }
+        public long FileSize { get; set; }
+        public string? MimeType { get; set; }
+        public IBrowserFile? PendingFile { get; set; }
+        public bool IsDeleted { get; set; }
+        public int SortOrder { get; set; }
+        public bool IsPending => PendingFile != null;
+    }
+
+    private List<InteractiveColumnDefinition> GetFileColumnDefinitions() => new()
+    {
+        new()
+        {
+            PropertyName = nameof(DocumentFileViewModel.DisplayName),
+            Title = L["Field.FileDisplayName"],
+            ColumnType = InteractiveColumnType.Input,
+            Placeholder = L["Field.FileDisplayName"],
+            Width = "200px",
+            IsReadOnly = false
+        },
+        new()
+        {
+            PropertyName = nameof(DocumentFileViewModel.FileName),
+            Title = L["Field.FileName"],
+            ColumnType = InteractiveColumnType.Display,
+            Width = "200px"
+        },
+        new()
+        {
+            PropertyName = nameof(DocumentFileViewModel.FileSize),
+            Title = L["Field.FileSize"],
+            ColumnType = InteractiveColumnType.Display,
+            DisplayFormatter = obj =>
+            {
+                var vm = obj as DocumentFileViewModel;
+                if (vm == null) return "-";
+                var size = FileUploadHelper.GetFileSizeString(vm.FileSize);
+                return vm.IsPending ? $"{size} ({L["Label.PendingUpload"]})" : size;
+            },
+            Width = "100px",
+            TextAlign = "right"
+        }
+    };
+
+    private RenderFragment<DocumentFileViewModel> GetFileActionsTemplate => item => __builder =>
+    {
+        if (!item.IsDeleted)
+        {
+            if (!item.IsPending && !string.IsNullOrEmpty(item.FilePath))
+            {
+                <a href="@item.FilePath" download="@item.FileName"
+                   class="btn btn-sm btn-outline-secondary me-1"
+                   title="@L["Button.Download"]">
+                    <i class="bi bi-download"></i>
+                </a>
+            }
+            <button type="button" class="btn btn-sm btn-outline-danger"
+                    title="@L["Button.Delete"]"
+                    @onclick="() => RemoveFile(item)">
+                <i class="bi bi-trash"></i>
+            </button>
+        }
+    };
 
     protected override void OnParametersSet()
     {
@@ -97,12 +163,9 @@
     {
         try
         {
-            selectedFile = null;
-            uploadError = null;
-            currentFileName = null;
-            currentFilePath = null;
+            fileViewModels = new();
+            fileError = null;
 
-            // 載入分類選項
             var categories = await DocumentCategoryService.GetAllAsync();
             categoryOptions = categories
                 .Where(c => c.Status == EntityStatus.Active)
@@ -127,57 +190,130 @@
 
         if (doc != null && doc.Id > 0)
         {
-            currentFileName = doc.FileName;
-            currentFilePath = doc.FilePath;
+            var existing = await DocumentService.GetWithFilesAsync(doc.Id);
+            if (existing?.DocumentFiles != null)
+            {
+                fileViewModels = existing.DocumentFiles
+                    .OrderBy(f => f.SortOrder)
+                    .Select(f => new DocumentFileViewModel
+                    {
+                        Id = f.Id,
+                        DisplayName = f.DisplayName,
+                        FileName = f.FileName,
+                        FilePath = f.FilePath,
+                        FileSize = f.FileSize,
+                        MimeType = f.MimeType,
+                        SortOrder = f.SortOrder
+                    })
+                    .ToList();
+            }
+        }
+        else
+        {
+            fileViewModels = new();
         }
 
+        await InvokeAsync(StateHasChanged);
         return doc;
     }
 
-    private void HandleFileSelected(InputFileChangeEventArgs e)
+    private void HandleFilesSelected(InputFileChangeEventArgs e)
     {
-        selectedFile = e.File;
-        uploadError = null;
+        fileError = null;
+        var nextSortOrder = fileViewModels.Count > 0 ? fileViewModels.Max(f => f.SortOrder) + 1 : 0;
+
+        foreach (var file in e.GetMultipleFiles())
+        {
+            fileViewModels.Add(new DocumentFileViewModel
+            {
+                DisplayName = Path.GetFileNameWithoutExtension(file.Name),
+                FileName = file.Name,
+                FileSize = file.Size,
+                PendingFile = file,
+                SortOrder = nextSortOrder++
+            });
+        }
+        StateHasChanged();
+    }
+
+    private void RemoveFile(DocumentFileViewModel vm)
+    {
+        if (vm.IsPending)
+            fileViewModels.Remove(vm);
+        else
+            vm.IsDeleted = true;
+        StateHasChanged();
     }
 
     private async Task<bool> HandleSaveAsync(Document entity)
     {
         try
         {
-            // 新增時必須有檔案
-            if (entity.Id == 0 && selectedFile == null)
+            var activeFiles = fileViewModels.Where(f => !f.IsDeleted).ToList();
+            if (!activeFiles.Any())
             {
-                uploadError = L["Message.FileRequired"];
+                fileError = L["Message.AtLeastOneFile"];
                 return false;
             }
 
-            // 如果有選擇新檔案，先上傳
-            if (selectedFile != null)
-            {
-                var oldPath = entity.FilePath;
-                var (success, message, filePath, mimeType) = await FileUploadHelper.UploadDocumentAsync(
-                    selectedFile, Environment, entity.Id > 0 ? oldPath : null);
-
-                if (!success)
-                {
-                    uploadError = message;
-                    return false;
-                }
-
-                entity.FilePath = filePath!;
-                entity.FileName = selectedFile.Name;
-                entity.FileSize = selectedFile.Size;
-                entity.MimeType = mimeType;
-            }
-
-            // 儲存實體
+            // 儲存 Document 主體
             ServiceResult result;
             if (entity.Id == 0)
                 result = await DocumentService.CreateAsync(entity);
             else
                 result = await DocumentService.UpdateAsync(entity);
 
-            return result.IsSuccess;
+            if (!result.IsSuccess)
+                return false;
+
+            // 更新現有附件的 DisplayName
+            foreach (var vm in fileViewModels.Where(f => !f.IsDeleted && !f.IsPending && f.Id.HasValue))
+            {
+                var existing = await DocumentFileService.GetByIdAsync(vm.Id!.Value);
+                if (existing != null && existing.DisplayName != vm.DisplayName)
+                {
+                    existing.DisplayName = vm.DisplayName;
+                    await DocumentFileService.UpdateAsync(existing);
+                }
+            }
+
+            // 上傳新附件
+            int maxSortOrder = fileViewModels.Where(f => !f.IsPending).Any()
+                ? fileViewModels.Where(f => !f.IsPending).Max(f => f.SortOrder)
+                : -1;
+
+            foreach (var vm in fileViewModels.Where(f => !f.IsDeleted && f.IsPending))
+            {
+                var (success, message, filePath, mimeType) = await FileUploadHelper.UploadDocumentAsync(
+                    vm.PendingFile!, Environment);
+
+                if (!success)
+                {
+                    fileError = message;
+                    return false;
+                }
+
+                await DocumentFileService.CreateAsync(new DocumentFile
+                {
+                    DocumentId = entity.Id,
+                    DisplayName = vm.DisplayName,
+                    FileName = vm.FileName,
+                    FilePath = filePath!,
+                    FileSize = vm.FileSize,
+                    MimeType = mimeType,
+                    SortOrder = vm.SortOrder
+                });
+            }
+
+            // 刪除已標記刪除的現有附件
+            foreach (var vm in fileViewModels.Where(f => f.IsDeleted && !f.IsPending && f.Id.HasValue))
+            {
+                if (!string.IsNullOrEmpty(vm.FilePath))
+                    FileUploadHelper.DeleteFile(vm.FilePath, Environment);
+                await DocumentFileService.DeleteAsync(vm.Id!.Value);
+            }
+
+            return true;
         }
         catch (Exception ex)
         {
