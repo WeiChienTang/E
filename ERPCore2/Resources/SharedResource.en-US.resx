@@ -269,6 +269,15 @@
   <data name="Preference.ThemeDark" xml:space="preserve">
     <value>Dark</value>
   </data>
+  <data name="Preference.NavDisplay" xml:space="preserve">
+    <value>Navigation Display</value>
+  </data>
+  <data name="Preference.HideDisabledModules" xml:space="preserve">
+    <value>Hide Disabled Modules</value>
+  </data>
+  <data name="Preference.ShowDisabledModules" xml:space="preserve">
+    <value>Show Disabled Modules</value>
+  </data>
   <!-- ===== Employee Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>Account is set by administrator and cannot be changed</value>
@@ -548,6 +557,9 @@
   </data>
   <data name="Nav.UnderConstruction" xml:space="preserve">
     <value>This feature is under construction</value>
+  </data>
+  <data name="Nav.ModuleDisabled" xml:space="preserve">
+    <value>This module is disabled</value>
   </data>
 
   <!-- ===== Placeholders ===== -->
@@ -1731,6 +1743,10 @@
   <data name="Approval.Approved" xml:space="preserve"><value>Approved</value></data>
   <data name="Approval.Rejected" xml:space="preserve"><value>Rejected</value></data>
   <data name="Approval.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Section.ApprovalInfo" xml:space="preserve"><value>Approval Info</value></data>
+  <data name="Approval.Status" xml:space="preserve"><value>Approval Status</value></data>
+  <data name="Approval.ApprovedBy" xml:space="preserve"><value>Approved By</value></data>
+  <data name="Approval.ApprovedAt" xml:space="preserve"><value>Approved At</value></data>
 
   <!-- ===== Customer Module ===== -->
   <data name="Customer.ChartTitle" xml:space="preserve"><value>Customer Analysis Charts</value></data>
@@ -2824,7 +2840,7 @@
   <data name="Preference.EnableCalendar" xml:space="preserve"><value>Enable Calendar</value></data>
   <data name="Preference.EnableStickyNote" xml:space="preserve"><value>Enable Sticky Notes</value></data>
   <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>Show Calendar Reminder Badge</value></data>
-  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>Show Note Count Badge</value></data>
+  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>Show Note Count Indicator</value></data>
   <data name="Preference.DefaultReminder" xml:space="preserve"><value>Default Reminder Time</value></data>
   <data name="Preference.NoReminder" xml:space="preserve"><value>No Reminder</value></data>
   <data name="Preference.Reminder5" xml:space="preserve"><value>5 min before</value></data>

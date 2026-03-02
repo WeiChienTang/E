@@ -82,6 +82,12 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "預設提醒時間（分鐘）")]
         public int DefaultReminderMinutes { get; set; } = 15;
 
+        // ===== 導覽列顯示設定 =====
+
+        /// <summary>是否在側邊選單中顯示已停用的模組（灰色鎖定狀態）。false = 完全隱藏</summary>
+        [Display(Name = "顯示停用模組")]
+        public bool ShowDisabledModules { get; set; } = false;
+
         // 導航屬性
         public Employee? Employee { get; set; }
     }

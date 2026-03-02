@@ -453,23 +453,52 @@
                     CssClass = "text-success fw-bold" // 使用綠色粗體顯示
                 },
 
+                FormFieldConfigurationHelper.CreateRemarksField<PurchaseOrder>(
+                    containerCssClass: "col-6",
+                    readOnly: shouldLock // 根據審核狀態和明細狀態決定是否鎖定
+                ),
+
+                // ===== 審核資訊（唯讀，僅用於顯示，所有異動只能透過工具列按鈕執行）=====
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(PurchaseOrder.IsApproved),
+                    Label = L["Approval.Status"],
+                    FieldType = FormFieldType.Select,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4",
+                    Options = new List<SelectOption>
+                    {
+                        new SelectOption { Value = "True", Text = L["Approval.Approved"] },
+                        new SelectOption { Value = "False", Text = L["Approval.Pending"] }
+                    }
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = "ApprovedByUser.FullName",
+                    Label = L["Approval.ApprovedBy"],
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4"
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(PurchaseOrder.ApprovedAt),
+                    Label = L["Approval.ApprovedAt"],
+                    FieldType = FormFieldType.DateTime,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4"
+                },
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseOrder.RejectReason),
                     Label = L["Field.RejectionReason"],
                     FieldType = FormFieldType.Text,
-                    Placeholder = L["Placeholder.PleaseInput", L["Field.RejectionReason"]],
-                    IsRequired = false,
-                    MaxLength = 50,
-                    HelpText = "其他需要記錄的駁回原因",
-                    ContainerCssClass = "col-6",
-                    IsReadOnly = true
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-12"
                 },
-
-                FormFieldConfigurationHelper.CreateRemarksField<PurchaseOrder>(
-                    containerCssClass: "col-6",
-                    readOnly: shouldLock // 根據審核狀態和明細狀態決定是否鎖定
-                ),
             };
 
             formSections = FormSectionHelper<PurchaseOrder>.Create()
@@ -486,6 +515,12 @@
                     po => po.PurchaseTotalAmountIncludingTax)
                 .AddToSection(FormSectionNames.AdditionalInfo,
                     po => po.Remarks)
+                .AddCustomFieldsIf(isApprovalEnabled && PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0,
+                    FormSectionNames.ApprovalInfo,
+                    nameof(PurchaseOrder.IsApproved),
+                    "ApprovedByUser.FullName",
+                    nameof(PurchaseOrder.ApprovedAt),
+                    nameof(PurchaseOrder.RejectReason))
                 .Build();
         }
         catch (Exception ex)

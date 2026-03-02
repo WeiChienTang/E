@@ -637,7 +637,49 @@
                     HelpText = "系統根據明細自動計算（金額 - 折扣 + 稅額）",
                     CssClass = "text-success fw-bold"
                 },
-                    FormFieldConfigurationHelper.CreateRemarksField<SalesDelivery>(readOnly: hasUndeletableDetails)
+                    FormFieldConfigurationHelper.CreateRemarksField<SalesDelivery>(readOnly: hasUndeletableDetails),
+
+                // ===== 審核資訊（唯讀，僅用於顯示，所有異動只能透過工具列按鈕執行）=====
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesDelivery.IsApproved),
+                    Label = L["Approval.Status"],
+                    FieldType = FormFieldType.Select,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4",
+                    Options = new List<SelectOption>
+                    {
+                        new SelectOption { Value = "True", Text = L["Approval.Approved"] },
+                        new SelectOption { Value = "False", Text = L["Approval.Pending"] }
+                    }
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = "ApprovedByUser.FullName",
+                    Label = L["Approval.ApprovedBy"],
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4"
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesDelivery.ApprovedAt),
+                    Label = L["Approval.ApprovedAt"],
+                    FieldType = FormFieldType.DateTime,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4"
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesDelivery.RejectReason),
+                    Label = L["Field.RejectionReason"],
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-12"
+                },
             };
 
 
@@ -657,6 +699,12 @@
                 .AddToSection(FormSectionNames.OtherInfo,
                     sd => sd.DeliveryAddress,
                     sd => sd.Remarks)
+                .AddCustomFieldsIf(isApprovalEnabled && SalesDeliveryId.HasValue && SalesDeliveryId.Value > 0,
+                    FormSectionNames.ApprovalInfo,
+                    nameof(SalesDelivery.IsApproved),
+                    "ApprovedByUser.FullName",
+                    nameof(SalesDelivery.ApprovedAt),
+                    nameof(SalesDelivery.RejectReason))
                 .Build();
             
             // 重置篩選狀態

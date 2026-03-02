@@ -277,5 +277,8 @@ namespace ERPCore2.Helpers.EditModal
 
         /// <summary>配給裝備</summary>
         public const string EquipmentAssignment = "Section.EquipmentAssignment";
+
+        /// <summary>審核資訊（唯讀，僅審核功能啟用時顯示）</summary>
+        public const string ApprovalInfo = "Section.ApprovalInfo";
     }
 }

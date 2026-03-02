@@ -1,7 +1,7 @@
 # 審核機制 — 新模組實作指南
 
 > 本文件提供為任意模組加入完整審核功能的逐步操作指南。以 PurchaseOrder 為最完整參考實作。
-> 最後更新：2026-03-02
+> 最後更新：2026-03-02（加入 Step 7-8：EditModal 審核資訊 Section）
 
 ---
 
@@ -353,6 +353,75 @@ private async Task<bool> SaveXxxWithDetails(XxxEntity entity, bool isPreApproval
 
 ---
 
+## Step 7-B：EditModal 審核資訊 Section（唯讀顯示）
+
+在 `InitializeFormFieldsAsync`（或等效方法）的 `formFields` 清單末端加入 4 個唯讀欄位：
+
+```csharp
+// ===== 審核資訊（唯讀，僅用於顯示，所有異動只能透過工具列按鈕執行）=====
+new FormFieldDefinition()
+{
+    PropertyName = nameof(XxxEntity.IsApproved),
+    Label        = L["Approval.Status"],
+    FieldType    = FormFieldType.Select,
+    IsDisabled   = true,
+    ContainerCssClass = "col-md-4",
+    Options = new List<SelectOption>
+    {
+        new SelectOption { Value = "True",  Text = L["Approval.Approved"] },
+        new SelectOption { Value = "False", Text = L["Approval.Pending"]  }
+    }
+},
+new FormFieldDefinition()
+{
+    PropertyName = "ApprovedByUser.FullName",   // dot-notation：GenericFormComponent 支援嵌套屬性
+    Label        = L["Approval.ApprovedBy"],
+    FieldType    = FormFieldType.Text,
+    IsReadOnly   = true,
+    IsDisabled   = true,
+    ContainerCssClass = "col-md-4"
+},
+new FormFieldDefinition()
+{
+    PropertyName = nameof(XxxEntity.ApprovedAt),
+    Label        = L["Approval.ApprovedAt"],
+    FieldType    = FormFieldType.DateTime,
+    IsReadOnly   = true,
+    IsDisabled   = true,
+    ContainerCssClass = "col-md-4"
+},
+new FormFieldDefinition()
+{
+    PropertyName = nameof(XxxEntity.RejectReason),
+    Label        = L["Field.RejectionReason"],
+    FieldType    = FormFieldType.Text,
+    IsReadOnly   = true,
+    IsDisabled   = true,
+    ContainerCssClass = "col-md-12"
+},
+```
+
+在 `formSections` 建立的 `.Build()` 前加入條件式 Section：
+
+```csharp
+.AddCustomFieldsIf(
+    isApprovalEnabled && XxxId.HasValue && XxxId.Value > 0,
+    FormSectionNames.ApprovalInfo,
+    nameof(XxxEntity.IsApproved),
+    "ApprovedByUser.FullName",
+    nameof(XxxEntity.ApprovedAt),
+    nameof(XxxEntity.RejectReason))
+.Build();
+```
+
+> **注意**：
+> - 欄位必須設為 `IsDisabled=true`（非僅 `IsReadOnly`），確保完全無法互動
+> - 顯示條件是「審核啟用 + 既有單據（XxxId > 0）」，新建模式不顯示
+> - `ApprovedByUser.FullName` 使用 dot-notation，`GenericFormComponent.GetPropertyValue` 支援跨層屬性存取
+> - 確保 Service 的 `GetByIdAsync` 已有 `.Include(x => x.ApprovedByUser)`
+
+---
+
 ## Step 8：Detail Table 封鎖
 
 在傳入 Table 組件的地方加入正確的 `IsReadOnly`：
@@ -367,7 +436,7 @@ private async Task<bool> SaveXxxWithDetails(XxxEntity entity, bool isPreApproval
 
 ---
 
-## Step 9：Index 加入批次審核
+## Step 9（原 Step 8）：Index 加入批次審核
 
 在 `XxxIndex.razor` 加入（參考 `PurchaseOrderIndex.razor`）：
 
@@ -401,7 +470,7 @@ private async Task<bool> SaveXxxWithDetails(XxxEntity entity, bool isPreApproval
 
 ---
 
-## Step 10：Index FieldConfiguration 加入審核狀態欄
+## Step 10（原 Step 9）：Index FieldConfiguration 加入審核狀態欄
 
 在 `XxxFieldConfiguration.cs` 加入：
 
@@ -437,14 +506,15 @@ new FieldConfiguration<XxxEntity>
 
 **EditModal 基本功能**
 - [ ] 新增模式開啟後看不到核准/駁回按鈕（`XxxId.HasValue = false`）
-- [ ] 編輯模式、審核關閉 → 無按鈕、欄位可編輯、列印可用
-- [ ] 編輯模式、審核開啟、未審核 → 顯示核准/駁回按鈕、欄位可編輯
-- [ ] 按核准 → 先儲存含明細 → `ApproveAsync` → 按鈕消失、欄位變唯讀、Detail Table 封鎖
-- [ ] 按駁回 → 輸入原因 → `RejectAsync` → 欄位恢復可編輯
+- [ ] 編輯模式、審核關閉 → 無按鈕、欄位可編輯、列印可用、**無審核資訊 Section**
+- [ ] 編輯模式、審核開啟、未審核 → 顯示核准/駁回按鈕、欄位可編輯、**顯示審核資訊 Section（IsApproved=待審核、其他空白）**
+- [ ] 按核准 → 先儲存含明細 → `ApproveAsync` → 按鈕消失、欄位變唯讀、Detail Table 封鎖、**審核資訊 Section 顯示審核者 + 時間**
+- [ ] 按駁回 → 輸入原因 → `RejectAsync` → 欄位恢復可編輯、**審核資訊 Section 顯示駁回原因**
 - [ ] 已核准時按儲存 → 顯示警告，無法儲存
 - [ ] 已核准時按列印 → 允許（`CanPerformActionRequiringApproval = true`）
 - [ ] 未審核時按列印（審核開啟）→ 顯示警告，無法列印（`CanPrintCheck` 已傳入）
 - [ ] Detail Table 在已核准時完全唯讀（無法新增/刪除/修改明細）
+- [ ] 審核資訊 Section 所有欄位完全無法點擊/互動（`IsDisabled=true`）
 
 **Index 功能（待實作）**
 - [ ] 批次審核 Modal 正常載入待審核清單並可核准

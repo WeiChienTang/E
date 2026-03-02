@@ -1,7 +1,7 @@
 # 審核機制 — 各模組狀態與待辦項目
 
 > 本文件記錄各模組審核功能的現況、已知問題，以及各輪修正的完整項目清單。
-> 最後更新：2026-03-02（第三輪：警告訊息精簡 + PermissionRegistry 常數修正 + 全 7 模組完整）
+> 最後更新：2026-03-02（第四輪：EditModal 加入「審核資訊」Section 顯示審核者/時間/狀態/駁回原因）
 
 ---
 
@@ -13,6 +13,7 @@
 |------|------|------|
 | 實體審核欄位 | ✅ | `Quotation.cs` 完整 |
 | EditModal UI | ✅ | `ShowApprovalSection` + `OnApprove` + `OnRejectWithReason` + `CanPrintCheck` |
+| EditModal 審核資訊 Section | ✅ | 第四輪：IsApproved/ApprovedByUser.FullName/ApprovedAt/RejectReason 唯讀顯示 |
 | 核准邏輯 | ✅ | 先 `SaveQuotationWithDetails(entity)` → 再 `ApproveAsync(id, userId)` |
 | 駁回邏輯 | ✅ | 呼叫 `RejectAsync(id, userId, reason)` |
 | Service 方法 | ✅ | `ApproveAsync` + `RejectAsync`；`GetAllAsync` 加入 `Include(ApprovedByUser)` |
@@ -30,6 +31,7 @@
 |------|------|------|
 | 實體審核欄位 | ✅ | 完整 |
 | EditModal UI | ✅ | `ShowApprovalSection` + `OnApprove` + `OnRejectWithReason` + `CanPrintCheck` |
+| EditModal 審核資訊 Section | ✅ | 第四輪：IsApproved/ApprovedByUser.FullName/ApprovedAt/RejectReason 唯讀顯示 |
 | 核准邏輯 | ✅ | 先 `SavePurchaseOrderWithDetails(isPreApprovalSave:true)` → 再 `ApproveOrderAsync` |
 | 駁回邏輯 | ✅ | `RejectOrderAsync` Service 方法 |
 | Service 方法 | ✅ | `ApproveOrderAsync` + `RejectOrderAsync` |
@@ -47,6 +49,7 @@
 |------|------|------|
 | 實體審核欄位 | ✅ | `SalesDelivery.cs` 本輪前已有欄位 |
 | EditModal UI | ✅ | 本輪加入完整審核 UI |
+| EditModal 審核資訊 Section | ✅ | 第四輪：IsApproved/ApprovedByUser.FullName/ApprovedAt/RejectReason 唯讀顯示 |
 | SystemParameter 開關 | ✅ | `EnableSalesDeliveryApproval` 本輪加入（含 Migration） |
 | ApprovalSettingsTab | ✅ | 本輪加入 SalesDelivery 切換開關 |
 | Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
@@ -64,6 +67,7 @@
 |------|------|------|
 | 實體審核欄位 | ✅ | 本輪加入（含 Migration） |
 | EditModal UI | ✅ | 本輪加入完整審核 UI；同時修正原有死代碼（錯誤呼叫 PurchaseOrder 開關） |
+| EditModal 審核資訊 Section | ✅ | 第四輪：IsApproved/ApprovedByUser.FullName/ApprovedAt/RejectReason 唯讀顯示 |
 | SystemParameter 開關 | ✅ | `EnablePurchaseReceivingApproval` 本輪前已存在 |
 | Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
 | Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
@@ -80,6 +84,7 @@
 |------|------|------|
 | 實體審核欄位 | ✅ | 本輪加入（含 Migration） |
 | EditModal UI | ✅ | 本輪加入完整審核 UI |
+| EditModal 審核資訊 Section | ✅ | 第四輪：IsApproved/ApprovedByUser.FullName/ApprovedAt/RejectReason 唯讀顯示 |
 | SystemParameter 開關 | ✅ | `EnablePurchaseReturnApproval` 本輪前已存在 |
 | Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
 | Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
@@ -96,6 +101,7 @@
 |------|------|------|
 | 實體審核欄位 | ✅ | 本輪加入（含 Migration） |
 | EditModal UI | ✅ | 本輪加入完整審核 UI |
+| EditModal 審核資訊 Section | ✅ | 第四輪：IsApproved/ApprovedByUser.FullName/ApprovedAt/RejectReason 唯讀顯示 |
 | SystemParameter 開關 | ✅ | `EnableSalesOrderApproval` 本輪前已存在 |
 | Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
 | Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
@@ -112,6 +118,7 @@
 |------|------|------|
 | 實體審核欄位 | ✅ | 本輪加入（含 Migration） |
 | EditModal UI | ✅ | 本輪加入完整審核 UI |
+| EditModal 審核資訊 Section | ✅ | 第四輪：IsApproved/ApprovedByUser.FullName/ApprovedAt/RejectReason 唯讀顯示 |
 | SystemParameter 開關 | ✅ | `EnableSalesReturnApproval` 本輪前已存在 |
 | Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
 | Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
@@ -295,6 +302,54 @@ ApprovalPermission="@PermissionRegistry.Quotation.Approve"
 ApprovalPermission="@PermissionRegistry.PurchaseOrder.Approve"
 ```
 （防止拼寫錯誤、享有編譯期型別檢查）
+
+---
+
+## 三-B、第四輪（2026-03-02）已完成項目 — 審核資訊 Section
+
+### ✅ 目標
+
+EditModal 在「審核功能啟用 + 編輯現有單據」時，於表單最下方顯示唯讀的「審核資訊」區段，讓使用者直接看到誰審核、何時審核、目前狀態與駁回原因，無需另查。
+
+### ✅ 基礎設施
+
+- `FormSectionNames.ApprovalInfo = "Section.ApprovalInfo"` — 常數加入 `FormSectionHelper.cs`
+- `Section.ApprovalInfo`、`Approval.Status`、`Approval.ApprovedBy`、`Approval.ApprovedAt` — 4 個 key 加入全 5 語言 resx
+
+### ✅ 7 個 EditModal 統一改動
+
+每個 EditModal 的 `InitializeFormFieldsAsync`（或等效方法）各加入：
+
+**formFields**（4 個新欄位，全設 `IsDisabled=true`）：
+- `IsApproved` → `FormFieldType.Select`，選項：已核准 / 待審核
+- `ApprovedByUser.FullName` → `FormFieldType.Text`（dot-notation 嵌套屬性）
+- `ApprovedAt` → `FormFieldType.DateTime`
+- `RejectReason` → `FormFieldType.Text`（PurchaseOrder 已有此欄位，本輪重構位置並加 `IsDisabled=true`）
+
+**formSections**（條件式 AddCustomFieldsIf）：
+```csharp
+.AddCustomFieldsIf(
+    isApprovalEnabled && XxxId.HasValue && XxxId.Value > 0,
+    FormSectionNames.ApprovalInfo,
+    nameof(XxxEntity.IsApproved),
+    "ApprovedByUser.FullName",
+    nameof(XxxEntity.ApprovedAt),
+    nameof(XxxEntity.RejectReason))
+```
+
+| EditModal | 實體類型 | 條件變數 |
+|-----------|---------|---------|
+| `QuotationEditModalComponent` | `Quotation` | `QuotationId` |
+| `PurchaseOrderEditModalComponent` | `PurchaseOrder` | `PurchaseOrderId` |
+| `PurchaseReceivingEditModalComponent` | `PurchaseReceiving` | `PurchaseReceivingId` |
+| `PurchaseReturnEditModalComponent` | `PurchaseReturn` | `PurchaseReturnId` |
+| `SalesOrderEditModalComponent` | `SalesOrder` | `SalesOrderId` |
+| `SalesDeliveryEditModalComponent` | `SalesDelivery` | `SalesDeliveryId` |
+| `SalesReturnEditModalComponent` | `SalesReturn` | `SalesReturnId` |
+
+### ✅ Service Include 確認（無需改動）
+
+全 7 個 Service 的 `GetByIdAsync` 均已有 `.Include(x => x.ApprovedByUser)`，`ApprovedByUser.FullName` 可正常顯示。
 
 ---
 

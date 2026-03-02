@@ -14,28 +14,17 @@
     <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 mb-3">
         @foreach (var module in companyModules)
         {
+            var m = module;
             <div class="col">
-                <div class="card h-100 @(module.IsEnabled ? "border-success" : "border-secondary")">
+                <div class="card h-100 @(m.IsEnabled ? "border-success" : "border-secondary")"
+                     style="cursor: @(isModuleSaving || IsDisabled ? "not-allowed" : "pointer")"
+                     @onclick="@(() => { if (!isModuleSaving && !IsDisabled) m.IsEnabled = !m.IsEnabled; })">
                     <div class="card-body p-2 d-flex flex-column gap-1">
                         <div class="d-flex justify-content-between align-items-start">
-                            <strong class="small">@module.DisplayName</strong>
-                            <span class="badge @(module.IsEnabled ? "bg-success" : "bg-secondary") ms-1 flex-shrink-0">
-                                @(module.IsEnabled ? L["System.Enabled"].ToString() : L["System.Disabled"].ToString())
+                            <strong class="small">@m.DisplayName</strong>
+                            <span class="badge @(m.IsEnabled ? "bg-success" : "bg-secondary") ms-1 flex-shrink-0">
+                                @(m.IsEnabled ? L["System.Enabled"].ToString() : L["System.Disabled"].ToString())
                             </span>
-                        </div>
-                        @if (!string.IsNullOrEmpty(module.Description))
-                        {
-                            <small class="text-muted">@module.Description</small>
-                        }
-                        <div class="form-check form-switch mt-auto mb-0">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   role="switch"
-                                   id="module_@module.Id"
-                                   checked="@module.IsEnabled"
-                                   disabled="@(isModuleSaving || IsDisabled)"
-                                   @onchange="@((e) => module.IsEnabled = (bool)(e.Value ?? true))" />
-                            <label class="form-check-label small" for="module_@module.Id">@L["System.Toggle"]</label>
                         </div>
                     </div>
                 </div>

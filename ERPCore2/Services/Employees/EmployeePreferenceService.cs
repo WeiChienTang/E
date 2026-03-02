@@ -69,6 +69,7 @@ namespace ERPCore2.Services
                     existing.ShowCalendarBadge          = preference.ShowCalendarBadge;
                     existing.ShowNoteBadge              = preference.ShowNoteBadge;
                     existing.DefaultReminderMinutes     = preference.DefaultReminderMinutes;
+                    existing.ShowDisabledModules        = preference.ShowDisabledModules;
                     existing.UpdatedAt = DateTime.Now;
                 }
 

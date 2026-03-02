@@ -269,6 +269,15 @@
   <data name="Preference.ThemeDark" xml:space="preserve">
     <value>深色</value>
   </data>
+  <data name="Preference.NavDisplay" xml:space="preserve">
+    <value>导航栏显示</value>
+  </data>
+  <data name="Preference.HideDisabledModules" xml:space="preserve">
+    <value>隐藏已停用模块</value>
+  </data>
+  <data name="Preference.ShowDisabledModules" xml:space="preserve">
+    <value>显示已停用模块</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>账号由管理员设置，无法自行修改</value>
@@ -568,6 +577,9 @@
   </data>
   <data name="Nav.UnderConstruction" xml:space="preserve">
     <value>此功能正在开发中</value>
+  </data>
+  <data name="Nav.ModuleDisabled" xml:space="preserve">
+    <value>此模块已停用</value>
   </data>
 
 
@@ -1731,6 +1743,10 @@
   <data name="Approval.Approved" xml:space="preserve"><value>已核准</value></data>
   <data name="Approval.Rejected" xml:space="preserve"><value>已拒绝</value></data>
   <data name="Approval.Draft" xml:space="preserve"><value>草稿</value></data>
+  <data name="Section.ApprovalInfo" xml:space="preserve"><value>审核信息</value></data>
+  <data name="Approval.Status" xml:space="preserve"><value>审核状态</value></data>
+  <data name="Approval.ApprovedBy" xml:space="preserve"><value>审核者</value></data>
+  <data name="Approval.ApprovedAt" xml:space="preserve"><value>审核时间</value></data>
 
   <!-- ===== Customer 客户模块 ===== -->
   <data name="Customer.ChartTitle" xml:space="preserve"><value>客户分析图表</value></data>
@@ -2797,7 +2813,7 @@
   <data name="Preference.EnableCalendar" xml:space="preserve"><value>启用日历</value></data>
   <data name="Preference.EnableStickyNote" xml:space="preserve"><value>启用便条贴</value></data>
   <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>显示日历提醒徽章</value></data>
-  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>显示便条计数徽章</value></data>
+  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>显示便条计数提示</value></data>
   <data name="Preference.DefaultReminder" xml:space="preserve"><value>默认提醒时间</value></data>
   <data name="Preference.NoReminder" xml:space="preserve"><value>不提醒</value></data>
   <data name="Preference.Reminder5" xml:space="preserve"><value>5分钟前</value></data>

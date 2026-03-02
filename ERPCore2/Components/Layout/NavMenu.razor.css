@@ -1,5 +1,48 @@
 /* Navigation Menu Layout Styles - 只保留佈局和基本結構 */
 
+/* 停用模組的選單項目 */
+.nav-module-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+/* 複製 NavMenuItem.razor.css 的樣式，因為 Blazor scoped CSS 無法跨元件繼承 */
+.nav-module-disabled .nav-menu-dropdown-toggle-btn {
+    color: var(--primary-white);
+    background-color: transparent;
+    border: none;
+    border-radius: var(--radius-lg);
+    min-height: 3rem;
+    height: auto;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    text-decoration: none;
+    cursor: not-allowed;
+    padding: 0.375rem 1rem;
+    box-sizing: border-box;
+    font-weight: normal;
+}
+
+.nav-module-disabled .nav-menu-dropdown-toggle-btn span[aria-hidden="true"] {
+    font-size: 1.25rem;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.nav-module-disabled .nav-menu-item-text {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.nav-module-disabled-lock {
+    margin-left: auto;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
 /* 主導航容器 */
 .nav-menu-container {
     display: flex;

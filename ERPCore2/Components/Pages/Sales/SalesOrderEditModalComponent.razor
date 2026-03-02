@@ -639,6 +639,48 @@
                     containerCssClass: "col-6",
                     readOnly: hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 ),
+
+                // ===== 審核資訊（唯讀，僅用於顯示，所有異動只能透過工具列按鈕執行）=====
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesOrder.IsApproved),
+                    Label = L["Approval.Status"],
+                    FieldType = FormFieldType.Select,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4",
+                    Options = new List<SelectOption>
+                    {
+                        new SelectOption { Value = "True", Text = L["Approval.Approved"] },
+                        new SelectOption { Value = "False", Text = L["Approval.Pending"] }
+                    }
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = "ApprovedByUser.FullName",
+                    Label = L["Approval.ApprovedBy"],
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4"
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesOrder.ApprovedAt),
+                    Label = L["Approval.ApprovedAt"],
+                    FieldType = FormFieldType.DateTime,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4"
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesOrder.RejectReason),
+                    Label = L["Field.RejectionReason"],
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-12"
+                },
             };
 
             formSections = FormSectionHelper<SalesOrder>.Create()
@@ -660,6 +702,12 @@
                     so => so.PaymentTerms,
                     so => so.DeliveryTerms,
                     so => so.Remarks)
+                .AddCustomFieldsIf(isApprovalEnabled && SalesOrderId.HasValue && SalesOrderId.Value > 0,
+                    FormSectionNames.ApprovalInfo,
+                    nameof(SalesOrder.IsApproved),
+                    "ApprovedByUser.FullName",
+                    nameof(SalesOrder.ApprovedAt),
+                    nameof(SalesOrder.RejectReason))
                 .Build();
         }
         catch (Exception ex)

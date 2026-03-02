@@ -269,6 +269,15 @@
   <data name="Preference.ThemeDark" xml:space="preserve">
     <value>Madilim</value>
   </data>
+  <data name="Preference.NavDisplay" xml:space="preserve">
+    <value>Display ng Nabigasyon</value>
+  </data>
+  <data name="Preference.HideDisabledModules" xml:space="preserve">
+    <value>Itago ang Mga Disabled na Module</value>
+  </data>
+  <data name="Preference.ShowDisabledModules" xml:space="preserve">
+    <value>Ipakita ang Mga Disabled na Module</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>Itinakda ng administrator ang account at hindi maaaring baguhin</value>
@@ -568,6 +577,9 @@
   </data>
   <data name="Nav.UnderConstruction" xml:space="preserve">
     <value>Ang feature na ito ay isinasagawa pa</value>
+  </data>
+  <data name="Nav.ModuleDisabled" xml:space="preserve">
+    <value>Ang module na ito ay naka-disable</value>
   </data>
 
 
@@ -1731,6 +1743,10 @@
   <data name="Approval.Approved" xml:space="preserve"><value>Naaprubahan</value></data>
   <data name="Approval.Rejected" xml:space="preserve"><value>Tinanggihan</value></data>
   <data name="Approval.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Section.ApprovalInfo" xml:space="preserve"><value>Impormasyon ng Pag-apruba</value></data>
+  <data name="Approval.Status" xml:space="preserve"><value>Status ng Pag-apruba</value></data>
+  <data name="Approval.ApprovedBy" xml:space="preserve"><value>Inaprubahan ni</value></data>
+  <data name="Approval.ApprovedAt" xml:space="preserve"><value>Petsa ng Pag-apruba</value></data>
 
   <!-- ===== Customer Module ===== -->
   <data name="Customer.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Customer</value></data>
@@ -2797,7 +2813,7 @@
   <data name="Preference.EnableCalendar" xml:space="preserve"><value>Paganahin ang Kalendaryo</value></data>
   <data name="Preference.EnableStickyNote" xml:space="preserve"><value>Paganahin ang Sticky Notes</value></data>
   <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>Ipakita ang Calendar Badge</value></data>
-  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>Ipakita ang Note Badge</value></data>
+  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>Ipakita ang Note Indicator</value></data>
   <data name="Preference.DefaultReminder" xml:space="preserve"><value>Default na Oras ng Paalala</value></data>
   <data name="Preference.NoReminder" xml:space="preserve"><value>Walang Paalala</value></data>
   <data name="Preference.Reminder5" xml:space="preserve"><value>5 min bago</value></data>

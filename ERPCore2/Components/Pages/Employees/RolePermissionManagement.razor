@@ -16,7 +16,8 @@
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    ShowFooter="false"
                    ShowCloseButton="true"
-                   CloseOnBackdropClick="true">
+                   CloseOnBackdropClick="true"
+                   OnClose="@HandleClose">
     <BodyContent>
         @* 區塊 1: 權限組選擇區域 *@
         <div class="mb-2">
@@ -190,7 +191,7 @@
                                                    @onclick:stopPropagation="true"
                                                    @onchange="e => HandleGroupSelectAll(groupKey, false, e.Value is bool b && b)" />
                                         }
-                                        <span class="fw-semibold">@groupKey</span>
+                                        <span class="fw-semibold">@GetGroupDisplayName(groupKey)</span>
                                         <span class="badge @(selectedCount > 0 ? "bg-primary" : "bg-secondary") ms-auto">
                                             @selectedCount / @totalCount
                                         </span>
@@ -267,7 +268,7 @@
                                                    @onchange="e => HandleGroupSelectAll(groupKey, true, e.Value is bool b && b)" />
                                         }
                                         <i class="bi bi-exclamation-triangle-fill text-danger"></i>
-                                        <span class="fw-semibold text-danger">@group.Key</span>
+                                        <span class="fw-semibold text-danger">@GetGroupDisplayName(group.Key)</span>
                                         <span class="badge @(selectedCount > 0 ? "bg-danger" : "bg-secondary") ms-auto">
                                             @selectedCount / @totalCount
                                         </span>
@@ -345,6 +346,7 @@
     {
         if (IsVisible && !roles.Any())
         {
+            isLoadingRoles = true;
             await LoadDataAsync();
         }
     }
@@ -438,6 +440,14 @@
     private async Task HandleModalVisibilityChanged(bool visible)
     {
         await IsVisibleChanged.InvokeAsync(visible);
+    }
+
+    private void HandleClose()
+    {
+        roles.Clear();
+        selectedRole = null;
+        permissionSelections.Clear();
+        collapsedGroups.Clear();
     }
 
     private async Task HandleRoleSelectionChanged(ChangeEventArgs e)
@@ -700,7 +710,7 @@
     }
 
     /// <summary>
-    /// 從 NavigationConfig 的導航分類來分組（如 "Sales"、"Quotation" → "銷售管理"）
+    /// 從 NavigationConfig 的導航分類來分組，回傳 Nav.* resource key（或原始前綴作為 fallback）
     /// </summary>
     private string GetGroupCategory(string? code)
     {
@@ -710,39 +720,83 @@
     }
 
     /// <summary>
-    /// 掃描 NavigationConfig，從 RequiredPermission 建立「Code 前綴 → 導航分類」對應表
+    /// 將群組 key（Nav.* resource key 或原始前綴）轉為本地化顯示文字
+    /// </summary>
+    private string GetGroupDisplayName(string groupKey)
+    {
+        if (groupKey.StartsWith("Nav."))
+            return L[groupKey].ToString() ?? groupKey;
+        return groupKey;
+    }
+
+    /// <summary>
+    /// 掃描 NavigationConfig，從 RequiredPermission 建立「Code 前綴 → Nav.* resource key」對應表
     /// </summary>
     private void BuildPermissionCategoryMapping()
     {
         permissionPrefixToCategory.Clear();
 
-        // 第一步：從 NavigationConfig 自動建立對應
+        // 中文分類名稱 → Nav.* resource key 的對應表
+        var chineseToNavKey = new Dictionary<string, string>
+        {
+            { "基礎功能",    "Nav.Home" },
+            { "檔案管理",    "Nav.DocumentGroup" },
+            { "人力管理",    "Nav.HumanResources" },
+            { "供應鏈管理",  "Nav.SupplierGroup" },
+            { "客戶關係管理","Nav.CustomerGroup" },
+            { "商品管理",    "Nav.ProductGroup" },
+            { "庫存管理",    "Nav.InventoryGroup" },
+            { "採購管理",    "Nav.PurchaseGroup" },
+            { "銷售管理",    "Nav.SalesGroup" },
+            { "車輛管理",    "Nav.VehicleGroup" },
+            { "廢料管理",    "Nav.WasteGroup" },
+            { "財務管理",    "Nav.FinanceGroup" },
+            { "會計管理",    "Nav.AccountingGroup" },
+            { "系統管理",    "Nav.SystemGroup" },
+        };
+
+        // 第一步：從 NavigationConfig 自動建立對應（中文分類轉為 Nav.* key）
         foreach (var item in NavigationConfig.GetFlattenedNavigationItems()
             .Where(i => !string.IsNullOrEmpty(i.RequiredPermission) && !string.IsNullOrEmpty(i.Category)))
         {
             var prefix = item.RequiredPermission!.Split('.')[0];
-            permissionPrefixToCategory.TryAdd(prefix, item.Category!);
+            var navKey = chineseToNavKey.TryGetValue(item.Category!, out var k) ? k : item.Category!;
+            permissionPrefixToCategory.TryAdd(prefix, navKey);
         }
 
         // 第二步：補充 NavigationConfig 未直接對應的前綴
         // （這些權限存在於 PermissionRegistry，但 NavigationConfig 沒有對應的導航項目）
         var supplemental = new Dictionary<string, string>
         {
-            { "System",                        "系統管理" },
-            { "User",                          "人力管理" },
-            { "EmployeeEdit_Account_Password", "人力管理" },
-            { "ErrorLog",                      "系統管理" },
-            { "CustomerType",                  "客戶關係管理" },
-            { "ProductPricing",                "商品管理" },
-            { "MasterData",                    "商品管理" },
-            { "Material",                      "商品管理" },
-            { "Weather",                       "商品管理" },
-            { "Color",                         "商品管理" },
-            { "Inventory",                     "庫存管理" },
-            { "InventoryTransaction",          "庫存管理" },
-            { "InventoryTransactionType",      "庫存管理" },
-            { "InventoryReservation",          "庫存管理" },
-            { "Sales",                         "銷售管理" },
+            // 系統管理
+            { "System",                        "Nav.SystemGroup" },
+            { "User",                          "Nav.HumanResources" },
+            { "EmployeeEdit_Account_Password", "Nav.HumanResources" },
+            { "ErrorLog",                      "Nav.SystemGroup" },
+            { "PaperSetting",                  "Nav.SystemGroup" },
+            { "PrinterConfiguration",          "Nav.SystemGroup" },
+            { "PrinterSetting",                "Nav.SystemGroup" },  // 舊版相容別名
+            { "ReportPrintConfiguration",      "Nav.SystemGroup" },
+            { "SystemParameter",               "Nav.SystemGroup" },
+            { "Company",                       "Nav.SystemGroup" },
+            { "SystemControl",                 "Nav.SystemGroup" },
+            // 客戶
+            { "CustomerType",                  "Nav.CustomerGroup" },
+            // 供應鏈
+            { "Supplier",                      "Nav.SupplierGroup" },
+            // 商品
+            { "ProductPricing",                "Nav.ProductGroup" },
+            { "MasterData",                    "Nav.ProductGroup" },
+            { "Material",                      "Nav.ProductGroup" },
+            { "Weather",                       "Nav.ProductGroup" },
+            { "Color",                         "Nav.ProductGroup" },
+            // 庫存
+            { "Inventory",                     "Nav.InventoryGroup" },
+            { "InventoryTransaction",          "Nav.InventoryGroup" },
+            { "InventoryTransactionType",      "Nav.InventoryGroup" },
+            { "InventoryReservation",          "Nav.InventoryGroup" },
+            // 銷售
+            { "Sales",                         "Nav.SalesGroup" },
         };
 
         foreach (var kvp in supplemental)

@@ -6,6 +6,8 @@
 @using ERPCore2.Services
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject INavigationPermissionService PermissionService
+@inject ICompanyModuleService CompanyModuleService
+@inject IEmployeePreferenceService EmployeePreferenceService
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
 
@@ -56,10 +58,24 @@
             {
                 @foreach (var menuItem in filteredMenuGroups)
                 {
-                    @if (menuItem.IsParent && menuItem.Children.Any())
+                    var isModuleDisabled = !string.IsNullOrEmpty(menuItem.ModuleKey) && _disabledModuleKeys.Contains(menuItem.ModuleKey);
+                    var itemDisplayName = menuItem.NameKey != null ? L[menuItem.NameKey].ToString() : menuItem.Name;
+
+                    @if (isModuleDisabled)
+                    {
+                        <!-- 模組已停用：灰色鎖定顯示 -->
+                        <div class="nav-item px-3 nav-module-disabled" title="@L["Nav.ModuleDisabled"]">
+                            <div class="nav-menu-dropdown-toggle-btn">
+                                <span class="@menuItem.IconClass" aria-hidden="true"></span>
+                                <span class="nav-menu-item-text">@itemDisplayName</span>
+                                <span class="bi bi-lock nav-module-disabled-lock"></span>
+                            </div>
+                        </div>
+                    }
+                    else if (menuItem.IsParent && menuItem.Children.Any())
                     {
                         <!-- 有子選單的項目 -->
-                        <NavMenuItem Text="@(menuItem.NameKey != null ? L[menuItem.NameKey].ToString() : menuItem.Name)"
+                        <NavMenuItem Text="@itemDisplayName"
                                     IconClass="@menuItem.IconClass"
                                     MenuKey="@menuItem.MenuKey"
                                     AutoDetectPermissions="false">
@@ -70,8 +86,8 @@
                                                    Url="@child.Route"
                                                    ItemType="@child.ItemType"
                                                    ActionId="@child.ActionId"
-                                                   RequiredPermission="@child.RequiredPermission" 
-                                                   ParentMenuKey="@menuItem.MenuKey" 
+                                                   RequiredPermission="@child.RequiredPermission"
+                                                   ParentMenuKey="@menuItem.MenuKey"
                                                    IconClass="@child.IconClass"
                                                    IsDivider="@child.IsDivider" />
                                 }
@@ -81,7 +97,7 @@
                     else
                     {
                         <!-- 單一連結項目 -->
-                        <NavMenuItem Text="@(menuItem.NameKey != null ? L[menuItem.NameKey].ToString() : menuItem.Name)"
+                        <NavMenuItem Text="@itemDisplayName"
                                     IconClass="@menuItem.IconClass"
                                     Url="@menuItem.Route"
                                     AutoDetectPermissions="false" />
@@ -103,9 +119,11 @@
     public EventCallback<string> OnActionTriggered { get; set; }
     
     // ===== 私有欄位 =====
-    
+
     private bool isInitialized = false;
     private List<NavigationItem> filteredMenuGroups = new();
+    private HashSet<string> _disabledModuleKeys = new();
+    private bool _showDisabledModules = false;
     
     // ===== 生命週期方法 =====
     
@@ -123,20 +141,52 @@
     {
         var allMenuGroups = NavigationConfig.GetMenuGroups();
         filteredMenuGroups = new List<NavigationItem>();
-        
+
         // 取得當前員工ID
         var currentEmployeeId = await PermissionService.GetCurrentEmployeeIdAsync();
-        
+
         // 檢查是否為系統管理員
         bool isAdmin = await PermissionService.CanAccessAsync("System.Admin");
-        
+
+        // 載入停用模組清單（SuperAdmin 略過，因為對他們全部啟用）
+        if (!isAdmin)
+        {
+            var allModules = await CompanyModuleService.GetAllAsync();
+            _disabledModuleKeys = allModules
+                .Where(m => !m.IsEnabled)
+                .Select(m => m.ModuleKey)
+                .ToHashSet();
+
+            // 載入使用者偏好：是否顯示停用模組
+            if (currentEmployeeId > 0)
+            {
+                var pref = await EmployeePreferenceService.GetByEmployeeIdAsync(currentEmployeeId);
+                _showDisabledModules = pref.ShowDisabledModules;
+            }
+        }
+
         foreach (var menuGroup in allMenuGroups)
         {
             if (menuGroup.IsParent && menuGroup.Children.Any())
             {
+                // 父選單有 ModuleKey 且模組已停用
+                bool isModuleDisabled = !string.IsNullOrEmpty(menuGroup.ModuleKey)
+                    && _disabledModuleKeys.Contains(menuGroup.ModuleKey);
+
+                if (isModuleDisabled)
+                {
+                    if (_showDisabledModules)
+                    {
+                        // 顯示為停用狀態（不過濾子項目，無論如何都不可點）
+                        filteredMenuGroups.Add(menuGroup);
+                    }
+                    // else: 完全隱藏，跳過
+                    continue;
+                }
+
                 // 過濾子項目
                 var filteredChildren = new List<NavigationItem>();
-                
+
                 foreach (var child in menuGroup.Children)
                 {
                     // 如果是分隔線，先暫存
@@ -145,10 +195,10 @@
                         filteredChildren.Add(child);
                         continue;
                     }
-                    
+
                     // 檢查權限
                     bool hasPermission = false;
-                    
+
                     if (isAdmin)
                     {
                         hasPermission = true;
@@ -163,16 +213,16 @@
                         // 檢查是否有特定權限
                         hasPermission = await PermissionService.CanAccessAsync(child.RequiredPermission);
                     }
-                    
+
                     if (hasPermission)
                     {
                         filteredChildren.Add(child);
                     }
                 }
-                
+
                 // 移除開頭和結尾的分隔線，以及連續的分隔線
                 filteredChildren = CleanDividers(filteredChildren);
-                
+
                 // 如果有子項目（不包含只有分隔線的情況），則加入父選單
                 if (filteredChildren.Any(c => !c.IsDivider))
                 {
@@ -183,10 +233,11 @@
                         IconClass = menuGroup.IconClass,
                         IsParent = menuGroup.IsParent,
                         MenuKey = menuGroup.MenuKey,
+                        ModuleKey = menuGroup.ModuleKey,
                         Route = menuGroup.Route,
                         Children = filteredChildren
                     };
-                    
+
                     filteredMenuGroups.Add(filteredMenuGroup);
                 }
             }

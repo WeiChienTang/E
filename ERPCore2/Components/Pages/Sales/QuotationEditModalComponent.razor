@@ -533,7 +533,49 @@
                 FormFieldConfigurationHelper.CreateRemarksField<Quotation>(
                     label: "報價說明",
                     readOnly: shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
-                )
+                ),
+
+                // ===== 審核資訊（唯讀，僅用於顯示，所有異動只能透過工具列按鈕執行）=====
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(Quotation.IsApproved),
+                    Label = L["Approval.Status"],
+                    FieldType = FormFieldType.Select,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4",
+                    Options = new List<SelectOption>
+                    {
+                        new SelectOption { Value = "True", Text = L["Approval.Approved"] },
+                        new SelectOption { Value = "False", Text = L["Approval.Pending"] }
+                    }
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = "ApprovedByUser.FullName",
+                    Label = L["Approval.ApprovedBy"],
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4"
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(Quotation.ApprovedAt),
+                    Label = L["Approval.ApprovedAt"],
+                    FieldType = FormFieldType.DateTime,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-4"
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(Quotation.RejectReason),
+                    Label = L["Field.RejectionReason"],
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
+                    IsDisabled = true,
+                    ContainerCssClass = "col-md-12"
+                },
             };
 
             formSections = FormSectionHelper<Quotation>.Create()
@@ -554,6 +596,12 @@
                     q => q.PaymentTerms,
                     q => q.DeliveryTerms)
                 .AddCustomFields(FormSectionNames.OtherInfo, "Remarks")
+                .AddCustomFieldsIf(isApprovalEnabled && QuotationId.HasValue && QuotationId.Value > 0,
+                    FormSectionNames.ApprovalInfo,
+                    nameof(Quotation.IsApproved),
+                    "ApprovedByUser.FullName",
+                    nameof(Quotation.ApprovedAt),
+                    nameof(Quotation.RejectReason))
                 .Build();
         }
         catch (Exception)

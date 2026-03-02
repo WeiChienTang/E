@@ -17,16 +17,22 @@ namespace ERPCore2.Services
     public class EmployeeService : GenericManagementService<Employee>, IEmployeeService
     {
         private readonly AuthenticationStateProvider? _authenticationStateProvider;
+        private readonly IPermissionService? _permissionService;
+        private readonly INavigationPermissionService? _navigationPermissionService;
 
         /// <summary>
-        /// 完整建構子 - 包含 Logger 和 AuthenticationStateProvider
+        /// 完整建構子 - 包含 Logger、AuthenticationStateProvider 及快取清除服務
         /// </summary>
         public EmployeeService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<Employee>> logger,
+            IPermissionService permissionService,
+            INavigationPermissionService navigationPermissionService,
             AuthenticationStateProvider? authenticationStateProvider = null) : base(contextFactory, logger)
         {
             _authenticationStateProvider = authenticationStateProvider;
+            _permissionService = permissionService;
+            _navigationPermissionService = navigationPermissionService;
         }
 
         /// <summary>
@@ -129,11 +135,13 @@ namespace ERPCore2.Services
                 if (!protectionResult.IsSuccess)
                     return ServiceResult<Employee>.Failure(protectionResult.ErrorMessage);
 
-                // 保護 IsSuperAdmin 欄位不被修改
+                // 保護 IsSuperAdmin 欄位不被修改；同時記錄舊 RoleId 以判斷是否需要清除快取
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var existingEmployee = await context.Employees
                     .AsNoTracking()
                     .FirstOrDefaultAsync(e => e.Id == entity.Id);
+
+                var oldRoleId = existingEmployee?.RoleId;
 
                 if (existingEmployee != null)
                 {
@@ -141,7 +149,13 @@ namespace ERPCore2.Services
                     entity.IsSuperAdmin = existingEmployee.IsSuperAdmin;
                 }
 
-                return await base.UpdateAsync(entity);
+                var result = await base.UpdateAsync(entity);
+
+                // 若 RoleId 有變動，清除雙層權限快取
+                if (result.IsSuccess && oldRoleId != entity.RoleId)
+                    await ClearEmployeePermissionCacheAsync(entity.Id);
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -489,11 +503,14 @@ namespace ERPCore2.Services
 
                 await context.SaveChangesAsync();
 
+                // 清除雙層權限快取，確保新角色的權限立即生效
+                await ClearEmployeePermissionCacheAsync(employeeId);
+
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ChangeEmployeeRoleAsync), GetType(), _logger, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ChangeEmployeeRoleAsync), GetType(), _logger, new {
                     Method = nameof(ChangeEmployeeRoleAsync),
                     ServiceType = GetType().Name,
                     EmployeeId = employeeId,
@@ -980,12 +997,18 @@ namespace ERPCore2.Services
                 employee.Code = updateData.Code;
                 employee.Account = updateData.Account;
                 employee.Name = updateData.Name;
+                var oldRoleId = employee.RoleId;
+
                 employee.RoleId = updateData.RoleId;
                 employee.DepartmentId = updateData.DepartmentId;
                 employee.EmployeePositionId = updateData.EmployeePositionId;
 
                 await context.SaveChangesAsync();
-                
+
+                // 若 RoleId 有變動，清除雙層權限快取
+                if (oldRoleId != updateData.RoleId)
+                    await ClearEmployeePermissionCacheAsync(employeeId);
+
                 // 重新載入員工資料以包含相關資料
                 var updatedEmployee = await context.Employees
                     .Include(e => e.Role)
@@ -1053,6 +1076,22 @@ namespace ERPCore2.Services
                     new { EmployeeId = employeeId });
                 return ServiceResult.Failure("更新個人資料時發生錯誤");
             }
+        }
+
+        #endregion
+
+        #region 私有輔助方法
+
+        /// <summary>
+        /// 清除員工的雙層權限快取（PermissionService + NavigationPermissionService）
+        /// 當員工的 RoleId 變更時必須呼叫，確保權限變更立即生效
+        /// </summary>
+        private async Task ClearEmployeePermissionCacheAsync(int employeeId)
+        {
+            if (_permissionService != null)
+                await _permissionService.RefreshEmployeePermissionCacheAsync(employeeId);
+
+            _navigationPermissionService?.ClearEmployeePermissionCache(employeeId);
         }
 
         #endregion

@@ -37,10 +37,9 @@
 </CascadingValue>
 
 @* 全域頁面搜尋 Modal *@
-<GenericSearchModalComponent @ref="pageSearchModal" 
+<GenericSearchModalComponent @ref="pageSearchModal"
                             IsVisible="@showPageSearch"
                             IsVisibleChanged="@((bool visible) => showPageSearch = visible)"
-                            ActionRegistry="@actionRegistry"
                             Title="頁面搜尋"
                             Icon="bi-search"
                             Placeholder="輸入功能名稱或關鍵字搜尋..."
@@ -50,7 +49,8 @@
                             EmptyStateMessage="開始輸入以搜尋功能頁面"
                             EmptyStateHint="支援功能名稱、關鍵字搜尋"
                             EmptyResultMessage="沒有找到符合條件的功能，請嘗試使用其他關鍵字"
-                            SearchFunction="@SearchNavigationItems" />
+                            SearchFunction="@SearchNavigationItems"
+                            OnItemSelected="@((string id) => HandleNavigationAction(id))" />
 
 @* 全域報表搜尋 Modal *@
 <GenericSearchModalComponent @ref="reportSearchModal" 
@@ -647,24 +647,32 @@
     /// 處理報表中心選擇的報表
     /// 當使用者在報表中心點擊列印按鈕時觸發
     /// </summary>
-    private void HandleReportSelected(string actionId)
+    private async Task HandleReportSelected(string actionId)
     {
         // 從 ActionId 查找對應的 ReportId
         var reportDef = Data.ReportRegistry.GetAllReports()
             .FirstOrDefault(r => r.ActionId == actionId);
-        
-        if (reportDef != null)
+
+        if (reportDef == null)
+            return;
+
+        // 若報表有 RequiredPermission，檢查使用者是否有對應權限（SuperAdmin 自動繞過）
+        if (!string.IsNullOrEmpty(reportDef.RequiredPermission))
         {
-            // 檢查是否有對應的篩選模板配置
-            if (Models.Reports.FilterTemplates.FilterTemplateRegistry.HasConfig(reportDef.Id))
-            {
-                // 使用新的通用篩選 Modal
-                currentFilterReportId = reportDef.Id;
-                StateHasChanged();
+            var hasPermission = await NavigationPermissionService.CanAccessAsync(reportDef.RequiredPermission);
+            if (!hasPermission)
                 return;
-            }
         }
-        
+
+        // 檢查是否有對應的篩選模板配置
+        if (Models.Reports.FilterTemplates.FilterTemplateRegistry.HasConfig(reportDef.Id))
+        {
+            // 使用新的通用篩選 Modal
+            currentFilterReportId = reportDef.Id;
+            StateHasChanged();
+            return;
+        }
+
         // 沒有篩選配置，使用舊的 ActionHandlerRegistry 執行
         actionRegistry?.Execute(actionId);
     }
@@ -705,7 +713,7 @@
     
     /// <summary>
     /// 處理導航動作觸發
-    /// 執行前檢查所屬模組是否啟用（SuperAdmin 自動繞過）
+    /// 執行前依序檢查：模組是否啟用、使用者是否有所需權限（SuperAdmin 自動繞過）
     /// </summary>
     private async void HandleNavigationAction(string actionId)
     {
@@ -725,6 +733,14 @@
                     StateHasChanged();
                     return;
                 }
+            }
+
+            // 若有 RequiredPermission，檢查使用者是否有對應權限（CanAccessAsync 內部已處理 SuperAdmin 繞過）
+            if (!string.IsNullOrEmpty(navItem?.RequiredPermission))
+            {
+                var hasPermission = await NavigationPermissionService.CanAccessAsync(navItem.RequiredPermission);
+                if (!hasPermission)
+                    return;
             }
 
             // 使用 ActionHandlerRegistry 執行 Action

@@ -1,0 +1,18 @@
+/* Light mode: ensure muted/danger text cells are readable on hover */
+.table-hover tbody tr:hover td.text-muted {
+    color: var(--bs-body-color) !important;
+}
+
+.table-hover tbody tr:hover td.text-danger {
+    color: var(--bs-body-color) !important;
+}
+
+/* Dark mode: all td text should use primary text color on hover */
+[data-bs-theme=dark] .table-hover tbody tr:hover td {
+    color: var(--text-primary) !important;
+}
+
+/* Dark mode: preserve badge text colors even when parent td is overridden */
+[data-bs-theme=dark] .table-hover tbody tr:hover .badge {
+    color: var(--bs-badge-color) !important;
+}

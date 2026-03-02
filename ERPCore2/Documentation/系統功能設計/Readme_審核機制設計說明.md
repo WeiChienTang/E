@@ -1,7 +1,7 @@
 # 審核機制設計說明（總綱）
 
 > 本文件為 ERPCore2 單據審核機制（Approval Workflow）的**總綱**，說明設計原則、核心元件與各模組現況摘要。詳細內容請參閱子文件。
-> 最後更新：2026-03-02（全 7 模組完整；警告訊息精簡；審核權限整合說明補充）
+> 最後更新：2026-03-02（全 7 模組完整；警告訊息精簡；審核權限整合說明補充；審核資訊 Section 新增）
 
 ---
 
@@ -40,6 +40,7 @@ SystemParameter 不存放指定審核人員。需要審核權限請在 `Permissi
 | `BatchApprovalTable` | `Components/Pages/Purchase/BatchApprovalTable.razor` | 批次審核 Modal 內部表格 |
 | `RejectConfirmModalComponent` | `Components/Pages/Purchase/RejectConfirmModalComponent.razor` | 駁回原因輸入 Modal |
 | `GenericEditModalComponent` | `Components/Shared/Modal/GenericEditModalComponent.razor` | 核准/駁回按鈕區塊（`ShowApprovalSection` 系列參數）+ `CanPrintCheck` 列印守衛 |
+| `FormSectionNames.ApprovalInfo` | `Helpers/EditModal/FormSectionHelper.cs` | 審核資訊顯示 Section（`"Section.ApprovalInfo"`），審核啟用時才在 EditModal 表單中出現 |
 
 ### ApprovalConfigHelper 邏輯摘要
 
@@ -193,6 +194,107 @@ ApprovalPermission="SalesOrder.Approve"
 在系統管理 → 角色管理中，對應角色需開啟 `Xxx.Approve` 權限，該使用者才會看到「核准」與「駁回」按鈕。
 
 沒有 `Approve` 權限的使用者，`<PermissionCheck>` 會直接隱藏按鈕，整個審核操作區塊不可見。
+
+---
+
+## 七、審核資訊顯示 Section（EditModal 內）
+
+### 7-1 設計目的
+
+讓編輯人員在單據中直接看到「誰審核、何時審核、是否核准、駁回原因」，無需另開其他頁面查詢。
+
+### 7-2 顯示條件
+
+| 條件 | 是否顯示 ApprovalInfo Section |
+|------|-------------------------------|
+| 新建單據（EntityId = null） | ❌ 不顯示 |
+| 編輯現有單據 + 審核功能關閉 | ❌ 不顯示 |
+| 編輯現有單據 + 審核功能開啟 | ✅ 顯示 |
+
+### 7-3 欄位一覽
+
+| 欄位 | FormFieldType | 說明 |
+|------|---------------|------|
+| 審核狀態（`IsApproved`） | `Select`（`IsDisabled=true`） | 選項：已核准 / 待審核 |
+| 審核者（`ApprovedByUser.FullName`） | `Text`（`IsDisabled=true`） | 使用嵌套屬性路徑，自動解析 navigation property |
+| 審核時間（`ApprovedAt`） | `DateTime`（`IsDisabled=true`） | 核准前空白 |
+| 駁回原因（`RejectReason`） | `Text`（`IsDisabled=true`） | 無駁回時空白 |
+
+> **重要**：所有欄位均設 `IsDisabled=true`（非單純 `IsReadOnly`），完全無法互動。所有審核狀態異動只能透過工具列的「核准」/「駁回」按鈕執行。
+
+### 7-4 實作位置
+
+```csharp
+// 在各 EditModal 的 formSections 建立處（BuildFormSections / InitializeFormFieldsAsync）
+
+formSections = FormSectionHelper<TEntity>.Create()
+    .AddToSection(FormSectionNames.BasicInfo, ...)
+    // ...
+    .AddCustomFieldsIf(
+        isApprovalEnabled && XxxId.HasValue && XxxId.Value > 0,
+        FormSectionNames.ApprovalInfo,
+        nameof(XxxEntity.IsApproved),
+        "ApprovedByUser.FullName",          // 嵌套屬性，GenericFormComponent 支援 dot-notation
+        nameof(XxxEntity.ApprovedAt),
+        nameof(XxxEntity.RejectReason))
+    .Build();
+```
+
+```csharp
+// formFields 定義（固定加入，visibility 由 formSections 控制）
+
+new FormFieldDefinition()
+{
+    PropertyName = nameof(XxxEntity.IsApproved),
+    Label = L["Approval.Status"],
+    FieldType = FormFieldType.Select,
+    IsDisabled = true,
+    ContainerCssClass = "col-md-4",
+    Options = new List<SelectOption>
+    {
+        new SelectOption { Value = "True",  Text = L["Approval.Approved"] },
+        new SelectOption { Value = "False", Text = L["Approval.Pending"]  }
+    }
+},
+new FormFieldDefinition()
+{
+    PropertyName = "ApprovedByUser.FullName",
+    Label        = L["Approval.ApprovedBy"],
+    FieldType    = FormFieldType.Text,
+    IsReadOnly   = true,
+    IsDisabled   = true,
+    ContainerCssClass = "col-md-4"
+},
+new FormFieldDefinition()
+{
+    PropertyName = nameof(XxxEntity.ApprovedAt),
+    Label        = L["Approval.ApprovedAt"],
+    FieldType    = FormFieldType.DateTime,
+    IsReadOnly   = true,
+    IsDisabled   = true,
+    ContainerCssClass = "col-md-4"
+},
+new FormFieldDefinition()
+{
+    PropertyName = nameof(XxxEntity.RejectReason),
+    Label        = L["Field.RejectionReason"],
+    FieldType    = FormFieldType.Text,
+    IsReadOnly   = true,
+    IsDisabled   = true,
+    ContainerCssClass = "col-md-12"
+},
+```
+
+### 7-5 Resx Keys
+
+| Key | zh-TW | en-US |
+|-----|-------|-------|
+| `Section.ApprovalInfo` | 審核資訊 | Approval Info |
+| `Approval.Status` | 審核狀態 | Approval Status |
+| `Approval.ApprovedBy` | 審核者 | Approved By |
+| `Approval.ApprovedAt` | 審核時間 | Approved At |
+
+（已於 2026-03-02 加入全 5 語言 resx）
 
 ---
 

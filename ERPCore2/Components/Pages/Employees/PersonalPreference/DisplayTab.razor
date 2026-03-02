@@ -25,7 +25,7 @@
     <div class="section-header mb-3">
         <span class="section-title">@L["Preference.FontSize"]</span>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
+    <div class="d-flex gap-2 flex-wrap mb-4">
         @foreach (var option in _zoomOptions)
         {
             var isSelected = (Model ?? _fallback).Zoom == option.Value;
@@ -35,6 +35,24 @@
                     @onclick="() => SelectZoom(option.Value)">
                 <span class="zoom-preview" style="font-size: @option.PreviewSize;">Aa</span>
                 <span class="zoom-label">@option.Label</span>
+            </button>
+        }
+    </div>
+
+    @* 導覽列顯示設定 *@
+    <div class="section-header mb-3">
+        <span class="section-title">@L["Preference.NavDisplay"]</span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        @foreach (var option in _navDisplayOptions)
+        {
+            var isSelected = (Model ?? _fallback).ShowDisabledModules == option.Value;
+            <button type="button"
+                    class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") theme-option-btn"
+                    title="@option.Label"
+                    @onclick="() => SelectNavDisplay(option.Value)">
+                <i class="bi @option.Icon theme-icon"></i>
+                <span class="theme-label">@option.Label</span>
             </button>
         }
     </div>
@@ -49,8 +67,10 @@
 
     private record ThemeOption(AppTheme Value, string Label, string Icon);
     private record ZoomOption(ContentZoom Value, string Label, string PreviewSize);
+    private record NavDisplayOption(bool Value, string Label, string Icon);
 
     private List<ThemeOption> _themeOptions = new();
+    private List<NavDisplayOption> _navDisplayOptions = new();
 
     private static readonly List<ZoomOption> _zoomOptions = new()
     {
@@ -69,6 +89,12 @@
             new(AppTheme.Light, L["Preference.ThemeLight"], "bi-sun"),
             new(AppTheme.Dark,  L["Preference.ThemeDark"],  "bi-moon-stars"),
         };
+
+        _navDisplayOptions = new List<NavDisplayOption>
+        {
+            new(false, L["Preference.HideDisabledModules"], "bi-eye-slash"),
+            new(true,  L["Preference.ShowDisabledModules"], "bi-lock"),
+        };
     }
 
     private void SelectTheme(AppTheme value)
@@ -80,6 +106,12 @@
     private void SelectZoom(ContentZoom value)
     {
         (Model ?? _fallback).Zoom = value;
+        StateHasChanged();
+    }
+
+    private void SelectNavDisplay(bool value)
+    {
+        (Model ?? _fallback).ShowDisabledModules = value;
         StateHasChanged();
     }
 }

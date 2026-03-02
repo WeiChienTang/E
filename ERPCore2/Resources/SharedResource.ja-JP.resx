@@ -269,6 +269,15 @@
   <data name="Preference.ThemeDark" xml:space="preserve">
     <value>ダーク</value>
   </data>
+  <data name="Preference.NavDisplay" xml:space="preserve">
+    <value>ナビゲーション表示</value>
+  </data>
+  <data name="Preference.HideDisabledModules" xml:space="preserve">
+    <value>無効モジュールを非表示</value>
+  </data>
+  <data name="Preference.ShowDisabledModules" xml:space="preserve">
+    <value>無効モジュールを表示</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>アカウントは管理者が設定するため、変更できません</value>
@@ -568,6 +577,9 @@
   </data>
   <data name="Nav.UnderConstruction" xml:space="preserve">
     <value>この機能は準備中です</value>
+  </data>
+  <data name="Nav.ModuleDisabled" xml:space="preserve">
+    <value>このモジュールは無効です</value>
   </data>
 
 
@@ -1731,6 +1743,10 @@
   <data name="Approval.Approved" xml:space="preserve"><value>承認済み</value></data>
   <data name="Approval.Rejected" xml:space="preserve"><value>拒否済み</value></data>
   <data name="Approval.Draft" xml:space="preserve"><value>草案</value></data>
+  <data name="Section.ApprovalInfo" xml:space="preserve"><value>承認情報</value></data>
+  <data name="Approval.Status" xml:space="preserve"><value>承認状態</value></data>
+  <data name="Approval.ApprovedBy" xml:space="preserve"><value>承認者</value></data>
+  <data name="Approval.ApprovedAt" xml:space="preserve"><value>承認日時</value></data>
 
   <!-- ===== Customer 顧客モジュール ===== -->
   <data name="Customer.ChartTitle" xml:space="preserve"><value>顧客分析チャート</value></data>
@@ -2797,7 +2813,7 @@
   <data name="Preference.EnableCalendar" xml:space="preserve"><value>カレンダーを有効化</value></data>
   <data name="Preference.EnableStickyNote" xml:space="preserve"><value>付箋を有効化</value></data>
   <data name="Preference.ShowCalendarBadge" xml:space="preserve"><value>カレンダーバッジを表示</value></data>
-  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>メモバッジを表示</value></data>
+  <data name="Preference.ShowNoteBadge" xml:space="preserve"><value>メモ件数インジケーターを表示</value></data>
   <data name="Preference.DefaultReminder" xml:space="preserve"><value>既定リマインダー時間</value></data>
   <data name="Preference.NoReminder" xml:space="preserve"><value>リマインダーなし</value></data>
   <data name="Preference.Reminder5" xml:space="preserve"><value>5分前</value></data>
