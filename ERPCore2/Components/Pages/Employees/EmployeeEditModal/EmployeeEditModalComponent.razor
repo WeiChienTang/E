@@ -46,7 +46,8 @@
                           ReportService="@EmployeeDetailReportService"
                           ReportId="@ReportIds.EmployeeDetail"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Employee"]]"
-                          GetReportDocumentName="@(e => $"員工-{e.Code}-{e.Name}")">
+                          GetReportDocumentName="@(e => $"員工-{e.Code}-{e.Name}")"
+                          ComponentName="EmployeeEditModalComponent">
     <CustomActionButtons>
         @if (_hasAccountPermission && EmployeeId.HasValue)
         {

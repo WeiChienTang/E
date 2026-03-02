@@ -26,7 +26,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Document"]]"
                           RequiredPermission="@PermissionRegistry.Document.Read"
                           OnEntitySaved="@OnDocumentSaved"
-                          OnCancel="@OnCancel">
+                          OnCancel="@OnCancel"
+                          ComponentName="DocumentEditModalComponent">
     <CustomFormContent>
         @* 附件檔案區域 *@
         <div class="col-12 mt-3">

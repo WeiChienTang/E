@@ -22,7 +22,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeeTrainingRecord"]]"
                           RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnEntitySaved="@OnEmployeeTrainingRecordSaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="EmployeeTrainingRecordEditModalComponent" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

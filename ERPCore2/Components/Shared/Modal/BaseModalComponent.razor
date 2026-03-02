@@ -12,6 +12,7 @@
 @using Microsoft.Extensions.Localization
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
+@inject INavigationPermissionService NavigationPermissionService
 @implements IDisposable
 
 @if (IsVisible)
@@ -131,6 +132,15 @@
                                 </span>
                             }
                         </div>
+                    </div>
+                }
+
+                @* ===== Debug Info (僅 SuperAdmin 可見) ===== *@
+                @if (_isSuperAdmin && !string.IsNullOrEmpty(DebugComponentName))
+                {
+                    <div class="px-3 py-1 border-top"
+                         style="background:#1a1a2e; color:#7ec8e3; font-size:0.7rem; font-family:monospace; letter-spacing:0.03em;">
+                        🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong> | @DebugComponentName
                     </div>
                 }
             </div>
@@ -254,7 +264,14 @@
     /// </summary>
     [Parameter]
     public ModalAuditInfo? AuditInfo { get; set; }
-    
+
+    /// <summary>
+    /// 組件名稱（僅 SuperAdmin 可見，用於快速定位 .razor 檔案）
+    /// 建議傳入 nameof 或直接寫字串，例如：DebugComponentName="PurchaseOrderEditModalComponent"
+    /// </summary>
+    [Parameter]
+    public string? DebugComponentName { get; set; }
+
     // ===== RenderFragment 參數 =====
     
     /// <summary>
@@ -298,6 +315,7 @@
     // ===== 私有欄位 =====
     
     private bool _lastVisible = false;
+    private bool _isSuperAdmin = false;
     private DotNetObjectReference<BaseModalComponent>? _escKeyDotNetRef;
     private bool _isEscKeyListenerActive = false;
     private bool _isDisposed = false;
@@ -316,14 +334,20 @@
         if (IsVisible && !_lastVisible)
         {
             _lastVisible = true;
-            
+
             // 分配新的 z-index
             lock (_zIndexLock)
             {
                 _currentZIndexBase += 10; // 每個新 Modal 增加 10，留出空間給 backdrop
                 _myZIndex = _currentZIndexBase;
             }
-            
+
+            // 查詢 SuperAdmin 狀態（有快取，效能無虞）
+            if (!string.IsNullOrEmpty(DebugComponentName))
+            {
+                _isSuperAdmin = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+            }
+
             if (OnOpening.HasDelegate)
             {
                 await OnOpening.InvokeAsync();

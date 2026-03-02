@@ -63,7 +63,8 @@
                           CanPrintCheck="@GetCanPrintCheck()"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomActionButtons="@GetCustomActionButtons()"
-                          OnEntityLoaded="@HandleEntityLoaded">
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ComponentName="PurchaseOrderEditModalComponent">
 </GenericEditModalComponent>
 
 @* 廠商編輯 Modal *@
@@ -461,16 +462,12 @@
                 // ===== 審核資訊（唯讀，僅用於顯示，所有異動只能透過工具列按鈕執行）=====
                 new FormFieldDefinition()
                 {
-                    PropertyName = nameof(PurchaseOrder.IsApproved),
+                    PropertyName = "ApprovalStatusText",
                     Label = L["Approval.Status"],
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
                     IsDisabled = true,
-                    ContainerCssClass = "col-md-4",
-                    Options = new List<SelectOption>
-                    {
-                        new SelectOption { Value = "True", Text = L["Approval.Approved"] },
-                        new SelectOption { Value = "False", Text = L["Approval.Pending"] }
-                    }
+                    ContainerCssClass = "col-md-4"
                 },
                 new FormFieldDefinition()
                 {
@@ -517,7 +514,7 @@
                     po => po.Remarks)
                 .AddCustomFieldsIf(isApprovalEnabled && PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0,
                     FormSectionNames.ApprovalInfo,
-                    nameof(PurchaseOrder.IsApproved),
+                    "ApprovalStatusText",
                     "ApprovedByUser.FullName",
                     nameof(PurchaseOrder.ApprovedAt),
                     nameof(PurchaseOrder.RejectReason))
@@ -1283,7 +1280,14 @@
                 await NotificationService.ShowWarningAsync("採購單資料載入失敗，請重新整理頁面");
                 return;
             }
-            
+
+            // 審核檢查：如啟用審核，必須先審核通過才能轉單
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
+                return;
+            }
+
             // 檢查是否有廠商資料
             if (editModalComponent.Entity.SupplierId <= 0)
             {

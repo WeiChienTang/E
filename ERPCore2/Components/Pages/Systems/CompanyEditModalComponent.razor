@@ -26,7 +26,8 @@
                           RequiredPermission="@PermissionRegistry.Company.Read"
                           OnEntitySaved="@OnCompanySaved"
                           OnCancel="@OnCancel"
-                          CustomActionButtons="@LogoManagementButtons" />
+                          CustomActionButtons="@LogoManagementButtons"
+                          ComponentName="CompanyEditModalComponent" />
 
 @* 隱藏的檔案輸入元素 *@
 <InputFile id="logo-file-input" OnChange="HandleLogoFileSelected" accept=".jpg,.jpeg,.png,.gif,.svg" style="display: none;" @ref="logoInputFile" />

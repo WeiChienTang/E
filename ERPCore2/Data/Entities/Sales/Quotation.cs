@@ -69,6 +69,11 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "駁回原因")]
         public string? RejectReason { get; set; }
 
+        [NotMapped]
+        public string ApprovalStatusText =>
+            IsApproved ? "已核准" :
+            !string.IsNullOrEmpty(RejectReason) ? "已駁回" : "待審核";
+
         // Foreign Keys
         [Required(ErrorMessage = "公司為必填")]
         [Display(Name = "公司")]

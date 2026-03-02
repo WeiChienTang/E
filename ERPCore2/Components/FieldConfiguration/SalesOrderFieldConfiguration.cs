@@ -136,8 +136,8 @@ namespace ERPCore2.FieldConfiguration
                             {
                                 var so = (SalesOrder)item;
                                 builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", so.IsApproved ? "badge bg-success" : "badge bg-warning");
-                                builder.AddContent(2, so.IsApproved ? "已核准" : "待核准");
+                                builder.AddAttribute(1, "class", so.IsApproved ? "badge bg-success" : !string.IsNullOrEmpty(so.RejectReason) ? "badge bg-danger" : "badge bg-warning");
+                                builder.AddContent(2, so.ApprovalStatusText);
                                 builder.CloseElement();
                             },
                             FilterFunction = (model, query) =>

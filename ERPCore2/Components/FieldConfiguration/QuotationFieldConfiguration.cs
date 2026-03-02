@@ -142,8 +142,8 @@ namespace ERPCore2.FieldConfiguration
                             {
                                 var quotation = (Quotation)item;
                                 builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", quotation.IsApproved ? "badge bg-success" : "badge bg-warning");
-                                builder.AddContent(2, quotation.IsApproved ? "已核准" : "待核准");
+                                builder.AddAttribute(1, "class", quotation.IsApproved ? "badge bg-success" : !string.IsNullOrEmpty(quotation.RejectReason) ? "badge bg-danger" : "badge bg-warning");
+                                builder.AddContent(2, quotation.ApprovalStatusText);
                                 builder.CloseElement();
                             },
                             FilterFunction = (model, query) => {

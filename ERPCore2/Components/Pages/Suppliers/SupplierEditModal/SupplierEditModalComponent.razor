@@ -44,7 +44,8 @@
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Supplier"]]"
                           GetReportDocumentName="@(e => $"廠商-{e.Code}")"
                           CustomModules="@GetCustomModules()"
-                          CustomActionButtons="@GetCustomActionButtons()" />
+                          CustomActionButtons="@GetCustomActionButtons()"
+                          ComponentName="SupplierEditModalComponent" />
 
 @* 付款方式編輯 Modal *@
 <PaymentMethodEditModalComponent @ref="paymentMethodEditModal"

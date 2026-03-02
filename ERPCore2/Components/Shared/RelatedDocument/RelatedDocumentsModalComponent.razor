@@ -14,8 +14,9 @@
                    CloseOnBackdropClick="false"
                    IsLoading="@IsLoading"
                    LoadingMessage="@L["RelatedDoc.LoadingMessage"]"
-                   OnClose="@Close">
-    
+                   OnClose="@Close"
+                   DebugComponentName="RelatedDocumentsModalComponent">
+
     <BodyContent>
         @if (RelatedDocuments == null || !RelatedDocuments.Any())
         {

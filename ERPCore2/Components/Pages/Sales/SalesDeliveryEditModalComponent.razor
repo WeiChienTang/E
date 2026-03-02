@@ -65,7 +65,8 @@
                           ReportId="@ReportIds.SalesDelivery"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.SalesDelivery"]]"
                           GetReportDocumentName="@(e => $"出貨單-{e.Code}")"
-                          OnEntityLoaded="@HandleEntityLoaded">
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ComponentName="SalesDeliveryEditModalComponent">
 </GenericEditModalComponent>
 
 @* 客戶編輯 Modal *@
@@ -642,16 +643,12 @@
                 // ===== 審核資訊（唯讀，僅用於顯示，所有異動只能透過工具列按鈕執行）=====
                 new FormFieldDefinition()
                 {
-                    PropertyName = nameof(SalesDelivery.IsApproved),
+                    PropertyName = "ApprovalStatusText",
                     Label = L["Approval.Status"],
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
                     IsDisabled = true,
-                    ContainerCssClass = "col-md-4",
-                    Options = new List<SelectOption>
-                    {
-                        new SelectOption { Value = "True", Text = L["Approval.Approved"] },
-                        new SelectOption { Value = "False", Text = L["Approval.Pending"] }
-                    }
+                    ContainerCssClass = "col-md-4"
                 },
                 new FormFieldDefinition()
                 {
@@ -701,7 +698,7 @@
                     sd => sd.Remarks)
                 .AddCustomFieldsIf(isApprovalEnabled && SalesDeliveryId.HasValue && SalesDeliveryId.Value > 0,
                     FormSectionNames.ApprovalInfo,
-                    nameof(SalesDelivery.IsApproved),
+                    "ApprovalStatusText",
                     "ApprovedByUser.FullName",
                     nameof(SalesDelivery.ApprovedAt),
                     nameof(SalesDelivery.RejectReason))
@@ -1269,7 +1266,14 @@
                 await NotificationService.ShowWarningAsync("出貨單資料載入失敗，請重新整理頁面");
                 return;
             }
-            
+
+            // 審核檢查：如啟用審核，必須先審核通過才能轉單
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
+                return;
+            }
+
             // 檢查是否有客戶資料
             if (editModalComponent.Entity.CustomerId <= 0)
             {
@@ -1434,7 +1438,14 @@
                 await NotificationService.ShowWarningAsync("無法轉沖款：出貨單資料不存在");
                 return;
             }
-            
+
+            // 審核檢查：如啟用審核，必須先審核通過才能轉單
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
+                return;
+            }
+
             // 2. 驗證客戶資料
             if (editModalComponent.Entity.CustomerId <= 0)
             {

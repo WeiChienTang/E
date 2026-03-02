@@ -140,6 +140,15 @@
   </data>
 
   <!-- ===== Modal ===== -->
+  <data name="Modal.ConfirmApprove" xml:space="preserve">
+    <value>Kumpirmahin ang Pag-apruba</value>
+  </data>
+  <data name="Message.ConfirmApproveAction" xml:space="preserve">
+    <value>Sigurado ka bang aprubahan ang dokumentong ito?</value>
+  </data>
+  <data name="Message.ConfirmBatchApproveAction" xml:space="preserve">
+    <value>Sigurado ka bang aprubahan ang napiling {0} {1}?</value>
+  </data>
   <data name="Modal.ConfirmReject" xml:space="preserve">
     <value>Kumpirmahin ang Pagtanggi</value>
   </data>

@@ -140,6 +140,15 @@
   </data>
 
   <!-- ===== Modal ===== -->
+  <data name="Modal.ConfirmApprove" xml:space="preserve">
+    <value>Confirm Approval</value>
+  </data>
+  <data name="Message.ConfirmApproveAction" xml:space="preserve">
+    <value>Are you sure you want to approve this document?</value>
+  </data>
+  <data name="Message.ConfirmBatchApproveAction" xml:space="preserve">
+    <value>Are you sure you want to approve the selected {0} {1}?</value>
+  </data>
   <data name="Modal.ConfirmReject" xml:space="preserve">
     <value>Confirm Rejection</value>
   </data>

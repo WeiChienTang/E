@@ -15,8 +15,9 @@
                    CloseOnBackdropClick="false"
                    IsLoading="@isLoading"
                    LoadingMessage="@L["RelatedDoc.LoadingHistory"]"
-                   OnClose="@Close">
-    
+                   OnClose="@Close"
+                   DebugComponentName="InventoryTransactionRelatedModal">
+
     <BodyContent>
         @if (relatedDocuments == null || !relatedDocuments.Any())
         {

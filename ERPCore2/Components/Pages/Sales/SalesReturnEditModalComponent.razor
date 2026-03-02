@@ -70,6 +70,7 @@
                           ReportId="@ReportIds.SalesReturn"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.SalesReturnDoc"]]"
                           GetReportDocumentName="@(e => $"銷貨退回單-{e.Code}")"
+                          ComponentName="SalesReturnEditModalComponent"
 />
 
 @* 沖款單編輯 Modal *@
@@ -689,16 +690,12 @@
                 // ===== 審核資訊（唯讀，僅用於顯示，所有異動只能透過工具列按鈕執行）=====
                 new FormFieldDefinition()
                 {
-                    PropertyName = nameof(SalesReturn.IsApproved),
+                    PropertyName = "ApprovalStatusText",
                     Label = L["Approval.Status"],
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
                     IsDisabled = true,
-                    ContainerCssClass = "col-md-4",
-                    Options = new List<SelectOption>
-                    {
-                        new SelectOption { Value = "True", Text = L["Approval.Approved"] },
-                        new SelectOption { Value = "False", Text = L["Approval.Pending"] }
-                    }
+                    ContainerCssClass = "col-md-4"
                 },
                 new FormFieldDefinition()
                 {
@@ -745,7 +742,7 @@
                     sr => sr.Remarks)
                 .AddCustomFieldsIf(isApprovalEnabled && SalesReturnId.HasValue && SalesReturnId.Value > 0,
                     FormSectionNames.ApprovalInfo,
-                    nameof(SalesReturn.IsApproved),
+                    "ApprovalStatusText",
                     "ApprovedByUser.FullName",
                     nameof(SalesReturn.ApprovedAt),
                     nameof(SalesReturn.RejectReason))
@@ -1366,7 +1363,14 @@
                 await NotificationService.ShowWarningAsync("無法轉沖款：銷貨退回資料不存在");
                 return;
             }
-            
+
+            // 審核檢查：如啟用審核，必須先審核通過才能轉單
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
+                return;
+            }
+
             // 2. 驗證客戶資料
             if (editModalComponent.Entity.CustomerId <= 0)
             {

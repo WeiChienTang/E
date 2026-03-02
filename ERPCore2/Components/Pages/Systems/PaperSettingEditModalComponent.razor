@@ -24,7 +24,8 @@
                           RequiredPermission="@PermissionRegistry.PaperSetting.Read"
                           OnEntitySaved="@OnPaperSettingSaved"
                           OnCancel="@OnCancel"
-                          CustomActionButtons="@CustomActionButtons" />
+                          CustomActionButtons="@CustomActionButtons"
+                          ComponentName="PaperSettingEditModalComponent" />
 
 @* 現有紙張列表 Modal *@
 <ExistingPaperListModalComponent IsVisible="@showExistingPaperModal"

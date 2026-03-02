@@ -23,7 +23,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.VehicleType"]]"
                           RequiredPermission="@PermissionRegistry.VehicleType.Read"
                           OnEntitySaved="@OnVehicleTypeSaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="VehicleTypeEditModalComponent" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

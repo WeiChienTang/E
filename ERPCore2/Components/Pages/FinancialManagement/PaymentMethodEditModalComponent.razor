@@ -23,7 +23,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PaymentMethod"]]"
                           RequiredPermission="@PermissionRegistry.PaymentMethod.Read"
                           OnEntitySaved="@OnPaymentMethodSaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="PaymentMethodEditModalComponent" />
 
 @code {
     // ===== 參數 =====

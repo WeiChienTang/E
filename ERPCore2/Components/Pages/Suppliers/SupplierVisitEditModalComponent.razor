@@ -30,7 +30,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SupplierVisit"]]"
                           RequiredPermission="@PermissionRegistry.Supplier.Read"
                           OnEntitySaved="@OnSupplierVisitSaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="SupplierVisitEditModalComponent" />
 
 @* 廠商編輯 Modal *@
 <SupplierEditModalComponent @ref="supplierEditModal"

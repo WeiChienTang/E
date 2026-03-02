@@ -83,6 +83,11 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "駁回原因")]
         public string? RejectReason { get; set; }
 
+        [NotMapped]
+        public string ApprovalStatusText =>
+            IsApproved ? "已核准" :
+            !string.IsNullOrEmpty(RejectReason) ? "已駁回" : "待審核";
+
         [Display(Name = "已轉傳票")]
         public bool IsJournalized { get; set; } = false;
 

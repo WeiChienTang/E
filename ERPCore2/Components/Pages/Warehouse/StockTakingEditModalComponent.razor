@@ -51,7 +51,8 @@
                           ReportService="@StockTakingDifferenceReportService"
                           ReportId="@ReportIds.InventoryCount"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.StockTakingReport"]]"
-                          GetReportDocumentName="@(e => $"盤點差異表-{e.TakingNumber}")">
+                          GetReportDocumentName="@(e => $"盤點差異表-{e.TakingNumber}")"
+                          ComponentName="StockTakingEditModalComponent">
 </GenericEditModalComponent>
 
 <!-- 庫存調整確認 Modal -->

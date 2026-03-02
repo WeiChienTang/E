@@ -23,7 +23,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductCategory"]]"
                           RequiredPermission="@PermissionRegistry.ProductCategory.Read"
                           OnEntitySaved="@OnProductCategorySaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="ProductCategoryEditModalComponent" />
 
 @code {
     // ===== 必要參數 =====

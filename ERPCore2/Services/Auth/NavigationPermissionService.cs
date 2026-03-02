@@ -32,6 +32,13 @@ namespace ERPCore2.Services
         /// IsSuperAdmin 為唯一繞過公司模組限制的身分，不受任何存取控制
         /// </summary>
         Task<bool> IsCurrentEmployeeSuperAdminAsync();
+
+        /// <summary>
+        /// 檢查指定模組在公司層級是否啟用（IsSuperAdmin 可繞過）
+        /// 此方法只檢查公司層級模組開關，不檢查使用者個人權限
+        /// 用於報表等需要獨立模組啟用檢查的場景
+        /// </summary>
+        Task<bool> IsModuleEnabledAsync(string moduleKey);
     }
 
     public class NavigationPermissionService : INavigationPermissionService
@@ -235,6 +242,34 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCurrentEmployeeSuperAdminAsync), GetType(), _logger, new {
                     Method = nameof(IsCurrentEmployeeSuperAdminAsync),
                     ServiceType = GetType().Name
+                });
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 檢查指定模組在公司層級是否啟用（IsSuperAdmin 可繞過）
+        /// 此方法只檢查公司層級模組開關，不檢查使用者個人權限
+        /// </summary>
+        public async Task<bool> IsModuleEnabledAsync(string moduleKey)
+        {
+            try
+            {
+                var employeeId = await GetCurrentEmployeeIdAsync();
+                if (employeeId <= 0) return false;
+
+                // IsSuperAdmin 繞過所有模組限制
+                if (await GetIsSuperAdminAsync(employeeId))
+                    return true;
+
+                return await _companyModuleService.IsModuleEnabledAsync(moduleKey);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsModuleEnabledAsync), GetType(), _logger, new {
+                    Method = nameof(IsModuleEnabledAsync),
+                    ServiceType = GetType().Name,
+                    ModuleKey = moduleKey
                 });
                 return false;
             }

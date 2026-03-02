@@ -15,24 +15,31 @@
                    UseWhiteCloseButton="true"
                    CloseOnEscape="true"
                    CloseOnBackdropClick="@(!IsProcessing)"
-                   OnClose="@HandleCancel">
+                   OnClose="@HandleCancel"
+                   DebugComponentName="RejectConfirmModalComponent">
         <HeaderButtons>
-            <GenericButtonComponent Variant="ButtonVariant.Gray"
-                                Text="@CancelButtonText"
-                                OnClick="HandleCancel"
-                                IsDisabled="@IsProcessing"
-                                Title="@L["Button.Cancel"].ToString()" />
-            <GenericButtonComponent Variant="ButtonVariant.Red"
-                                Text="@ConfirmButtonText"
+            <GenericButtonComponent Variant="ButtonVariant.Green"
+                                Text="@L["Button.Confirm"].ToString()"
                                 OnClick="HandleConfirm"
                                 IsDisabled="@IsProcessing"
                                 IsLoading="@IsProcessing"
                                 Title="@L["Button.Confirm"].ToString()" />
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                Text="@CancelButtonText"
+                                OnClick="HandleCancel"
+                                IsDisabled="@IsProcessing"
+                                Title="@L["Button.Cancel"].ToString()" />
         </HeaderButtons>
     <BodyContent>
-        <div class="mb-3">                    
-            <textarea class="form-control" 
-                      rows="4" 
+        @if (!string.IsNullOrEmpty(ApproverName))
+        {
+            <div class="mb-2 text-center fw-bold text-primary">
+                @L["Approval.ApprovedBy"]：@ApproverName
+            </div>
+        }
+        <div class="mb-3">
+            <textarea class="form-control"
+                      rows="4"
                       placeholder="@L["Purchase.RejectReasonPlaceholder"].ToString()"
                       @bind="RejectReason"
                       disabled="@IsProcessing"></textarea>
@@ -98,7 +105,13 @@
     /// </summary>
     [Parameter]
     public EventCallback OnCancel { get; set; }
-    
+
+    /// <summary>
+    /// 執行駁回的使用者名稱（顯示在 Modal 中）
+    /// </summary>
+    [Parameter]
+    public string ApproverName { get; set; } = string.Empty;
+
     // ===== 內部狀態 =====
     
     private bool IsProcessing { get; set; } = false;

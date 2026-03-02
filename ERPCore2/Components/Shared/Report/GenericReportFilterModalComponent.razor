@@ -7,11 +7,13 @@
 @using ERPCore2.Models.Reports.FilterCriteria
 @using ERPCore2.Models.Reports.FilterTemplates
 @using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Services
 @using ERPCore2.Data.Entities
 @using ERPCore2.Components.Shared.Report.FilterTemplates
 @inject INotificationService NotificationService
 @inject IServiceProvider ServiceProvider
 @inject Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> L
+@inject INavigationPermissionService NavigationPermissionService
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@HandleVisibilityChanged"
@@ -21,8 +23,9 @@
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    UseWhiteCloseButton="true"
                    BodyCssClass="p-4"
-                   OnClose="@HandleCancel">
-    
+                   OnClose="@HandleCancel"
+                   DebugComponentName="@($"GenericReportFilterModalComponent > {filterConfig?.CriteriaType?.Name ?? ReportId}")">
+
     <HeaderButtons>
         <div class="d-flex gap-2">
             <GenericButtonComponent Variant="ButtonVariant.Green"
@@ -157,12 +160,42 @@
     private IReportFilterCriteria? currentTypedCriteria; // 具體類型的 Criteria（用於條碼等特殊報表）
     
     // ===== 生命週期方法 =====
-    
-    protected override void OnParametersSet()
+
+    protected override async Task OnParametersSetAsync()
     {
         if (IsVisible && !string.IsNullOrEmpty(ReportId))
         {
-            // 保存 ReportId 的本地副本，避免關閉篩選 Modal 時參數被外部清空
+            // 查找報表定義，依序檢查：公司模組是否啟用、使用者是否有所需權限（SuperAdmin 自動繞過）
+            var reportDef = Data.ReportRegistry.GetReportById(ReportId);
+
+            if (reportDef != null)
+            {
+                // 1. 檢查公司層級模組是否啟用
+                if (!string.IsNullOrEmpty(reportDef.ModuleKey))
+                {
+                    var moduleEnabled = await NavigationPermissionService.IsModuleEnabledAsync(reportDef.ModuleKey);
+                    if (!moduleEnabled)
+                    {
+                        // 模組停用：靜默關閉（呼叫端 HandleReportSelected 已顯示 Module.DisabledMessage）
+                        await IsVisibleChanged.InvokeAsync(false);
+                        return;
+                    }
+                }
+
+                // 2. 檢查使用者個人權限
+                if (!string.IsNullOrEmpty(reportDef.RequiredPermission))
+                {
+                    var hasPermission = await NavigationPermissionService.CanAccessAsync(reportDef.RequiredPermission);
+                    if (!hasPermission)
+                    {
+                        // 無權限：靜默關閉，不載入任何內容
+                        await IsVisibleChanged.InvokeAsync(false);
+                        return;
+                    }
+                }
+            }
+
+            // 通過所有檢查，保存 ReportId 本地副本並載入篩選配置
             savedReportId = ReportId;
             LoadFilterConfig();
         }

@@ -55,7 +55,8 @@
                           ReportId="@ReportIds.ProductDetail"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Product"]]"
                           GetReportDocumentName="@(e => $"商品-{e.Code}")"
-                          CustomActionButtons="@CustomActionButtons" />
+                          CustomActionButtons="@CustomActionButtons"
+                          ComponentName="ProductEditModalComponent" />
 
 @* 商品類型編輯 Modal *@
 <ProductCategoryEditModalComponent @ref="productCategoryEditModal"

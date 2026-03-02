@@ -61,7 +61,8 @@
                           OnApprove="@HandleQuotationApprove"
                           OnRejectWithReason="@HandleQuotationRejectWithReason"
                           CanPrintCheck="@GetCanPrintCheck()"
-                          OnEntityLoaded="@HandleEntityLoaded">
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ComponentName="QuotationEditModalComponent">
 </GenericEditModalComponent>
 
 @* 客戶編輯 Modal *@
@@ -538,16 +539,12 @@
                 // ===== 審核資訊（唯讀，僅用於顯示，所有異動只能透過工具列按鈕執行）=====
                 new FormFieldDefinition()
                 {
-                    PropertyName = nameof(Quotation.IsApproved),
+                    PropertyName = "ApprovalStatusText",
                     Label = L["Approval.Status"],
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
                     IsDisabled = true,
-                    ContainerCssClass = "col-md-4",
-                    Options = new List<SelectOption>
-                    {
-                        new SelectOption { Value = "True", Text = L["Approval.Approved"] },
-                        new SelectOption { Value = "False", Text = L["Approval.Pending"] }
-                    }
+                    ContainerCssClass = "col-md-4"
                 },
                 new FormFieldDefinition()
                 {
@@ -598,7 +595,7 @@
                 .AddCustomFields(FormSectionNames.OtherInfo, "Remarks")
                 .AddCustomFieldsIf(isApprovalEnabled && QuotationId.HasValue && QuotationId.Value > 0,
                     FormSectionNames.ApprovalInfo,
-                    nameof(Quotation.IsApproved),
+                    "ApprovalStatusText",
                     "ApprovedByUser.FullName",
                     nameof(Quotation.ApprovedAt),
                     nameof(Quotation.RejectReason))
@@ -1167,10 +1164,13 @@
                 return;
             }
             
-            // 移除審核檢查：改為在載入明細時根據審核開關過濾
-            // 如果啟用審核，只會載入已審核的報價單明細
-            // 如果未啟用審核，載入所有報價單明細
-            
+            // 審核檢查：如啟用審核，必須先審核通過才能轉單
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
+                return;
+            }
+
             // 檢查是否有客戶資料
             if (editModalComponent.Entity.CustomerId <= 0)
             {

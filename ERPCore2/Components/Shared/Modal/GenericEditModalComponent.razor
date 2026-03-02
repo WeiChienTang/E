@@ -3,6 +3,7 @@
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @using System.Reflection
 @using ERPCore2.Helpers
 @using ERPCore2.Helpers.EditModal
@@ -39,6 +40,7 @@
                    ShowFooter="@(Entity != null && Entity.Id > 0)"
                    AuditInfo="@GetAuditInfo()"
                    BodyCssClass="p-0"
+                   DebugComponentName="@ComponentName"
                    OnClose="@HandleCancel">    
     <HeaderButtons>
         @* ===== Modal Actions 按鈕區塊 ===== *@
@@ -71,7 +73,7 @@
                         <div class="d-flex gap-2 me-3">
                             <GenericButtonComponent Text="@L["Button.Approve"]"
                                                   Variant="ButtonVariant.Green"
-                                                  OnClick="HandleApprove"
+                                                  OnClick="OpenApproveConfirmModal"
                                                   IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
                                                   IsLoading="@IsApproving" />
                             <GenericButtonComponent Text="@L["Button.Reject"]"
@@ -236,11 +238,24 @@
     
 </BaseModalComponent>
 
+@* 核准確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@_isApproveConfirmModalVisible"
+                              IsVisibleChanged="@((bool v) => _isApproveConfirmModalVisible = v)"
+                              Title="@L["Modal.ConfirmApprove"]"
+                              Icon="bi-check-circle"
+                              Message="@L["Message.ConfirmApproveAction"]"
+                              SummaryMessage="@(!string.IsNullOrEmpty(_currentUserName) ? $"{L["Approval.ApprovedBy"]}：{_currentUserName}" : "")"
+                              ConfirmButtonText="@L["Button.Confirm"]"
+                              ConfirmButtonVariant="ButtonVariant.Green"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Success"
+                              OnConfirm="HandleApproveConfirm" />
+
 @* 駁回確認 Modal *@
 <RejectConfirmModalComponent @ref="_rejectConfirmModal"
                             IsVisible="@_isRejectConfirmModalVisible"
                             IsVisibleChanged="@((bool value) => _isRejectConfirmModalVisible = value)"
                             Title="@L["Modal.ConfirmReject"]"
+                            ApproverName="@_currentUserName"
                             OnConfirm="@HandleRejectConfirm"
                             OnCancel="@HandleRejectCancel" />
 
@@ -333,7 +348,10 @@
     // 顯示控制
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    
+
+    // Debug 資訊（僅 SuperAdmin 可見）
+    [Parameter] public string? ComponentName { get; set; }
+
     // 權限檢查參數
     [Parameter] public string RequiredPermission { get; set; } = "";
     
@@ -548,9 +566,15 @@
     // 通用表單組件參考（供跨欄位自動帶入使用）
     private GenericFormComponent<TEntity>? genericFormComponent;
 
+    // 核准確認 Modal
+    private bool _isApproveConfirmModalVisible = false;
+
     // 駁回確認 Modal
     private RejectConfirmModalComponent? _rejectConfirmModal;
     private bool _isRejectConfirmModalVisible = false;
+
+    // 當前使用者名稱（用於審核/駁回確認 Modal）
+    private string _currentUserName = "";
 
     // 未儲存修改確認 Modal
     // result: 0=繼續編輯(cancel), 1=確定離開(leave), 2=儲存關閉(saveAndClose)
@@ -1213,15 +1237,23 @@
         }
     }
     
-    private async Task HandleApprove()
+    private async Task OpenApproveConfirmModal()
+    {
+        if (IsApproving || IsRejecting) return;
+        _currentUserName = await CurrentUserHelper.GetCurrentUserFullNameAsync(AuthenticationStateProvider);
+        _isApproveConfirmModalVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleApproveConfirm()
     {
         if (OnApprove == null || IsApproving || IsRejecting) return;
-        
+
         try
         {
             IsApproving = true;
             StateHasChanged();
-            
+
             var success = await OnApprove();
             
             if (success)
@@ -1251,10 +1283,10 @@
     /// <summary>
     /// 開啟駁回確認 Modal
     /// </summary>
-    private void OpenRejectConfirmModal()
+    private async Task OpenRejectConfirmModal()
     {
         if (IsApproving || IsRejecting) return;
-        
+        _currentUserName = await CurrentUserHelper.GetCurrentUserFullNameAsync(AuthenticationStateProvider);
         _isRejectConfirmModalVisible = true;
         StateHasChanged();
     }

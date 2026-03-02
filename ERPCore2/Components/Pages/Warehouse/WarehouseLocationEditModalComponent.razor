@@ -29,7 +29,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WarehouseLocation"]]"
                           RequiredPermission="@PermissionRegistry.WarehouseLocation.Read"
                           OnEntitySaved="@OnWarehouseLocationSaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="WarehouseLocationEditModalComponent" />
 
 @* 倉庫編輯 Modal *@
 <WarehouseEditModalComponent @ref="warehouseEditModal"

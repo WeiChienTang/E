@@ -143,6 +143,15 @@
   </data>
 
   <!-- ===== Modal 操作 ===== -->
+  <data name="Modal.ConfirmApprove" xml:space="preserve">
+    <value>確認核准</value>
+  </data>
+  <data name="Message.ConfirmApproveAction" xml:space="preserve">
+    <value>確定要核准此單據嗎？</value>
+  </data>
+  <data name="Message.ConfirmBatchApproveAction" xml:space="preserve">
+    <value>確定要核准所選 {0} 筆{1}嗎？</value>
+  </data>
   <data name="Modal.ConfirmReject" xml:space="preserve">
     <value>確認駁回</value>
   </data>
@@ -1760,7 +1769,7 @@
   <data name="Approval.AllStatuses" xml:space="preserve"><value>全部狀態</value></data>
   <data name="Approval.Pending" xml:space="preserve"><value>待審核</value></data>
   <data name="Approval.Approved" xml:space="preserve"><value>已核准</value></data>
-  <data name="Approval.Rejected" xml:space="preserve"><value>已拒絕</value></data>
+  <data name="Approval.Rejected" xml:space="preserve"><value>已駁回</value></data>
   <data name="Approval.Draft" xml:space="preserve"><value>草稿</value></data>
   <data name="Section.ApprovalInfo" xml:space="preserve"><value>審核資訊</value></data>
   <data name="Approval.Status" xml:space="preserve"><value>審核狀態</value></data>

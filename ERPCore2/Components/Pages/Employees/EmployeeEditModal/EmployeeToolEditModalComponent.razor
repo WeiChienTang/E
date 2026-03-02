@@ -22,7 +22,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeeTool"]]"
                           RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnEntitySaved="@OnEmployeeToolSaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="EmployeeToolEditModalComponent" />
 
 @code {
     // ===== 必要參數 =====

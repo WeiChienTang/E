@@ -23,7 +23,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.DocumentCategory"]]"
                           RequiredPermission="@PermissionRegistry.Document.Manage"
                           OnEntitySaved="@OnDocumentCategorySaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="DocumentCategoryEditModalComponent" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

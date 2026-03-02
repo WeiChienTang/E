@@ -46,7 +46,8 @@
                           OnEntitySaved="@HandleWasteRecordSavedAsync"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          OnFieldChanged="@HandleFieldChangedAsync" />
+                          OnFieldChanged="@HandleFieldChangedAsync"
+                          ComponentName="WasteRecordEditModalComponent" />
 
 @* 廢料類型編輯 Modal *@
 <WasteTypeEditModalComponent @ref="wasteTypeEditModal"

@@ -140,6 +140,15 @@
   </data>
 
   <!-- ===== Modal ===== -->
+  <data name="Modal.ConfirmApprove" xml:space="preserve">
+    <value>承認の確認</value>
+  </data>
+  <data name="Message.ConfirmApproveAction" xml:space="preserve">
+    <value>この書類を承認してよろしいですか？</value>
+  </data>
+  <data name="Message.ConfirmBatchApproveAction" xml:space="preserve">
+    <value>選択した {0} 件の{1}を承認してよろしいですか？</value>
+  </data>
   <data name="Modal.ConfirmReject" xml:space="preserve">
     <value>却下の確認</value>
   </data>

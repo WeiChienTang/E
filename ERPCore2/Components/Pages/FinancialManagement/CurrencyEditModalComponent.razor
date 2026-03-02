@@ -23,7 +23,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Currency"]]"
                           RequiredPermission="@PermissionRegistry.Currency.Read"
                           OnEntitySaved="@OnCurrencySaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="CurrencyEditModalComponent" />
 
 @code {
     // ===== 參數 =====

@@ -23,7 +23,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeePosition"]]"
                           RequiredPermission="@PermissionRegistry.EmployeePosition.Read"
                           OnEntitySaved="@OnEmployeePositionSaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="EmployeePositionEditModalComponent" />
 
 @code {
     // ===== 參數 =====

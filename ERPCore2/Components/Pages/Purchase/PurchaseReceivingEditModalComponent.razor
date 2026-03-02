@@ -70,7 +70,8 @@
                           ReportId="PO002"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.PurchaseReceivingDoc"]]"
                           GetReportDocumentName="@(e => $"進貨單-{e.Code}")"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ComponentName="PurchaseReceivingEditModalComponent" />
 
 @* 廠商編輯 Modal *@
 @if (supplierModalManager != null)
@@ -285,7 +286,14 @@
                 await NotificationService.ShowWarningAsync("無法轉庫退出：進貨單資料不存在");
                 return;
             }
-            
+
+            // 審核檢查：如啟用審核，必須先審核通過才能轉單
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
+                return;
+            }
+
             // 2. 驗證廠商資料
             if (editModalComponent.Entity.SupplierId <= 0)
             {
@@ -350,7 +358,14 @@
                 await NotificationService.ShowWarningAsync("無法轉沖款：進貨單資料不存在");
                 return;
             }
-            
+
+            // 審核檢查：如啟用審核，必須先審核通過才能轉單
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            {
+                await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
+                return;
+            }
+
             // 2. 驗證廠商資料
             if (editModalComponent.Entity.SupplierId <= 0)
             {
@@ -895,16 +910,12 @@
                 // ===== 審核資訊（唯讀，僅用於顯示，所有異動只能透過工具列按鈕執行）=====
                 new FormFieldDefinition()
                 {
-                    PropertyName = nameof(PurchaseReceiving.IsApproved),
+                    PropertyName = "ApprovalStatusText",
                     Label = L["Approval.Status"],
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
                     IsDisabled = true,
-                    ContainerCssClass = "col-md-4",
-                    Options = new List<SelectOption>
-                    {
-                        new SelectOption { Value = "True", Text = L["Approval.Approved"] },
-                        new SelectOption { Value = "False", Text = L["Approval.Pending"] }
-                    }
+                    ContainerCssClass = "col-md-4"
                 },
                 new FormFieldDefinition()
                 {
@@ -950,7 +961,7 @@
                     pr => pr.Remarks)
                 .AddCustomFieldsIf(isApprovalEnabled && PurchaseReceivingId.HasValue && PurchaseReceivingId.Value > 0,
                     FormSectionNames.ApprovalInfo,
-                    nameof(PurchaseReceiving.IsApproved),
+                    "ApprovalStatusText",
                     "ApprovedByUser.FullName",
                     nameof(PurchaseReceiving.ApprovedAt),
                     nameof(PurchaseReceiving.RejectReason))

@@ -46,6 +46,13 @@ namespace ERPCore2.Models.Reports
         /// 所需權限
         /// </summary>
         public string? RequiredPermission { get; set; }
+
+        /// <summary>
+        /// 公司模組鍵值（對應 CompanyModule.ModuleKey）
+        /// 設定後會在開啟報表前檢查公司層級模組是否啟用
+        /// 若為 null 則不進行模組層級檢查
+        /// </summary>
+        public string? ModuleKey { get; set; }
         
         /// <summary>
         /// 開啟報表的 Action 識別碼

@@ -22,7 +22,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeeLicense"]]"
                           RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnEntitySaved="@OnEmployeeLicenseSaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="EmployeeLicenseEditModalComponent" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

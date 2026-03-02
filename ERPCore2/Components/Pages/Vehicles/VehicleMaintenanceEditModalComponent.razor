@@ -41,7 +41,8 @@
                           ReportService="@VehicleMaintenanceReportService"
                           ReportId="@ReportIds.VehicleMaintenance"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.VehicleMaintenance"]]"
-                          GetReportDocumentName="@(e => $"保養紀錄-{e.Code}")" />
+                          GetReportDocumentName="@(e => $"保養紀錄-{e.Code}")"
+                          ComponentName="VehicleMaintenanceEditModalComponent" />
 
 @* 車輛編輯 Modal *@
 <VehicleEditModalComponent @ref="vehicleEditModal"

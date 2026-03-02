@@ -19,8 +19,9 @@
                    IsLoading="@isLoading"
                    LoadingMessage="@L["Vehicle.LoadingMessage"]"
                    BodyCssClass="p-4"
-                   OnClose="@HandleClose">
-    
+                   OnClose="@HandleClose"
+                   DebugComponentName="VehicleSelectModal">
+
     <BodyContent>
         @* 搜尋列 *@
         <SearchInputComponent Value="@searchText"

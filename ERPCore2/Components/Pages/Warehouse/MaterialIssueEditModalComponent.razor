@@ -38,7 +38,8 @@
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomValidator="@ValidateMaterialIssueDetailsAsync"
                           CustomModules="@GetCustomModules()"
-                          OnEntityLoaded="@HandleEntityLoaded">
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ComponentName="MaterialIssueEditModalComponent">
 </GenericEditModalComponent>
 
 @code {

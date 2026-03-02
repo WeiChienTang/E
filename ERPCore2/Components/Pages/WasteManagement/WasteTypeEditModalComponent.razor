@@ -29,7 +29,8 @@
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WasteType"]]"
                           RequiredPermission="@PermissionRegistry.WasteType.Read"
                           OnEntitySaved="@OnWasteTypeSaved"
-                          OnCancel="@OnCancel" />
+                          OnCancel="@OnCancel"
+                          ComponentName="WasteTypeEditModalComponent" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

@@ -51,7 +51,8 @@
                           ReportId="@ReportIds.ProductionSchedule"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.ProductionScheduleReport"]]"
                           GetReportDocumentName="@(e => $"生產排程表-{e.Code}")"
-                          CustomModules="@GetCustomModules()" />
+                          CustomModules="@GetCustomModules()"
+                          ComponentName="ProductionScheduleEditModalComponent" />
 
 @* 排程項目編輯 Modal *@
 <ProductionScheduleItemEditModal IsVisible="@showScheduleItemModal"

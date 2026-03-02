@@ -46,7 +46,8 @@ ShowPrintButton="true"
                           ReportId="@ReportIds.BOMReport"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.BOM"]]"
                           GetReportDocumentName="@(e => $"物料清單-{e.Code}")"
-                          CustomModules="@GetCustomModules()" />
+                          CustomModules="@GetCustomModules()"
+                          ComponentName="ProductCompositionEditModalComponent" />
 
 @* 客戶編輯 Modal *@
 <CustomerEditModalComponent @ref="customerEditModal"

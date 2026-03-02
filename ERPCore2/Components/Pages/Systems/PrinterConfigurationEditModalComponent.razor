@@ -26,7 +26,8 @@
                           RequiredPermission="@PermissionRegistry.PrinterConfiguration.Read"
                           OnEntitySaved="@OnPrinterConfigurationSaved"
                           OnCancel="@OnCancel"
-                          CustomActionButtons="@CustomActionButtons" />
+                          CustomActionButtons="@CustomActionButtons"
+                          ComponentName="PrinterConfigurationEditModalComponent" />
 
 @* 已安裝印表機列表 Modal *@
 <InstalledPrinterListModalComponent IsVisible="@showInstalledPrinterModal"

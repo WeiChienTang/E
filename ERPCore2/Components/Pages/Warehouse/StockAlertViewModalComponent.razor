@@ -22,8 +22,9 @@
                    IsLoading="@isLoading"
                    LoadingMessage="@L["Warehouse.LoadingStock"]"
                    BodyCssClass="p-4"
-                   OnClose="@HandleClose">
-    
+                   OnClose="@HandleClose"
+                   DebugComponentName="StockAlertViewModalComponent">
+
     <BodyContent>
         @if (!stockAlertItems.Any())
         {

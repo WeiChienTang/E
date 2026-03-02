@@ -14,7 +14,8 @@
                    UseWhiteCloseButton="@(HeaderColor != BaseModalComponent.HeaderVariant.Default)"
                    CloseOnEscape="true"
                    CloseOnBackdropClick="true"
-                   OnClose="@HandleCancel">
+                   OnClose="@HandleCancel"
+                   DebugComponentName="GenericConfirmModalComponent">
     <HeaderButtons>
         <GenericButtonComponent Variant="@ConfirmButtonVariant"
                             Text="@ConfirmButtonText"

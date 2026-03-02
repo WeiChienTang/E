@@ -280,6 +280,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrders
                     .Include(so => so.Customer)
                     .Include(so => so.Employee)
+                    .Include(so => so.ApprovedByUser)
                     .Include(so => so.SalesOrderDetails)
                         .ThenInclude(sod => sod.Product)
                     .Include(so => so.SalesOrderDetails)

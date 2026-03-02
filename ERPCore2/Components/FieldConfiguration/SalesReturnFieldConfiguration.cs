@@ -139,8 +139,8 @@ namespace ERPCore2.FieldConfiguration
                             {
                                 var sr = (SalesReturn)item;
                                 builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", sr.IsApproved ? "badge bg-success" : "badge bg-warning");
-                                builder.AddContent(2, sr.IsApproved ? "已核准" : "待核准");
+                                builder.AddAttribute(1, "class", sr.IsApproved ? "badge bg-success" : !string.IsNullOrEmpty(sr.RejectReason) ? "badge bg-danger" : "badge bg-warning");
+                                builder.AddContent(2, sr.ApprovalStatusText);
                                 builder.CloseElement();
                             },
                             FilterFunction = (model, query) =>

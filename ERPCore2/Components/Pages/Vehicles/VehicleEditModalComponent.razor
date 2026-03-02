@@ -44,7 +44,8 @@
                           ReportService="@VehicleListReportService"
                           ReportId="@ReportIds.VehicleList"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Vehicle"]]"
-                          GetReportDocumentName="@(e => $"車輛-{e.LicensePlate}")" />
+                          GetReportDocumentName="@(e => $"車輛-{e.LicensePlate}")"
+                          ComponentName="VehicleEditModalComponent" />
 
 @* 車型編輯 Modal *@
 <VehicleTypeEditModalComponent @ref="vehicleTypeEditModal"

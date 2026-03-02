@@ -106,10 +106,14 @@ Task<ServiceResult> UpdateModulesAsync(List<CompanyModule> modules, string updat
 提供整合公司層 + 使用者層的複合檢查：
 
 ```csharp
-// 複合檢查：公司層模組 + 使用者層模組權限
+// 複合檢查：公司層模組 + 使用者層模組權限（以 "ModuleKey." 開頭的權限）
 Task<bool> CanAccessModuleAsync(string module);
 
-// 僅檢查使用者是否擁有特定權限
+// 僅檢查公司層級模組是否啟用（IsSuperAdmin 可繞過，不做使用者權限前綴檢查）
+// 用於報表等需要獨立模組檢查、且權限命名不符合 "ModuleKey." 格式的場景
+Task<bool> IsModuleEnabledAsync(string moduleKey);
+
+// 僅檢查使用者是否擁有特定權限（不考慮公司層級模組狀態）
 Task<bool> CanAccessAsync(string permission);
 ```
 
@@ -118,10 +122,21 @@ Task<bool> CanAccessAsync(string permission);
 ```
 1. 取得目前登入員工 ID → 若無效則拒絕
 2. 查詢員工 IsSuperAdmin 狀態（含快取）→ 若為 true 直接允許（繞過所有限制）
-3. 呼叫 IsModuleEnabledAsync(module) → 模組停用則拒絕（System.Admin 亦受此限制）
+3. 呼叫 CompanyModuleService.IsModuleEnabledAsync(module) → 模組停用則拒絕（System.Admin 亦受此限制）
 4. 取得員工所有權限清單
 5. 若包含 "System.Admin" → 允許（模組已啟用前提下的管理者存取）
 6. 檢查員工是否有任何以 "ModuleKey." 開頭的權限 → 無則拒絕
+```
+
+> ⚠️ **命名不一致問題**：`CanAccessModuleAsync("Accounting")` 步驟 6 會尋找以 `"Accounting."` 開頭的權限，但實際會計模組的權限命名為 `"AccountItem.Read"` / `"JournalEntry.Read"`（非 `"Accounting.*"` 格式）。因此**不可對報表使用 `CanAccessModuleAsync`**，應改用 `IsModuleEnabledAsync`（只查公司層） + `CanAccessAsync`（只查個人權限）的雙層分離方式。
+
+**`IsModuleEnabledAsync()` 執行邏輯**（2026-03-02 新增）：
+
+```
+1. 取得目前登入員工 ID → 若無效則拒絕
+2. 查詢員工 IsSuperAdmin 狀態 → 若為 true 直接允許（繞過所有限制）
+3. 呼叫 CompanyModuleService.IsModuleEnabledAsync(moduleKey) → 回傳模組啟用狀態
+   （不做使用者層級的 "ModuleKey." 前綴權限檢查）
 ```
 
 ---
@@ -186,7 +201,80 @@ private async void HandleNavigationAction(string actionId)
 
 **模組停用時的行為**（2026-02-27 更新）：開啟 `_showModuleDisabledModal`（`BaseModalComponent`），Modal 內顯示鎖定圖示（`bi-lock-fill`）、標題「此功能未開放」、說明「您的系統目前未啟用此功能模組，請聯絡系統管理員。」，與 Index 頁面的鎖定畫面視覺完全一致。Modal 宣告在 `MainLayout.razor` Razor 區塊末段，使用者可按右上角關閉鍵或點擊背景關閉。
 
-### 3. 元件層 — PagePermissionCheck
+### 3. 報表層 — MainLayout.HandleReportSelected + GenericReportFilterModalComponent
+
+（2026-03-02 新增）
+
+報表的存取控制需要特殊處理，因為報表的權限命名（如 `AccountItem.Read`）不符合 `CanAccessModuleAsync` 要求的 `"ModuleKey."` 前綴格式。改用雙層分離檢查：
+
+**`ReportDefinition` 新增 `ModuleKey` 欄位**（`Models/Reports/ReportDefinition.cs`）：
+
+```csharp
+/// <summary>
+/// 公司模組鍵值（對應 CompanyModule.ModuleKey）
+/// 設定後會在開啟報表前檢查公司層級模組是否啟用
+/// </summary>
+public string? ModuleKey { get; set; }
+```
+
+**報表模組鍵對照**（`Data/Reports/ReportRegistry.cs`）：
+
+| ReportCategory | ModuleKey |
+|----------------|-----------|
+| `Customer` | `"Customers"` |
+| `Supplier` | `"Suppliers"` |
+| `Product` | `"Products"` |
+| `Inventory` | `"Warehouse"` |
+| `Sales` | `"Sales"` |
+| `Purchase` | `"Purchase"` |
+| `HR` | `"Employees"` |
+| `Vehicle` | `"Vehicles"` |
+| `Waste` | `"WasteManagement"` |
+| `Financial` | `"FinancialManagement"` |
+| `Accounting` | `"Accounting"` |
+
+**`HandleReportSelected` 執行邏輯**（`Components/Layout/MainLayout.razor`）：
+
+```csharp
+private async Task HandleReportSelected(string actionId)
+{
+    var reportDef = Data.ReportRegistry.GetAllReports()
+        .FirstOrDefault(r => r.ActionId == actionId);
+    if (reportDef == null) return;
+
+    // 1. 公司層：檢查模組是否啟用（IsSuperAdmin 自動繞過）
+    if (!string.IsNullOrEmpty(reportDef.ModuleKey))
+    {
+        var moduleEnabled = await NavigationPermissionService.IsModuleEnabledAsync(reportDef.ModuleKey);
+        if (!moduleEnabled)
+        {
+            _showModuleDisabledModal = true;  // 顯示「此功能未開放」Modal
+            StateHasChanged();
+            return;
+        }
+    }
+
+    // 2. 使用者層：檢查個人權限（SuperAdmin 自動繞過）
+    if (!string.IsNullOrEmpty(reportDef.RequiredPermission))
+    {
+        var hasPermission = await NavigationPermissionService.CanAccessAsync(reportDef.RequiredPermission);
+        if (!hasPermission) return;
+    }
+
+    // 3. 開啟篩選 Modal 或直接執行 Action
+}
+```
+
+**第二道防線 — `GenericReportFilterModalComponent.OnParametersSetAsync`**：
+
+同樣進行雙層檢查（模組 → 個人權限），防止直接設定 `currentFilterReportId` 時繞過檢查。模組停用時靜默關閉（呼叫端 `HandleReportSelected` 已顯示 Modal，此處不重複）。
+
+**涵蓋的入口點**：
+- 從 NavMenu 進入的報表中心（`GenericReportIndexPage`）→ `HandleReportSelected`
+- 從報表搜尋 Modal（`reportSearchModal`）選擇 → `HandleReportSelected`
+- 直接設定 `currentFilterReportId` 的情境 → `GenericReportFilterModalComponent` 備援
+
+### 4. 元件層 — PagePermissionCheck
 
 位置：`Components/Shared/PagePermissionCheck.razor`
 
@@ -269,7 +357,7 @@ private async Task<HashSet<string>?> GetEnabledModuleKeysAsync(int employeeId)
 ## 完整存取控制流程圖
 
 ```
-使用者觸發功能（頁面 / 圖表等 Action / 儀表板捷徑 / EditModal Tab）
+使用者觸發功能（頁面 / 圖表 Action / 報表 / 儀表板捷徑 / EditModal Tab）
         │
         ├── 頁面導航（Route）
         │       ↓
@@ -289,6 +377,23 @@ private async Task<HashSet<string>?> GetEnabledModuleKeysAsync(int employeeId)
         │       ├── IsSuperAdmin → 直接允許
         │       ├── 模組停用 → 顯示模組停用 Modal
         │       └── 模組啟用且有權限 → 開啟 Modal
+        │
+        ├── 報表（從報表中心或報表搜尋選擇）
+        │       ↓
+        │   MainLayout.HandleReportSelected(actionId)
+        │       ↓
+        │   查找 reportDef.ModuleKey（ReportRegistry 設定）
+        │       ↓
+        │   NavigationPermissionService.IsModuleEnabledAsync()  ← 公司層
+        │       ├── IsSuperAdmin → 直接允許
+        │       ├── 模組停用 → 顯示模組停用 Modal
+        │       └── 模組啟用 → 繼續
+        │                   ↓
+        │           NavigationPermissionService.CanAccessAsync()  ← 使用者層
+        │                   ├── 無權限 → 靜默 return
+        │                   └── 有權限 → 開啟篩選 Modal
+        │                               ↓
+        │                   GenericReportFilterModalComponent（備援雙重檢查）
         │
         ├── EditModal 中的跨模組 Tab（如車輛資訊）
         │       ↓
@@ -318,8 +423,10 @@ private async Task<HashSet<string>?> GetEnabledModuleKeysAsync(int employeeId)
 | 檢查點 | IsSuperAdmin 行為 |
 |--------|------------------|
 | `NavigationPermissionService.CanAccessModuleAsync()` | 直接回傳 `true`，跳過模組啟用檢查與權限檢查 |
+| `NavigationPermissionService.IsModuleEnabledAsync()` | 直接回傳 `true`，跳過公司層級模組檢查 |
 | `NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync()` | 回傳 `true` |
 | `MainLayout.HandleNavigationAction()` | 透過 `CanAccessModuleAsync()` 自動繞過 |
+| `MainLayout.HandleReportSelected()` | 透過 `IsModuleEnabledAsync()` 自動繞過 |
 | `DashboardService.GetEnabledModuleKeysAsync()` | 回傳 `null`，所有過濾點跳過模組與權限檢查 |
 | `GenericIndexPageComponent` 模組鎖定畫面 | 不顯示（透過 `IsCurrentEmployeeSuperAdminAsync()` 繞過） |
 | EditModal 跨模組 Tab（如車輛資訊） | Tab 正常顯示（透過 `IsCurrentEmployeeSuperAdminAsync()` 繞過） |
@@ -389,7 +496,11 @@ private async Task<HashSet<string>?> GetEnabledModuleKeysAsync(int employeeId)
 | 選單設定（含 ModuleKey 繼承） | `Data/Navigation/NavigationConfig.cs` |
 | Index 頁面元件 | `Components/Shared/Page/GenericIndexPageComponent.razor` |
 | 權限檢查元件 | `Components/Shared/PagePermissionCheck.razor` |
-| 報表/圖表 Action 模組檢查 | `Components/Layout/MainLayout.razor` |
+| 圖表 Action 模組檢查 | `Components/Layout/MainLayout.razor`（`HandleNavigationAction`） |
+| 報表模組 + 權限檢查（主） | `Components/Layout/MainLayout.razor`（`HandleReportSelected`） |
+| 報表模組 + 權限檢查（備援） | `Components/Shared/Report/GenericReportFilterModalComponent.razor`（`OnParametersSetAsync`） |
+| 報表定義（含 ModuleKey） | `Models/Reports/ReportDefinition.cs` |
+| 報表模組鍵設定 | `Data/Reports/ReportRegistry.cs` |
 | 儀表板模組過濾 | `Services/Dashboard/DashboardService.cs` |
 | EditModal Tab — 客戶車輛 | `Components/Pages/Customers/CustomerEditModal/CustomerEditModalComponent.razor` |
 | EditModal Tab — 廠商車輛 | `Components/Pages/Suppliers/SupplierEditModal/SupplierEditModalComponent.razor` |

@@ -140,6 +140,15 @@
   </data>
 
   <!-- ===== Modal ===== -->
+  <data name="Modal.ConfirmApprove" xml:space="preserve">
+    <value>确认核准</value>
+  </data>
+  <data name="Message.ConfirmApproveAction" xml:space="preserve">
+    <value>确定要核准此单据吗？</value>
+  </data>
+  <data name="Message.ConfirmBatchApproveAction" xml:space="preserve">
+    <value>确定要核准所选 {0} 笔{1}吗？</value>
+  </data>
   <data name="Modal.ConfirmReject" xml:space="preserve">
     <value>确认驳回</value>
   </data>
@@ -1741,7 +1750,7 @@
   <data name="Approval.AllStatuses" xml:space="preserve"><value>全部状态</value></data>
   <data name="Approval.Pending" xml:space="preserve"><value>待审核</value></data>
   <data name="Approval.Approved" xml:space="preserve"><value>已核准</value></data>
-  <data name="Approval.Rejected" xml:space="preserve"><value>已拒绝</value></data>
+  <data name="Approval.Rejected" xml:space="preserve"><value>已驳回</value></data>
   <data name="Approval.Draft" xml:space="preserve"><value>草稿</value></data>
   <data name="Section.ApprovalInfo" xml:space="preserve"><value>审核信息</value></data>
   <data name="Approval.Status" xml:space="preserve"><value>审核状态</value></data>
