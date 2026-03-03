@@ -1,4 +1,9 @@
-/* Toast 通知樣式 */
+/* ══════════════════════════════════════════════════════════════
+   Toast 通知樣式
+   配合 colors.css CSS 變數實現自動淺/深色模式切換
+   ══════════════════════════════════════════════════════════════ */
+
+/* ══ 容器 ══ */
 .toast-container-slide {
     z-index: 9999;
     pointer-events: none;
@@ -8,16 +13,21 @@
 .toast-slide {
     background: var(--bg-primary);
     border-radius: 12px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-light);
+    border-left: 4px solid transparent;
     margin-bottom: 10px;
     overflow: hidden;
     transform: translateX(110%);
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.35s ease,
+                border-radius 0.25s ease,
+                max-width 0.25s ease;
     opacity: 0;
-    border-left: 4px solid transparent;
     position: relative;
     max-width: 300px;
     pointer-events: auto;
+    touch-action: pan-x;
 }
 
 .toast-slide.slide-in {
@@ -36,7 +46,9 @@
     display: flex;
     align-items: center;
     padding: 12px 14px;
+    cursor: default;
     transition: background-color 0.15s ease;
+    user-select: none;
 }
 
 /* ══ 圖示（圓形底色）══ */
@@ -52,7 +64,7 @@
     border-radius: 50%;
 }
 
-/* ══ 內容區域 ══ */
+/* ══ 內容 ══ */
 .toast-slide-content {
     flex: 1;
     min-width: 0;
@@ -79,7 +91,7 @@
     word-break: break-word;
 }
 
-/* ══ 操作按鈕 ══ */
+/* ══ 緊湊區操作按鈕 ══ */
 .toast-slide-actions {
     display: flex;
     flex-shrink: 0;
@@ -87,9 +99,7 @@
     margin-left: 8px;
 }
 
-.toast-slide-expand,
-.toast-slide-close,
-.toast-slide-collapse {
+.toast-slide-close {
     width: 26px;
     height: 26px;
     border: none;
@@ -105,18 +115,12 @@
     flex-shrink: 0;
 }
 
-.toast-slide-expand:hover,
-.toast-slide-collapse:hover {
-    background-color: var(--bg-tertiary);
-    color: var(--text-secondary-hover);
-}
-
 .toast-slide-close:hover {
-    background-color: var(--alert-danger-bg);
-    color: var(--danger-color);
+    background-color: rgba(var(--danger-color-rgb), 0.12);
+    color: rgb(var(--danger-color-rgb));
 }
 
-/* ══ 展開視圖 ══ */
+/* ══ 展開視圖（Hover / 點擊觸發）══ */
 .toast-slide-expanded {
     display: none;
     padding: 14px;
@@ -126,7 +130,6 @@
 
 .toast-slide.expanded .toast-slide-compact {
     border-bottom: 1px solid var(--border-light);
-    background-color: var(--bg-secondary);
 }
 
 .toast-slide.expanded .toast-slide-expanded {
@@ -154,10 +157,64 @@
     white-space: pre-wrap;
 }
 
+/* ══ 展開區操作列（複製 + 關閉）══ */
 .toast-slide-expanded-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 8px;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-light);
+}
+
+/* 複製按鈕 */
+.toast-copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+.toast-copy-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--text-light);
+}
+
+.toast-copy-btn.copied {
+    color: rgb(var(--success-color-rgb));
+    border-color: rgba(var(--success-color-rgb), 0.4);
+    background: rgba(var(--success-color-rgb), 0.08);
+}
+
+/* 展開區的關閉按鈕 */
+.toast-expanded-close-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+.toast-expanded-close-btn:hover {
+    background: rgba(var(--danger-color-rgb), 0.12);
+    color: rgb(var(--danger-color-rgb));
 }
 
 /* ══ 進度條 ══ */
@@ -171,7 +228,7 @@
     animation-name: toastProgress;
     animation-timing-function: linear;
     animation-fill-mode: forwards;
-    animation-play-state: paused; /* JS 啟動後才開始跑 */
+    animation-play-state: paused; /* JS 啟動後才開始 */
     border-radius: 0 0 0 8px;
 }
 
@@ -184,108 +241,87 @@
    TYPE: SUCCESS → 小藥丸 (Pill)
    ══════════════════════════════════════ */
 .toast-slide-success {
-    border-left: none;
-    border-radius: 100px;
-    border: 1.5px solid rgba(var(--success-color-rgb), 0.3);
-    background: rgba(var(--success-color-rgb), 0.07);
-    max-width: 260px;
-    box-shadow: var(--shadow-md);
+    border-left-color: rgb(var(--success-color-rgb));
 }
 
-.toast-slide-success .toast-slide-compact {
-    padding: 9px 14px;
-    cursor: default;
+.toast-slide-success.expanded {
+    max-width: 300px;
 }
 
 .toast-slide-success .toast-slide-icon {
-    width: 22px;
-    height: 22px;
-    font-size: 13px;
-    background: rgba(var(--success-color-rgb), 0.18);
-    color: var(--success-color);
-    margin-right: 8px;
-}
-
-.toast-slide-success .toast-slide-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--success-color);
-}
-
-.toast-slide-success .toast-slide-message {
-    color: var(--text-secondary);
-}
-
-/* 成功 Toast：沒有展開/關閉按鈕 */
-.toast-slide-success .toast-slide-actions {
-    display: none;
+    background: rgba(var(--success-color-rgb), 0.12);
+    color: rgb(var(--success-color-rgb));
 }
 
 .toast-slide-success .toast-progress {
-    background: rgba(var(--success-color-rgb), 0.45);
-    border-radius: 0 0 100px 100px;
-    height: 2px;
+    background: rgb(var(--success-color-rgb));
 }
 
 /* ══════════════════════════════════════
-   TYPE: ERROR → 展開顯示、不自動消失
+   TYPE: ERROR → 紅色左框
    ══════════════════════════════════════ */
 .toast-slide-error {
-    border-left-color: var(--danger-color);
-    max-width: 320px;
+    border-left-color: rgb(var(--danger-color-rgb));
 }
 
 .toast-slide-error .toast-slide-icon {
     background: rgba(var(--danger-color-rgb), 0.12);
-    color: var(--danger-color);
+    color: rgb(var(--danger-color-rgb));
 }
 
-/* Error 起始就展開，compact 當作標題列使用 */
-.toast-slide-error .toast-slide-compact {
-    cursor: default;
+.toast-slide-error .toast-progress {
+    background: rgb(var(--danger-color-rgb));
 }
-
-/* Error 沒有展開按鈕（已展開）、沒有進度條（不自動消失） */
-.toast-slide-error .toast-slide-expand { display: none; }
-.toast-slide-error .toast-progress { display: none; }
 
 /* ══════════════════════════════════════
-   TYPE: WARNING → 可展開、4 秒消失
+   TYPE: WARNING → 橘色左框
    ══════════════════════════════════════ */
 .toast-slide-warning {
-    border-left-color: var(--warning-color);
-}
-
-.toast-slide-warning .toast-slide-compact {
-    cursor: pointer;
+    border-left-color: rgb(var(--warning-color-rgb));
 }
 
 .toast-slide-warning .toast-slide-icon {
     background: rgba(var(--warning-color-rgb), 0.12);
-    color: var(--warning-color);
+    color: rgb(var(--warning-color-rgb));
 }
 
 .toast-slide-warning .toast-progress {
-    background: var(--warning-color);
+    background: rgb(var(--warning-color-rgb));
 }
 
 /* ══════════════════════════════════════
-   TYPE: INFO → 3 秒消失、無展開
+   TYPE: INFO → 藍色左框
    ══════════════════════════════════════ */
 .toast-slide-info {
-    border-left-color: var(--primary-blue);
+    border-left-color: rgb(var(--primary-blue-rgb));
 }
 
 .toast-slide-info .toast-slide-icon {
     background: rgba(var(--primary-blue-rgb), 0.12);
-    color: var(--primary-blue);
+    color: rgb(var(--primary-blue-rgb));
 }
-
-.toast-slide-info .toast-slide-expand { display: none; }
 
 .toast-slide-info .toast-progress {
-    background: var(--primary-blue);
+    background: rgb(var(--primary-blue-rgb));
 }
+
+/* ══════════════════════════════════════
+   深色模式覆寫
+   大部分顏色由 CSS 變數 + RGB 變數自動處理，
+   僅覆寫變數無法處理的項目
+   ══════════════════════════════════════ */
+
+/* 基礎 toast：深色模式使用較亮背景層，與頁面背景(--bg-secondary)區隔 */
+[data-bs-theme=dark] .toast-slide {
+    background: var(--bg-tertiary);
+    /* 只覆寫上/右/下邊框色，保留 border-left 給各 type 設定 */
+    border-top-color: var(--border-color);
+    border-right-color: var(--border-color);
+    border-bottom-color: var(--border-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* Success：深色模式無需額外覆寫，CSS 變數自動處理 */
 
 /* ══ 響應式 ══ */
 @media (max-width: 768px) {
@@ -328,15 +364,17 @@
     }
 }
 
+/* 行動裝置：點擊展開，加上 pointer 提示 */
+@media (hover: none) {
+    .toast-slide-compact {
+        cursor: pointer;
+    }
+}
+
 /* ══ 動畫 ══ */
 @keyframes expandDown {
     from { opacity: 0; max-height: 0; }
     to   { opacity: 1; max-height: 400px; }
-}
-
-/* ══ 觸控支援 ══ */
-.toast-slide {
-    touch-action: pan-x;
 }
 
 /* ══ 無障礙：減少動效 ══ */

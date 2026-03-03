@@ -1,14 +1,17 @@
 // Toast 通知系統
+// 統一行為：所有類型皆有進度條 + Hover 展開暫停 + 複製訊息 + 關閉按鈕
+
 class ToastManager {
     constructor() {
         this.container = null;
         this.maxToasts = 3;
+        this.canHover = window.matchMedia('(hover: hover)').matches;
         this.initContainer();
     }
 
-    // 各類型自動消失延遲（ms）。0 = 不自動消失
+    // 各類型自動消失延遲（ms）— 統一 2.5 秒
     getDelay(type) {
-        return { success: 2500, info: 3500, warning: 5000, error: 0 }[type] ?? 3500;
+        return 2500;
     }
 
     initContainer() {
@@ -41,20 +44,18 @@ class ToastManager {
         const toast = this.createToast(type, message, title, delay);
         this.container.appendChild(toast);
 
-        // 滑入動畫，並在動畫開始後啟動進度條與計時器
+        // 滑入動畫 → 啟動進度條 + 計時器
         setTimeout(() => {
             toast.classList.add('slide-in');
 
-            if (delay > 0) {
-                const progress = toast.querySelector('.toast-progress');
-                if (progress) {
-                    progress.style.animationDuration = delay + 'ms';
-                    progress.style.animationPlayState = 'running';
-                }
-                toast.remainingTime = delay;
-                toast.startTime = Date.now();
-                toast.autoHideTimeout = setTimeout(() => this.hide(toast), delay);
+            const progress = toast.querySelector('.toast-progress');
+            if (progress) {
+                progress.style.animationDuration = delay + 'ms';
+                progress.style.animationPlayState = 'running';
             }
+            toast.remainingTime = delay;
+            toast.startTime = Date.now();
+            toast.autoHideTimeout = setTimeout(() => this.hide(toast), delay);
         }, 50);
 
         return toast;
@@ -80,16 +81,16 @@ class ToastManager {
             info:    'fas fa-info-circle'
         };
 
-        const isError = (type === 'error');
-        // Warning 才有展開/收合功能（訊息足夠長才有意義）
-        const hasExpandSection = isError || (type === 'warning' && message.length > 20);
-
         const toast = document.createElement('div');
         toast.id = toastId;
         toast.className = `toast-slide toast-slide-${type}`;
         toast.setAttribute('role', 'alert');
-        toast.setAttribute('aria-live', isError ? 'assertive' : 'polite');
+        toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
         toast.setAttribute('aria-atomic', 'true');
+
+        // 儲存原始訊息供複製
+        toast._rawTitle = title || '';
+        toast._rawMessage = message || '';
 
         toast.innerHTML = `
             <div class="toast-slide-compact">
@@ -101,64 +102,131 @@ class ToastManager {
                     <div class="toast-slide-message">${message}</div>
                 </div>
                 <div class="toast-slide-actions">
-                    ${(hasExpandSection && !isError) ? `
-                    <button type="button" class="toast-slide-expand" aria-label="展開" onclick="toastManager.toggleExpand('${toastId}')">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>` : ''}
-                    ${(type !== 'success') ? `
-                    <button type="button" class="toast-slide-close" aria-label="關閉" onclick="toastManager.hide(document.getElementById('${toastId}'))">
+                    <button type="button" class="toast-slide-close" aria-label="關閉">
                         <i class="fas fa-times"></i>
-                    </button>` : ''}
+                    </button>
                 </div>
             </div>
-            ${hasExpandSection ? `
             <div class="toast-slide-expanded">
                 <div class="toast-slide-expanded-content">
                     ${title ? `<div class="toast-slide-expanded-title">${title}</div>` : ''}
                     <div class="toast-slide-expanded-message">${message}</div>
                 </div>
                 <div class="toast-slide-expanded-actions">
-                    ${!isError ? `
-                    <button type="button" class="toast-slide-collapse" aria-label="收合" onclick="toastManager.toggleExpand('${toastId}')">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>` : ''}
-                    <button type="button" class="toast-slide-close" aria-label="關閉" onclick="toastManager.hide(document.getElementById('${toastId}'))">
-                        <i class="fas fa-times"></i>
+                    <button type="button" class="toast-copy-btn">
+                        <i class="fas fa-copy"></i> 複製訊息
+                    </button>
+                    <button type="button" class="toast-expanded-close-btn">
+                        <i class="fas fa-times"></i> 關閉
                     </button>
                 </div>
-            </div>` : ''}
-            ${delay > 0 ? '<div class="toast-progress"></div>' : ''}
+            </div>
+            <div class="toast-progress"></div>
         `;
 
-        // Error：預設展開
-        if (isError) {
-            toast.classList.add('expanded');
-        }
-
-        // 有倒計時的類型：滑鼠移入暫停，移出繼續
-        if (delay > 0) {
-            toast.addEventListener('mouseenter', () => {
-                if (toast.autoHideTimeout) {
-                    const elapsed = Date.now() - (toast.startTime || Date.now());
-                    toast.remainingTime = Math.max(500, toast.remainingTime - elapsed);
-                    clearTimeout(toast.autoHideTimeout);
-                    toast.autoHideTimeout = null;
-                }
-                const progress = toast.querySelector('.toast-progress');
-                if (progress) progress.style.animationPlayState = 'paused';
+        // ── 綁定關閉按鈕 ──
+        toast.querySelectorAll('.toast-slide-close, .toast-expanded-close-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.hide(toast);
             });
+        });
 
-            toast.addEventListener('mouseleave', () => {
-                if (!toast.classList.contains('expanded')) {
-                    const progress = toast.querySelector('.toast-progress');
-                    if (progress) progress.style.animationPlayState = 'running';
-                    toast.startTime = Date.now();
-                    toast.autoHideTimeout = setTimeout(() => this.hide(toast), toast.remainingTime);
-                }
+        // ── 綁定複製按鈕 ──
+        const copyBtn = toast.querySelector('.toast-copy-btn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.copyMessage(toast, copyBtn);
             });
         }
+
+        // ── 桌面：Hover 展開 + 暫停計時 ──
+        toast.addEventListener('mouseenter', () => {
+            this.expandToast(toast);
+        });
+
+        toast.addEventListener('mouseleave', () => {
+            this.collapseToast(toast);
+        });
+
+        // ── 行動裝置：點擊展開/收合（桌面用 hover，不用 click）──
+        toast.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return;
+            if (this.canHover) return;
+            if (toast.classList.contains('expanded')) {
+                this.collapseToast(toast);
+            } else {
+                this.expandToast(toast);
+            }
+        });
 
         return toast;
+    }
+
+    // ── 展開 toast：暫停計時 + 進度條 ──
+    expandToast(toast) {
+        toast.classList.add('expanded');
+        if (toast.autoHideTimeout) {
+            const elapsed = Date.now() - (toast.startTime || Date.now());
+            toast.remainingTime = Math.max(500, (toast.remainingTime || 0) - elapsed);
+            clearTimeout(toast.autoHideTimeout);
+            toast.autoHideTimeout = null;
+        }
+        const progress = toast.querySelector('.toast-progress');
+        if (progress) progress.style.animationPlayState = 'paused';
+    }
+
+    // ── 收合 toast：繼續計時 + 進度條 ──
+    collapseToast(toast) {
+        toast.classList.remove('expanded');
+        if (toast.remainingTime > 0) {
+            const progress = toast.querySelector('.toast-progress');
+            if (progress) progress.style.animationPlayState = 'running';
+            toast.startTime = Date.now();
+            toast.autoHideTimeout = setTimeout(() => this.hide(toast), toast.remainingTime);
+        }
+    }
+
+    // ── 複製訊息到剪貼簿 ──
+    copyMessage(toast, btn) {
+        // 組合標題+訊息，移除 HTML 標籤
+        const tmp = document.createElement('div');
+        let raw = '';
+        if (toast._rawTitle) raw += toast._rawTitle + '\n';
+        raw += toast._rawMessage;
+        tmp.innerHTML = raw;
+        const text = tmp.textContent || tmp.innerText || '';
+
+        const onCopied = () => {
+            btn.classList.add('copied');
+            btn.innerHTML = '<i class="fas fa-check"></i> 已複製';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.innerHTML = '<i class="fas fa-copy"></i> 複製訊息';
+            }, 1500);
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(onCopied).catch(() => {
+                this.fallbackCopy(text);
+                onCopied();
+            });
+        } else {
+            this.fallbackCopy(text);
+            onCopied();
+        }
+    }
+
+    // ── 剪貼簿 fallback（舊瀏覽器）──
+    fallbackCopy(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try { document.execCommand('copy'); } catch (_) { /* ignore */ }
+        document.body.removeChild(textarea);
     }
 
     hide(toast) {
@@ -166,7 +234,7 @@ class ToastManager {
             if (toast.autoHideTimeout) {
                 clearTimeout(toast.autoHideTimeout);
             }
-            toast.classList.remove('slide-in');
+            toast.classList.remove('slide-in', 'expanded');
             toast.classList.add('slide-out');
             setTimeout(() => {
                 if (toast.parentElement) {
@@ -176,31 +244,14 @@ class ToastManager {
         }
     }
 
+    // 保留相容性（舊版透過 onclick 呼叫）
     toggleExpand(toastId) {
         const toast = document.getElementById(toastId);
         if (!toast) return;
-
-        const isExpanded = toast.classList.contains('expanded');
-        const progress = toast.querySelector('.toast-progress');
-
-        if (isExpanded) {
-            // 收合：繼續計時
-            toast.classList.remove('expanded');
-            if (toast.remainingTime > 0) {
-                if (progress) progress.style.animationPlayState = 'running';
-                toast.startTime = Date.now();
-                toast.autoHideTimeout = setTimeout(() => this.hide(toast), toast.remainingTime);
-            }
+        if (toast.classList.contains('expanded')) {
+            this.collapseToast(toast);
         } else {
-            // 展開：暫停計時
-            toast.classList.add('expanded');
-            if (toast.autoHideTimeout) {
-                const elapsed = Date.now() - (toast.startTime || Date.now());
-                toast.remainingTime = Math.max(500, (toast.remainingTime || 0) - elapsed);
-                clearTimeout(toast.autoHideTimeout);
-                toast.autoHideTimeout = null;
-            }
-            if (progress) progress.style.animationPlayState = 'paused';
+            this.expandToast(toast);
         }
     }
 
