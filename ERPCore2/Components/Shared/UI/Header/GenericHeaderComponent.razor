@@ -82,6 +82,18 @@
     </div>
     *@
     
+    @* 輕量級標題區域 *@
+    @if (!IsCardHeader && !string.IsNullOrEmpty(Title))
+    {
+        <div class="header-title-area mb-1 mb-md-0">
+            <h5 class="page-title-compact mb-0" aria-label="@AriaLabel">@Title</h5>
+            @if (!string.IsNullOrEmpty(Subtitle))
+            {
+                <p class="page-subtitle-compact text-muted mb-0">@Subtitle</p>
+            }
+        </div>
+    }
+    
     @* 載入狀態或動作按鈕 *@
     @if (IsLoading)
     {
@@ -102,7 +114,7 @@
 @* 分隔線 - 縮短間距 *@
 @if (ShowDivider && !IsCardHeader)
 {
-    <hr class="mt-2 mb-3" />
+    <div class="header-divider"></div>
 }
 
 @code {    // 基本屬性
@@ -156,14 +168,16 @@
             classes.Add("mb-2"); // 縮短間距從 mb-4 改為 mb-2
         }
         
-        // 響應式佈局 - 按鈕靠右對齊
+        // 響應式佈局 - 非卡片模式：標題左對齊、按鈕靠右；卡片模式：按鈕靠右
+        var justify = IsCardHeader ? "justify-content-end" : "justify-content-between";
+        
         if (StackOnMobile)
         {
-            classes.Add("d-flex flex-column flex-md-row justify-content-end align-items-start align-items-md-center");
+            classes.Add($"d-flex flex-column flex-md-row {justify} align-items-start align-items-md-center");
         }
         else
         {
-            classes.Add("d-flex justify-content-end align-items-center");
+            classes.Add($"d-flex {justify} align-items-center");
         }
         
         if (!string.IsNullOrEmpty(CssClass))

@@ -1,13 +1,39 @@
-/* ===== 圖表 Modal - Tab 按鈕樣式（與 GenericFormComponent 相同視覺規格） ===== */
+/* ===== 圖表 Modal 樣式 ===== */
 
-/* Tab 按鈕群組容器 */
+/* ===== 頁籤 - 單行水平滾動 ===== */
+.chart-tab-scroll-wrapper {
+    position: relative;
+    margin-bottom: 0.75rem;
+}
+
+/* 右側漸層遮罩提示可滾動 */
+.chart-tab-scroll-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 2rem;
+    background: linear-gradient(to right, transparent, var(--bg-primary));
+    pointer-events: none;
+    opacity: 0.8;
+    border-radius: 0 0.375rem 0.375rem 0;
+}
+
 .chart-tab-btn-group {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.35rem;
     padding-bottom: 0.5rem;
-    margin-bottom: 0.75rem;
     border-bottom: 1px solid var(--border-light);
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    padding-right: 1.5rem; /* 為漸層遮罩留空間 */
+}
+
+.chart-tab-btn-group::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
 }
 
 /* Tab 按鈕基礎樣式 */
@@ -16,7 +42,7 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.25rem 0.75rem;
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-secondary);
     background-color: var(--bg-tertiary);
@@ -25,6 +51,7 @@
     cursor: pointer;
     transition: all 0.15s ease;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .chart-tab-btn:hover {
@@ -33,7 +60,6 @@
     border-color: var(--primary-blue);
 }
 
-/* 作用中的 Tab 按鈕 */
 .chart-tab-btn.active {
     color: #fff;
     background-color: var(--primary-blue);
@@ -47,14 +73,201 @@
     color: #fff;
 }
 
-/* 手機版響應式 */
+/* ===== 圖表面板 ===== */
+.chart-panel {
+    position: relative;
+}
+
+/* ===== 圖表類型切換 - 輕量圖標按鈕 ===== */
+.chart-type-switcher {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.chart-type-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.chart-type-btn:hover {
+    color: var(--primary-blue);
+    background-color: rgba(var(--primary-blue-rgb), 0.08);
+    border-color: var(--primary-blue);
+}
+
+.chart-type-btn.active {
+    color: #fff;
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.chart-type-btn.active:hover {
+    background-color: var(--primary-blue-hover);
+}
+
+/* ===== 圖表本體 ===== */
+.chart-body {
+    height: 280px;
+}
+
+/* ===== 點擊提示 - 浮層 ===== */
+.chart-click-hint {
+    text-align: right;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.chart-click-hint:hover {
+    opacity: 1;
+}
+
+/* ===== Drill-down 明細面板 ===== */
+.chart-detail-panel {
+    margin-top: 0.75rem;
+    border-top: 1px solid var(--border-light);
+    padding-top: 0.75rem;
+    animation: chartDetailSlideIn 0.2s ease-out;
+}
+
+@keyframes chartDetailSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chart-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.chart-detail-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.chart-detail-title i {
+    color: var(--primary-blue);
+}
+
+.chart-detail-count {
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background-color: var(--bg-tertiary);
+    padding: 0.1rem 0.5rem;
+    border-radius: 1rem;
+    margin-left: 0.25rem;
+}
+
+.chart-detail-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.chart-detail-close:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--danger-color);
+}
+
+/* 明細表格容器 - 覆寫 InteractiveTableComponent 的沉重樣式 */
+.chart-detail-table {
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border-light);
+}
+
+/* 覆寫 InteractiveTableComponent 在 drill-down 內的樣式 */
+.chart-detail-table ::deep .interactive-table-container {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+.chart-detail-table ::deep .table thead th {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.chart-detail-table ::deep .table tbody td {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* 明細表格自訂 scrollbar */
+.chart-detail-table::-webkit-scrollbar {
+    width: 5px;
+}
+
+.chart-detail-table::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chart-detail-table::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.chart-detail-table::-webkit-scrollbar-thumb:hover {
+    background: var(--text-light);
+}
+
+/* ===== 手機版響應式 ===== */
 @media (max-width: 576px) {
-    .chart-tab-btn-group {
-        gap: 0.25rem;
+    .chart-tab-btn {
+        padding: 0.2rem 0.6rem;
+        font-size: 0.8rem;
     }
 
-    .chart-tab-btn {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.9rem;
+    .chart-type-btn {
+        width: 1.75rem;
+        height: 1.75rem;
+        font-size: 0.8rem;
+    }
+
+    .chart-body {
+        height: 240px;
+    }
+
+    .chart-detail-table {
+        max-height: 160px;
     }
 }

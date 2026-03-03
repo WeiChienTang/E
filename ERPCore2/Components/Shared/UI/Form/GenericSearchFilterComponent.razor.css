@@ -14,17 +14,17 @@
 }
 
 ::deep .card:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
 }
 
 /* ===== Header 樣式優化 ===== */
 
-/* Header 背景色 - 使用專案主色 */
+/* Header 背景色 - 使用淺色背景以區分層次 */
 ::deep .card-header {
-    background-color: #1F2937;
-    color: #FFFFFF;
-    border-bottom: none;
-    padding: 0rem 0.75rem;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
+    padding: 0.25rem 0.75rem;
     border-top-left-radius: 0.5rem;
     border-top-right-radius: 0.5rem;
 }
@@ -33,7 +33,7 @@
 ::deep .card-header .card-title {
     font-size: 1rem;
     font-weight: 600;
-    color: #FFFFFF;
+    color: var(--text-primary);
     margin: 0;
     display: flex;
     align-items: center;
@@ -41,7 +41,7 @@
 
 /* Header Icon 樣式 */
 ::deep .card-header .card-title i {
-    color: #FFFFFF;
+    color: var(--primary-blue);
     font-size: 1rem;
     margin-right: 0.5rem;
 }
@@ -112,8 +112,8 @@
 }
 
 ::deep .form-check-input:checked {
-    background-color: #1F2937;
-    border-color: #1F2937;
+    background-color: var(--primary-blue-alt);
+    border-color: var(--primary-blue-alt);
 }
 
 ::deep .form-check-input:focus {
@@ -124,7 +124,7 @@
 ::deep .form-check-label {
     font-size: 1rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--text-primary);
     margin-left: 0.5rem;
     cursor: pointer;
     user-select: none;
@@ -144,7 +144,7 @@
 
 ::deep .form-control::placeholder,
 ::deep .form-select::placeholder {
-    color: #9CA3AF;
+    color: var(--text-light);
     opacity: 1;
 }
 

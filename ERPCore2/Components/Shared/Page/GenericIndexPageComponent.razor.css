@@ -1,21 +1,30 @@
 /* 通用 Index 頁面組件樣式 */
 
-/* 區段標題樣式 */
+/* 區段標題樣式 - 使用左側色條強調 */
 .section-header-primary {
-    background-color: var(--primary-blue-alt);
-    color: var(--primary-white);
-    border-bottom: 1px solid var(--primary-blue-alt);
-    padding: 0.5rem 1.25rem;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
+    border-left: 3px solid var(--primary-blue);
+    padding: 0.6rem 1.25rem;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .section-header-primary .card-title {
     margin-bottom: 0;
     font-weight: 600;
+    color: var(--text-primary);
 }
 
 .section-header-primary .card-title i {
-    color: var(--primary-white);
+    color: var(--primary-blue);
+}
+
+/* 搜尋與表格分隔線 */
+.search-table-divider {
+    border-top: 1px solid var(--border-light);
+    margin: 1.25rem 0 1rem 0;
+    opacity: 0.5;
 }
 
 /* 區段卡片樣式 */

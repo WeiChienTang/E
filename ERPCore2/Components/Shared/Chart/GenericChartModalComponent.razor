@@ -31,20 +31,22 @@
                 @SummaryContent
             }
 
-            @* 頁籤導覽 *@
+            @* 頁籤導覽 - 單行水平滾動 *@
             @if (_charts.Count > 0)
             {
-                <div class="chart-tab-btn-group">
-                    @for (int i = 0; i < _charts.Count; i++)
-                    {
-                        var idx = i;
-                        var chart = _charts[i];
-                        <button type="button"
-                                class="chart-tab-btn @(_activeChartIndex == idx ? "active" : "")"
-                                @onclick="() => SetActiveChart(idx)">
-                            @chart.Title
-                        </button>
-                    }
+                <div class="chart-tab-scroll-wrapper">
+                    <div class="chart-tab-btn-group">
+                        @for (int i = 0; i < _charts.Count; i++)
+                        {
+                            var idx = i;
+                            var chart = _charts[i];
+                            <button type="button"
+                                    class="chart-tab-btn @(_activeChartIndex == idx ? "active" : "")"
+                                    @onclick="() => SetActiveChart(idx)">
+                                @chart.Title
+                            </button>
+                        }
+                    </div>
                 </div>
 
                 @* 圖表區域 *@
@@ -59,28 +61,25 @@
                     var selectedType = _selectedTypes.TryGetValue(chart.ChartId, out var t) ? t : chart.DefaultSeriesType;
 
                     <div class="chart-panel">
-                        @* 圖表類型切換列 *@
+                        @* 圖表類型切換列 - 圖標按鈕 *@
                         @if (chart.AllowedSeriesTypes.Count > 1)
                         {
-                            <div class="d-flex justify-content-end mb-2">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    @foreach (var st in chart.AllowedSeriesTypes)
-                                    {
-                                        var seriesType = st;
-                                        <button type="button"
-                                                class="btn @(selectedType == seriesType ? "btn-primary" : "btn-outline-secondary")"
-                                                title="@ChartSeriesTypeInfo.GetLabel(seriesType)"
-                                                @onclick="() => SwitchType(chart.ChartId, seriesType)">
-                                            <i class="@ChartSeriesTypeInfo.GetIcon(seriesType) me-1"></i>
-                                            @ChartSeriesTypeInfo.GetLabel(seriesType)
-                                        </button>
-                                    }
-                                </div>
+                            <div class="chart-type-switcher">
+                                @foreach (var st in chart.AllowedSeriesTypes)
+                                {
+                                    var seriesType = st;
+                                    <button type="button"
+                                            class="chart-type-btn @(selectedType == seriesType ? "active" : "")"
+                                            title="@ChartSeriesTypeInfo.GetLabel(seriesType)"
+                                            @onclick="() => SwitchType(chart.ChartId, seriesType)">
+                                        <i class="@ChartSeriesTypeInfo.GetIcon(seriesType)"></i>
+                                    </button>
+                                }
                             </div>
                         }
 
                         @* 圖表本體 *@
-                        <div style="height: 280px;">
+                        <div class="chart-body">
                             @if (data.Count > 0)
                             {
                                 <ApexChart @key="@($"{chart.ChartId}_{selectedType}")"
@@ -102,30 +101,30 @@
                             }
                         </div>
 
-                        @* 點擊提示（有 DetailFetcher、無已展開明細時顯示） *@
+                        @* 點擊提示 - 半透明浮層整合於圖表底部 *@
                         @if (chart.DetailFetcher != null && _detailChartId != chart.ChartId && data.Count > 0)
                         {
-                            <div class="text-end mt-1">
-                                <small class="text-muted">
-                                    <i class="bi bi-hand-index me-1"></i>@L["Chart.ClickForDetail"]
-                                </small>
+                            <div class="chart-click-hint">
+                                <i class="bi bi-hand-index me-1"></i>@L["Chart.ClickForDetail"]
                             </div>
                         }
 
                         @* Drill-down 明細面板 *@
                         @if (chart.DetailFetcher != null && _detailChartId == chart.ChartId && _detailLabel != null)
                         {
-                            <div class="mt-3 border rounded p-3 bg-light">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span>
-                                        <i class="bi bi-list-ul me-1 text-primary"></i>
-                                        <strong>@_detailLabel</strong>
+                            <div class="chart-detail-panel">
+                                <div class="chart-detail-header">
+                                    <span class="chart-detail-title">
+                                        <i class="bi bi-list-ul me-1"></i>
+                                        @_detailLabel
                                         @if (!_detailLoading)
                                         {
-                                            <span class="text-muted ms-1">（共 @(_detailItems?.Count ?? 0) 筆）</span>
+                                            <span class="chart-detail-count">@(_detailItems?.Count ?? 0) 筆</span>
                                         }
                                     </span>
-                                    <button type="button" class="btn-close" title="@L["Button.Close"]" @onclick="CloseDetail"></button>
+                                    <button type="button" class="chart-detail-close" title="@L["Button.Close"]" @onclick="CloseDetail">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
                                 </div>
 
                                 @if (_detailLoading)
@@ -141,7 +140,7 @@
                                 }
                                 else
                                 {
-                                    <div style="max-height: 180px; overflow-y: auto;">
+                                    <div class="chart-detail-table">
                                         <InteractiveTableComponent TItem="ChartDetailItem"
                                                                    Items="@_detailItems"
                                                                    ColumnDefinitions="@(chart.DetailColumns ?? _detailColumns)"

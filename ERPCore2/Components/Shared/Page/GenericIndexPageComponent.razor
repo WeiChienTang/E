@@ -115,8 +115,11 @@ else
                                              ShowSearchButton="@ShowSearchButton"
                                              SearchDelayMs="@SearchDelayMs" />
 
+                @* 搜尋與表格分隔線 *@
+                <div class="search-table-divider"></div>
+
                 @* 列表表格 *@
-                <div class="mt-4">                    
+                <div>
                     <GenericTableComponent TItem="TEntity"
                                           Items="@PagedItems"
                                           ColumnDefinitions="@GetFinalColumnDefinitions()"
