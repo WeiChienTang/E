@@ -1367,8 +1367,8 @@ namespace ERPCore2.Services
             if (entity == null) return ServiceResult.Failure("找不到採購退回單");
 
             entity.IsApproved = false;
-            entity.ApprovedBy = null;
-            entity.ApprovedAt = null;
+            entity.ApprovedBy = rejectedBy;
+            entity.ApprovedAt = DateTime.Now;
             entity.RejectReason = reason;
             entity.UpdatedAt = DateTime.Now;
 

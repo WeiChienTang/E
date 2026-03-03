@@ -1,0 +1,160 @@
+/* ===== 步驟指示器 ===== */
+
+.step-indicator {
+    padding: 0 1rem;
+}
+
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--border-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.step-item.active .step-circle {
+    background: #0d6efd;
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+
+.step-item.completed .step-circle {
+    background: #198754;
+    color: #fff;
+}
+
+.step-label {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.step-item.active .step-label {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.step-item.completed .step-label {
+    color: #198754;
+}
+
+.step-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--border-color);
+    margin: 16px 8px 0;
+    transition: background 0.2s;
+}
+
+.step-connector.completed {
+    background: #198754;
+}
+
+
+/* ===== Step 1：表選取清單 ===== */
+
+.table-select-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    background-color: var(--bg-primary);
+}
+
+.table-select-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+    color: var(--text-primary);
+}
+
+.table-select-item:hover {
+    background: var(--bg-secondary);
+}
+
+.table-select-item.selected {
+    background: #e7f1ff;
+    border-left: 3px solid #0d6efd;
+}
+
+.table-select-item:last-child {
+    border-bottom: none;
+}
+
+/* ===== 欄位資訊面板（Step 1 / Step 2）===== */
+
+.properties-panel {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+
+/* ===== Step 3：對應表格 ===== */
+
+.mapping-table th {
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.mapping-table td {
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+.mapping-table .form-select-sm,
+.mapping-table .form-control-sm {
+    font-size: 0.8rem;
+}
+
+
+/* ===== Step 4：預覽表格 ===== */
+
+.preview-table th,
+.preview-table td {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+}
+
+.preview-table .table-danger {
+    background-color: #f8d7da !important;
+}
+
+
+/* ===== 通用 ===== */
+
+.step-content {
+    min-height: 300px;
+}
+
+.database-import-wizard {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+
+/* ===== 深色模式覆寫 ===== */
+
+[data-bs-theme=dark] .table-select-item.selected {
+    background: #1c3353;
+    border-left-color: #58a6ff;
+}
+
+[data-bs-theme=dark] .preview-table .table-danger {
+    background-color: #3b1a1a !important;
+    color: var(--text-primary);
+}

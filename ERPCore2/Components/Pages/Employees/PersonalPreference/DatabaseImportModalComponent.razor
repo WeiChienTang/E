@@ -1,0 +1,791 @@
+@* 資料庫匯入工具 Modal — SuperAdmin 專用 *@
+@* 精靈步驟：Step 1（選表）→ Step 2（上傳 Excel）→ Step 3（欄位對應）→ Step 4（預覽）→ Step 5（匯入）*@
+
+@using ERPCore2.Models.Import
+@using ERPCore2.Services.Import
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject IDatabaseImportService ImportService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="@GetStepTitle()"
+                    Icon="bi bi-database-down"
+                    Size="BaseModalComponent.ModalSize.Desktop"
+                    HeaderColor="BaseModalComponent.HeaderVariant.Dark"
+                    IsLoading="@isLoading"
+                    LoadingMessage="@loadingMessage"
+                    OnClose="@HandleClose"
+                    DebugComponentName="DatabaseImportModalComponent">
+
+    <HeaderButtons>
+        <div class="d-flex gap-2 align-items-center">
+            @if (currentStep > 1 && currentStep < 5)
+            {
+                <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                        Size="ButtonSize.Small"
+                                        Text="上一步"
+                                        IconClass="bi bi-arrow-left"
+                                        OnClick="HandlePrevStep"
+                                        IsDisabled="@isLoading" />
+            }
+            @if (currentStep < 4 && CanGoNext())
+            {
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                        Size="ButtonSize.Small"
+                                        Text="下一步"
+                                        IconClass="bi bi-arrow-right"
+                                        OnClick="HandleNextStep"
+                                        IsDisabled="@isLoading" />
+            }
+            @if (currentStep == 4 && validationErrors.Count == 0)
+            {
+                <GenericButtonComponent Variant="ButtonVariant.Green"
+                                        Size="ButtonSize.Small"
+                                        Text="執行匯入"
+                                        IconClass="bi bi-play-fill"
+                                        OnClick="HandleExecuteImport"
+                                        IsDisabled="@isLoading" />
+            }
+            @if (currentStep == 5)
+            {
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                        Size="ButtonSize.Small"
+                                        Text="完成"
+                                        IconClass="bi bi-check-lg"
+                                        OnClick="HandleClose" />
+            }
+        </div>
+    </HeaderButtons>
+
+    <BodyContent>
+        <div class="database-import-wizard p-3">
+
+            @* ===== 步驟指示器 ===== *@
+            <div class="step-indicator mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        var step = i;
+                        <div class="step-item @(step == currentStep ? "active" : step < currentStep ? "completed" : "")">
+                            <div class="step-circle">
+                                @if (step < currentStep)
+                                {
+                                    <i class="bi bi-check-lg"></i>
+                                }
+                                else
+                                {
+                                    @step
+                                }
+                            </div>
+                            <div class="step-label">@GetStepLabel(step)</div>
+                        </div>
+                        @if (step < 5)
+                        {
+                            <div class="step-connector @(step < currentStep ? "completed" : "")"></div>
+                        }
+                    }
+                </div>
+            </div>
+
+            @* ===== Step 1：選擇目標 Entity ===== *@
+            @if (currentStep == 1)
+            {
+                <div class="step-content">
+                    <h6 class="mb-3"><i class="bi bi-table me-2"></i>選擇匯入的目標資料表</h6>
+                    <p class="text-muted small mb-3">
+                        選擇要將 Excel 資料匯入到哪個資料表。清單包含系統中所有已定義的 Entity。
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">目標資料表</label>
+                        <input type="text"
+                               class="form-control mb-2"
+                               placeholder="搜尋資料表名稱..."
+                               @bind="tableSearchText"
+                               @bind:event="oninput" />
+                        <div class="table-select-list">
+                            @foreach (var table in GetFilteredTables())
+                            {
+                                <div class="table-select-item @(selectedDbSetName == table.DbSetName ? "selected" : "")"
+                                     @onclick="() => SelectTable(table.DbSetName)">
+                                    <i class="bi bi-table me-2"></i>
+                                    <span class="fw-bold">@table.DbSetName</span>
+                                    <span class="text-muted ms-2 small">(@table.EntityShortName)</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(selectedDbSetName) && targetProperties.Count > 0)
+                    {
+                        <div class="mt-3 p-3 properties-panel rounded">
+                            <h6 class="mb-2"><i class="bi bi-list-columns me-2"></i>@selectedDbSetName 的可對應欄位（@targetProperties.Count 個）</h6>
+                            <div class="small">
+                                <div class="row row-cols-3 g-1">
+                                    @foreach (var prop in targetProperties)
+                                    {
+                                        <div class="col">
+                                            <span class="@(prop.IsRequired ? "text-danger fw-bold" : "text-muted")">
+                                                @prop.PropertyName
+                                            </span>
+                                            <span class="text-muted" style="font-size:0.75rem;">(@prop.TypeDisplayName)</span>
+                                            @if (prop.IsRequired)
+                                            {
+                                                <span class="badge bg-danger" style="font-size:0.6rem;">必填</span>
+                                            }
+                                            @if (prop.IsForeignKeyLike)
+                                            {
+                                                <span class="badge bg-info" style="font-size:0.6rem;">FK</span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @* ===== Step 2：上傳 Excel ===== *@
+            @if (currentStep == 2)
+            {
+                <div class="step-content">
+                    <h6 class="mb-3"><i class="bi bi-file-earmark-excel me-2"></i>上傳 Excel 檔案</h6>
+                    <p class="text-muted small mb-3">
+                        選擇要匯入的 Excel 檔案（.xlsx 格式，最大 20MB）。第一行須為欄位標頭。
+                    </p>
+
+                    <div class="upload-area mb-3">
+                        <InputFile OnChange="HandleFileUpload" accept=".xlsx" class="form-control" />
+                    </div>
+
+                    @if (excelResult != null && excelResult.IsSuccess)
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            成功解析！Worksheet: <strong>@excelResult.WorksheetName</strong>，
+                            共 <strong>@excelResult.RowCount</strong> 筆資料，
+                            <strong>@excelResult.Headers.Count</strong> 個欄位。
+                        </div>
+
+                        <div class="mt-3 p-3 properties-panel rounded">
+                            <h6 class="mb-2">來源欄位標頭</h6>
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach (var header in excelResult.Headers)
+                                {
+                                    <span class="badge bg-secondary">@header</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (excelResult != null && !excelResult.IsSuccess)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-x-circle me-2"></i>@excelResult.ErrorMessage
+                        </div>
+                    }
+                </div>
+            }
+
+            @* ===== Step 3：欄位對應 ===== *@
+            @if (currentStep == 3)
+            {
+                <div class="step-content">
+                    <h6 class="mb-3"><i class="bi bi-arrows-angle-contract me-2"></i>欄位對應設定</h6>
+                    <p class="text-muted small mb-3">
+                        設定目標欄位與來源 Excel 欄位的對應關係。必填欄位未對應時需提供預設值。
+                        <span class="text-danger">紅色</span>表示尚未解決的必填欄位。
+                    </p>
+
+                    @if (HasUnresolvedRequiredFields())
+                    {
+                        <div class="mb-3">
+                            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                                    Size="ButtonSize.Small"
+                                                    Text="@($"套用智慧預設（{GetUnresolvedRequiredCount()} 個必填欄位）")"
+                                                    IconClass="bi bi-magic"
+                                                    OnClick="ApplySmartDefaults" />
+                            <span class="text-muted small ms-2">自動為未解決的必填欄位填入型別預設值（string→空字串、int→0、DateTime→現在時間…）</span>
+                        </div>
+                    }
+
+                    @if (validationErrors.Count > 0)
+                    {
+                        <div class="alert alert-warning small py-2 mb-3">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            以下必填欄位尚未設定對應或預設值：@string.Join("、", validationErrors)
+                        </div>
+                    }
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle mapping-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width:18%">目標欄位</th>
+                                    <th style="width:10%">型別</th>
+                                    <th style="width:8%">必填</th>
+                                    <th style="width:25%">對應來源欄位</th>
+                                    <th style="width:25%">預設值</th>
+                                    <th style="width:14%">狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var mapping in columnMappings)
+                                {
+                                    <tr class="@(mapping.HasProblem ? "table-danger" : "")">
+                                        <td>
+                                            <strong>@mapping.TargetPropertyName</strong>
+                                            @if (mapping.TargetProperty.IsForeignKeyLike)
+                                            {
+                                                <span class="badge bg-info ms-1" style="font-size:0.6rem;">FK</span>
+                                            }
+                                        </td>
+                                        <td class="text-muted small">@mapping.TargetProperty.TypeDisplayName</td>
+                                        <td class="text-center">
+                                            @if (mapping.TargetProperty.IsRequired)
+                                            {
+                                                <span class="badge bg-danger">必填</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm"
+                                                    value="@(mapping.SourceColumnName ?? "")"
+                                                    @onchange="(e) => HandleMappingSourceChanged(mapping, e)">
+                                                <option value="">— 不對應 —</option>
+                                                @if (excelResult != null)
+                                                {
+                                                    @foreach (var header in excelResult.Headers)
+                                                    {
+                                                        <option value="@header">@header</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </td>
+                                        <td>
+                                            @if (mapping.TargetProperty.IsEnum)
+                                            {
+                                                <select class="form-select form-select-sm"
+                                                        value="@(mapping.DefaultValue ?? "")"
+                                                        @onchange="(e) => HandleMappingDefaultChanged(mapping, e)">
+                                                    <option value="">— 無預設 —</option>
+                                                    @foreach (var enumVal in mapping.TargetProperty.EnumValues)
+                                                    {
+                                                        <option value="@enumVal">@enumVal</option>
+                                                    }
+                                                </select>
+                                            }
+                                            else
+                                            {
+                                                <input type="text"
+                                                       class="form-control form-control-sm"
+                                                       placeholder="@GetPlaceholder(mapping)"
+                                                       value="@(mapping.DefaultValue ?? "")"
+                                                       @onchange="(e) => HandleMappingDefaultChanged(mapping, e)" />
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (mapping.IsResolved)
+                                            {
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-lg"></i>
+                                                    @(mapping.Status == MappingStatus.AutoSuggested ? "自動" : 
+                                                      mapping.Status == MappingStatus.Mapped ? "已對應" : "預設值")
+                                                </span>
+                                            }
+                                            else if (mapping.TargetProperty.IsRequired)
+                                            {
+                                                <span class="badge bg-danger"><i class="bi bi-x-lg"></i> 需處理</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">略過</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            @* ===== Step 4：預覽 & 驗證 ===== *@
+            @if (currentStep == 4)
+            {
+                <div class="step-content">
+                    <h6 class="mb-3"><i class="bi bi-eye me-2"></i>資料預覽與驗證</h6>
+                    <p class="text-muted small mb-3">
+                        以下是前 @previewRows.Count 筆資料的轉換結果。<span class="text-danger">紅底</span>表示轉換錯誤。
+                    </p>
+
+                    @if (excelResult != null)
+                    {
+                        <div class="alert alert-info small py-2 mb-3">
+                            <i class="bi bi-info-circle me-1"></i>
+                            目標表：<strong>@selectedDbSetName</strong>，
+                            總筆數：<strong>@excelResult.RowCount</strong>，
+                            對應欄位：<strong>@columnMappings.Count(m => m.IsResolved)</strong> / @columnMappings.Count
+                        </div>
+                    }
+
+                    @if (previewRows.Count > 0)
+                    {
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-sm table-bordered small preview-table">
+                                <thead class="table-secondary sticky-top">
+                                    <tr>
+                                        <th style="width:40px">#</th>
+                                        @foreach (var mapping in columnMappings.Where(m => m.IsResolved))
+                                        {
+                                            <th>@mapping.TargetPropertyName</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in previewRows)
+                                    {
+                                        <tr>
+                                            <td class="text-muted">@row.RowNumber</td>
+                                            @foreach (var mapping in columnMappings.Where(m => m.IsResolved))
+                                            {
+                                                var cell = row.Cells.GetValueOrDefault(mapping.TargetPropertyName);
+                                                @if (cell != null)
+                                                {
+                                                    <td class="@(cell.HasError ? "table-danger" : "")"
+                                                        title="@(cell.ErrorMessage ?? "")">
+                                                        @cell.DisplayValue
+                                                    </td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="text-muted">(null)</td>
+                                                }
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
+                            無法產生預覽資料
+                        </div>
+                    }
+                </div>
+            }
+
+            @* ===== Step 5：匯入結果 ===== *@
+            @if (currentStep == 5)
+            {
+                <div class="step-content">
+                    @if (importResult != null)
+                    {
+                        @if (importResult.IsSuccess)
+                        {
+                            <div class="text-center py-4">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3 text-success">匯入成功！</h5>
+                                <p class="text-muted">
+                                    成功匯入 <strong>@importResult.SuccessCount</strong> 筆資料到 <strong>@selectedDbSetName</strong>
+                                </p>
+                                <p class="text-muted small">耗時 @importResult.ElapsedTime.TotalSeconds.ToString("F1") 秒</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3 text-danger">匯入失敗</h5>
+                                <p class="text-muted">@importResult.ErrorMessage</p>
+                            </div>
+
+                            @if (importResult.RowErrors.Count > 0)
+                            {
+                                <div class="mt-3">
+                                    <h6>錯誤明細</h6>
+                                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                        <table class="table table-sm table-bordered small">
+                                            <thead class="table-danger">
+                                                <tr>
+                                                    <th>行號</th>
+                                                    <th>欄位</th>
+                                                    <th>錯誤訊息</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var err in importResult.RowErrors)
+                                                {
+                                                    <tr>
+                                                        <td>@err.RowNumber</td>
+                                                        <td>@(err.PropertyName ?? "-")</td>
+                                                        <td>@err.ErrorMessage</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+            }
+
+        </div>
+    </BodyContent>
+
+</BaseModalComponent>
+
+@code {
+    // ===== 參數 =====
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // ===== 精靈狀態 =====
+
+    private int currentStep = 1;
+    private bool isLoading = false;
+    private string loadingMessage = "處理中...";
+
+    // Step 1：選擇目標表
+    private List<EntityTableInfo> allTables = new();
+    private string tableSearchText = string.Empty;
+    private string selectedDbSetName = string.Empty;
+    private List<EntityPropertyInfo> targetProperties = new();
+
+    // Step 2：上傳 Excel
+    private ExcelParseResult? excelResult;
+
+    // Step 3：欄位對應
+    private List<ColumnMapping> columnMappings = new();
+    private List<string> validationErrors = new();
+
+    // Step 4：預覽
+    private List<ImportPreviewRow> previewRows = new();
+
+    // Step 5：匯入結果
+    private ImportResult? importResult;
+    private int importProgress = 0;
+
+    // ===== 生命週期 =====
+
+    protected override void OnInitialized()
+    {
+        allTables = ImportService.GetEntityTableList();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!IsVisible)
+        {
+            // Modal 關閉時重置狀態
+            ResetWizard();
+        }
+    }
+
+    // ===== 步驟控制 =====
+
+    private string GetStepTitle()
+    {
+        return currentStep switch
+        {
+            1 => "資料庫載入 — 選擇目標資料表",
+            2 => "資料庫載入 — 上傳 Excel 檔案",
+            3 => "資料庫載入 — 欄位對應設定",
+            4 => "資料庫載入 — 預覽與驗證",
+            5 => "資料庫載入 — 匯入結果",
+            _ => "資料庫載入"
+        };
+    }
+
+    private string GetStepLabel(int step)
+    {
+        return step switch
+        {
+            1 => "選表",
+            2 => "上傳",
+            3 => "對應",
+            4 => "預覽",
+            5 => "結果",
+            _ => ""
+        };
+    }
+
+    private bool CanGoNext()
+    {
+        return currentStep switch
+        {
+            1 => !string.IsNullOrEmpty(selectedDbSetName) && targetProperties.Count > 0,
+            2 => excelResult != null && excelResult.IsSuccess,
+            3 => validationErrors.Count == 0,
+            _ => false
+        };
+    }
+
+    private void HandlePrevStep()
+    {
+        if (currentStep > 1)
+        {
+            currentStep--;
+            StateHasChanged();
+        }
+    }
+
+    private Task HandleNextStep()
+    {
+        if (currentStep == 2 && excelResult != null)
+        {
+            // 進入 Step 3 前，執行自動欄位配對
+            columnMappings = ImportService.AutoMapColumns(targetProperties, excelResult.Headers);
+            RefreshValidation();
+        }
+
+        if (currentStep == 3)
+        {
+            // 進入 Step 4 前，產生預覽
+            RefreshValidation();
+            if (validationErrors.Count > 0) return Task.CompletedTask;
+
+            GeneratePreviewData();
+        }
+
+        currentStep++;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // ===== Step 1：選擇目標表 =====
+
+    private List<EntityTableInfo> GetFilteredTables()
+    {
+        if (string.IsNullOrWhiteSpace(tableSearchText))
+            return allTables;
+
+        return allTables.Where(t =>
+            t.DbSetName.Contains(tableSearchText, StringComparison.OrdinalIgnoreCase) ||
+            t.EntityShortName.Contains(tableSearchText, StringComparison.OrdinalIgnoreCase)
+        ).ToList();
+    }
+
+    private void SelectTable(string dbSetName)
+    {
+        selectedDbSetName = dbSetName;
+        targetProperties = ImportService.GetEntityProperties(dbSetName);
+        StateHasChanged();
+    }
+
+    // ===== Step 2：上傳 Excel =====
+
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        if (file.Size > 20 * 1024 * 1024)
+        {
+            await NotificationService.ShowErrorAsync("檔案大小不可超過 20MB");
+            return;
+        }
+
+        try
+        {
+            // ⚠ 必須先讀完檔案 Stream，再設定 isLoading。
+            // 因為 BaseModalComponent 在 IsLoading=true 時不渲染 BodyContent，
+            // 會銷毀 InputFile 導致 Blazor JS 端的 _blazorFilesById 遺失。
+            using var stream = new MemoryStream();
+            await file.OpenReadStream(maxAllowedSize: 20 * 1024 * 1024).CopyToAsync(stream);
+            stream.Position = 0;
+
+            // 檔案已讀入記憶體，現在才可以安全地顯示 Loading
+            isLoading = true;
+            loadingMessage = "解析 Excel 中...";
+            StateHasChanged();
+
+            excelResult = ImportService.ParseExcel(stream, file.Name);
+
+            if (excelResult.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync($"成功解析 {excelResult.RowCount} 筆資料");
+            }
+        }
+        catch (Exception ex)
+        {
+            excelResult = ExcelParseResult.Failure($"檔案讀取失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== Step 3：欄位對應 =====
+
+    private void HandleMappingSourceChanged(ColumnMapping mapping, ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        mapping.SourceColumnName = string.IsNullOrEmpty(value) ? null : value;
+        mapping.Status = !string.IsNullOrEmpty(mapping.SourceColumnName)
+            ? MappingStatus.Mapped
+            : (string.IsNullOrEmpty(mapping.DefaultValue) ? MappingStatus.Unmapped : MappingStatus.DefaultValue);
+        RefreshValidation();
+    }
+
+    private void HandleMappingDefaultChanged(ColumnMapping mapping, ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        mapping.DefaultValue = string.IsNullOrEmpty(value) ? null : value;
+        mapping.Status = !string.IsNullOrEmpty(mapping.SourceColumnName)
+            ? MappingStatus.Mapped
+            : (!string.IsNullOrEmpty(mapping.DefaultValue) ? MappingStatus.DefaultValue : MappingStatus.Unmapped);
+        RefreshValidation();
+    }
+
+    private void RefreshValidation()
+    {
+        validationErrors = ImportService.ValidateMappings(columnMappings);
+    }
+
+    private bool HasUnresolvedRequiredFields()
+    {
+        return columnMappings.Any(m => m.HasProblem);
+    }
+
+    private int GetUnresolvedRequiredCount()
+    {
+        return columnMappings.Count(m => m.HasProblem);
+    }
+
+    private void ApplySmartDefaults()
+    {
+        foreach (var mapping in columnMappings.Where(m => m.HasProblem))
+        {
+            var defaultValue = ImportService.GetSmartDefaultValue(mapping.TargetProperty);
+            if (defaultValue != null)
+            {
+                mapping.DefaultValue = defaultValue;
+                mapping.Status = string.IsNullOrEmpty(mapping.SourceColumnName)
+                    ? MappingStatus.DefaultValue
+                    : MappingStatus.Mapped;
+            }
+        }
+        RefreshValidation();
+        StateHasChanged();
+    }
+
+    private string GetPlaceholder(ColumnMapping mapping)
+    {
+        if (!mapping.TargetProperty.IsRequired) return "可選";
+        return mapping.TargetProperty.TypeDisplayName switch
+        {
+            "string" => "需填入文字",
+            "int" or "long" or "short" => "需填入整數",
+            "decimal" or "double" or "float" => "需填入數值",
+            "bool" => "true / false",
+            "DateTime" => "yyyy-MM-dd",
+            _ => "需填入值"
+        };
+    }
+
+    // ===== Step 4：預覽 =====
+
+    private void GeneratePreviewData()
+    {
+        if (excelResult == null) return;
+        previewRows = ImportService.GeneratePreview(selectedDbSetName, columnMappings, excelResult.Rows, 10);
+    }
+
+    // ===== Step 5：執行匯入 =====
+
+    private async Task HandleExecuteImport()
+    {
+        if (excelResult == null) return;
+
+        try
+        {
+            isLoading = true;
+            loadingMessage = "匯入中... 0%";
+            importProgress = 0;
+            StateHasChanged();
+
+            var currentUserId = await GetCurrentUserId();
+
+            importResult = await ImportService.ExecuteImportAsync(
+                selectedDbSetName,
+                columnMappings,
+                excelResult.Rows,
+                currentUserId,
+                progress =>
+                {
+                    importProgress = progress;
+                    loadingMessage = $"匯入中... {progress}%";
+                    InvokeAsync(StateHasChanged);
+                });
+
+            currentStep = 5;
+
+            if (importResult.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync($"成功匯入 {importResult.SuccessCount} 筆資料！");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"匯入失敗：{importResult.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            importResult = ImportResult.Failure($"匯入過程發生例外：{ex.Message}", excelResult.RowCount);
+            currentStep = 5;
+            await NotificationService.ShowErrorAsync($"匯入例外：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 工具方法 =====
+
+    private async Task<string?> GetCurrentUserId()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            return authState.User?.FindFirst("EmployeeId")?.Value;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task HandleClose()
+    {
+        ResetWizard();
+        if (IsVisibleChanged.HasDelegate)
+            await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private void ResetWizard()
+    {
+        currentStep = 1;
+        tableSearchText = string.Empty;
+        selectedDbSetName = string.Empty;
+        targetProperties = new();
+        excelResult = null;
+        columnMappings = new();
+        validationErrors = new();
+        previewRows = new();
+        importResult = null;
+        importProgress = 0;
+    }
+}

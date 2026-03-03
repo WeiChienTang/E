@@ -435,17 +435,14 @@ namespace ERPCore2.Services
                     order.ApprovedBy = approvedBy;
                     order.ApprovedAt = DateTime.Now;
                     order.IsApproved = true;
+                    order.RejectReason = null;
                     order.UpdatedAt = DateTime.Now;
                     // TODO: 根據當前登入使用者設置 UpdatedBy
                     // order.UpdatedBy = currentUser.Name;
 
-                    ConsoleHelper.WriteTitle($"ApproveOrderAsync: saving orderId={orderId}");
-                    ConsoleHelper.WriteDebug($"Setting ApprovedBy={order.ApprovedBy}, ApprovedAt={order.ApprovedAt:yyyy-MM-dd HH:mm}, IsApproved={order.IsApproved}");
-
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    ConsoleHelper.WriteSuccess($"ApproveOrderAsync: committed successfully");
                     return ServiceResult.Success();
                 }
                 catch
@@ -485,8 +482,8 @@ namespace ERPCore2.Services
 
                     // 重置審核狀態
                     order.IsApproved = false;
-                    order.ApprovedBy = null;
-                    order.ApprovedAt = null;
+                    order.ApprovedBy = rejectedBy;
+                    order.ApprovedAt = DateTime.Now;
                     
                     // 設定駁回原因
                     order.RejectReason = reason;

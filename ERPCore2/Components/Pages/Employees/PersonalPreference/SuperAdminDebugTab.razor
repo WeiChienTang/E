@@ -101,16 +101,56 @@
         <div class="shortcut-row shortcut-row--fixed">
             <div class="shortcut-label">
                 <span>方式二：頁面組件名稱</span>
-                <small class="text-muted ms-2">在 Index 列表頁面左下角顯示對應的 .razor 頁面名稱</small>
+                <small class="text-muted ms-2">在 Index 列表頁面下方置中顯示對應的 .razor 頁面名稱</small>
             </div>
             <div class="shortcut-display">
                 <span class="text-muted small fst-italic">自動顯示</span>
             </div>
             <div class="shortcut-actions">
-                <span class="text-muted small fst-italic">左下 Badge</span>
+                <span class="text-muted small fst-italic">置中 Badge</span>
             </div>
         </div>
 
     </div>
 
+    @* ── 開發者工具（按鈕觸發）── *@
+    <div class="section-header mb-2">
+        <span class="section-title">開發者工具</span>
+    </div>
+    <p class="text-muted small mb-3">
+        SuperAdmin 專用的進階工具，需手動啟動。
+    </p>
+
+    <div class="shortcut-editor-table mb-4">
+        <div class="shortcut-row shortcut-row--fixed">
+            <div class="shortcut-label">
+                <span>資料庫載入</span>
+                <small class="text-muted ms-2">從 Excel 檔案匯入資料到系統資料表（精靈步驟：選表 → 上傳 → 對應 → 預覽 → 匯入）</small>
+            </div>
+            <div class="shortcut-display">
+                <GenericButtonComponent Variant="ButtonVariant.Purple"
+                                        Size="ButtonSize.Small"
+                                        Text="開啟工具"
+                                        IconClass="bi bi-database-down"
+                                        OnClick="OpenDatabaseImport" />
+            </div>
+            <div class="shortcut-actions">
+                <span class="text-muted small fst-italic">Modal 精靈</span>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+@* 資料庫匯入 Modal *@
+<DatabaseImportModalComponent @bind-IsVisible="showDatabaseImport" />
+
+@code {
+    private bool showDatabaseImport = false;
+
+    private void OpenDatabaseImport()
+    {
+        showDatabaseImport = true;
+        StateHasChanged();
+    }
+}

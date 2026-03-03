@@ -22,7 +22,7 @@
                     IsLoading="@isLoading"
                     ErrorMessage="@errorMessage"
                     OnClose="@HandleClose"
-                    DebugComponentName="SystemParameterSettingsModal">
+                    DebugComponentName="@DebugName">
     <HeaderButtons>
         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                Text="@L["Button.Confirm"]"
@@ -50,7 +50,8 @@
                               Model="@systemParameter"
                               FieldDefinitions="@allFields"
                               FieldSections="@fieldSections"
-                              TabDefinitions="@tabDefinitions" />
+                              TabDefinitions="@tabDefinitions"
+                              OnTabChanged="@HandleTabChanged" />
 
         @* ===== 底部審計資訊 ===== *@
         @if (systemParameter.Id > 0)
@@ -112,6 +113,28 @@
     private readonly Dictionary<string, string> fieldSections = new();
     private List<FormTabDefinition> tabDefinitions = new();
 
+    // Debug Tab 追蹤（僅 SuperAdmin 可見的 Debug Bar 使用）
+    private int _activeTabIndex = 0;
+
+    private string DebugName
+    {
+        get
+        {
+            if (_activeTabIndex < 0 || _activeTabIndex >= tabDefinitions.Count)
+                return "SystemParameterSettingsModal";
+            var tabDebugName = tabDefinitions[_activeTabIndex].DebugComponentName;
+            return string.IsNullOrEmpty(tabDebugName)
+                ? "SystemParameterSettingsModal"
+                : $"SystemParameterSettingsModal > {tabDebugName}";
+        }
+    }
+
+    private void HandleTabChanged(int index)
+    {
+        _activeTabIndex = index;
+        StateHasChanged();
+    }
+
     // ===== Tab 內容 RenderFragment =====
 
     private RenderFragment CreateTaxTabContent() => __builder =>
@@ -147,12 +170,13 @@
 
     protected override void OnInitialized()
     {
+        _activeTabIndex = 0;
         tabDefinitions = new List<FormTabDefinition>
         {
-            new() { Label = L["Section.TaxSettings"], Icon = "bi bi-cash-stack", SectionNames = new(), CustomContent = CreateTaxTabContent() },
-            new() { Label = L["Tab.SubAccountSettings"], Icon = "bi bi-diagram-3", SectionNames = new(), CustomContent = CreateSubAccountTabContent() },
+            new() { Label = L["Section.TaxSettings"],    Icon = "bi bi-cash-stack", SectionNames = new(), CustomContent = CreateTaxTabContent(),         DebugComponentName = "TaxSettingsTab" },
+            new() { Label = L["Tab.SubAccountSettings"], Icon = "bi bi-diagram-3",  SectionNames = new(), CustomContent = CreateSubAccountTabContent(),  DebugComponentName = "SubAccountSettingsTab" },
             // 安全憑證 Tab 暫時停用（HTTPS 自簽憑證方案未完成，詳見 README_HTTPS憑證設計(失敗).md）
-            // new() { Label = "安全憑證", Icon = "bi bi-shield-lock", SectionNames = new(), CustomContent = CreateCertificateTabContent() },
+            // new() { Label = "安全憑證", Icon = "bi bi-shield-lock", SectionNames = new(), CustomContent = CreateCertificateTabContent(), DebugComponentName = "CertificateTab" },
         };
     }
 
@@ -175,7 +199,8 @@
                 Label = L["Tab.ApprovalSettings"],
                 Icon = "bi bi-check2-square",
                 SectionNames = new(),
-                CustomContent = CreateApprovalSettingsTabContent()
+                CustomContent = CreateApprovalSettingsTabContent(),
+                DebugComponentName = "ApprovalSettingsTab"
             });
 
             tabDefinitions.Add(new FormTabDefinition
@@ -183,7 +208,8 @@
                 Label = L["Tab.ModuleManagement"],
                 Icon = "bi bi-toggles",
                 SectionNames = new(),
-                CustomContent = CreateModuleManagementTabContent()
+                CustomContent = CreateModuleManagementTabContent(),
+                DebugComponentName = "ModuleManagementTab"
             });
         }
     }

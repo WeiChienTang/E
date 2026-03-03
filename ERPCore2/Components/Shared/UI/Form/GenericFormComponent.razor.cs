@@ -58,6 +58,13 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
     [Parameter]
     public List<FormTabDefinition>? TabDefinitions { get; set; }
 
+    /// <summary>
+    /// Tab 切換事件（傳回新的 Tab 索引）
+    /// 供父元件追蹤目前 Tab，用於 Debug Bar 顯示組件名稱
+    /// </summary>
+    [Parameter]
+    public EventCallback<int> OnTabChanged { get; set; }
+
     #endregion
 
     #region Private Fields
@@ -280,11 +287,13 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
     }
 
     /// <summary>
-    /// 設定當前啟用的 Tab 索引
+    /// 設定當前啟用的 Tab 索引，並通知父元件（用於 Debug Bar 顯示）
     /// </summary>
     protected void SetActiveTab(int index)
     {
         _activeTabIndex = index;
+        if (OnTabChanged.HasDelegate)
+            _ = OnTabChanged.InvokeAsync(index);
         StateHasChanged();
     }
 

@@ -505,7 +505,7 @@
             .GroupIntoTab(L["Tab.ProductData"].ToString(), "bi-box-seam", FormSectionNames.BasicInfo, FormSectionNames.CategoryAndSpecification, FormSectionNames.AdditionalInfo);
 
         if (isAccountingEnabled)
-            builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent());
+            builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent(), "ProductAccountingTab");
 
         var layout = builder.BuildAll();
         formSections = layout.FieldSections;

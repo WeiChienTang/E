@@ -40,7 +40,7 @@
                    ShowFooter="@(Entity != null && Entity.Id > 0)"
                    AuditInfo="@GetAuditInfo()"
                    BodyCssClass="p-0"
-                   DebugComponentName="@ComponentName"
+                   DebugComponentName="@DebugName"
                    OnClose="@HandleCancel">    
     <HeaderButtons>
         @* ===== Modal Actions 按鈕區塊 ===== *@
@@ -191,7 +191,8 @@
                                     FieldDefinitions="@GetProcessedFormFields()"
                                     FieldSections="@FormSections"
                                     TabDefinitions="@TabDefinitions"
-                                    OnFieldChanged="@HandleFieldChanged" />
+                                    OnFieldChanged="@HandleFieldChanged"
+                                    OnTabChanged="@HandleTabChanged" />
             </div>
         }
 
@@ -551,6 +552,33 @@
     // 改為 public 以便子元件檢查父元件載入狀態
     public bool IsLoading { get; private set; } = false;
     private bool IsSubmitting { get; set; } = false;
+
+    // Debug Tab 追蹤（僅 SuperAdmin 可見的 Debug Bar 使用）
+    private int _activeTabIndex = 0;
+
+    /// <summary>
+    /// Debug Bar 顯示名稱：ModalName 或 ModalName > TabComponentName
+    /// </summary>
+    private string DebugName
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(ComponentName))
+                return string.Empty;
+            if (TabDefinitions == null || TabDefinitions.Count == 0 || _activeTabIndex >= TabDefinitions.Count)
+                return ComponentName;
+            var tabDebugName = TabDefinitions[_activeTabIndex].DebugComponentName;
+            return string.IsNullOrEmpty(tabDebugName)
+                ? ComponentName
+                : $"{ComponentName} > {tabDebugName}";
+        }
+    }
+
+    private void HandleTabChanged(int index)
+    {
+        _activeTabIndex = index;
+        StateHasChanged();
+    }
     private string ErrorMessage { get; set; } = string.Empty;
     private bool _isDirty = false;
     private int? _lastId = null;
@@ -892,7 +920,6 @@
     /// </summary>
     public async Task RefreshEntityAsync()
     {
-        ConsoleHelper.WriteDebug($"RefreshEntityAsync called. Entity.Id={Entity?.Id}, DataLoader={DataLoader != null}");
         if (DataLoader != null && Entity != null && Entity.Id > 0)
         {
             var reloadedEntity = await DataLoader();
@@ -901,17 +928,8 @@
                 Entity = reloadedEntity;
                 editContext = new EditContext(Entity);
                 await LoadStatusMessageData(); // 重新載入狀態訊息
-                ConsoleHelper.WriteDebug($"RefreshEntityAsync: Entity updated, calling StateHasChanged");
                 StateHasChanged();
             }
-            else
-            {
-                ConsoleHelper.WriteWarning($"RefreshEntityAsync: DataLoader returned null!");
-            }
-        }
-        else
-        {
-            ConsoleHelper.WriteWarning($"RefreshEntityAsync: skipped — DataLoader={DataLoader != null}, Entity={Entity?.Id}");
         }
     }
     
@@ -1264,22 +1282,17 @@
             IsApproving = true;
             StateHasChanged();
 
-            ConsoleHelper.WriteDebug($"HandleApproveConfirm: calling OnApprove...");
             var success = await OnApprove();
-            ConsoleHelper.WriteDebug($"HandleApproveConfirm: OnApprove returned success={success}");
 
             if (success)
             {
                 await ShowSuccessMessage("審核通過");
 
                 // 重新載入實體資料以確保狀態同步
-                ConsoleHelper.WriteDebug($"HandleApproveConfirm: calling RefreshEntityAsync...");
                 await RefreshEntityAsync();
-                ConsoleHelper.WriteDebug($"HandleApproveConfirm: RefreshEntityAsync complete.");
             }
             else
             {
-                ConsoleHelper.WriteWarning($"HandleApproveConfirm: OnApprove returned false — NOT calling RefreshEntityAsync");
                 await ShowErrorMessage("審核通過失敗");
             }
         }

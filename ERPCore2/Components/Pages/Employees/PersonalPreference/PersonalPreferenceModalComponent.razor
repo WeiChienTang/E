@@ -17,7 +17,7 @@
                    IsLoading="@isLoading"
                    LoadingMessage="@L["Preference.LoadingMessage"]"
                    OnClose="@HandleClose"
-                   DebugComponentName="PersonalPreferenceModalComponent">
+                   DebugComponentName="@DebugName">
 
     <HeaderButtons>
         <div class="d-flex gap-2 align-items-center">
@@ -36,7 +36,8 @@
                               Model="@employeePreference"
                               FieldDefinitions="@allFields"
                               FieldSections="@fieldSections"
-                              TabDefinitions="@tabDefinitions" />
+                              TabDefinitions="@tabDefinitions"
+                              OnTabChanged="@HandleTabChanged" />
     </BodyContent>
 
 </BaseModalComponent>
@@ -76,6 +77,31 @@
     private readonly List<FormFieldDefinition> allFields = new();
     private readonly Dictionary<string, string> fieldSections = new();
     private List<FormTabDefinition> tabDefinitions = new();
+
+    // Debug Tab 追蹤（僅 SuperAdmin 可見的 Debug Bar 使用）
+    private int _activeTabIndex = 0;
+
+    /// <summary>
+    /// Debug Bar 顯示名稱：PersonalPreferenceModalComponent 或 PersonalPreferenceModalComponent > TabComponentName
+    /// </summary>
+    private string DebugName
+    {
+        get
+        {
+            if (_activeTabIndex < 0 || _activeTabIndex >= tabDefinitions.Count)
+                return "PersonalPreferenceModalComponent";
+            var tabDebugName = tabDefinitions[_activeTabIndex].DebugComponentName;
+            return string.IsNullOrEmpty(tabDebugName)
+                ? "PersonalPreferenceModalComponent"
+                : $"PersonalPreferenceModalComponent > {tabDebugName}";
+        }
+    }
+
+    private void HandleTabChanged(int index)
+    {
+        _activeTabIndex = index;
+        StateHasChanged();
+    }
 
     // ===== Tab RenderFragment =====
 
@@ -126,13 +152,14 @@
     /// </summary>
     private void RebuildTabDefinitions(bool isSuperAdmin)
     {
+        _activeTabIndex = 0;
         tabDefinitions = new List<FormTabDefinition>
         {
-            new() { Label = L["Preference.PersonalData"],   Icon = "bi bi-person",    SectionNames = new(), CustomContent = CreatePersonalDataTabContent() },
-            new() { Label = L["Preference.LanguageRegion"], Icon = "bi bi-translate",  SectionNames = new(), CustomContent = CreateLanguageRegionTabContent() },
-            new() { Label = L["Preference.Display"],        Icon = "bi bi-type",       SectionNames = new(), CustomContent = CreateDisplayTabContent() },
-            new() { Label = L["Preference.ShortcutKeys"],   Icon = "bi bi-keyboard",   SectionNames = new(), CustomContent = CreateShortcutKeysTabContent() },
-            new() { Label = L["Preference.Notifications"],  Icon = "bi bi-bell",       SectionNames = new(), CustomContent = CreateNotificationTabContent() }
+            new() { Label = L["Preference.PersonalData"],   Icon = "bi bi-person",    SectionNames = new(), CustomContent = CreatePersonalDataTabContent(),     DebugComponentName = "PersonalDataTab" },
+            new() { Label = L["Preference.LanguageRegion"], Icon = "bi bi-translate",  SectionNames = new(), CustomContent = CreateLanguageRegionTabContent(),   DebugComponentName = "LanguageRegionTab" },
+            new() { Label = L["Preference.Display"],        Icon = "bi bi-type",       SectionNames = new(), CustomContent = CreateDisplayTabContent(),          DebugComponentName = "DisplayTab" },
+            new() { Label = L["Preference.ShortcutKeys"],   Icon = "bi bi-keyboard",   SectionNames = new(), CustomContent = CreateShortcutKeysTabContent(),     DebugComponentName = "ShortcutKeysTab" },
+            new() { Label = L["Preference.Notifications"],  Icon = "bi bi-bell",       SectionNames = new(), CustomContent = CreateNotificationTabContent(),     DebugComponentName = "NotificationSettingsTab" }
         };
 
         if (isSuperAdmin)
@@ -142,7 +169,8 @@
                 Label = "Debug",
                 Icon = "bi bi-bug",
                 SectionNames = new(),
-                CustomContent = CreateSuperAdminDebugTabContent()
+                CustomContent = CreateSuperAdminDebugTabContent(),
+                DebugComponentName = "SuperAdminDebugTab"
             });
         }
     }

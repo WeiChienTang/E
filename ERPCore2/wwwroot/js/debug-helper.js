@@ -3,7 +3,7 @@
  * SuperAdmin 專屬的開發輔助快捷鍵系統
  *
  * 方式一：Modal 底部顯示組件名稱（點擊複製）
- * 方式二：頁面左下角 Badge 顯示頁面名稱（點擊複製）
+ * 方式二：頁面下方置中 Badge 顯示頁面名稱（點擊複製）
  * 方式三（Shift+Alt+K）：切換 i18n Key 顯示模式，在表單欄位 Label 旁顯示推斷的資源鍵名稱（點擊複製）
  * 方式四（Shift+Alt+P）：切換 PropertyName 顯示模式，在表單欄位 Label 旁顯示 C# 屬性名稱（點擊複製）
  * 方式五：InteractiveTableComponent 欄位標頭 Debug 標記（與方式三/四共用快捷鍵，同步顯示）（點擊複製）
@@ -15,7 +15,7 @@ window.DebugHelper = {
 
     /**
      * 初始化 Debug 快捷鍵監聽器（只應在 SuperAdmin 登入後呼叫一次）
-     * 同時掛載方式三/四欄位 span 的點擊複製監聽（capture phase）
+     * 同時掛載方式三/四/五欄位 span 與表格 Badge 的點擊複製監聽（capture phase）
      */
     initDebugShortcuts: function () {
         if (window._debugShortcutsRegistered) return;
@@ -85,7 +85,7 @@ window.DebugHelper = {
 
     /**
      * 複製文字到剪貼簿並顯示確認通知
-     * 供方式一/二的 Blazor @onclick 直接呼叫，以及方式三/四的 JS 內部呼叫
+     * 供方式一/二的 Blazor @onclick 直接呼叫，以及方式三/四/五的 JS 內部呼叫
      * @param {string} text  - 要複製的文字
      * @param {string} color - 通知文字顏色（預設 #7ec8e3）
      */

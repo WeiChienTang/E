@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
+using ERPCore2.Services.Import;
 using ERPCore2.Services.Reports;
 using ERPCore2.Services.Reports.Configuration;
 using ERPCore2.Services.Reports.Interfaces;
@@ -44,6 +45,9 @@ namespace ERPCore2.Data
         {
             // 通知服務
             services.AddScoped<INotificationService, NotificationService>();
+
+            // 資料庫匯入工具（SuperAdmin）
+            services.AddScoped<IDatabaseImportService, DatabaseImportService>();
 
             // Helper 服務
             services.AddScoped<ActionButtonHelper>();

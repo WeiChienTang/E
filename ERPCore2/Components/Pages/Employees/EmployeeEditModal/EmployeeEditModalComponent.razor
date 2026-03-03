@@ -400,12 +400,12 @@
                 .GroupIntoTab(L["Tab.EmployeeData"].ToString(), "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData);
 
             if (isVehiclesEnabled)
-                builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent());
+                builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent(), "EmployeeVehicleTab");
 
             var layout = builder
-                .GroupIntoCustomTab(L["Tab.PersonalTools"].ToString(), "bi-tools", CreateToolTabContent())
-                .GroupIntoCustomTab(L["Tab.Training"].ToString(), "bi-mortarboard", CreateTrainingTabContent())
-                .GroupIntoCustomTab(L["Tab.Permissions"].ToString(), "bi-shield-lock", CreatePermissionTabContent())
+                .GroupIntoCustomTab(L["Tab.PersonalTools"].ToString(), "bi-tools", CreateToolTabContent(), "EmployeeToolTab")
+                .GroupIntoCustomTab(L["Tab.Training"].ToString(), "bi-mortarboard", CreateTrainingTabContent(), "EmployeeTrainingTab")
+                .GroupIntoCustomTab(L["Tab.Permissions"].ToString(), "bi-shield-lock", CreatePermissionTabContent(), "EmployeePermissionTab")
                 .BuildAll();
 
             formSections = layout.FieldSections;

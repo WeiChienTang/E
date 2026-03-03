@@ -1374,11 +1374,6 @@
                 return false;
             }
 
-            var confirmed = await NotificationService.ShowConfirmAsync(
-                "確定要審核通過此採購退回單嗎？系統將先儲存當前資料，然後進行審核。審核通過後將無法再修改。",
-                "審核確認");
-            if (!confirmed) return false;
-
             var entity = editModalComponent?.Entity;
             if (entity == null) return false;
 

@@ -30,6 +30,13 @@ namespace ERPCore2.Helpers.EditModal
         /// 額外內容 RenderFragment（在表單欄位區段之後渲染，CustomContent 為 null 時有效）
         /// </summary>
         public RenderFragment? ExtraContent { get; set; }
+
+        /// <summary>
+        /// 對應的 .razor 組件名稱（Debug 用，僅 SuperAdmin 可見）
+        /// 純表單欄位的 Tab 可留 null；有 CustomContent 的 Tab 應填入組件名稱
+        /// 例：DebugComponentName = "CustomerVehicleTab"
+        /// </summary>
+        public string? DebugComponentName { get; set; }
     }
 
     /// <summary>
@@ -157,15 +164,17 @@ namespace ERPCore2.Helpers.EditModal
         /// <param name="tabLabel">Tab 標籤文字</param>
         /// <param name="icon">Tab 圖示 CSS class（例如 "bi bi-truck"），可為 null</param>
         /// <param name="customContent">自訂內容 RenderFragment</param>
+        /// <param name="debugComponentName">對應的 .razor 組件名稱（Debug 用，僅 SuperAdmin 可見）</param>
         /// <returns>當前實例，支援鏈式呼叫</returns>
-        public FormSectionHelper<TEntity> GroupIntoCustomTab(string tabLabel, string? icon, RenderFragment customContent)
+        public FormSectionHelper<TEntity> GroupIntoCustomTab(string tabLabel, string? icon, RenderFragment customContent, string? debugComponentName = null)
         {
             _tabDefinitions.Add(new FormTabDefinition
             {
                 Label = tabLabel,
                 Icon = icon,
                 SectionNames = new List<string>(),
-                CustomContent = customContent
+                CustomContent = customContent,
+                DebugComponentName = debugComponentName
             });
             return this;
         }

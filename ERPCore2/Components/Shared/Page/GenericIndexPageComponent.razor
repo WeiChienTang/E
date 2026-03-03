@@ -146,11 +146,12 @@ else
 @* ===== Debug Badge (僅 SuperAdmin 可見) ===== *@
 @if (_isSuperAdmin && !string.IsNullOrEmpty(DebugPageName))
 {
-    <div style="position:fixed; bottom:1rem; left:1rem; z-index:999;
+    <div style="position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); z-index:999;
                 background:#1a1a2e; color:#7ec8e3; font-size:0.7rem;
                 font-family:monospace; padding:0.25rem 0.6rem;
                 border-radius:4px; border:1px solid #30363d;
-                cursor:pointer; letter-spacing:0.03em; opacity:0.85; user-select:text;"
+                cursor:pointer; letter-spacing:0.03em; opacity:0.85; user-select:text;
+                white-space:nowrap;"
          title="點擊複製頁面名稱"
          @onclick="CopyDebugPageNameAsync">
         🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong> | @DebugPageName

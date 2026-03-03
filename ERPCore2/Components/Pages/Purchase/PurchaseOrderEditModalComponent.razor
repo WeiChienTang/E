@@ -288,28 +288,14 @@
             
             var purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId.Value);
 
-            // === DEBUG: 追蹤審核資料載入 ===
             if (purchaseOrder != null)
             {
-                ConsoleHelper.WriteTitle($"LoadPurchaseOrderData [ID={purchaseOrder.Id}]");
-                ConsoleHelper.WriteDebug($"IsApproved = {purchaseOrder.IsApproved}");
-                ConsoleHelper.WriteDebug($"ApprovedAt = {purchaseOrder.ApprovedAt?.ToString("yyyy-MM-dd HH:mm") ?? "(null)"}");
-                ConsoleHelper.WriteDebug($"ApprovedAtText = {purchaseOrder.ApprovedAtText ?? "(null)"}");
-                ConsoleHelper.WriteDebug($"ApprovedBy = {purchaseOrder.ApprovedBy?.ToString() ?? "(null)"}");
-                ConsoleHelper.WriteDebug($"ApprovedByUser = {purchaseOrder.ApprovedByUser?.Name ?? "(null)"}");
-                ConsoleHelper.WriteDebug($"ApprovalStatusText = {purchaseOrder.ApprovalStatusText}");
-                ConsoleHelper.WriteSeparator();
-
                 // 載入採購單明細
                 await LoadPurchaseOrderDetails(PurchaseOrderId.Value);
 
                 // 修正 2：直接初始化表單欄位，移除 Task.Run + Task.Delay 延遲模式
                 // NavigateToRecordAsync 會在 DataLoader 返回後呼叫 StateHasChanged()，不需要在這裡額外呼叫
                 await InitializeFormFieldsAsync();
-            }
-            else
-            {
-                ConsoleHelper.WriteWarning($"LoadPurchaseOrderData: GetByIdAsync returned null for ID={PurchaseOrderId.Value}");
             }
 
             return purchaseOrder;
@@ -1061,14 +1047,6 @@
                 return false;
             }
             
-            // 確認對話框
-            var confirmed = await NotificationService.ShowConfirmAsync(
-                "確定要審核通過此採購單嗎？系統將先儲存當前資料，然後進行審核。審核通過後將無法再修改。", 
-                "審核確認");
-            
-            if (!confirmed)
-                return false;
-            
             // **方案一實施：審核前先自動儲存**
             if (editModalComponent?.Entity != null)
             {
@@ -1083,25 +1061,20 @@
             
             // 呼叫服務進行審核
             var currentUserId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
-            ConsoleHelper.WriteDebug($"HandlePurchaseOrderApprove: currentUserId = {currentUserId?.ToString() ?? "(null)"}");
             if (!currentUserId.HasValue)
             {
                 await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
                 return false;
             }
 
-            ConsoleHelper.WriteDebug($"Calling ApproveOrderAsync(orderId={PurchaseOrderId.Value}, approvedBy={currentUserId.Value})");
             var result = await PurchaseOrderService.ApproveOrderAsync(PurchaseOrderId.Value, currentUserId.Value);
-            ConsoleHelper.WriteDebug($"ApproveOrderAsync result: IsSuccess={result.IsSuccess}, Error={(result.IsSuccess ? "(none)" : result.ErrorMessage)}");
 
             if (result.IsSuccess)
             {
-                ConsoleHelper.WriteSuccess("Approval succeeded — returning true to trigger RefreshEntityAsync");
                 return true;
             }
             else
             {
-                ConsoleHelper.WriteError($"Approval failed: {result.ErrorMessage}");
                 await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "審核通過失敗");
                 return false;
             }

@@ -15,7 +15,7 @@
                    IsLoading="@IsLoading"
                    LoadingMessage="@L["RelatedDoc.LoadingMessage"]"
                    OnClose="@Close"
-                   DebugComponentName="RelatedDocumentsModalComponent">
+                   DebugComponentName="@DebugName">
 
     <BodyContent>
         @if (RelatedDocuments == null || !RelatedDocuments.Any())
@@ -76,6 +76,37 @@
         public RelatedDocumentType Type { get; set; }
         public List<RelatedDocumentInfo> Documents { get; set; } = new();
         public DocumentSectionConfig Config { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Debug 用：顯示組件名稱 > 目前使用的 Template 組件名稱（僅 SuperAdmin 可見）
+    /// 例：RelatedDocumentsModalComponent > InventoryTransactionDetailsTemplate
+    /// </summary>
+    private string DebugName
+    {
+        get
+        {
+            if (RelatedDocuments == null || !RelatedDocuments.Any())
+                return "RelatedDocumentsModalComponent";
+
+            var templateNames = RelatedDocuments
+                .Select(d => d.DocumentType)
+                .Distinct()
+                .OrderBy(t => t)
+                .Select(t => t switch
+                {
+                    RelatedDocumentType.ProductComposition     => "CompositionDetailsTemplate",
+                    RelatedDocumentType.SalesOrder             => "SalesOrderDetailsTemplate",
+                    RelatedDocumentType.ReceivingDocument      => "ReceivingDetailsTemplate",
+                    RelatedDocumentType.ReturnDocument         => "ReturnDetailsTemplate",
+                    RelatedDocumentType.SetoffDocument         => "SetoffDetailsTemplate",
+                    RelatedDocumentType.SupplierRecommendation => "SupplierRecommendationDetailsTemplate",
+                    RelatedDocumentType.InventoryTransaction   => "InventoryTransactionDetailsTemplate",
+                    _                                          => t.ToString()
+                });
+
+            return $"RelatedDocumentsModalComponent > {string.Join(", ", templateNames)}";
+        }
     }
 
     /// <summary>
