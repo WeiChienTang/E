@@ -116,6 +116,17 @@ namespace ERPCore2.Services
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
                 
+                // 若前端未設定建立者，預設為「系統」
+                if (string.IsNullOrEmpty(entity.CreatedBy))
+                {
+                    entity.CreatedBy = "系統";
+                }
+                // 若前端未設定修改者，預設為建立者
+                if (string.IsNullOrEmpty(entity.UpdatedBy))
+                {
+                    entity.UpdatedBy = entity.CreatedBy;
+                }
+                
                 if (entity.Status == default)
                 {
                     entity.Status = EntityStatus.Active;
@@ -168,6 +179,12 @@ namespace ERPCore2.Services
                 
                 // 更新時間
                 entity.UpdatedAt = DateTime.UtcNow;
+                
+                // 若前端未設定修改者，保留原修改者或預設為「系統」
+                if (string.IsNullOrEmpty(entity.UpdatedBy))
+                {
+                    entity.UpdatedBy = existingEntity.UpdatedBy ?? "系統";
+                }
 
                 // 分離舊實體並附加新實體
                 context.Entry(existingEntity).State = EntityState.Detached;

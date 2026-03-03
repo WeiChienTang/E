@@ -1167,14 +1167,14 @@
   <!-- ===== Approval Settings Tab keys ===== -->
   <data name="Tab.ApprovalSettings" xml:space="preserve"><value>審核管理</value></data>
   <data name="Section.ApprovalSettings" xml:space="preserve"><value>審核流程設定</value></data>
-  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>啟用報價單審核</value></data>
-  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>啟用採購單審核</value></data>
-  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>啟用進貨單審核</value></data>
-  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>啟用進貨退回審核</value></data>
-  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>啟用銷貨單審核</value></data>
-  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>啟用銷貨退回審核</value></data>
-  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>啟用銷貨出貨審核</value></data>
-  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>啟用庫存調撥審核</value></data>
+  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>報價單審核方式</value></data>
+  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>採購訂單審核方式</value></data>
+  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>進貨單審核方式</value></data>
+  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>進貨退回審核方式</value></data>
+  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>銷貨訂單審核方式</value></data>
+  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>銷貨退回審核方式</value></data>
+  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>出貨單審核方式</value></data>
+  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>庫存調撥審核方式</value></data>
   <data name="Field.MaintenanceType" xml:space="preserve"><value>保養類型</value></data>
   <data name="Field.MaintenanceVehicle" xml:space="preserve"><value>保養車輛</value></data>
   <data name="Field.ManufactureYear" xml:space="preserve"><value>出廠年份</value></data>
@@ -1256,6 +1256,7 @@
   <data name="Dashboard.NoItems" xml:space="preserve"><value>目前沒有可新增的{0}</value></data>
   <data name="Placeholder.SearchWidgets" xml:space="preserve"><value>搜尋名稱、描述或分類...</value></data>
   <data name="Dashboard.RemoveShortcut" xml:space="preserve"><value>移除捷徑</value></data>
+  <data name="Dashboard.AlreadyAdded" xml:space="preserve"><value>已加入</value></data>
   <data name="Dashboard.SelectIcon" xml:space="preserve"><value>選擇面板圖示</value></data>
   <data name="Dashboard.ApplyIcon" xml:space="preserve"><value>套用選取的圖示</value></data>
   <data name="Dashboard.CurrentSelection" xml:space="preserve"><value>目前選擇</value></data>
@@ -1603,6 +1604,9 @@
   <data name="Home.DeleteThisPanelTooltip" xml:space="preserve"><value>刪除此區塊</value></data>
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>編輯此區塊</value></data>
   <data name="Home.Create" xml:space="preserve"><value>建立</value></data>
+  <data name="Home.WelcomeMessage" xml:space="preserve"><value>你好，{0}</value></data>
+  <data name="Home.NoPanelItemsHint" xml:space="preserve"><value>點擊編輯按鈕開始自訂此區塊</value></data>
+  <data name="Home.NoPanelsHint" xml:space="preserve"><value>建立您的第一個區塊，開始自訂工作區</value></data>
 
   <!-- ===== Message - Home 操作 ===== -->
   <data name="Message.LoadHomeFailed" xml:space="preserve"><value>載入首頁配置失敗</value></data>
@@ -1828,6 +1832,8 @@
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>確認移除</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>清除明細</value></data>
   <data name="Button.DisableAccount" xml:space="preserve"><value>停用帳號</value></data>
+  <data name="Button.SetAllManual" xml:space="preserve"><value>全部人工審核</value></data>
+  <data name="Button.SetAllAuto" xml:space="preserve"><value>全部自動審核</value></data>
   <data name="Button.EnableAll" xml:space="preserve"><value>全部開啟</value></data>
   <data name="Button.DisableAll" xml:space="preserve"><value>全部關閉</value></data>
   <data name="Button.OpenEdit" xml:space="preserve"><value>開啟編輯</value></data>
@@ -2819,10 +2825,14 @@
   <data name="AccountLevel.L4" xml:space="preserve"><value>第4層（明細科目）</value></data>
 
   <!-- ===== ApprovalSettings Toggle ===== -->
+  <data name="Toggle.Manual" xml:space="preserve"><value>人工審核</value></data>
+  <data name="Toggle.Auto" xml:space="preserve"><value>自動審核</value></data>
   <data name="Toggle.Enabled" xml:space="preserve"><value>啟用</value></data>
   <data name="Toggle.Disabled" xml:space="preserve"><value>停用</value></data>
   <data name="Toggle.Switch" xml:space="preserve"><value>開關</value></data>
-  <data name="ApprovalSettings.Description" xml:space="preserve"><value>控制各單據類型的審核流程。啟用後，相關單據需經審核才能生效。</value></data>
+  <data name="ApprovalSettings.Description" xml:space="preserve"><value>人工審核模式下，單據需經人工確認後才能執行後續操作；自動審核模式下，系統儲存時自動確認</value></data>
+  <data name="ApprovalSettings.HideApprovalInfoSection" xml:space="preserve"><value>隱藏審核資訊欄位（適用所有模組）</value></data>
+  <data name="ApprovalSettings.HideApprovalInfoSectionDesc" xml:space="preserve"><value>勾選後，所有單據編輯頁面將不顯示審核狀態、核准人員與核准時間等欄位</value></data>
 
   <!-- ===== SubAccount BatchCreate ===== -->
   <data name="SubAccount.BatchCreateTitle" xml:space="preserve"><value>批次補建子科目</value></data>

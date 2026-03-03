@@ -741,7 +741,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查是否啟用採購單審核
-                var isApprovalEnabled = await _systemParameterService.IsPurchaseOrderApprovalEnabledAsync();
+                var isApprovalEnabled = await _systemParameterService.IsPurchaseOrderManualApprovalAsync();
                 
                 // 建立查詢
                 var query = context.PurchaseOrders

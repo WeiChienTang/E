@@ -1167,14 +1167,14 @@
   <!-- ===== Approval Settings Tab keys ===== -->
   <data name="Tab.ApprovalSettings" xml:space="preserve"><value>审核管理</value></data>
   <data name="Section.ApprovalSettings" xml:space="preserve"><value>审核流程设置</value></data>
-  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>启用报价单审核</value></data>
-  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>启用采购单审核</value></data>
-  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>启用进货单审核</value></data>
-  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>启用进货退回审核</value></data>
-  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>启用销货单审核</value></data>
-  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>启用销货退回审核</value></data>
-  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>启用销货出货审核</value></data>
-  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>启用库存调拨审核</value></data>
+  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>报价单审核方式</value></data>
+  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>采购订单审核方式</value></data>
+  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>进货单审核方式</value></data>
+  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>进货退回审核方式</value></data>
+  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>销货订单审核方式</value></data>
+  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>销货退回审核方式</value></data>
+  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>出货单审核方式</value></data>
+  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>库存调拨审核方式</value></data>
   <!-- ===== FormSectionNames keys ===== -->
   <data name="Section.BasicInfo" xml:space="preserve"><value>基本信息</value></data>
   <data name="Section.FilterConditions" xml:space="preserve"><value>筛选条件</value></data>
@@ -1238,6 +1238,7 @@
   <data name="Dashboard.NoItems" xml:space="preserve"><value>目前没有可新增的{0}</value></data>
   <data name="Placeholder.SearchWidgets" xml:space="preserve"><value>搜索名称、描述或分类...</value></data>
   <data name="Dashboard.RemoveShortcut" xml:space="preserve"><value>移除快捷方式</value></data>
+  <data name="Dashboard.AlreadyAdded" xml:space="preserve"><value>已添加</value></data>
   <data name="Dashboard.SelectIcon" xml:space="preserve"><value>选择面板图标</value></data>
   <data name="Dashboard.ApplyIcon" xml:space="preserve"><value>套用选取的图标</value></data>
   <data name="Dashboard.CurrentSelection" xml:space="preserve"><value>当前选择</value></data>
@@ -1584,6 +1585,9 @@
   <data name="Home.DeleteThisPanelTooltip" xml:space="preserve"><value>删除此区块</value></data>
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>编辑此区块</value></data>
   <data name="Home.Create" xml:space="preserve"><value>创建</value></data>
+  <data name="Home.WelcomeMessage" xml:space="preserve"><value>你好，{0}</value></data>
+  <data name="Home.NoPanelItemsHint" xml:space="preserve"><value>点击编辑按钮开始自定义此区块</value></data>
+  <data name="Home.NoPanelsHint" xml:space="preserve"><value>创建您的第一个区块，开始自定义工作区</value></data>
 
   <!-- ===== Message - Home 操作 ===== -->
   <data name="Message.LoadHomeFailed" xml:space="preserve"><value>加载首页配置失败</value></data>
@@ -1809,6 +1813,8 @@
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>确认移除</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>清除明细</value></data>
   <data name="Button.DisableAccount" xml:space="preserve"><value>停用账号</value></data>
+  <data name="Button.SetAllManual" xml:space="preserve"><value>全部人工审核</value></data>
+  <data name="Button.SetAllAuto" xml:space="preserve"><value>全部自动审核</value></data>
   <data name="Button.EnableAll" xml:space="preserve"><value>全部启用</value></data>
   <data name="Button.DisableAll" xml:space="preserve"><value>全部停用</value></data>
   <data name="Button.OpenEdit" xml:space="preserve"><value>打开编辑</value></data>
@@ -2768,10 +2774,14 @@
   <data name="AccountLevel.L2" xml:space="preserve"><value>第2层（子分类）</value></data>
   <data name="AccountLevel.L3" xml:space="preserve"><value>第3层（中分类）</value></data>
   <data name="AccountLevel.L4" xml:space="preserve"><value>第4层（明细科目）</value></data>
+  <data name="Toggle.Manual" xml:space="preserve"><value>人工审核</value></data>
+  <data name="Toggle.Auto" xml:space="preserve"><value>自动审核</value></data>
   <data name="Toggle.Enabled" xml:space="preserve"><value>启用</value></data>
   <data name="Toggle.Disabled" xml:space="preserve"><value>停用</value></data>
   <data name="Toggle.Switch" xml:space="preserve"><value>开关</value></data>
-  <data name="ApprovalSettings.Description" xml:space="preserve"><value>控制各单据类型的审核流程。启用后，相关单据需经审核才能生效。</value></data>
+  <data name="ApprovalSettings.Description" xml:space="preserve"><value>人工审核模式下，单据需经人工确认后才能执行后续操作；自动审核模式下，系统保存时自动确认</value></data>
+  <data name="ApprovalSettings.HideApprovalInfoSection" xml:space="preserve"><value>隐藏审核信息字段（适用所有模块）</value></data>
+  <data name="ApprovalSettings.HideApprovalInfoSectionDesc" xml:space="preserve"><value>勾选后，所有单据编辑页面将不显示审核状态、审核人员与审核时间等字段</value></data>
   <data name="SubAccount.BatchCreateTitle" xml:space="preserve"><value>批量补建子科目</value></data>
   <data name="SubAccount.BatchCreateDesc" xml:space="preserve"><value>为现有客户、供应商、商品补建子科目（已有子科目者略过）。执行前请先确认上方统制科目代码设置正确并已保存。</value></data>
   <data name="SubAccount.CreateCustomer" xml:space="preserve"><value>补建客户</value></data>

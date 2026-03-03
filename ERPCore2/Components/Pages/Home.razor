@@ -37,6 +37,33 @@
     }
     else
     {
+        @* ==================== 歡迎區塊 ==================== *@
+        <div class="welcome-banner mb-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h4 class="welcome-title mb-1">
+                        <i class="bi bi-hand-wave me-2"></i>@string.Format(L["Home.WelcomeMessage"], currentUserName)
+                    </h4>
+                    <p class="welcome-subtitle mb-0">
+                        @DateTime.Now.ToString("yyyy/MM/dd dddd")
+                        @if (primaryCompany != null)
+                        {
+                            <span class="ms-2">·</span>
+                            <span class="ms-2">@primaryCompany.CompanyName</span>
+                        }
+                    </p>
+                </div>
+                <div class="d-none d-md-flex align-items-center gap-2">
+                    <GenericButtonComponent Variant="ButtonVariant.Orange"
+                                            Size="ButtonSize.Small"
+                                            IconClass="bi bi-arrow-counterclockwise"
+                                            Text="@L["Home.RestoreDefault"]"
+                                            Title="@L["Home.RestoreDefaultTooltip"]"
+                                            OnClick="@HandleResetAllToDefault" />
+                </div>
+            </div>
+        </div>
+
         @* ==================== 動態區塊列表 ==================== *@
         @foreach (var panelWithItems in panels)
         {
@@ -45,8 +72,8 @@
 
             <div class="dashboard-panel mb-4">
                 @* 區塊標題列 *@
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0 fw-bold">
+                <div class="panel-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold d-flex align-items-center">
                         @if (isEditMode)
                         {
                             <span class="panel-icon-edit me-2" 
@@ -102,17 +129,15 @@
                     </div>
                 </div>
 
-                <hr class="mt-2 mb-3" />
-
                 @* 區塊內容 *@
                 @if (panelWithItems.Items.Any())
                 {
-                    <div class="row g-3">
+                    <div class="row g-3 panel-content">
                         @foreach (var configWithNav in panelWithItems.Items)
                         {
                             var capturedConfig = configWithNav;
                             var capturedPanelId = panel.Id;
-                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4"
+                            <div class="col-xl-2 col-lg-2 col-md-3 col-sm-4 col-4"
                                  draggable="@(isEditMode ? "true" : "false")"
                                  @ondragstart="@(() => HandleDragStart(capturedConfig, capturedPanelId))"
                                  @ondragover:preventDefault="true"
@@ -128,7 +153,7 @@
 
                         @if (isEditMode)
                         {
-                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4">
+                            <div class="col-xl-2 col-lg-2 col-md-3 col-sm-4 col-4">
                                 <div class="add-shortcut-card" @onclick="@(() => OpenWidgetPicker(panel.Id))">
                                     <i class="bi bi-plus-circle"></i>
                                     <span>@L["Home.AddItem"]</span>
@@ -139,13 +164,18 @@
                 }
                 else
                 {
-                    <div class="text-center py-4">
-                        <i class="bi bi-grid-1x2 text-muted" style="font-size: 2.5rem;"></i>
-                        <p class="text-muted mt-3 mb-2">@L["Home.NoPanelItems"]</p>
+                    <div class="empty-panel-state">
+                        <div class="empty-panel-icons">
+                            <i class="bi bi-grid"></i>
+                            <i class="bi bi-plus-lg empty-panel-plus"></i>
+                        </div>
+                        <p class="text-muted mt-3 mb-1">@L["Home.NoPanelItems"]</p>
+                        <p class="text-muted small mb-2">@L["Home.NoPanelItemsHint"]</p>
                         @if (isEditMode)
                         {
                             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                                     Size="ButtonSize.Small"
+                                                    IconClass="bi bi-plus-lg"
                                                     Text="@L["Home.AddItem"]"
                                                     OnClick="@(() => OpenWidgetPicker(panel.Id))" />
                         }
@@ -154,39 +184,47 @@
             </div>
         }
 
-        @* 區塊管理按鈕區 *@
-        <div class="text-center mt-4 mb-4">
-            @if (panels.Count < DashboardDefaults.MaxPanelCount)
-            {
-                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                        Size="ButtonSize.Normal"
-                                        Text="@L["Home.AddPanel"]"
-                                        OnClick="@HandleCreatePanel" />
-            }
+        @* 區塊管理按鈕區 - 採用面板風格 *@
+        @if (panels.Count < DashboardDefaults.MaxPanelCount)
+        {
+            <div class="add-panel-card mb-4" @onclick="HandleCreatePanel">
+                <i class="bi bi-plus-circle"></i>
+                <span>@L["Home.AddPanel"]</span>
+            </div>
+        }
+
+        @* 行動版恢復預設按鈕 *@
+        <div class="d-md-none text-center mb-4">
             <GenericButtonComponent Variant="ButtonVariant.Orange"
-                                    Size="ButtonSize.Normal"
+                                    Size="ButtonSize.Small"
+                                    IconClass="bi bi-arrow-counterclockwise"
                                     Text="@L["Home.RestoreDefault"]"
                                     Title="@L["Home.RestoreDefaultTooltip"]"
-                                    CssClass="ms-2"
                                     OnClick="@HandleResetAllToDefault" />
         </div>
 
         @* 沒有任何區塊時的空狀態 *@
         @if (!panels.Any())
         {
-            <div class="text-center py-5">
-                <i class="bi bi-grid text-muted" style="font-size: 4rem;"></i>
-                <p class="text-muted mt-3 mb-3">@L["Home.NoPanels"]</p>
-                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                        Size="ButtonSize.Normal"
-                                        IconClass="bi bi-plus-lg"
-                                        Text="@L["Home.CreateFirstPanel"]"
-                                        OnClick="@HandleCreatePanel" />
-                <GenericButtonComponent Variant="ButtonVariant.Orange"
-                                        Size="ButtonSize.Normal"
-                                        Text="@L["Home.RestoreDefault"]"
-                                        CssClass="ms-2"
-                                        OnClick="@HandleResetAllToDefault" />
+            <div class="global-empty-state">
+                <div class="empty-state-illustration">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                    <i class="bi bi-cursor empty-state-cursor"></i>
+                </div>
+                <h5 class="text-muted mt-3 mb-2">@L["Home.NoPanels"]</h5>
+                <p class="text-muted small mb-3">@L["Home.NoPanelsHint"]</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                            Size="ButtonSize.Normal"
+                                            IconClass="bi bi-plus-lg"
+                                            Text="@L["Home.CreateFirstPanel"]"
+                                            OnClick="@HandleCreatePanel" />
+                    <GenericButtonComponent Variant="ButtonVariant.Orange"
+                                            Size="ButtonSize.Normal"
+                                            IconClass="bi bi-arrow-counterclockwise"
+                                            Text="@L["Home.RestoreDefault"]"
+                                            OnClick="@HandleResetAllToDefault" />
+                </div>
             </div>
         }
     }
@@ -284,6 +322,7 @@
 @code {
     // ===== 狀態欄位 =====
     private int currentEmployeeId = 0;
+    private string currentUserName = "";
     private bool isLoading = true;
 
     // 公司資料
@@ -335,6 +374,9 @@
     {
         // 載入預設公司資料
         await LoadPrimaryCompanyAsync();
+
+        // 載入使用者名稱
+        currentUserName = await CurrentUserHelper.GetCurrentUserFullNameAsync(AuthenticationStateProvider);
 
         var employeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
 

@@ -2,7 +2,9 @@
 @using ERPCore2.Components.Shared.UI.Auth
 @using ERPCore2.Services
 @inject INavigationPermissionCollector PermissionCollector
+@inject NavigationManager NavigationManager
 @inject ILogger<NavMenuItem> Logger
+@implements IDisposable
 
 <div class="nav-item px-3">
     @if (HasDropdownItems)
@@ -22,7 +24,7 @@
                         <span class="nav-menu-item-text">@Text</span>
                         @if (ShowDropdownArrow)
                         {
-                            <span class="nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")">▼</span>
+                            <span class="bi bi-chevron-down nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")"></span>
                         }
                     </div>
                     <div class="nav-menu-dropdown-content @(isDropdownOpen ? "show" : "")">
@@ -40,7 +42,7 @@
                     <span class="nav-menu-item-text">@Text</span>
                     @if (ShowDropdownArrow)
                     {
-                        <span class="nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")">▼</span>
+                        <span class="bi bi-chevron-down nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")"></span>
                     }
                 </div>
                 <div class="nav-menu-dropdown-content @(isDropdownOpen ? "show" : "")">
@@ -52,7 +54,7 @@
     else
     {
         <!-- 簡單連結 -->
-        <a class="nav-menu-nav-link" href="@Url" @onclick="OnNavLinkClick">
+        <a class="nav-menu-nav-link @(IsActive ? "active" : "")" href="@Url" @onclick="OnNavLinkClick">
             <span class="@IconClass" aria-hidden="true"></span> @Text
         </a>
     }
@@ -102,6 +104,11 @@
     private bool isDropdownOpen = false;
     private string GeneratedMenuKey => MenuKey ?? $"menu_{Text.Replace(" ", "_")}";
 
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
     protected override void OnParametersSet()
     {
         if (AutoDetectPermissions && HasDropdownItems)
@@ -147,5 +154,29 @@
         var result = permissions.Length > 0 ? permissions : new[] { "___NO_PERMISSIONS___" };
             
         return result;
+    }
+
+    /// <summary>
+    /// 判斷目前連結是否為當前頁面
+    /// </summary>
+    private bool IsActive
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(Url)) return false;
+            var relativePath = "/" + NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+            return string.Equals(relativePath.TrimEnd('/'), Url.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)
+                || (Url == "/" && relativePath == "/");
+        }
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }

@@ -194,7 +194,8 @@
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
     
     // ===== 審核開關狀態 =====
-    private bool isApprovalEnabled = false; // 是否啟用進貨單審核功能（從系統參數載入）
+    private bool isManualApproval = false; // 是否使用人工審核（false=系統自動審核，true=人工審核）
+    private bool showApprovalSection = true; // 是否顯示審核資訊欄位（false=隱藏，true=顯示）
 
     // ===== 建構函數 =====
     public PurchaseReceivingEditModalComponent()
@@ -209,8 +210,9 @@
         try
         {
             // 載入審核開關設定（優先執行,影響後續邏輯）
-            isApprovalEnabled = await SystemParameterService.IsPurchaseReceivingApprovalEnabledAsync();
-            
+            isManualApproval = await SystemParameterService.IsPurchaseReceivingManualApprovalAsync();
+            showApprovalSection = !await SystemParameterService.IsApprovalInfoHiddenAsync();
+
             // 使用 ModalManagerInitHelper 初始化 Modal 管理器
             modalManagers = ModalManagerInitHelper.CreateBuilder<PurchaseReceiving, IPurchaseReceivingService>(
                     () => editModalComponent,
@@ -288,7 +290,7 @@
             }
 
             // 審核檢查：如啟用審核，必須先審核通過才能轉單
-            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isManualApproval, editModalComponent.Entity.IsApproved))
             {
                 await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
                 return;
@@ -360,7 +362,7 @@
             }
 
             // 審核檢查：如啟用審核，必須先審核通過才能轉單
-            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isManualApproval, editModalComponent.Entity.IsApproved))
             {
                 await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
                 return;
@@ -447,7 +449,7 @@
     {
         if (!isDetailDataReady) return;
 
-        if (isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)
+        if (isManualApproval && editModalComponent?.Entity?.IsApproved == true)
         {
             <GenericLockedFieldMessage IsVisible="true"
                                       Message="@EditModalMessages.ApprovedWarning"
@@ -568,9 +570,13 @@
             
             //  一次性載入系統稅率（避免每次計算都查詢資料庫）
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
-            
+
+            // 重新載入審核開關設定（確保每次開啟 Modal 時使用最新值）
+            isManualApproval = await SystemParameterService.IsPurchaseReceivingManualApprovalAsync();
+            showApprovalSection = !await SystemParameterService.IsApprovalInfoHiddenAsync();
+
             taxCalculationMethodOptions = TaxCalculationHelper.GetTaxMethodOptions();
-            
+
             //  在所有資料載入完成後建立 AutoComplete 配置
             // 確保 suppliers、purchaseOrders 和 products 都已載入
             autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseReceiving>()
@@ -919,7 +925,7 @@
                 },
                 new FormFieldDefinition()
                 {
-                    PropertyName = "ApprovedByUser.Name",
+                    PropertyName = "ApprovedByDisplayName",
                     Label = L["Approval.ApprovedBy"],
                     FieldType = FormFieldType.Text,
                     IsReadOnly = true,
@@ -959,10 +965,10 @@
                     pr => pr.PurchaseReceivingTotalAmountIncludingTax)
                 .AddToSection(FormSectionNames.OtherInfo,
                     pr => pr.Remarks)
-                .AddCustomFieldsIf(isApprovalEnabled && PurchaseReceivingId.HasValue && PurchaseReceivingId.Value > 0,
+                .AddCustomFieldsIf(showApprovalSection && PurchaseReceivingId.HasValue && PurchaseReceivingId.Value > 0,
                     FormSectionNames.ApprovalInfo,
                     "ApprovalStatusText",
-                    "ApprovedByUser.Name",
+                    "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(PurchaseReceiving.RejectReason))
                 .Build();
@@ -1342,7 +1348,7 @@
         try
         {
             // 審核後不允許儲存
-            if (!ApprovalConfigHelper.CanSaveWhenApproved(isApprovalEnabled, purchaseReceiving.IsApproved))
+            if (!ApprovalConfigHelper.CanSaveWhenApproved(isManualApproval, purchaseReceiving.IsApproved))
             {
                 await NotificationService.ShowWarningAsync("進貨單已核准，無法修改");
                 return false;
@@ -1522,6 +1528,10 @@
                 }
             }
 
+            // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
+            if (!isManualApproval && !purchaseReceiving.IsApproved)
+                await PurchaseReceivingService.ApproveAsync(purchaseReceiving.Id, null);
+
             StateHasChanged(); // 通知UI更新
         }
         catch (Exception ex)
@@ -1609,7 +1619,7 @@
                                     ShowWarehouseLocation="true"
                                     Warehouses="@warehouses"
                                     WarehouseLocations="@warehouseLocations"
-                                    IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)" />
+                                    IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)" />
         </DetailSectionWrapper>
     };
     
@@ -1768,12 +1778,12 @@
     // ===== 審核相關方法 =====
 
     private bool ShouldShowApprovalSection()
-        => isApprovalEnabled && PurchaseReceivingId.HasValue && PurchaseReceivingId.Value > 0;
+        => isManualApproval && PurchaseReceivingId.HasValue && PurchaseReceivingId.Value > 0;
 
     private Func<bool>? GetCanPrintCheck()
-        => isApprovalEnabled
+        => isManualApproval
             ? () => ApprovalConfigHelper.CanPerformActionRequiringApproval(
-                  isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false)
+                  isManualApproval, editModalComponent?.Entity?.IsApproved ?? false)
             : null;
 
     private async Task<bool> HandlePurchaseReceivingApprove()

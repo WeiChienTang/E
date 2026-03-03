@@ -208,87 +208,96 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 統一的審核開關查詢
+        /// 統一的審核模式查詢（false=系統自動審核，true=人工審核）
         /// </summary>
-        public async Task<bool> IsApprovalEnabledAsync(ApprovalType approvalType)
+        public async Task<bool> IsManualApprovalAsync(ApprovalType approvalType)
         {
             try
             {
                 var parameter = await GetCachedSystemParameterAsync();
-                if (parameter == null) return false; // 安全預設：找不到參數時不啟用審核
+                if (parameter == null) return false; // 安全預設：找不到參數時使用自動審核
 
                 return approvalType switch
                 {
-                    ApprovalType.Quotation => parameter.EnableQuotationApproval,
-                    ApprovalType.PurchaseOrder => parameter.EnablePurchaseOrderApproval,
-                    ApprovalType.PurchaseReceiving => parameter.EnablePurchaseReceivingApproval,
-                    ApprovalType.PurchaseReturn => parameter.EnablePurchaseReturnApproval,
-                    ApprovalType.SalesOrder => parameter.EnableSalesOrderApproval,
-                    ApprovalType.SalesReturn => parameter.EnableSalesReturnApproval,
-                    ApprovalType.SalesDelivery => parameter.EnableSalesDeliveryApproval,
-                    ApprovalType.InventoryTransfer => parameter.EnableInventoryTransferApproval,
+                    ApprovalType.Quotation => parameter.QuotationManualApproval,
+                    ApprovalType.PurchaseOrder => parameter.PurchaseOrderManualApproval,
+                    ApprovalType.PurchaseReceiving => parameter.PurchaseReceivingManualApproval,
+                    ApprovalType.PurchaseReturn => parameter.PurchaseReturnManualApproval,
+                    ApprovalType.SalesOrder => parameter.SalesOrderManualApproval,
+                    ApprovalType.SalesReturn => parameter.SalesReturnManualApproval,
+                    ApprovalType.SalesDelivery => parameter.SalesDeliveryManualApproval,
+                    ApprovalType.InventoryTransfer => parameter.InventoryTransferManualApproval,
                     _ => false
                 };
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsApprovalEnabledAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsManualApprovalAsync), GetType(), _logger, new
                 {
-                    Method = nameof(IsApprovalEnabledAsync),
+                    Method = nameof(IsManualApprovalAsync),
                     ServiceType = GetType().Name,
                     ApprovalType = approvalType
                 });
-                return false; // 發生錯誤時預設不啟用審核
+                return false; // 發生錯誤時預設使用自動審核
             }
         }
 
         /// <summary>
-        /// 檢查報價單是否需要審核
+        /// 報價單是否使用人工審核
         /// </summary>
-        public async Task<bool> IsQuotationApprovalEnabledAsync()
-            => await IsApprovalEnabledAsync(ApprovalType.Quotation);
+        public async Task<bool> IsQuotationManualApprovalAsync()
+            => await IsManualApprovalAsync(ApprovalType.Quotation);
 
         /// <summary>
-        /// 檢查採購單是否需要審核
+        /// 採購訂單是否使用人工審核
         /// </summary>
-        public async Task<bool> IsPurchaseOrderApprovalEnabledAsync()
-            => await IsApprovalEnabledAsync(ApprovalType.PurchaseOrder);
+        public async Task<bool> IsPurchaseOrderManualApprovalAsync()
+            => await IsManualApprovalAsync(ApprovalType.PurchaseOrder);
 
         /// <summary>
-        /// 檢查進貨單是否需要審核
+        /// 進貨單是否使用人工審核
         /// </summary>
-        public async Task<bool> IsPurchaseReceivingApprovalEnabledAsync()
-            => await IsApprovalEnabledAsync(ApprovalType.PurchaseReceiving);
+        public async Task<bool> IsPurchaseReceivingManualApprovalAsync()
+            => await IsManualApprovalAsync(ApprovalType.PurchaseReceiving);
 
         /// <summary>
-        /// 檢查進貨退回是否需要審核
+        /// 進貨退回是否使用人工審核
         /// </summary>
-        public async Task<bool> IsPurchaseReturnApprovalEnabledAsync()
-            => await IsApprovalEnabledAsync(ApprovalType.PurchaseReturn);
+        public async Task<bool> IsPurchaseReturnManualApprovalAsync()
+            => await IsManualApprovalAsync(ApprovalType.PurchaseReturn);
 
         /// <summary>
-        /// 檢查銷貨單是否需要審核
+        /// 銷貨訂單是否使用人工審核
         /// </summary>
-        public async Task<bool> IsSalesOrderApprovalEnabledAsync()
-            => await IsApprovalEnabledAsync(ApprovalType.SalesOrder);
+        public async Task<bool> IsSalesOrderManualApprovalAsync()
+            => await IsManualApprovalAsync(ApprovalType.SalesOrder);
 
         /// <summary>
-        /// 檢查銷貨退回是否需要審核
+        /// 銷貨退回是否使用人工審核
         /// </summary>
-        public async Task<bool> IsSalesReturnApprovalEnabledAsync()
-            => await IsApprovalEnabledAsync(ApprovalType.SalesReturn);
+        public async Task<bool> IsSalesReturnManualApprovalAsync()
+            => await IsManualApprovalAsync(ApprovalType.SalesReturn);
 
         /// <summary>
-        /// 檢查銷貨出貨單是否需要審核
+        /// 出貨單是否使用人工審核
         /// </summary>
-        public async Task<bool> IsSalesDeliveryApprovalEnabledAsync()
-            => await IsApprovalEnabledAsync(ApprovalType.SalesDelivery);
+        public async Task<bool> IsSalesDeliveryManualApprovalAsync()
+            => await IsManualApprovalAsync(ApprovalType.SalesDelivery);
 
         /// <summary>
-        /// 檢查庫存調撥是否需要審核
+        /// 庫存調撥是否使用人工審核
         /// </summary>
-        public async Task<bool> IsInventoryTransferApprovalEnabledAsync()
-            => await IsApprovalEnabledAsync(ApprovalType.InventoryTransfer);
+        public async Task<bool> IsInventoryTransferManualApprovalAsync()
+            => await IsManualApprovalAsync(ApprovalType.InventoryTransfer);
+
+        /// <summary>
+        /// 是否隱藏所有模組的審核資訊欄位（false=顯示，true=隱藏）
+        /// </summary>
+        public async Task<bool> IsApprovalInfoHiddenAsync()
+        {
+            var parameter = await GetCachedSystemParameterAsync();
+            return parameter?.HideApprovalInfoSection ?? false;
+        }
 
         // ===== 恢復預設 =====
 

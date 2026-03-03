@@ -1,63 +1,58 @@
-/* Toast 通知樣式 - 創新滑入式側邊通知 */
+/* Toast 通知樣式 */
 .toast-container-slide {
     z-index: 9999;
-    pointer-events: none; /* 容器本身不接收事件 */
+    pointer-events: none;
 }
 
-/* 滑入式 Toast 基本樣式 */
+/* ══ 基礎 Toast ══ */
 .toast-slide {
-    background: white;
+    background: var(--bg-primary);
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    margin-bottom: 12px;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 10px;
     overflow: hidden;
-    transform: translateX(100%);
-    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform: translateX(110%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
     opacity: 0;
-    border-left: 4px solid;
+    border-left: 4px solid transparent;
     position: relative;
-    max-width: 320px;
-    pointer-events: auto; /* 確保可以接收事件 */
+    max-width: 300px;
+    pointer-events: auto;
 }
 
-/* 滑入動畫 */
 .toast-slide.slide-in {
     transform: translateX(0);
     opacity: 1;
 }
 
-/* 滑出動畫 */
 .toast-slide.slide-out {
-    transform: translateX(100%);
+    transform: translateX(110%);
     opacity: 0;
+    transition-duration: 0.25s;
 }
 
-/* 緊湊視圖 */
+/* ══ 緊湊視圖 ══ */
 .toast-slide-compact {
     display: flex;
     align-items: center;
-    padding: 16px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+    padding: 12px 14px;
+    transition: background-color 0.15s ease;
 }
 
-.toast-slide-compact:hover {
-    background-color: rgba(0, 0, 0, 0.02);
-}
-
-/* 圖示區域 */
+/* ══ 圖示（圓形底色）══ */
 .toast-slide-icon {
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 12px;
-    font-size: 16px;
+    margin-right: 10px;
+    font-size: 14px;
+    border-radius: 50%;
 }
 
-/* 內容區域 */
+/* ══ 內容區域 ══ */
 .toast-slide-content {
     flex: 1;
     min-width: 0;
@@ -65,32 +60,38 @@
 
 .toast-slide-title {
     font-weight: 600;
-    font-size: 14px;
-    line-height: 1.2;
-    margin-bottom: 2px;
-    color: #1f2937;
+    font-size: 13px;
+    line-height: 1.3;
+    margin-bottom: 1px;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .toast-slide-message {
-    font-size: 13px;
-    line-height: 1.3;
-    color: #6b7280;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     word-break: break-word;
 }
 
-/* 操作按鈕區域 */
+/* ══ 操作按鈕 ══ */
 .toast-slide-actions {
     display: flex;
     flex-shrink: 0;
-    gap: 4px;
+    gap: 2px;
     margin-left: 8px;
 }
 
 .toast-slide-expand,
 .toast-slide-close,
 .toast-slide-collapse {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border: none;
     background: none;
     border-radius: 6px;
@@ -98,56 +99,57 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
-    color: #9ca3af;
-    font-size: 12px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    color: var(--text-light);
+    font-size: 11px;
+    flex-shrink: 0;
 }
 
 .toast-slide-expand:hover,
 .toast-slide-collapse:hover {
-    background-color: #f3f4f6;
-    color: #4b5563;
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary-hover);
 }
 
 .toast-slide-close:hover {
-    background-color: #fee2e2;
-    color: #dc2626;
+    background-color: var(--alert-danger-bg);
+    color: var(--danger-color);
 }
 
-/* 展開視圖 */
+/* ══ 展開視圖 ══ */
 .toast-slide-expanded {
     display: none;
-    padding: 20px;
-    border-top: 1px solid #f3f4f6;
-    background-color: #fafafa;
+    padding: 14px;
+    border-top: 1px solid var(--border-light);
+    background-color: var(--bg-secondary);
 }
 
 .toast-slide.expanded .toast-slide-compact {
-    border-bottom: 1px solid #f3f4f6;
-    background-color: #f9fafb;
+    border-bottom: 1px solid var(--border-light);
+    background-color: var(--bg-secondary);
 }
 
 .toast-slide.expanded .toast-slide-expanded {
     display: block;
-    animation: expandDown 0.3s ease-out;
+    animation: expandDown 0.2s ease-out;
 }
 
 .toast-slide-expanded-content {
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
 
 .toast-slide-expanded-title {
     font-weight: 600;
-    font-size: 15px;
+    font-size: 13px;
     line-height: 1.4;
-    margin-bottom: 8px;
-    color: #1f2937;
+    margin-bottom: 6px;
+    color: var(--text-primary);
 }
 
 .toast-slide-expanded-message {
-    font-size: 14px;
-    line-height: 1.5;
-    color: #4b5563;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-secondary);
     word-break: break-word;
     white-space: pre-wrap;
 }
@@ -158,40 +160,134 @@
     gap: 8px;
 }
 
-/* 不同類型的配色 */
+/* ══ 進度條 ══ */
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    transform-origin: left;
+    animation-name: toastProgress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    animation-play-state: paused; /* JS 啟動後才開始跑 */
+    border-radius: 0 0 0 8px;
+}
+
+@keyframes toastProgress {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}
+
+/* ══════════════════════════════════════
+   TYPE: SUCCESS → 小藥丸 (Pill)
+   ══════════════════════════════════════ */
 .toast-slide-success {
-    border-left-color: #10b981;
+    border-left: none;
+    border-radius: 100px;
+    border: 1.5px solid rgba(var(--success-color-rgb), 0.3);
+    background: rgba(var(--success-color-rgb), 0.07);
+    max-width: 260px;
+    box-shadow: var(--shadow-md);
+}
+
+.toast-slide-success .toast-slide-compact {
+    padding: 9px 14px;
+    cursor: default;
 }
 
 .toast-slide-success .toast-slide-icon {
-    color: #10b981;
+    width: 22px;
+    height: 22px;
+    font-size: 13px;
+    background: rgba(var(--success-color-rgb), 0.18);
+    color: var(--success-color);
+    margin-right: 8px;
 }
 
+.toast-slide-success .toast-slide-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--success-color);
+}
+
+.toast-slide-success .toast-slide-message {
+    color: var(--text-secondary);
+}
+
+/* 成功 Toast：沒有展開/關閉按鈕 */
+.toast-slide-success .toast-slide-actions {
+    display: none;
+}
+
+.toast-slide-success .toast-progress {
+    background: rgba(var(--success-color-rgb), 0.45);
+    border-radius: 0 0 100px 100px;
+    height: 2px;
+}
+
+/* ══════════════════════════════════════
+   TYPE: ERROR → 展開顯示、不自動消失
+   ══════════════════════════════════════ */
 .toast-slide-error {
-    border-left-color: #ef4444;
+    border-left-color: var(--danger-color);
+    max-width: 320px;
 }
 
 .toast-slide-error .toast-slide-icon {
-    color: #ef4444;
+    background: rgba(var(--danger-color-rgb), 0.12);
+    color: var(--danger-color);
 }
 
+/* Error 起始就展開，compact 當作標題列使用 */
+.toast-slide-error .toast-slide-compact {
+    cursor: default;
+}
+
+/* Error 沒有展開按鈕（已展開）、沒有進度條（不自動消失） */
+.toast-slide-error .toast-slide-expand { display: none; }
+.toast-slide-error .toast-progress { display: none; }
+
+/* ══════════════════════════════════════
+   TYPE: WARNING → 可展開、4 秒消失
+   ══════════════════════════════════════ */
 .toast-slide-warning {
-    border-left-color: #f59e0b;
+    border-left-color: var(--warning-color);
+}
+
+.toast-slide-warning .toast-slide-compact {
+    cursor: pointer;
 }
 
 .toast-slide-warning .toast-slide-icon {
-    color: #f59e0b;
+    background: rgba(var(--warning-color-rgb), 0.12);
+    color: var(--warning-color);
 }
 
+.toast-slide-warning .toast-progress {
+    background: var(--warning-color);
+}
+
+/* ══════════════════════════════════════
+   TYPE: INFO → 3 秒消失、無展開
+   ══════════════════════════════════════ */
 .toast-slide-info {
-    border-left-color: #3b82f6;
+    border-left-color: var(--primary-blue);
 }
 
 .toast-slide-info .toast-slide-icon {
-    color: #3b82f6;
+    background: rgba(var(--primary-blue-rgb), 0.12);
+    color: var(--primary-blue);
 }
 
-/* 響應式調整 */
+.toast-slide-info .toast-slide-expand { display: none; }
+
+.toast-slide-info .toast-progress {
+    background: var(--primary-blue);
+}
+
+/* ══ 響應式 ══ */
 @media (max-width: 768px) {
     .toast-container-slide {
         bottom: 20px !important;
@@ -200,109 +296,69 @@
         left: 10px !important;
         transform: none !important;
         width: auto !important;
-        max-width: calc(100vw - 20px) !important; /* 確保不超過螢幕寬度 */
+        max-width: calc(100vw - 20px) !important;
     }
-    
+
     .toast-slide {
         max-width: none;
-        width: 100%; /* 填滿容器寬度 */
+        width: 100%;
     }
-    
+
+    .toast-slide-success {
+        max-width: none;
+    }
+
     .toast-slide-compact {
-        padding: 14px;
-    }
-    
-    .toast-slide-title {
-        font-size: 13px;
-    }
-    
-    .toast-slide-message {
-        font-size: 12px;
+        padding: 10px 12px;
     }
 }
 
 @media (max-width: 480px) {
     .toast-container-slide {
         bottom: 15px !important;
-        top: auto !important;
         right: 8px !important;
         left: 8px !important;
-        transform: none !important;
-        max-width: calc(100vw - 16px) !important; /* 確保不超過螢幕寬度 */
+        max-width: calc(100vw - 16px) !important;
     }
-    
+
     .toast-slide-icon {
-        width: 20px;
-        height: 20px;
-        font-size: 14px;
-    }
-    
-    .toast-slide-actions {
-        gap: 2px;
-    }
-    
-    .toast-slide-expand,
-    .toast-slide-close,
-    .toast-slide-collapse {
-        width: 24px;
-        height: 24px;
-        font-size: 11px;
+        width: 26px;
+        height: 26px;
+        font-size: 13px;
     }
 }
 
-/* 動畫效果 */
+/* ══ 動畫 ══ */
 @keyframes expandDown {
-    from {
-        opacity: 0;
-        max-height: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        max-height: 200px;
-        transform: translateY(0);
-    }
+    from { opacity: 0; max-height: 0; }
+    to   { opacity: 1; max-height: 400px; }
 }
 
-/* 滑動手勢支援 (觸控設備) */
+/* ══ 觸控支援 ══ */
 .toast-slide {
     touch-action: pan-x;
 }
 
-/* 無障礙優化 */
+/* ══ 無障礙：減少動效 ══ */
 @media (prefers-reduced-motion: reduce) {
     .toast-slide {
         transition: opacity 0.2s ease;
+        transform: none !important;
     }
-    
-    .toast-slide.slide-in {
-        transform: translateX(0);
-    }
-    
-    @keyframes expandDown {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
+
+    .toast-slide.slide-out {
+        opacity: 0;
     }
 }
 
-/* 高對比模式支援 */
+/* ══ 高對比模式 ══ */
 @media (prefers-contrast: high) {
     .toast-slide {
-        border: 2px solid;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        border: 2px solid currentColor;
+        box-shadow: none;
     }
-    
-    .toast-slide-title,
-    .toast-slide-expanded-title {
-        color: #000;
-    }
-    
-    .toast-slide-message,
-    .toast-slide-expanded-message {
-        color: #333;
+
+    .toast-slide-success {
+        border-radius: 8px;
     }
 }

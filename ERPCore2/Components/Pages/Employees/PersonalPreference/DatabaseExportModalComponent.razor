@@ -1,0 +1,539 @@
+@* 資料庫匯出工具 Modal — SuperAdmin 專用 *@
+@* 功能：選擇資料表（單選/多選/全選）→ 預覽 → 匯出為 Excel *@
+
+@using ERPCore2.Models.Import
+@using ERPCore2.Models.Export
+@using ERPCore2.Services.Export
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.JSInterop
+
+@inject IDatabaseExportService ExportService
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="@GetStepTitle()"
+                    Icon="bi bi-database-up"
+                    Size="BaseModalComponent.ModalSize.Desktop"
+                    HeaderColor="BaseModalComponent.HeaderVariant.Dark"
+                    IsLoading="@isLoading"
+                    LoadingMessage="@loadingMessage"
+                    OnClose="@HandleClose"
+                    DebugComponentName="DatabaseExportModalComponent">
+
+    <HeaderButtons>
+        <div class="d-flex gap-2 align-items-center">
+            @if (currentStep > 1 && currentStep < 3)
+            {
+                <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                        Size="ButtonSize.Small"
+                                        Text="上一步"
+                                        OnClick="HandlePrevStep"
+                                        IsDisabled="@isLoading" />
+            }
+            @if (currentStep == 1 && CanGoNext())
+            {
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                        Size="ButtonSize.Small"
+                                        Text="下一步"
+                                        OnClick="HandleNextStep"
+                                        IsDisabled="@isLoading" />
+            }
+            @if (currentStep == 2)
+            {
+                <GenericButtonComponent Variant="ButtonVariant.Green"
+                                        Size="ButtonSize.Small"
+                                        Text="執行匯出"
+                                        OnClick="HandleExecuteExport"
+                                        IsDisabled="@isLoading" />
+            }
+            @if (currentStep == 3)
+            {
+                @if (exportResult != null && exportResult.IsSuccess)
+                {
+                    <GenericButtonComponent Variant="ButtonVariant.Green"
+                                            Size="ButtonSize.Small"
+                                            Text="下載 Excel"
+                                            OnClick="HandleDownload"
+                                            IsDisabled="@isLoading" />
+                }
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                        Size="ButtonSize.Small"
+                                        Text="完成"
+                                        OnClick="HandleClose" />
+            }
+        </div>
+    </HeaderButtons>
+
+    <BodyContent>
+        <div class="database-export-wizard p-3">
+
+            @* ===== 步驟指示器 ===== *@
+            <div class="step-indicator mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    @for (int i = 1; i <= 3; i++)
+                    {
+                        var step = i;
+                        <div class="step-item @(step == currentStep ? "active" : step < currentStep ? "completed" : "")">
+                            <div class="step-circle">
+                                @if (step < currentStep)
+                                {
+                                    <i class="bi bi-check-lg"></i>
+                                }
+                                else
+                                {
+                                    @step
+                                }
+                            </div>
+                            <div class="step-label">@GetStepLabel(step)</div>
+                        </div>
+                        @if (step < 3)
+                        {
+                            <div class="step-connector @(step < currentStep ? "completed" : "")"></div>
+                        }
+                    }
+                </div>
+            </div>
+
+            @* ===== Step 1：選擇匯出資料表 ===== *@
+            @if (currentStep == 1)
+            {
+                <div class="step-content">
+                    <h6 class="mb-3"><i class="bi bi-table me-2"></i>選擇要匯出的資料表</h6>
+                    <p class="text-muted small mb-3">
+                        選擇要匯出為 Excel 的資料表。可單選、多選或全選。每個資料表會產生一個 Worksheet。
+                    </p>
+
+                    @* 操作按鈕列 *@
+                    <div class="d-flex gap-2 mb-3 align-items-center">
+                        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                                Size="ButtonSize.Small"
+                                                Text="全選"
+                                                OnClick="SelectAll" />
+                        <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                                Size="ButtonSize.Small"
+                                                Text="取消全選"
+                                                OnClick="DeselectAll" />
+                        <span class="text-muted small ms-2">
+                            已選擇 <strong>@selectedDbSetNames.Count</strong> / @allTables.Count 個資料表
+                        </span>
+                    </div>
+
+                    @* 搜尋 *@
+                    <div class="mb-3">
+                        <input type="text"
+                               class="form-control"
+                               placeholder="搜尋資料表名稱..."
+                               @bind="tableSearchText"
+                               @bind:event="oninput" />
+                    </div>
+
+                    @* 資料表清單（多選） *@
+                    <div class="table-select-list">
+                        @foreach (var table in GetFilteredTables())
+                        {
+                            var isSelected = selectedDbSetNames.Contains(table.DbSetName);
+                            <div class="table-select-item @(isSelected ? "selected" : "")"
+                                 @onclick="() => ToggleTableSelection(table.DbSetName)">
+                                <div class="d-flex align-items-center w-100">
+                                    <input type="checkbox"
+                                           class="form-check-input me-2"
+                                           checked="@isSelected"
+                                           @onclick:stopPropagation="true"
+                                           @onchange="() => ToggleTableSelection(table.DbSetName)" />
+                                    <i class="bi bi-table me-2"></i>
+                                    <span class="fw-bold">@table.DbSetName</span>
+                                    <span class="text-muted ms-2 small">(@table.EntityShortName)</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @* ===== Step 2：預覽確認 ===== *@
+            @if (currentStep == 2)
+            {
+                <div class="step-content">
+                    <h6 class="mb-3"><i class="bi bi-eye me-2"></i>匯出預覽確認</h6>
+                    <p class="text-muted small mb-3">
+                        確認要匯出的資料表與預估資料量。點擊「執行匯出」開始產生 Excel 檔案。
+                    </p>
+
+                    <div class="alert alert-info small py-2 mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        選取了 <strong>@selectedDbSetNames.Count</strong> 個資料表，
+                        預估共 <strong>@tableRowCounts.Values.Sum()</strong> 筆資料
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle preview-confirm-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 5%">#</th>
+                                    <th style="width: 35%">資料表名稱</th>
+                                    <th style="width: 25%">Entity</th>
+                                    <th style="width: 15%">欄位數</th>
+                                    <th style="width: 20%">資料筆數</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{ int rowIdx = 1; }
+                                @foreach (var dbSetName in selectedDbSetNames.OrderBy(n => n))
+                                {
+                                    var table = allTables.FirstOrDefault(t => t.DbSetName == dbSetName);
+                                    var rowCount = tableRowCounts.GetValueOrDefault(dbSetName, 0);
+                                    var colCount = tableColumnCounts.GetValueOrDefault(dbSetName, 0);
+                                    <tr>
+                                        <td class="text-muted text-center">@rowIdx</td>
+                                        <td><i class="bi bi-table me-1 text-muted"></i><strong>@dbSetName</strong></td>
+                                        <td class="text-muted">@(table?.EntityShortName ?? "-")</td>
+                                        <td class="text-center">@colCount</td>
+                                        <td class="text-center">
+                                            @if (rowCount > 0)
+                                            {
+                                                <span class="badge bg-primary">@rowCount.ToString("N0")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">0</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    rowIdx++;
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light fw-bold">
+                                    <td colspan="3" class="text-end">合計</td>
+                                    <td class="text-center">—</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-dark">@tableRowCounts.Values.Sum().ToString("N0")</span>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    @if (tableRowCounts.Values.Sum() > 10000)
+                    {
+                        <div class="alert alert-warning small py-2">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            資料量較大（超過 10,000 筆），匯出可能需要較長時間，請耐心等候。
+                        </div>
+                    }
+                </div>
+            }
+
+            @* ===== Step 3：匯出結果 ===== *@
+            @if (currentStep == 3)
+            {
+                <div class="step-content">
+                    @if (exportResult != null)
+                    {
+                        @if (exportResult.IsSuccess)
+                        {
+                            <div class="text-center py-4">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3 text-success">匯出成功！</h5>
+                                <p class="text-muted">
+                                    已匯出 <strong>@exportResult.TableCount</strong> 個資料表，
+                                    共 <strong>@exportResult.TotalRowCount.ToString("N0")</strong> 筆資料
+                                </p>
+                                <p class="text-muted small">
+                                    檔案大小：@FormatFileSize(exportResult.FileContent.Length)，
+                                    耗時 @exportResult.ElapsedTime.TotalSeconds.ToString("F1") 秒
+                                </p>
+                            </div>
+
+                            @if (exportResult.TableSummaries.Count > 0)
+                            {
+                                <div class="mt-3">
+                                    <h6 class="mb-2"><i class="bi bi-list-check me-2"></i>各資料表匯出摘要</h6>
+                                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                        <table class="table table-sm table-bordered small">
+                                            <thead class="table-secondary">
+                                                <tr>
+                                                    <th>Worksheet 名稱</th>
+                                                    <th>Entity</th>
+                                                    <th class="text-center">欄位數</th>
+                                                    <th class="text-center">資料筆數</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var summary in exportResult.TableSummaries)
+                                                {
+                                                    <tr>
+                                                        <td><strong>@summary.DbSetName</strong></td>
+                                                        <td class="text-muted">@summary.EntityShortName</td>
+                                                        <td class="text-center">@summary.ColumnCount</td>
+                                                        <td class="text-center">@summary.RowCount.ToString("N0")</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3 text-danger">匯出失敗</h5>
+                                <p class="text-muted">@exportResult.ErrorMessage</p>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+
+        </div>
+    </BodyContent>
+
+</BaseModalComponent>
+
+@code {
+    // ===== 參數 =====
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // ===== 精靈狀態 =====
+
+    private int currentStep = 1;
+    private bool isLoading = false;
+    private string loadingMessage = "處理中...";
+
+    // Step 1：選擇目標表
+    private List<EntityTableInfo> allTables = new();
+    private string tableSearchText = string.Empty;
+    private HashSet<string> selectedDbSetNames = new();
+
+    // Step 2：預覽資訊
+    private Dictionary<string, int> tableRowCounts = new();
+    private Dictionary<string, int> tableColumnCounts = new();
+
+    // Step 3：匯出結果
+    private ExportResult? exportResult;
+
+    // ===== 生命週期 =====
+
+    protected override void OnInitialized()
+    {
+        allTables = ExportService.GetEntityTableList();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!IsVisible)
+        {
+            ResetWizard();
+        }
+    }
+
+    // ===== 步驟控制 =====
+
+    private string GetStepTitle()
+    {
+        return currentStep switch
+        {
+            1 => "資料庫匯出 — 選擇資料表",
+            2 => "資料庫匯出 — 預覽確認",
+            3 => "資料庫匯出 — 匯出結果",
+            _ => "資料庫匯出"
+        };
+    }
+
+    private string GetStepLabel(int step)
+    {
+        return step switch
+        {
+            1 => "選表",
+            2 => "預覽",
+            3 => "結果",
+            _ => ""
+        };
+    }
+
+    private bool CanGoNext()
+    {
+        return currentStep switch
+        {
+            1 => selectedDbSetNames.Count > 0,
+            _ => false
+        };
+    }
+
+    private void HandlePrevStep()
+    {
+        if (currentStep > 1)
+        {
+            currentStep--;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleNextStep()
+    {
+        if (currentStep == 1)
+        {
+            // 進入 Step 2 前，查詢各表資料筆數
+            isLoading = true;
+            loadingMessage = "查詢資料筆數中...";
+            StateHasChanged();
+
+            try
+            {
+                tableRowCounts.Clear();
+                tableColumnCounts.Clear();
+
+                foreach (var dbSetName in selectedDbSetNames)
+                {
+                    var count = await ExportService.GetTableRowCountAsync(dbSetName);
+                    tableRowCounts[dbSetName] = count;
+
+                    var props = ExportService.GetExportableProperties(dbSetName);
+                    tableColumnCounts[dbSetName] = props.Count;
+                }
+            }
+            catch (Exception ex)
+            {
+                await NotificationService.ShowErrorAsync($"查詢資料筆數失敗：{ex.Message}");
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+
+        currentStep++;
+        StateHasChanged();
+    }
+
+    // ===== Step 1：選擇資料表 =====
+
+    private List<EntityTableInfo> GetFilteredTables()
+    {
+        if (string.IsNullOrWhiteSpace(tableSearchText))
+            return allTables;
+
+        return allTables.Where(t =>
+            t.DbSetName.Contains(tableSearchText, StringComparison.OrdinalIgnoreCase) ||
+            t.EntityShortName.Contains(tableSearchText, StringComparison.OrdinalIgnoreCase)
+        ).ToList();
+    }
+
+    private void ToggleTableSelection(string dbSetName)
+    {
+        if (!selectedDbSetNames.Remove(dbSetName))
+        {
+            selectedDbSetNames.Add(dbSetName);
+        }
+        StateHasChanged();
+    }
+
+    private void SelectAll()
+    {
+        var filtered = GetFilteredTables();
+        foreach (var table in filtered)
+        {
+            selectedDbSetNames.Add(table.DbSetName);
+        }
+        StateHasChanged();
+    }
+
+    private void DeselectAll()
+    {
+        selectedDbSetNames.Clear();
+        StateHasChanged();
+    }
+
+    // ===== Step 2 → 3：執行匯出 =====
+
+    private async Task HandleExecuteExport()
+    {
+        try
+        {
+            isLoading = true;
+            loadingMessage = "匯出中... 0%";
+            StateHasChanged();
+
+            exportResult = await ExportService.ExportMultipleTablesAsync(
+                selectedDbSetNames.ToList(),
+                progress =>
+                {
+                    loadingMessage = $"匯出中... {progress}%";
+                    InvokeAsync(StateHasChanged);
+                });
+
+            currentStep = 3;
+
+            if (exportResult.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync(
+                    $"匯出成功！共 {exportResult.TableCount} 個資料表，{exportResult.TotalRowCount:N0} 筆資料");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"匯出失敗：{exportResult.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            exportResult = ExportResult.Failure($"匯出過程發生例外：{ex.Message}");
+            currentStep = 3;
+            await NotificationService.ShowErrorAsync($"匯出例外：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 下載 =====
+
+    private async Task HandleDownload()
+    {
+        if (exportResult == null || !exportResult.IsSuccess) return;
+
+        try
+        {
+            var base64 = Convert.ToBase64String(exportResult.FileContent);
+            var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            await JSRuntime.InvokeAsync<bool>("downloadFileFromBase64", exportResult.FileName, base64, contentType);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"下載失敗：{ex.Message}");
+        }
+    }
+
+    // ===== 工具方法 =====
+
+    private string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+
+    private async Task HandleClose()
+    {
+        ResetWizard();
+        if (IsVisibleChanged.HasDelegate)
+            await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private void ResetWizard()
+    {
+        currentStep = 1;
+        tableSearchText = string.Empty;
+        selectedDbSetNames = new();
+        tableRowCounts = new();
+        tableColumnCounts = new();
+        exportResult = null;
+    }
+}

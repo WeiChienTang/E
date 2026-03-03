@@ -153,8 +153,9 @@
     private List<SelectOption> taxCalculationMethodOptions = new();
     
     // ===== 審核開關狀態 =====
-    private bool isApprovalEnabled = true; // 是否啟用報價單審核功能（從系統參數載入）
-    
+    private bool isManualApproval = false; // 是否使用人工審核（false=系統自動審核，true=人工審核）
+    private bool showApprovalSection = true; // 是否顯示審核資訊欄位（false=隱藏，true=顯示）
+
     // ===== 鎖定狀態 =====
     private bool hasUndeletableDetails = false; // 是否有不可刪除的明細（已有轉單記錄）
     
@@ -305,6 +306,9 @@
     {
         try
         {
+            // 重新載入審核開關設定（確保每次開啟 Modal 時使用最新值）
+            await LoadSystemParametersAsync();
+
             // 載入客戶列表
             availableCustomers = await CustomerService.GetAllAsync();
             customers = availableCustomers;
@@ -367,14 +371,16 @@
             var systemParams = await SystemParameterService.GetSystemParameterAsync();
             if (systemParams != null)
             {
-                isApprovalEnabled = systemParams.EnableQuotationApproval;
+                isManualApproval = systemParams.QuotationManualApproval;
+                showApprovalSection = !systemParams.HideApprovalInfoSection;
             }
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSystemParametersAsync), GetType());
             // 預設啟用審核
-            isApprovalEnabled = false;
+            isManualApproval = false;
+            showApprovalSection = true;
         }
     }
 
@@ -385,7 +391,7 @@
             // 使用 ApprovalConfigHelper 統一判斷是否鎖定欄位
             // 報價單的鎖定條件：(審核通過) 或 (明細有轉單記錄)
             var shouldLock = ApprovalConfigHelper.ShouldLockFieldByApproval(
-                isApprovalEnabled,
+                isManualApproval,
                 editModalComponent?.Entity?.IsApproved ?? false,
                 hasUndeletableDetails  // 使用明細轉單狀態作為額外的鎖定條件
             );
@@ -548,7 +554,7 @@
                 },
                 new FormFieldDefinition()
                 {
-                    PropertyName = "ApprovedByUser.Name",
+                    PropertyName = "ApprovedByDisplayName",
                     Label = L["Approval.ApprovedBy"],
                     FieldType = FormFieldType.Text,
                     IsReadOnly = true,
@@ -593,10 +599,10 @@
                     q => q.PaymentTerms,
                     q => q.DeliveryTerms)
                 .AddCustomFields(FormSectionNames.OtherInfo, "Remarks")
-                .AddCustomFieldsIf(isApprovalEnabled && QuotationId.HasValue && QuotationId.Value > 0,
+                .AddCustomFieldsIf(showApprovalSection && QuotationId.HasValue && QuotationId.Value > 0,
                     FormSectionNames.ApprovalInfo,
                     "ApprovalStatusText",
-                    "ApprovedByUser.Name",
+                    "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(Quotation.RejectReason))
                 .Build();
@@ -742,6 +748,10 @@
 
             // 儲存明細
             await SaveQuotationDetails(result.Data.Id);
+
+            // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
+            if (!isManualApproval && !result.Data.IsApproved)
+                await QuotationService.ApproveAsync(result.Data.Id, null);
 
             return true;
         }
@@ -927,7 +937,7 @@
                                     SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId > 0 ? editModalComponent.Entity.CustomerId : (int?)null)"
                                     SelectedSupplierId="@(editModalComponent?.Entity?.CustomerId > 0 ? editModalComponent.Entity.CustomerId : (int?)null)"
                                     TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                                    IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)"
+                                    IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)"
                                     OnOpenRelatedDocument="@HandleOpenRelatedDocument"
                                     Title="報價明細"
                                     EmptyMessage="尚未新增報價商品" />
@@ -1046,7 +1056,7 @@
     {
         // 計算是否應該鎖定欄位
         var shouldLock = ApprovalConfigHelper.ShouldLockFieldByApproval(
-            isApprovalEnabled,
+            isManualApproval,
             editModalComponent?.Entity?.IsApproved ?? false,
             hasUndeletableDetails
         );
@@ -1100,7 +1110,7 @@
     {
         if (!isDetailDataReady) return;
 
-        if (isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)
+        if (isManualApproval && editModalComponent?.Entity?.IsApproved == true)
         {
             <GenericLockedFieldMessage IsVisible="true"
                                       Message="@EditModalMessages.ApprovedWarning"
@@ -1165,7 +1175,7 @@
             }
             
             // 審核檢查：如啟用審核，必須先審核通過才能轉單
-            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isManualApproval, editModalComponent.Entity.IsApproved))
             {
                 await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
                 return;
@@ -1315,13 +1325,13 @@
     /// </summary>
     private bool ShouldShowApprovalSection()
     {
-        return isApprovalEnabled && QuotationId.HasValue;
+        return isManualApproval && QuotationId.HasValue;
     }
 
     private Func<bool>? GetCanPrintCheck()
-        => isApprovalEnabled
+        => isManualApproval
             ? () => ApprovalConfigHelper.CanPerformActionRequiringApproval(
-                  isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false)
+                  isManualApproval, editModalComponent?.Entity?.IsApproved ?? false)
             : null;
 
     /// <summary>

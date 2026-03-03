@@ -1167,14 +1167,14 @@
   <!-- ===== Approval Settings Tab keys ===== -->
   <data name="Tab.ApprovalSettings" xml:space="preserve"><value>Pamamahala ng Pag-apruba</value></data>
   <data name="Section.ApprovalSettings" xml:space="preserve"><value>Mga Setting ng Proseso ng Pag-apruba</value></data>
-  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Quotation</value></data>
-  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Purchase Order</value></data>
-  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Pagtanggap ng Binili</value></data>
-  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Pagbabalik ng Binili</value></data>
-  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Sales Order</value></data>
-  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Pagbabalik ng Benta</value></data>
-  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Paghahatid ng Benta</value></data>
-  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>Paganahin ang Pag-apruba ng Paglipat ng Imbentaryo</value></data>
+  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>Paraan ng Approval ng Quotation</value></data>
+  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>Paraan ng Approval ng Purchase Order</value></data>
+  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>Paraan ng Approval ng Purchase Receiving</value></data>
+  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>Paraan ng Approval ng Purchase Return</value></data>
+  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>Paraan ng Approval ng Sales Order</value></data>
+  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>Paraan ng Approval ng Sales Return</value></data>
+  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>Paraan ng Approval ng Sales Delivery</value></data>
+  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>Paraan ng Approval ng Inventory Transfer</value></data>
   <!-- ===== FormSectionNames keys ===== -->
   <data name="Section.BasicInfo" xml:space="preserve"><value>Pangunahing Impormasyon</value></data>
   <data name="Section.FilterConditions" xml:space="preserve"><value>Mga Kondisyon ng Filter</value></data>
@@ -1238,6 +1238,7 @@
   <data name="Dashboard.NoItems" xml:space="preserve"><value>Walang {0} na maaaring idagdag</value></data>
   <data name="Placeholder.SearchWidgets" xml:space="preserve"><value>Maghanap ng pangalan, paglalarawan o kategorya...</value></data>
   <data name="Dashboard.RemoveShortcut" xml:space="preserve"><value>Alisin ang Shortcut</value></data>
+  <data name="Dashboard.AlreadyAdded" xml:space="preserve"><value>Naidagdag na</value></data>
   <data name="Dashboard.SelectIcon" xml:space="preserve"><value>Pumili ng Icon ng Panel</value></data>
   <data name="Dashboard.ApplyIcon" xml:space="preserve"><value>I-apply ang Napiling Icon</value></data>
   <data name="Dashboard.CurrentSelection" xml:space="preserve"><value>Kasalukuyang Pinili</value></data>
@@ -1584,6 +1585,9 @@
   <data name="Home.DeleteThisPanelTooltip" xml:space="preserve"><value>Tanggalin ang Panel na Ito</value></data>
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>I-edit ang Panel na Ito</value></data>
   <data name="Home.Create" xml:space="preserve"><value>Lumikha</value></data>
+  <data name="Home.WelcomeMessage" xml:space="preserve"><value>Kumusta, {0}</value></data>
+  <data name="Home.NoPanelItemsHint" xml:space="preserve"><value>I-click ang edit button para i-customize ang panel na ito</value></data>
+  <data name="Home.NoPanelsHint" xml:space="preserve"><value>Lumikha ng unang panel para simulan ang pag-customize ng workspace</value></data>
 
   <!-- ===== Message - Home operations ===== -->
   <data name="Message.LoadHomeFailed" xml:space="preserve"><value>Nabigong i-load ang home configuration</value></data>
@@ -1809,6 +1813,8 @@
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>Kumpirmahin ang Pag-alis</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>I-clear ang Mga Detalye</value></data>
   <data name="Button.DisableAccount" xml:space="preserve"><value>I-disable ang Account</value></data>
+  <data name="Button.SetAllManual" xml:space="preserve"><value>Lahat Manual</value></data>
+  <data name="Button.SetAllAuto" xml:space="preserve"><value>Lahat Auto</value></data>
   <data name="Button.EnableAll" xml:space="preserve"><value>I-enable Lahat</value></data>
   <data name="Button.DisableAll" xml:space="preserve"><value>I-disable Lahat</value></data>
   <data name="Button.OpenEdit" xml:space="preserve"><value>Buksan ang Edit</value></data>
@@ -2768,10 +2774,14 @@
   <data name="AccountLevel.L2" xml:space="preserve"><value>Antas 2 (Sub-kategorya)</value></data>
   <data name="AccountLevel.L3" xml:space="preserve"><value>Antas 3 (Gitnang Kategorya)</value></data>
   <data name="AccountLevel.L4" xml:space="preserve"><value>Antas 4 (Detalyadong Account)</value></data>
+  <data name="Toggle.Manual" xml:space="preserve"><value>Manual</value></data>
+  <data name="Toggle.Auto" xml:space="preserve"><value>Auto</value></data>
   <data name="Toggle.Enabled" xml:space="preserve"><value>Pinagana</value></data>
   <data name="Toggle.Disabled" xml:space="preserve"><value>Hindi Pinagana</value></data>
   <data name="Toggle.Switch" xml:space="preserve"><value>I-toggle</value></data>
-  <data name="ApprovalSettings.Description" xml:space="preserve"><value>Kontrolin ang proseso ng pag-apruba para sa bawat uri ng dokumento. Kapag pinagana, ang mga kaugnay na dokumento ay kailangan ng pag-apruba bago magkabisa.</value></data>
+  <data name="ApprovalSettings.Description" xml:space="preserve"><value>Sa manual na paraan, ang mga dokumento ay kailangan ng pag-apruba ng tao. Sa auto na paraan, awtomatikong inaprubahan ng sistema kapag na-save.</value></data>
+  <data name="ApprovalSettings.HideApprovalInfoSection" xml:space="preserve"><value>Itago ang mga field ng impormasyon sa pag-apruba (lahat ng module)</value></data>
+  <data name="ApprovalSettings.HideApprovalInfoSectionDesc" xml:space="preserve"><value>Kapag naka-tsek, ang katayuan ng pag-apruba, approver, at oras ng pag-apruba ay hindi ipapakita sa mga pahina ng pag-edit ng dokumento</value></data>
   <data name="SubAccount.BatchCreateTitle" xml:space="preserve"><value>Batch na Paglikha ng Sub-Account</value></data>
   <data name="SubAccount.BatchCreateDesc" xml:space="preserve"><value>Lumikha ng mga sub-account para sa mga kasalukuyang customer, supplier, at produkto (lilaktawan ang mga may sub-account na). Bago magsagawa, tiyakin na ang mga setting ng control account code sa itaas ay tama at naka-save na.</value></data>
   <data name="SubAccount.CreateCustomer" xml:space="preserve"><value>Lumikha para sa Customer</value></data>

@@ -725,7 +725,7 @@ namespace ERPCore2.Services
 
         #region 審核作業
 
-        public async Task<ServiceResult> ApproveAsync(int id, int approvedBy)
+        public async Task<ServiceResult> ApproveAsync(int id, int? approvedBy)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             using var transaction = await context.Database.BeginTransactionAsync();

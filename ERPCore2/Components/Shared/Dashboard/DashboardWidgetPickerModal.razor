@@ -17,7 +17,7 @@
                     DebugComponentName="DashboardWidgetPickerModal">
     <HeaderButtons>
         <GenericButtonComponent Variant="ButtonVariant.Blue"
-                               Text="@L["Button.Confirm"]"
+                               Text="@(selectedItemKeys.Any() ? $"{L["Button.Confirm"]} ({selectedItemKeys.Count})" : L["Button.Confirm"].ToString())"
                                OnClick="HandleConfirm"
                                IsDisabled="@(!selectedItemKeys.Any())"
                                Title="@L["Dashboard.AddShortcutTitle"]" />
@@ -49,10 +49,10 @@
                 @if (FilteredShortcutWidgets.Any())
                 {
                     <div class="mb-3">
-                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">
+                        <div class="category-header">
                             <i class="bi bi-link-45deg me-1"></i>@L["Tab.PageShortcut"]
                             <span class="badge bg-primary ms-1">@FilteredShortcutWidgets.Count</span>
-                        </h6>
+                        </div>
                         @RenderWidgetGrid(FilteredShortcutWidgets)
                     </div>
                 }
@@ -61,10 +61,10 @@
                 @if (FilteredQuickActionWidgets.Any())
                 {
                     <div class="mb-3">
-                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">
+                        <div class="category-header category-header-green">
                             <i class="bi bi-wrench-adjustable me-1"></i>@L["Tab.QuickAction"]
-                            <span class="badge bg-primary ms-1">@FilteredQuickActionWidgets.Count</span>
-                        </h6>
+                            <span class="badge bg-success ms-1">@FilteredQuickActionWidgets.Count</span>
+                        </div>
                         @RenderWidgetGrid(FilteredQuickActionWidgets)
                     </div>
                 }
@@ -73,10 +73,10 @@
                 @if (FilteredChartWidgets.Any())
                 {
                     <div class="mb-3">
-                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">
+                        <div class="category-header category-header-cyan">
                             <i class="bi bi-bar-chart-fill me-1"></i>@L["Tab.ChartView"]
-                            <span class="badge bg-primary ms-1">@FilteredChartWidgets.Count</span>
-                        </h6>
+                            <span class="badge bg-info ms-1">@FilteredChartWidgets.Count</span>
+                        </div>
                         @RenderWidgetGrid(FilteredChartWidgets)
                     </div>
                 }
@@ -84,42 +84,36 @@
         }
         else
         {
-            @* 一般模式：Tab 切換 *@
-            <ul class="nav nav-tabs mb-3">
-                <li class="nav-item">
-                    <button class="nav-link @(activeTab == "shortcut" ? "active tab-active" : "tab-inactive")"
-                            type="button"
-                            @onclick='@(() => activeTab = "shortcut")'>
-                        <i class="bi bi-window me-1"></i>@L["Tab.PageShortcut"]
-                        @if (AvailableShortcutWidgets.Any())
-                        {
-                            <span class="badge bg-secondary ms-1">@AvailableShortcutWidgets.Count</span>
-                        }
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link @(activeTab == "quickaction" ? "active tab-active" : "tab-inactive")"
-                            type="button"
-                            @onclick='@(() => activeTab = "quickaction")'>
-                        <i class="bi bi-wrench-adjustable me-1"></i>@L["Tab.QuickAction"]
-                        @if (AvailableQuickActionWidgets.Any())
-                        {
-                            <span class="badge bg-secondary ms-1">@AvailableQuickActionWidgets.Count</span>
-                        }
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link @(activeTab == "chart" ? "active tab-active" : "tab-inactive")"
-                            type="button"
-                            @onclick='@(() => activeTab = "chart")'>
-                        <i class="bi bi-bar-chart-fill me-1"></i>@L["Tab.ChartView"]
-                        @if (AvailableChartWidgets.Any())
-                        {
-                            <span class="badge bg-secondary ms-1">@AvailableChartWidgets.Count</span>
-                        }
-                    </button>
-                </li>
-            </ul>
+            @* 一般模式：Pill Tab 切換 *@
+            <div class="picker-tabs mb-3">
+                <button class="picker-tab @(activeTab == "shortcut" ? "picker-tab-active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "shortcut")'>
+                    <i class="bi bi-window me-1"></i>@L["Tab.PageShortcut"]
+                    @if (AvailableShortcutWidgets.Any())
+                    {
+                        <span class="picker-tab-badge">@AvailableShortcutWidgets.Count</span>
+                    }
+                </button>
+                <button class="picker-tab picker-tab-green @(activeTab == "quickaction" ? "picker-tab-active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "quickaction")'>
+                    <i class="bi bi-wrench-adjustable me-1"></i>@L["Tab.QuickAction"]
+                    @if (AvailableQuickActionWidgets.Any())
+                    {
+                        <span class="picker-tab-badge">@AvailableQuickActionWidgets.Count</span>
+                    }
+                </button>
+                <button class="picker-tab picker-tab-cyan @(activeTab == "chart" ? "picker-tab-active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "chart")'>
+                    <i class="bi bi-bar-chart-fill me-1"></i>@L["Tab.ChartView"]
+                    @if (AvailableChartWidgets.Any())
+                    {
+                        <span class="picker-tab-badge">@AvailableChartWidgets.Count</span>
+                    }
+                </button>
+            </div>
 
             @* Tab 內容 *@
             var currentWidgets = activeTab == "quickaction" ? AvailableQuickActionWidgets
@@ -144,8 +138,16 @@
                     .GroupBy(w => w.Category)
                     .OrderBy(g => g.Key))
                 {
+                    var categoryIconClass = NavigationConfig.GetCategoryIcon(group.Key);
+                    var headerColorClass = activeTab == "quickaction" ? "category-header-green"
+                                         : activeTab == "chart"       ? "category-header-cyan"
+                                         : "";
+
                     <div class="mb-3">
-                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">@group.Key</h6>
+                        <div class="category-header @headerColorClass">
+                            <i class="@categoryIconClass me-1"></i>@group.Key
+                            <span class="category-count">@group.Count()</span>
+                        </div>
                         <div class="row g-2">
                             @foreach (var widget in group.OrderBy(w => w.Name))
                             {
@@ -156,12 +158,28 @@
                                 var iconClass = widget.ItemType == NavigationItemType.QuickAction
                                     ? (widget.QuickActionIconClass ?? widget.IconClass ?? "bi bi-plus-circle-fill")
                                     : (widget.IconClass ?? "bi bi-window");
+                                var typeClass = widget.ItemType == NavigationItemType.QuickAction ? "picker-type-quick"
+                                              : widget.IsChartWidget ? "picker-type-chart"
+                                              : "";
 
-                                <div class="col-lg-2 col-md-4 col-6">
-                                    <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"
-                                         @onclick="@(() => ToggleWidget(capturedItemKey, isExisting))">
-                                        <div class="picker-icon me-2">
-                                            <i class="@iconClass"></i>
+                                <div class="col-xl-2 col-lg-3 col-md-3 col-sm-4 col-6">
+                                    <div class="picker-item @typeClass @(isExisting ? "existing" : isSelected ? "selected" : "")"
+                                         @onclick="@(() => ToggleWidget(capturedItemKey, isExisting))"
+                                         title="@widget.Description">
+                                        @if (isSelected)
+                                        {
+                                            <span class="picker-check-badge">
+                                                <i class="bi bi-check"></i>
+                                            </span>
+                                        }
+                                        @if (isExisting)
+                                        {
+                                            <span class="picker-existing-badge">@L["Dashboard.AlreadyAdded"]</span>
+                                        }
+                                        <div class="picker-icon-wrapper">
+                                            <div class="picker-icon">
+                                                <i class="@iconClass"></i>
+                                            </div>
                                         </div>
                                         <div class="picker-name">@widget.Name</div>
                                     </div>
@@ -189,12 +207,28 @@
                 var iconClass = widget.ItemType == NavigationItemType.QuickAction
                     ? (widget.QuickActionIconClass ?? widget.IconClass ?? "bi bi-plus-circle-fill")
                     : (widget.IconClass ?? "bi bi-window");
+                var typeClass = widget.ItemType == NavigationItemType.QuickAction ? "picker-type-quick"
+                              : widget.IsChartWidget ? "picker-type-chart"
+                              : "";
 
-                <div class="col-lg-2 col-md-4 col-6">
-                    <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"
-                         @onclick="@(() => ToggleWidget(capturedItemKey, isExisting))">
-                        <div class="picker-icon me-2">
-                            <i class="@iconClass"></i>
+                <div class="col-xl-2 col-lg-3 col-md-3 col-sm-4 col-6">
+                    <div class="picker-item @typeClass @(isExisting ? "existing" : isSelected ? "selected" : "")"
+                         @onclick="@(() => ToggleWidget(capturedItemKey, isExisting))"
+                         title="@widget.Description">
+                        @if (isSelected)
+                        {
+                            <span class="picker-check-badge">
+                                <i class="bi bi-check"></i>
+                            </span>
+                        }
+                        @if (isExisting)
+                        {
+                            <span class="picker-existing-badge">@L["Dashboard.AlreadyAdded"]</span>
+                        }
+                        <div class="picker-icon-wrapper">
+                            <div class="picker-icon">
+                                <i class="@iconClass"></i>
+                            </div>
                         </div>
                         <div class="picker-name">@widget.Name</div>
                     </div>

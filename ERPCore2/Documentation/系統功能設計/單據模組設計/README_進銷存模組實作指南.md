@@ -1,7 +1,7 @@
 # 進銷存模組實作指南
 
 ## 更新日期
-2026-03-03
+2026-03-03（Step 1 更新：showApprovalSection、ApprovedByDisplayName）
 
 ---
 
@@ -24,11 +24,14 @@ formSections = FormSectionHelper<Xxx>.Create()
     .AddToSection(FormSectionNames.BasicInfo, ...)
     .AddToSection(FormSectionNames.AmountInfo, ...)
     .AddToSection(FormSectionNames.AdditionalInfo, ...)
-    .AddCustomFieldsIf(isApprovalEnabled && Id > 0, FormSectionNames.ApprovalInfo,
-        "ApprovalStatusText", "ApprovedByUser.Name", "ApprovedAtText",
+    .AddCustomFieldsIf(showApprovalSection && Id > 0, FormSectionNames.ApprovalInfo,
+        "ApprovalStatusText", "ApprovedByDisplayName", "ApprovedAtText",
         nameof(Xxx.RejectReason))
     .Build();
 ```
+
+> `showApprovalSection` 由系統參數 `HideApprovalInfoSection` 決定（非 `isManualApproval`）。
+> `"ApprovedByDisplayName"` 為 `[NotMapped]` 計算屬性，自動處理 null（顯示「系統自動審核」）。
 
 ### Step 2：移除 tabDefinitions 欄位宣告
 

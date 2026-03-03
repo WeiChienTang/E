@@ -1167,14 +1167,14 @@
   <!-- ===== Approval Settings Tab keys ===== -->
   <data name="Tab.ApprovalSettings" xml:space="preserve"><value>承認管理</value></data>
   <data name="Section.ApprovalSettings" xml:space="preserve"><value>承認フロー設定</value></data>
-  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>見積承認を有効にする</value></data>
-  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>発注承認を有効にする</value></data>
-  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>入荷承認を有効にする</value></data>
-  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>仕入返品承認を有効にする</value></data>
-  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>受注承認を有効にする</value></data>
-  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>売上返品承認を有効にする</value></data>
-  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>出荷承認を有効にする</value></data>
-  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>在庫振替承認を有効にする</value></data>
+  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>見積書承認方式</value></data>
+  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>発注書承認方式</value></data>
+  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>入荷書承認方式</value></data>
+  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>仕入返品承認方式</value></data>
+  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>受注書承認方式</value></data>
+  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>売上返品承認方式</value></data>
+  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>出荷書承認方式</value></data>
+  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>在庫移動承認方式</value></data>
   <!-- ===== FormSectionNames keys ===== -->
   <data name="Section.BasicInfo" xml:space="preserve"><value>基本情報</value></data>
   <data name="Section.FilterConditions" xml:space="preserve"><value>フィルター条件</value></data>
@@ -1238,6 +1238,7 @@
   <data name="Dashboard.NoItems" xml:space="preserve"><value>追加できる{0}はありません</value></data>
   <data name="Placeholder.SearchWidgets" xml:space="preserve"><value>名前、説明またはカテゴリーを検索...</value></data>
   <data name="Dashboard.RemoveShortcut" xml:space="preserve"><value>ショートカットを削除</value></data>
+  <data name="Dashboard.AlreadyAdded" xml:space="preserve"><value>追加済み</value></data>
   <data name="Dashboard.SelectIcon" xml:space="preserve"><value>パネルアイコンを選択</value></data>
   <data name="Dashboard.ApplyIcon" xml:space="preserve"><value>選択したアイコンを適用</value></data>
   <data name="Dashboard.CurrentSelection" xml:space="preserve"><value>現在の選択</value></data>
@@ -1584,6 +1585,9 @@
   <data name="Home.DeleteThisPanelTooltip" xml:space="preserve"><value>このパネルを削除</value></data>
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>このパネルを編集</value></data>
   <data name="Home.Create" xml:space="preserve"><value>作成</value></data>
+  <data name="Home.WelcomeMessage" xml:space="preserve"><value>こんにちは、{0}</value></data>
+  <data name="Home.NoPanelItemsHint" xml:space="preserve"><value>編集ボタンをクリックしてこのパネルをカスタマイズ</value></data>
+  <data name="Home.NoPanelsHint" xml:space="preserve"><value>最初のパネルを作成してワークスペースをカスタマイズしましょう</value></data>
 
   <!-- ===== Message - Home 操作 ===== -->
   <data name="Message.LoadHomeFailed" xml:space="preserve"><value>ホームページ設定の読み込みに失敗しました</value></data>
@@ -1809,6 +1813,8 @@
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>削除確認</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>明細をクリア</value></data>
   <data name="Button.DisableAccount" xml:space="preserve"><value>アカウント無効化</value></data>
+  <data name="Button.SetAllManual" xml:space="preserve"><value>すべて手動</value></data>
+  <data name="Button.SetAllAuto" xml:space="preserve"><value>すべて自動</value></data>
   <data name="Button.EnableAll" xml:space="preserve"><value>すべて有効</value></data>
   <data name="Button.DisableAll" xml:space="preserve"><value>すべて無効</value></data>
   <data name="Button.OpenEdit" xml:space="preserve"><value>編集を開く</value></data>
@@ -2768,10 +2774,14 @@
   <data name="AccountLevel.L2" xml:space="preserve"><value>第2層（小分類）</value></data>
   <data name="AccountLevel.L3" xml:space="preserve"><value>第3層（中分類）</value></data>
   <data name="AccountLevel.L4" xml:space="preserve"><value>第4層（明細科目）</value></data>
+  <data name="Toggle.Manual" xml:space="preserve"><value>手動承認</value></data>
+  <data name="Toggle.Auto" xml:space="preserve"><value>自動承認</value></data>
   <data name="Toggle.Enabled" xml:space="preserve"><value>有効</value></data>
   <data name="Toggle.Disabled" xml:space="preserve"><value>無効</value></data>
   <data name="Toggle.Switch" xml:space="preserve"><value>切替</value></data>
-  <data name="ApprovalSettings.Description" xml:space="preserve"><value>各伝票タイプの承認フローを制御します。有効にすると、関連する伝票は承認を経てから有効になります。</value></data>
+  <data name="ApprovalSettings.Description" xml:space="preserve"><value>手動承認モードでは、伝票は人が確認する必要があります。自動モードでは、保存時にシステムが自動承認します。</value></data>
+  <data name="ApprovalSettings.HideApprovalInfoSection" xml:space="preserve"><value>承認情報フィールドを非表示（全モジュール）</value></data>
+  <data name="ApprovalSettings.HideApprovalInfoSectionDesc" xml:space="preserve"><value>チェックすると、全伝票編集画面で承認状態・承認者・承認日時などのフィールドが非表示になります</value></data>
   <data name="SubAccount.BatchCreateTitle" xml:space="preserve"><value>一括補充サブ勘定科目作成</value></data>
   <data name="SubAccount.BatchCreateDesc" xml:space="preserve"><value>既存の顧客、仕入先、商品のサブ勘定科目を補充作成します（既にサブ科目がある場合はスキップ）。実行前に上記の統制科目コードの設定が正しく保存されていることを確認してください。</value></data>
   <data name="SubAccount.CreateCustomer" xml:space="preserve"><value>顧客補充</value></data>

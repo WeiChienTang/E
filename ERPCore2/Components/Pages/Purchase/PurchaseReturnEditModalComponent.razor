@@ -150,7 +150,8 @@
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
 
     // ===== 審核開關狀態 =====
-    private bool isApprovalEnabled = false;
+    private bool isManualApproval = false; // 是否使用人工審核（false=系統自動審核，true=人工審核）
+    private bool showApprovalSection = true; // 是否顯示審核資訊欄位（false=隱藏，true=顯示）
 
     // ===== 鎖定狀態 =====
     private bool hasUndeletableDetails = false;
@@ -163,7 +164,8 @@
     // ===== 生命週期 =====
     protected override async Task OnInitializedAsync()
     {
-        isApprovalEnabled = await SystemParameterService.IsPurchaseReturnApprovalEnabledAsync();
+        isManualApproval = await SystemParameterService.IsPurchaseReturnManualApprovalAsync();
+        showApprovalSection = !await SystemParameterService.IsApprovalInfoHiddenAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -356,7 +358,11 @@
             
             // 一次性載入系統稅率（避免每次計算都查詢資料庫）
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
-            
+
+            // 重新載入審核開關設定（確保每次開啟 Modal 時使用最新值）
+            isManualApproval = await SystemParameterService.IsPurchaseReturnManualApprovalAsync();
+            showApprovalSection = !await SystemParameterService.IsApprovalInfoHiddenAsync();
+
             taxCalculationMethodOptions = TaxCalculationHelper.GetTaxMethodOptions();
         }
         catch (Exception ex)
@@ -547,7 +553,7 @@
                 },
                 new FormFieldDefinition()
                 {
-                    PropertyName = "ApprovedByUser.Name",
+                    PropertyName = "ApprovedByDisplayName",
                     Label = L["Approval.ApprovedBy"],
                     FieldType = FormFieldType.Text,
                     IsReadOnly = true,
@@ -587,10 +593,10 @@
                     pr => pr.TotalReturnAmountWithTax)
                 .AddToSection(FormSectionNames.AdditionalInfo,
                     pr => pr.Remarks)
-                .AddCustomFieldsIf(isApprovalEnabled && PurchaseReturnId.HasValue && PurchaseReturnId.Value > 0,
+                .AddCustomFieldsIf(showApprovalSection && PurchaseReturnId.HasValue && PurchaseReturnId.Value > 0,
                     FormSectionNames.ApprovalInfo,
                     "ApprovalStatusText",
-                    "ApprovedByUser.Name",
+                    "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(PurchaseReturn.RejectReason))
                 .Build();
@@ -701,7 +707,7 @@
     {
         if (!isDetailDataReady) return;
 
-        if (isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)
+        if (isManualApproval && editModalComponent?.Entity?.IsApproved == true)
         {
             <GenericLockedFieldMessage IsVisible="true"
                                       Message="@EditModalMessages.ApprovedWarning"
@@ -987,7 +993,7 @@
             }
 
             // 審核檢查：如啟用審核，必須先審核通過才能轉單
-            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isManualApproval, editModalComponent.Entity.IsApproved))
             {
                 await NotificationService.ShowWarningAsync("需先審核通過，才能執行轉單操作");
                 return;
@@ -1165,7 +1171,7 @@
                                  OnReturnDetailsChanged="@HandleReturnDetailsChanged"
                                  OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                                  OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                                 IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)" />
+                                 IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)" />
         </DetailSectionWrapper>
     };
 
@@ -1208,7 +1214,7 @@
         try
         {
             // 審核後不允許儲存
-            if (!ApprovalConfigHelper.CanSaveWhenApproved(isApprovalEnabled, purchaseReturn.IsApproved))
+            if (!ApprovalConfigHelper.CanSaveWhenApproved(isManualApproval, purchaseReturn.IsApproved))
             {
                 await NotificationService.ShowWarningAsync("採購退回單已核准，無法修改");
                 return false;
@@ -1279,6 +1285,9 @@
             
             if (result.IsSuccess)
             {
+                // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
+                if (!isManualApproval && result.Data != null && !result.Data.IsApproved)
+                    await PurchaseReturnService.ApproveAsync(result.Data.Id, null);
                 return true;
             }
             else
@@ -1356,12 +1365,12 @@
     // ===== 審核相關方法 =====
 
     private bool ShouldShowApprovalSection()
-        => isApprovalEnabled && PurchaseReturnId.HasValue && PurchaseReturnId.Value > 0;
+        => isManualApproval && PurchaseReturnId.HasValue && PurchaseReturnId.Value > 0;
 
     private Func<bool>? GetCanPrintCheck()
-        => isApprovalEnabled
+        => isManualApproval
             ? () => ApprovalConfigHelper.CanPerformActionRequiringApproval(
-                  isApprovalEnabled, editModalComponent?.Entity?.IsApproved ?? false)
+                  isManualApproval, editModalComponent?.Entity?.IsApproved ?? false)
             : null;
 
     private async Task<bool> HandlePurchaseReturnApprove()

@@ -246,7 +246,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查是否啟用報價單審核
-                var isApprovalEnabled = await _systemParameterService.IsQuotationApprovalEnabledAsync();
+                var isApprovalEnabled = await _systemParameterService.IsQuotationManualApprovalAsync();
                 
                 // 建立查詢
                 var query = context.Quotations
@@ -302,7 +302,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查是否啟用報價單審核
-                var isApprovalEnabled = await _systemParameterService.IsQuotationApprovalEnabledAsync();
+                var isApprovalEnabled = await _systemParameterService.IsQuotationManualApprovalAsync();
                 
                 // 建立查詢：取得該客戶的報價單明細
                 var query = context.QuotationDetails

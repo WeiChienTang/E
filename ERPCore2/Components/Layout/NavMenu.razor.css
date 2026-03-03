@@ -1,18 +1,91 @@
-/* Navigation Menu Layout Styles - 只保留佈局和基本結構 */
+/* === Navigation Menu Layout Styles === */
 
-/* 停用模組的選單項目 */
+/* ========================================= */
+/* 使用者個人資訊區                           */
+/* ========================================= */
+
+.user-profile-area {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.125rem 0;
+}
+
+.user-avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.5), rgba(59, 130, 246, 0.3));
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    position: relative;
+    letter-spacing: 0.5px;
+}
+
+.user-online-dot {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 10px;
+    height: 10px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    border: 2px solid var(--primary-blue-alt);
+}
+
+/* 隱藏使用者區域中 NavMenuItem 的預設圖示 */
+.user-profile-area ::deep span[aria-hidden="true"] {
+    display: none !important;
+}
+
+/* 使用者區域中 NavMenuItem 的 nav-item 不需要額外 padding */
+.user-profile-area ::deep .nav-item {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    flex: 1;
+    min-width: 0;
+}
+
+/* ========================================= */
+/* 停用模組樣式                               */
+/* ========================================= */
+
 .nav-module-disabled {
     opacity: 0.45;
     pointer-events: none;
+    position: relative;
 }
 
-/* 複製 NavMenuItem.razor.css 的樣式，因為 Blazor scoped CSS 無法跨元件繼承 */
+.nav-module-disabled::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 4px,
+        rgba(255, 255, 255, 0.03) 4px,
+        rgba(255, 255, 255, 0.03) 8px
+    );
+    border-radius: var(--radius-lg);
+    pointer-events: none;
+}
+
 .nav-module-disabled .nav-menu-dropdown-toggle-btn {
     color: var(--primary-white);
     background-color: transparent;
     border: none;
     border-radius: var(--radius-lg);
-    min-height: 3rem;
+    min-height: 2.75rem;
     height: auto;
     display: flex;
     align-items: center;
@@ -37,21 +110,31 @@
     word-break: break-word;
 }
 
-.nav-module-disabled-lock {
+.nav-module-disabled-badge {
     margin-left: auto;
-    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.08);
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.6);
     flex-shrink: 0;
 }
 
-/* 主導航容器 */
+/* ========================================= */
+/* 主導航容器                                 */
+/* ========================================= */
+
 .nav-menu-container {
     display: flex;
     flex-direction: column;
-    height: 100%; /* 填充整個 sidebar */
-    flex: 1; /* 讓容器在 sidebar 中展開 */
+    height: 100%;
+    flex: 1;
 }
 
-/* 隱藏實際的 checkbox，但保持其功能 */
 .navbar-toggler {
     position: absolute;
     opacity: 0;
@@ -60,14 +143,13 @@
     pointer-events: none;
 }
 
-/* 顯示可點擊的 label 作為按鈕 */
 .navbar-toggler-label {
     cursor: pointer;
     width: 3rem;
     height: 3rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.25rem;
-    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    background-color: rgba(255, 255, 255, 0.06);
     flex-shrink: 0;
     transition: background-color 0.2s ease;
     display: flex;
@@ -83,16 +165,20 @@
 }
 
 .navbar-toggler:checked ~ .top-row .navbar-toggler-label {
-    background-color: rgba(255, 255, 255, 0.25);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .navbar-toggler-label:hover {
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(255, 255, 255, 0.12);
 }
 
 .navbar-toggler:checked ~ .top-row .navbar-toggler-label:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.25);
 }
+
+/* ========================================= */
+/* 頂部列                                     */
+/* ========================================= */
 
 .top-row {
     min-height: 3.5rem;
@@ -100,8 +186,8 @@
     position: sticky;
     top: 0;
     z-index: 1000;
-    flex-shrink: 0; /* 防止頂部列被壓縮 */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3); /* 添加白色分隔線 */
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding: 0.25rem 1rem;
 }
 
@@ -116,18 +202,21 @@
 .user-info-nav {
     flex: 1;
     position: relative;
-    z-index: 1; /* 確保使用者資訊在一般層級 */
+    z-index: 1;
 }
 
 .navbar-brand {
     font-size: 1.1rem;
 }
 
-/* 響應式登入/登出按鈕區域 */
 .auth-section {
     position: relative;
     z-index: 999;
 }
+
+/* ========================================= */
+/* 導航滾動區域                               */
+/* ========================================= */
 
 .nav-scrollable {
     display: none;
@@ -140,12 +229,10 @@
 
 
 /* ========================================= */
-/* 響應式設計 - Media Queries */
+/* 響應式設計 - Media Queries                  */
 /* ========================================= */
 
-/* 所有螢幕斷點統一使用 640px */
 @media (max-width: 640px) {
-    /* 手機版：導航容器使用固定定位結構 */
     .nav-menu-container {
         position: fixed;
         top: 0;
@@ -158,39 +245,36 @@
         flex-direction: column;
     }
     
-    /* 頂部列固定在最上方 */
     .top-row {
         position: relative;
         flex-shrink: 0;
         z-index: 1051;
     }
     
-    /* 導航選單：可滾動區域 */
     .nav-scrollable {
         max-height: calc(100vh - 3.5rem);
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
+        z-index: 1050;
+        position: relative;
     }
     
-    /* 確保切換按鈕位於最上層 */
     .navbar-toggler-label {
         position: relative;
         z-index: 1052;
     }
     
-    /* 限制使用者資訊下拉選單的 z-index */
     .user-info-nav ::deep .nav-menu-dropdown-content {
         z-index: 1050;
     }
     
-    /* 登入/登出按鈕區域調整 */
     .auth-section {
-        margin-right: 4.5rem; /* 為導航按鈕留出空間 */
+        margin-right: 4.5rem;
     }
     
     .user-welcome {
-        display: none; /* 在小螢幕上隱藏歡迎文字 */
+        display: none;
     }
     
     .logout-btn,
@@ -198,92 +282,88 @@
         padding: 0.25rem 0.5rem;
     }
     
-    /* 確保導航選單有較高的 z-index */
-    .nav-scrollable {
-        z-index: 1050;
-        position: relative;
-    }
-    
-    /* 為選單項目添加更好的觸控體驗 */
+    /* 觸控優化 */
     .nav-scrollable .nav-item {
-        min-height: 40px; /* 符合無障礙設計的最小觸控目標 */
+        min-height: 40px;
     }
     
-    /* 確保下拉選單項目有足夠的觸控區域 */
     .nav-scrollable ::deep .dropdown-item {
         min-height: 36px;
         display: flex;
         align-items: center;
     }
     
-    /* 自訂滾動條樣式 - 手機版 */
+    /* 手機版滾動條 */
     .nav-scrollable::-webkit-scrollbar {
         width: 4px;
     }
     
     .nav-scrollable::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 2px;
+        background: transparent;
     }
     
     .nav-scrollable::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.2);
         border-radius: 2px;
     }
     
     .nav-scrollable::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.35);
+    }
+
+    /* 手機版頭像稍小 */
+    .user-avatar-circle {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
     }
 }
 
 @media (min-width: 640px) {
-    /* 調整頂部列定位 */
     .top-row {
-        position: relative; /* 在桌面版本中使用相對定位 */
+        position: relative;
     }
     
     .top-row-content {
         justify-content: flex-start;
     }
     
-    /* 隱藏切換按鈕 */
     .navbar-toggler-label {
         display: none;
     }
 
-    /* 顯示導航選單並填充剩餘空間 */
     .nav-scrollable {
         display: block;
-        flex: 1; /* 填充 sidebar 的剩餘空間 */
-        overflow-y: auto; /* 允許垂直滾動 */
-        min-height: 0; /* 允許收縮 */
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
         height: calc(100vh - 3.5rem);
-        max-height: calc(100vh - 3.5rem); /* 限制最大高度為視港高度減去頂部列高度 */
-        padding-bottom: 1rem; /* 為底部項目添加額外間距 */
-        scroll-behavior: smooth; /* 平滑滾動 */
-    }
-    
-    /* 確保導航選單內容有足夠的底部邊距 */
-    .nav-scrollable .nav {
+        max-height: calc(100vh - 3.5rem);
         padding-bottom: 1rem;
+        scroll-behavior: smooth;
     }
     
-    /* 自訂滾動條樣式 */
+    /* 導航選單內容間距 */
+    .nav-scrollable .nav {
+        padding: 0.5rem 0 1rem 0;
+        gap: 1px;
+    }
+    
+    /* 桌面版滾動條 */
     .nav-scrollable::-webkit-scrollbar {
-        width: 6px;
+        width: 5px;
     }
     
     .nav-scrollable::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 3px;
+        background: transparent;
     }
     
     .nav-scrollable::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.15);
         border-radius: 3px;
     }
     
     .nav-scrollable::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.3);
     }
 }

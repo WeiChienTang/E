@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Models.Enums;
 
 namespace ERPCore2.Data.Entities
@@ -15,55 +16,73 @@ namespace ERPCore2.Data.Entities
         [Range(0.00, 100.00, ErrorMessage = "稅率範圍必須在 0% 到 100% 之間")]
         public decimal TaxRate { get; set; } = 5.00m; // 預設 5% 稅率
 
-        // ===== 審核流程開關 =====
+        // ===== 審核模式設定 =====
+        // false = 系統自動審核（儲存時自動核准）
+        // true  = 人工審核（需人工按核准鍵）
+        // DB 欄位名維持原名（EnableXxxApproval）以避免 Migration，語意已變更
 
         /// <summary>
-        /// 是否啟用報價單審核
+        /// 報價單是否使用人工審核（false=系統自動審核，true=人工審核）
         /// </summary>
-        [Display(Name = "啟用報價單審核")]
-        public bool EnableQuotationApproval { get; set; } = false;
+        [Column("EnableQuotationApproval")]
+        [Display(Name = "報價單審核方式")]
+        public bool QuotationManualApproval { get; set; } = false;
 
         /// <summary>
-        /// 是否啟用採購單審核
+        /// 採購訂單是否使用人工審核（false=系統自動審核，true=人工審核）
         /// </summary>
-        [Display(Name = "啟用採購單審核")]
-        public bool EnablePurchaseOrderApproval { get; set; } = false;
+        [Column("EnablePurchaseOrderApproval")]
+        [Display(Name = "採購訂單審核方式")]
+        public bool PurchaseOrderManualApproval { get; set; } = false;
 
         /// <summary>
-        /// 是否啟用進貨單審核
+        /// 進貨單是否使用人工審核（false=系統自動審核，true=人工審核）
         /// </summary>
-        [Display(Name = "啟用進貨單審核")]
-        public bool EnablePurchaseReceivingApproval { get; set; } = false;
+        [Column("EnablePurchaseReceivingApproval")]
+        [Display(Name = "進貨單審核方式")]
+        public bool PurchaseReceivingManualApproval { get; set; } = false;
 
         /// <summary>
-        /// 是否啟用進貨退回審核
+        /// 進貨退回是否使用人工審核（false=系統自動審核，true=人工審核）
         /// </summary>
-        [Display(Name = "啟用進貨退回審核")]
-        public bool EnablePurchaseReturnApproval { get; set; } = false;
+        [Column("EnablePurchaseReturnApproval")]
+        [Display(Name = "進貨退回審核方式")]
+        public bool PurchaseReturnManualApproval { get; set; } = false;
 
         /// <summary>
-        /// 是否啟用銷貨單審核
+        /// 銷貨訂單是否使用人工審核（false=系統自動審核，true=人工審核）
         /// </summary>
-        [Display(Name = "啟用銷貨單審核")]
-        public bool EnableSalesOrderApproval { get; set; } = false;
+        [Column("EnableSalesOrderApproval")]
+        [Display(Name = "銷貨訂單審核方式")]
+        public bool SalesOrderManualApproval { get; set; } = false;
 
         /// <summary>
-        /// 是否啟用銷貨退回審核
+        /// 銷貨退回是否使用人工審核（false=系統自動審核，true=人工審核）
         /// </summary>
-        [Display(Name = "啟用銷貨退回審核")]
-        public bool EnableSalesReturnApproval { get; set; } = false;
+        [Column("EnableSalesReturnApproval")]
+        [Display(Name = "銷貨退回審核方式")]
+        public bool SalesReturnManualApproval { get; set; } = false;
 
         /// <summary>
-        /// 是否啟用出貨單審核
+        /// 出貨單是否使用人工審核（false=系統自動審核，true=人工審核）
         /// </summary>
-        [Display(Name = "啟用出貨單審核")]
-        public bool EnableSalesDeliveryApproval { get; set; } = false;
+        [Column("EnableSalesDeliveryApproval")]
+        [Display(Name = "出貨單審核方式")]
+        public bool SalesDeliveryManualApproval { get; set; } = false;
 
         /// <summary>
-        /// 是否啟用庫存調撥審核
+        /// 庫存調撥是否使用人工審核（false=系統自動審核，true=人工審核）
         /// </summary>
-        [Display(Name = "啟用庫存調撥審核")]
-        public bool EnableInventoryTransferApproval { get; set; } = false;
+        [Column("EnableInventoryTransferApproval")]
+        [Display(Name = "庫存調撥審核方式")]
+        public bool InventoryTransferManualApproval { get; set; } = false;
+
+        /// <summary>
+        /// 是否隱藏所有模組的審核資訊欄位（核准人員、時間、狀態等）
+        /// false=顯示（預設），true=隱藏
+        /// </summary>
+        [Display(Name = "隱藏審核資訊欄位")]
+        public bool HideApprovalInfoSection { get; set; } = false;
 
         // ===== 子科目自動產生設定 =====
 

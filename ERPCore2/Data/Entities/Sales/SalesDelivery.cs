@@ -91,6 +91,9 @@ namespace ERPCore2.Data.Entities
         [NotMapped]
         public string? ApprovedAtText => ApprovedAt?.ToString("yyyy-MM-dd HH:mm");
 
+        [NotMapped]
+        public string ApprovedByDisplayName => IsApproved ? (ApprovedByUser?.Name ?? "系統自動審核") : "";
+
         [Display(Name = "已轉傳票")]
         public bool IsJournalized { get; set; } = false;
 

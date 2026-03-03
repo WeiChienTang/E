@@ -27,7 +27,7 @@
                       RequiredModule="Sales"
                       ShowBatchPrintButton="true"
                       OnBatchPrintClick="@HandleBatchPrintAsync"
-                      ShowBatchApprovalButton="@isApprovalEnabled"
+                      ShowBatchApprovalButton="@isManualApproval"
                       OnBatchApprovalClick="@HandleBatchApprovalAsync"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
@@ -68,7 +68,7 @@
     private int? editingSalesOrderId = null;
     
     // 審核相關狀態
-    private bool isApprovalEnabled = false;
+    private bool isManualApproval = false;
     private bool showBatchApprovalModal = false;
 
     // 批次列印 Modal 相關狀態
@@ -123,8 +123,8 @@
             await LoadEmployeesAsync();
             
             // 建立欄位配置（在載入相關資料後，並傳遞 NotificationService）
-            isApprovalEnabled = await SystemParameterService.IsSalesOrderApprovalEnabledAsync();
-            fieldConfiguration = new SalesOrderFieldConfiguration(customers, employees, isApprovalEnabled, NotificationService);
+            isManualApproval = await SystemParameterService.IsSalesOrderManualApprovalAsync();
+            fieldConfiguration = new SalesOrderFieldConfiguration(customers, employees, isManualApproval, NotificationService);
             fieldConfiguration.SetLocalizer(L);
 
             // 使用欄位配置建立篩選器和表格欄位

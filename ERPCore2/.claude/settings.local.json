@@ -105,7 +105,10 @@
       "Bash(powershell -Command \":*)",
       "Bash(del \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Migrations\\\\20260302014715_AddEmployeePreferenceShortcuts.cs\")",
       "Bash(del \"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Migrations\\\\20260302014715_AddEmployeePreferenceShortcuts.Designer.cs\")",
-      "Bash(del \"C:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Migrations\\\\20260302031527_RemoveDocumentCategorySource.cs\" \"C:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Migrations\\\\20260302031527_RemoveDocumentCategorySource.Designer.cs\")"
+      "Bash(del \"C:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Migrations\\\\20260302031527_RemoveDocumentCategorySource.cs\" \"C:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Migrations\\\\20260302031527_RemoveDocumentCategorySource.Designer.cs\")",
+      "Bash(while read file)",
+      "Bash(do basename \"$file\")",
+      "Bash(/dev/null:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

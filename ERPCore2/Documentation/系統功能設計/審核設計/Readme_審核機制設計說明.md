@@ -1,17 +1,22 @@
 # 審核機制設計說明（總綱）
 
 > 本文件為 ERPCore2 單據審核機制（Approval Workflow）的**總綱**，說明設計原則、核心元件與各模組現況摘要。詳細內容請參閱子文件。
-> 最後更新：2026-03-02（全 7 模組完整；警告訊息精簡；審核權限整合說明補充；審核資訊 Section 新增）
+> 最後更新：2026-03-03（架構重構：審核永遠啟用，改為自動/人工模式）
 
 ---
 
 ## 一、設計原則
 
-### 1-1 審核是「全域開關」，而非強制要求
+### 1-1 審核永遠啟用，設定控制「方式」
 
-審核功能以 **SystemParameter** 控制，每種單據類型各有一個布林開關：
-- 開關關閉 → 可自由儲存、轉單、列印
-- 開關開啟 → 必須先審核通過，才能執行後續操作（轉單、列印），且已核准後無法直接修改
+審核功能**永遠開啟**，不可關閉。**SystemParameter** 控制各單據類型的審核方式：
+
+| 模式 | C# 屬性值 | 行為 |
+|------|-----------|------|
+| **系統自動審核** | `XxxManualApproval = false`（預設） | 儲存時系統自動設 `IsApproved = true`，無需人工操作 |
+| **人工審核** | `XxxManualApproval = true` | 需人工按「核准」鍵，欄位在核准後鎖定 |
+
+**設計目的**：消除「開關切換前歷史資料 IsApproved=false」的語意模糊問題。所有單據的 `IsApproved` 永遠有明確意義。
 
 ### 1-2 「誰可以審核」由 Role/Permission 控制
 
@@ -21,10 +26,10 @@ SystemParameter 不存放指定審核人員。需要審核權限請在 `Permissi
 
 | 欄位名 | 型別 | 說明 |
 |--------|------|------|
-| `IsApproved` | `bool` | 是否已審核通過（預設 `false`） |
-| `ApprovedBy` | `int?` | FK → `Employee.Id`，審核者 |
+| `IsApproved` | `bool` | 是否已審核通過（預設 `false`，儲存後由系統或人工設為 `true`） |
+| `ApprovedBy` | `int?` | FK → `Employee.Id`，審核者（自動審核時為儲存者） |
 | `ApprovedAt` | `DateTime?` | 審核時間戳 |
-| `RejectReason` | `string?` | 駁回原因（核准後應清空） |
+| `RejectReason` | `string?` | 駁回原因（人工審核才有意義；核准後應清空） |
 | `ApprovedByUser` | `Employee?` | Navigation Property |
 
 ---
@@ -34,34 +39,33 @@ SystemParameter 不存放指定審核人員。需要審核權限請在 `Permissi
 | 元件 | 位置 | 說明 |
 |------|------|------|
 | `ApprovalConfigHelper` | `Helpers/EditModal/ApprovalConfigHelper.cs` | **唯一**審核邏輯入口，不可在元件直接硬寫判斷 |
-| `SystemParameter` | `Data/Entities/Systems/SystemParameter.cs` | 各模組審核開關儲存 |
-| `ApprovalSettingsTab` | `Components/Pages/Systems/SystemParameter/ApprovalSettingsTab.razor` | 系統參數 UI — 審核開關切換（8 個模組） |
-| `BatchApprovalModalComponent` | `Components/Pages/Purchase/BatchApprovalModalComponent.razor` | 通用批次審核 Modal（泛型 `TEntity`） |
+| `SystemParameter` | `Data/Entities/Systems/SystemParameter.cs` | 各模組審核方式設定（`XxxManualApproval`）|
+| `ApprovalSettingsTab` | `Components/Pages/Systems/SystemParameter/ApprovalSettingsTab.razor` | 系統參數 UI — 審核方式切換（8 個模組）|
+| `BatchApprovalModalComponent` | `Components/Pages/Purchase/BatchApprovalModalComponent.razor` | 通用批次審核 Modal（泛型 `TEntity`），人工審核模式才顯示 |
 | `BatchApprovalTable` | `Components/Pages/Purchase/BatchApprovalTable.razor` | 批次審核 Modal 內部表格 |
 | `RejectConfirmModalComponent` | `Components/Pages/Purchase/RejectConfirmModalComponent.razor` | 駁回原因輸入 Modal |
 | `GenericEditModalComponent` | `Components/Shared/Modal/GenericEditModalComponent.razor` | 核准/駁回按鈕區塊（`ShowApprovalSection` 系列參數）+ `CanPrintCheck` 列印守衛 |
-| `FormSectionNames.ApprovalInfo` | `Helpers/EditModal/FormSectionHelper.cs` | 審核資訊顯示 Section（`"Section.ApprovalInfo"`），審核啟用時才在 EditModal 表單中出現 |
+| `FormSectionNames.ApprovalInfo` | `Helpers/EditModal/FormSectionHelper.cs` | 審核資訊顯示 Section，人工審核模式才顯示 |
 
 ### ApprovalConfigHelper 邏輯摘要
 
 ```csharp
-// 欄位是否唯讀
-ShouldLockFieldByApproval(isApprovalEnabled, isApproved, hasUndeletableDetails)
+// 欄位是否唯讀（isManualApproval 取代舊的 isApprovalEnabled）
+ShouldLockFieldByApproval(isManualApproval, isApproved, hasUndeletableDetails)
 
 // 轉單/列印等操作是否允許
-CanPerformActionRequiringApproval(isApprovalEnabled, isApproved)
+CanPerformActionRequiringApproval(isManualApproval, isApproved)
 
 // 儲存是否允許（isPreApprovalSave=true 供核准前自動儲存用）
-CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
+CanSaveWhenApproved(isManualApproval, isApproved, isPreApprovalSave = false)
 ```
 
 | 情境 | ShouldLockField | CanPerformAction | CanSave |
 |------|-----------------|------------------|---------|
-| 審核關閉，無下一步 | `false` | `true` | `true` |
-| 審核關閉，有下一步 | `true` | `true` | `true` |
-| 審核開啟，未審核 | `false` | `false` | `true` |
-| 審核開啟，已核准 | `true` | `true` | `false` |
-| 審核開啟，已核准，isPreApprovalSave | `true` | `true` | `true` |
+| 自動審核，任意狀態 | `false` | `true` | `true` |
+| 人工審核，未審核 | `false` | `false` | `true` |
+| 人工審核，已核准 | `true` | `true` | `false` |
+| 人工審核，已核准，isPreApprovalSave | `true` | `true` | `true` |
 
 ---
 
@@ -79,18 +83,18 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
 | 銷貨出貨 | ✅ | ✅ 完整 | ✅ ApproveAsync | ✅ | ✅ |
 | 銷貨退回 | ✅ | ✅ 完整 | ✅ ApproveAsync | ✅ | ✅ |
 
-**SystemParameter 審核開關現況**
+**SystemParameter 審核方式欄位現況（DB 欄位保留舊名，C# 屬性已更新）**
 
-| 開關欄位 | 存在 | ApprovalSettingsTab 可切換 |
-|---------|------|---------------------------|
-| `EnableQuotationApproval` | ✅ | ✅ |
-| `EnablePurchaseOrderApproval` | ✅ | ✅ |
-| `EnablePurchaseReceivingApproval` | ✅ | ✅ |
-| `EnablePurchaseReturnApproval` | ✅ | ✅ |
-| `EnableSalesOrderApproval` | ✅ | ✅ |
-| `EnableSalesReturnApproval` | ✅ | ✅ |
-| `EnableInventoryTransferApproval` | ✅ | ✅ |
-| `EnableSalesDeliveryApproval` | ✅ | ✅ |
+| C# 屬性 | DB 欄位（原名） | 存在 | ApprovalSettingsTab 可切換 |
+|---------|---------------|------|---------------------------|
+| `QuotationManualApproval` | `EnableQuotationApproval` | ✅ | ✅ |
+| `PurchaseOrderManualApproval` | `EnablePurchaseOrderApproval` | ✅ | ✅ |
+| `PurchaseReceivingManualApproval` | `EnablePurchaseReceivingApproval` | ✅ | ✅ |
+| `PurchaseReturnManualApproval` | `EnablePurchaseReturnApproval` | ✅ | ✅ |
+| `SalesOrderManualApproval` | `EnableSalesOrderApproval` | ✅ | ✅ |
+| `SalesReturnManualApproval` | `EnableSalesReturnApproval` | ✅ | ✅ |
+| `SalesDeliveryManualApproval` | `EnableSalesDeliveryApproval` | ✅ | ✅ |
+| `InventoryTransferManualApproval` | `EnableInventoryTransferApproval` | ✅ | ✅ |
 
 ---
 
@@ -111,11 +115,19 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
      ├─ 按「儲存」
      │       ↓
      │   ApprovalConfigHelper.CanSaveWhenApproved()
-     │       ├─ 審核關閉 → 允許
-     │       ├─ 審核開啟 + 未核准 → 允許
-     │       └─ 審核開啟 + 已核准 → ❌ 顯示警告
+     │       ├─ 自動審核 → 允許儲存
+     │       ├─ 人工審核 + 未核准 → 允許
+     │       └─ 人工審核 + 已核准 → ❌ 顯示警告
      │
-     ├─ 按「核准」（HandleApproveAsync）
+     ├─ 儲存成功（自動審核模式）
+     │       ↓
+     │   !isManualApproval && !entity.IsApproved
+     │       ↓
+     │   EntityService.ApproveAsync(id, currentUserId)  ← 系統自動核准
+     │       ↓
+     │   IsApproved = true（對使用者無感）
+     │
+     ├─ 按「核准」（HandleApproveAsync）— 人工審核模式
      │       ↓
      │   UpdateAsync(entity) + SaveXxxDetailsAsync(entity)  ← 先儲存含明細
      │       ↓
@@ -123,7 +135,7 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
      │       ↓
      │   欄位變唯讀 / Detail Table 封鎖 / 轉單與列印開放
      │
-     ├─ 按「駁回」（HandleRejectWithReasonAsync）
+     ├─ 按「駁回」（HandleRejectWithReasonAsync）— 人工審核模式
      │       ↓
      │   輸入駁回原因（RejectConfirmModalComponent）
      │       ↓
@@ -134,8 +146,8 @@ CanSaveWhenApproved(isApprovalEnabled, isApproved, isPreApprovalSave = false)
      └─ 執行需審核後才能做的操作（轉單、列印）
              ↓
          ApprovalConfigHelper.CanPerformActionRequiringApproval()
-             ├─ 審核關閉 → 執行
-             └─ 審核開啟 + 未核准 → ❌ 顯示「需先審核通過」
+             ├─ 自動審核 → 執行（IsApproved 已為 true）
+             └─ 人工審核 + 未核准 → ❌ 顯示「需先審核通過」
 ```
 
 ---
@@ -179,21 +191,12 @@ public static class Quotation
 </PermissionCheck>
 ```
 
-`ApprovalPermission` 由各 EditModal 傳入，**必須使用 PermissionRegistry 常數**（非原始字串），以享有編譯期型別檢查並避免拼寫錯誤：
-
-```razor
-@* ✅ 正確 *@
-ApprovalPermission="@PermissionRegistry.SalesOrder.Approve"
-
-@* ❌ 錯誤（原始字串，無編譯期保護） *@
-ApprovalPermission="SalesOrder.Approve"
-```
+**人工審核模式**下：有 `Approve` 權限的使用者可看到核准/駁回按鈕。
+**自動審核模式**下：`ShouldShowApprovalSection()` 回傳 `false`，整個審核操作區塊不顯示。
 
 ### 6-3 角色授權設定
 
 在系統管理 → 角色管理中，對應角色需開啟 `Xxx.Approve` 權限，該使用者才會看到「核准」與「駁回」按鈕。
-
-沒有 `Approve` 權限的使用者，`<PermissionCheck>` 會直接隱藏按鈕，整個審核操作區塊不可見。
 
 ---
 
@@ -208,8 +211,8 @@ ApprovalPermission="SalesOrder.Approve"
 | 條件 | 是否顯示 ApprovalInfo Section |
 |------|-------------------------------|
 | 新建單據（EntityId = null） | ❌ 不顯示 |
-| 編輯現有單據 + 審核功能關閉 | ❌ 不顯示 |
-| 編輯現有單據 + 審核功能開啟 | ✅ 顯示 |
+| 編輯現有單據 + 自動審核模式 | ❌ 不顯示 |
+| 編輯現有單據 + 人工審核模式 | ✅ 顯示 |
 
 ### 7-3 欄位一覽
 
@@ -231,58 +234,13 @@ formSections = FormSectionHelper<TEntity>.Create()
     .AddToSection(FormSectionNames.BasicInfo, ...)
     // ...
     .AddCustomFieldsIf(
-        isApprovalEnabled && XxxId.HasValue && XxxId.Value > 0,
+        isManualApproval && XxxId.HasValue && XxxId.Value > 0,  // 人工審核模式才顯示
         FormSectionNames.ApprovalInfo,
         nameof(XxxEntity.IsApproved),
-        "ApprovedByUser.FullName",          // 嵌套屬性，GenericFormComponent 支援 dot-notation
+        "ApprovedByUser.FullName",
         nameof(XxxEntity.ApprovedAt),
         nameof(XxxEntity.RejectReason))
     .Build();
-```
-
-```csharp
-// formFields 定義（固定加入，visibility 由 formSections 控制）
-
-new FormFieldDefinition()
-{
-    PropertyName = nameof(XxxEntity.IsApproved),
-    Label = L["Approval.Status"],
-    FieldType = FormFieldType.Select,
-    IsDisabled = true,
-    ContainerCssClass = "col-md-4",
-    Options = new List<SelectOption>
-    {
-        new SelectOption { Value = "True",  Text = L["Approval.Approved"] },
-        new SelectOption { Value = "False", Text = L["Approval.Pending"]  }
-    }
-},
-new FormFieldDefinition()
-{
-    PropertyName = "ApprovedByUser.FullName",
-    Label        = L["Approval.ApprovedBy"],
-    FieldType    = FormFieldType.Text,
-    IsReadOnly   = true,
-    IsDisabled   = true,
-    ContainerCssClass = "col-md-4"
-},
-new FormFieldDefinition()
-{
-    PropertyName = nameof(XxxEntity.ApprovedAt),
-    Label        = L["Approval.ApprovedAt"],
-    FieldType    = FormFieldType.DateTime,
-    IsReadOnly   = true,
-    IsDisabled   = true,
-    ContainerCssClass = "col-md-4"
-},
-new FormFieldDefinition()
-{
-    PropertyName = nameof(XxxEntity.RejectReason),
-    Label        = L["Field.RejectionReason"],
-    FieldType    = FormFieldType.Text,
-    IsReadOnly   = true,
-    IsDisabled   = true,
-    ContainerCssClass = "col-md-12"
-},
 ```
 
 ### 7-5 Resx Keys
@@ -300,13 +258,25 @@ new FormFieldDefinition()
 
 ## 八、常見問題
 
-### Q: 開啟審核後，歷史資料 IsApproved = false 怎麼辦？
+### Q: 從舊版（開關式審核）升級後，歷史資料 IsApproved=false 怎麼辦？
 
-欄位仍可編輯，但轉單/列印需先手動核准。批次核准請使用各模組 Index 的「批次審核」按鈕（報價單、採購訂單、進貨單、進貨退回、銷售訂單、銷貨出貨、銷貨退回均已實作）。
+舊版中「審核關閉」等同新版「自動審核」（`XxxManualApproval=false`）。歷史資料在新版中：
+- 若切換為自動審核：下次儲存時系統自動核准，無需補審
+- 若切換為人工審核：需要手動補核准（使用 Index 頁批次審核按鈕）
 
 ### Q: 核准後發現資料有誤？
 
-按「駁回」→ 輸入原因 → 欄位解鎖 → 修改 → 重新核准。
+**人工審核模式**：按「駁回」→ 輸入原因 → 欄位解鎖 → 修改 → 重新核准。
+**自動審核模式**：直接修改並儲存，系統自動重新核准。
+
+### Q: 批次審核按鈕什麼時候顯示？
+
+只在**人工審核模式**（`isManualApproval=true`）下顯示批次審核按鈕。自動審核模式下按鈕隱藏（無意義）。
+
+### Q: 轉單後建立的新單據會自動審核嗎？
+
+- **自動審核模式**：使用者開啟新單據並儲存後，系統自動核准（Phase 2 可在 service 層補充轉單時直接核准）
+- **人工審核模式**：需人工審核後才可執行後續操作
 
 ### Q: 為什麼 SalesOrderEditModal 在 OnInitializedAsync 要先初始化 ModalManager 再 await？
 

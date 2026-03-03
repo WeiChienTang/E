@@ -31,7 +31,7 @@
                           RequiredModule="Sales"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
-                          ShowBatchApprovalButton="@isApprovalEnabled"
+                          ShowBatchApprovalButton="@isManualApproval"
                           OnBatchApprovalClick="@HandleBatchApprovalAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
@@ -72,7 +72,7 @@
     private int? editingSalesReturnId = null;
     
     // 審核相關狀態
-    private bool isApprovalEnabled = false;
+    private bool isManualApproval = false;
     private bool showBatchApprovalModal = false;
 
     // 批次列印 Modal 相關狀態
@@ -131,8 +131,8 @@
             await LoadCustomersAsync();
             
             // 建立欄位配置
-            isApprovalEnabled = await SystemParameterService.IsSalesReturnApprovalEnabledAsync();
-            fieldConfiguration = new SalesReturnFieldConfiguration(salesDeliveries, warehouses, returnReasons, isApprovalEnabled, NotificationService);
+            isManualApproval = await SystemParameterService.IsSalesReturnManualApprovalAsync();
+            fieldConfiguration = new SalesReturnFieldConfiguration(salesDeliveries, warehouses, returnReasons, isManualApproval, NotificationService);
             fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();

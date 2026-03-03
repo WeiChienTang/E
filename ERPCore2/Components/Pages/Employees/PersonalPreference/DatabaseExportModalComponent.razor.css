@@ -1,0 +1,133 @@
+/* ===== 步驟指示器 ===== */
+
+.step-indicator {
+    padding: 0 1rem;
+}
+
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--border-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.step-item.active .step-circle {
+    background: #0d6efd;
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+
+.step-item.completed .step-circle {
+    background: #198754;
+    color: #fff;
+}
+
+.step-label {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.step-item.active .step-label {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.step-item.completed .step-label {
+    color: #198754;
+}
+
+.step-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--border-color);
+    margin: 16px 8px 0;
+    transition: background 0.2s;
+}
+
+.step-connector.completed {
+    background: #198754;
+}
+
+
+/* ===== Step 1：表選取清單（多選） ===== */
+
+.table-select-list {
+    max-height: 350px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    background-color: var(--bg-primary);
+}
+
+.table-select-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+    color: var(--text-primary);
+}
+
+.table-select-item:hover {
+    background: var(--bg-secondary);
+}
+
+.table-select-item.selected {
+    background: #e7f1ff;
+    border-left: 3px solid #0d6efd;
+}
+
+.table-select-item:last-child {
+    border-bottom: none;
+}
+
+.table-select-item .form-check-input {
+    cursor: pointer;
+}
+
+
+/* ===== Step 2：預覽確認表格 ===== */
+
+.preview-confirm-table th {
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.preview-confirm-table td {
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+
+/* ===== 通用 ===== */
+
+.step-content {
+    min-height: 300px;
+}
+
+.database-export-wizard {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+
+/* ===== 深色模式覆寫 ===== */
+
+[data-bs-theme=dark] .table-select-item.selected {
+    background: #1c3353;
+    border-left-color: #58a6ff;
+}

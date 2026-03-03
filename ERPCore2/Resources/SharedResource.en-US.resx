@@ -1167,14 +1167,14 @@
   <!-- ===== Approval Settings Tab keys ===== -->
   <data name="Tab.ApprovalSettings" xml:space="preserve"><value>Approval Settings</value></data>
   <data name="Section.ApprovalSettings" xml:space="preserve"><value>Approval Workflow Settings</value></data>
-  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>Enable Quotation Approval</value></data>
-  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>Enable Purchase Order Approval</value></data>
-  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>Enable Purchase Receiving Approval</value></data>
-  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>Enable Purchase Return Approval</value></data>
-  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>Enable Sales Order Approval</value></data>
-  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>Enable Sales Return Approval</value></data>
-  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>Enable Sales Delivery Approval</value></data>
-  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>Enable Inventory Transfer Approval</value></data>
+  <data name="Field.EnableQuotationApproval" xml:space="preserve"><value>Quotation Approval Mode</value></data>
+  <data name="Field.EnablePurchaseOrderApproval" xml:space="preserve"><value>Purchase Order Approval Mode</value></data>
+  <data name="Field.EnablePurchaseReceivingApproval" xml:space="preserve"><value>Purchase Receiving Approval Mode</value></data>
+  <data name="Field.EnablePurchaseReturnApproval" xml:space="preserve"><value>Purchase Return Approval Mode</value></data>
+  <data name="Field.EnableSalesOrderApproval" xml:space="preserve"><value>Sales Order Approval Mode</value></data>
+  <data name="Field.EnableSalesReturnApproval" xml:space="preserve"><value>Sales Return Approval Mode</value></data>
+  <data name="Field.EnableSalesDeliveryApproval" xml:space="preserve"><value>Sales Delivery Approval Mode</value></data>
+  <data name="Field.EnableInventoryTransferApproval" xml:space="preserve"><value>Inventory Transfer Approval Mode</value></data>
   <!-- ===== FormSectionNames keys ===== -->
   <data name="Section.BasicInfo" xml:space="preserve"><value>Basic Info</value></data>
   <data name="Section.FilterConditions" xml:space="preserve"><value>Filter Conditions</value></data>
@@ -1238,6 +1238,7 @@
   <data name="Dashboard.NoItems" xml:space="preserve"><value>No {0} available to add</value></data>
   <data name="Placeholder.SearchWidgets" xml:space="preserve"><value>Search name, description or category...</value></data>
   <data name="Dashboard.RemoveShortcut" xml:space="preserve"><value>Remove Shortcut</value></data>
+  <data name="Dashboard.AlreadyAdded" xml:space="preserve"><value>Added</value></data>
   <data name="Dashboard.SelectIcon" xml:space="preserve"><value>Select Panel Icon</value></data>
   <data name="Dashboard.ApplyIcon" xml:space="preserve"><value>Apply Selected Icon</value></data>
   <data name="Dashboard.CurrentSelection" xml:space="preserve"><value>Current Selection</value></data>
@@ -1584,6 +1585,9 @@
   <data name="Home.DeleteThisPanelTooltip" xml:space="preserve"><value>Delete This Panel</value></data>
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>Edit This Panel</value></data>
   <data name="Home.Create" xml:space="preserve"><value>Create</value></data>
+  <data name="Home.WelcomeMessage" xml:space="preserve"><value>Hello, {0}</value></data>
+  <data name="Home.NoPanelItemsHint" xml:space="preserve"><value>Click the edit button to customize this panel</value></data>
+  <data name="Home.NoPanelsHint" xml:space="preserve"><value>Create your first panel to start customizing your workspace</value></data>
 
   <!-- ===== Message - Home operations ===== -->
   <data name="Message.LoadHomeFailed" xml:space="preserve"><value>Failed to load home configuration</value></data>
@@ -1809,6 +1813,8 @@
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>Confirm Remove</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>Clear Details</value></data>
   <data name="Button.DisableAccount" xml:space="preserve"><value>Disable Account</value></data>
+  <data name="Button.SetAllManual" xml:space="preserve"><value>Set All Manual</value></data>
+  <data name="Button.SetAllAuto" xml:space="preserve"><value>Set All Auto</value></data>
   <data name="Button.EnableAll" xml:space="preserve"><value>Enable All</value></data>
   <data name="Button.DisableAll" xml:space="preserve"><value>Disable All</value></data>
   <data name="Button.OpenEdit" xml:space="preserve"><value>Open Edit</value></data>
@@ -2787,10 +2793,14 @@
   <data name="AccountLevel.L4" xml:space="preserve"><value>Level 4 (Detail Account)</value></data>
 
   <!-- ===== ApprovalSettings Toggle ===== -->
+  <data name="Toggle.Manual" xml:space="preserve"><value>Manual</value></data>
+  <data name="Toggle.Auto" xml:space="preserve"><value>Auto</value></data>
   <data name="Toggle.Enabled" xml:space="preserve"><value>Enabled</value></data>
   <data name="Toggle.Disabled" xml:space="preserve"><value>Disabled</value></data>
   <data name="Toggle.Switch" xml:space="preserve"><value>Toggle</value></data>
-  <data name="ApprovalSettings.Description" xml:space="preserve"><value>Control the approval workflow for each document type. When enabled, related documents require approval before taking effect.</value></data>
+  <data name="ApprovalSettings.Description" xml:space="preserve"><value>In manual approval mode, documents require human confirmation. In auto mode, the system automatically approves on save.</value></data>
+  <data name="ApprovalSettings.HideApprovalInfoSection" xml:space="preserve"><value>Hide approval info fields (all modules)</value></data>
+  <data name="ApprovalSettings.HideApprovalInfoSectionDesc" xml:space="preserve"><value>When checked, approval status, approver, and approval time fields will not be shown on document edit pages</value></data>
 
   <!-- ===== SubAccount BatchCreate ===== -->
   <data name="SubAccount.BatchCreateTitle" xml:space="preserve"><value>Batch Create Sub-Accounts</value></data>

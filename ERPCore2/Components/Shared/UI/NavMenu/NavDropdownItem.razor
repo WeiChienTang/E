@@ -5,7 +5,9 @@
 @using Microsoft.JSInterop
 @inject INavigationPermissionCollector PermissionCollector
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 @inject ILogger<NavDropdownItem> Logger
+@implements IDisposable
 
 @if (IsDivider)
 {
@@ -36,7 +38,7 @@ else if (ForceLoad)
 }
 else
 {
-    <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" href="@Url" @onclick="OnDropdownItemClick">
+    <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "") @(IsActive ? "active" : "")" href="@Url" @onclick="OnDropdownItemClick">
         @if (!string.IsNullOrEmpty(IconClass))
         {
             <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
@@ -102,6 +104,7 @@ else
     {        
         // 在組件初始化時就註冊權限，確保父組件能及時收集到
         RegisterPermission();
+        NavigationManager.LocationChanged += OnLocationChanged;
     }
 
     protected override void OnParametersSet()
@@ -187,5 +190,28 @@ else
         catch
         {
         }
+    }
+
+    /// <summary>
+    /// 判斷目前連結是否為當前頁面
+    /// </summary>
+    private bool IsActive
+    {
+        get
+        {
+            if (IsDivider || string.IsNullOrEmpty(Url) || ItemType == NavigationItemType.Action) return false;
+            var relativePath = "/" + NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+            return string.Equals(relativePath.TrimEnd('/'), Url.TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }

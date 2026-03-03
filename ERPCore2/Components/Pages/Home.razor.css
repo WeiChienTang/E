@@ -1,28 +1,74 @@
+/* ===== 歡迎橫幅 ===== */
+.welcome-banner {
+    background: linear-gradient(135deg, rgba(var(--primary-blue-rgb), 0.06), rgba(var(--primary-blue-rgb), 0.02));
+    border: 1px solid rgba(var(--primary-blue-rgb), 0.1);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+}
+
+.welcome-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.welcome-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* ===== 面板容器 ===== */
+.dashboard-panel {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.2s ease;
+}
+
+.dashboard-panel:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* 面板標題列 */
+.panel-header {
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+/* 面板內容區域 */
+.panel-content {
+    padding-top: 0.25rem;
+}
+
 /* ===== 新增捷徑卡片 ===== */
 .add-shortcut-card {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
-    padding: 0.45rem 0.65rem;
+    padding: 0.85rem 0.5rem 0.7rem;
     background-color: var(--bg-tertiary);
     border: 2px dashed var(--border-color);
     border-radius: 0.75rem;
     cursor: pointer;
     transition: all 0.25s ease;
-    min-height: 52px;
+    min-height: 88px;
     color: var(--text-secondary);
 }
 
 .add-shortcut-card:hover {
-    background-color: rgba(var(--primary-blue-rgb), 0.1);
+    background-color: rgba(var(--primary-blue-rgb), 0.06);
     border-color: var(--primary-blue);
     color: var(--primary-blue);
 }
 
 .add-shortcut-card i {
-    font-size: 1.1rem;
+    font-size: 1.3rem;
     transition: transform 0.25s ease;
     flex-shrink: 0;
 }
@@ -32,40 +78,174 @@
 }
 
 .add-shortcut-card span {
-    font-size: 1rem;
+    font-size: 0.82rem;
     font-weight: 600;
     white-space: nowrap;
 }
 
+/* ===== 新增面板卡片 ===== */
+.add-panel-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    background-color: var(--bg-secondary);
+    border: 2px dashed var(--border-color);
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.add-panel-card:hover {
+    background-color: rgba(var(--primary-blue-rgb), 0.06);
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.add-panel-card i {
+    font-size: 1.1rem;
+    transition: transform 0.25s ease;
+}
+
+.add-panel-card:hover i {
+    transform: scale(1.15);
+}
+
+/* ===== 面板空狀態 ===== */
+.empty-panel-state {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.empty-panel-icons {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+}
+
+.empty-panel-icons > i:first-child {
+    font-size: 2.5rem;
+    color: var(--border-color);
+}
+
+.empty-panel-icons .empty-panel-plus {
+    position: absolute;
+    bottom: 0;
+    right: -4px;
+    font-size: 1rem;
+    color: var(--primary-blue);
+    background: var(--bg-primary);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== 全域空狀態 ===== */
+.global-empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.empty-state-illustration {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+}
+
+.empty-state-illustration > i:first-child {
+    font-size: 3.5rem;
+    color: var(--border-color);
+}
+
+.empty-state-illustration .empty-state-cursor {
+    position: absolute;
+    bottom: 0;
+    right: -6px;
+    font-size: 1.3rem;
+    color: var(--primary-blue);
+}
+
 /* ===== 響應式調整 - 平板 ===== */
 @media (max-width: 768px) {
+    .welcome-banner {
+        padding: 0.75rem 1rem;
+    }
+
+    .welcome-title {
+        font-size: 1rem;
+    }
+
+    .dashboard-panel {
+        padding: 0.75rem 0.85rem 1rem;
+    }
+
     .add-shortcut-card {
-        min-height: 46px;
-        padding: 0.35rem 0.5rem;
+        min-height: 78px;
+        padding: 0.7rem 0.4rem 0.55rem;
     }
 
     .add-shortcut-card i {
-        font-size: 1rem !important;
+        font-size: 1.1rem;
     }
 
     .add-shortcut-card span {
-        font-size: 0.78rem;
+        font-size: 0.75rem;
     }
 }
 
 /* ===== 響應式調整 - 手機 ===== */
 @media (max-width: 576px) {
+    .welcome-banner {
+        padding: 0.6rem 0.75rem;
+    }
+
+    .welcome-title {
+        font-size: 0.9rem;
+    }
+
+    .welcome-subtitle {
+        font-size: 0.75rem;
+    }
+
+    .dashboard-panel {
+        padding: 0.6rem 0.65rem 0.8rem;
+        border-radius: 0.5rem;
+    }
+
     .add-shortcut-card {
-        min-height: 40px;
-        padding: 0.3rem 0.4rem;
+        min-height: 66px;
+        padding: 0.55rem 0.3rem 0.45rem;
     }
 
     .add-shortcut-card i {
-        font-size: 0.9rem !important;
+        font-size: 1rem;
     }
 
     .add-shortcut-card span {
-        font-size: 0.7rem;
+        font-size: 0.68rem;
+    }
+
+    .add-panel-card {
+        padding: 0.65rem 0.75rem;
+        font-size: 0.82rem;
     }
 }
 

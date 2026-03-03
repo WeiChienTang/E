@@ -3,7 +3,7 @@
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResource> L
 
-<div class="shortcut-card @(IsEditMode ? "edit-mode" : "")"
+<div class="shortcut-card @(IsEditMode ? "edit-mode" : "") @GetTypeClass()"
      @onclick="HandleClick"
      title="@NavigationItem.Description">
 
@@ -14,8 +14,22 @@
         </button>
     }
 
-    <div class="shortcut-icon">
-        <i class="@GetEffectiveIcon()"></i>
+    <div class="shortcut-icon-wrapper">
+        <div class="shortcut-icon">
+            <i class="@GetEffectiveIcon()"></i>
+        </div>
+        @if (NavigationItem.ItemType == NavigationItemType.QuickAction)
+        {
+            <span class="type-badge type-badge-quick">
+                <i class="bi bi-plus"></i>
+            </span>
+        }
+        else if (NavigationItem.IsChartWidget)
+        {
+            <span class="type-badge type-badge-chart">
+                <i class="bi bi-bar-chart-fill"></i>
+            </span>
+        }
     </div>
     <div class="shortcut-name">@NavigationItem.Name</div>
 </div>
@@ -64,5 +78,17 @@
         }
         
         return icon;
+    }
+
+    /// <summary>
+    /// 根據項目類型回傳對應的 CSS class
+    /// </summary>
+    private string GetTypeClass()
+    {
+        if (NavigationItem.ItemType == NavigationItemType.QuickAction)
+            return "type-quick-action";
+        if (NavigationItem.IsChartWidget)
+            return "type-chart-widget";
+        return "";
     }
 }

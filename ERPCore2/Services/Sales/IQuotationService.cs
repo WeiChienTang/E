@@ -70,7 +70,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 核准報價單
         /// </summary>
-        Task<ServiceResult> ApproveAsync(int id, int approvedBy);
+        Task<ServiceResult> ApproveAsync(int id, int? approvedBy);
 
         /// <summary>
         /// 駁回報價單

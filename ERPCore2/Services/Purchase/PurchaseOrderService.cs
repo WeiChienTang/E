@@ -408,7 +408,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> ApproveOrderAsync(int orderId, int approvedBy)
+        public async Task<ServiceResult> ApproveOrderAsync(int orderId, int? approvedBy)
         {
             try
             {
@@ -1044,7 +1044,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查是否啟用採購單審核功能
-                var isApprovalEnabled = await _systemParameterService.IsPurchaseOrderApprovalEnabledAsync();
+                var isApprovalEnabled = await _systemParameterService.IsPurchaseOrderManualApprovalAsync();
                 
                 var query = context.PurchaseOrders
                     .Include(po => po.Company)

@@ -92,7 +92,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 核准進貨單
         /// </summary>
-        Task<ServiceResult> ApproveAsync(int id, int approvedBy);
+        Task<ServiceResult> ApproveAsync(int id, int? approvedBy);
 
         /// <summary>
         /// 駁回進貨單

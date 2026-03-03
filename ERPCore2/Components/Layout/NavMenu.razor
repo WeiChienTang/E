@@ -22,20 +22,32 @@
                 @* 使用者資訊選單 *@
                 <AuthorizeView>
                     <Authorized>
-                        <NavMenuItem Text="@(context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? context.User.Identity?.Name ?? L["Nav.DefaultUser"].ToString())"
-                                    IconClass="bi bi-person-circle" 
-                                    ShowDropdownArrow ="false"
-                                    AutoDetectPermissions="false">
-                            <DropdownItems>
-                                <NavDropdownItem Text="@L["Nav.PersonalData"]"
-                                               ItemType="NavigationItemType.Action"
-                                               ActionId="OpenPersonalPreference"
-                                               IconClass="bi bi-person" />
-                                <NavDropdownItem Text="@L["Nav.SignOut"]"
-                                               Url="/auth/signout"
-                                               IconClass="bi bi-box-arrow-right" />
-                            </DropdownItems>
-                        </NavMenuItem>
+                        @{
+                            var userName = context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+                                ?? context.User.Identity?.Name
+                                ?? L["Nav.DefaultUser"].ToString();
+                            var userInitial = !string.IsNullOrEmpty(userName) ? userName[0].ToString().ToUpper() : "U";
+                        }
+                        <div class="user-profile-area">
+                            <div class="user-avatar-circle">
+                                @userInitial
+                                <span class="user-online-dot"></span>
+                            </div>
+                            <NavMenuItem Text="@userName"
+                                        IconClass=""
+                                        ShowDropdownArrow="false"
+                                        AutoDetectPermissions="false">
+                                <DropdownItems>
+                                    <NavDropdownItem Text="@L["Nav.PersonalData"]"
+                                                   ItemType="NavigationItemType.Action"
+                                                   ActionId="OpenPersonalPreference"
+                                                   IconClass="bi bi-person" />
+                                    <NavDropdownItem Text="@L["Nav.SignOut"]"
+                                                   Url="/auth/signout"
+                                                   IconClass="bi bi-box-arrow-right" />
+                                </DropdownItems>
+                            </NavMenuItem>
+                        </div>
                     </Authorized>
                     <NotAuthorized>
                         <NavMenuItem Text="@L["Nav.SignIn"]"
@@ -68,7 +80,9 @@
                             <div class="nav-menu-dropdown-toggle-btn">
                                 <span class="@menuItem.IconClass" aria-hidden="true"></span>
                                 <span class="nav-menu-item-text">@itemDisplayName</span>
-                                <span class="bi bi-lock nav-module-disabled-lock"></span>
+                                <span class="nav-module-disabled-badge">
+                                    <span class="bi bi-lock-fill"></span>
+                                </span>
                             </div>
                         </div>
                     }

@@ -1,27 +1,27 @@
-@* 審核管理 Tab *@
+@* 審核模式設定 Tab *@
 
 @inject IStringLocalizer<SharedResource> L
 
 <div class="mt-2">
     <p class="text-muted mb-3">@L["ApprovalSettings.Description"]</p>
     <div class="d-flex gap-2 mb-3">
-        <button class="btn btn-sm btn-success" @onclick="EnableAll">@L["Button.EnableAll"]</button>
-        <button class="btn btn-sm btn-secondary" @onclick="DisableAll">@L["Button.DisableAll"]</button>
+        <button class="btn btn-sm btn-warning" @onclick="SetAllManual">@L["Button.SetAllManual"]</button>
+        <button class="btn btn-sm btn-success" @onclick="SetAllAuto">@L["Button.SetAllAuto"]</button>
     </div>
     <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 mb-3">
         @foreach (var setting in approvalSettings)
         {
             var s = setting;
-            var isEnabled = s.GetValue();
+            var isManual = s.GetValue();
             <div class="col">
-                <div class="card h-100 @(isEnabled ? "border-success" : "border-secondary")"
+                <div class="card h-100 @(isManual ? "border-warning" : "border-success")"
                      style="cursor: pointer"
                      @onclick="@(() => { s.SetValue(!s.GetValue()); StateHasChanged(); })">
                     <div class="card-body p-2 d-flex flex-column gap-1">
                         <div class="d-flex justify-content-between align-items-start">
                             <strong class="small">@s.Label</strong>
-                            <span class="badge @(isEnabled ? "bg-success" : "bg-secondary") ms-1 flex-shrink-0">
-                                @(isEnabled ? L["Toggle.Enabled"].ToString() : L["Toggle.Disabled"].ToString())
+                            <span class="badge @(isManual ? "bg-warning text-dark" : "bg-success") ms-1 flex-shrink-0">
+                                @(isManual ? L["Toggle.Manual"].ToString() : L["Toggle.Auto"].ToString())
                             </span>
                         </div>
                     </div>
@@ -29,6 +29,16 @@
             </div>
         }
     </div>
+    <hr class="my-3" />
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="hideApprovalInfoSection"
+               checked="@Model.HideApprovalInfoSection"
+               @onchange="@(e => Model.HideApprovalInfoSection = (bool)(e.Value ?? false))" />
+        <label class="form-check-label" for="hideApprovalInfoSection">
+            @L["ApprovalSettings.HideApprovalInfoSection"]
+        </label>
+    </div>
+    <p class="text-muted small mt-1">@L["ApprovalSettings.HideApprovalInfoSectionDesc"]</p>
 </div>
 
 @code {
@@ -39,13 +49,13 @@
 
     private record ApprovalSettingItem(string Key, string Label, Func<bool> GetValue, Action<bool> SetValue);
 
-    private void EnableAll()
+    private void SetAllManual()
     {
         foreach (var setting in approvalSettings)
             setting.SetValue(true);
     }
 
-    private void DisableAll()
+    private void SetAllAuto()
     {
         foreach (var setting in approvalSettings)
             setting.SetValue(false);
@@ -55,14 +65,14 @@
     {
         approvalSettings = new List<ApprovalSettingItem>
         {
-            new("quotation",         L["Field.EnableQuotationApproval"],         () => Model.EnableQuotationApproval,         v => Model.EnableQuotationApproval = v),
-            new("purchaseOrder",     L["Field.EnablePurchaseOrderApproval"],     () => Model.EnablePurchaseOrderApproval,     v => Model.EnablePurchaseOrderApproval = v),
-            new("purchaseReceiving", L["Field.EnablePurchaseReceivingApproval"], () => Model.EnablePurchaseReceivingApproval, v => Model.EnablePurchaseReceivingApproval = v),
-            new("purchaseReturn",    L["Field.EnablePurchaseReturnApproval"],    () => Model.EnablePurchaseReturnApproval,    v => Model.EnablePurchaseReturnApproval = v),
-            new("salesOrder",        L["Field.EnableSalesOrderApproval"],        () => Model.EnableSalesOrderApproval,       v => Model.EnableSalesOrderApproval = v),
-            new("salesReturn",       L["Field.EnableSalesReturnApproval"],       () => Model.EnableSalesReturnApproval,       v => Model.EnableSalesReturnApproval = v),
-            new("salesDelivery",     L["Field.EnableSalesDeliveryApproval"],     () => Model.EnableSalesDeliveryApproval,     v => Model.EnableSalesDeliveryApproval = v),
-            new("inventoryTransfer", L["Field.EnableInventoryTransferApproval"], () => Model.EnableInventoryTransferApproval, v => Model.EnableInventoryTransferApproval = v),
+            new("quotation",         L["Field.EnableQuotationApproval"],         () => Model.QuotationManualApproval,         v => Model.QuotationManualApproval = v),
+            new("purchaseOrder",     L["Field.EnablePurchaseOrderApproval"],     () => Model.PurchaseOrderManualApproval,     v => Model.PurchaseOrderManualApproval = v),
+            new("purchaseReceiving", L["Field.EnablePurchaseReceivingApproval"], () => Model.PurchaseReceivingManualApproval, v => Model.PurchaseReceivingManualApproval = v),
+            new("purchaseReturn",    L["Field.EnablePurchaseReturnApproval"],    () => Model.PurchaseReturnManualApproval,    v => Model.PurchaseReturnManualApproval = v),
+            new("salesOrder",        L["Field.EnableSalesOrderApproval"],        () => Model.SalesOrderManualApproval,       v => Model.SalesOrderManualApproval = v),
+            new("salesReturn",       L["Field.EnableSalesReturnApproval"],       () => Model.SalesReturnManualApproval,       v => Model.SalesReturnManualApproval = v),
+            new("salesDelivery",     L["Field.EnableSalesDeliveryApproval"],     () => Model.SalesDeliveryManualApproval,     v => Model.SalesDeliveryManualApproval = v),
+            new("inventoryTransfer", L["Field.EnableInventoryTransferApproval"], () => Model.InventoryTransferManualApproval, v => Model.InventoryTransferManualApproval = v),
         };
     }
 }

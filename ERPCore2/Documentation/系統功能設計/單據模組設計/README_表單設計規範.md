@@ -1,7 +1,7 @@
 # 進銷存表單設計規範
 
 ## 更新日期
-2026-03-03
+2026-03-03（審核欄位設計更新：ApprovedByDisplayName、showApprovalSection）
 
 ---
 
@@ -18,9 +18,10 @@ private List<XxxDetail> details;
 private XxxTable? detailManager;
 
 // 狀態旗標
-private bool isApprovalEnabled;
+private bool isManualApproval;      // 是否人工審核（false = 系統自動審核）
+private bool showApprovalSection;   // 是否顯示審核資訊欄位（由系統參數 HideApprovalInfoSection 控制）
 private bool hasUndeletableDetails;
-private int _detailsDataVersion;   // 遞增觸發 Table 重載
+private int _detailsDataVersion;    // 遞增觸發 Table 重載
 ```
 
 **DataVersion 使用模式：**
@@ -109,27 +110,36 @@ public string ApprovalStatusText =>
     !string.IsNullOrEmpty(RejectReason) ? "已駁回" : "待審核";
 
 public string? ApprovedAtText => ApprovedAt?.ToString("yyyy-MM-dd HH:mm");
+
+// 審核者顯示名稱：null ApprovedBy = 系統自動審核
+public string ApprovedByDisplayName =>
+    IsApproved ? (ApprovedByUser?.Name ?? "系統自動審核") : "";
 ```
 
 ### 審核 / 駁回行為
 
 | 動作 | ApprovedBy | ApprovedAt | IsApproved | RejectReason |
 |------|-----------|-----------|------------|-------------|
-| 核准 | = approvedBy | = DateTime.Now | = true | = null（清除舊原因） |
+| 人工核准 | = approvedBy（員工 ID） | = DateTime.Now | = true | = null（清除舊原因） |
+| 系統自動核准 | = **null**（不記錄人員） | = DateTime.Now | = true | = null |
 | 駁回 | = rejectedBy | = DateTime.Now | = false | = reason |
 
-> **重要**：駁回時同樣記錄 `ApprovedBy`（誰駁回）和 `ApprovedAt`（何時駁回），
-> 欄位語義為「審核者」和「審核時間」，不限於核准場景。
+> **重要**：駁回時同樣記錄 `ApprovedBy`（誰駁回）和 `ApprovedAt`（何時駁回），欄位語義為「審核者」和「審核時間」，不限於核准場景。
+>
+> `ApprovedBy = null` 表示由系統自動審核，畫面顯示 `ApprovedByDisplayName` 屬性中的「系統自動審核」文字。
 
 ### 表單欄位顯示
 
 ```csharp
-// 審核區塊欄位（isApprovalEnabled && Id > 0 時顯示）
-{ PropertyName = "ApprovalStatusText", Label = L["Approval.Status"] }
-{ PropertyName = "ApprovedByUser.Name", Label = L["Approval.ApprovedBy"] }  // 審核者
-{ PropertyName = "ApprovedAtText",      Label = L["Approval.ApprovedAt"] }  // 審核時間
-{ PropertyName = nameof(RejectReason),  Label = L["Approval.RejectReason"] }
+// 審核區塊欄位（showApprovalSection && Id > 0 時顯示）
+{ PropertyName = "ApprovalStatusText",   Label = L["Approval.Status"] }
+{ PropertyName = "ApprovedByDisplayName", Label = L["Approval.ApprovedBy"] }  // 人工審核者或「系統自動審核」
+{ PropertyName = "ApprovedAtText",        Label = L["Approval.ApprovedAt"] }  // 審核時間
+{ PropertyName = nameof(RejectReason),    Label = L["Approval.RejectReason"] }
 ```
+
+> `showApprovalSection` 由 `SystemParameter.HideApprovalInfoSection` 控制（false = 顯示，true = 隱藏），
+> 與 `isManualApproval` 無關，審核資訊欄位預設對所有模式都顯示。
 
 ---
 

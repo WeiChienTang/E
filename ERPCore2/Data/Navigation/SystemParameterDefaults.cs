@@ -18,42 +18,52 @@ public static class SystemParameterDefaults
     /// </summary>
     public const string DefaultRemarks = "系統預設稅率設定";
 
-    // ===== 審核流程開關預設值 =====
+    // ===== 審核模式預設值（false=系統自動審核，true=人工審核）=====
 
     /// <summary>
-    /// 預設：報價單審核關閉
+    /// 預設：報價單使用系統自動審核
     /// </summary>
-    public const bool DefaultEnableQuotationApproval = false;
+    public const bool DefaultQuotationManualApproval = false;
 
     /// <summary>
-    /// 預設：採購單審核關閉
+    /// 預設：採購訂單使用系統自動審核
     /// </summary>
-    public const bool DefaultEnablePurchaseOrderApproval = false;
+    public const bool DefaultPurchaseOrderManualApproval = false;
 
     /// <summary>
-    /// 預設：進貨單審核關閉
+    /// 預設：進貨單使用系統自動審核
     /// </summary>
-    public const bool DefaultEnablePurchaseReceivingApproval = false;
+    public const bool DefaultPurchaseReceivingManualApproval = false;
 
     /// <summary>
-    /// 預設：進貨退回審核關閉
+    /// 預設：進貨退回使用系統自動審核
     /// </summary>
-    public const bool DefaultEnablePurchaseReturnApproval = false;
+    public const bool DefaultPurchaseReturnManualApproval = false;
 
     /// <summary>
-    /// 預設：銷貨單審核關閉
+    /// 預設：銷貨訂單使用系統自動審核
     /// </summary>
-    public const bool DefaultEnableSalesOrderApproval = false;
+    public const bool DefaultSalesOrderManualApproval = false;
 
     /// <summary>
-    /// 預設：銷貨退回審核關閉
+    /// 預設：銷貨退回使用系統自動審核
     /// </summary>
-    public const bool DefaultEnableSalesReturnApproval = false;
+    public const bool DefaultSalesReturnManualApproval = false;
 
     /// <summary>
-    /// 預設：庫存調撥審核關閉
+    /// 預設：出貨單使用系統自動審核
     /// </summary>
-    public const bool DefaultEnableInventoryTransferApproval = false;
+    public const bool DefaultSalesDeliveryManualApproval = false;
+
+    /// <summary>
+    /// 預設：庫存調撥使用系統自動審核
+    /// </summary>
+    public const bool DefaultInventoryTransferManualApproval = false;
+
+    /// <summary>
+    /// 預設：顯示審核資訊欄位（不隱藏）
+    /// </summary>
+    public const bool DefaultHideApprovalInfoSection = false;
 
     // ===== 子科目自動產生預設值 =====
 
@@ -105,13 +115,15 @@ public static class SystemParameterDefaults
     {
         parameter.TaxRate = DefaultTaxRate;
         parameter.Remarks = DefaultRemarks;
-        parameter.EnableQuotationApproval = DefaultEnableQuotationApproval;
-        parameter.EnablePurchaseOrderApproval = DefaultEnablePurchaseOrderApproval;
-        parameter.EnablePurchaseReceivingApproval = DefaultEnablePurchaseReceivingApproval;
-        parameter.EnablePurchaseReturnApproval = DefaultEnablePurchaseReturnApproval;
-        parameter.EnableSalesOrderApproval = DefaultEnableSalesOrderApproval;
-        parameter.EnableSalesReturnApproval = DefaultEnableSalesReturnApproval;
-        parameter.EnableInventoryTransferApproval = DefaultEnableInventoryTransferApproval;
+        parameter.QuotationManualApproval = DefaultQuotationManualApproval;
+        parameter.PurchaseOrderManualApproval = DefaultPurchaseOrderManualApproval;
+        parameter.PurchaseReceivingManualApproval = DefaultPurchaseReceivingManualApproval;
+        parameter.PurchaseReturnManualApproval = DefaultPurchaseReturnManualApproval;
+        parameter.SalesOrderManualApproval = DefaultSalesOrderManualApproval;
+        parameter.SalesReturnManualApproval = DefaultSalesReturnManualApproval;
+        parameter.SalesDeliveryManualApproval = DefaultSalesDeliveryManualApproval;
+        parameter.InventoryTransferManualApproval = DefaultInventoryTransferManualApproval;
+        parameter.HideApprovalInfoSection = DefaultHideApprovalInfoSection;
         parameter.AutoCreateCustomerSubAccount = DefaultAutoCreateCustomerSubAccount;
         parameter.AutoCreateSupplierSubAccount = DefaultAutoCreateSupplierSubAccount;
         parameter.AutoCreateProductSubAccount = DefaultAutoCreateProductSubAccount;

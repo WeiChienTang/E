@@ -980,6 +980,26 @@
                 return;
             }
             
+            // 自動設定審計欄位（建立者/修改者）
+            try
+            {
+                var currentUserName = await CurrentUserHelper.GetCurrentUserFullNameAsync(AuthenticationStateProvider);
+                if (!string.IsNullOrEmpty(currentUserName))
+                {
+                    if (!Id.HasValue)
+                    {
+                        // 新增時設定建立者
+                        Entity.CreatedBy = currentUserName;
+                    }
+                    // 新增和更新都設定修改者
+                    Entity.UpdatedBy = currentUserName;
+                }
+            }
+            catch
+            {
+                // 無法取得使用者資訊時不阻擋儲存流程
+            }
+            
             bool success;
             
             if (UseGenericSave)

@@ -1,8 +1,10 @@
-/* 分隔線樣式 */
+/* === NavDropdownItem Scoped Styles === */
+
+/* 分隔線樣式 - 漸層淡化 */
 .dropdown-divider {
     height: 1px;
-    margin: 0.5rem 0;
-    background-color: rgba(255, 255, 255, 0.2);
+    margin: 0.375rem 0.75rem;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
     border: none;
     opacity: 1;
 }
@@ -10,21 +12,23 @@
 .nav-dropdown-item {
     display: flex;
     align-items: center;
-    padding: 0.5rem 1rem 0.5rem 2.25rem;
-    color: var(--primary-white);
+    padding: 0.45rem 1rem 0.45rem 1.25rem;
+    color: rgba(255, 255, 255, 0.82);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     background-color: transparent;
     border: none;
-    border-radius: var(--radius-md);
+    border-left: 2px solid transparent;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
     width: 100%;
     clear: both;
     font-weight: 400;
+    font-size: 0.9rem;
     line-height: 1.5;
     white-space: normal;
     word-break: break-word;
-    text-align: left; /* 確保按鈕文字靠左 */
-    cursor: pointer; /* 確保滑鼠游標顯示為指標 */
+    text-align: left;
+    cursor: pointer;
 }
 
 /* btn-link 樣式重置（用於 button 元素） */
@@ -39,34 +43,56 @@
     box-shadow: none;
 }
 
-/* 沒有圖示的項目，添加額外的左側縮排 */
+/* 沒有圖示的項目 */
 .nav-dropdown-item.no-icon {
-    padding-left: 3.5rem; /* 2.25rem + 1.25rem (圖示寬度和間距) */
+    padding-left: 2.625rem;
 }
 
 /* 下拉選單圖示樣式 */
 .nav-dropdown-item .nav-dropdown-bi {
-    font-size: 1.25rem;
-    width: 1.25rem;
-    height: 1.25rem;
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
     line-height: 1;
     vertical-align: text-bottom;
     margin-right: 0.5rem;
     flex-shrink: 0;
     display: inline-block;
+    opacity: 0.65;
+    transition: opacity 0.2s ease;
 }
 
 .nav-dropdown-item .nav-dropdown-bi::before {
-    font-size: 1.25rem;
-    width: 1.25rem;
-    height: 1.25rem;
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
     line-height: 1;
 }
 
+/* Hover - 左側 border 漸現效果 */
 .nav-dropdown-item:hover {
-    background-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--primary-white);
     text-decoration: none;
-    transform: translateX(5px);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, transform 0.2s ease;
+    border-left-color: rgba(120, 170, 255, 0.6);
+}
+
+.nav-dropdown-item:hover .nav-dropdown-bi {
+    opacity: 1;
+}
+
+/* 當前頁面 active 狀態 */
+.nav-dropdown-item.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--primary-white);
+    border-left-color: #60a5fa;
+    font-weight: 500;
+}
+
+.nav-dropdown-item.active .nav-dropdown-bi {
+    opacity: 1;
+}
+
+.nav-dropdown-item.active:hover {
+    background-color: rgba(255, 255, 255, 0.14);
 }

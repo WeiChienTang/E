@@ -32,7 +32,7 @@
                           RequiredModule="Purchase"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
-                          ShowBatchApprovalButton="@isApprovalEnabled"
+                          ShowBatchApprovalButton="@isManualApproval"
                           OnBatchApprovalClick="@HandleBatchApprovalAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
@@ -73,7 +73,7 @@
     private int? editingPurchaseReturnId = null;
     
     // 審核相關狀態
-    private bool isApprovalEnabled = false;
+    private bool isManualApproval = false;
     private bool showBatchApprovalModal = false;
 
     // 批次列印 Modal 相關狀態
@@ -119,14 +119,14 @@
             await LoadEmployeesAsync();
             
             // 建立欄位配置
-            isApprovalEnabled = await SystemParameterService.IsPurchaseReturnApprovalEnabledAsync();
+            isManualApproval = await SystemParameterService.IsPurchaseReturnManualApprovalAsync();
             fieldConfiguration = new PurchaseReturnFieldConfiguration(
                 suppliers,
                 purchaseOrders,
                 purchaseReceivings,
                 warehouses,
                 employees,
-                isApprovalEnabled,
+                isManualApproval,
                 NotificationService);
             fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();

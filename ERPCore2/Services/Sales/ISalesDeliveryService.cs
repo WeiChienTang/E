@@ -54,7 +54,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 核准銷貨出貨單
         /// </summary>
-        Task<ServiceResult> ApproveAsync(int id, int approvedBy);
+        Task<ServiceResult> ApproveAsync(int id, int? approvedBy);
 
         /// <summary>
         /// 駁回銷貨出貨單

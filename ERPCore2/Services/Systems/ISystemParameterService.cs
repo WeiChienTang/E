@@ -49,54 +49,59 @@ namespace ERPCore2.Services
         /// <returns>系統參數物件</returns>
         Task<SystemParameter?> GetSystemParameterAsync();
 
-        // ===== 審核流程開關查詢 =====
+        // ===== 審核模式查詢（false=系統自動審核，true=人工審核）=====
 
         /// <summary>
-        /// 統一的審核開關查詢（泛型版本，避免重複程式碼）
+        /// 統一的審核模式查詢（泛型版本，避免重複程式碼）
         /// </summary>
         /// <param name="approvalType">審核類型</param>
-        /// <returns>是否啟用審核</returns>
-        Task<bool> IsApprovalEnabledAsync(ApprovalType approvalType);
+        /// <returns>是否使用人工審核（false=自動審核）</returns>
+        Task<bool> IsManualApprovalAsync(ApprovalType approvalType);
 
         /// <summary>
-        /// 檢查報價單是否需要審核
+        /// 報價單是否使用人工審核
         /// </summary>
-        Task<bool> IsQuotationApprovalEnabledAsync();
+        Task<bool> IsQuotationManualApprovalAsync();
 
         /// <summary>
-        /// 檢查採購單是否需要審核
+        /// 採購訂單是否使用人工審核
         /// </summary>
-        Task<bool> IsPurchaseOrderApprovalEnabledAsync();
+        Task<bool> IsPurchaseOrderManualApprovalAsync();
 
         /// <summary>
-        /// 檢查進貨單是否需要審核
+        /// 進貨單是否使用人工審核
         /// </summary>
-        Task<bool> IsPurchaseReceivingApprovalEnabledAsync();
+        Task<bool> IsPurchaseReceivingManualApprovalAsync();
 
         /// <summary>
-        /// 檢查進貨退回是否需要審核
+        /// 進貨退回是否使用人工審核
         /// </summary>
-        Task<bool> IsPurchaseReturnApprovalEnabledAsync();
+        Task<bool> IsPurchaseReturnManualApprovalAsync();
 
         /// <summary>
-        /// 檢查銷貨單是否需要審核
+        /// 銷貨訂單是否使用人工審核
         /// </summary>
-        Task<bool> IsSalesOrderApprovalEnabledAsync();
+        Task<bool> IsSalesOrderManualApprovalAsync();
 
         /// <summary>
-        /// 檢查銷貨退回是否需要審核
+        /// 銷貨退回是否使用人工審核
         /// </summary>
-        Task<bool> IsSalesReturnApprovalEnabledAsync();
+        Task<bool> IsSalesReturnManualApprovalAsync();
 
         /// <summary>
-        /// 檢查銷貨出貨單是否需要審核
+        /// 出貨單是否使用人工審核
         /// </summary>
-        Task<bool> IsSalesDeliveryApprovalEnabledAsync();
+        Task<bool> IsSalesDeliveryManualApprovalAsync();
 
         /// <summary>
-        /// 檢查庫存調撥是否需要審核
+        /// 庫存調撥是否使用人工審核
         /// </summary>
-        Task<bool> IsInventoryTransferApprovalEnabledAsync();
+        Task<bool> IsInventoryTransferManualApprovalAsync();
+
+        /// <summary>
+        /// 是否隱藏所有模組的審核資訊欄位（false=顯示，true=隱藏）
+        /// </summary>
+        Task<bool> IsApprovalInfoHiddenAsync();
 
         /// <summary>
         /// 清除審核配置快取（當系統參數更新時使用）

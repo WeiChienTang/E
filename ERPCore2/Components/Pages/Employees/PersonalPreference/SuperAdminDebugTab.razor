@@ -138,6 +138,23 @@
                 <span class="text-muted small fst-italic">Modal 精靈</span>
             </div>
         </div>
+
+        <div class="shortcut-row shortcut-row--fixed">
+            <div class="shortcut-label">
+                <span>資料庫匯出</span>
+                <small class="text-muted ms-2">將系統資料表匯出為 Excel 檔案（可單選、多選或全選資料表）</small>
+            </div>
+            <div class="shortcut-display">
+                <GenericButtonComponent Variant="ButtonVariant.Cyan"
+                                        Size="ButtonSize.Small"
+                                        Text="開啟工具"
+                                        IconClass="bi bi-database-up"
+                                        OnClick="OpenDatabaseExport" />
+            </div>
+            <div class="shortcut-actions">
+                <span class="text-muted small fst-italic">Modal 精靈</span>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -145,12 +162,22 @@
 @* 資料庫匯入 Modal *@
 <DatabaseImportModalComponent @bind-IsVisible="showDatabaseImport" />
 
+@* 資料庫匯出 Modal *@
+<DatabaseExportModalComponent @bind-IsVisible="showDatabaseExport" />
+
 @code {
     private bool showDatabaseImport = false;
+    private bool showDatabaseExport = false;
 
     private void OpenDatabaseImport()
     {
         showDatabaseImport = true;
+        StateHasChanged();
+    }
+
+    private void OpenDatabaseExport()
+    {
+        showDatabaseExport = true;
         StateHasChanged();
     }
 }

@@ -27,7 +27,7 @@
                           RequiredModule="Purchase"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
-                          ShowBatchApprovalButton="true"
+                          ShowBatchApprovalButton="@isManualApproval"
                           OnBatchApprovalClick="@HandleBatchApprovalAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
@@ -77,6 +77,9 @@
     private bool showEditModal = false;
     private int? editingPurchaseOrderId = null;
     
+    // 審核模式狀態（false=系統自動審核，true=人工審核）
+    private bool isManualApproval = false;
+
     // 批次審核 Modal 相關狀態
     private bool showBatchApprovalModal = false;
     
@@ -107,11 +110,11 @@
             await LoadSuppliersAsync();
             await LoadCompaniesAsync();
             
-            // 檢查是否啟用採購單審核
-            var enableApproval = await SystemParameterService.IsPurchaseOrderApprovalEnabledAsync();
-            
+            // 讀取採購訂單審核模式
+            isManualApproval = await SystemParameterService.IsPurchaseOrderManualApprovalAsync();
+
             // 使用欄位配置替代原本的方法調用
-            fieldConfiguration = new PurchaseOrderFieldConfiguration(suppliers, companies, enableApproval, NotificationService);
+            fieldConfiguration = new PurchaseOrderFieldConfiguration(suppliers, companies, isManualApproval, NotificationService);
             fieldConfiguration.SetLocalizer(L);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
