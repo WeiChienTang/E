@@ -363,26 +363,38 @@ namespace ERPCore2.Services.Reports
         /// </summary>
         private static bool ShouldShowBom(QuotationDetail detail, Product product)
         {
-            if (detail.CompositionDetails == null || !detail.CompositionDetails.Any())
-                return false;
-            
-            return detail.CompositionDetails.Any();
+            return detail.CompositionDetails?.Any() ?? false;
         }
 
         /// <summary>
         /// 取得 BOM 組成文字（橫向顯示）
+        /// 數量為 1 時只顯示名稱，數量 ≥ 2 時顯示「名稱 ×數量單位」
         /// </summary>
         private static string GetBomText(QuotationDetail detail)
         {
             var compositions = detail.CompositionDetails?.ToList() ?? new List<QuotationCompositionDetail>();
-            
+
             if (!compositions.Any()) return "";
-            
-            var componentNames = compositions
-                .Select(comp => comp.ComponentProduct?.Name ?? "")
-                .Where(name => !string.IsNullOrEmpty(name));
-            
-            return string.Join("、", componentNames);
+
+            var parts = compositions
+                .Select(comp =>
+                {
+                    var name = comp.ComponentProduct?.Name ?? "";
+                    if (string.IsNullOrEmpty(name)) return "";
+
+                    // 數量為 1 時僅顯示名稱，≥ 2 時附加數量與單位
+                    if (comp.Quantity > 1)
+                    {
+                        var qty = comp.Quantity.ToString("G");
+                        var unit = comp.Unit?.Name ?? "";
+                        return $"{name} ×{qty}{unit}";
+                    }
+
+                    return name;
+                })
+                .Where(s => !string.IsNullOrEmpty(s));
+
+            return string.Join("、", parts);
         }
 
         #endregion

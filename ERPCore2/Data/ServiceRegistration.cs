@@ -6,6 +6,7 @@ using ERPCore2.Services.Reports;
 using ERPCore2.Services.Reports.Configuration;
 using ERPCore2.Services.Reports.Interfaces;
 using ERPCore2.Helpers;
+using ERPCore2.Helpers.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data
@@ -55,6 +56,7 @@ namespace ERPCore2.Data
 
             // Helper 服務
             services.AddScoped<ActionButtonHelper>();
+            services.AddScoped<ContactLinkHelper>();
             services.AddScoped<RelatedDocumentsHelper>();
 
             // 客戶相關服務

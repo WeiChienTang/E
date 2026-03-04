@@ -40,6 +40,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
@@ -63,7 +64,6 @@
                           OnTaxMethodChanged="@(() => HandleReceivingDetailsChanged(purchaseReceivingDetails))"
                           GetStatusMessage="@GetPurchaseReceivingStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@PurchaseReceivingReportService"
@@ -135,6 +135,10 @@
     private GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+    
+    // Tab 元件參考
+    private SupplierInfoTab? supplierInfoTab;
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -952,7 +956,7 @@
                 },
             };
 
-            formSections = FormSectionHelper<PurchaseReceiving>.Create()
+            var formBuilder = FormSectionHelper<PurchaseReceiving>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.Code,
                     pr => pr.SupplierId,
@@ -971,7 +975,21 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(PurchaseReceiving.RejectReason))
-                .Build();
+                .GroupIntoTab(L["Tab.ReceivingData"].ToString(), "bi-box-seam",
+                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
+                    FormSectionNames.AmountInfo, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)
+                .GroupIntoCustomTab(L["Tab.SupplierInfo"].ToString(), "bi-building",
+                    CreateSupplierInfoTabContent(), "SupplierInfoTab");
+
+            var layout = formBuilder.BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+
+            // 將進貨明細表格嵌入第一個 Tab 的 ExtraContent
+            if (tabDefinitions != null && tabDefinitions.Count > 0)
+            {
+                tabDefinitions[0].ExtraContent = CreateReceivingDetailManagerContent();
+            }
         }
         catch (Exception ex)
         {
@@ -1027,6 +1045,12 @@
         try
         {
             UpdateFilterFieldsState();
+
+            // 載入廠商資訊 Tab
+            if (supplierInfoTab != null && editModalComponent?.Entity?.SupplierId > 0)
+                await supplierInfoTab.LoadAsync(editModalComponent.Entity.SupplierId);
+            else
+                supplierInfoTab?.Clear();
 
             StateHasChanged();
         }
@@ -1560,6 +1584,17 @@
             return Task.FromResult(false);
         }
     }
+
+    // ===== Tab RenderFragment =====
+
+    /// <summary>
+    /// 創建廠商資訊 Tab 的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateSupplierInfoTabContent() => __builder =>
+    {
+        <SupplierInfoTab @ref="supplierInfoTab"
+                        SupplierId="@editModalComponent?.Entity?.SupplierId" />
+    };
 
     /// <summary>
     /// 配置自訂模組（進貨明細表格）

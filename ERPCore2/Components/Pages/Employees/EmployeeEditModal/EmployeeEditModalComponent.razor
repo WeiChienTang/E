@@ -12,6 +12,7 @@
 @inject INavigationPermissionService NavigationPermissionService
 @inject ICompanyModuleService CompanyModuleService
 @inject ActionButtonHelper ActionButtonHelper
+@inject ContactLinkHelper ContactLinkHelper
 @inject IEmployeeDetailReportService EmployeeDetailReportService
 @inject IStringLocalizer<SharedResource> L
 
@@ -366,10 +367,10 @@
                 new() { PropertyName = nameof(Employee.BirthDate), Label = L["Field.Birthday"], FieldType = FormFieldType.Date, Placeholder = L["Placeholder.PleaseSelect", L["Field.Birthday"]], HelpText = "員工出生日期" },
                 new() { PropertyName = nameof(Employee.IdNumber), Label = L["Field.IdNumber"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.IdNumber"]], MaxLength = 10, HelpText = "員工身分證字號" },
                 // 聯絡資訊區段
-                new() { PropertyName = nameof(Employee.Mobile), Label = L["Field.PhoneNumber"], FieldType = FormFieldType.MobilePhone, Placeholder = "0912-345-678", HelpText = "員工個人手機號碼（10碼，以09開頭）" },
-                new() { PropertyName = nameof(Employee.Email), Label = L["Field.Email"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.Email"]], MaxLength = 50, HelpText = "員工電子郵件地址" },
+                new() { PropertyName = nameof(Employee.Mobile), Label = L["Field.PhoneNumber"], FieldType = FormFieldType.MobilePhone, Placeholder = "0912-345-678", HelpText = "員工個人手機號碼（10碼，以09開頭）", ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.Mobile, IsSaved) },
+                new() { PropertyName = nameof(Employee.Email), Label = L["Field.Email"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.Email"]], MaxLength = 50, HelpText = "員工電子郵件地址", ActionButtons = ContactLinkHelper.CreateEmailButtons(() => editModalComponent?.Entity?.Email, IsSaved) },
                 new() { PropertyName = nameof(Employee.EmergencyContact), Label = L["Field.EmergencyContact"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EmergencyContact"]], MaxLength = 10, HelpText = "緊急狀況時的聯絡人" },
-                new() { PropertyName = nameof(Employee.EmergencyPhone), Label = L["Field.EmergencyPhone"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EmergencyPhone"]], MaxLength = 20, HelpText = "緊急聯絡人電話號碼" },
+                new() { PropertyName = nameof(Employee.EmergencyPhone), Label = L["Field.EmergencyPhone"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EmergencyPhone"]], MaxLength = 20, HelpText = "緊急聯絡人電話號碼", ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.EmergencyPhone, IsSaved) },
                 // 組織架構區段
                 new() { PropertyName = nameof(Employee.DepartmentId), Label = L["Entity.Department"], FieldType = FormFieldType.AutoComplete, Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Department"]], MinSearchLength = 0, HelpText = "輸入部門名稱進行搜尋，或直接選擇", ActionButtons = await GetDepartmentActionButtonsAsync() },
                 new() { PropertyName = nameof(Employee.EmployeePositionId), Label = L["Entity.EmployeePosition"], FieldType = FormFieldType.AutoComplete, Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.EmployeePosition"]], MinSearchLength = 0, HelpText = "輸入職位名稱進行搜尋，或直接選擇", ActionButtons = await GetPositionActionButtonsAsync() },
@@ -418,6 +419,8 @@
     }
 
     // ===== 輔助方法 =====
+
+    private bool IsSaved() => EmployeeId.HasValue && EmployeeId.Value > 0;
 
     private async Task<List<FieldActionButton>> GetDepartmentActionButtonsAsync()
     {

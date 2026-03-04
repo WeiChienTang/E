@@ -40,6 +40,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
@@ -63,7 +64,6 @@
                           OnTaxMethodChanged="@(() => HandleReturnDetailsChanged(salesReturnDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@SalesReturnReportService"
@@ -101,6 +101,10 @@
     private GenericEditModalComponent<SalesReturn, ISalesReturnService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+    
+    // Tab 元件參考
+    private CustomerInfoTab? customerInfoTab;
 
     // 原始資料集合（用於 AutoComplete）
     private List<SalesDelivery> availableSalesDeliveries = new();
@@ -732,7 +736,7 @@
                 },
             };
 
-            formSections = FormSectionHelper<SalesReturn>.Create()
+            var formBuilder = FormSectionHelper<SalesReturn>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     sr => sr.Code,
                     sr => sr.CustomerId,
@@ -752,7 +756,21 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(SalesReturn.RejectReason))
-                .Build();
+                .GroupIntoTab(L["Tab.ReturnData"].ToString(), "bi-arrow-return-left",
+                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
+                    FormSectionNames.AmountInfo, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)
+                .GroupIntoCustomTab(L["Tab.CustomerInfo"].ToString(), "bi-people",
+                    CreateCustomerInfoTabContent(), "CustomerInfoTab");
+
+            var layout = formBuilder.BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+
+            // 將退貨明細表格嵌入第一個 Tab 的 ExtraContent
+            if (tabDefinitions != null && tabDefinitions.Count > 0)
+            {
+                tabDefinitions[0].ExtraContent = CreateReturnDetailManagerContent();
+            }
         }
         catch (Exception ex)
         {
@@ -912,11 +930,26 @@
     /// <summary>
     /// 根據 hasUndeletableDetails 狀態更新欄位的唯讀狀態
     /// </summary>
-    private Task HandleEntityLoaded(int loadedEntityId)
+    private async Task HandleEntityLoaded(int loadedEntityId)
     {
-        UpdateFilterFieldsState();
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            UpdateFilterFieldsState();
+
+            // 載入客戶資訊 Tab
+            if (customerInfoTab != null && editModalComponent?.Entity?.CustomerId > 0)
+                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId);
+            else
+                customerInfoTab?.Clear();
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(),
+                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
+            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
+        }
     }
 
     private void UpdateFieldsReadOnlyState()
@@ -1231,6 +1264,17 @@
             return false;
         }
     }
+
+    // ===== Tab RenderFragment =====
+
+    /// <summary>
+    /// 創建客戶資訊 Tab 的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateCustomerInfoTabContent() => __builder =>
+    {
+        <CustomerInfoTab @ref="customerInfoTab"
+                        CustomerId="@editModalComponent?.Entity?.CustomerId" />
+    };
 
     /// <summary>
     /// 配置自訂模組（退貨明細表格）

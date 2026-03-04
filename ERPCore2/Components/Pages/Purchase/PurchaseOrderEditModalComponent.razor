@@ -35,6 +35,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
@@ -49,7 +50,6 @@
                           OnCancel="@OnCancel"
                           OnTaxMethodChanged="@(() => HandleDetailsChanged(purchaseOrderDetails))"
                           CustomValidator="@ValidatePurchaseOrderDetailsAsync"
-                          CustomModules="@GetCustomModules()"
                           ShowPrintButton = "true"
                           PrintButtonText="@L["Button.Print"]"
                           ReportService="@PurchaseOrderReportService"
@@ -110,6 +110,7 @@
     private GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -130,6 +131,9 @@
     private SupplierEditModalComponent? supplierEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
     private ModalManagerCollection modalManagers = default!;
+
+    // Tab 元件參考
+    private SupplierInfoTab? supplierTab;
     
     // ===== 相關單據 Modal =====
     private PurchaseReceivingEditModalComponent? purchaseReceivingEditModal;
@@ -504,7 +508,7 @@
                 },
             };
 
-            formSections = FormSectionHelper<PurchaseOrder>.Create()
+            var formBuilder = FormSectionHelper<PurchaseOrder>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     po => po.Code,
                     po => po.SupplierId,
@@ -524,7 +528,21 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(PurchaseOrder.RejectReason))
-                .Build();
+                .GroupIntoTab(L["Tab.PurchaseOrderData"].ToString(), "bi-cart",
+                    FormSectionNames.BasicInfo, FormSectionNames.AmountInfo,
+                    FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)
+                .GroupIntoCustomTab(L["Tab.SupplierInfo"].ToString(), "bi-building",
+                    CreateSupplierTabContent(), "PurchaseOrderSupplierTab");
+
+            var layout = formBuilder.BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+
+            // 將採購明細表格嵌入第一個 Tab（採購單資料）的 ExtraContent
+            if (tabDefinitions != null && tabDefinitions.Count > 0)
+            {
+                tabDefinitions[0].ExtraContent = CreateProductManagerContent();
+            }
         }
         catch (Exception ex)
         {
@@ -536,6 +554,17 @@
             formSections = new Dictionary<string, string>();
         }
     }
+
+    // ===== Tab RenderFragment =====
+
+    /// <summary>
+    /// 創建廠商資訊 Tab 的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateSupplierTabContent() => __builder =>
+    {
+        <SupplierInfoTab @ref="supplierTab"
+                        SupplierId="@editModalComponent?.Entity?.SupplierId" />
+    };
 
     // ===== AutoComplete 配置方法 =====
 
@@ -715,6 +744,12 @@
         {
             canCreateReceiving = true;
             canCopyMessage = true;
+
+            // 載入廠商資訊 Tab
+            if (supplierTab != null && editModalComponent?.Entity?.SupplierId > 0)
+                await supplierTab.LoadAsync(editModalComponent.Entity.SupplierId);
+            else
+                supplierTab?.Clear();
 
             StateHasChanged();
         }

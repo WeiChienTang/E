@@ -1,0 +1,1084 @@
+/* ==========================================
+ * table-base.css - ERP 表格共用基礎樣式
+ * ==========================================
+ * 此檔案為以下兩個表格組件的共用 CSS：
+ *
+ * 1. GenericTableComponent  (Index 頁面唯讀列表)
+ *    - 搭配 TableColumnDefinition，用於展示資料
+ *    - 支援排序、欄位 Resize、分頁
+ *    - 使用 .resizable-table 設定 table-layout: fixed
+ *
+ * 2. InteractiveTableComponent  (Modal 可編輯明細表格)
+ *    - 搭配 InteractiveColumnDefinition，用於編輯明細資料
+ *    - 支援輸入控件、SearchableSelect、拖放、自動空行
+ *    - 使用 .interactive-table 設定 table-layout: auto
+ *
+ * 結構索引：
+ *   [A] 共用基礎 — 容器、表頭、儲存格、Hover、Striped、欄位邊框
+ *   [B] 共用操作欄位 — .table-actions-column 按鈕壓縮
+ *   [C] 共用空資料與滾動條
+ *   [D] Generic 特有 — 固定佈局、欄位 Resize、排序圖標、尺寸變體
+ *   [E] Interactive 特有 — Auto 佈局、行號、選取行、輸入控件、
+ *       合計列、拖放、數字輸入
+ *   [F] 共用 RWD 響應式
+ *   [G] 深色模式
+ * ========================================== */
+
+
+/* ==========================================
+ * [A] 共用基礎
+ * ========================================== */
+
+/* --- 表格容器 --- */
+.table-container-hover {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border-radius: 6px;
+    background: var(--bg-primary);
+    padding: 0;
+    border: 1px solid var(--border-light, #E5E7EB);
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.table-container-hover:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.table-container-hover .table {
+    margin-bottom: 0;
+    --bs-table-bg: var(--bg-primary);
+    --bs-table-border-color: var(--border-color);
+}
+
+/* --- .table-responsive 功能性覆寫 --- */
+.table-responsive {
+    border-radius: 6px;
+    overflow-x: auto !important;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* --- 表頭 — 統一漸層深色風格（兩個 Table 組件共用）--- */
+.table-header-primary {
+    background: linear-gradient(135deg, #1F2937 0%, #263345 100%) !important;
+    color: white !important;
+    border-radius: 6px 6px 0 0 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.table-header-primary th {
+    background: transparent !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.18) !important;
+    border-top: none !important;
+    padding: 0.2rem 0.75rem !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    letter-spacing: 0.03em !important;
+    text-transform: none !important;
+    vertical-align: middle !important;
+    transition: all 0.2s ease !important;
+}
+
+/* 表頭首尾圓角 */
+.table-header-primary tr th:first-child {
+    border-top-left-radius: 6px !important;
+    border-left: none !important;
+}
+
+.table-header-primary tr th:last-child {
+    border-top-right-radius: 6px !important;
+    border-right: none !important;
+}
+
+/* 表頭圖標 */
+.table-header-primary th i {
+    color: rgba(255, 255, 255, 0.9) !important;
+    margin-right: 0.5rem;
+}
+
+/* 表頭必填標記 */
+.table-header-primary th .text-danger {
+    color: rgba(255, 150, 150, 0.95) !important;
+    font-weight: bold !important;
+}
+
+/* --- 儲存格基礎 --- */
+.table-container-hover .table td,
+.table-container-hover .table th:not(.table-header-primary th) {
+    vertical-align: middle;
+    padding: 0.2rem 0.75rem;
+    line-height: 1.4;
+    font-size: 1rem;
+}
+
+/* --- 表體過渡動畫 --- */
+.table-container-hover .table tbody tr {
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.table-container-hover .table tbody td {
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* --- Hover 效果（使用 CSS 變數，支援深色模式）--- */
+.table-hover > tbody > tr:hover > td,
+.table-hover > tbody > tr:hover > th {
+    background-color: var(--table-hover-bg) !important;
+    color: var(--table-hover-text) !important;
+}
+
+.table-striped.table-hover > tbody > tr:hover > td,
+.table-striped.table-hover > tbody > tr:hover > th {
+    background-color: var(--table-hover-bg-striped) !important;
+    color: var(--table-hover-text) !important;
+}
+
+/* --- Striped 效果 --- */
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+    background-color: var(--bg-secondary);
+}
+
+/* --- 欄位邊框（tbody 使用 CSS 變數，thead 由 .table-header-primary th 處理白色半透明邊框）--- */
+.table-with-column-borders td {
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+}
+
+.table-with-column-borders td:first-child {
+    border-left: none;
+}
+
+.table-with-column-borders td:last-child {
+    border-right: none;
+}
+
+/* --- 表格圓角處理 --- */
+.table-container-hover .table thead th:first-child {
+    border-top-left-radius: 6px;
+}
+
+.table-container-hover .table thead th:last-child {
+    border-top-right-radius: 6px;
+}
+
+.table-container-hover .table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 6px;
+}
+
+.table-container-hover .table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 6px;
+}
+
+/* --- 表格內按鈕壓縮（防止撐高行距）--- */
+.table td .btn,
+.table td button {
+    padding: 0.125rem 0.3rem;
+    font-size: 0.8rem;
+    line-height: 1;
+    vertical-align: middle;
+    max-height: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table td .btn i,
+.table td .btn .fas,
+.table td .btn .far,
+.table td .btn .bi,
+.table td .btn svg,
+.table td button i,
+.table td button svg {
+    font-size: 0.75rem;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+/* 允許換行的儲存格（特殊情況使用） */
+.table td.text-wrap,
+.table th.text-wrap {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+
+/* ==========================================
+ * [B] 共用操作欄位
+ * ========================================== */
+
+.table-actions-column {
+    min-width: 80px;
+    max-width: none;
+    white-space: nowrap;
+    vertical-align: middle !important;
+    text-align: center !important;
+    padding: 0.25rem 0.25rem !important;
+}
+
+/* 有明確 inline style 寬度時，移除限制 */
+.table-actions-column[style*="width"] {
+    min-width: unset;
+    max-width: unset;
+}
+
+/* 操作欄位按鈕容器 */
+.table-actions-column > div,
+.table-actions-column .d-flex {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    min-width: fit-content;
+    height: 100%;
+}
+
+/* 操作欄位按鈕 */
+.table-actions-column .btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap;
+    min-width: fit-content;
+    padding: 0.125rem 0.3rem;
+    font-size: 0.8rem;
+    line-height: 1;
+    border-radius: 0.2rem;
+    border-width: 1px;
+    max-height: 1.5rem;
+    vertical-align: middle;
+    box-sizing: border-box;
+}
+
+/* 操作欄位按鈕圖標 */
+.table-actions-column .btn i,
+.table-actions-column .btn .fas,
+.table-actions-column .btn .far,
+.table-actions-column .btn .bi,
+.table-actions-column .btn svg {
+    font-size: 0.75rem;
+    line-height: 1;
+    width: auto;
+    height: auto;
+    vertical-align: middle;
+}
+
+/* btn-square 壓縮至 24px */
+.table-actions-column .btn-square {
+    width: 24px !important;
+    height: 24px !important;
+}
+
+/* .table-responsive 內的操作欄位智慧調整 */
+.table-responsive .table .table-actions-column {
+    min-width: 100px;
+    max-width: none;
+    white-space: nowrap;
+    padding: 0.25rem 0.5rem !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+}
+
+.table-responsive .table .table-actions-column[style*="width"] {
+    min-width: unset !important;
+    max-width: unset !important;
+}
+
+
+/* ==========================================
+ * [C] 共用空資料與滾動條
+ * ========================================== */
+
+/* 空資料文字 */
+.text-light-custom {
+    color: var(--text-secondary) !important;
+}
+
+/* --- 滾動條美化 — WebKit --- */
+.table-responsive::-webkit-scrollbar {
+    height: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #e9ecef;
+    border-radius: 4px;
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #a0a0a0, #888888);
+    border-radius: 4px;
+    border: 1px solid #d0d0d0;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #888888, #666666);
+}
+
+/* --- 滾動條美化 — Firefox --- */
+.table-responsive {
+    scrollbar-width: auto;
+    scrollbar-color: #888888 #e9ecef;
+}
+
+
+/* ==========================================
+ * [D] Generic 特有 — GenericTableComponent
+ * ========================================== */
+
+/* 固定佈局表格（搭配欄位 Resize） */
+.resizable-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* 固定佈局的儲存格文字截斷 */
+.resizable-table td,
+.resizable-table th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 可調整欄位寬度的手柄 */
+.resizable-column {
+    position: relative;
+    user-select: none;
+}
+
+.column-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-right: 8px;
+}
+
+.column-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px;
+    height: 100%;
+    cursor: col-resize;
+    background-color: transparent;
+    border-right: 2px solid transparent;
+    transition: border-color 0.2s ease;
+    z-index: 10;
+}
+
+.column-resizer:hover {
+    border-right-color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.column-resizer.resizing {
+    border-right-color: #007bff;
+    background-color: rgba(0, 123, 255, 0.2);
+}
+
+/* 拖拽 Resize 時防止文字選取 */
+.table.resizing {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* 排序圖標 */
+.table th i.fa-sort {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.table th:hover i.fa-sort {
+    opacity: 1;
+}
+
+.table-container-hover .table thead th .fa-sort:hover {
+    color: #0d6efd !important;
+    transform: scale(1.1);
+    transition: all 0.15s ease-in-out;
+}
+
+/* 表格尺寸變體（Generic 使用 Bootstrap TableSize） */
+.table-sm .table-actions-column {
+    min-width: 70px;
+    width: 70px;
+    max-width: 70px;
+}
+
+.table-lg .table-actions-column {
+    min-width: 85px;
+    width: 85px;
+    max-width: 85px;
+}
+
+
+/* ==========================================
+ * [E] Interactive 特有 — InteractiveTableComponent
+ * ========================================== */
+
+/* --- Auto 佈局 --- */
+.interactive-table {
+    table-layout: auto;
+    width: auto;
+    min-width: max-content;
+    margin-bottom: 0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* 容器覆寫 — overflow: visible 支援下拉選單溢出 */
+.interactive-table-container {
+    border-radius: 6px;
+    overflow: visible;
+}
+
+/* .table-responsive 內擴展 */
+.table-responsive .interactive-table {
+    width: 100%;
+    min-width: max-content;
+}
+
+/* --- 選取行 --- */
+.interactive-table tbody tr.row-selected td {
+    background-color: #fcd34d !important;
+    color: #92400e !important;
+    font-weight: 500;
+}
+
+.interactive-table tbody tr.row-selected:hover td {
+    background-color: #fbbf24 !important;
+    color: #78350f !important;
+}
+
+/* --- Interactive 儲存格（較緊湊的垂直 padding）--- */
+.interactive-table tbody td {
+    padding: 0.15rem 0.75rem !important;
+    vertical-align: middle;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+/* --- Interactive Striped --- */
+.interactive-table.table-striped > tbody > tr:nth-of-type(odd) > td {
+    background-color: #f8fafc !important;
+}
+
+.interactive-table.table-striped > tbody > tr:nth-of-type(even) > td {
+    background-color: #ffffff !important;
+}
+
+/* --- Interactive Hover（覆蓋上方 striped !important，確保 hover 變色）--- */
+.interactive-table.table-hover > tbody > tr:hover > td {
+    background-color: var(--table-hover-bg) !important;
+    color: var(--table-hover-text) !important;
+}
+
+.interactive-table.table-striped.table-hover > tbody > tr:hover > td {
+    background-color: var(--table-hover-bg-striped) !important;
+    color: var(--table-hover-text) !important;
+}
+
+/* tbody 第一行與 thead 無縫連接 */
+.interactive-table tbody tr:first-child td {
+    border-top: 2px solid var(--border-light) !important;
+}
+
+/* --- 序號欄位 --- */
+.row-number-column {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    box-sizing: border-box !important;
+}
+
+.interactive-table tbody .row-number-column {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #6b7280 !important;
+    letter-spacing: 0.02em;
+}
+
+/* --- 表格內輸入控件壓縮 --- */
+.interactive-table-container .form-control,
+.interactive-table-container .form-select,
+.interactive-table .form-control,
+.interactive-table .form-select,
+.interactive-table tbody .form-control,
+.interactive-table tbody .form-select {
+    padding: 0.1rem 0.5rem !important;
+    font-size: 1rem !important;
+    border-radius: 0.25rem;
+    border: 1px solid #d1d5db;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 聚焦效果 — 藍色邊框 + 光暈 */
+.interactive-table .form-control:focus,
+.interactive-table .form-select:focus {
+    border-color: var(--primary-blue, #1E3A8A) !important;
+    box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.15) !important;
+    outline: none;
+}
+
+/* textarea 特別調整 */
+.interactive-table-container textarea.form-control,
+.interactive-table textarea.form-control {
+    padding: 0.1rem 0.5rem !important;
+    font-size: 1rem !important;
+}
+
+/* 驗證錯誤 */
+.interactive-table-container .is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Checkbox 置中 */
+.interactive-table-container .form-check.form-switch {
+    padding-left: 0;
+}
+
+.interactive-table-container .form-check-input {
+    margin-left: 0;
+}
+
+/* 小按鈕 */
+.interactive-table-container .btn-sm {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+    line-height: 1;
+    max-height: 1.5rem;
+}
+
+/* 數字輸入靠右 */
+.interactive-table-container input[type="number"] {
+    text-align: right;
+}
+
+/* 隱藏 number spinner — WebKit */
+.interactive-table-container input[type="number"]::-webkit-outer-spin-button,
+.interactive-table-container input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* 隱藏 number spinner — Firefox */
+.interactive-table-container input[type="number"],
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* 唯讀 / 停用控件 */
+.interactive-table-container .form-control[readonly],
+.interactive-table-container .form-select[disabled] {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+
+/* 必填標記 */
+.interactive-table-container .text-danger {
+    color: #dc2626 !important;
+    font-weight: bold;
+}
+
+/* 行號文字 */
+.interactive-table-container .row-number {
+    color: #6c757d;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+/* --- 合計行（tfoot）--- */
+.interactive-table-total-row {
+    background-color: #f0f4f8 !important;
+    border-top: 2px solid #cbd5e1 !important;
+}
+
+.interactive-table-total-row th {
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    color: #1e293b !important;
+    padding: 0.2rem 0.75rem !important;
+    background-color: #f0f4f8 !important;
+}
+
+/* --- 空資料提示美化 --- */
+.interactive-table tbody td.text-center.py-4 {
+    padding: 2.5rem 1rem !important;
+}
+
+.interactive-table tbody td.text-center.py-4 i.fa-inbox {
+    opacity: 0.4;
+}
+
+.interactive-table tbody td.text-center.py-4 .mt-1 {
+    font-size: 1rem;
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+/* --- 拖放功能 --- */
+tr[draggable="true"] {
+    cursor: grab !important;
+    user-select: none;
+}
+
+tr[draggable="true"]:active {
+    cursor: grabbing !important;
+}
+
+tr.dragging {
+    opacity: 0.5;
+    background-color: #e3f2fd !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+tr.dragging td {
+    background-color: #e3f2fd !important;
+    color: #1976d2 !important;
+}
+
+tr.drag-over {
+    position: relative;
+}
+
+tr.drag-over::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 3px;
+    background: linear-gradient(90deg, #1976d2, #42a5f5, #1976d2);
+    border-radius: 2px;
+    animation: drag-indicator-pulse 1s ease-in-out infinite;
+}
+
+@keyframes drag-indicator-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+tbody.drop-target-active {
+    background-color: rgba(25, 118, 210, 0.05);
+    outline: 2px dashed #1976d2;
+    outline-offset: -2px;
+    transition: all 0.2s ease;
+}
+
+.drop-zone {
+    min-height: 120px;
+    transition: all 0.2s ease;
+}
+
+tr.drop-zone-active td {
+    background-color: rgba(25, 118, 210, 0.1) !important;
+    border: 2px dashed #1976d2 !important;
+}
+
+.drop-zone-hint {
+    padding: 1rem;
+    animation: drop-zone-hint-bounce 0.5s ease-in-out;
+}
+
+@keyframes drop-zone-hint-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.drop-zone-hint i {
+    color: #1976d2 !important;
+    animation: drop-icon-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes drop-icon-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+tr.dragging.row-selected td {
+    background-color: #bbdefb !important;
+}
+
+.drag-handle {
+    cursor: grab;
+    color: #9e9e9e;
+    transition: color 0.2s ease;
+}
+
+.drag-handle:hover {
+    color: #616161;
+}
+
+tr.dragging .drag-handle {
+    cursor: grabbing;
+    color: #1976d2;
+}
+
+
+/* ==========================================
+ * [F] 共用 RWD 響應式
+ * ========================================== */
+
+/* --- 桌面模式 — 防止 Index 頁面表格溢出側邊欄 --- */
+/* 僅限非 Interactive 容器（GenericTableComponent 用於 Index 頁面） */
+@media (min-width: 641px) {
+    .table-container-hover:not(.interactive-table-container) {
+        max-width: calc(100vw - 270px);
+    }
+}
+
+@media (min-width: 769px) {
+    .table-container-hover:not(.interactive-table-container) {
+        max-width: calc(100vw - 280px);
+    }
+}
+
+/* --- 手機版 ≤ 767px --- */
+@media (max-width: 767px) {
+    .table-container-hover:hover {
+        transform: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* 表格最小寬度 — 防止欄位被壓縮 */
+    .table-responsive .table {
+        min-width: 900px;
+        margin-bottom: 0;
+        white-space: nowrap;
+        width: max-content;
+    }
+
+    /* 表頭 sticky */
+    .table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        white-space: nowrap;
+        min-width: 80px;
+    }
+
+    /* 儲存格手機版 */
+    .table-responsive .table td,
+    .table-responsive .table th {
+        padding: 0.3rem 0.5rem;
+        white-space: nowrap;
+    }
+
+    .table-responsive .table td:not([style*="width"]):not(.table-actions-column),
+    .table-responsive .table th:not([style*="width"]):not(.table-actions-column) {
+        min-width: 80px;
+    }
+
+    /* Interactive 表頭手機版 */
+    .interactive-table thead th {
+        padding: 0.35rem 0.5rem !important;
+        font-size: 1rem !important;
+    }
+
+    /* 行號手機版 */
+    .row-number-column {
+        width: 50px !important;
+        min-width: 50px !important;
+        max-width: 50px !important;
+        padding: 0.5rem 0.25rem !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 操作欄位手機版（Interactive） */
+    .table-responsive .table .table-actions-column {
+        min-width: 120px !important;
+        white-space: nowrap;
+        padding: 0.25rem 0.5rem !important;
+        vertical-align: middle !important;
+        text-align: center !important;
+    }
+
+    .table-responsive .table .table-actions-column[style*="width"] {
+        min-width: unset !important;
+    }
+
+    .table-responsive .table .table-actions-column .btn {
+        padding: 0.125rem 0.3rem;
+        font-size: 0.8rem;
+        margin: 0 0.125rem;
+        min-width: 24px;
+        min-height: unset;
+        max-height: 1.5rem;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1;
+        width: auto;
+    }
+
+    .table-responsive .table .table-actions-column .btn i {
+        font-size: 0.75rem !important;
+        line-height: 1;
+    }
+
+    .table-responsive .table .table-actions-column .d-flex {
+        gap: 0.375rem !important;
+        justify-content: center !important;
+        align-items: center !important;
+        height: 100% !important;
+        flex-wrap: nowrap !important;
+        min-width: fit-content;
+    }
+
+    /* Interactive 輸入控件手機版 */
+    .interactive-table-container .form-control-sm,
+    .interactive-table-container .form-select-sm {
+        font-size: 0.875rem;
+        padding: 0.2rem 0.4rem;
+        min-height: 30px;
+        min-width: 120px;
+    }
+
+    .interactive-table-container .btn-sm {
+        min-height: 30px;
+        padding: 0.2rem 0.4rem;
+        min-width: 60px;
+        font-size: 0.85rem;
+    }
+
+    .interactive-table-container .btn i {
+        font-size: 0.75rem;
+        line-height: 1;
+    }
+
+    /* 輸入框最小寬度 */
+    .table-responsive .table td input[type="text"],
+    .table-responsive .table td input[type="number"] {
+        min-width: 100px;
+    }
+
+    .table-responsive .table td select {
+        min-width: 120px;
+    }
+
+    /* Generic 操作欄位手機版 — sticky 固定在右側 */
+    .table-container-hover:not(.interactive-table-container) .table .table-actions-column {
+        min-width: 80px;
+        width: 80px;
+        max-width: 80px;
+        position: sticky;
+        right: 0;
+        background-color: var(--bg-primary);
+        z-index: 1;
+        box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Generic striped 背景修正（sticky 欄位需要不透明背景） */
+    .table-container-hover:not(.interactive-table-container) .table-striped tbody tr:nth-of-type(odd) .table-actions-column {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .table-container-hover:not(.interactive-table-container) .table-hover tbody tr:hover .table-actions-column {
+        background-color: rgba(0, 0, 0, 0.075);
+    }
+
+    /* 下拉選單觸控優化 */
+    .dropdown-item {
+        padding: 12px 16px !important;
+        line-height: 1.4;
+        font-size: 1rem;
+    }
+
+    .dropdown-item.active {
+        background-color: #007bff !important;
+    }
+
+    /* 滾動提示底部 */
+    .table-responsive::after {
+        display: block;
+        text-align: center;
+        padding: 0.5rem;
+        background-color: #f8f9fa;
+        color: #6c757d;
+        font-size: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+}
+
+/* --- 極小螢幕 ≤ 576px --- */
+@media (max-width: 576px) {
+    .table-responsive {
+        border: 1px solid var(--border-color);
+        border-radius: 0.375rem;
+    }
+
+    .table thead th {
+        font-size: 1rem;
+        padding: 0.25rem 0.375rem;
+        line-height: 1.2;
+    }
+
+    .table td {
+        font-size: 1rem;
+        padding: 0.25rem 0.375rem;
+    }
+
+    .table .table-actions-column {
+        min-width: 75px !important;
+        width: 75px !important;
+        max-width: 75px !important;
+    }
+
+    .table-actions-column .btn {
+        padding: 0.1rem 0.15rem;
+        font-size: 0.7rem;
+        margin: 0;
+        max-height: 1.3rem;
+    }
+
+    .table-actions-column > div {
+        gap: 1px;
+    }
+}
+
+/* --- ≤ 640px 手機版寬度重置 --- */
+@media (max-width: 640px) {
+    .table-container-hover {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .table-responsive {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        max-width: 100% !important;
+    }
+
+    .table {
+        min-width: 600px;
+        margin-bottom: 0 !important;
+    }
+
+    .table thead {
+        display: table-header-group !important;
+    }
+
+    .table thead th {
+        display: table-cell !important;
+        position: relative !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.18) !important;
+        font-weight: 600 !important;
+        z-index: 1 !important;
+    }
+}
+
+/* --- 平板 768px ~ 991px --- */
+@media (min-width: 768px) and (max-width: 991px) {
+    .table-container-hover:not(.interactive-table-container) .table-actions-column {
+        min-width: 75px;
+        width: 75px;
+        max-width: 75px;
+    }
+}
+
+
+/* ==========================================
+ * [G] 深色模式
+ * ========================================== */
+
+/* Interactive 選取行 */
+[data-bs-theme=dark] .interactive-table tbody tr.row-selected td {
+    background-color: var(--table-hover-bg-striped) !important;
+    color: var(--table-hover-text) !important;
+}
+
+[data-bs-theme=dark] .interactive-table tbody tr.row-selected:hover td {
+    background-color: var(--table-hover-bg-striped) !important;
+    color: var(--table-hover-text) !important;
+}
+
+/* Interactive Striped */
+[data-bs-theme=dark] .interactive-table.table-striped > tbody > tr:nth-of-type(odd) > td {
+    background-color: var(--bg-tertiary) !important;
+}
+
+[data-bs-theme=dark] .interactive-table.table-striped > tbody > tr:nth-of-type(even) > td {
+    background-color: var(--bg-primary) !important;
+}
+
+/* Interactive Hover（深色模式 — 覆蓋 striped !important） */
+[data-bs-theme=dark] .interactive-table.table-hover > tbody > tr:hover > td {
+    background-color: var(--table-hover-bg) !important;
+    color: var(--table-hover-text) !important;
+}
+
+[data-bs-theme=dark] .interactive-table.table-striped.table-hover > tbody > tr:hover > td {
+    background-color: var(--table-hover-bg-striped) !important;
+    color: var(--table-hover-text) !important;
+}
+
+/* 合計行 */
+[data-bs-theme=dark] .interactive-table-total-row,
+[data-bs-theme=dark] .interactive-table-total-row th {
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* 輸入控件聚焦 */
+[data-bs-theme=dark] .interactive-table .form-control:focus,
+[data-bs-theme=dark] .interactive-table .form-select:focus {
+    border-color: var(--primary-blue) !important;
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2) !important;
+}
+
+/* 容器邊框 */
+[data-bs-theme=dark] .table-container-hover {
+    border-color: var(--border-color) !important;
+}
+
+[data-bs-theme=dark] .table-responsive {
+    border-color: var(--border-color) !important;
+}
+
+/* 唯讀 / 停用控件 */
+[data-bs-theme=dark] .interactive-table-container .form-control[readonly],
+[data-bs-theme=dark] .interactive-table-container .form-select[disabled] {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+}
+
+/* 滾動條深色模式 */
+[data-bs-theme=dark] .table-responsive::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+[data-bs-theme=dark] .table-responsive::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #4e5058, #3d3f47);
+    border: 1px solid var(--border-color);
+}
+
+[data-bs-theme=dark] .table-responsive::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #6e7178, #5d5f67);
+}
+
+[data-bs-theme=dark] .table-responsive {
+    scrollbar-color: #4e5058 var(--bg-tertiary);
+}

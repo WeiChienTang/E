@@ -57,8 +57,7 @@ public static class DashboardDefaults
             ItemKeys = new List<string>
             {
                 "/account-items",                   // 會計科目
-                "/journal-entries",                  // 傳票管理
-                "/journal-entry-batch",              // 批次轉傳票
+                "/journal-entries",                  // 傳票管理（含批次轉傳票）
                 "QuickAction:NewAccountItem",        // 新增會計科目
                 "QuickAction:NewJournalEntry",       // 新增傳票
             }

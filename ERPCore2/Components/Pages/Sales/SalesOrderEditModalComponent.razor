@@ -35,6 +35,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
@@ -56,7 +57,6 @@
                           OnTaxMethodChanged="@(() => HandleDetailsChanged(salesOrderDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@SalesOrderReportService"
@@ -161,6 +161,10 @@
     private GenericEditModalComponent<SalesOrder, ISalesOrderService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+    
+    // Tab 元件參考
+    private CustomerInfoTab? customerInfoTab;
 
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -686,7 +690,7 @@
                 },
             };
 
-            formSections = FormSectionHelper<SalesOrder>.Create()
+            var formBuilder = FormSectionHelper<SalesOrder>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     so => so.Code,
                     so => so.CustomerId,
@@ -711,7 +715,21 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(SalesOrder.RejectReason))
-                .Build();
+                .GroupIntoTab(L["Tab.OrderData"].ToString(), "bi-cart-check",
+                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
+                    FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)
+                .GroupIntoCustomTab(L["Tab.CustomerInfo"].ToString(), "bi-people",
+                    CreateCustomerInfoTabContent(), "CustomerInfoTab");
+
+            var layout = formBuilder.BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+
+            // 將訂單明細表格嵌入第一個 Tab 的 ExtraContent
+            if (tabDefinitions != null && tabDefinitions.Count > 0)
+            {
+                tabDefinitions[0].ExtraContent = CreateProductManagerContent();
+            }
         }
         catch (Exception ex)
         {
@@ -760,6 +778,17 @@
                              ItemDisplayName="銷售商品"
                              EmptyMessage="尚未新增銷售商品" />
         </DetailSectionWrapper>
+    };
+
+    // ===== Tab RenderFragment =====
+
+    /// <summary>
+    /// 創建客戶資訊 Tab 的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateCustomerInfoTabContent() => __builder =>
+    {
+        <CustomerInfoTab @ref="customerInfoTab"
+                        CustomerId="@editModalComponent?.Entity?.CustomerId" />
     };
 
     /// <summary>
@@ -950,11 +979,26 @@
 
     // ===== 銷貨明細管理方法 =====
     
-    private Task HandleEntityLoaded(int loadedEntityId)
+    private async Task HandleEntityLoaded(int loadedEntityId)
     {
-        UpdateFilterFieldsState();
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            UpdateFilterFieldsState();
+
+            // 載入客戶資訊 Tab
+            if (customerInfoTab != null && editModalComponent?.Entity?.CustomerId > 0)
+                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId);
+            else
+                customerInfoTab?.Clear();
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(),
+                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
+            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
+        }
     }
 
     /// <summary>

@@ -1947,6 +1947,9 @@
   <data name="Button.OpenDelivery" xml:space="preserve"><value>Open Delivery</value></data>
   <data name="Button.OpenQuotation" xml:space="preserve"><value>Open Quotation</value></data>
   <data name="Button.OpenSalesReturn" xml:space="preserve"><value>Open Sales Return</value></data>
+  <data name="Composition.Loading" xml:space="preserve"><value>Loading formula data...</value></data>
+  <data name="Composition.QuickApply" xml:space="preserve"><value>Quick Apply Formula</value></data>
+  <data name="Composition.CustomModeShort" xml:space="preserve"><value>Custom</value></data>
   <data name="Composition.SelectBOM" xml:space="preserve"><value>Select BOM Formula</value></data>
   <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>Select BOM Formula - {0}</value></data>
   <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>Search by formula code, spec, customer or category...</value></data>

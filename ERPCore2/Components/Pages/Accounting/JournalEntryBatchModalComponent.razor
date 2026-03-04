@@ -1,0 +1,594 @@
+@*
+    批次轉傳票 Modal 組件
+    將進貨、銷貨、退回等業務單據批次產生會計傳票
+    使用 BaseModalComponent 統一 Modal 外觀
+
+    DebugComponentName: JournalEntryBatchModalComponent
+*@
+@inject IJournalEntryAutoGenerationService AutoGenerationService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IStringLocalizer<SharedResource> L
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="@L["Journal.BatchTransfer"]"
+                    Icon="bi bi-journal-arrow-up"
+                    Size="BaseModalComponent.ModalSize.Desktop"
+                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                    ShowFooter="false"
+                    ShowCloseButton="true"
+                    CloseOnBackdropClick="false"
+                    CloseOnEscape="true"
+                    IsLoading="@_isInitialLoading"
+                    LoadingMessage="@L["Label.Loading"]"
+                    OnClose="HandleCloseAsync"
+                    OnOpening="HandleOpeningAsync"
+                    DebugComponentName="JournalEntryBatchModalComponent">
+    <HeaderButtons>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0 text-nowrap small">@L["Label.DateFrom"]</label>
+                <input type="date" class="form-control form-control-sm" style="width: 150px;" @bind="_filterFrom" />
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0 text-nowrap small">@L["Label.DateTo"]</label>
+                <input type="date" class="form-control form-control-sm" style="width: 150px;" @bind="_filterTo" />
+            </div>
+            <button class="btn btn-sm btn-primary" @onclick="LoadAllAsync" disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                }
+                <i class="bi bi-search me-1"></i>@L["Button.Query"]
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="ClearFilterAsync">
+                <i class="bi bi-x-circle me-1"></i>@L["Button.ClearFilter"]
+            </button>
+            <div class="vr mx-1"></div>
+            <button class="btn btn-sm btn-success" @onclick="JournalizeAllAsync"
+                    disabled="@(_isProcessing || TotalPendingCount == 0)">
+                @if (_isProcessing)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    <span>@L["Label.Processing"]</span>
+                }
+                else
+                {
+                    <i class="bi bi-lightning-charge me-1"></i>
+                    <span>@string.Format(L["Journal.TransferAll"], TotalPendingCount)</span>
+                }
+            </button>
+        </div>
+    </HeaderButtons>
+    <BodyContent>
+        @* ===== 進貨入庫 Section ===== *@
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center py-2" style="cursor:pointer" @onclick="@(() => _showPurchaseReceiving = !_showPurchaseReceiving)">
+                <i class="bi @(_showPurchaseReceiving ? "bi-chevron-down" : "bi-chevron-right") me-2"></i>
+                <strong>@L["Journal.PurchaseReceiving"]</strong>
+                <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], _purchaseReceivings.Count)</span>
+            </div>
+            @if (_showPurchaseReceiving)
+            {
+                <div class="card-body p-0">
+                    @if (_purchaseReceivings.Count == 0)
+                    {
+                        <p class="text-muted p-3 mb-0">@L["Journal.NoPendingPurchaseReceiving"]</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>@L["Field.Code"]</th>
+                                        <th>@L["Journal.ReceiptDate"]</th>
+                                        <th>@L["Field.Supplier"]</th>
+                                        <th class="text-end">@L["Journal.PreTaxAmount"]</th>
+                                        <th class="text-end">@L["Journal.TaxAmount"]</th>
+                                        <th class="text-end">@L["Journal.TotalWithTax"]</th>
+                                        <th class="text-center" style="width: 100px;">@L["Label.Actions"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var doc in _purchaseReceivings)
+                                    {
+                                        <tr>
+                                            <td><code>@doc.Code</code></td>
+                                            <td>@doc.ReceiptDate.ToString("yyyy/MM/dd")</td>
+                                            <td>@doc.Supplier?.CompanyName</td>
+                                            <td class="text-end">@doc.TotalAmount.ToString("N2")</td>
+                                            <td class="text-end">@doc.PurchaseReceivingTaxAmount.ToString("N2")</td>
+                                            <td class="text-end">@doc.PurchaseReceivingTotalAmountIncludingTax.ToString("N2")</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary"
+                                                        @onclick="@(() => JournalizeSingleAsync("PurchaseReceiving", doc.Id, doc.Code ?? ""))"
+                                                        disabled="@_isProcessing">
+                                                    @L["Journal.Transfer"]
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @* ===== 進貨退回 Section ===== *@
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center py-2" style="cursor:pointer" @onclick="@(() => _showPurchaseReturn = !_showPurchaseReturn)">
+                <i class="bi @(_showPurchaseReturn ? "bi-chevron-down" : "bi-chevron-right") me-2"></i>
+                <strong>@L["Journal.PurchaseReturn"]</strong>
+                <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], _purchaseReturns.Count)</span>
+            </div>
+            @if (_showPurchaseReturn)
+            {
+                <div class="card-body p-0">
+                    @if (_purchaseReturns.Count == 0)
+                    {
+                        <p class="text-muted p-3 mb-0">@L["Journal.NoPendingPurchaseReturn"]</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>@L["Field.Code"]</th>
+                                        <th>@L["Journal.ReturnDate"]</th>
+                                        <th>@L["Field.Supplier"]</th>
+                                        <th class="text-end">@L["Journal.PreTaxAmount"]</th>
+                                        <th class="text-end">@L["Journal.TaxAmount"]</th>
+                                        <th class="text-end">@L["Journal.TotalWithTax"]</th>
+                                        <th class="text-center" style="width: 100px;">@L["Label.Actions"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var doc in _purchaseReturns)
+                                    {
+                                        <tr>
+                                            <td><code>@doc.Code</code></td>
+                                            <td>@doc.ReturnDate.ToString("yyyy/MM/dd")</td>
+                                            <td>@doc.Supplier?.CompanyName</td>
+                                            <td class="text-end">@doc.TotalReturnAmount.ToString("N2")</td>
+                                            <td class="text-end">@doc.ReturnTaxAmount.ToString("N2")</td>
+                                            <td class="text-end">@doc.TotalReturnAmountWithTax.ToString("N2")</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary"
+                                                        @onclick="@(() => JournalizeSingleAsync("PurchaseReturn", doc.Id, doc.Code ?? ""))"
+                                                        disabled="@_isProcessing">
+                                                    @L["Journal.Transfer"]
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @* ===== 銷貨出貨 Section ===== *@
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center py-2" style="cursor:pointer" @onclick="@(() => _showSalesDelivery = !_showSalesDelivery)">
+                <i class="bi @(_showSalesDelivery ? "bi-chevron-down" : "bi-chevron-right") me-2"></i>
+                <strong>@L["Journal.SalesDelivery"]</strong>
+                <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], _salesDeliveries.Count)</span>
+            </div>
+            @if (_showSalesDelivery)
+            {
+                <div class="card-body p-0">
+                    @if (_salesDeliveries.Count == 0)
+                    {
+                        <p class="text-muted p-3 mb-0">@L["Journal.NoPendingSalesDelivery"]</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>@L["Field.Code"]</th>
+                                        <th>@L["Journal.DeliveryDate"]</th>
+                                        <th>@L["Field.Customer"]</th>
+                                        <th class="text-end">@L["Journal.PreTaxAmount"]</th>
+                                        <th class="text-end">@L["Journal.TaxAmount"]</th>
+                                        <th class="text-end">@L["Journal.TotalWithTax"]</th>
+                                        <th class="text-center" style="width: 100px;">@L["Label.Actions"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var doc in _salesDeliveries)
+                                    {
+                                        <tr>
+                                            <td><code>@doc.Code</code></td>
+                                            <td>@doc.DeliveryDate.ToString("yyyy/MM/dd")</td>
+                                            <td>@doc.Customer?.CompanyName</td>
+                                            <td class="text-end">@doc.TotalAmount.ToString("N2")</td>
+                                            <td class="text-end">@doc.TaxAmount.ToString("N2")</td>
+                                            <td class="text-end">@doc.TotalAmountWithTax.ToString("N2")</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary"
+                                                        @onclick="@(() => JournalizeSingleAsync("SalesDelivery", doc.Id, doc.Code ?? ""))"
+                                                        disabled="@_isProcessing">
+                                                    @L["Journal.Transfer"]
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @* ===== 沖款單 Section ===== *@
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center py-2" style="cursor:pointer" @onclick="@(() => _showSetoffDocument = !_showSetoffDocument)">
+                <i class="bi @(_showSetoffDocument ? "bi-chevron-down" : "bi-chevron-right") me-2"></i>
+                <strong>@L["Journal.SetoffDocument"]</strong>
+                <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], _setoffDocuments.Count)</span>
+            </div>
+            @if (_showSetoffDocument)
+            {
+                <div class="card-body p-0">
+                    @if (_setoffDocuments.Count == 0)
+                    {
+                        <p class="text-muted p-3 mb-0">@L["Journal.NoPendingSetoff"]</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>@L["Field.Code"]</th>
+                                        <th>@L["Journal.SetoffDate"]</th>
+                                        <th>@L["Column.Type"]</th>
+                                        <th class="text-end">@L["Journal.WriteoffAmount"]</th>
+                                        <th class="text-end">@L["Journal.CollectionPayment"]</th>
+                                        <th class="text-end">@L["Journal.Allowance"]</th>
+                                        <th class="text-center" style="width: 100px;">@L["Label.Actions"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var doc in _setoffDocuments)
+                                    {
+                                        <tr>
+                                            <td><code>@doc.Code</code></td>
+                                            <td>@doc.SetoffDate.ToString("yyyy/MM/dd")</td>
+                                            <td>
+                                                @if (doc.IsAccountsReceivable)
+                                                {
+                                                    <span class="badge bg-info text-dark">@L["Journal.AccountsReceivable"]</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning text-dark">@L["Journal.AccountsPayable"]</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">@doc.CurrentSetoffAmount.ToString("N2")</td>
+                                            <td class="text-end">@doc.TotalCollectionAmount.ToString("N2")</td>
+                                            <td class="text-end">@doc.TotalAllowanceAmount.ToString("N2")</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary"
+                                                        @onclick="@(() => JournalizeSingleAsync("SetoffDocument", doc.Id, doc.Code ?? ""))"
+                                                        disabled="@_isProcessing">
+                                                    @L["Journal.Transfer"]
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @* ===== 銷貨退回 Section ===== *@
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center py-2" style="cursor:pointer" @onclick="@(() => _showSalesReturn = !_showSalesReturn)">
+                <i class="bi @(_showSalesReturn ? "bi-chevron-down" : "bi-chevron-right") me-2"></i>
+                <strong>@L["Journal.SalesReturn"]</strong>
+                <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], _salesReturns.Count)</span>
+            </div>
+            @if (_showSalesReturn)
+            {
+                <div class="card-body p-0">
+                    @if (_salesReturns.Count == 0)
+                    {
+                        <p class="text-muted p-3 mb-0">@L["Journal.NoPendingSalesReturn"]</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>@L["Field.Code"]</th>
+                                        <th>@L["Journal.ReturnDate"]</th>
+                                        <th>@L["Field.Customer"]</th>
+                                        <th class="text-end">@L["Journal.PreTaxAmount"]</th>
+                                        <th class="text-end">@L["Journal.TaxAmount"]</th>
+                                        <th class="text-end">@L["Journal.TotalWithTax"]</th>
+                                        <th class="text-center" style="width: 100px;">@L["Label.Actions"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var doc in _salesReturns)
+                                    {
+                                        <tr>
+                                            <td><code>@doc.Code</code></td>
+                                            <td>@doc.ReturnDate.ToString("yyyy/MM/dd")</td>
+                                            <td>@doc.Customer?.CompanyName</td>
+                                            <td class="text-end">@doc.TotalReturnAmount.ToString("N2")</td>
+                                            <td class="text-end">@doc.ReturnTaxAmount.ToString("N2")</td>
+                                            <td class="text-end">@doc.TotalReturnAmountWithTax.ToString("N2")</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary"
+                                                        @onclick="@(() => JournalizeSingleAsync("SalesReturn", doc.Id, doc.Code ?? ""))"
+                                                        disabled="@_isProcessing">
+                                                    @L["Journal.Transfer"]
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </BodyContent>
+</BaseModalComponent>
+
+@code {
+    // ===== 參數定義 =====
+
+    /// <summary>
+    /// Modal 是否顯示
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    /// <summary>
+    /// Modal 關閉事件（通知父組件重新整理資料）
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    // ===== 私有欄位 =====
+
+    // 資料
+    private List<PurchaseReceiving> _purchaseReceivings = new();
+    private List<PurchaseReturn> _purchaseReturns = new();
+    private List<SalesDelivery> _salesDeliveries = new();
+    private List<SalesReturn> _salesReturns = new();
+    private List<SetoffDocument> _setoffDocuments = new();
+
+    // 篩選條件
+    private DateTime? _filterFrom;
+    private DateTime? _filterTo;
+
+    // UI 狀態
+    private bool _isInitialLoading = false;
+    private bool _isLoading = false;
+    private bool _isProcessing = false;
+    private bool _showPurchaseReceiving = true;
+    private bool _showPurchaseReturn = true;
+    private bool _showSalesDelivery = true;
+    private bool _showSalesReturn = true;
+    private bool _showSetoffDocument = true;
+
+    // 目前使用者
+    private string _currentUser = "System";
+
+    private int TotalPendingCount =>
+        _purchaseReceivings.Count + _purchaseReturns.Count + _salesDeliveries.Count + _salesReturns.Count + _setoffDocuments.Count;
+
+    // ===== 生命週期方法 =====
+
+    /// <summary>
+    /// Modal 開啟時載入資料
+    /// </summary>
+    private async Task HandleOpeningAsync()
+    {
+        try
+        {
+            _isInitialLoading = true;
+            StateHasChanged();
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            _currentUser = authState.User.Identity?.Name ?? "System";
+            await LoadAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, nameof(HandleOpeningAsync), GetType(),
+                additionalData: "批次轉傳票 Modal 初始化失敗");
+            await NotificationService.ShowErrorAsync("載入資料失敗");
+        }
+        finally
+        {
+            _isInitialLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 載入所有待轉傳票資料
+    /// </summary>
+    private async Task LoadAllAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        try
+        {
+            var t1 = AutoGenerationService.GetPendingPurchaseReceivingsAsync(_filterFrom, _filterTo);
+            var t2 = AutoGenerationService.GetPendingPurchaseReturnsAsync(_filterFrom, _filterTo);
+            var t3 = AutoGenerationService.GetPendingSalesDeliveriesAsync(_filterFrom, _filterTo);
+            var t4 = AutoGenerationService.GetPendingSalesReturnsAsync(_filterFrom, _filterTo);
+            var t5 = AutoGenerationService.GetPendingSetoffDocumentsAsync(_filterFrom, _filterTo);
+            await Task.WhenAll(t1, t2, t3, t4, t5);
+            _purchaseReceivings = t1.Result;
+            _purchaseReturns    = t2.Result;
+            _salesDeliveries    = t3.Result;
+            _salesReturns       = t4.Result;
+            _setoffDocuments    = t5.Result;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, nameof(LoadAllAsync), GetType(),
+                additionalData: "載入待轉傳票資料失敗");
+            await NotificationService.ShowErrorAsync("載入資料失敗");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 清除篩選條件並重新載入
+    /// </summary>
+    private async Task ClearFilterAsync()
+    {
+        _filterFrom = null;
+        _filterTo = null;
+        await LoadAllAsync();
+    }
+
+    /// <summary>
+    /// 單筆轉傳票
+    /// </summary>
+    private async Task JournalizeSingleAsync(string docType, int id, string code)
+    {
+        _isProcessing = true;
+        StateHasChanged();
+        try
+        {
+            var (success, error) = docType switch
+            {
+                "PurchaseReceiving" => await AutoGenerationService.JournalizePurchaseReceivingAsync(id, _currentUser),
+                "PurchaseReturn"    => await AutoGenerationService.JournalizePurchaseReturnAsync(id, _currentUser),
+                "SalesDelivery"     => await AutoGenerationService.JournalizeSalesDeliveryAsync(id, _currentUser),
+                "SalesReturn"       => await AutoGenerationService.JournalizeSalesReturnAsync(id, _currentUser),
+                "SetoffDocument"    => await AutoGenerationService.JournalizeSetoffDocumentAsync(id, _currentUser),
+                _ => (false, L["Journal.UnknownDocType"].ToString())
+            };
+
+            if (success)
+                await NotificationService.ShowSuccessAsync(string.Format(L["Journal.TransferSuccess"], code));
+            else
+                await NotificationService.ShowErrorAsync(string.Format(L["Journal.TransferFailed"], code, error));
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, nameof(JournalizeSingleAsync), GetType(),
+                additionalData: $"單筆轉傳票失敗: {docType} {code}");
+            await NotificationService.ShowErrorAsync($"轉傳票失敗：{code}");
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+        await LoadAllAsync();
+    }
+
+    /// <summary>
+    /// 批次全部轉傳票
+    /// </summary>
+    private async Task JournalizeAllAsync()
+    {
+        _isProcessing = true;
+        StateHasChanged();
+        int successCount = 0;
+        int failCount = 0;
+        try
+        {
+            foreach (var doc in _purchaseReceivings.ToList())
+            {
+                var (ok, _) = await AutoGenerationService.JournalizePurchaseReceivingAsync(doc.Id, _currentUser);
+                if (ok) successCount++; else failCount++;
+            }
+            foreach (var doc in _purchaseReturns.ToList())
+            {
+                var (ok, _) = await AutoGenerationService.JournalizePurchaseReturnAsync(doc.Id, _currentUser);
+                if (ok) successCount++; else failCount++;
+            }
+            foreach (var doc in _salesDeliveries.ToList())
+            {
+                var (ok, _) = await AutoGenerationService.JournalizeSalesDeliveryAsync(doc.Id, _currentUser);
+                if (ok) successCount++; else failCount++;
+            }
+            foreach (var doc in _salesReturns.ToList())
+            {
+                var (ok, _) = await AutoGenerationService.JournalizeSalesReturnAsync(doc.Id, _currentUser);
+                if (ok) successCount++; else failCount++;
+            }
+            foreach (var doc in _setoffDocuments.ToList())
+            {
+                var (ok, _) = await AutoGenerationService.JournalizeSetoffDocumentAsync(doc.Id, _currentUser);
+                if (ok) successCount++; else failCount++;
+            }
+
+            if (failCount == 0)
+                await NotificationService.ShowSuccessAsync(string.Format(L["Journal.BatchSuccess"], successCount));
+            else
+                await NotificationService.ShowWarningAsync(string.Format(L["Journal.BatchPartialSuccess"], successCount, failCount));
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, nameof(JournalizeAllAsync), GetType(),
+                additionalData: $"批次轉傳票失敗: 成功={successCount}, 失敗={failCount}");
+            await NotificationService.ShowErrorAsync("批次轉傳票發生錯誤");
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+        await LoadAllAsync();
+    }
+
+    /// <summary>
+    /// 處理 Modal 關閉
+    /// </summary>
+    private async Task HandleCloseAsync()
+    {
+        // 重置狀態
+        _filterFrom = null;
+        _filterTo = null;
+        _purchaseReceivings.Clear();
+        _purchaseReturns.Clear();
+        _salesDeliveries.Clear();
+        _salesReturns.Clear();
+        _setoffDocuments.Clear();
+
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+}

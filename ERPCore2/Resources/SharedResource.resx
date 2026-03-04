@@ -1245,6 +1245,10 @@
   <data name="Tab.PageShortcut" xml:space="preserve"><value>頁面連結</value></data>
   <data name="Tab.QuickAction" xml:space="preserve"><value>快速功能</value></data>
   <data name="Tab.ChartView" xml:space="preserve"><value>圖表介面</value></data>
+  <data name="Tab.PurchaseOrderData" xml:space="preserve"><value>採購單資料</value></data>
+  <data name="Tab.SupplierInfo" xml:space="preserve"><value>廠商資訊</value></data>
+  <data name="Tab.CustomerInfo" xml:space="preserve"><value>客戶資訊</value></data>
+  <data name="Message.PleaseSelectCustomer" xml:space="preserve"><value>請先選擇客戶</value></data>
   <!-- ===== Supplier action keys ===== -->
   <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>複製至客戶</value></data>
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>確定要將此廠商的資料複製為新客戶嗎？</value></data>
@@ -1966,6 +1970,9 @@
   <data name="Button.OpenDelivery" xml:space="preserve"><value>開啟出貨單</value></data>
   <data name="Button.OpenQuotation" xml:space="preserve"><value>開啟報價單</value></data>
   <data name="Button.OpenSalesReturn" xml:space="preserve"><value>開啟退回單</value></data>
+  <data name="Composition.Loading" xml:space="preserve"><value>正在載入配方資料...</value></data>
+  <data name="Composition.QuickApply" xml:space="preserve"><value>快速套用配方</value></data>
+  <data name="Composition.CustomModeShort" xml:space="preserve"><value>自定義</value></data>
   <data name="Composition.SelectBOM" xml:space="preserve"><value>選擇 BOM 配方</value></data>
   <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>選擇 BOM 配方 - {0}</value></data>
   <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>搜尋配方編號、規格、客戶或類型...</value></data>

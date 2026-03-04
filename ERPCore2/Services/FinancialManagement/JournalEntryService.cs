@@ -328,7 +328,6 @@ namespace ERPCore2.Services
 
                     journalEntry.CreatedAt = DateTime.Now;
                     journalEntry.CreatedBy = savedBy;
-                    journalEntry.JournalEntryStatus = JournalEntryStatus.Draft;
 
                     // 清除導航屬性，防止 EF Core 將已存在的實體誤判為 Added 並嘗試插入
                     journalEntry.Company = null!;

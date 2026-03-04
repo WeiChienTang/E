@@ -35,6 +35,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
@@ -57,7 +58,6 @@
                           OnTaxMethodChanged="@(() => HandleDeliveryDetailsChanged(salesDeliveryDetails))"
                           GetStatusMessage="@GetSalesDeliveryStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           PrintButtonText="@L["Button.Print"]"
@@ -123,6 +123,10 @@
     private GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+    
+    // Tab 元件參考
+    private CustomerInfoTab? customerInfoTab;
 
     // 原始資料集合（用於 AutoComplete）
     private List<Customer> availableCustomers = new();
@@ -686,7 +690,7 @@
             };
 
 
-            formSections = FormSectionHelper<SalesDelivery>.Create()
+            var formBuilder = FormSectionHelper<SalesDelivery>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     sd => sd.Code,
                     sd => sd.CustomerId,
@@ -708,7 +712,21 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(SalesDelivery.RejectReason))
-                .Build();
+                .GroupIntoTab(L["Tab.DeliveryData"].ToString(), "bi-truck",
+                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
+                    FormSectionNames.AmountInfo, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)
+                .GroupIntoCustomTab(L["Tab.CustomerInfo"].ToString(), "bi-people",
+                    CreateCustomerInfoTabContent(), "CustomerInfoTab");
+
+            var layout = formBuilder.BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+
+            // 將出貨明細表格嵌入第一個 Tab 的 ExtraContent
+            if (tabDefinitions != null && tabDefinitions.Count > 0)
+            {
+                tabDefinitions[0].ExtraContent = CreateDeliveryDetailManagerContent();
+            }
             
             // 重置篩選狀態
             filterProductId = null;
@@ -773,6 +791,13 @@
         try
         {
             UpdateFilterFieldsState();
+
+            // 載入客戶資訊 Tab
+            if (customerInfoTab != null && editModalComponent?.Entity?.CustomerId > 0)
+                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId);
+            else
+                customerInfoTab?.Clear();
+
             StateHasChanged();
         }
         catch (Exception ex)
@@ -1172,6 +1197,17 @@
             throw;
         }
     }
+
+    // ===== Tab RenderFragment =====
+
+    /// <summary>
+    /// 創建客戶資訊 Tab 的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateCustomerInfoTabContent() => __builder =>
+    {
+        <CustomerInfoTab @ref="customerInfoTab"
+                        CustomerId="@editModalComponent?.Entity?.CustomerId" />
+    };
 
     /// <summary>
     /// 配置自訂模組（出貨明細表格）

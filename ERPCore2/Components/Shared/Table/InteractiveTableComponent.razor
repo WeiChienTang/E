@@ -101,7 +101,7 @@
                         @if (ShowRowNumbers)
                         {
                             <td class="text-center text-muted row-number-column">
-                                <small>@(currentIndex + 1)</small>
+                                @(currentIndex + 1)
                             </td>
                         }
                         @if (ShowSelectColumn)
@@ -435,8 +435,7 @@
                         else
                         {
                             <i class="fas fa-inbox fa-2x mb-2 text-light-custom"></i>
-                            <br />
-                            @EmptyMessage
+                            <div class="mt-1">@EmptyMessage</div>
                         }
                     </td>
                 </tr>
@@ -445,7 +444,7 @@
         @if (ShowTotalRow && Items != null && Items.Any())
         {
             <tfoot>
-                <tr class="table-info">
+                <tr class="interactive-table-total-row">
                     @if (ShowRowNumbers)
                     {
                         <th class="row-number-column"></th>

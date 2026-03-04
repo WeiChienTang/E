@@ -1,0 +1,278 @@
+@* 共用廠商資訊 Tab（唯讀）— 以 dl/dt/dd 精緻列表呈現，可跨單據重用 *@
+@using Microsoft.Extensions.Localization
+@inject ISupplierService SupplierService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@if (_supplierId <= 0)
+{
+    <div class="d-flex align-items-center justify-content-center text-muted py-5">
+        <i class="bi bi-building fs-4 me-2 opacity-50"></i>
+        <span>@L["Message.PleaseSelectSupplier"]</span>
+    </div>
+}
+else if (_isLoading)
+{
+    <div class="d-flex align-items-center justify-content-center text-muted py-5">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        <span>@L["Label.Loading"]</span>
+    </div>
+}
+else if (_supplier == null)
+{
+    <div class="d-flex align-items-center justify-content-center text-muted py-5">
+        <i class="bi bi-exclamation-circle fs-4 me-2 opacity-50"></i>
+        <span>找不到廠商資料</span>
+    </div>
+}
+else
+{
+    <div class="entity-info-tab px-2 pt-3 pb-2">
+        @* --- 基本資訊 --- *@
+        <div class="info-section mb-3">
+            <div class="info-section-header">
+                <i class="bi bi-building me-1"></i>@L["Section.BasicInfo"]
+            </div>
+            <dl class="info-list">
+                @RenderRow(L["Field.SupplierCode"], _supplier.Code, isMono: true)
+                @RenderRow(L["Field.CompanyName"], _supplier.CompanyName, isBold: true)
+                @RenderRow(L["Field.ResponsiblePerson"], _supplier.ResponsiblePerson)
+                @RenderRow(L["Field.TaxNumber"], _supplier.TaxNumber, isMono: true)
+                @RenderPhoneRow(L["Field.ContactPhone"], _supplier.SupplierContactPhone)
+                @RenderPhoneRow(L["Field.Fax"], _supplier.Fax)
+                @RenderLinkRow(L["Field.Website"], _supplier.Website)
+                @RenderAddressRow(L["Field.ContactAddress"], _supplier.ContactAddress)
+                @RenderAddressRow(L["Field.ShippingAddress"], _supplier.SupplierAddress)
+            </dl>
+        </div>
+
+        @* --- 聯絡人資訊 --- *@
+        @if (HasContactInfo())
+        {
+            <div class="info-section mb-3">
+                <div class="info-section-header">
+                    <i class="bi bi-person me-1"></i>@L["Section.ContactPersonInfo"]
+                </div>
+                <dl class="info-list">
+                    @RenderRow(L["Field.ContactPerson"], _supplier.ContactPerson, isBold: true)
+                    @RenderRow(L["Field.JobTitle"], _supplier.JobTitle)
+                    @RenderPhoneRow(L["Field.ContactPhone"], _supplier.ContactPhone)
+                    @RenderPhoneRow(L["Field.MobilePhone"], _supplier.MobilePhone)
+                    @RenderEmailRow(L["Field.Email"], _supplier.Email)
+                </dl>
+            </div>
+        }
+
+        @* --- 付款資訊 --- *@
+        @if (HasPaymentInfo())
+        {
+            <div class="info-section mb-3">
+                <div class="info-section-header">
+                    <i class="bi bi-credit-card me-1"></i>@L["Section.PaymentInfo"]
+                </div>
+                <dl class="info-list">
+                    @RenderRow(L["Entity.PaymentMethod"], _supplier.PaymentMethod?.Name)
+                    @RenderRow(L["Field.PaymentTerms"], _supplier.PaymentTerms)
+                </dl>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .entity-info-tab .info-section-header {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--bs-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding-bottom: 0.35rem;
+        margin-bottom: 0.5rem;
+        border-bottom: 2px solid var(--bs-primary);
+        opacity: 0.85;
+    }
+
+    .entity-info-tab .info-list {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 0;
+        margin: 0;
+    }
+
+    .entity-info-tab .info-list dt {
+        font-size: 1rem;
+        color: #6c757d;
+        font-weight: 500;
+        padding: 0.4rem 0.5rem 0.4rem 0;
+        border-bottom: 1px solid #f0f0f0;
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    .entity-info-tab .info-list dd {
+        font-size: 1rem;
+        color: #212529;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #f0f0f0;
+        margin: 0;
+        word-break: break-word;
+    }
+
+    .entity-info-tab .info-list dd:last-child,
+    .entity-info-tab .info-list dt:nth-last-child(2) {
+        border-bottom: none;
+    }
+
+    .entity-info-tab .info-list .info-mono {
+        font-family: 'Cascadia Code', 'Fira Code', monospace;
+        letter-spacing: 0.04em;
+    }
+
+    .entity-info-tab .info-list .info-bold {
+        font-weight: 600;
+    }
+
+    .entity-info-tab .info-list a {
+        color: var(--bs-primary);
+        text-decoration: none;
+    }
+
+    .entity-info-tab .info-list a:hover {
+        text-decoration: underline;
+    }
+
+    .entity-info-tab .info-list .email-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .entity-info-tab .info-list .email-actions .email-text {
+        margin-right: 0.35rem;
+    }
+
+    .entity-info-tab .info-list .email-actions .email-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        transition: background-color 0.15s;
+    }
+
+    .entity-info-tab .info-list .email-actions .email-action-btn:hover {
+        background-color: rgba(0,0,0,0.06);
+        text-decoration: none;
+    }
+</style>
+
+@code {
+    [Parameter] public int? SupplierId { get; set; }
+
+    private int _supplierId;
+    private int _lastLoadedId;
+    private bool _isLoading;
+    private Supplier? _supplier;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var id = SupplierId ?? 0;
+        if (id != _lastLoadedId)
+        {
+            if (id > 0)
+                await LoadAsync(id);
+            else
+                Clear();
+        }
+    }
+
+    public async Task LoadAsync(int supplierId)
+    {
+        _supplierId = supplierId;
+        _lastLoadedId = supplierId;
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _supplier = await SupplierService.GetByIdAsync(supplierId);
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入廠商資訊時發生錯誤");
+            _supplier = null;
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Clear()
+    {
+        _supplierId = 0;
+        _lastLoadedId = 0;
+        _supplier = null;
+        StateHasChanged();
+    }
+
+    // ===== 區塊顯示判斷（空區塊自動隱藏） =====
+
+    private bool HasContactInfo() =>
+        !string.IsNullOrWhiteSpace(_supplier?.ContactPerson) ||
+        !string.IsNullOrWhiteSpace(_supplier?.JobTitle) ||
+        !string.IsNullOrWhiteSpace(_supplier?.ContactPhone) ||
+        !string.IsNullOrWhiteSpace(_supplier?.MobilePhone) ||
+        !string.IsNullOrWhiteSpace(_supplier?.Email);
+
+    private bool HasPaymentInfo() =>
+        _supplier?.PaymentMethod != null ||
+        !string.IsNullOrWhiteSpace(_supplier?.PaymentTerms);
+
+    // ===== 渲染輔助方法 =====
+
+    private RenderFragment RenderRow(string label, string? value, bool isMono = false, bool isBold = false) => __builder =>
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        <dt>@label</dt>
+        <dd class="@(isMono ? "info-mono" : "") @(isBold ? "info-bold" : "")">@value</dd>
+    };
+
+    private RenderFragment RenderPhoneRow(string label, string? value) => __builder =>
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        <dt>@label</dt>
+        <dd><a href="tel:@value.Replace("-","").Replace(" ","")" title="撥打 @value"><i class="bi bi-telephone me-1"></i>@value</a></dd>
+    };
+
+    private RenderFragment RenderEmailRow(string label, string? value) => __builder =>
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        <dt>@label</dt>
+        <dd>
+            <span class="email-actions">
+                <span class="email-text">@value</span>
+                <a href="mailto:@value" class="email-action-btn" title="使用系統郵件寄信"><i class="bi bi-envelope"></i></a>
+                <a href="https://mail.google.com/mail/?view=cm&fs=1&to=@(Uri.EscapeDataString(value))" target="_blank" rel="noopener" class="email-action-btn" title="使用 Gmail 寄信"><i class="bi bi-google"></i></a>
+            </span>
+        </dd>
+    };
+
+    private RenderFragment RenderLinkRow(string label, string? value) => __builder =>
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        var url = value.StartsWith("http") ? value : $"https://{value}";
+        <dt>@label</dt>
+        <dd><a href="@url" target="_blank" rel="noopener" title="開啟 @value"><i class="bi bi-globe me-1"></i>@value</a></dd>
+    };
+
+    private RenderFragment RenderAddressRow(string label, string? value) => __builder =>
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        <dt>@label</dt>
+        <dd><a href="https://www.google.com/maps/search/?api=1&query=@(Uri.EscapeDataString(value))" target="_blank" rel="noopener" title="在 Google Maps 上查看"><i class="bi bi-geo-alt me-1"></i>@value</a></dd>
+    };
+}

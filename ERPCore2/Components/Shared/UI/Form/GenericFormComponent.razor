@@ -94,7 +94,9 @@
                                 </div>
                                 @if (tab.ExtraContent != null)
                                 {
-                                    @tab.ExtraContent
+                                    <div class="tab-extra-content">
+                                        @tab.ExtraContent
+                                    </div>
                                 }
                             }
                         </div>
@@ -237,7 +239,7 @@
                                         title="@(actionButton.Title ?? actionButton.Text)"
                                         disabled="@actionButton.IsDisabled"
                                         @onclick="@(actionButton.OnClick ?? (() => Task.CompletedTask))">
-                                    <i class="@FormConstants.GetIconForButtonText(actionButton.Text)"></i>
+                                    <i class="@(!string.IsNullOrEmpty(actionButton.IconClass) ? actionButton.IconClass : FormConstants.GetIconForButtonText(actionButton.Text))"></i>
                                 </button>
                             }
                         </div>

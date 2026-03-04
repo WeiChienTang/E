@@ -981,17 +981,7 @@ public static class NavigationConfig
                         QuickActionId = "NewJournalEntry",
                         QuickActionName = "新增傳票"
                     },                    
-                    new NavigationItem
-                    {
-                        Name = "批次轉傳票",
-                        NameKey = "Nav.JournalEntryBatch",
-                        Description = "將進貨、銷貨、退回等業務單據批次產生會計傳票",
-                        Route = "/journal-entry-batch",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "會計管理",
-                        RequiredPermission = PermissionRegistry.JournalEntry.Read,
-                        SearchKeywords = new List<string> { "批次轉傳票", "自動傳票", "進貨轉傳票", "銷貨轉傳票", "轉帳" }
-                    },
+                    // 批次轉傳票已整合至傳票管理頁面 (/journal-entries) 的 Modal 中
                     new NavigationItem
                     {
                         Name = "會計科目",

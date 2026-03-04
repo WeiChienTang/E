@@ -34,6 +34,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
@@ -56,7 +57,6 @@
                           OnTaxMethodChanged="@(() => HandleReturnDetailsChanged(purchaseReturnDetails))"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@PurchaseReturnReportService"
@@ -96,6 +96,10 @@
     // 表單欄位和區塊
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+    
+    // Tab 元件參考
+    private SupplierInfoTab? supplierInfoTab;
 
     // 相關資料
     private List<Supplier> suppliers = new();
@@ -130,6 +134,12 @@
         try
         {
             UpdateFilterFieldsState();
+
+            // 載入廠商資訊 Tab
+            if (supplierInfoTab != null && editModalComponent?.Entity?.SupplierId > 0)
+                await supplierInfoTab.LoadAsync(editModalComponent.Entity.SupplierId);
+            else
+                supplierInfoTab?.Clear();
 
             StateHasChanged();
         }
@@ -580,7 +590,7 @@
                 },
             };
 
-            formSections = FormSectionHelper<PurchaseReturn>.Create()
+            var formBuilder = FormSectionHelper<PurchaseReturn>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.Code,
                     pr => pr.SupplierId,
@@ -599,7 +609,21 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(PurchaseReturn.RejectReason))
-                .Build();
+                .GroupIntoTab(L["Tab.ReturnData"].ToString(), "bi-arrow-return-left",
+                    FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
+                    FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)
+                .GroupIntoCustomTab(L["Tab.SupplierInfo"].ToString(), "bi-building",
+                    CreateSupplierInfoTabContent(), "SupplierInfoTab");
+
+            var layout = formBuilder.BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+
+            // 將退貨明細表格嵌入第一個 Tab 的 ExtraContent
+            if (tabDefinitions != null && tabDefinitions.Count > 0)
+            {
+                tabDefinitions[0].ExtraContent = CreateReturnDetailManagerContent();
+            }
             
             // 關鍵：如果實體已經載入且有廠商ID，立即更新商品和進貨單選項
             if (editModalComponent?.Entity?.SupplierId > 0)
@@ -1116,6 +1140,17 @@
     }
 
     // ===== 輔助方法 =====
+
+    // ===== Tab RenderFragment =====
+
+    /// <summary>
+    /// 創建廠商資訊 Tab 的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateSupplierInfoTabContent() => __builder =>
+    {
+        <SupplierInfoTab @ref="supplierInfoTab"
+                        SupplierId="@editModalComponent?.Entity?.SupplierId" />
+    };
 
     /// <summary>
     /// 配置自訂模組（退貨明細表格）

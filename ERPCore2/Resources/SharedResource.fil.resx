@@ -1947,6 +1947,9 @@
   <data name="Button.OpenDelivery" xml:space="preserve"><value>Buksan ang Delivery</value></data>
   <data name="Button.OpenQuotation" xml:space="preserve"><value>Buksan ang Quotation</value></data>
   <data name="Button.OpenSalesReturn" xml:space="preserve"><value>Buksan ang Sales Return</value></data>
+  <data name="Composition.Loading" xml:space="preserve"><value>Naglo-load ng formula data...</value></data>
+  <data name="Composition.QuickApply" xml:space="preserve"><value>Mabilis na Pag-apply ng Formula</value></data>
+  <data name="Composition.CustomModeShort" xml:space="preserve"><value>Custom</value></data>
   <data name="Composition.SelectBOM" xml:space="preserve"><value>Pumili ng BOM Formula</value></data>
   <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>Pumili ng BOM Formula - {0}</value></data>
   <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>Maghanap ayon sa code, spec, customer o kategorya...</value></data>

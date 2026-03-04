@@ -1210,6 +1210,10 @@
   <data name="Tab.ReturnRecords" xml:space="preserve"><value>退回记录</value></data>
   <data name="Tab.ReceivingData" xml:space="preserve"><value>进货资料</value></data>
   <data name="Tab.ReceivingDetail" xml:space="preserve"><value>进货明细</value></data>
+  <data name="Tab.PurchaseOrderData" xml:space="preserve"><value>采购单资料</value></data>
+  <data name="Tab.SupplierInfo" xml:space="preserve"><value>供应商信息</value></data>
+  <data name="Tab.CustomerInfo" xml:space="preserve"><value>客户信息</value></data>
+  <data name="Message.PleaseSelectCustomer" xml:space="preserve"><value>请先选择客户</value></data>
   <data name="Tab.SetoffRecords" xml:space="preserve"><value>冲款记录</value></data>
   <data name="Tab.SourcePurchaseOrder" xml:space="preserve"><value>来源采购订单</value></data>
   <data name="Tab.ReturnData" xml:space="preserve"><value>退回资料</value></data>
@@ -1947,6 +1951,9 @@
   <data name="Button.OpenDelivery" xml:space="preserve"><value>打开出货单</value></data>
   <data name="Button.OpenQuotation" xml:space="preserve"><value>打开报价单</value></data>
   <data name="Button.OpenSalesReturn" xml:space="preserve"><value>打开退货单</value></data>
+  <data name="Composition.Loading" xml:space="preserve"><value>正在加载配方数据...</value></data>
+  <data name="Composition.QuickApply" xml:space="preserve"><value>快速套用配方</value></data>
+  <data name="Composition.CustomModeShort" xml:space="preserve"><value>自定义</value></data>
   <data name="Composition.SelectBOM" xml:space="preserve"><value>选择 BOM 配方</value></data>
   <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>选择 BOM 配方 - {0}</value></data>
   <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>搜索配方编号、规格、客户或类型...</value></data>

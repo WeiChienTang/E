@@ -31,7 +31,7 @@
                           RequiredPermission="@PermissionRegistry.JournalEntry.Read"
                           OnEntitySaved="@OnJournalEntrySaved"
                           OnCancel="@OnCancel"
-                          ShowAddButton="false"
+                          ShowAddButton="true"
                           ShowDeleteButton="false"
                           ShowPrintButton="false"
                           CustomModules="@GetCustomModules()"
@@ -87,8 +87,7 @@
     {
         if (isDataLoaded) return;
 
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        currentUser = authState.User.Identity?.Name ?? "System";
+        currentUser = await CurrentUserHelper.GetCurrentUserFullNameAsync(AuthenticationStateProvider);
 
         detailAccounts = await AccountItemService.GetDetailAccountsAsync();
         companies = await CompanyService.GetActiveCompaniesAsync();
@@ -385,12 +384,6 @@
     /// </summary>
     private async Task<bool> SaveJournalEntryWrapper(JournalEntry entity)
     {
-        if (IsReadOnly)
-        {
-            await NotificationService.ShowWarningAsync("此傳票已過帳/取消/沖銷，無法修改");
-            return false;
-        }
-
         // 準備分錄行資料
         entity.Lines = journalEntryLines;
         entity.FiscalYear = entity.EntryDate.Year;

@@ -1,7 +1,7 @@
 /* ===== 表單容器 ===== */
 .generic-form-container {
     width: 100%;
-    margin-bottom: 1rem; /* 與後續內容（如 InteractiveTableComponent）保持間距 */
+    margin-bottom: 0.5rem; /* 與後續內容保持適度間距 */
 }
 
 /* ===== 新版佈局：區段水平並排 ===== */
@@ -12,6 +12,11 @@
     flex-wrap: wrap;
     gap: 1rem;
     align-items: flex-start;
+}
+
+/* Tab 內 ExtraContent 與上方表單欄位的間距 */
+.tab-extra-content {
+    margin-top: 0.5rem;
 }
 
 /* 區段欄位 - 基礎樣式 */

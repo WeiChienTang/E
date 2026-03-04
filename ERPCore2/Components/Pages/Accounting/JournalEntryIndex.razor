@@ -22,7 +22,15 @@
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           DebugPageName="JournalEntryIndex"
-                          @ref="indexComponent" />
+                          @ref="indexComponent">
+    <CustomIndexButtons>
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                Text="@L["Journal.BatchTransfer"]"
+                                IconClass="bi bi-journal-arrow-up"
+                                OnClick="@(() => showBatchModal = true)"
+                                Title="@L["Journal.BatchTransfer"]" />
+    </CustomIndexButtons>
+</GenericIndexPageComponent>
 
 <JournalEntryEditModalComponent IsVisible="@showEditModal"
                                 IsVisibleChanged="@((bool v) => showEditModal = v)"
@@ -30,12 +38,17 @@
                                 OnJournalEntrySaved="@modalHandler.OnEntitySavedAsync"
                                 OnCancel="@modalHandler.OnModalCancelAsync" />
 
+<JournalEntryBatchModalComponent IsVisible="@showBatchModal"
+                                 IsVisibleChanged="@((bool v) => showBatchModal = v)"
+                                 OnClose="@HandleBatchModalCloseAsync" />
+
 @code {
     // 組件參考
     private GenericIndexPageComponent<JournalEntry, IJournalEntryService> indexComponent = default!;
 
     // Modal 狀態
     private bool showEditModal = false;
+    private bool showBatchModal = false;
     private int? editingId = null;
 
     // Modal 處理器
@@ -102,5 +115,16 @@
 
         return fieldConfiguration.ApplyFilters(
             searchModel, query, nameof(ApplyFilters), GetType());
+    }
+
+    // 批次轉傳票 Modal 關閉時重新整理列表
+    private async Task HandleBatchModalCloseAsync()
+    {
+        showBatchModal = false;
+        if (indexComponent != null)
+        {
+            await indexComponent.SmoothRefresh();
+        }
+        StateHasChanged();
     }
 }

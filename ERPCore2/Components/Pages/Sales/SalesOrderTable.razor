@@ -104,31 +104,23 @@ else
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
-<!-- 配方選擇 Modal -->
-<CompositionSelectorModal IsVisible="@showCompositionSelectorModal"
-                         IsVisibleChanged="@((bool visible) => showCompositionSelectorModal = visible)"
-                         ProductName="@selectedCompositionProductName"
-                         Compositions="@availableCompositions"
-                         CurrentCustomerId="@SelectedCustomerId"
-                         OnSelected="@HandleCompositionSelected" />
-
-<!-- BOM 組合編輯/查看 Modal -->
+<!-- BOM 組合編輯 Modal（整合配方選擇 + 組件編輯） -->
 <QuotationCompositionEditModal TCompositionDetail="SalesOrderCompositionDetail"
                               IsVisible="@showCompositionModal"
-                              IsVisibleChanged="@((bool visible) => showCompositionModal = visible)"
+                              IsVisibleChanged="@((bool visible) => { showCompositionModal = visible; })"
                               DetailId="@GetSelectedSalesOrderDetailId()"
                               ProductName="@selectedCompositionProductName"
                               ProductId="@selectedCompositionProductId"
                               SelectedCompositionId="@selectedCompositionId"
                               IsCustomMode="@isCustomCompositionMode"
-                              IsReselecting="@isReselectingComposition"
+                              Compositions="@availableCompositions"
+                              CurrentCustomerId="@SelectedCustomerId"
                               IsReadOnly="@GetCompositionModalReadOnlyState()"
                               GetCompositionsByDetailId="@SalesOrderCompositionDetailService.GetBySalesOrderDetailIdAsync"
                               CopyFromComposition="@SalesOrderCompositionDetailService.CopyFromCompositionAsync"
                               OnSave="@HandleCompositionSave"
                               OnCancel="@HandleCompositionCancel"
-                              OnRequestCachedData="@GetCachedCompositionData"
-                              OnReselect="@HandleCompositionReselect" />
+                              OnRequestCachedData="@GetCachedCompositionData" />
 
 <!-- 載入確認 Modal -->
 <GenericConfirmModalComponent IsVisible="@_showLoadConfirmModal"
@@ -213,13 +205,11 @@ else
     
     // ===== BOM 組合編輯相關 =====
     private bool showCompositionModal = false;
-    private bool showCompositionSelectorModal = false;
     private int? selectedSalesItemIndex = null;
     private string selectedCompositionProductName = string.Empty;
     private int? selectedCompositionProductId = null;
     private int? selectedCompositionId = null;
     private bool isCustomCompositionMode = false;
-    private bool isReselectingComposition = false;
     private List<ProductComposition> availableCompositions = new();
     private Dictionary<int, List<SalesOrderCompositionDetail>> compositionDetailsCache = new();
     private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
@@ -632,128 +622,25 @@ else
     }
     
     /// <summary>
-    /// 顯示 BOM 組合編輯器 - 智能判斷是否需要選擇配方
+    /// 顯示 BOM 組合編輯器 - 直接開啟整合式 Modal
     /// </summary>
     private async Task ShowCompositionEditor(SalesItem item)
     {
-        if (item.SelectedProduct == null)
-        {
-            return;
-        }
+        if (item.SelectedProduct == null) return;
         
-        // 找出 SalesItem 的索引
         selectedSalesItemIndex = Items.IndexOf(item);
         selectedCompositionProductName = item.SelectedProduct.Name;
         selectedCompositionProductId = item.SelectedProduct.Id;
+        selectedCompositionId = item.SelectedCompositionId;
+        isCustomCompositionMode = item.IsCustomComposition;
         
-        // 取得明細 ID
-        var detailId = (item.ExistingDetailEntity as SalesOrderDetail)?.Id ?? 0;
+        // 載入可用的配方清單（供 Modal 頂部 pill 按鈕使用）
+        availableCompositions = await ProductCompositionService
+            .GetCompositionsByProductIdAsync(item.SelectedProduct.Id);
         
-        // 🔑 關鍵修正：如果是已儲存的明細（DetailId > 0）但沒有快取資料，直接開啟 Modal
-        // Modal 會自動從資料庫載入 BOM 組合明細
-        if (detailId > 0 && !item.HasCompositionData)
-        {
-            selectedCompositionId = null;  // 讓 Modal 自己判斷
-            isCustomCompositionMode = false;
-            showCompositionModal = true;
-        }
-        // 檢查是否已有組合資料（快取）
-        else if (item.HasCompositionData)
-        {
-            // 已有資料，直接開啟編輯器
-            selectedCompositionId = item.SelectedCompositionId;
-            isCustomCompositionMode = item.IsCustomComposition;
-            showCompositionModal = true;
-        }
-        else
-        {
-            // 尚未選擇配方，顯示選擇器
-            availableCompositions = await ProductCompositionService
-                .GetCompositionsByProductIdAsync(item.SelectedProduct.Id);
-            showCompositionSelectorModal = true;
-        }
-        
-        StateHasChanged();
-    }
-    
-    /// <summary>
-    /// 處理配方選擇
-    /// </summary>
-    private async Task HandleCompositionSelected((int? compositionId, bool isCustomMode) selection)
-    {
-        showCompositionSelectorModal = false;
-        
-        selectedCompositionId = selection.compositionId;
-        isCustomCompositionMode = selection.isCustomMode;
-        
-        // 記錄選擇資訊到 SalesItem
-        if (selectedSalesItemIndex.HasValue)
-        {
-            var item = Items.ElementAtOrDefault(selectedSalesItemIndex.Value);
-            if (item != null)
-            {
-                item.SelectedCompositionId = selection.compositionId;
-                item.IsCustomComposition = selection.isCustomMode;
-                
-                // 如果是重新選擇，清除舊的快取資料
-                if (isReselectingComposition)
-                {
-                    item.CustomCompositionDetails = null;
-                }
-                
-                // 🔑 關鍵：如果選擇的是配方（非自定義），立即從配方複製組合明細
-                if (selection.compositionId.HasValue && !selection.isCustomMode)
-                {
-                    try
-                    {
-                        // 使用臨時 DetailId（新增明細時用負數表示）
-                        var tempDetailId = item.ExistingDetailEntity?.Id ?? -(selectedSalesItemIndex.Value + 1);
-                        var copiedDetails = await SalesOrderCompositionDetailService.CopyFromCompositionAsync(
-                            tempDetailId,
-                            selection.compositionId.Value
-                        );
-                        
-                        item.CustomCompositionDetails = copiedDetails;
-                    }
-                    catch (Exception ex)
-                    {
-                        await NotificationService.ShowErrorAsync($"載入配方失敗：{ex.Message}");
-                    }
-                }
-            }
-        }
-        
-        // 開啟 BOM 編輯器
+        // 直接開啟整合式 Modal
         showCompositionModal = true;
         StateHasChanged();
-    }
-    
-    /// <summary>
-    /// 處理重新選擇配方
-    /// </summary>
-    private async Task HandleCompositionReselect()
-    {
-        // 先標記為重新選擇模式（在關閉 Modal 之前）
-        isReselectingComposition = true;
-        
-        // 關閉當前的 BOM 編輯 Modal
-        showCompositionModal = false;
-        
-        // 清除當前選擇的配方資訊
-        if (selectedSalesItemIndex.HasValue)
-        {
-            var item = Items.ElementAtOrDefault(selectedSalesItemIndex.Value);
-            if (item?.SelectedProduct != null)
-            {
-                // 重新載入配方清單
-                availableCompositions = await ProductCompositionService
-                    .GetCompositionsByProductIdAsync(item.SelectedProduct.Id);
-                
-                // 顯示配方選擇器
-                showCompositionSelectorModal = true;
-                StateHasChanged();
-            }
-        }
     }
     
     /// <summary>
@@ -806,26 +693,18 @@ else
     private async Task HandleCompositionSave(List<SalesOrderCompositionDetail> compositionDetails)
     {
         if (!selectedSalesItemIndex.HasValue || !selectedCompositionProductId.HasValue)
-        {
             return;
-        }
             
         try
         {
             // 暫存到快取（實際儲存會在銷貨訂單儲存時一併處理）
             var item = Items[selectedSalesItemIndex.Value];
             item.CustomCompositionDetails = compositionDetails;
-            
-            // 確保選擇資訊已記錄（如果還沒記錄的話）
-            if (!item.SelectedCompositionId.HasValue && !item.IsCustomComposition)
-            {
-                item.SelectedCompositionId = selectedCompositionId;
-                item.IsCustomComposition = isCustomCompositionMode;
-            }
+            item.SelectedCompositionId = selectedCompositionId;
+            item.IsCustomComposition = isCustomCompositionMode;
             
             await NotificationService.ShowSuccessAsync("BOM 組成已更新（將在銷貨訂單儲存時一併保存）");
             showCompositionModal = false;
-            isReselectingComposition = false;  // 儲存完成後重置
         }
         catch (Exception ex)
         {
@@ -839,7 +718,6 @@ else
     private void HandleCompositionCancel()
     {
         showCompositionModal = false;
-        isReselectingComposition = false;
     }
     
     /// <summary>

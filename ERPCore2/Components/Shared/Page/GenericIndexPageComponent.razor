@@ -75,7 +75,8 @@ else
                 IsBatchDeleteDisabled="@IsBatchDeleteDisabled"
                 OnBatchDeleteClick="@HandleBatchDeleteClick"
                 IsLoading="@IsLoading"
-                LoadingOnRefresh="true" />
+                LoadingOnRefresh="true"
+                CustomButtons="@CustomIndexButtons" />
         }
         else if (CustomActionButtons != null)
         {
@@ -213,6 +214,13 @@ else
     [Parameter] public bool ShowDefaultActions { get; set; } = true;
     [Parameter] public bool ShowAddButton { get; set; } = true;
     [Parameter] public RenderFragment? CustomActionButtons { get; set; }
+    
+    /// <summary>
+    /// 自訂額外按鈕（追加在預設按鈕列尾端，不會取代預設按鈕）
+    /// 與 CustomActionButtons 不同：CustomActionButtons 會完全替換按鈕列，
+    /// 而 CustomIndexButtons 只會在預設按鈕列後方追加。
+    /// </summary>
+    [Parameter] public RenderFragment? CustomIndexButtons { get; set; }
     
     // 匯出功能控制
     [Parameter] public bool ShowExportExcelButton { get; set; } = false;

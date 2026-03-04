@@ -7,6 +7,7 @@
 @inject ISupplierRosterReportService SupplierRosterReportService
 @inject ISupplierDetailReportService SupplierDetailReportService
 @inject ActionButtonHelper ActionButtonHelper
+@inject ContactLinkHelper ContactLinkHelper
 @inject ICompanyModuleService CompanyModuleService
 @inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
@@ -389,7 +390,8 @@
                     Placeholder = L["Placeholder.PleaseInput", L["Field.ContactPhone"]],
                     IsRequired = false,
                     MaxLength = 20,
-                    HelpText = "聯絡人或是公司聯絡電話"
+                    HelpText = "聯絡人或是公司聯絡電話",
+                    ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.ContactPhone, IsSaved)
                 },
                 new()
                 {
@@ -397,7 +399,8 @@
                     Label = L["Field.MobilePhone"],
                     FieldType = FormFieldType.MobilePhone,
                     Placeholder = "0912-345-678",
-                    HelpText = "聯絡人行動電話（10碼，以09開頭）"
+                    HelpText = "聯絡人行動電話（10碼，以09開頭）",
+                    ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.MobilePhone, IsSaved)
                 },
                 new()
                 {
@@ -407,7 +410,8 @@
                     Placeholder = L["Placeholder.PleaseInput", L["Field.Fax"]],
                     IsRequired = false,
                     MaxLength = 20,
-                    HelpText = "公司傳真號碼"
+                    HelpText = "公司傳真號碼",
+                    ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.Fax, IsSaved)
                 },
                 new()
                 {
@@ -417,7 +421,8 @@
                     Placeholder = L["Placeholder.PleaseInput", L["Field.Email"]],
                     IsRequired = false,
                     MaxLength = 50,
-                    HelpText = "聯絡人電子郵件地址"
+                    HelpText = "聯絡人電子郵件地址",
+                    ActionButtons = ContactLinkHelper.CreateEmailButtons(() => editModalComponent?.Entity?.Email, IsSaved)
                 },
                 new()
                 {
@@ -427,7 +432,8 @@
                     Placeholder = L["Placeholder.PleaseInput", L["Field.Website"]],
                     MaxLength = 50,
                     ContainerCssClass = "col-4",
-                    HelpText = "公司官方網站網址"
+                    HelpText = "公司官方網站網址",
+                    ActionButtons = ContactLinkHelper.CreateWebsiteButtons(() => editModalComponent?.Entity?.Website, IsSaved)
                 },
                 new()
                 {
@@ -438,7 +444,8 @@
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "公司聯絡地址",
-                    ContainerCssClass = "col-4"
+                    ContainerCssClass = "col-4",
+                    ActionButtons = ContactLinkHelper.CreateAddressButtons(() => editModalComponent?.Entity?.ContactAddress, IsSaved)
                 },
                 new()
                 {
@@ -481,7 +488,8 @@
                     Placeholder = L["Placeholder.PleaseInput", L["Field.ContactPhone"]],
                     IsRequired = false,
                     MaxLength = 20,
-                    HelpText = "負責人或是公司聯絡電話"
+                    HelpText = "負責人或是公司聯絡電話",
+                    ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.SupplierContactPhone, IsSaved)
                 },
                 FormFieldConfigurationHelper.CreateRemarksField<Supplier>()
             };
@@ -574,7 +582,7 @@
 
     private Task<List<FieldActionButton>> GetSupplierAddressActionButtonsAsync()
     {
-        return Task.FromResult(new List<FieldActionButton>
+        var buttons = new List<FieldActionButton>
         {
             new()
             {
@@ -585,7 +593,9 @@
                 OnClick = async () => await CopyContactAddressToSupplierAddress(),
                 IsDisabled = false
             }
-        });
+        };
+        buttons.AddRange(ContactLinkHelper.CreateAddressButtons(() => editModalComponent?.Entity?.SupplierAddress, IsSaved));
+        return Task.FromResult(buttons);
     }
 
     private async Task CopyResponsiblePersonToContactPerson()
@@ -627,6 +637,8 @@
     }
 
     // ===== 自訂模組 =====
+
+    private bool IsSaved() => SupplierId.HasValue && SupplierId.Value > 0;
 
     private List<GenericEditModalComponent<Supplier, ISupplierService>.CustomModule> GetCustomModules()
     {
