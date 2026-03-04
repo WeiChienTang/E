@@ -148,8 +148,10 @@
 
 /* 按鈕在表格中的樣式調整 */
 .interactive-table-container .btn-sm {
-    padding: 0.125rem 0.5rem; /* 縮小上下內邊距至 0.125rem */
-    font-size: 1rem;
+    padding: 0.125rem 0.4rem; /* 縮小上下內邊距至 0.125rem */
+    font-size: 0.8rem;
+    line-height: 1;
+    max-height: 1.5rem;
 }
 
 /* 操作欄位基礎樣式設置 - 適用於所有螢幕尺寸 */
@@ -180,11 +182,27 @@
 
 /* 操作欄位內按鈕樣式 */
 .table-actions-column .btn {
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     white-space: nowrap; /* 確保按鈕文字不會換行 */
     min-width: fit-content; /* 按鈕寬度適應內容 */
+    padding: 0.125rem 0.3rem;
+    font-size: 0.8rem;
+    line-height: 1;
+    max-height: 1.5rem;
+    vertical-align: middle;
+}
+
+/* 操作欄位內圖示大小限制 */
+.table-actions-column .btn i,
+.table-actions-column .btn .fas,
+.table-actions-column .btn .far,
+.table-actions-column .btn .bi,
+.table-actions-column .btn svg {
+    font-size: 0.75rem;
+    line-height: 1;
+    vertical-align: middle;
 }
 
 /* 操作欄位的正方形按鈕 - 縮小至 24px 以配合緊湊行高 */
@@ -250,7 +268,8 @@
     
     /* 確保表格內按鈕圖標大小正常 */
     .interactive-table-container .btn i {
-        font-size: 1rem; /* 確保圖標大小正常 */
+        font-size: 0.75rem; /* 圖標大小配合緊湊行高 */
+        line-height: 1;
     }
     
     /* 針對特定欄位類型的寬度設置 */
@@ -288,21 +307,24 @@
     
     /* 操作欄位內的按鈕樣式 - 保持彈性尺寸 */
     .table-responsive .table .table-actions-column .btn {
-        padding: 0.125rem 0.5rem; /* 縮小上下內邊距至 0.125rem */
-        font-size: 1rem; /* 按鈕字體大小 */
+        padding: 0.125rem 0.3rem; /* 縮小上下內邊距至 0.125rem */
+        font-size: 0.8rem; /* 按鈕字體大小 */
         margin: 0 0.125rem; /* 按鈕間距 */
-        min-width: 32px; /* 調整最小寬度以配合較小的 padding */
-        min-height: 32px; /* 調整最小高度以配合較小的 padding */
-        display: flex !important;
+        min-width: 24px; /* 調整最小寬度以配合較小的 padding */
+        min-height: unset; /* 移除最小高度限制 */
+        max-height: 1.5rem; /* 限制最大高度 */
+        display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
+        line-height: 1;
         /* 讓按鈕能夠根據內容自動調整大小 */
         width: auto; /* 自動寬度 */
     }
     
     /* 操作欄位內的圖標樣式 */
     .table-responsive .table .table-actions-column .btn i {
-        font-size: 1rem !important; /* 確保圖標大小正常，使用 !important 覆蓋其他樣式 */
+        font-size: 0.75rem !important; /* 圖標大小配合緊湊行高 */
+        line-height: 1;
     }
     
     /* 操作欄位內的 flex 容器樣式 - 支援智慧調整 */

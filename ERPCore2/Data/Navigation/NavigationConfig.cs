@@ -157,9 +157,7 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "人力管理",
                         RequiredPermission = PermissionRegistry.Permission.Read,
-                        SearchKeywords = new List<string> { "權限", "permission", "授權" },
-                        QuickActionId = "NewPermission",
-                        QuickActionName = "新增權限"
+                        SearchKeywords = new List<string> { "權限", "permission", "授權" }
                     },
 
                     // 分隔線 - 區分資料維護與報表

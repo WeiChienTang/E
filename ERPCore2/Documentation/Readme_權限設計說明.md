@@ -51,7 +51,7 @@ PermissionRegistry.cs（靜態定義，開發者維護）
 ```csharp
 // 權限定義 record，含分組歸屬
 public record PermissionDefinition(
-    string Code,             // 權限編號（如 "AccountItem.SubAccountRead"）
+    string Code,             // 權限編號（如 "SubAccount.Read"）
     string Name,             // 顯示名稱（如 "檢視子科目設定"）
     PermissionLevel Level,   // Normal 或 Sensitive
     string Remarks,          // 說明文字
@@ -84,8 +84,8 @@ public static class PermissionRegistry
     public static class AccountItem
     {
         public const string Read                = "AccountItem.Read";
-        public const string SubAccountRead      = "AccountItem.SubAccountRead";        // 檢視子科目設定
-        public const string SubAccountBatchCreate = "AccountItem.SubAccountBatchCreate"; // 批次補建子科目
+        public const string SubAccountRead      = "SubAccount.Read";          // 檢視子科目設定
+        public const string SubAccountBatchCreate = "SubAccount.BatchCreate";   // 批次補建子科目
     }
 
     public static class Document
@@ -218,16 +218,16 @@ permissionCodeToCategory = PermissionRegistry.GetAllPermissions()
 
 | 權限 | Code | 等級 | 控制範圍 |
 |------|------|------|----------|
-| 檢視子科目設定 | `AccountItem.SubAccountRead` | Normal | 控制子科目設定 Tab 是否顯示 |
-| 批次補建子科目 | `AccountItem.SubAccountBatchCreate` | **Sensitive** | 控制批次補建按鈕是否顯示 |
+| 檢視子科目設定 | `SubAccount.Read` | Normal | 控制子科目設定 Tab 是否顯示 |
+| 批次補建子科目 | `SubAccount.BatchCreate` | **Sensitive** | 控制批次補建按鈕是否顯示 |
 
 ### 控制流程
 
 ```
 SystemParameterSettingsModal.OnInitializedAsync()
-    ├─ 檢查 AccountItem.SubAccountRead
+    ├─ 檢查 SubAccount.Read
     │     └─ 有權限（或 SuperAdmin）→ 加入子科目設定 Tab
-    ├─ 檢查 AccountItem.SubAccountBatchCreate
+    ├─ 檢查 SubAccount.BatchCreate
     │     └─ 有權限 → SubAccountSettingsTab 顯示批次補建按鈕
     └─ 無權限 → 只能查看設定，不能執行批次操作
 ```

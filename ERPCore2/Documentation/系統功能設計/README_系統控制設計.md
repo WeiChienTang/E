@@ -319,7 +319,7 @@ SuperAdmin 在不同場景有兩種識別方式：
 |------|------|
 | `SystemParameterSettingsModal.razor` | 主檔：Modal 外殼、Tab 切換（使用 `GenericFormComponent` + `CustomContent`）、共用 CRUD 操作 |
 | `TaxSettingsTab.razor` | 稅務設定 Tab：稅率、備註（內嵌獨立的 `GenericFormComponent`） |
-| `SubAccountSettingsTab.razor` | 子科目設定 Tab：自動產生設定、統制科目代碼、批次補建子科目（需 `AccountItem.SubAccountRead` 權限才可見；批次補建區塊需 `AccountItem.SubAccountBatchCreate`） |
+| `SubAccountSettingsTab.razor` | 子科目設定 Tab：自動產生設定、統制科目代碼、批次補建子科目（需 `SubAccount.Read` 權限才可見；批次補建區塊需 `SubAccount.BatchCreate`） |
 | `CertificateTab.razor` | 安全憑證 Tab（目前停用，預留未來啟用） |
 | `ModuleManagementTab.razor` | 模組管理 Tab（僅 SuperAdmin 可見） |
 

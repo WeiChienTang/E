@@ -1,110 +1,109 @@
-@* 通知設定 Tab — 功能開關 + 系統訊息顯示時長 *@
+@* 通知設定 Tab — 左：功能開關 ｜ 右：系統訊息顯示時長 *@
 @inject IStringLocalizer<SharedResource> L
 
 <div class="p-2">
+    <div class="row g-4">
 
-    @* ==================== 區塊一：功能開關 ==================== *@
-    <h6 class="mb-3">
-        <i class="bi bi-toggles me-2"></i>@L["Preference.NotificationFeatures"]
-    </h6>
+        @* ==================== 左欄：功能開關 ==================== *@
+        <div class="col-12 col-md-6">
+            <div class="notification-section-header">
+                <span class="notification-section-title">@L["Preference.NotificationFeatures"]</span>
+            </div>
 
-    @* 行事曆 *@
-    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.EnableCalendar"]</div>
-    <div class="form-check form-switch mb-2">
-        <input class="form-check-input" type="checkbox" role="switch"
-               id="enableCalendar"
-               @bind="(Model ?? _fallback).EnableCalendar" />
-        <label class="form-check-label" for="enableCalendar">
-            @L["Preference.EnableCalendar"]
-        </label>
-    </div>
-
-    @if ((Model ?? _fallback).EnableCalendar)
-    {
-        <div class="ms-3 mb-4">
-            <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.ShowCalendarBadge"]</div>
-            <div class="form-check form-switch mb-3">
+            @* 行事曆 *@
+            <div class="form-check form-switch mb-2">
                 <input class="form-check-input" type="checkbox" role="switch"
-                       id="showCalendarBadge"
-                       @bind="(Model ?? _fallback).ShowCalendarBadge" />
-                <label class="form-check-label" for="showCalendarBadge">
-                    @L["Preference.ShowCalendarBadge"]
+                       id="enableCalendar"
+                       @bind="(Model ?? _fallback).EnableCalendar" />
+                <label class="form-check-label" for="enableCalendar">
+                    @L["Preference.EnableCalendar"]
                 </label>
             </div>
 
-            @* 預設提醒時間 *@
-            <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.DefaultReminder"]</div>
-            <div class="d-flex gap-2 flex-wrap">
-                @foreach (var option in _reminderOptions)
-                {
-                    var isSelected = (Model ?? _fallback).DefaultReminderMinutes == option.Value;
-                    <button type="button"
-                            class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") reminder-option-btn"
-                            @onclick="() => SelectReminder(option.Value)">
-                        @option.Label
-                    </button>
-                }
-            </div>
-        </div>
-    }
+            @if ((Model ?? _fallback).EnableCalendar)
+            {
+                <div class="ms-3 mb-3">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               id="showCalendarBadge"
+                               @bind="(Model ?? _fallback).ShowCalendarBadge" />
+                        <label class="form-check-label" for="showCalendarBadge">
+                            @L["Preference.ShowCalendarBadge"]
+                        </label>
+                    </div>
 
-    @* 便條貼 *@
-    <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.EnableStickyNote"]</div>
-    <div class="form-check form-switch mb-2">
-        <input class="form-check-input" type="checkbox" role="switch"
-               id="enableStickyNote"
-               @bind="(Model ?? _fallback).EnableStickyNote" />
-        <label class="form-check-label" for="enableStickyNote">
-            @L["Preference.EnableStickyNote"]
-        </label>
-    </div>
+                    <label class="form-label fw-medium small text-secondary mb-1">@L["Preference.DefaultReminder"]</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        @foreach (var option in _reminderOptions)
+                        {
+                            var isSelected = (Model ?? _fallback).DefaultReminderMinutes == option.Value;
+                            <button type="button"
+                                    class="btn btn-sm @(isSelected ? "btn-primary" : "btn-outline-secondary")"
+                                    @onclick="() => SelectReminder(option.Value)">
+                                @option.Label
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
 
-    @if ((Model ?? _fallback).EnableStickyNote)
-    {
-        <div class="ms-3 mb-4">
-            <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.ShowNoteBadge"]</div>
-            <div class="form-check form-switch mb-3">
+            @* 便條貼 *@
+            <div class="form-check form-switch mb-2">
                 <input class="form-check-input" type="checkbox" role="switch"
-                       id="showNoteBadge"
-                       @bind="(Model ?? _fallback).ShowNoteBadge" />
-                <label class="form-check-label" for="showNoteBadge">
-                    @L["Preference.ShowNoteBadge"]
+                       id="enableStickyNote"
+                       @bind="(Model ?? _fallback).EnableStickyNote" />
+                <label class="form-check-label" for="enableStickyNote">
+                    @L["Preference.EnableStickyNote"]
                 </label>
             </div>
+
+            @if ((Model ?? _fallback).EnableStickyNote)
+            {
+                <div class="ms-3 mb-3">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               id="showNoteBadge"
+                               @bind="(Model ?? _fallback).ShowNoteBadge" />
+                        <label class="form-check-label" for="showNoteBadge">
+                            @L["Preference.ShowNoteBadge"]
+                        </label>
+                    </div>
+                </div>
+            }
         </div>
-    }
 
-    @* ==================== 區塊二：系統訊息顯示時長 ==================== *@
-    <div class="mt-4 pt-3 border-top">
-        <h6 class="mb-3">
-            <i class="bi bi-chat-square-text me-2"></i>@L["Preference.ToastDuration"]
-        </h6>
-        <p class="text-muted small mb-3">@L["Preference.ToastDurationHelpText"]</p>
-
-        @foreach (var toastType in _toastTypes)
-        {
-            <div class="mb-3">
-                <div class="mb-1 small text-secondary">
-                    <i class="@toastType.Icon me-1"></i>@toastType.Label
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    @foreach (var option in _durationOptions)
-                    {
-                        var currentValue = GetToastDuration(toastType.Type);
-                        var isSelected = currentValue == option.Value;
-                        var capturedType = toastType.Type;
-                        var capturedValue = option.Value;
-                        <button type="button"
-                                class="btn btn-sm @(isSelected ? "btn-primary" : "btn-outline-secondary") reminder-option-btn"
-                                @onclick="() => SelectToastDuration(capturedType, capturedValue)">
-                            @option.Label
-                        </button>
-                    }
-                </div>
+        @* ==================== 右欄：系統訊息顯示時長 ==================== *@
+        <div class="col-12 col-md-6">
+            <div class="notification-section-header">
+                <span class="notification-section-title">@L["Preference.ToastDuration"]</span>
             </div>
-        }
-    </div>
+            <p class="text-muted small mb-3">@L["Preference.ToastDurationHelpText"]</p>
 
+            @foreach (var toastType in _toastTypes)
+            {
+                <div class="mb-3">
+                    <label class="form-label fw-medium small text-secondary mb-1">
+                        <i class="@toastType.Icon me-1"></i>@toastType.Label
+                    </label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        @foreach (var option in _durationOptions)
+                        {
+                            var currentValue = GetToastDuration(toastType.Type);
+                            var isSelected = currentValue == option.Value;
+                            var capturedType = toastType.Type;
+                            var capturedValue = option.Value;
+                            <button type="button"
+                                    class="btn btn-sm @(isSelected ? "btn-primary" : "btn-outline-secondary")"
+                                    @onclick="() => SelectToastDuration(capturedType, capturedValue)">
+                                @option.Label
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+    </div>
 </div>
 
 @code {

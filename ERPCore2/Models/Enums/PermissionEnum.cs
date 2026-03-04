@@ -13,6 +13,11 @@ namespace ERPCore2.Models.Enums
         /// <summary>
         /// 核准
         /// </summary>
-        Approve = 2
+        Approve = 2,
+
+        /// <summary>
+        /// 批次建立
+        /// </summary>
+        BatchCreate = 3
     }
 }

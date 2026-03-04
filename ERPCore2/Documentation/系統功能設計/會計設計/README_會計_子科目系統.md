@@ -118,8 +118,8 @@
 
 | 權限常數 | Code | 等級 | 說明 |
 |----------|------|------|------|
-| `AccountItem.SubAccountRead` | `AccountItem.SubAccountRead` | Normal | 可檢視子科目設定 Tab |
-| `AccountItem.SubAccountBatchCreate` | `AccountItem.SubAccountBatchCreate` | Sensitive | 可執行批次補建子科目 |
+| `AccountItem.SubAccountRead` | `SubAccount.Read` | Normal | 可檢視子科目設定 Tab |
+| `AccountItem.SubAccountBatchCreate` | `SubAccount.BatchCreate` | Sensitive | 可執行批次補建子科目 |
 
 ### 控制流程
 

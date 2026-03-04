@@ -29,7 +29,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
                     Remarks = "政府機關發文、法規公告、許可證照等"
                 },
                 new DocumentCategory
@@ -39,7 +38,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     DefaultAccessLevel = DocumentAccessLevel.Sensitive,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
                     Remarks = "廠商報價、採購合約、供應協議等"
                 },
                 new DocumentCategory
@@ -49,7 +47,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
                     Remarks = "客戶簽約資料、訂單確認書等"
                 },
                 new DocumentCategory
@@ -59,7 +56,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
                     Remarks = "公司內部作業程序、規章制度等"
                 },
                 new DocumentCategory
@@ -69,7 +65,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
                     Remarks = "其他類型的文件"
                 }
             };

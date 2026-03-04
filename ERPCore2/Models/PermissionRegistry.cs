@@ -325,8 +325,8 @@ public static class PermissionRegistry
     public static class AccountItem
     {
         public const string Read = "AccountItem.Read";
-        public const string SubAccountRead = "AccountItem.SubAccountRead";
-        public const string SubAccountBatchCreate = "AccountItem.SubAccountBatchCreate";
+        public const string SubAccountRead = "SubAccount.Read";
+        public const string SubAccountBatchCreate = "SubAccount.BatchCreate";
     }
 
     public static class JournalEntry

@@ -22,7 +22,7 @@
                           RequiredPermission="@PermissionRegistry.Permission.Read"
                           RequiredModule="Employees"
                           ShowActions = "false"
-                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          ShowAddButton="false"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           DebugPageName="PermissionIndex"
                           @ref="indexComponent" />
@@ -30,7 +30,6 @@
 <PermissionEditModalComponent IsVisible="@showEditModal"
                               IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                               PermissionId="@editingPermissionId"
-                              OnPermissionSaved="@modalHandler.OnEntitySavedAsync"
                               OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
