@@ -1,0 +1,206 @@
+@* 通用分頁組件 - 使用 Bootstrap 語義化分頁結構，統一設計語言 *@
+@inject IStringLocalizer<SharedResource> L
+
+@if (TotalItems > 0)
+{
+    <div class="pagination-container">
+        @* 左側：資料統計資訊 *@
+        <div class="pagination-info">
+            <small>
+                @string.Format(L["Pagination.ShowingRange"].ToString(), StartItem, EndItem, TotalItems, CurrentPage, TotalPages)
+            </small>
+        </div>
+
+        @* 中間：分頁按鈕群 *@
+        <nav class="pagination-nav" aria-label="@L["Pagination.GoToPage"]">
+            <ul class="pagination pagination-sm mb-0">
+                @* 第一頁按鈕 *@
+                <li class="page-item d-none d-md-block @(HasPreviousPage ? "" : "disabled")">
+                    <button class="page-link" @onclick="() => GoToPage(1)"
+                            title="@L["Pagination.GoToFirst"]" disabled="@(!HasPreviousPage)">
+                        <i class="fas fa-angle-double-left"></i>
+                    </button>
+                </li>
+
+                @* 上一頁按鈕 *@
+                <li class="page-item @(HasPreviousPage ? "" : "disabled")">
+                    <button class="page-link" @onclick="() => GoToPage(CurrentPage - 1)"
+                            title="@L["Pagination.PrevPage"]" disabled="@(!HasPreviousPage)">
+                        <i class="fas fa-angle-left"></i>
+                        <span class="pagination-text-label ms-1">@L["Pagination.PrevPage"]</span>
+                    </button>
+                </li>
+
+                @* 頁碼按鈕群（含省略號） *@
+                @foreach (var item in GetPageItems())
+                {
+                    @if (item.IsEllipsis)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link page-ellipsis">&hellip;</span>
+                        </li>
+                    }
+                    else
+                    {
+                        var pageNum = item.PageNumber;
+                        <li class="page-item @(pageNum == CurrentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(pageNum)"
+                                    title="@string.Format(L["Pagination.GoToPage"].ToString(), pageNum)">
+                                @pageNum
+                            </button>
+                        </li>
+                    }
+                }
+
+                @* 下一頁按鈕 *@
+                <li class="page-item @(HasNextPage ? "" : "disabled")">
+                    <button class="page-link" @onclick="() => GoToPage(CurrentPage + 1)"
+                            title="@L["Pagination.NextPage"]" disabled="@(!HasNextPage)">
+                        <span class="pagination-text-label me-1">@L["Pagination.NextPage"]</span>
+                        <i class="fas fa-angle-right"></i>
+                    </button>
+                </li>
+
+                @* 最後一頁按鈕 *@
+                <li class="page-item d-none d-md-block @(HasNextPage ? "" : "disabled")">
+                    <button class="page-link" @onclick="() => GoToPage(TotalPages)"
+                            title="@L["Pagination.GoToLast"]" disabled="@(!HasNextPage)">
+                        <i class="fas fa-angle-double-right"></i>
+                    </button>
+                </li>
+            </ul>
+        </nav>
+
+        @* 右側：每頁筆數選擇器 *@
+        @if (ShowPageSizeSelector)
+        {
+            <div class="page-size-selector">
+                <label class="page-size-label">
+                    <small>@L["Pagination.PerPage"]</small>
+                </label>
+                <select class="form-select form-select-sm page-size-select"
+                        value="@PageSize"
+                        @onchange="HandlePageSizeChanged">
+                    @foreach (var size in PageSizeOptions)
+                    {
+                        <option value="@size">@size</option>
+                    }
+                </select>
+                <small class="page-size-unit">@L["Pagination.Records"]</small>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    // ===== 參數 =====
+
+    [Parameter] public int CurrentPage { get; set; } = 1;
+    [Parameter] public int PageSize { get; set; } = 20;
+    [Parameter] public int TotalItems { get; set; } = 0;
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+    [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
+    [Parameter] public bool ShowPageSizeSelector { get; set; } = true;
+    [Parameter] public List<int> PageSizeOptions { get; set; } = new() { 10, 20, 50, 100 };
+
+    // ===== 計算屬性 =====
+
+    private int TotalPages => TotalItems > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 0;
+    private bool HasPreviousPage => CurrentPage > 1;
+    private bool HasNextPage => CurrentPage < TotalPages;
+    private int StartItem => TotalItems > 0 ? ((CurrentPage - 1) * PageSize) + 1 : 0;
+    private int EndItem => TotalItems > 0 ? Math.Min(CurrentPage * PageSize, TotalItems) : 0;
+
+    // ===== 頁碼產生（含省略號邏輯） =====
+
+    /// <summary>
+    /// 產生頁碼清單，頁數較多時自動插入省略號
+    /// 例如：1 ... 4 5 6 ... 20
+    /// </summary>
+    private List<PageItem> GetPageItems()
+    {
+        var items = new List<PageItem>();
+
+        if (TotalPages <= 7)
+        {
+            // 頁數少，全部顯示
+            for (int i = 1; i <= TotalPages; i++)
+                items.Add(new PageItem(i));
+            return items;
+        }
+
+        // 永遠顯示第一頁
+        items.Add(new PageItem(1));
+
+        if (CurrentPage > 3)
+            items.Add(PageItem.Ellipsis);
+
+        // 當前頁附近的頁碼
+        var start = Math.Max(2, CurrentPage - 1);
+        var end = Math.Min(TotalPages - 1, CurrentPage + 1);
+
+        // 靠近第一頁時多顯示幾個
+        if (CurrentPage <= 3)
+            end = Math.Min(TotalPages - 1, 4);
+
+        // 靠近最後一頁時多顯示幾個
+        if (CurrentPage >= TotalPages - 2)
+            start = Math.Max(2, TotalPages - 3);
+
+        for (int i = start; i <= end; i++)
+            items.Add(new PageItem(i));
+
+        if (CurrentPage < TotalPages - 2)
+            items.Add(PageItem.Ellipsis);
+
+        // 永遠顯示最後一頁
+        items.Add(new PageItem(TotalPages));
+
+        return items;
+    }
+
+    // ===== 事件處理 =====
+
+    private async Task GoToPage(int page)
+    {
+        if (page >= 1 && page <= TotalPages && page != CurrentPage)
+        {
+            if (OnPageChanged.HasDelegate)
+                await OnPageChanged.InvokeAsync(page);
+        }
+    }
+
+    private async Task HandlePageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var newPageSize) && newPageSize > 0)
+        {
+            if (OnPageSizeChanged.HasDelegate)
+                await OnPageSizeChanged.InvokeAsync(newPageSize);
+        }
+    }
+
+    // ===== 內部類型 =====
+
+    /// <summary>
+    /// 分頁項目（可以是頁碼或省略號）
+    /// </summary>
+    private class PageItem
+    {
+        public int PageNumber { get; }
+        public bool IsEllipsis { get; }
+
+        public PageItem(int pageNumber)
+        {
+            PageNumber = pageNumber;
+            IsEllipsis = false;
+        }
+
+        private PageItem(bool isEllipsis)
+        {
+            PageNumber = -1;
+            IsEllipsis = isEllipsis;
+        }
+
+        public static PageItem Ellipsis => new(true);
+    }
+}

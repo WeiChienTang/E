@@ -1124,11 +1124,15 @@
             }
 
             //  關鍵1：更新庫存（使用差異計算方式，避免重複累加）
-            var inventoryUpdateResult = await SalesDeliveryService.UpdateInventoryByDifferenceAsync(salesDelivery.Id);
-            if (!inventoryUpdateResult.IsSuccess)
+            // 審核守衛：人工審核模式下，需核准後才更新庫存；自動審核模式下，儲存即更新
+            if (ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, salesDelivery.IsApproved))
             {
-                await NotificationService.ShowErrorAsync($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
-                throw new Exception($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
+                var inventoryUpdateResult = await SalesDeliveryService.UpdateInventoryByDifferenceAsync(salesDelivery.Id);
+                if (!inventoryUpdateResult.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
+                    throw new Exception($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
+                }
             }
             
             //  關鍵2：更新相關銷貨訂單明細的已出貨量（僅處理有訂單的明細）
@@ -1548,10 +1552,27 @@
             }
 
             var result = await SalesDeliveryService.ApproveAsync(SalesDeliveryId.Value, currentUserId.Value);
-            if (result.IsSuccess) return true;
+            if (!result.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "審核通過失敗");
+                return false;
+            }
 
-            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "審核通過失敗");
-            return false;
+            // 核准成功後觸發庫存更新（人工審核模式下，庫存在此才執行）
+            try
+            {
+                var inventoryResult = await SalesDeliveryService.UpdateInventoryByDifferenceAsync(entity.Id);
+                if (!inventoryResult.IsSuccess)
+                {
+                    await NotificationService.ShowWarningAsync($"核准成功，但庫存更新失敗：{inventoryResult.ErrorMessage}");
+                }
+            }
+            catch (Exception inventoryEx)
+            {
+                await NotificationService.ShowWarningAsync($"核准成功，但庫存更新發生錯誤：{inventoryEx.Message}");
+            }
+
+            return true;
         }
         catch (Exception ex)
         {

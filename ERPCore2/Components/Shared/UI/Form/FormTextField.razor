@@ -13,7 +13,9 @@
        maxlength="@Field.MaxLength"
        minlength="@Field.MinLength"
        value="@Value"
-       @oninput="HandleInput" />
+       @oninput="HandleInput"
+       @oncompositionstart="HandleCompositionStart"
+       @oncompositionend="HandleCompositionEnd" />
 
 @code {
     [Parameter, EditorRequired]
@@ -30,6 +32,16 @@
 
     [Parameter]
     public string CssClass { get; set; } = FormConstants.CssClasses.FormControl;
+
+    /// <summary>
+    /// 追蹤 IME 組字狀態，防止組字過程中觸發父組件重新渲染導致文字重複
+    /// </summary>
+    private bool _isComposing;
+
+    /// <summary>
+    /// 組字期間暫存的最新輸入值，待組字結束後一次性同步給父組件
+    /// </summary>
+    private string? _compositionValue;
 
     private string InputType => Field.FieldType switch
     {
@@ -48,8 +60,49 @@
             ? FormConstants.AutoCompleteAttributes.NewPassword 
             : FormConstants.AutoCompleteAttributes.Off);
 
+    /// <summary>
+    /// IME 組字開始（如注音/拼音輸入法開始組字）
+    /// 設定旗標以防止 oninput 將中間值傳回父組件造成重新渲染
+    /// </summary>
+    private void HandleCompositionStart(EventArgs e)
+    {
+        _isComposing = true;
+    }
+
+    /// <summary>
+    /// IME 組字結束（使用者按下 Enter 確認文字）
+    /// 將最終值同步給父組件
+    /// </summary>
+    private async Task HandleCompositionEnd(EventArgs e)
+    {
+        _isComposing = false;
+
+        // Firefox 中 input 事件在 compositionend 之前觸發，
+        // 因此需要在此處將暫存值傳回父組件
+        if (_compositionValue != null)
+        {
+            var value = _compositionValue;
+            _compositionValue = null;
+            await ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    /// <summary>
+    /// 處理 input 事件
+    /// 組字期間僅暫存值，不通知父組件，避免 Blazor 重新渲染干擾 IME 組字緩衝區
+    /// </summary>
     private async Task HandleInput(ChangeEventArgs e)
     {
-        await ValueChanged.InvokeAsync(e.Value?.ToString());
+        var value = e.Value?.ToString();
+
+        if (_isComposing)
+        {
+            // 組字中：僅暫存，不觸發 ValueChanged，避免父組件重新渲染
+            _compositionValue = value;
+            return;
+        }
+
+        // 非組字狀態（一般英數輸入，或 Chrome 中 compositionend 之後的 input 事件）
+        await ValueChanged.InvokeAsync(value);
     }
 }

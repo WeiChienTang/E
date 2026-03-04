@@ -4,8 +4,9 @@ namespace ERPCore2.Models;
 
 /// <summary>
 /// 權限定義資料傳輸物件，供 PermissionSeeder 使用
+/// GroupKey 為導航分組 resource key（如 "Nav.AccountingGroup"），供權限管理 UI 分類使用
 /// </summary>
-public record PermissionDefinition(string Code, string Name, PermissionLevel Level, string Remarks);
+public record PermissionDefinition(string Code, string Name, PermissionLevel Level, string Remarks, string GroupKey = "Nav.SystemGroup");
 
 /// <summary>
 /// 權限登錄表 - 系統所有權限的單一來源
@@ -324,6 +325,8 @@ public static class PermissionRegistry
     public static class AccountItem
     {
         public const string Read = "AccountItem.Read";
+        public const string SubAccountRead = "AccountItem.SubAccountRead";
+        public const string SubAccountBatchCreate = "AccountItem.SubAccountBatchCreate";
     }
 
     public static class JournalEntry
@@ -338,102 +341,112 @@ public static class PermissionRegistry
     /// </summary>
     public static IEnumerable<PermissionDefinition> GetAllPermissions() =>
     [
-        // ===== 敏感權限 =====
-        new(System.Admin,           "系統管理",             PermissionLevel.Sensitive, "系統最高管理權限，擁有所有功能存取權限"),
-        new(EmployeeAccount.Read,   "編輯員工帳號密碼",      PermissionLevel.Sensitive, "編輯員工系統帳號、密碼與角色設定權限"),
-        new(Permission.Read,        "檢視權限",             PermissionLevel.Sensitive, "檢視系統功能權限設定"),
-        new(Role.Read,              "檢視角色",             PermissionLevel.Sensitive, "檢視系統角色與權限群組設定"),
-        new(Company.Read,           "檢視公司",             PermissionLevel.Sensitive, "檢視公司基本資料與相關資訊"),
-        new(SystemControl.Read,     "檢視系統控制",          PermissionLevel.Sensitive, "檢視系統設定與控制功能"),
-        new(PurchaseOrder.Approve,    "審核採購訂單",   PermissionLevel.Sensitive, "審核與核准採購訂單權限"),
-        new(PurchaseReceiving.Approve,"審核採購進貨單", PermissionLevel.Sensitive, "審核與核准採購進貨單"),
-        new(PurchaseReturn.Approve,   "審核採購退回單", PermissionLevel.Sensitive, "審核與核准採購退回單"),
-        new(Quotation.Approve,        "審核報價單",     PermissionLevel.Sensitive, "審核與核准報價單"),
-        new(SalesOrder.Approve,       "審核銷貨訂單",   PermissionLevel.Sensitive, "審核與核准銷貨訂單"),
-        new(SalesDelivery.Approve,    "審核銷貨出貨單", PermissionLevel.Sensitive, "審核與核准銷貨出貨單"),
-        new(SalesReturn.Approve,      "審核銷貨退回單", PermissionLevel.Sensitive, "審核與核准銷貨退回單"),
-        new(Document.Sensitive,     "瀏覽敏感文件",          PermissionLevel.Sensitive, "瀏覽與下載敏感存取層級的文件"),
-        new(Document.Manage,        "管理文件",              PermissionLevel.Sensitive, "上傳、編輯、刪除文件及管理檔案分類"),
+        // ===== 敏感權限：系統 =====
+        new(System.Admin,           "系統管理",        PermissionLevel.Sensitive, "系統最高管理權限，擁有所有功能存取權限",  "Nav.SystemGroup"),
+        new(EmployeeAccount.Read,   "編輯員工帳號密碼", PermissionLevel.Sensitive, "編輯員工系統帳號、密碼與角色設定權限",    "Nav.HumanResources"),
+        new(Permission.Read,        "檢視權限",        PermissionLevel.Sensitive, "檢視系統功能權限設定",                   "Nav.SystemGroup"),
+        new(Role.Read,              "檢視角色",        PermissionLevel.Sensitive, "檢視系統角色與權限群組設定",              "Nav.SystemGroup"),
+        new(Company.Read,           "檢視公司",        PermissionLevel.Sensitive, "檢視公司基本資料與相關資訊",              "Nav.SystemGroup"),
+        new(SystemControl.Read,     "檢視系統控制",    PermissionLevel.Sensitive, "檢視系統設定與控制功能",                  "Nav.SystemGroup"),
+
+        // ===== 敏感權限：採購審核 =====
+        new(PurchaseOrder.Approve,    "審核採購訂單",   PermissionLevel.Sensitive, "審核與核准採購訂單權限",   "Nav.PurchaseGroup"),
+        new(PurchaseReceiving.Approve,"審核採購進貨單", PermissionLevel.Sensitive, "審核與核准採購進貨單",     "Nav.PurchaseGroup"),
+        new(PurchaseReturn.Approve,   "審核採購退回單", PermissionLevel.Sensitive, "審核與核准採購退回單",     "Nav.PurchaseGroup"),
+
+        // ===== 敏感權限：銷貨審核 =====
+        new(Quotation.Approve,        "審核報價單",     PermissionLevel.Sensitive, "審核與核准報價單",         "Nav.SalesGroup"),
+        new(SalesOrder.Approve,       "審核銷貨訂單",   PermissionLevel.Sensitive, "審核與核准銷貨訂單",       "Nav.SalesGroup"),
+        new(SalesDelivery.Approve,    "審核銷貨出貨單", PermissionLevel.Sensitive, "審核與核准銷貨出貨單",     "Nav.SalesGroup"),
+        new(SalesReturn.Approve,      "審核銷貨退回單", PermissionLevel.Sensitive, "審核與核准銷貨退回單",     "Nav.SalesGroup"),
+
+        // ===== 敏感權限：文件 =====
+        new(Document.Sensitive,     "瀏覽敏感文件",    PermissionLevel.Sensitive, "瀏覽與下載敏感存取層級的文件",   "Nav.DocumentGroup"),
+        new(Document.Manage,        "管理文件",        PermissionLevel.Sensitive, "上傳、編輯、刪除文件及管理檔案分類", "Nav.DocumentGroup"),
+
+        // ===== 敏感權限：會計 =====
+        new(AccountItem.SubAccountBatchCreate, "批次補建子科目", PermissionLevel.Sensitive, "批次補建客戶、廠商、商品子科目（高影響操作）", "Nav.AccountingGroup"),
 
         // ===== 一般權限：系統 =====
-        new(PaperSetting.Read,              "檢視紙張設定",     PermissionLevel.Normal, "檢視紙張設定基本資料與相關資訊"),
-        new(PrinterConfiguration.Read,      "檢視印表機設定",   PermissionLevel.Normal, "檢視印表機設定基本資料與相關資訊"),
-        new(ReportPrintConfiguration.Read,  "檢視報表列印設定", PermissionLevel.Normal, "檢視報表列印設定基本資料與相關資訊"),
-        new(SystemParameter.Read,           "檢視系統參數",     PermissionLevel.Normal, "檢視系統全域參數設定"),
-        new(ErrorLog.Read,                  "檢視錯誤記錄",     PermissionLevel.Normal, "檢視系統錯誤記錄與問題追蹤"),
+        new(PaperSetting.Read,              "檢視紙張設定",     PermissionLevel.Normal, "檢視紙張設定基本資料與相關資訊",   "Nav.SystemGroup"),
+        new(PrinterConfiguration.Read,      "檢視印表機設定",   PermissionLevel.Normal, "檢視印表機設定基本資料與相關資訊", "Nav.SystemGroup"),
+        new(ReportPrintConfiguration.Read,  "檢視報表列印設定", PermissionLevel.Normal, "檢視報表列印設定基本資料與相關資訊", "Nav.SystemGroup"),
+        new(SystemParameter.Read,           "檢視系統參數",     PermissionLevel.Normal, "檢視系統全域參數設定",             "Nav.SystemGroup"),
+        new(ErrorLog.Read,                  "檢視錯誤記錄",     PermissionLevel.Normal, "檢視系統錯誤記錄與問題追蹤",       "Nav.SystemGroup"),
 
         // ===== 一般權限：人力 =====
-        new(User.Read,              "檢視使用者",   PermissionLevel.Normal, "檢視系統使用者基本資料"),
-        new(Employee.Read,          "檢視員工",     PermissionLevel.Normal, "檢視員工基本資料與組織架構"),
-        new(Department.Read,        "檢視部門",     PermissionLevel.Normal, "檢視公司部門組織架構資料"),
-        new(EmployeePosition.Read,  "檢視員工職位", PermissionLevel.Normal, "檢視員工職位與職級設定"),
+        new(User.Read,              "檢視使用者",   PermissionLevel.Normal, "檢視系統使用者基本資料",       "Nav.HumanResources"),
+        new(Employee.Read,          "檢視員工",     PermissionLevel.Normal, "檢視員工基本資料與組織架構",   "Nav.HumanResources"),
+        new(Department.Read,        "檢視部門",     PermissionLevel.Normal, "檢視公司部門組織架構資料",     "Nav.HumanResources"),
+        new(EmployeePosition.Read,  "檢視員工職位", PermissionLevel.Normal, "檢視員工職位與職級設定",       "Nav.HumanResources"),
 
         // ===== 一般權限：客戶 =====
-        new(Customer.Read,      "檢視客戶",     PermissionLevel.Normal, "檢視客戶基本資料與相關資訊"),
-        new(CustomerType.Read,  "檢視客戶類型", PermissionLevel.Normal, "檢視客戶分類與類型設定"),
+        new(Customer.Read,      "檢視客戶",     PermissionLevel.Normal, "檢視客戶基本資料與相關資訊",   "Nav.CustomerGroup"),
+        new(CustomerType.Read,  "檢視客戶類型", PermissionLevel.Normal, "檢視客戶分類與類型設定",       "Nav.CustomerGroup"),
 
         // ===== 一般權限：廠商 =====
-        new(Supplier.Read, "檢視供應商", PermissionLevel.Normal, "檢視供應商基本資料與相關資訊"),
+        new(Supplier.Read, "檢視供應商", PermissionLevel.Normal, "檢視供應商基本資料與相關資訊", "Nav.SupplierGroup"),
 
         // ===== 一般權限：商品 =====
-        new(Product.Read,               "檢視商品",         PermissionLevel.Normal, "檢視商品基本資料與規格"),
-        new(ProductCategory.Read,       "檢視商品分類",     PermissionLevel.Normal, "檢視商品分類階層與設定"),
-        new(ProductComposition.Read,    "檢視商品合成",     PermissionLevel.Normal, "檢視商品合成（BOM）結構與明細"),
-        new(CompositionCategory.Read,   "檢視物料清單類型", PermissionLevel.Normal, "檢視商品物料清單的類型分類"),
-        new(ProductionSchedule.Read,    "檢視生產排程",     PermissionLevel.Normal, "檢視生產排程的詳細資料"),
-        new(ProductPricing.Read,        "檢視商品定價",     PermissionLevel.Normal, "檢視商品價格設定與價格表"),
-        new(MasterData.Read,            "檢視基礎資料",     PermissionLevel.Normal, "檢視系統基礎資料維護功能"),
-        new(Material.Read,              "檢視材質",         PermissionLevel.Normal, "檢視商品材質分類與屬性"),
-        new(Weather.Read,               "檢視天氣",         PermissionLevel.Normal, "檢視天氣相關基礎資料"),
-        new(Color.Read,                 "檢視顏色",         PermissionLevel.Normal, "檢視顏色分類與色彩設定"),
-        new(Size.Read,                  "檢視尺寸",         PermissionLevel.Normal, "檢視尺寸規格與大小設定"),
-        new(Unit.Read,                  "檢視單位",         PermissionLevel.Normal, "檢視度量衡單位與換算設定"),
+        new(Product.Read,               "檢視商品",         PermissionLevel.Normal, "檢視商品基本資料與規格",         "Nav.ProductGroup"),
+        new(ProductCategory.Read,       "檢視商品分類",     PermissionLevel.Normal, "檢視商品分類階層與設定",         "Nav.ProductGroup"),
+        new(ProductComposition.Read,    "檢視商品合成",     PermissionLevel.Normal, "檢視商品合成（BOM）結構與明細", "Nav.ProductGroup"),
+        new(CompositionCategory.Read,   "檢視物料清單類型", PermissionLevel.Normal, "檢視商品物料清單的類型分類",     "Nav.ProductGroup"),
+        new(ProductionSchedule.Read,    "檢視生產排程",     PermissionLevel.Normal, "檢視生產排程的詳細資料",         "Nav.ProductGroup"),
+        new(ProductPricing.Read,        "檢視商品定價",     PermissionLevel.Normal, "檢視商品價格設定與價格表",       "Nav.ProductGroup"),
+        new(MasterData.Read,            "檢視基礎資料",     PermissionLevel.Normal, "檢視系統基礎資料維護功能",       "Nav.ProductGroup"),
+        new(Material.Read,              "檢視材質",         PermissionLevel.Normal, "檢視商品材質分類與屬性",         "Nav.ProductGroup"),
+        new(Weather.Read,               "檢視天氣",         PermissionLevel.Normal, "檢視天氣相關基礎資料",           "Nav.ProductGroup"),
+        new(Color.Read,                 "檢視顏色",         PermissionLevel.Normal, "檢視顏色分類與色彩設定",         "Nav.ProductGroup"),
+        new(Size.Read,                  "檢視尺寸",         PermissionLevel.Normal, "檢視尺寸規格與大小設定",         "Nav.ProductGroup"),
+        new(Unit.Read,                  "檢視單位",         PermissionLevel.Normal, "檢視度量衡單位與換算設定",       "Nav.ProductGroup"),
 
         // ===== 一般權限：車輛 =====
-        new(Vehicle.Read,           "檢視車輛",     PermissionLevel.Normal, "檢視車輛基本資料與相關資訊"),
-        new(VehicleType.Read,       "檢視車輛類型", PermissionLevel.Normal, "檢視車輛類型基本資料與相關資訊"),
-        new(VehicleMaintenance.Read,"檢視保養紀錄", PermissionLevel.Normal, "檢視車輛保養紀錄與維修歷史"),
+        new(Vehicle.Read,           "檢視車輛",     PermissionLevel.Normal, "檢視車輛基本資料與相關資訊",     "Nav.VehicleGroup"),
+        new(VehicleType.Read,       "檢視車輛類型", PermissionLevel.Normal, "檢視車輛類型基本資料與相關資訊", "Nav.VehicleGroup"),
+        new(VehicleMaintenance.Read,"檢視保養紀錄", PermissionLevel.Normal, "檢視車輛保養紀錄與維修歷史",     "Nav.VehicleGroup"),
 
         // ===== 一般權限：倉庫 =====
-        new(Warehouse.Read,             "檢視倉庫",         PermissionLevel.Normal, "檢視倉庫基本資料與儲位設定"),
-        new(Inventory.Read,             "檢視庫存",         PermissionLevel.Normal, "檢視庫存數量與庫存狀況"),
-        new(WarehouseLocation.Read,     "檢視倉庫位置",     PermissionLevel.Normal, "檢視倉庫內部位置與儲位設定"),
-        new(InventoryTransaction.Read,  "檢視庫存異動",     PermissionLevel.Normal, "檢視庫存進出異動記錄"),
-        new(InventoryTransactionType.Read,"檢視庫存異動類型",PermissionLevel.Normal, "檢視庫存異動類型與分類設定"),
-        new(MaterialIssue.Read,         "檢視領料單",       PermissionLevel.Normal, "檢視領料單基本資料與明細"),
-        new(InventoryStock.Read,        "檢視庫存明細",     PermissionLevel.Normal, "檢視詳細庫存明細與批號資訊"),
-        new(InventoryReservation.Read,  "檢視庫存預留",     PermissionLevel.Normal, "檢視庫存預留與保留狀況"),
-        new(StockTaking.Read,           "檢視盤點",         PermissionLevel.Normal, "檢視庫存盤點作業與結果"),
+        new(Warehouse.Read,             "檢視倉庫",         PermissionLevel.Normal, "檢視倉庫基本資料與儲位設定",     "Nav.InventoryGroup"),
+        new(Inventory.Read,             "檢視庫存",         PermissionLevel.Normal, "檢視庫存數量與庫存狀況",         "Nav.InventoryGroup"),
+        new(WarehouseLocation.Read,     "檢視倉庫位置",     PermissionLevel.Normal, "檢視倉庫內部位置與儲位設定",     "Nav.InventoryGroup"),
+        new(InventoryTransaction.Read,  "檢視庫存異動",     PermissionLevel.Normal, "檢視庫存進出異動記錄",           "Nav.InventoryGroup"),
+        new(InventoryTransactionType.Read,"檢視庫存異動類型",PermissionLevel.Normal, "檢視庫存異動類型與分類設定",     "Nav.InventoryGroup"),
+        new(MaterialIssue.Read,         "檢視領料單",       PermissionLevel.Normal, "檢視領料單基本資料與明細",       "Nav.InventoryGroup"),
+        new(InventoryStock.Read,        "檢視庫存明細",     PermissionLevel.Normal, "檢視詳細庫存明細與批號資訊",     "Nav.InventoryGroup"),
+        new(InventoryReservation.Read,  "檢視庫存預留",     PermissionLevel.Normal, "檢視庫存預留與保留狀況",         "Nav.InventoryGroup"),
+        new(StockTaking.Read,           "檢視盤點",         PermissionLevel.Normal, "檢視庫存盤點作業與結果",         "Nav.InventoryGroup"),
 
         // ===== 一般權限：廢料 =====
-        new(WasteRecord.Read,   "檢視廢料記錄", PermissionLevel.Normal, "檢視廢料記錄基本資料與相關資訊"),
-        new(WasteType.Read,     "檢視廢料類型", PermissionLevel.Normal, "檢視廢料類型基本資料與相關資訊"),
+        new(WasteRecord.Read,   "檢視廢料記錄", PermissionLevel.Normal, "檢視廢料記錄基本資料與相關資訊", "Nav.WasteGroup"),
+        new(WasteType.Read,     "檢視廢料類型", PermissionLevel.Normal, "檢視廢料類型基本資料與相關資訊", "Nav.WasteGroup"),
 
         // ===== 一般權限：財務 =====
-        new(SetoffDocument.Read,"檢視沖款單",   PermissionLevel.Normal, "檢視客戶應收帳款與交易紀錄"),
-        new(PaymentMethod.Read, "檢視付款方式", PermissionLevel.Normal, "檢視系統付款方式設定"),
-        new(Bank.Read,          "檢視銀行",     PermissionLevel.Normal, "檢視銀行基本資料與相關資訊"),
-        new(Currency.Read,      "檢視貨幣",     PermissionLevel.Normal, "檢視貨幣基本資料與匯率設定"),
+        new(SetoffDocument.Read,"檢視沖款單",   PermissionLevel.Normal, "檢視客戶應收帳款與交易紀錄",     "Nav.FinanceGroup"),
+        new(PaymentMethod.Read, "檢視付款方式", PermissionLevel.Normal, "檢視系統付款方式設定",           "Nav.FinanceGroup"),
+        new(Bank.Read,          "檢視銀行",     PermissionLevel.Normal, "檢視銀行基本資料與相關資訊",     "Nav.FinanceGroup"),
+        new(Currency.Read,      "檢視貨幣",     PermissionLevel.Normal, "檢視貨幣基本資料與匯率設定",     "Nav.FinanceGroup"),
 
         // ===== 一般權限：銷貨 =====
-        new(Quotation.Read,         "檢視報價單",       PermissionLevel.Normal, "檢視報價單與客戶交易紀錄"),
-        new(Sales.Read,             "檢視銷售訂單",     PermissionLevel.Normal, "檢視銷售訂單與客戶交易紀錄"),
-        new(SalesOrder.Read,        "檢視銷貨訂單",     PermissionLevel.Normal, "檢視銷貨訂單詳細資料"),
-        new(SalesDelivery.Read,     "檢視銷貨出貨",     PermissionLevel.Normal, "檢視銷貨出貨單與配送記錄"),
-        new(SalesReturn.Read,       "檢視銷貨退回",     PermissionLevel.Normal, "檢視銷貨退回與退貨處理"),
-        new(SalesReturnReason.Read, "檢視銷貨退回原因", PermissionLevel.Normal, "檢視銷貨退回原因設定與管理"),
+        new(Quotation.Read,         "檢視報價單",       PermissionLevel.Normal, "檢視報價單與客戶交易紀錄",       "Nav.SalesGroup"),
+        new(Sales.Read,             "檢視銷售訂單",     PermissionLevel.Normal, "檢視銷售訂單與客戶交易紀錄",     "Nav.SalesGroup"),
+        new(SalesOrder.Read,        "檢視銷貨訂單",     PermissionLevel.Normal, "檢視銷貨訂單詳細資料",           "Nav.SalesGroup"),
+        new(SalesDelivery.Read,     "檢視銷貨出貨",     PermissionLevel.Normal, "檢視銷貨出貨單與配送記錄",       "Nav.SalesGroup"),
+        new(SalesReturn.Read,       "檢視銷貨退回",     PermissionLevel.Normal, "檢視銷貨退回與退貨處理",         "Nav.SalesGroup"),
+        new(SalesReturnReason.Read, "檢視銷貨退回原因", PermissionLevel.Normal, "檢視銷貨退回原因設定與管理",     "Nav.SalesGroup"),
 
         // ===== 一般權限：採購 =====
-        new(PurchaseOrder.Read,         "檢視採購訂單",     PermissionLevel.Normal, "檢視採購訂單與供應商交易"),
-        new(PurchaseReceiving.Read,     "檢視採購收貨",     PermissionLevel.Normal, "檢視採購收貨單與驗收記錄"),
-        new(PurchaseReturn.Read,        "檢視採購退回貨",   PermissionLevel.Normal, "檢視採購退貨與退回處理"),
-        new(PurchaseReturnReason.Read,  "檢視採購退回原因", PermissionLevel.Normal, "檢視採購退回原因設定與管理"),
+        new(PurchaseOrder.Read,         "檢視採購訂單",     PermissionLevel.Normal, "檢視採購訂單與供應商交易",       "Nav.PurchaseGroup"),
+        new(PurchaseReceiving.Read,     "檢視採購收貨",     PermissionLevel.Normal, "檢視採購收貨單與驗收記錄",       "Nav.PurchaseGroup"),
+        new(PurchaseReturn.Read,        "檢視採購退回貨",   PermissionLevel.Normal, "檢視採購退貨與退回處理",         "Nav.PurchaseGroup"),
+        new(PurchaseReturnReason.Read,  "檢視採購退回原因", PermissionLevel.Normal, "檢視採購退回原因設定與管理",     "Nav.PurchaseGroup"),
 
         // ===== 一般權限：會計 =====
-        new(AccountItem.Read,   "檢視會計科目", PermissionLevel.Normal, "檢視會計科目與相關設定"),
-        new(JournalEntry.Read,  "檢視傳票",     PermissionLevel.Normal, "檢視會計傳票與分錄明細"),
+        new(AccountItem.Read,                  "檢視會計科目",   PermissionLevel.Normal, "檢視會計科目與相關設定",                       "Nav.AccountingGroup"),
+        new(AccountItem.SubAccountRead,        "檢視子科目設定", PermissionLevel.Normal, "檢視子科目設定（統制科目代碼、自動產生開關）", "Nav.AccountingGroup"),
+        new(JournalEntry.Read,                 "檢視傳票",       PermissionLevel.Normal, "檢視會計傳票與分錄明細",                       "Nav.AccountingGroup"),
 
         // ===== 一般權限：文件 =====
-        new(Document.Read, "瀏覽文件", PermissionLevel.Normal, "瀏覽與下載一般存取層級的文件"),
+        new(Document.Read, "瀏覽文件", PermissionLevel.Normal, "瀏覽與下載一般存取層級的文件", "Nav.DocumentGroup"),
     ];
 }

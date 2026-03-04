@@ -1,7 +1,7 @@
 # 進銷存模組實作指南
 
 ## 更新日期
-2026-03-03（Step 1 更新：showApprovalSection、ApprovedByDisplayName）
+2026-03-04（新增注意事項 10：庫存異動審核整合）
 
 ---
 
@@ -198,6 +198,11 @@ public XxxDetailEntity? ExistingDetailEntity { get; set; }
 8. **模組特有參數保留在子類別**：例如 `SalesOrderTable` 的 `SelectedQuotationId`、`FilterProductId`；`SalesDeliveryTable` 的 `ShowWarehouse`。這些不在基底類別，子類別自行宣告追蹤。
 
 9. **審核前自動儲存（部分模組）**：採購單等模組在核准前會先自動儲存，確保審核的是最新資料。若新增模組需要此行為，在 `HandleXxxApprove` 中實作儲存邏輯。
+
+10. **庫存異動模組的審核整合**：若模組會異動庫存（如進貨單、進貨退回、銷貨出貨、銷貨退回），庫存更新必須依審核狀態結果決定：
+    - 儲存時：用 `ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, isApproved)` 判斷是否更新庫存
+    - 核准後：在 `HandleXxxApprove` 成功後觸發庫存異動
+    - 詳見 [README_審核_新模組實作指南.md](../審核設計/README_審核_新模組實作指南.md) Step 11
 
 ---
 

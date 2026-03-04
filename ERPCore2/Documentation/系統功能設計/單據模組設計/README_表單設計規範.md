@@ -1,7 +1,7 @@
 # 進銷存表單設計規範
 
 ## 更新日期
-2026-03-03（審核欄位設計更新：ApprovedByDisplayName、showApprovalSection）
+2026-03-04（庫存異動審核整合、ApprovedByDisplayName 三條件判斷）
 
 ---
 
@@ -111,9 +111,13 @@ public string ApprovalStatusText =>
 
 public string? ApprovedAtText => ApprovedAt?.ToString("yyyy-MM-dd HH:mm");
 
-// 審核者顯示名稱：null ApprovedBy = 系統自動審核
+// 審核者顯示名稱：
+// - 已核准：顯示審核者名稱（null ApprovedBy = 系統自動審核）
+// - 已駁回：顯示駁回者名稱
+// - 待審核：空白
 public string ApprovedByDisplayName =>
-    IsApproved ? (ApprovedByUser?.Name ?? "系統自動審核") : "";
+    IsApproved ? (ApprovedByUser?.Name ?? "系統自動審核") :
+    !string.IsNullOrEmpty(RejectReason) ? (ApprovedByUser?.Name ?? "") : "";
 ```
 
 ### 審核 / 駁回行為
@@ -122,7 +126,7 @@ public string ApprovedByDisplayName =>
 |------|-----------|-----------|------------|-------------|
 | 人工核准 | = approvedBy（員工 ID） | = DateTime.Now | = true | = null（清除舊原因） |
 | 系統自動核准 | = **null**（不記錄人員） | = DateTime.Now | = true | = null |
-| 駁回 | = rejectedBy | = DateTime.Now | = false | = reason |
+| 駁回 | = rejectedBy（記錄駁回者） | = DateTime.Now | = false | = reason |
 
 > **重要**：駁回時同樣記錄 `ApprovedBy`（誰駁回）和 `ApprovedAt`（何時駁回），欄位語義為「審核者」和「審核時間」，不限於核准場景。
 >

@@ -1,6 +1,5 @@
 @* 權限組權限管理 Modal 組件 - 不使用路由，純 Modal 彈窗 *@
 @using ERPCore2.Data.Entities
-@using ERPCore2.Data.Navigation
 @inject IRoleService RoleService
 @inject IPermissionManagementService PermissionManagementService
 @inject INotificationService NotificationService
@@ -332,8 +331,8 @@
     private Role? selectedRole;
     private Dictionary<int, bool> permissionSelections = new();
     private Dictionary<string, bool> collapsedGroups = new();
-    // 權限 Code 前綴 → 導航分類名稱（如 "Customer" → "客戶關係管理"）
-    private Dictionary<string, string> permissionPrefixToCategory = new();
+    // 權限 Code → 導航分類（如 "AccountItem.Read" → "Nav.AccountingGroup"）
+    private Dictionary<string, string> permissionCodeToCategory = new();
 
     private string permissionSearchKeyword = string.Empty;
 
@@ -711,13 +710,19 @@
     }
 
     /// <summary>
-    /// 從 NavigationConfig 的導航分類來分組，回傳 Nav.* resource key（或原始前綴作為 fallback）
+    /// 從 PermissionRegistry 的 GroupKey 來分組，回傳 Nav.* resource key（或原始前綴作為 fallback）
     /// </summary>
     private string GetGroupCategory(string? code)
     {
         if (string.IsNullOrEmpty(code)) return "其他";
+        // 直接用完整 Code 查詢（優先精確匹配），再用前綴 fallback
+        if (permissionCodeToCategory.TryGetValue(code, out var category))
+            return category;
         var prefix = code.Split('.')[0];
-        return permissionPrefixToCategory.TryGetValue(prefix, out var category) ? category : prefix;
+        return permissionCodeToCategory
+            .Where(kvp => kvp.Key.StartsWith(prefix + "."))
+            .Select(kvp => kvp.Value)
+            .FirstOrDefault() ?? prefix;
     }
 
     /// <summary>
@@ -731,77 +736,13 @@
     }
 
     /// <summary>
-    /// 掃描 NavigationConfig，從 RequiredPermission 建立「Code 前綴 → Nav.* resource key」對應表
+    /// 從 PermissionRegistry.GetAllPermissions() 的 GroupKey 建立「Code → Nav.* resource key」對應表
+    /// 所有分組資訊統一由 PermissionRegistry 維護，新增權限時只需修改 PermissionRegistry 即可
     /// </summary>
     private void BuildPermissionCategoryMapping()
     {
-        permissionPrefixToCategory.Clear();
-
-        // 中文分類名稱 → Nav.* resource key 的對應表
-        var chineseToNavKey = new Dictionary<string, string>
-        {
-            { "基礎功能",    "Nav.Home" },
-            { "檔案管理",    "Nav.DocumentGroup" },
-            { "人力管理",    "Nav.HumanResources" },
-            { "供應鏈管理",  "Nav.SupplierGroup" },
-            { "客戶關係管理","Nav.CustomerGroup" },
-            { "商品管理",    "Nav.ProductGroup" },
-            { "庫存管理",    "Nav.InventoryGroup" },
-            { "採購管理",    "Nav.PurchaseGroup" },
-            { "銷售管理",    "Nav.SalesGroup" },
-            { "車輛管理",    "Nav.VehicleGroup" },
-            { "廢料管理",    "Nav.WasteGroup" },
-            { "財務管理",    "Nav.FinanceGroup" },
-            { "會計管理",    "Nav.AccountingGroup" },
-            { "系統管理",    "Nav.SystemGroup" },
-        };
-
-        // 第一步：從 NavigationConfig 自動建立對應（中文分類轉為 Nav.* key）
-        foreach (var item in NavigationConfig.GetFlattenedNavigationItems()
-            .Where(i => !string.IsNullOrEmpty(i.RequiredPermission) && !string.IsNullOrEmpty(i.Category)))
-        {
-            var prefix = item.RequiredPermission!.Split('.')[0];
-            var navKey = chineseToNavKey.TryGetValue(item.Category!, out var k) ? k : item.Category!;
-            permissionPrefixToCategory.TryAdd(prefix, navKey);
-        }
-
-        // 第二步：補充 NavigationConfig 未直接對應的前綴
-        // （這些權限存在於 PermissionRegistry，但 NavigationConfig 沒有對應的導航項目）
-        var supplemental = new Dictionary<string, string>
-        {
-            // 系統管理
-            { "System",                        "Nav.SystemGroup" },
-            { "User",                          "Nav.HumanResources" },
-            { "EmployeeEdit_Account_Password", "Nav.HumanResources" },
-            { "ErrorLog",                      "Nav.SystemGroup" },
-            { "PaperSetting",                  "Nav.SystemGroup" },
-            { "PrinterConfiguration",          "Nav.SystemGroup" },
-            { "PrinterSetting",                "Nav.SystemGroup" },  // 舊版相容別名
-            { "ReportPrintConfiguration",      "Nav.SystemGroup" },
-            { "SystemParameter",               "Nav.SystemGroup" },
-            { "Company",                       "Nav.SystemGroup" },
-            { "SystemControl",                 "Nav.SystemGroup" },
-            // 客戶
-            { "CustomerType",                  "Nav.CustomerGroup" },
-            // 供應鏈
-            { "Supplier",                      "Nav.SupplierGroup" },
-            // 商品
-            { "ProductPricing",                "Nav.ProductGroup" },
-            { "MasterData",                    "Nav.ProductGroup" },
-            { "Material",                      "Nav.ProductGroup" },
-            { "Weather",                       "Nav.ProductGroup" },
-            { "Color",                         "Nav.ProductGroup" },
-            // 庫存
-            { "Inventory",                     "Nav.InventoryGroup" },
-            { "InventoryTransaction",          "Nav.InventoryGroup" },
-            { "InventoryTransactionType",      "Nav.InventoryGroup" },
-            { "InventoryReservation",          "Nav.InventoryGroup" },
-            // 銷售
-            { "Sales",                         "Nav.SalesGroup" },
-        };
-
-        foreach (var kvp in supplemental)
-            permissionPrefixToCategory.TryAdd(kvp.Key, kvp.Value);
+        permissionCodeToCategory = PermissionRegistry.GetAllPermissions()
+            .ToDictionary(d => d.Code, d => d.GroupKey);
     }
 
     /// <summary>

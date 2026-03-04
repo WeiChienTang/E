@@ -6,12 +6,24 @@ class ToastManager {
         this.container = null;
         this.maxToasts = 3;
         this.canHover = window.matchMedia('(hover: hover)').matches;
+        // 各類型自動消失延遲（ms）— 預設 2 秒，可由使用者自訂
+        this.delays = { success: 2000, error: 2000, warning: 2000, info: 2000 };
         this.initContainer();
     }
 
-    // 各類型自動消失延遲（ms）— 統一 2.5 秒
+    // 各類型自動消失延遲（ms）— 讀取使用者自訂值
     getDelay(type) {
-        return 2500;
+        return this.delays[type] ?? 2000;
+    }
+
+    // 設定各類型的自動消失延遲（由 Blazor interop 呼叫）
+    setDelays(delays) {
+        if (delays) {
+            if (delays.success != null) this.delays.success = delays.success;
+            if (delays.error   != null) this.delays.error   = delays.error;
+            if (delays.warning != null) this.delays.warning = delays.warning;
+            if (delays.info    != null) this.delays.info    = delays.info;
+        }
     }
 
     initContainer() {
@@ -48,14 +60,22 @@ class ToastManager {
         setTimeout(() => {
             toast.classList.add('slide-in');
 
-            const progress = toast.querySelector('.toast-progress');
-            if (progress) {
-                progress.style.animationDuration = delay + 'ms';
-                progress.style.animationPlayState = 'running';
+            // delay=0 代表不自動關閉
+            if (delay > 0) {
+                const progress = toast.querySelector('.toast-progress');
+                if (progress) {
+                    progress.style.animationDuration = delay + 'ms';
+                    progress.style.animationPlayState = 'running';
+                }
+                toast.remainingTime = delay;
+                toast.startTime = Date.now();
+                toast.autoHideTimeout = setTimeout(() => this.hide(toast), delay);
+            } else {
+                // 不自動關閉：隱藏進度條
+                const progress = toast.querySelector('.toast-progress');
+                if (progress) progress.style.display = 'none';
+                toast.remainingTime = 0;
             }
-            toast.remainingTime = delay;
-            toast.startTime = Date.now();
-            toast.autoHideTimeout = setTimeout(() => this.hide(toast), delay);
         }, 50);
 
         return toast;
@@ -280,6 +300,9 @@ window.showSuccess = (message, title = '成功') => showToast('success', message
 window.showError   = (message, title = '錯誤') => showToast('error',   message, title);
 window.showWarning = (message, title = '警告') => showToast('warning', message, title);
 window.showInfo    = (message, title = '資訊') => showToast('info',    message, title);
+
+// 設定各類型 Toast 延遲（由偏好設定同步）
+window.setToastDelays = (delays) => toastManager.setDelays(delays);
 
 // 已由 per-type 延遲取代，保留為相容性存根
 window.setToastAutoHideDelay = (_delay) => {};

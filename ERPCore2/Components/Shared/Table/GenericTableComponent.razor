@@ -86,102 +86,6 @@
     </table>
 </div>
 
-@* 分頁控制區塊 *@
-@if (EnablePagination && TotalItems > 0)
-{
-    <!-- 響應式分頁容器 - 大螢幕水平排列，小螢幕垂直堆疊 -->
-    <div class="mt-3">
-        <!-- 第一行：資料統計資訊與每頁筆數選擇器 -->
-        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center mb-2 gap-2">
-            <!-- 資料統計資訊 -->
-            <div class="text-muted text-center text-sm-start">
-                <small>
-                    @string.Format(L["Pagination.ShowingRange"].ToString(), StartItem, EndItem, TotalItems, CurrentPage, TotalPages)
-                </small>
-            </div>
-            
-            <!-- 每頁筆數選擇器 -->
-            @if (ShowPageSizeSelector)
-            {
-                <div class="d-flex align-items-center flex-shrink-0">
-                    <label class="form-label me-2 mb-0 text-muted">
-                        <small>@L["Pagination.PerPage"]</small>
-                    </label>
-                    <select class="form-select form-select-sm" style="width: auto;" 
-                            value="@PageSize" 
-                            @onchange="HandlePageSizeChanged">
-                        @foreach (var size in PageSizeOptions)
-                        {
-                            <option value="@size">@size</option>
-                        }
-                    </select>
-                    <small class="text-muted ms-1">@L["Pagination.Records"]</small>
-                </div>
-            }
-        </div>
-        
-        <!-- 第二行：分頁按鈕群 - 置中顯示 -->
-        <div class="d-flex justify-content-center">
-            <nav aria-label="資料表分頁">
-                <div class="btn-group flex-wrap" role="group" aria-label="分頁控制">
-                    <!-- 第一頁按鈕 - 只在中大螢幕顯示 -->
-                    <div class="d-none d-md-block">
-                        <GenericButtonComponent Text="@L["Pagination.FirstPage"]"
-                                              IconClass="fas fa-angle-double-left"
-                                              Variant="ButtonVariant.OutlineDarkBlue"
-                                              Size="ButtonSize.Small"
-                                              IsDisabled="@(!HasPreviousPage)"
-                                              OnClick="@(() => HandlePageChanged(1))"
-                                              Title="@L["Pagination.GoToFirst"]" />
-                    </div>
-                    
-                    <!-- 上一頁按鈕 -->
-                    <GenericButtonComponent Text="@GetPreviousButtonText()"
-                                          IconClass="fas fa-angle-left"
-                                          Variant="ButtonVariant.OutlineDarkBlue"
-                                          Size="ButtonSize.Small"
-                                          IsDisabled="@(!HasPreviousPage)"
-                                          OnClick="@(() => HandlePageChanged(CurrentPage - 1))"
-                                          Title="@L["Pagination.PrevPage"]" />
-                    
-                    <!-- 頁碼按鈕群 - 響應式數量控制 -->
-                    @foreach (var pageNumber in GetPageNumbers())
-                    {
-                        var currentPageNumber = pageNumber;
-                        var isCurrentPage = currentPageNumber == CurrentPage;
-                        
-                        <GenericButtonComponent Text="@currentPageNumber.ToString()"
-                                              Variant="@(isCurrentPage ? ButtonVariant.DarkBlue : ButtonVariant.OutlineDarkBlue)"
-                                              Size="ButtonSize.Small"
-                                              OnClick="@(() => HandlePageChanged(currentPageNumber))"
-                                              Title="@string.Format(L["Pagination.GoToPage"].ToString(), currentPageNumber)" />
-                    }
-                    
-                    <!-- 下一頁按鈕 -->
-                    <GenericButtonComponent Text="@GetNextButtonText()"
-                                          IconClass="fas fa-angle-right"
-                                          Variant="ButtonVariant.OutlineDarkBlue"
-                                          Size="ButtonSize.Small"
-                                          IsDisabled="@(!HasNextPage)"
-                                          OnClick="@(() => HandlePageChanged(CurrentPage + 1))"
-                                          Title="@L["Pagination.NextPage"]" />
-                    
-                    <!-- 最後一頁按鈕 - 只在中大螢幕顯示 -->
-                    <div class="d-none d-md-block">
-                        <GenericButtonComponent Text="@L["Pagination.LastPage"]"
-                                              IconClass="fas fa-angle-double-right"
-                                              Variant="ButtonVariant.OutlineDarkBlue"
-                                              Size="ButtonSize.Small"
-                                              IsDisabled="@(!HasNextPage)"
-                                              OnClick="@(() => HandlePageChanged(TotalPages))"
-                                              Title="@L["Pagination.GoToLast"]" />
-                    </div>
-                </div>
-            </nav>
-        </div>
-    </div>
-}
-
 @code {
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
     [Parameter] public List<TableColumnDefinition>? ColumnDefinitions { get; set; }
@@ -201,25 +105,6 @@
     [Parameter] public EventCallback<string> OnSort { get; set; }
     [Parameter] public bool EnableColumnResize { get; set; } = true;
     [Parameter] public string TableId { get; set; } = Guid.NewGuid().ToString("N")[..8];
-
-    // 分頁相關參數
-    [Parameter] public bool EnablePagination { get; set; } = false;
-    [Parameter] public int CurrentPage { get; set; } = 1;
-    [Parameter] public int PageSize { get; set; } = 20;
-    [Parameter] public int TotalItems { get; set; } = 0;
-    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
-    [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
-    [Parameter] public bool ShowPageSizeSelector { get; set; } = true;
-    [Parameter] public List<int> PageSizeOptions { get; set; } = new() { 10, 20, 50, 100 };
-    [Parameter] public int MaxDisplayedPages { get; set; } = 5;
-    [Parameter] public int MaxDisplayedPagesMobile { get; set; } = 3;
-
-    // 分頁計算屬性
-    private int TotalPages => TotalItems > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 0;
-    private bool HasPreviousPage => CurrentPage > 1;
-    private bool HasNextPage => CurrentPage < TotalPages;
-    private int StartItem => TotalItems > 0 ? ((CurrentPage - 1) * PageSize) + 1 : 0;
-    private int EndItem => TotalItems > 0 ? Math.Min(CurrentPage * PageSize, TotalItems) : 0;
 
     private string GetTableClass()
     {
@@ -444,57 +329,6 @@
             };
         }
         return "bg-secondary";
-    }
-
-    // 分頁相關方法
-    private async Task HandlePageChanged(int newPage)
-    {
-        if (newPage >= 1 && newPage <= TotalPages && newPage != CurrentPage)
-        {
-            if (OnPageChanged.HasDelegate)
-            {
-                await OnPageChanged.InvokeAsync(newPage);
-            }
-        }
-    }
-
-    private async Task HandlePageSizeChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var newPageSize) && newPageSize > 0)
-        {
-            if (OnPageSizeChanged.HasDelegate)
-            {
-                await OnPageSizeChanged.InvokeAsync(newPageSize);
-            }
-        }
-    }
-
-    private IEnumerable<int> GetPageNumbers()
-    {
-        // 使用較少的頁碼數量以適應手機螢幕
-        var maxPages = Math.Min(MaxDisplayedPages, 3); // 限制最多3個頁碼按鈕
-        
-        var startPage = Math.Max(1, CurrentPage - maxPages / 2);
-        var endPage = Math.Min(TotalPages, startPage + maxPages - 1);
-        
-        // 調整起始頁面，確保顯示正確數量的頁碼
-        if (endPage - startPage + 1 < maxPages)
-        {
-            startPage = Math.Max(1, endPage - maxPages + 1);
-        }
-        
-        return Enumerable.Range(startPage, endPage - startPage + 1);
-    }
-
-    // 響應式按鈕文字方法
-    private string GetPreviousButtonText()
-    {
-        return L["Pagination.PrevPage"].ToString();
-    }
-
-    private string GetNextButtonText()
-    {
-        return L["Pagination.NextPage"].ToString();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

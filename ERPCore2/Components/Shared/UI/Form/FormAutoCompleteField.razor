@@ -18,6 +18,8 @@
            minlength="@Field.MinLength"
            value="@_state.DisplayValue"
            @oninput="@(e => HandleInput(e.Value?.ToString() ?? ""))"
+           @oncompositionstart="HandleCompositionStart"
+           @oncompositionend="HandleCompositionEnd"
            @onfocus="HandleFocus"
            @onblur="HandleBlur"
            @onkeydown="HandleKeyDown" />
@@ -95,6 +97,11 @@
     private double _dropdownTop = 0;
     private double _dropdownLeft = 0;
     private double _dropdownWidth = 0;
+
+    /// <summary>
+    /// 追蹤 IME 組字狀態，防止組字過程中觸發重新渲染導致搜尋文字重複
+    /// </summary>
+    private bool _isComposing;
     
     /// <summary>
     /// 取得下拉選單的樣式（使用 fixed 定位）
@@ -213,7 +220,30 @@
     private void HandleInput(string inputValue)
     {
         _state.DisplayValue = inputValue;
+
+        // IME 組字期間僅更新本地顯示值，不觸發搜尋
+        // 避免 PerformSearchAsync 可能導致的 StateHasChanged 干擾組字緩衝區
+        if (_isComposing) return;
+
         _ = PerformSearchAsync(inputValue);
+    }
+
+    /// <summary>
+    /// IME 組字開始
+    /// </summary>
+    private void HandleCompositionStart(EventArgs e)
+    {
+        _isComposing = true;
+    }
+
+    /// <summary>
+    /// IME 組字結束，以最終文字觸發搜尋
+    /// </summary>
+    private void HandleCompositionEnd(EventArgs e)
+    {
+        _isComposing = false;
+        // 組字結束後以當前 DisplayValue 執行搜尋
+        _ = PerformSearchAsync(_state.DisplayValue);
     }
 
     private async Task HandleFocus()

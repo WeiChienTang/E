@@ -4,7 +4,7 @@
 
 本系統採用「**單一來源（Single Source of Truth）**」架構管理所有權限定義。
 所有權限皆在 `PermissionRegistry.cs` 中以靜態常數宣告，
-程式碼各處（頁面、導覽、Seeder）皆引用此常數，不使用魔法字串。
+程式碼各處（頁面、導覽、Seeder、權限管理 UI 分組）皆引用此常數，不使用魔法字串。
 
 ---
 
@@ -23,7 +23,9 @@ PermissionRegistry.cs（靜態定義，開發者維護）
          │
          ├─── 各頁面 RequiredPermission ──→ PagePermissionCheck 元件（頁面層）
          │
-         └─── QuickActionModalHost.razor ──→ 快速功能 Modal 權限守衛（首頁層）
+         ├─── QuickActionModalHost.razor ──→ 快速功能 Modal 權限守衛（首頁層）
+         │
+         └─── RolePermissionManagement.razor ──→ 權限管理 UI 分組（讀取 GroupKey）
 ```
 
 ---
@@ -32,7 +34,7 @@ PermissionRegistry.cs（靜態定義，開發者維護）
 
 | 檔案 | 職責 |
 |------|------|
-| `Models/PermissionRegistry.cs` | 所有權限的唯一定義來源 |
+| `Models/PermissionRegistry.cs` | 所有權限的唯一定義來源（含分組 GroupKey） |
 | `Data/SeedDataManager/Seeders/PermissionSeeder.cs` | 啟動時將 Registry 同步至資料庫 |
 | `Services/Auth/PermissionCheckMiddleware.cs` | Middleware 層路由保護 |
 | `Data/Navigation/NavigationConfig.cs` | 導覽項目的權限宣告 |
@@ -43,6 +45,24 @@ PermissionRegistry.cs（靜態定義，開發者維護）
 ---
 
 ## PermissionRegistry 結構
+
+### PermissionDefinition
+
+```csharp
+// 權限定義 record，含分組歸屬
+public record PermissionDefinition(
+    string Code,             // 權限編號（如 "AccountItem.SubAccountRead"）
+    string Name,             // 顯示名稱（如 "檢視子科目設定"）
+    PermissionLevel Level,   // Normal 或 Sensitive
+    string Remarks,          // 說明文字
+    string GroupKey = "Nav.SystemGroup"  // 分組歸屬（Nav.* resource key）
+);
+```
+
+`GroupKey` 決定權限在 `RolePermissionManagement.razor` 中顯示於哪個分組（如「會計管理」、「系統管理」），
+統一由 `PermissionRegistry.GetAllPermissions()` 維護，不需在其他地方維護分組對應表。
+
+### 權限常數類別
 
 ```csharp
 // Models/PermissionRegistry.cs
@@ -61,6 +81,13 @@ public static class PermissionRegistry
         public const string Approve = "PurchaseOrder.Approve";  // 多個動作
     }
 
+    public static class AccountItem
+    {
+        public const string Read                = "AccountItem.Read";
+        public const string SubAccountRead      = "AccountItem.SubAccountRead";        // 檢視子科目設定
+        public const string SubAccountBatchCreate = "AccountItem.SubAccountBatchCreate"; // 批次補建子科目
+    }
+
     public static class Document
     {
         public const string Read      = "Document.Read";
@@ -70,7 +97,7 @@ public static class PermissionRegistry
 
     // ... 其他模組
 
-    // Seeder 呼叫此方法取得完整定義（含名稱、層級、說明）
+    // Seeder 呼叫此方法取得完整定義（含名稱、層級、說明、分組）
     public static IEnumerable<PermissionDefinition> GetAllPermissions() => [ ... ];
 }
 ```
@@ -105,12 +132,15 @@ public static class Logistics
 }
 ```
 
-### 步驟 2：在 GetAllPermissions() 加入定義
+### 步驟 2：在 GetAllPermissions() 加入定義（含 GroupKey）
 
 ```csharp
-new(Customer.Export, "匯出客戶資料", PermissionLevel.Normal, "允許將客戶資料匯出為 Excel"),
-new(Logistics.Read,  "檢視物流",     PermissionLevel.Normal, "檢視物流配送相關資訊"),
+// GroupKey 決定權限管理 UI 的分組歸屬
+new(Customer.Export,  "匯出客戶資料", PermissionLevel.Normal, "允許將客戶資料匯出為 Excel", "Nav.CustomerGroup"),
+new(Logistics.Read,  "檢視物流",     PermissionLevel.Normal, "檢視物流配送相關資訊",       "Nav.InventoryGroup"),
 ```
+
+> **GroupKey 參考值**：`Nav.SystemGroup`、`Nav.HumanResources`、`Nav.CustomerGroup`、`Nav.SupplierGroup`、`Nav.ProductGroup`、`Nav.InventoryGroup`、`Nav.SalesGroup`、`Nav.PurchaseGroup`、`Nav.FinanceGroup`、`Nav.AccountingGroup`、`Nav.VehicleGroup`、`Nav.WasteGroup`、`Nav.DocumentGroup`
 
 ### 步驟 3：重新啟動應用程式
 
@@ -164,6 +194,45 @@ new NavigationItem
 
 一般業務頁面（客戶、商品、採購⋯）由 `PagePermissionCheck` 處理，
 不在 Middleware 設定，避免設定分散、難以維護。
+
+---
+
+## 權限管理 UI 分組機制
+
+`RolePermissionManagement.razor` 的權限分組顯示（如「會計管理」、「系統管理」）統一從 `PermissionRegistry.GetAllPermissions()` 的 `GroupKey` 讀取：
+
+```csharp
+// RolePermissionManagement.razor — BuildPermissionCategoryMapping()
+permissionCodeToCategory = PermissionRegistry.GetAllPermissions()
+    .ToDictionary(d => d.Code, d => d.GroupKey);
+```
+
+**不再**使用 NavigationConfig 掃描或 supplemental 字典。
+新增權限時只需在 `PermissionRegistry.GetAllPermissions()` 中指定正確的 `GroupKey`，權限管理 UI 即自動歸入對應分組。
+
+---
+
+## 子科目權限控制
+
+子科目設定（`SubAccountSettingsTab.razor`）位於「系統參數設定」 Modal 內，採用單獨的權限控制：
+
+| 權限 | Code | 等級 | 控制範圍 |
+|------|------|------|----------|
+| 檢視子科目設定 | `AccountItem.SubAccountRead` | Normal | 控制子科目設定 Tab 是否顯示 |
+| 批次補建子科目 | `AccountItem.SubAccountBatchCreate` | **Sensitive** | 控制批次補建按鈕是否顯示 |
+
+### 控制流程
+
+```
+SystemParameterSettingsModal.OnInitializedAsync()
+    ├─ 檢查 AccountItem.SubAccountRead
+    │     └─ 有權限（或 SuperAdmin）→ 加入子科目設定 Tab
+    ├─ 檢查 AccountItem.SubAccountBatchCreate
+    │     └─ 有權限 → SubAccountSettingsTab 顯示批次補建按鈕
+    └─ 無權限 → 只能查看設定，不能執行批次操作
+```
+
+> 此機制從「系統參數存取」（`SystemParameter.Read`）中分離出「會計子科目」權限，讓會計人員可獨立取得權限。
 
 ---
 
@@ -232,8 +301,9 @@ if (!await NavigationPermissionService.CanAccessAsync(perm))
 
 ## 設計原則
 
-1. **單一來源**：所有權限 Code 只在 `PermissionRegistry.cs` 定義一次
+1. **單一來源**：所有權限 Code 及分組歸屬只在 `PermissionRegistry.cs` 定義一次
 2. **編譯時期安全**：字串拼錯會產生編譯錯誤，而非靜默失效
 3. **自動同步**：新增權限後重啟即可，Seeder 負責補差異
 4. **僅追加**：Seeder 只新增不存在的 Code，不修改現有記錄，不影響已指派的角色權限
 5. **雙層快取同步清除**：`RoleService` 同時清除兩層快取，確保角色權限修改立即生效
+6. **分組自動化**：`GroupKey` 隨權限定義一起維護，權限管理 UI 無需額外維護分組對應表

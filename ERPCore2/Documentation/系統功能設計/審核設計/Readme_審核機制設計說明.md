@@ -1,7 +1,7 @@
 # 審核機制設計說明（總綱）
 
 > 本文件為 ERPCore2 單據審核機制（Approval Workflow）的**總綱**，說明設計原則、核心元件與各模組現況摘要。詳細內容請參閱子文件。
-> 最後更新：2026-03-03（架構重構：審核永遠啟用，改為自動/人工模式）
+> 最後更新：2026-03-04（新增庫存異動與審核整合說明）
 
 ---
 
@@ -27,9 +27,9 @@ SystemParameter 不存放指定審核人員。需要審核權限請在 `Permissi
 | 欄位名 | 型別 | 說明 |
 |--------|------|------|
 | `IsApproved` | `bool` | 是否已審核通過（預設 `false`，儲存後由系統或人工設為 `true`） |
-| `ApprovedBy` | `int?` | FK → `Employee.Id`，審核者（自動審核時為儲存者） |
-| `ApprovedAt` | `DateTime?` | 審核時間戳 |
-| `RejectReason` | `string?` | 駁回原因（人工審核才有意義；核准後應清空） |
+| `ApprovedBy` | `int?` | FK → `Employee.Id`，最後審核動作的執行者（人工核准 = 核准者、駁回 = 駁回者、自動審核 = **null**） |
+| `ApprovedAt` | `DateTime?` | 最後審核動作的時間戳（核准或駁回時設定） |
+| `RejectReason` | `string?` | 駁回原因（核准後清空為 null） |
 | `ApprovedByUser` | `Employee?` | Navigation Property |
 
 ---
@@ -58,14 +58,17 @@ CanPerformActionRequiringApproval(isManualApproval, isApproved)
 
 // 儲存是否允許（isPreApprovalSave=true 供核准前自動儲存用）
 CanSaveWhenApproved(isManualApproval, isApproved, isPreApprovalSave = false)
+
+// 是否應該執行庫存更新（僅 4 個庫存模組使用）
+ShouldUpdateInventory(isManualApproval, isApproved)
 ```
 
-| 情境 | ShouldLockField | CanPerformAction | CanSave |
-|------|-----------------|------------------|---------|
-| 自動審核，任意狀態 | `false` | `true` | `true` |
-| 人工審核，未審核 | `false` | `false` | `true` |
-| 人工審核，已核准 | `true` | `true` | `false` |
-| 人工審核，已核准，isPreApprovalSave | `true` | `true` | `true` |
+| 情境 | ShouldLockField | CanPerformAction | CanSave | ShouldUpdateInventory |
+|------|-----------------|------------------|---------|-----------------------|
+| 自動審核，任意狀態 | `false` | `true` | `true` | `true` |
+| 人工審核，未審核 | `false` | `false` | `true` | `false` |
+| 人工審核，已核准 | `true` | `true` | `false` | `true` |
+| 人工審核，已核准，isPreApprovalSave | `true` | `true` | `true` | `true` |
 
 ---
 
@@ -127,13 +130,21 @@ CanSaveWhenApproved(isManualApproval, isApproved, isPreApprovalSave = false)
      │       ↓
      │   IsApproved = true（對使用者無感）
      │
+     ├─ 儲存時庫存異動（4 個庫存模組）
+     │       ↓
+     │   ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, isApproved)
+     │       ├─ 自動審核 → ✅ 立即更新庫存
+     │       └─ 人工審核 + 未核准 → ❌ 跳過庫存更新（等待核准）
+     │
      ├─ 按「核准」（HandleApproveAsync）— 人工審核模式
      │       ↓
-     │   UpdateAsync(entity) + SaveXxxDetailsAsync(entity)  ← 先儲存含明細
+     │   UpdateAsync(entity) + SaveXxxDetailsAsync(entity)  ← 先儲存含明細（不更新庫存）
      │       ↓
      │   EntityService.ApproveAsync(id, userId)
      │       ↓
      │   欄位變唯讀 / Detail Table 封鎖 / 轉單與列印開放
+     │       ↓
+     │   觸發庫存異動（ConfirmReceiptAsync / UpdateInventoryByDifferenceAsync 等）
      │
      ├─ 按「駁回」（HandleRejectWithReasonAsync）— 人工審核模式
      │       ↓
@@ -256,7 +267,73 @@ formSections = FormSectionHelper<TEntity>.Create()
 
 ---
 
-## 八、常見問題
+## 八、庫存異動與審核整合
+
+### 8-1 適用範圍
+
+7 個進銷存模組中，只有 4 個會異動庫存：
+
+| 模組 | 庫存操作 | 使用方法 |
+|------|---------|---------|
+| 進貨單（PurchaseReceiving） | 入庫（加庫存） | `ConfirmReceiptAsync` / `UpdateInventoryByDifferenceAsync` |
+| 進貨退回（PurchaseReturn） | 退庫（減庫存） | `SaveWithDetailsAsync` 內含庫存邏輯 |
+| 銷貨出貨（SalesDelivery） | 出庫（減庫存） | `UpdateInventoryByDifferenceAsync` |
+| 銷貨退回（SalesReturn） | 退回入庫（加庫存） | `AddStockAsync` |
+
+其餘 3 個（報價單、採購訂單、銷售訂單）**不異動庫存**，不受此規則影響。
+
+### 8-2 設計原則
+
+**庫存異動必須經過審核才能執行**。透過 `ApprovalConfigHelper.ShouldUpdateInventory()` 統一控管：
+
+```csharp
+// 自動審核模式：儲存時即可更新庫存（系統會自動核准）
+// 人工審核模式：需核准後才可更新庫存
+bool shouldUpdate = ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, isApproved);
+```
+
+### 8-3 各模組實作方式
+
+#### 自動審核模式（`isManualApproval = false`）
+
+儲存時 `ShouldUpdateInventory` 回傳 `true`，庫存立即更新。儲存後系統自動核准。
+
+#### 人工審核模式（`isManualApproval = true`）
+
+**儲存時**：`ShouldUpdateInventory` 回傳 `false`（因 `isApproved = false`），**跳過庫存更新**。
+
+**核准時（HandleApprove）**：
+1. 先儲存明細（不觸發庫存）
+2. 呼叫 `ApproveAsync` 設定 `IsApproved = true`
+3. **觸發庫存異動**（此時才真正更新庫存）
+
+```
+// 人工審核核准流程（4 個庫存模組通用模式）
+SaveDetails(skipInventory) → ApproveAsync → TriggerInventoryUpdate
+```
+
+#### 進貨退回的特殊處理
+
+`PurchaseReturnService.SaveWithDetailsAsync` 接受 `updateInventory` 參數：
+
+```csharp
+// 儲存時
+var shouldUpdateInventory = ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, isApproved);
+await PurchaseReturnService.SaveWithDetailsAsync(entity, details, shouldUpdateInventory);
+
+// 核准後
+await PurchaseReturnService.SaveWithDetailsAsync(entity, details, updateInventory: true);
+```
+
+### 8-4 駁回時的庫存處理
+
+目前設計：**駁回時不回滾庫存**。
+
+理由：當前的 UI 設計中，核准後不再顯示核准/駁回按鈕，因此核准後不會被駁回。若未來開放「核准後駁回」功能，需額外實作庫存回滾邏輯。
+
+---
+
+## 九、常見問題
 
 ### Q: 從舊版（開關式審核）升級後，歷史資料 IsApproved=false 怎麼辦？
 

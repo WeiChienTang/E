@@ -1,7 +1,7 @@
 @* 泛型Index頁面基底組件 *@
 @attribute [Authorize]
 @typeparam TEntity where TEntity : BaseEntity
-@typeparam TService
+@typeparam TService where TService : IGenericManagementService<TEntity>
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
@@ -12,6 +12,7 @@
 
 @using ERPCore2.Models.Enums
 @using ERPCore2.Components.Shared.UI.Form
+@using ERPCore2.Services
 @using Microsoft.Extensions.Localization
 
 @* 設置瀏覽器標題 *@
@@ -107,7 +108,7 @@ else
             <div class="card-body">                
                 @* 搜尋篩選區域 *@
                 <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                             FilterDefinitions="@GetFinalFilterDefinitions()"
+                                             FilterDefinitions="@_cachedFilterDefinitions"
                                              FilterModel="@SearchModel"
                                              OnSearch="@HandleSearch"
                                              OnFilterChanged="@HandleFilterChanged"
@@ -122,7 +123,7 @@ else
                 <div>
                     <GenericTableComponent TItem="TEntity"
                                           Items="@PagedItems"
-                                          ColumnDefinitions="@GetFinalColumnDefinitions()"
+                                          ColumnDefinitions="@_cachedColumnDefinitions"
                                           EnableRowClick="@EnableRowClick"
                                           OnRowClick="@HandleRowClick"
                                           EnableSorting="@EnableSorting"
@@ -130,15 +131,19 @@ else
                                           IsHoverable="@IsHoverable"
                                           IsBordered="@IsBordered"
                                           Size="@TableSize"
-                                          EmptyMessage="@GetEmptyMessage()"
-                                          EnablePagination="@EnablePagination"
-                                          CurrentPage="@CurrentPage"
-                                          PageSize="@PageSize"
-                                          TotalItems="@TotalItems"
-                                          OnPageChanged="@HandlePageChanged"
-                                          OnPageSizeChanged="@HandlePageSizeChanged"
-                                          ShowPageSizeSelector="@ShowPageSizeSelector">
+                                          EmptyMessage="@GetEmptyMessage()">
                     </GenericTableComponent>
+
+                    @* 分頁組件 - 獨立於表格之外 *@
+                    @if (EnablePagination)
+                    {
+                        <GenericPaginationComponent CurrentPage="@CurrentPage"
+                                                   PageSize="@PageSize"
+                                                   TotalItems="@TotalItems"
+                                                   OnPageChanged="@HandlePageChanged"
+                                                   OnPageSizeChanged="@HandlePageSizeChanged"
+                                                   ShowPageSizeSelector="@ShowPageSizeSelector" />
+                    }
                 </div>
             </div>
         </div>
@@ -446,118 +451,44 @@ else
         
         try
         {
-            // 步驟0：檢查是否允許刪除此實體（雙重保護）
+            // 步驟0：檢查前端是否允許刪除此實體（系統資料保護 / 自訂 CanDelete）
             if (!IsEntityDeletable(entity))
             {
                 await NotificationService.ShowWarningAsync($"此{EntityName}「{displayName}」無法刪除");
                 return;
             }
             
-            // 步驟1：先檢查是否可以刪除（檢查關聯）
-            bool canDelete = false;
-            string? canDeleteErrorMessage = null;
-            
-            if (CustomDeleteHandler != null)
-            {
-                // 如果有自訂刪除處理器，直接使用
-                canDelete = true;
-            }
-            else
-            {
-                // 使用反射調用服務的 CanDeleteAsync 方法
-                var canDeleteMethod = Service?.GetType().GetMethod("CanDeleteAsync", new[] { typeof(TEntity) });
-                if (canDeleteMethod != null)
-                {
-                    var task = (Task)canDeleteMethod.Invoke(Service, new object[] { entity })!;
-                    await task;
-                    
-                    // 獲取結果
-                    var resultProperty = task.GetType().GetProperty("Result");
-                    if (resultProperty != null)
-                    {
-                        var result = resultProperty.GetValue(task);
-                        var isSuccessProperty = result?.GetType().GetProperty("IsSuccess");
-                        var errorMessageProperty = result?.GetType().GetProperty("ErrorMessage");
-                        
-                        if (isSuccessProperty != null)
-                        {
-                            canDelete = (bool)isSuccessProperty.GetValue(result)!;
-                            if (!canDelete)
-                            {
-                                canDeleteErrorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? "無法刪除此資料";
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // 如果沒有 CanDeleteAsync 方法，預設允許刪除
-                    canDelete = true;
-                }
-            }
-            
-            // 步驟2：如果不能刪除，顯示錯誤訊息
-            if (!canDelete)
-            {
-                await NotificationService.ShowWarningAsync(canDeleteErrorMessage ?? $"無法刪除{EntityName}「{displayName}」，因為有其他資料正在使用此{EntityName}");
-                return;
-            }
-            
-            // 步驟3：確認刪除
+            // 步驟1：確認刪除
             var confirmMessage = GetDeleteConfirmMessage(displayName);
             var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
             
             if (!confirmed)
                 return;
                 
-            // 步驟4：執行刪除
+            // 步驟2：執行刪除
             bool deleteSuccess = false;
             
             if (CustomDeleteHandler != null)
             {
+                // 使用自訂刪除處理器
                 deleteSuccess = await CustomDeleteHandler(entity);
             }
             else
             {
-                // 使用預設的反射調用服務的 PermanentDeleteAsync 方法
-                var deleteMethod = Service?.GetType().GetMethod("PermanentDeleteAsync", new[] { typeof(int) });
-                if (deleteMethod != null)
+                // 透過介面直接呼叫 PermanentDeleteAsync（內部已包含 CanDeleteAsync 檢查）
+                var result = await Service.PermanentDeleteAsync(entity.Id);
+                if (result.IsSuccess)
                 {
-                    var task = (Task)deleteMethod.Invoke(Service, new object[] { entity.Id })!;
-                    await task;
-                    
-                    // 獲取結果
-                    var resultProperty = task.GetType().GetProperty("Result");
-                    if (resultProperty != null)
-                    {                        
-                        var result = resultProperty.GetValue(task);
-                        var isSuccessProperty = result?.GetType().GetProperty("IsSuccess");
-                        var errorMessageProperty = result?.GetType().GetProperty("ErrorMessage");
-                        
-                        if (isSuccessProperty != null)
-                        {
-                            var isSuccess = (bool)isSuccessProperty.GetValue(result)!;                            
-                            if (isSuccess)
-                            {
-                                deleteSuccess = true;
-                            }
-                            else
-                            {
-                                var errorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? "刪除失敗";
-                                await NotificationService.ShowErrorAsync($"刪除失敗：{errorMessage}");
-                                return;
-                            }
-                        }
-                    }                
-                }               
+                    deleteSuccess = true;
+                }
                 else
                 {
-                    await NotificationService.ShowErrorAsync("找不到永久刪除方法");
+                    await NotificationService.ShowErrorAsync($"刪除失敗：{result.ErrorMessage}");
                     return;
                 }
             }
             
-            // 步驟5：顯示成功訊息並刷新資料
+            // 步驟3：顯示成功訊息並刷新資料
             if (deleteSuccess)
             {
                 var successMessage = GetDeleteSuccessMessage();
@@ -693,9 +624,9 @@ else
     // ===== 標準欄位和篩選器處理方法 =====
     
     /// <summary>
-    /// 取得最終的欄位定義（自動添加標準欄位）
+    /// 建構最終的欄位定義（自動添加標準欄位）
     /// </summary>
-    private List<TableColumnDefinition> GetFinalColumnDefinitions()
+    private List<TableColumnDefinition> BuildFinalColumnDefinitions()
     {
         var columns = new List<TableColumnDefinition>(ColumnDefinitions);
         
@@ -752,9 +683,9 @@ else
     }
     
     /// <summary>
-    /// 取得最終的篩選器定義（自動添加標準篩選器）
+    /// 建構最終的篩選器定義（自動添加標準篩選器）
     /// </summary>
-    private List<SearchFilterDefinition> GetFinalFilterDefinitions()
+    private List<SearchFilterDefinition> BuildFinalFilterDefinitions()
     {
         var filters = new List<SearchFilterDefinition>(FilterDefinitions);
         
@@ -786,13 +717,17 @@ else
         return filters;
     }
 
-    // ...existing code...
     // ===== 內部狀態 =====
     
     // 資料來源
     private List<TEntity> allItems = new();
     private List<TEntity> filteredItems = new();
-    private List<TEntity> pagedItems = new(); // 新增：快取分頁資料
+    private List<TEntity> pagedItems = new(); // 快取分頁資料
+    
+    // 快取欄位/篩選器定義（避免每次渲染重建 List）
+    private List<TableColumnDefinition> _cachedColumnDefinitions = new();
+    private List<SearchFilterDefinition> _cachedFilterDefinitions = new();
+    private bool _definitionsCacheInvalid = true;
     
     // 篩選相關
     private SearchFilterModel searchModel = new();
@@ -817,6 +752,25 @@ else
     public bool IsLoading => isLoading;
     
     // ===== 生命週期 =====
+    
+    protected override void OnParametersSet()
+    {
+        // 當參數變更時重建快取的欄位/篩選器定義
+        _definitionsCacheInvalid = true;
+        RebuildDefinitionsCache();
+    }
+    
+    /// <summary>
+    /// 重建欄位與篩選器定義快取
+    /// 僅在快取失效時重新計算，避免每次渲染都重建 List
+    /// </summary>
+    private void RebuildDefinitionsCache()
+    {
+        if (!_definitionsCacheInvalid) return;
+        _cachedColumnDefinitions = BuildFinalColumnDefinitions();
+        _cachedFilterDefinitions = BuildFinalFilterDefinitions();
+        _definitionsCacheInvalid = false;
+    }
     
     protected override async Task OnInitializedAsync()
     {
@@ -907,7 +861,7 @@ else
     
     // ===== 篩選和分頁邏輯 =====
     
-    private async Task ApplyFilters()
+    private Task ApplyFilters()
     {
         var query = allItems.AsQueryable();
         
@@ -940,7 +894,7 @@ else
         // 確保 UI 更新
         StateHasChanged();
         
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
     
     /// <summary>
@@ -962,7 +916,7 @@ else
     }
     
     /// <summary>
-    /// 自動更新統計資料
+    /// 自動更新統計資料（僅更新基本筆數統計，業務特定統計應由 StatisticsDataLoader 提供）
     /// </summary>
     private void UpdateStatisticsData()
     {
@@ -973,18 +927,6 @@ else
             // 自動計算基本統計
             StatisticsData["TotalItems"] = filteredItems.Count;
             StatisticsData["TotalOrders"] = filteredItems.Count;
-            
-            // 如果是採購訂單，計算特定統計
-            if (typeof(TEntity).Name == "PurchaseOrder")
-            {
-                var orders = filteredItems.Cast<dynamic>().ToList();
-                
-                StatisticsData["PendingOrders"] = 0;
-                    
-                StatisticsData["CompletedOrders"] = 0;
-                    
-                StatisticsData["TotalAmount"] = orders.Sum(o => (decimal)o.TotalAmount);
-            }
         }
         catch (Exception ex)
         {
@@ -1016,28 +958,28 @@ else
         await ApplyFilters(); // ApplyFilters 已經會調用 StateHasChanged()
     }
     
-    private async Task HandleFilterChanged(SearchFilterModel filterModel)
+    private Task HandleFilterChanged(SearchFilterModel filterModel)
     {
         searchModel = filterModel;
         // 如果啟用自動搜尋，這裡不需要立即執行搜尋
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
     
-    private async Task HandlePageChanged(int newPage)
+    private Task HandlePageChanged(int newPage)
     {
         currentPage = newPage;
         UpdatePagedItems();
         StateHasChanged();
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
     
-    private async Task HandlePageSizeChanged(int newPageSize)
+    private Task HandlePageSizeChanged(int newPageSize)
     {
         pageSize = newPageSize;
         currentPage = 1; // 重置到第一頁
         UpdatePagedItems();
         StateHasChanged();
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
     
     private async Task RefreshData()
@@ -1128,8 +1070,8 @@ else
     public void ResetFilters()
     {
         searchModel = new SearchFilterModel();
-        _ = ApplyFilters();
-        StateHasChanged();
+        ApplyFilters(); // ApplyFilters 為同步邏輯，回傳已完成的 Task
+        // StateHasChanged 已在 ApplyFilters 內呼叫，無需重複
     }
 }
 

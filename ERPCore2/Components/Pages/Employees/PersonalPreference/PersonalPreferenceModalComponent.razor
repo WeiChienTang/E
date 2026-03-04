@@ -300,6 +300,15 @@
                 _originalTheme = employeePreference.Theme;
             }
 
+            // 即時套用 Toast 訊息顯示時長
+            await JSRuntime.InvokeVoidAsync("setToastDelays", new
+            {
+                success = employeePreference.ToastSuccessDurationMs,
+                error   = employeePreference.ToastErrorDurationMs,
+                warning = employeePreference.ToastWarningDurationMs,
+                info    = employeePreference.ToastInfoDurationMs
+            });
+
             // 語言若與目前 UI 文化不同，寫入 cookie 並重新載入頁面以套用新語言
             var newCultureCode = ERPCore2.Helpers.CultureHelper.ToCultureCode(employeePreference.Language);
             var currentCulture = System.Globalization.CultureInfo.CurrentUICulture.Name;

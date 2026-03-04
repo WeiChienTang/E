@@ -1210,9 +1210,13 @@
             }
 
             //  關鍵：儲存成功後，使用差異計算更新庫存
+            // 審核守衛：人工審核模式下，需核准後才更新庫存；自動審核模式下，儲存即更新
             if (result.Data != null)
             {
-                await UpdateInventoryByDifferenceAsync(result.Data.Id);
+                if (ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, result.Data.IsApproved))
+                {
+                    await UpdateInventoryByDifferenceAsync(result.Data.Id);
+                }
 
                 // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
                 if (!isManualApproval && !result.Data.IsApproved)
@@ -1483,16 +1487,25 @@
                 return false;
             }
 
-            if (saveResult.Data != null)
-            {
-                await UpdateInventoryByDifferenceAsync(saveResult.Data.Id);
-            }
-
+            // 先核准
             var approveResult = await SalesReturnService.ApproveAsync(entity.Id, userId.Value);
             if (!approveResult.IsSuccess)
             {
                 await NotificationService.ShowErrorAsync(approveResult.ErrorMessage ?? "核准失敗");
                 return false;
+            }
+
+            // 核准成功後觸發庫存更新（人工審核模式下，庫存在此才執行）
+            if (saveResult.Data != null)
+            {
+                try
+                {
+                    await UpdateInventoryByDifferenceAsync(saveResult.Data.Id);
+                }
+                catch (Exception inventoryEx)
+                {
+                    await NotificationService.ShowWarningAsync($"核准成功，但庫存更新發生錯誤：{inventoryEx.Message}");
+                }
             }
 
             return true;

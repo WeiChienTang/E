@@ -6,6 +6,7 @@
 
 @inject ISystemParameterService SystemParameterService
 @inject IEmployeeService EmployeeService
+@inject IPermissionService PermissionService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IStringLocalizer<SharedResource> L
@@ -106,6 +107,8 @@
 
     // Tab 與權限
     private bool isSuperAdmin = false;
+    private bool hasSubAccountRead = false;
+    private bool hasSubAccountBatchCreate = false;
 
     // ===== 表單欄位與 Tab 定義（所有 Tab 使用 CustomContent，欄位定義為空） =====
 
@@ -146,7 +149,8 @@
     {
         <SubAccountSettingsTab @ref="subAccountTab"
                                Model="@systemParameter"
-                               IsDisabled="@(isSaving || isLoading)" />
+                               IsDisabled="@(isSaving || isLoading)"
+                               CanBatchCreate="@hasSubAccountBatchCreate" />
     };
 
     private RenderFragment CreateCertificateTabContent() => __builder =>
@@ -174,7 +178,7 @@
         tabDefinitions = new List<FormTabDefinition>
         {
             new() { Label = L["Section.TaxSettings"],    Icon = "bi bi-cash-stack", SectionNames = new(), CustomContent = CreateTaxTabContent(),         DebugComponentName = "TaxSettingsTab" },
-            new() { Label = L["Tab.SubAccountSettings"], Icon = "bi bi-diagram-3",  SectionNames = new(), CustomContent = CreateSubAccountTabContent(),  DebugComponentName = "SubAccountSettingsTab" },
+            // 子科目 Tab 由 OnInitializedAsync 權限檢查後動態加入
             // 安全憑證 Tab 暫時停用（HTTPS 自簽憑證方案未完成，詳見 README_HTTPS憑證設計(失敗).md）
             // new() { Label = "安全憑證", Icon = "bi bi-shield-lock", SectionNames = new(), CustomContent = CreateCertificateTabContent(), DebugComponentName = "CertificateTab" },
         };
@@ -190,6 +194,23 @@
             isSuperAdmin = await EmployeeService.IsSuperAdminAsync();
         }
         catch { }
+
+        // 檢查子科目相關權限
+        await CheckSubAccountPermissionsAsync();
+
+        // 有 SubAccount.Read 權限（或 SuperAdmin）才加入子科目設定 Tab
+        if (hasSubAccountRead || isSuperAdmin)
+        {
+            // 插入在稅務設定之後（index 1）
+            tabDefinitions.Insert(1, new FormTabDefinition
+            {
+                Label = L["Tab.SubAccountSettings"],
+                Icon = "bi bi-diagram-3",
+                SectionNames = new(),
+                CustomContent = CreateSubAccountTabContent(),
+                DebugComponentName = "SubAccountSettingsTab"
+            });
+        }
 
         // SuperAdmin 才加入審核設定與模組管理 Tab
         if (isSuperAdmin)
@@ -219,6 +240,37 @@
         if (IsVisible && systemParameter.Id == 0 && !isLoading)
         {
             await LoadSystemParameterAsync();
+        }
+    }
+
+    // ===== 權限檢查 =====
+
+    /// <summary>
+    /// 檢查當前使用者的子科目相關權限（SubAccount.Read / SubAccount.BatchCreate）
+    /// </summary>
+    private async Task CheckSubAccountPermissionsAsync()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState?.User;
+            if (user?.Identity?.IsAuthenticated != true) return;
+
+            var employeeIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(employeeIdClaim, out int employeeId)) return;
+
+            // 檢查 AccountItem.SubAccountRead
+            var readResult = await PermissionService.HasPermissionAsync(employeeId, PermissionRegistry.AccountItem.SubAccountRead);
+            hasSubAccountRead = readResult.IsSuccess && readResult.Data;
+
+            // 檢查 AccountItem.SubAccountBatchCreate
+            var batchResult = await PermissionService.HasPermissionAsync(employeeId, PermissionRegistry.AccountItem.SubAccountBatchCreate);
+            hasSubAccountBatchCreate = batchResult.IsSuccess && batchResult.Data;
+        }
+        catch
+        {
+            hasSubAccountRead = false;
+            hasSubAccountBatchCreate = false;
         }
     }
 

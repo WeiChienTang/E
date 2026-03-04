@@ -112,6 +112,33 @@
 
 ---
 
+## 權限控制
+
+子科目設定頁籤受兩層權限保護，定義於 `PermissionRegistry.AccountItem`（歸屬 `Nav.AccountingGroup` 分組）：
+
+| 權限常數 | Code | 等級 | 說明 |
+|----------|------|------|------|
+| `AccountItem.SubAccountRead` | `AccountItem.SubAccountRead` | Normal | 可檢視子科目設定 Tab |
+| `AccountItem.SubAccountBatchCreate` | `AccountItem.SubAccountBatchCreate` | Sensitive | 可執行批次補建子科目 |
+
+### 控制流程
+
+```
+SystemParameterSettingsModal 開啟
+    │
+    ├─ IPermissionService.HasPermissionAsync(SubAccountRead)
+    │   ├─ true / SuperAdmin → 顯示「子科目設定」Tab
+    │   └─ false            → 不插入 Tab
+    │
+    └─ IPermissionService.HasPermissionAsync(SubAccountBatchCreate)
+        ├─ true / SuperAdmin → 顯示「批次補建」按鈕區塊
+        └─ false            → 隱藏批次補建區塊
+```
+
+> **設計原則：** 檢視與操作權限分離——會計人員可查看子科目設定參數，但批次補建屬敏感操作，需額外授權。
+
+---
+
 ## Migrations
 
 | Migration | 說明 |

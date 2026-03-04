@@ -1424,6 +1424,12 @@
     #region 事件處理方法
     private async Task HandleInputChange(InteractiveColumnDefinition column, TItem item, string? value)
     {
+        // 值比對守衛：若值未改變則不處理，避免誤觸 dirty flag
+        var currentValue = GetPropertyValue(item, column.PropertyName)?.ToString();
+        if (string.Equals(currentValue, value, StringComparison.Ordinal)) return;
+        // 處理 null vs "" 等效情況
+        if (string.IsNullOrEmpty(currentValue) && string.IsNullOrEmpty(value)) return;
+        
         // 記錄變更前的狀態
         var wasEmpty = EnableAutoEmptyRow ? IsRowEmpty(item) : false;
         var fieldWasEmpty = EnableAutoEmptyRow && column.TriggerEmptyRowOnFilled 
@@ -1513,6 +1519,13 @@
 
     private async Task HandleSelectionChange(InteractiveColumnDefinition column, TItem item, object? value)
     {
+        // 值比對守衛：若值未改變則不處理，避免誤觸 dirty flag
+        var currentSelValue = GetPropertyValue(item, column.PropertyName);
+        var currentSelStr = currentSelValue?.ToString();
+        var incomingSelStr = value?.ToString();
+        if (string.Equals(currentSelStr, incomingSelStr, StringComparison.Ordinal)) return;
+        if (string.IsNullOrEmpty(currentSelStr) && string.IsNullOrEmpty(incomingSelStr)) return;
+        
         // 記錄變更前的狀態
         var wasEmpty = EnableAutoEmptyRow ? IsRowEmpty(item) : false;
         var fieldWasEmpty = EnableAutoEmptyRow && column.TriggerEmptyRowOnFilled 
@@ -1551,10 +1564,14 @@
 
     private async Task HandleCheckboxChange(InteractiveColumnDefinition column, TItem item, object? value)
     {
+        // 值比對守衛：若值未改變則不處理，避免誤觸 dirty flag
+        var currentCheckValue = GetPropertyValue(item, column.PropertyName);
+        var isChecked = value is bool boolValue && boolValue;
+        if (currentCheckValue is bool currentBool && currentBool == isChecked) return;
+        
         //  記錄變更前的狀態
         var wasEmpty = EnableAutoEmptyRow ? IsRowEmpty(item) : false;
         
-        var isChecked = value is bool boolValue && boolValue;
         SetPropertyValue(item, column.PropertyName, isChecked);
         
         if (column.OnCheckboxChanged.HasValue)

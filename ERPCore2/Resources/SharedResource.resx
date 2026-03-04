@@ -2898,6 +2898,19 @@
   <data name="Preference.Reminder15" xml:space="preserve"><value>15 分鐘前</value></data>
   <data name="Preference.Reminder30" xml:space="preserve"><value>30 分鐘前</value></data>
   <data name="Preference.Reminder60" xml:space="preserve"><value>1 小時前</value></data>
+  <!-- ===== 系統訊息顯示時長 ===== -->
+  <data name="Preference.ToastDuration" xml:space="preserve"><value>系統訊息顯示時長</value></data>
+  <data name="Preference.ToastDurationHelpText" xml:space="preserve"><value>設定各類型系統訊息自動消失的時間，儲存後立即生效。</value></data>
+  <data name="Preference.NotificationFeatures" xml:space="preserve"><value>功能開關</value></data>
+  <data name="Preference.ToastSuccess" xml:space="preserve"><value>成功訊息</value></data>
+  <data name="Preference.ToastError" xml:space="preserve"><value>錯誤訊息</value></data>
+  <data name="Preference.ToastWarning" xml:space="preserve"><value>警告訊息</value></data>
+  <data name="Preference.ToastInfo" xml:space="preserve"><value>資訊訊息</value></data>
+  <data name="Preference.ToastDuration1s" xml:space="preserve"><value>1 秒</value></data>
+  <data name="Preference.ToastDuration2s" xml:space="preserve"><value>2 秒</value></data>
+  <data name="Preference.ToastDuration3s" xml:space="preserve"><value>3 秒</value></data>
+  <data name="Preference.ToastDuration5s" xml:space="preserve"><value>5 秒</value></data>
+  <data name="Preference.ToastDurationNoAutoHide" xml:space="preserve"><value>不自動關閉</value></data>
   <data name="Calendar.Reminder" xml:space="preserve"><value>提醒</value></data>
   <data name="Calendar.ReminderUseDefault" xml:space="preserve"><value>使用預設值</value></data>
 

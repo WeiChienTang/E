@@ -500,6 +500,65 @@ new FieldConfiguration<XxxEntity>
 
 ---
 
+## Step 11：庫存異動模組的審核整合（僅限異動庫存的模組）
+
+> **適用範圍**：只有異動庫存的模組才需要此步驟（如進貨單、進貨退回、銷貨出貨、銷貨退回）。
+> 報價單、採購訂單、銷售訂單等不異動庫存的模組可跳過。
+
+### 11-1 儲存時：依審核狀態決定是否更新庫存
+
+在儲存流程中，將庫存異動包裹在 `ShouldUpdateInventory` 閘門內：
+
+```csharp
+if (ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, entity.IsApproved))
+{
+    // 執行庫存異動（ConfirmReceiptAsync / ReduceStockAsync / AddStockAsync 等）
+    await InventoryStockService.AddStockAsync(...);
+}
+```
+
+- **自動審核模式**（`isManualApproval=false`）：回傳 `true`，庫存立即更新
+- **人工審核模式**（`isManualApproval=true`）+ 未核准：回傳 `false`，跳過庫存
+
+### 11-2 核准時：觸發庫存異動
+
+在 `HandleXxxApprove` 方法中，`ApproveAsync` 成功後觸發庫存異動：
+
+```csharp
+private async Task<bool> HandleXxxApprove()
+{
+    // ... 前置檢查 ...
+
+    // 核准前先儲存（不觸發庫存）
+    var saveOk = await SaveXxxWithDetails(entity, isPreApprovalSave: true);
+    if (!saveOk) return false;
+
+    // 核准
+    var result = await XxxService.ApproveAsync(XxxId.Value, userId.Value);
+    if (!result.IsSuccess) return false;
+
+    // ★ 核准後觸發庫存異動
+    await TriggerInventoryUpdateAsync(entity);
+
+    return true;
+}
+```
+
+### 11-3 進貨退回的特殊模式
+
+若庫存邏輯在 Service 層（如 `PurchaseReturnService.SaveWithDetailsAsync`），透過參數控制：
+
+```csharp
+// 儲存時
+bool shouldUpdateInventory = ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, entity.IsApproved);
+await XxxService.SaveWithDetailsAsync(entity, details, shouldUpdateInventory);
+
+// 核准後
+await XxxService.SaveWithDetailsAsync(entity, details, updateInventory: true);
+```
+
+---
+
 ## 快速檢查清單
 
 完成後逐項驗證：
@@ -519,6 +578,11 @@ new FieldConfiguration<XxxEntity>
 **Index 功能（待實作）**
 - [ ] 批次審核 Modal 正常載入待審核清單並可核准
 - [ ] Index 審核狀態 badge 正確顯示
+
+**庫存異動模組額外檢查**（僅限異動庫存的模組）
+- [ ] 自動審核模式：儲存後庫存正確更新
+- [ ] 人工審核模式 + 未核准：儲存後庫存**不**更新
+- [ ] 人工審核模式 + 按核准：核准後庫存正確更新
 
 **`default!` Manager 陷阱檢查**
 - [ ] 若 EditModal Razor 模板中有 `xxxModalManager.IsModalVisible`（非 null-conditional 存取），

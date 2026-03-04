@@ -323,6 +323,15 @@
                     await JSRuntime.InvokeVoidAsync("setContentZoom", (int)preference.Zoom);
                     await JSRuntime.InvokeVoidAsync("setAppTheme", (int)preference.Theme);
 
+                    // 套用使用者自訂 Toast 訊息顯示時長
+                    await JSRuntime.InvokeVoidAsync("setToastDelays", new
+                    {
+                        success = preference.ToastSuccessDurationMs,
+                        error   = preference.ToastErrorDurationMs,
+                        warning = preference.ToastWarningDurationMs,
+                        info    = preference.ToastInfoDurationMs
+                    });
+
                     // 初始化通知快取服務（載入便條數 + 今日事項，後續 Timer 純記憶體比對）
                     await NotificationService.InitializeAsync(_currentEmployeeId, preference);
                     NotificationService.OnChanged += HandleNotificationChanged;

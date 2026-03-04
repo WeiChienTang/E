@@ -83,6 +83,30 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
+        /// 判斷是否應該執行庫存更新
+        /// 自動審核模式：儲存時即可更新庫存（系統會自動核准）
+        /// 人工審核模式：需核准後才可更新庫存
+        /// </summary>
+        /// <param name="isManualApproval">是否為人工審核（false=系統自動審核，true=人工審核）</param>
+        /// <param name="isApproved">實體是否已審核通過</param>
+        /// <returns>是否應該執行庫存更新</returns>
+        public static bool ShouldUpdateInventory(
+            bool isManualApproval,
+            bool isApproved)
+        {
+            if (!isManualApproval)
+            {
+                // 系統自動審核：儲存後系統自動核准，庫存可立即更新
+                return true;
+            }
+            else
+            {
+                // 人工審核：需核准後才允許更新庫存
+                return isApproved;
+            }
+        }
+
+        /// <summary>
         /// 取得審核狀態的警告訊息
         /// </summary>
         /// <param name="isManualApproval">是否為人工審核（false=系統自動審核，true=人工審核）</param>

@@ -69,6 +69,10 @@ namespace ERPCore2.Services
                     existing.ShowCalendarBadge          = preference.ShowCalendarBadge;
                     existing.ShowNoteBadge              = preference.ShowNoteBadge;
                     existing.DefaultReminderMinutes     = preference.DefaultReminderMinutes;
+                    existing.ToastSuccessDurationMs     = preference.ToastSuccessDurationMs;
+                    existing.ToastErrorDurationMs       = preference.ToastErrorDurationMs;
+                    existing.ToastWarningDurationMs     = preference.ToastWarningDurationMs;
+                    existing.ToastInfoDurationMs        = preference.ToastInfoDurationMs;
                     existing.ShowDisabledModules        = preference.ShowDisabledModules;
                     existing.UpdatedAt = DateTime.Now;
                 }

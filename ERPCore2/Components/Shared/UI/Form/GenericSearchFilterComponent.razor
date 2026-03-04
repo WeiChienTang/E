@@ -38,7 +38,9 @@
                                        id="@filter.PropertyName"
                                        placeholder="@filter.Placeholder"
                                        value="@GetTextValue(filter.PropertyName)"
-                                       @oninput="e => HandleTextInput(filter.PropertyName, e.Value?.ToString())" />
+                                       @oninput="e => HandleTextInput(filter.PropertyName, e.Value?.ToString())"
+                                       @oncompositionstart="@(() => HandleCompositionStart(filter.PropertyName))"
+                                       @oncompositionend="@(() => HandleCompositionEnd(filter.PropertyName))" />
                                 break;
                                 
                             case SearchFilterType.Number:
@@ -202,7 +204,9 @@
                                        placeholder="@filter.Placeholder"
                                        list="@($"{filter.PropertyName}_datalist")"
                                        value="@GetTextValue(filter.PropertyName)"
-                                       @oninput="e => HandleAutoCompleteInput(filter, e.Value?.ToString())" />
+                                       @oninput="e => HandleAutoCompleteInput(filter, e.Value?.ToString())"
+                                       @oncompositionstart="@(() => HandleCompositionStart(filter.PropertyName))"
+                                       @oncompositionend="@(() => HandleCompositionEnd(filter.PropertyName))" />
                                 <datalist id="@($"{filter.PropertyName}_datalist")">
                                     @if (autoCompleteOptions.ContainsKey(filter.PropertyName))
                                     {
@@ -220,7 +224,9 @@
                                        id="@filter.PropertyName"
                                        placeholder="@filter.Placeholder"
                                        value="@GetTextValue(filter.PropertyName)"
-                                       @oninput="e => HandleTextInput(filter.PropertyName, e.Value?.ToString())" />
+                                       @oninput="e => HandleTextInput(filter.PropertyName, e.Value?.ToString())"
+                                       @oncompositionstart="@(() => HandleCompositionStart(filter.PropertyName))"
+                                       @oncompositionend="@(() => HandleCompositionEnd(filter.PropertyName))" />
                                 break;
                         }
                     </div>
@@ -242,6 +248,13 @@
     private Timer? searchTimer;
     private readonly Dictionary<string, List<SelectOption>> autoCompleteOptions = new();
     private readonly Dictionary<string, Timer?> autoCompleteTimers = new();
+
+    /// <summary>
+    /// 追蹤 IME 組字狀態，防止組字過程中觸發重新渲染導致文字重複
+    /// </summary>
+    private bool _isComposing;
+    private string? _composingPropertyName;
+    private string? _composingValue;
 
     // 輔助方法：取得文字值
     private string GetTextValue(string propertyName)
@@ -301,9 +314,36 @@
         return value is bool boolValue && boolValue;
     }
 
+    // IME 組字開始
+    private void HandleCompositionStart(string propertyName)
+    {
+        _isComposing = true;
+        _composingPropertyName = propertyName;
+    }
+
+    // IME 組字結束
+    private void HandleCompositionEnd(string propertyName)
+    {
+        _isComposing = false;
+        // 組字結束後同步暫存的值
+        if (_composingValue != null)
+        {
+            FilterModel.SetFilterValue(propertyName, _composingValue);
+            _composingValue = null;
+            _composingPropertyName = null;
+            _ = HandleFilterChanged();
+        }
+    }
+
     // 事件處理：文字輸入
     private void HandleTextInput(string propertyName, string? value)
     {
+        if (_isComposing)
+        {
+            // 組字中僅暫存，不觸發搜尋和重新渲染
+            _composingValue = value;
+            return;
+        }
         FilterModel.SetFilterValue(propertyName, value);
         _ = HandleFilterChanged();
     }

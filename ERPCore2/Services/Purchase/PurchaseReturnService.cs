@@ -642,7 +642,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 儲存採購退貨連同明細
         /// </summary>
-        public async Task<ServiceResult<PurchaseReturn>> SaveWithDetailsAsync(PurchaseReturn purchaseReturn, List<PurchaseReturnDetail> details)
+        public async Task<ServiceResult<PurchaseReturn>> SaveWithDetailsAsync(PurchaseReturn purchaseReturn, List<PurchaseReturnDetail> details, bool updateInventory = true)
         {
             try
             {
@@ -705,7 +705,8 @@ namespace ERPCore2.Services
                     }
 
                     // 更新庫存邏輯 - 處理退貨的庫存變更（包含商品變更和數量變更）
-                    if (_inventoryStockService != null)
+                    // 審核守衛：由呼叫端決定是否更新庫存（人工審核模式下，核准前不更新庫存）
+                    if (updateInventory && _inventoryStockService != null)
                     {
                         var stockChanges = detailResult.Data ?? new List<(PurchaseReturnDetail, int)>();
                         

@@ -1,7 +1,12 @@
-@* 通知設定 Tab — 啟用功能 + 徽章顯示 + 預設提醒時間 *@
+@* 通知設定 Tab — 功能開關 + 系統訊息顯示時長 *@
 @inject IStringLocalizer<SharedResource> L
 
 <div class="p-2">
+
+    @* ==================== 區塊一：功能開關 ==================== *@
+    <h6 class="mb-3">
+        <i class="bi bi-toggles me-2"></i>@L["Preference.NotificationFeatures"]
+    </h6>
 
     @* 行事曆 *@
     <div class="mb-1 fw-semibold text-secondary small text-uppercase">@L["Preference.EnableCalendar"]</div>
@@ -69,6 +74,37 @@
         </div>
     }
 
+    @* ==================== 區塊二：系統訊息顯示時長 ==================== *@
+    <div class="mt-4 pt-3 border-top">
+        <h6 class="mb-3">
+            <i class="bi bi-chat-square-text me-2"></i>@L["Preference.ToastDuration"]
+        </h6>
+        <p class="text-muted small mb-3">@L["Preference.ToastDurationHelpText"]</p>
+
+        @foreach (var toastType in _toastTypes)
+        {
+            <div class="mb-3">
+                <div class="mb-1 small text-secondary">
+                    <i class="@toastType.Icon me-1"></i>@toastType.Label
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    @foreach (var option in _durationOptions)
+                    {
+                        var currentValue = GetToastDuration(toastType.Type);
+                        var isSelected = currentValue == option.Value;
+                        var capturedType = toastType.Type;
+                        var capturedValue = option.Value;
+                        <button type="button"
+                                class="btn btn-sm @(isSelected ? "btn-primary" : "btn-outline-secondary") reminder-option-btn"
+                                @onclick="() => SelectToastDuration(capturedType, capturedValue)">
+                            @option.Label
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
 </div>
 
 @code {
@@ -78,8 +114,12 @@
     private readonly EmployeePreference _fallback = new();
 
     private record ReminderOption(int Value, string Label);
+    private record DurationOption(int Value, string Label);
+    private record ToastTypeInfo(string Type, string Label, string Icon);
 
     private List<ReminderOption> _reminderOptions = new();
+    private List<DurationOption> _durationOptions = new();
+    private List<ToastTypeInfo> _toastTypes = new();
 
     protected override void OnInitialized()
     {
@@ -91,11 +131,50 @@
             new(30, L["Preference.Reminder30"]),
             new(60, L["Preference.Reminder60"]),
         };
+
+        _durationOptions = new List<DurationOption>
+        {
+            new(1000,  L["Preference.ToastDuration1s"]),
+            new(2000,  L["Preference.ToastDuration2s"]),
+            new(3000,  L["Preference.ToastDuration3s"]),
+            new(5000,  L["Preference.ToastDuration5s"]),
+            new(0,     L["Preference.ToastDurationNoAutoHide"]),
+        };
+
+        _toastTypes = new List<ToastTypeInfo>
+        {
+            new("success", L["Preference.ToastSuccess"], "fas fa-check-circle text-success"),
+            new("error",   L["Preference.ToastError"],   "fas fa-times-circle text-danger"),
+            new("warning", L["Preference.ToastWarning"], "fas fa-exclamation-triangle text-warning"),
+            new("info",    L["Preference.ToastInfo"],    "fas fa-info-circle text-info"),
+        };
     }
 
     private void SelectReminder(int value)
     {
         (Model ?? _fallback).DefaultReminderMinutes = value;
+        StateHasChanged();
+    }
+
+    private int GetToastDuration(string type) => type switch
+    {
+        "success" => (Model ?? _fallback).ToastSuccessDurationMs,
+        "error"   => (Model ?? _fallback).ToastErrorDurationMs,
+        "warning" => (Model ?? _fallback).ToastWarningDurationMs,
+        "info"    => (Model ?? _fallback).ToastInfoDurationMs,
+        _         => 2000
+    };
+
+    private void SelectToastDuration(string type, int value)
+    {
+        var pref = Model ?? _fallback;
+        switch (type)
+        {
+            case "success": pref.ToastSuccessDurationMs = value; break;
+            case "error":   pref.ToastErrorDurationMs   = value; break;
+            case "warning": pref.ToastWarningDurationMs = value; break;
+            case "info":    pref.ToastInfoDurationMs    = value; break;
+        }
         StateHasChanged();
     }
 }

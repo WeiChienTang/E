@@ -69,7 +69,9 @@ namespace ERPCore2.Data.Entities
         public string? ApprovedAtText => ApprovedAt?.ToString("yyyy-MM-dd HH:mm");
 
         [NotMapped]
-        public string ApprovedByDisplayName => IsApproved ? (ApprovedByUser?.Name ?? "系統自動審核") : "";
+        public string ApprovedByDisplayName =>
+            IsApproved ? (ApprovedByUser?.Name ?? "系統自動審核") :
+            !string.IsNullOrEmpty(RejectReason) ? (ApprovedByUser?.Name ?? "") : "";
 
         // Foreign Keys
         [Required(ErrorMessage = "供應商為必填")]

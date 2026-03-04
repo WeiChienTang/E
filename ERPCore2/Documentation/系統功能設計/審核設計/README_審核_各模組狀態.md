@@ -1,7 +1,7 @@
 # 審核機制 — 各模組狀態與待辦項目
 
 > 本文件記錄各模組審核功能的現況、已知問題，以及各輪修正的完整項目清單。
-> 最後更新：2026-03-03（第五輪：審核語意重構 — 啟用/停用 → 系統自動/人工審核）
+> 最後更新：2026-03-04（第六輪：庫存異動與審核整合 + ApprovedByDisplayName 修正）
 
 ---
 
@@ -55,6 +55,7 @@
 | Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
 | Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
 | 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
+| 庫存異動審核整合 | ✅ | 儲存時依 `ShouldUpdateInventory` 判斷；核准後觸發 `UpdateInventoryByDifferenceAsync` |
 | 批次審核 | ✅ | `SalesDeliveryIndex.razor` 加入 `BatchApprovalModalComponent` |
 | Index 審核狀態欄 | ✅ | `SalesDeliveryFieldConfiguration` 加入 `IsApproved` Badge 欄位 |
 | PermissionRegistry | ✅ | `SalesDelivery.Approve` 本輪加入 |
@@ -72,6 +73,7 @@
 | Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
 | Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
 | 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
+| 庫存異動審核整合 | ✅ | 儲存時依 `ShouldUpdateInventory` 判斷；核准後觸發 `ConfirmReceiptAsync`/`UpdateInventoryByDifferenceAsync` |
 | 批次審核 | ✅ | `PurchaseReceivingIndex.razor` 加入 `BatchApprovalModalComponent` |
 | Index 審核狀態欄 | ✅ | `PurchaseReceivingFieldConfiguration` 加入 `IsApproved` Badge 欄位 |
 | PermissionRegistry | ✅ | `PurchaseReceiving.Approve` 本輪加入 |
@@ -89,6 +91,7 @@
 | Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
 | Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
 | 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
+| 庫存異動審核整合 | ✅ | `SaveWithDetailsAsync` 接受 `updateInventory` 參數；核准後以 `updateInventory:true` 呼叫 |
 | 批次審核 | ✅ | `PurchaseReturnIndex.razor` 加入 `BatchApprovalModalComponent` |
 | Index 審核狀態欄 | ✅ | `PurchaseReturnFieldConfiguration` 加入 `IsApproved` Badge 欄位 |
 | PermissionRegistry | ✅ | `PurchaseReturn.Approve` 本輪加入 |
@@ -123,6 +126,7 @@
 | Service 方法 | ✅ | `ApproveAsync` + `RejectAsync` 本輪加入 |
 | Detail Table 封鎖 | ✅ | `IsReadOnly` 已由 `ApprovalConfigHelper.ShouldLockFieldByApproval` 控制 |
 | 列印審核檢查 | ✅ | 已傳入 `CanPrintCheck` |
+| 庫存異動審核整合 | ✅ | 儲存時依 `ShouldUpdateInventory` 判斷；核准後觸發 `AddStockAsync` |
 | 批次審核 | ✅ | `SalesReturnIndex.razor` 加入 `BatchApprovalModalComponent` |
 | Index 審核狀態欄 | ✅ | `SalesReturnFieldConfiguration` 加入 `IsApproved` Badge 欄位 |
 | PermissionRegistry | ✅ | `SalesReturn.Approve` 本輪加入 |
@@ -479,6 +483,59 @@ if (!isManualApproval && !result.Data.IsApproved)
 
 ---
 
+## 三-D、第六輪（2026-03-04）— 庫存異動與審核整合 + ApprovedByDisplayName 修正
+
+### ✅ 庫存異動審核閘門
+
+4 個庫存模組（進貨單、進貨退回、銷貨出貨、銷貨退回）的庫存異動，現在由 `ApprovalConfigHelper.ShouldUpdateInventory()` 控管：
+
+- **自動審核模式**：儲存時 `ShouldUpdateInventory` 回傳 `true`，庫存立即更新
+- **人工審核模式**：儲存時跳過庫存更新；核准後才觸發庫存異動
+
+| 模組 | 儲存時庫存閘門 | 核准後庫存觸發 |
+|------|--------------|--------------|
+| `PurchaseReceivingEditModal` | `ShouldUpdateInventory` 包裹 `ConfirmReceiptAsync`/`UpdateInventoryByDifferenceAsync` | `HandleApprove` → 庫存異動 |
+| `PurchaseReturnEditModal` | `SaveWithDetailsAsync(entity, details, shouldUpdateInventory)` 參數控制 | `HandleApprove` → `SaveWithDetailsAsync(..., updateInventory: true)` |
+| `SalesDeliveryEditModal` | `ShouldUpdateInventory` 包裹 `UpdateInventoryByDifferenceAsync` | `HandleApprove` → 庫存異動 |
+| `SalesReturnEditModal` | `ShouldUpdateInventory` 包裹 `AddStockAsync` | `HandleApprove` → 庫存異動 |
+
+其餘 3 個模組（報價單、採購訂單、銷售訂單）不異動庫存，不受影響。
+
+### ✅ ApprovedByDisplayName 7 個實體修正
+
+所有 7 個實體的 `[NotMapped] ApprovedByDisplayName` 計算屬性更新為三條件判斷：
+
+```csharp
+public string ApprovedByDisplayName =>
+    IsApproved ? (ApprovedByUser?.Name ?? "系統自動審核") :
+    !string.IsNullOrEmpty(RejectReason) ? (ApprovedByUser?.Name ?? "") : "";
+```
+
+- 已核准：顯示審核者名稱（`ApprovedByUser?.Name`），若為自動審核（`ApprovedBy = null`）則顯示「系統自動審核」
+- 已駁回（`RejectReason` 不為空）：顯示駁回者名稱
+- 待審核：空白
+
+### ✅ ApprovalConfigHelper 新增 ShouldUpdateInventory 方法
+
+```csharp
+public static bool ShouldUpdateInventory(bool isManualApproval, bool isApproved)
+{
+    if (!isManualApproval) return true;   // 自動審核：一律允許
+    return isApproved;                     // 人工審核：核准後才允許
+}
+```
+
+### ✅ PurchaseReturnService.SaveWithDetailsAsync 新增 updateInventory 參數
+
+```csharp
+public async Task<ServiceResult<PurchaseReturn>> SaveWithDetailsAsync(
+    PurchaseReturn entity, List<PurchaseReturnDetail> details, bool updateInventory = true)
+```
+
+庫存回扣邏輯以 `if (updateInventory && _inventoryStockService != null)` 閘門保護。
+
+---
+
 ## 四、尚未完成項目（待下一輪）
 
 ### 🟢 G — 審核歷史（可延後）
@@ -496,17 +553,17 @@ if (!isManualApproval && !result.Data.IsApproved)
 
 ### RejectAsync 欄位行為
 
-本輪實作的 `RejectAsync` 採用「清空核准資訊」策略：
+所有模組的 `RejectAsync` 實作統一記錄駁回者資訊：
 
 ```csharp
 entity.IsApproved  = false;
-entity.ApprovedBy  = null;   // 清空
-entity.ApprovedAt  = null;   // 清空
-entity.RejectReason = reason; // 保留駁回原因
+entity.ApprovedBy  = rejectedBy;  // 記錄駁回者
+entity.ApprovedAt  = DateTime.Now; // 記錄駁回時間
+entity.RejectReason = reason;      // 駁回原因
 ```
 
-> 注意：實作指南範本中 `ApprovedBy = rejectedBy`、`ApprovedAt = DateTime.Now`（記錄駁回人與時間）。
-> 兩種策略皆可運作，未來統一規範時可選擇其一並全面對齊。
+> `ApprovedBy` / `ApprovedAt` 語義為「最後審核動作的執行者與時間」，不限於核准場景。
+> 駁回後 `ApprovedByDisplayName` 會顯示駁回者名稱（透過 `!string.IsNullOrEmpty(RejectReason)` 分支判斷）。
 
 ### isManualApproval 的載入時機規則（第三輪原名 isApprovalEnabled，第五輪改名）
 

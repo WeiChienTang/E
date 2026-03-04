@@ -82,6 +82,24 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "預設提醒時間（分鐘）")]
         public int DefaultReminderMinutes { get; set; } = 15;
 
+        // ===== 系統訊息顯示時長 (毫秒) =====
+
+        /// <summary>成功訊息顯示時長（毫秒），預設 2000</summary>
+        [Display(Name = "成功訊息顯示時長")]
+        public int ToastSuccessDurationMs { get; set; } = 2000;
+
+        /// <summary>錯誤訊息顯示時長（毫秒），預設 2000</summary>
+        [Display(Name = "錯誤訊息顯示時長")]
+        public int ToastErrorDurationMs { get; set; } = 2000;
+
+        /// <summary>警告訊息顯示時長（毫秒），預設 2000</summary>
+        [Display(Name = "警告訊息顯示時長")]
+        public int ToastWarningDurationMs { get; set; } = 2000;
+
+        /// <summary>資訊訊息顯示時長（毫秒），預設 2000</summary>
+        [Display(Name = "資訊訊息顯示時長")]
+        public int ToastInfoDurationMs { get; set; } = 2000;
+
         // ===== 導覽列顯示設定 =====
 
         /// <summary>是否在側邊選單中顯示已停用的模組（灰色鎖定狀態）。false = 完全隱藏</summary>

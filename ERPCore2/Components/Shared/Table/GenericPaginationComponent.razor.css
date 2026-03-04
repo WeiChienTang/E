@@ -1,0 +1,183 @@
+/* GenericPaginationComponent.razor.css - 分頁組件專用樣式 */
+/* 設計語言統一：使用 CSS 變數 + transition，與 NavMenu 一致 */
+
+/* ========================================= */
+/* 分頁容器                                   */
+/* ========================================= */
+
+.pagination-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 1rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ========================================= */
+/* 左側：資料統計資訊                          */
+/* ========================================= */
+
+.pagination-info {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ========================================= */
+/* 中間：分頁按鈕群                            */
+/* ========================================= */
+
+.pagination-nav {
+    display: flex;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.pagination-nav .pagination {
+    gap: 3px;
+}
+
+/* 頁碼按鈕基礎樣式 - 使用 Bootstrap .pagination 語義結構 */
+.pagination-nav .page-link {
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    border-color: var(--border-color);
+    border-radius: var(--radius) !important;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    min-width: 2rem;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+/* hover 效果 - 與 NavMenu transition 統一 */
+.pagination-nav .page-item:not(.active):not(.disabled) .page-link:hover {
+    background: var(--bg-tertiary);
+    color: var(--primary-blue);
+    border-color: var(--primary-blue);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* 啟用狀態 - 使用專案主色 */
+.pagination-nav .page-item.active .page-link {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: var(--primary-white);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(var(--primary-blue-rgb), 0.3);
+}
+
+/* 停用狀態 */
+.pagination-nav .page-item.disabled .page-link {
+    color: var(--text-light);
+    background: var(--bg-secondary);
+    border-color: var(--border-light);
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* 省略號樣式 */
+.pagination-nav .page-ellipsis {
+    border: none;
+    background: transparent !important;
+    cursor: default;
+    padding: 0.25rem 0.25rem;
+    min-width: 1.5rem;
+    letter-spacing: 2px;
+    color: var(--text-light);
+}
+
+/* ========================================= */
+/* 右側：每頁筆數選擇器                        */
+/* ========================================= */
+
+.page-size-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.page-size-label {
+    color: var(--text-secondary);
+    margin-bottom: 0;
+}
+
+.page-size-select {
+    width: auto !important;
+    min-width: 4rem;
+    padding: 0.2rem 1.75rem 0.2rem 0.5rem;
+    font-size: 0.8125rem;
+    border-color: var(--border-color);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.page-size-select:focus {
+    border-color: var(--primary-blue);
+    box-shadow: var(--focus-shadow-primary);
+}
+
+.page-size-unit {
+    color: var(--text-secondary);
+}
+
+/* ========================================= */
+/* 響應式調整                                  */
+/* ========================================= */
+
+/* 平板：資訊列和選擇器縮為上下排列 */
+@media (max-width: 768px) {
+    .pagination-container {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .pagination-info {
+        order: 2;
+        text-align: center;
+    }
+
+    .pagination-nav {
+        order: 1;
+        width: 100%;
+    }
+
+    .page-size-selector {
+        order: 3;
+    }
+}
+
+/* 手機版：隱藏圖示旁的文字標籤 */
+@media (max-width: 576px) {
+    .pagination-text-label {
+        display: none;
+    }
+
+    .pagination-nav .page-link {
+        padding: 0.2rem 0.375rem;
+        min-width: 1.75rem;
+        font-size: 0.75rem;
+    }
+
+    .page-size-label {
+        display: none;
+    }
+
+    .pagination-info small {
+        font-size: 0.7rem;
+    }
+}

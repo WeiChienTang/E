@@ -1,3 +1,19 @@
+/* ===== 區段容器 - 水平並排 ===== */
+.display-sections-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.display-section-column {
+    flex: 1 1 calc(33.333% - 0.67rem);
+    max-width: calc(33.333% - 0.67rem);
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 .section-header {
     padding: 0.25rem 0;
     border-bottom: 1px solid var(--border-light);
@@ -55,4 +71,17 @@
     font-size: 0.7rem;
     line-height: 1;
     display: block;
+}
+
+/* 手機版：區段垂直堆疊 */
+@media (max-width: 576px) {
+    .display-sections-container {
+        flex-direction: column;
+    }
+
+    .display-section-column {
+        flex: 1 1 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
 }

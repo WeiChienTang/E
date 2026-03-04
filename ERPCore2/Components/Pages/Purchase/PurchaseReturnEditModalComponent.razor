@@ -1276,7 +1276,9 @@
             }
                         
             // 呼叫服務的 SaveWithDetailsAsync 方法
-            var result = await PurchaseReturnService.SaveWithDetailsAsync(purchaseReturn, purchaseReturnDetails);
+            // 審核守衛：人工審核模式下，需核准後才更新庫存；自動審核模式下，儲存即更新
+            bool shouldUpdateInventory = ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, purchaseReturn.IsApproved);
+            var result = await PurchaseReturnService.SaveWithDetailsAsync(purchaseReturn, purchaseReturnDetails, shouldUpdateInventory);
             
             if (result == null)
             {
@@ -1401,10 +1403,24 @@
             }
 
             var result = await PurchaseReturnService.ApproveAsync(PurchaseReturnId.Value, currentUserId.Value);
-            if (result.IsSuccess) return true;
+            if (!result.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "審核通過失敗");
+                return false;
+            }
 
-            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "審核通過失敗");
-            return false;
+            // 核准成功後觸發庫存更新（人工審核模式下，庫存在此才執行）
+            try
+            {
+                // 使用 updateInventory=true 重新儲存並更新庫存
+                await PurchaseReturnService.SaveWithDetailsAsync(entity, purchaseReturnDetails, updateInventory: true);
+            }
+            catch (Exception inventoryEx)
+            {
+                await NotificationService.ShowWarningAsync($"核准成功，但庫存更新發生錯誤：{inventoryEx.Message}");
+            }
+
+            return true;
         }
         catch (Exception ex)
         {

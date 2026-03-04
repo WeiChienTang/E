@@ -165,16 +165,6 @@
     transition: all 0.15s ease-in-out;
 }
 
-/* 分頁按鈕群組樣式調整 */
-.table-container-hover + div .btn-group .btn {
-    transition: all 0.15s ease-in-out;
-}
-
-.table-container-hover + div .btn-group .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
 /* 響應式調整 */
 @media (max-width: 768px) {
     .table-container-hover:hover {
@@ -296,15 +286,6 @@
 
 /* 分頁按鈕群組響應式調整 */
 @media (max-width: 576px) {
-    .btn-group {
-        gap: 2px;
-    }
-    
-    .btn-group .btn {
-        font-size: 1rem;
-        padding: 0.25rem 0.5rem;
-    }
-    
     /* 小螢幕下的表格進一步優化 */
     .table-responsive {
         border: 1px solid var(--border-color);

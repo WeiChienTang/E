@@ -950,13 +950,35 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
 
     /// <summary>
     /// 設定屬性值並觸發變更通知（公開方法，用於 UI 綁定）
+    /// 內建值比對：若新值與當前值相同，則不觸發變更通知，避免誤觸 dirty flag
     /// </summary>
     protected void SetPropertyValue(TModel model, string propertyName, object? value)
     {
+        // 先取得當前值，比對是否真的有變更
+        var currentValue = GetPropertyValue(model, propertyName);
+        if (AreValuesEqual(currentValue, value)) return;
+        
         SetPropertyValueInternal(model, propertyName, value);
         
         // 使用 fire-and-forget 模式觸發事件，避免 async void
         _ = NotifyFieldChanged(propertyName, value);
+    }
+    
+    /// <summary>
+    /// 比較兩個值是否相等（處理 null、空字串、型別轉換等邊界情況）
+    /// </summary>
+    private static bool AreValuesEqual(object? current, object? incoming)
+    {
+        // 兩者皆 null
+        if (current == null && incoming == null) return true;
+        
+        // 處理 string 的 null vs "" 等效情況
+        var currentStr = current?.ToString();
+        var incomingStr = incoming?.ToString();
+        if (string.IsNullOrEmpty(currentStr) && string.IsNullOrEmpty(incomingStr)) return true;
+        
+        // 一般比對：轉字串後比較（涵蓋 int/decimal/enum 與 string 之間的跨型別比對）
+        return string.Equals(currentStr, incomingStr, StringComparison.Ordinal);
     }
 
     /// <summary>
