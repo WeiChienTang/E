@@ -844,6 +844,13 @@
   <data name="Field.PhoneNumber" xml:space="preserve"><value>Numero ng Telepono</value></data>
   <data name="Field.EmergencyContact" xml:space="preserve"><value>Emergency Contact</value></data>
   <data name="Field.EmergencyPhone" xml:space="preserve"><value>Emergency Phone</value></data>
+  <data name="Field.EmergencyContactRelationship" xml:space="preserve"><value>Relasyon sa Emergency Contact</value></data>
+  <data name="Field.Nationality" xml:space="preserve"><value>Nasyonalidad</value></data>
+  <data name="Field.MaritalStatus" xml:space="preserve"><value>Katayuan ng Sibil</value></data>
+  <data name="Field.BloodType" xml:space="preserve"><value>Uri ng Dugo</value></data>
+  <data name="Field.EmployeeType" xml:space="preserve"><value>Uri ng Empleyado</value></data>
+  <data name="Field.HomeAddress" xml:space="preserve"><value>Tirahan</value></data>
+  <data name="Field.MailingAddress" xml:space="preserve"><value>Mailing Address</value></data>
   <data name="Field.HireDate" xml:space="preserve"><value>Petsa ng Pagtatrabaho</value></data>
   <data name="Field.ResignDate" xml:space="preserve"><value>Petsa ng Pagpapaalis</value></data>
   <data name="Field.EmploymentStatus" xml:space="preserve"><value>Katayuan ng Trabaho</value></data>

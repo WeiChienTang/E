@@ -9,17 +9,14 @@
              OnEditVehicle="@HandleEditVehicle"
              OnUnlinkVehicle="@HandleUnlinkVehicle" />
 
-@* 車輛編輯 Modal - 條件式渲染避免循環元件實例化 *@
-@if (isVehicleModalVisible)
-{
-    <VehicleEditModalComponent @ref="vehicleEditModal"
-                              IsVisible="@isVehicleModalVisible"
-                              IsVisibleChanged="@HandleVehicleModalVisibilityChanged"
-                              VehicleId="@editingVehicleId"
-                              PrefilledValues="@GetVehiclePrefilledValues()"
-                              OnVehicleSaved="@OnVehicleSavedWrapper"
-                              OnCancel="@HandleVehicleModalCancel" />
-}
+@* 車輛編輯 Modal - 修正：改為常駐渲染，避免 @if 移除元件時 Dispose 未正確清理 ESC 監聽器 *@
+<VehicleEditModalComponent @ref="vehicleEditModal"
+                          IsVisible="@isVehicleModalVisible"
+                          IsVisibleChanged="@HandleVehicleModalVisibilityChanged"
+                          VehicleId="@editingVehicleId"
+                          PrefilledValues="@GetVehiclePrefilledValues()"
+                          OnVehicleSaved="@OnVehicleSavedWrapper"
+                          OnCancel="@HandleVehicleModalCancel" />
 
 @* 車輛選擇 Modal *@
 <VehicleSelectModal IsVisible="@isVehicleSelectModalVisible"

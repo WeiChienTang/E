@@ -6,6 +6,7 @@
 @using ERPCore2.Data.Entities
 @inject IProductService ProductService
 @inject IUnitService UnitService
+@inject IProductCategoryService ProductCategoryService
 @inject IProductCompositionService ProductCompositionService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
@@ -40,54 +41,106 @@
     </HeaderButtons>
     <BodyContent>
         <div class="container-fluid">
-            @* ===== 配方快速套用區 ===== *@
-            @if (!IsReadOnly && Compositions.Any())
+            @* ===== 配方選擇區：三區段 ===== *@
+            @if (!IsReadOnly)
             {
-                <div class="mb-3">
-                    <label class="composition-section-label">
-                        <i class="bi bi-lightning-charge me-1"></i>@L["Composition.QuickApply"]
-                    </label>
-                    <div class="composition-pill-scroll">
-                        <div class="composition-pill-group">
-                            @foreach (var comp in Compositions)
-                            {
-                                var isActive = selectedCompositionId == comp.Id && !isCustomMode;
-                                var isCurrentCustomer = comp.CustomerId.HasValue && comp.CustomerId == CurrentCustomerId;
-                                var isOtherCustomer = comp.CustomerId.HasValue && comp.CustomerId != CurrentCustomerId;
-                                var pillVariant = isActive ? "active" 
-                                                : isCurrentCustomer ? "current-customer" 
-                                                : isOtherCustomer ? "other-customer" 
-                                                : "";
-                                var iconClass = isCurrentCustomer ? "bi-person-check" 
-                                              : isOtherCustomer ? "bi-person-lock" 
-                                              : "bi-diagram-3";
-                                var displayName = !string.IsNullOrEmpty(comp.Name) ? comp.Name : comp.Code;
+                var standardComps = Compositions.Where(c => !c.CustomerId.HasValue).ToList();
+                var customerComps = Compositions.Where(c => c.CustomerId.HasValue).ToList();
+                var hasAnySection = standardComps.Any() || customerComps.Any();
+
+                @if (hasAnySection || true) @* 自定義區段永遠顯示 *@
+                {
+                    <div class="composition-sections-container">
+                        @* ── 區段 1：快速套用（通用配方） ── *@
+                        @if (standardComps.Any())
+                        {
+                            <div class="composition-section">
+                                <div class="composition-section-header section-standard">
+                                    <i class="bi bi-lightning-charge composition-section-icon"></i>
+                                    <span class="composition-section-title">@L["Composition.SectionStandard"]</span>
+                                </div>
+                                <div class="composition-section-body">
+                                    @foreach (var comp in standardComps)
+                                    {
+                                        var isActive = selectedCompositionId == comp.Id && !isCustomMode;
+                                        var displayName = !string.IsNullOrEmpty(comp.Name) ? comp.Name : comp.Code;
+                                        <button type="button"
+                                                class="composition-pill @(isActive ? "active" : "")"
+                                                title="@comp.Code"
+                                                @onclick="() => ApplyComposition(comp.Id)">
+                                            <i class="bi bi-diagram-3"></i>
+                                            <span class="composition-pill-name">@displayName</span>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @* ── 區段 2：客製化（客戶專屬配方） ── *@
+                        @if (customerComps.Any())
+                        {
+                            <div class="composition-section">
+                                <div class="composition-section-header section-customer">
+                                    <i class="bi bi-person-gear composition-section-icon"></i>
+                                    <span class="composition-section-title">@L["Composition.SectionCustomer"]</span>
+                                </div>
+                                <div class="composition-section-body">
+                                    @foreach (var comp in customerComps)
+                                    {
+                                        var isActive = selectedCompositionId == comp.Id && !isCustomMode;
+                                        var isCurrentCustomer = comp.CustomerId == CurrentCustomerId;
+                                        var pillVariant = isActive ? "active" : isCurrentCustomer ? "current-customer" : "other-customer";
+                                        var iconClass = isCurrentCustomer ? "bi-person-check" : "bi-person-lock";
+                                        var displayName = !string.IsNullOrEmpty(comp.Name) ? comp.Name : comp.Code;
+                                        <button type="button"
+                                                class="composition-pill @pillVariant"
+                                                title="@comp.Code"
+                                                @onclick="() => ApplyComposition(comp.Id)">
+                                            <i class="bi @iconClass"></i>
+                                            <span class="composition-pill-name">@displayName</span>
+                                            @if (isCurrentCustomer)
+                                            {
+                                                <span class="composition-pill-tag tag-current">@L["Composition.CurrentCustomer"]</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="composition-pill-tag tag-other">@(comp.Customer?.CompanyName ?? L["Composition.OtherCustomer"].ToString())</span>
+                                            }
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @* ── 區段 3：自定義（空白編輯模式） ── *@
+                        <div class="composition-section">
+                            <div class="composition-section-header section-custom">
+                                <i class="bi bi-stars composition-section-icon"></i>
+                                <span class="composition-section-title">@L["Composition.SectionCustom"]</span>
+                            </div>
+                            <div class="composition-section-body">
                                 <button type="button"
-                                        class="composition-pill @pillVariant"
-                                        title="@comp.Code"
-                                        @onclick="() => ApplyComposition(comp.Id)">
-                                    <i class="bi @iconClass"></i>
-                                    <span class="composition-pill-name">@displayName</span>
-                                    @if (isCurrentCustomer)
-                                    {
-                                        <span class="composition-pill-tag tag-current">@L["Composition.CurrentCustomer"]</span>
-                                    }
-                                    else if (isOtherCustomer)
-                                    {
-                                        <span class="composition-pill-tag tag-other">@(comp.Customer?.CompanyName ?? L["Composition.OtherCustomer"].ToString())</span>
-                                    }
+                                        class="composition-pill custom-mode @(isCustomMode ? "active" : "")"
+                                        @onclick="EnterCustomMode">
+                                    <i class="bi bi-pencil-square"></i>
+                                    <span class="composition-pill-name">@L["Composition.CustomModeShort"]</span>
                                 </button>
-                            }
-                            <button type="button"
-                                    class="composition-pill custom-mode @(isCustomMode ? "active" : "")"
-                                    @onclick="EnterCustomMode">
-                                <i class="bi bi-stars"></i>
-                                <span class="composition-pill-name">@L["Composition.CustomModeShort"]</span>
-                            </button>
+                            </div>
                         </div>
                     </div>
+                    <hr class="my-2" />
+                }
+            }
+
+            @* ===== 自定義模式：批量選擇按鈕 ===== *@
+            @if (!IsReadOnly && isCustomMode)
+            {
+                <div class="mb-2">
+                    <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                            Size="ButtonSize.Small"
+                                            Text=@L["Composition.BatchSelect"]
+                                            OnClick="OpenProductPicker" />
                 </div>
-                <hr class="my-2" />
             }
 
             @* ===== 組件明細表格 ===== *@
@@ -112,6 +165,15 @@
         </div>
     </BodyContent>
 </BaseModalComponent>
+
+@* 商品批量選擇器 *@
+<ProductPickerModal IsVisible="@_showProductPicker"
+                   AvailableProducts="@GetPickerAvailableProducts()"
+                   AvailableCategories="@_availableCategories"
+                   AvailableUnits="@availableUnits"
+                   AlreadyAddedProductIds="@GetAlreadyAddedProductIds()"
+                   OnConfirmed="@HandleProductsSelected"
+                   OnCancelled="@(() => _showProductPicker = false)" />
 
 @* 空白 BOM 儲存確認對話框 *@
 <GenericConfirmModalComponent IsVisible="@_showEmptyConfirm"
@@ -158,7 +220,9 @@
     private List<TCompositionDetail> compositionDetails = new();
     private List<ERPCore2.Data.Entities.Product> availableProducts = new();
     private List<ERPCore2.Data.Entities.Unit> availableUnits = new();
+    private List<ERPCore2.Data.Entities.ProductCategory> _availableCategories = new();
     private InteractiveTableComponent<TCompositionDetail>? tableComponent;
+    private bool _showProductPicker = false;
     
     // ===== 配方選擇狀態 =====
     private int? selectedCompositionId;
@@ -190,9 +254,10 @@
 
         try
         {
-            // 載入可用的商品和單位
+            // 載入可用的商品、單位、商品類別
             availableProducts = await ProductService.GetAllAsync();
             availableUnits = await UnitService.GetAllAsync();
+            _availableCategories = await ProductCategoryService.GetAllAsync();
 
             // 優先從父組件的快取載入
             if (OnRequestCachedData != null)
@@ -360,6 +425,85 @@ private string GetModalTitle()
         tableComponent?.RefreshEmptyRow();
     }
 
+    // ===== 批量選擇器 =====
+    
+    private void OpenProductPicker() => _showProductPicker = true;
+
+    /// <summary>
+    /// 取得批量選擇器的可用商品（排除主商品本身）
+    /// </summary>
+    private List<Product> GetPickerAvailableProducts()
+    {
+        if (!ProductId.HasValue) return availableProducts;
+        return availableProducts.Where(p => p.Id != ProductId.Value).ToList();
+    }
+
+    /// <summary>
+    /// 取得已加入的商品 ID 集合（用於選擇器標示「已加入」）
+    /// </summary>
+    private HashSet<int> GetAlreadyAddedProductIds()
+    {
+        var ids = new HashSet<int>();
+        foreach (var detail in compositionDetails)
+        {
+            var prop = detail.GetType().GetProperty("ComponentProductId");
+            var id = (int)(prop?.GetValue(detail) ?? 0);
+            if (id > 0) ids.Add(id);
+        }
+        return ids;
+    }
+
+    /// <summary>
+    /// 批量選擇器確認：將選取的商品建立為 TCompositionDetail 加入表格
+    /// </summary>
+    private async Task HandleProductsSelected(List<Product> selectedProducts)
+    {
+        _showProductPicker = false;
+        if (!selectedProducts.Any()) return;
+
+        _dataLoadCompleted = false;
+        StateHasChanged();
+
+        try
+        {
+            var alreadyAdded = GetAlreadyAddedProductIds();
+
+            foreach (var product in selectedProducts.Where(p => !alreadyAdded.Contains(p.Id)))
+            {
+                var item = CreateEmptyItem();
+
+                item.GetType().GetProperty("ComponentProductId")?.SetValue(item, product.Id);
+                item.GetType().GetProperty("ComponentProduct")?.SetValue(item, product);
+                item.GetType().GetProperty("Quantity")?.SetValue(item, 1m);
+                item.GetType().GetProperty("UnitId")?.SetValue(item, product.UnitId > 0 ? (int?)product.UnitId : null);
+
+                if (product.UnitId > 0)
+                {
+                    var unit = availableUnits.FirstOrDefault(u => u.Id == product.UnitId);
+                    item.GetType().GetProperty("Unit")?.SetValue(item, unit);
+                }
+
+                compositionDetails.Add(item);
+            }
+
+            var addedCount = selectedProducts.Count(p => !alreadyAdded.Contains(p.Id));
+            if (addedCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync(
+                    string.Format(L["Composition.BatchAddedCount"].ToString(), addedCount));
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"{ex.Message}");
+        }
+        finally
+        {
+            _dataLoadCompleted = true;
+            StateHasChanged();
+        }
+    }
+
     // ===== InteractiveTable 配置 =====
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
     {
@@ -521,9 +665,17 @@ private string GetModalTitle()
                 })
                 .ToList();
 
-            // 空白 BOM 儲存確認：透過 GenericConfirmModalComponent 讓使用者確認
+            // 空白 BOM 處理
             if (!validDetails.Any())
             {
+                if (isCustomMode)
+                {
+                    // 自定義模式：不允許空白，直接提示
+                    await NotificationService.ShowWarningAsync(L["Composition.CustomModeEmptyError"].ToString());
+                    return;
+                }
+                
+                // 非自定義模式：透過 GenericConfirmModalComponent 讓使用者確認
                 _pendingSaveDetails = validDetails;
                 _showEmptyConfirm = true;
                 return;

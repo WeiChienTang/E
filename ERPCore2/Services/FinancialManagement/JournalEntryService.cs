@@ -377,6 +377,7 @@ namespace ERPCore2.Services
                     {
                         line.Id = 0;
                         line.JournalEntryId = existing.Id;
+                        line.JournalEntry = null!;
                         line.AccountItem = null!;
                         line.CreatedAt = DateTime.Now;
                         line.CreatedBy = savedBy;

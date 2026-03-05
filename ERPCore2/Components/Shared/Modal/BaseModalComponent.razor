@@ -725,29 +725,54 @@
     {
         try
         {
+            bool wasListenerActive;
             DotNetObjectReference<BaseModalComponent>? refToDispose = null;
             
             lock (_escKeyLock)
             {
                 _isDisposed = true;
+                wasListenerActive = _isEscKeyListenerActive;
                 _isEscKeyListenerActive = false;
                 refToDispose = _escKeyDotNetRef;
                 _escKeyDotNetRef = null;
             }
             
-            refToDispose?.Dispose();
-            
-            _ = Task.Run(async () =>
+            // 關鍵修復：如果 ESC 監聽器仍在活動中，需要通知 JS 清理堆疊
+            // 之前的 bug：先設 _isEscKeyListenerActive=false 再呼叫 CleanupEscKeyListenerAsync，
+            // 但 CleanupEscKeyListenerAsync 檢查到 flag 為 false 就直接 return，
+            // 導致 JS escKeyDotNetHelpers 堆疊殘留失效的引用，後續 ESC 全部失效。
+            if (wasListenerActive)
             {
-                try
+                _ = Task.Run(async () =>
                 {
-                    await CleanupEscKeyListenerAsync();
-                }
-                catch
+                    try
+                    {
+                        await JSRuntime.InvokeVoidAsync("cleanupEscKeyListener");
+                        await Task.Delay(200);
+                    }
+                    catch
+                    {
+                        // Blazor 連接可能已斷開，忽略錯誤
+                    }
+                });
+            }
+            
+            // 延遲釋放 DotNetObjectReference，讓 JS 端先完成清理
+            if (refToDispose != null)
+            {
+                _ = Task.Run(async () =>
                 {
-                    // 忽略清理過程中的錯誤
-                }
-            });
+                    try
+                    {
+                        await Task.Delay(300);
+                        refToDispose.Dispose();
+                    }
+                    catch
+                    {
+                        // 忽略釋放過程中的錯誤
+                    }
+                });
+            }
         }
         catch
         {

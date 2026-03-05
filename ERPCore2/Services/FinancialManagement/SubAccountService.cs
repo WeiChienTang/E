@@ -83,36 +83,42 @@ namespace ERPCore2.Services
                 var param = await _systemParameterService.GetSystemParameterAsync();
                 if (param?.AutoCreateCustomerSubAccount != true) return null;
 
-                using var context = await _contextFactory.CreateDbContextAsync();
-
-                var customer = await context.Customers.FindAsync(customerId);
-                if (customer == null) return null;
-
-                var customerName = customer.CompanyName ?? $"客戶{customerId}";
-
-                var specs = BuildCustomerSpecs(param);
-                var results = await GetOrCreateAllSubAccountsAsync(
-                    context, specs, customerName, customer.Code,
-                    param.SubAccountCodeFormat, createdBy,
-                    subAccount => subAccount.LinkedCustomerId = customerId,
-                    id => context.AccountItems
-                        .FirstOrDefaultAsync(a => a.LinkedCustomerId == id
-                            && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable)),
-                    (id, type) => context.AccountItems
-                        .FirstOrDefaultAsync(a => a.LinkedCustomerId == id && a.SubAccountLinkType == type),
-                    customerId);
-
-                var arAccount = results.FirstOrDefault(a =>
-                    a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable);
-
-                _logger?.LogInformation("已完成客戶子科目建立（CustomerId={CustomerId}，共 {Count} 支）", customerId, results.Count);
-                return arAccount;
+                return await CreateCustomerSubAccountCoreAsync(customerId, createdBy, param);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "建立客戶子科目時發生錯誤（CustomerId={CustomerId}）", customerId);
                 return null;
             }
+        }
+
+        /// <summary>客戶子科目建立核心邏輯（不檢查 AutoCreate 開關，供批次補建直接呼叫）</summary>
+        private async Task<AccountItem?> CreateCustomerSubAccountCoreAsync(int customerId, string createdBy, Data.Entities.SystemParameter param)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            var customer = await context.Customers.FindAsync(customerId);
+            if (customer == null) return null;
+
+            var customerName = customer.CompanyName ?? $"客戶{customerId}";
+
+            var specs = BuildCustomerSpecs(param);
+            var results = await GetOrCreateAllSubAccountsAsync(
+                context, specs, customerName, customer.Code,
+                param.SubAccountCodeFormat, createdBy,
+                subAccount => subAccount.LinkedCustomerId = customerId,
+                id => context.AccountItems
+                    .FirstOrDefaultAsync(a => a.LinkedCustomerId == id
+                        && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable)),
+                (id, type) => context.AccountItems
+                    .FirstOrDefaultAsync(a => a.LinkedCustomerId == id && a.SubAccountLinkType == type),
+                customerId);
+
+            var arAccount = results.FirstOrDefault(a =>
+                a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable);
+
+            _logger?.LogInformation("已完成客戶子科目建立（CustomerId={CustomerId}，共 {Count} 支）", customerId, results.Count);
+            return arAccount;
         }
 
         public async Task<AccountItem?> GetOrCreateSupplierSubAccountAsync(int supplierId, string createdBy)
@@ -122,36 +128,42 @@ namespace ERPCore2.Services
                 var param = await _systemParameterService.GetSystemParameterAsync();
                 if (param?.AutoCreateSupplierSubAccount != true) return null;
 
-                using var context = await _contextFactory.CreateDbContextAsync();
-
-                var supplier = await context.Suppliers.FindAsync(supplierId);
-                if (supplier == null) return null;
-
-                var supplierName = supplier.CompanyName ?? $"廠商{supplierId}";
-
-                var specs = BuildSupplierSpecs(param);
-                var results = await GetOrCreateAllSubAccountsAsync(
-                    context, specs, supplierName, supplier.Code,
-                    param.SubAccountCodeFormat, createdBy,
-                    subAccount => subAccount.LinkedSupplierId = supplierId,
-                    id => context.AccountItems
-                        .FirstOrDefaultAsync(a => a.LinkedSupplierId == id
-                            && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable)),
-                    (id, type) => context.AccountItems
-                        .FirstOrDefaultAsync(a => a.LinkedSupplierId == id && a.SubAccountLinkType == type),
-                    supplierId);
-
-                var apAccount = results.FirstOrDefault(a =>
-                    a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable);
-
-                _logger?.LogInformation("已完成廠商子科目建立（SupplierId={SupplierId}，共 {Count} 支）", supplierId, results.Count);
-                return apAccount;
+                return await CreateSupplierSubAccountCoreAsync(supplierId, createdBy, param);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "建立廠商子科目時發生錯誤（SupplierId={SupplierId}）", supplierId);
                 return null;
             }
+        }
+
+        /// <summary>廠商子科目建立核心邏輯（不檢查 AutoCreate 開關，供批次補建直接呼叫）</summary>
+        private async Task<AccountItem?> CreateSupplierSubAccountCoreAsync(int supplierId, string createdBy, Data.Entities.SystemParameter param)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            var supplier = await context.Suppliers.FindAsync(supplierId);
+            if (supplier == null) return null;
+
+            var supplierName = supplier.CompanyName ?? $"廠商{supplierId}";
+
+            var specs = BuildSupplierSpecs(param);
+            var results = await GetOrCreateAllSubAccountsAsync(
+                context, specs, supplierName, supplier.Code,
+                param.SubAccountCodeFormat, createdBy,
+                subAccount => subAccount.LinkedSupplierId = supplierId,
+                id => context.AccountItems
+                    .FirstOrDefaultAsync(a => a.LinkedSupplierId == id
+                        && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable)),
+                (id, type) => context.AccountItems
+                    .FirstOrDefaultAsync(a => a.LinkedSupplierId == id && a.SubAccountLinkType == type),
+                supplierId);
+
+            var apAccount = results.FirstOrDefault(a =>
+                a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable);
+
+            _logger?.LogInformation("已完成廠商子科目建立（SupplierId={SupplierId}，共 {Count} 支）", supplierId, results.Count);
+            return apAccount;
         }
 
         public async Task<AccountItem?> GetOrCreateProductSubAccountAsync(int productId, string createdBy)
@@ -167,35 +179,41 @@ namespace ERPCore2.Services
                 var param = await _systemParameterService.GetSystemParameterAsync();
                 if (param?.AutoCreateProductSubAccount != true) return null;
 
-                var parentCode = param.ProductSubAccountParentCode;
-                var parent = await context.AccountItems
-                    .FirstOrDefaultAsync(a => a.Code == parentCode);
-                if (parent == null)
-                {
-                    _logger?.LogWarning("找不到商品子科目統制科目（{Code}），跳過建立", parentCode);
-                    return null;
-                }
-
-                var product = await context.Products.FindAsync(productId);
-                if (product == null) return null;
-
-                var productName = product.Name ?? $"商品{productId}";
-                var code = await GenerateSubAccountCodeAsync(context, parent, param.SubAccountCodeFormat, product.Code);
-                var subAccount = BuildSubAccount(code, $"{parent.Name} - {productName}", parent, createdBy);
-                subAccount.Description = productName;
-                subAccount.LinkedProductId = productId;
-
-                context.AccountItems.Add(subAccount);
-                await context.SaveChangesAsync();
-
-                _logger?.LogInformation("已建立商品子科目 {Code} 對應商品 {ProductId}", code, productId);
-                return subAccount;
+                return await CreateProductSubAccountCoreAsync(context, productId, createdBy, param);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "建立商品子科目時發生錯誤（ProductId={ProductId}）", productId);
                 return null;
             }
+        }
+
+        /// <summary>商品子科目建立核心邏輯（不檢查 AutoCreate 開關，供批次補建直接呼叫）</summary>
+        private async Task<AccountItem?> CreateProductSubAccountCoreAsync(AppDbContext context, int productId, string createdBy, Data.Entities.SystemParameter param)
+        {
+            var parentCode = param.ProductSubAccountParentCode;
+            var parent = await context.AccountItems
+                .FirstOrDefaultAsync(a => a.Code == parentCode);
+            if (parent == null)
+            {
+                _logger?.LogWarning("找不到商品子科目統制科目（{Code}），跳過建立", parentCode);
+                return null;
+            }
+
+            var product = await context.Products.FindAsync(productId);
+            if (product == null) return null;
+
+            var productName = product.Name ?? $"商品{productId}";
+            var code = await GenerateSubAccountCodeAsync(context, parent, param.SubAccountCodeFormat, product.Code);
+            var subAccount = BuildSubAccount(code, $"{parent.Name} - {productName}", parent, createdBy);
+            subAccount.Description = productName;
+            subAccount.LinkedProductId = productId;
+
+            context.AccountItems.Add(subAccount);
+            await context.SaveChangesAsync();
+
+            _logger?.LogInformation("已建立商品子科目 {Code} 對應商品 {ProductId}", code, productId);
+            return subAccount;
         }
 
         // ===== 批次補建 =====
@@ -207,6 +225,14 @@ namespace ERPCore2.Services
 
             try
             {
+                // 批次補建不檢查 AutoCreateCustomerSubAccount 開關，取得 param 僅供讀取代碼格式與統制科目
+                var param = await _systemParameterService.GetSystemParameterAsync();
+                if (param == null)
+                {
+                    errors.Add("無法取得系統參數");
+                    return (created, skipped, errors);
+                }
+
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var customerIds = await context.Customers
                     .Where(c => c.Status == EntityStatus.Active)
@@ -227,7 +253,8 @@ namespace ERPCore2.Services
                             continue;
                         }
 
-                        var result = await GetOrCreateCustomerSubAccountAsync(id, createdBy);
+                        // 直接呼叫核心邏輯，不經過 AutoCreate 開關檢查
+                        var result = await CreateCustomerSubAccountCoreAsync(id, createdBy, param);
                         if (result != null) created++;
                         else skipped++;
                     }
@@ -252,6 +279,14 @@ namespace ERPCore2.Services
 
             try
             {
+                // 批次補建不檢查 AutoCreateSupplierSubAccount 開關
+                var param = await _systemParameterService.GetSystemParameterAsync();
+                if (param == null)
+                {
+                    errors.Add("無法取得系統參數");
+                    return (created, skipped, errors);
+                }
+
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var supplierIds = await context.Suppliers
                     .Where(s => s.Status == EntityStatus.Active)
@@ -271,7 +306,8 @@ namespace ERPCore2.Services
                             continue;
                         }
 
-                        var result = await GetOrCreateSupplierSubAccountAsync(id, createdBy);
+                        // 直接呼叫核心邏輯，不經過 AutoCreate 開關檢查
+                        var result = await CreateSupplierSubAccountCoreAsync(id, createdBy, param);
                         if (result != null) created++;
                         else skipped++;
                     }
@@ -296,6 +332,14 @@ namespace ERPCore2.Services
 
             try
             {
+                // 批次補建不檢查 AutoCreateProductSubAccount 開關
+                var param = await _systemParameterService.GetSystemParameterAsync();
+                if (param == null)
+                {
+                    errors.Add("無法取得系統參數");
+                    return (created, skipped, errors);
+                }
+
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var productIds = await context.Products
                     .Where(p => p.Status == EntityStatus.Active)
@@ -314,7 +358,8 @@ namespace ERPCore2.Services
                             continue;
                         }
 
-                        var result = await GetOrCreateProductSubAccountAsync(id, createdBy);
+                        // 直接呼叫核心邏輯，不經過 AutoCreate 開關檢查
+                        var result = await CreateProductSubAccountCoreAsync(context, id, createdBy, param);
                         if (result != null) created++;
                         else skipped++;
                     }

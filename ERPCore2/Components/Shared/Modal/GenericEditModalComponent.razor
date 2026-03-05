@@ -811,6 +811,12 @@
                     
                     // 方案三：主動更新所有 ActionButtons，確保按鈕狀態與實體資料同步
                     UpdateAllActionButtons();
+
+                    // 通知父組件實體已載入（讓子 Tab 元件可以載入對應資料）
+                    if (OnEntityLoaded.HasDelegate && Entity.Id > 0)
+                    {
+                        await OnEntityLoaded.InvokeAsync(Entity.Id);
+                    }
                 }
             }
             else if (_isNavigating)

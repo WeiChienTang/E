@@ -325,32 +325,84 @@ namespace ERPCore2.Services.Reports
                     _ => ""
                 };
 
+                var maritalStatusText = employee.MaritalStatus switch
+                {
+                    MaritalStatus.Single => "未婚",
+                    MaritalStatus.Married => "已婚",
+                    MaritalStatus.Divorced => "離婚",
+                    MaritalStatus.Widowed => "喪偶",
+                    _ => ""
+                };
+
+                var employeeTypeText = employee.EmployeeType switch
+                {
+                    EmployeeType.FullTime => "正職",
+                    EmployeeType.PartTime => "兼職",
+                    EmployeeType.Contract => "約聘",
+                    EmployeeType.Intern => "實習",
+                    EmployeeType.Dispatch => "派遣",
+                    _ => ""
+                };
+
                 // 基本資訊
                 doc.AddKeyValueRow(
                     ("員工編號", employee.Code ?? ""),
                     ("姓名", employee.Name ?? ""));
 
                 doc.AddKeyValueRow(
+                    ("英文姓名", employee.EnglishName ?? ""),
+                    ("身分證字號", employee.IdNumber ?? ""));
+
+                doc.AddKeyValueRow(
+                    ("性別", genderText),
+                    ("婚姻狀態", maritalStatusText));
+
+                doc.AddKeyValueRow(
+                    ("國籍", employee.Nationality ?? ""),
+                    ("血型", employee.BloodType.HasValue ? employee.BloodType.Value.ToString() : ""));
+
+                // 組織架構
+                doc.AddKeyValueRow(
                     ("部門", employee.Department?.Name ?? ""),
                     ("職位", employee.EmployeePosition?.Name ?? ""));
 
                 doc.AddKeyValueRow(
-                    ("性別", genderText),
-                    ("在職狀態", statusText));
+                    ("職稱", employee.JobTitle ?? ""),
+                    ("員工類別", employeeTypeText));
+
+                doc.AddKeyValueRow(
+                    ("在職狀態", statusText),
+                    ("到職日期", employee.HireDate?.ToString("yyyy/MM/dd") ?? ""));
 
                 // 任職資訊
                 doc.AddKeyValueRow(
-                    ("到職日期", employee.HireDate?.ToString("yyyy/MM/dd") ?? ""),
-                    ("離職日期", employee.ResignationDate?.ToString("yyyy/MM/dd") ?? ""));
+                    ("離職日期", employee.ResignationDate?.ToString("yyyy/MM/dd") ?? ""),
+                    ("", ""));
 
                 // 聯絡資訊
                 doc.AddKeyValueRow(
                     ("手機", employee.Mobile ?? ""),
-                    ("Email", employee.Email ?? ""));
+                    ("市話/分機", employee.Phone ?? ""));
+
+                doc.AddKeyValueRow(
+                    ("Email", employee.Email ?? ""),
+                    ("", ""));
+
+                doc.AddKeyValueRow(
+                    ("戶籍地址", employee.HomeAddress ?? ""),
+                    ("", ""));
+
+                doc.AddKeyValueRow(
+                    ("通訊地址", employee.MailingAddress ?? ""),
+                    ("", ""));
 
                 doc.AddKeyValueRow(
                     ("緊急聯絡人", employee.EmergencyContact ?? ""),
                     ("緊急電話", employee.EmergencyPhone ?? ""));
+
+                doc.AddKeyValueRow(
+                    ("聯絡人關係", employee.EmergencyContactRelationship ?? ""),
+                    ("", ""));
             }
 
             // === 頁尾區（最後一頁） ===

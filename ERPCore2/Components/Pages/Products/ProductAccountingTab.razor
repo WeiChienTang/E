@@ -60,14 +60,32 @@ else
 }
 
 @code {
+    /// <summary>商品 ID（由父元件傳入，用於自動載入資料）</summary>
+    [Parameter] public int? ProductId { get; set; }
+
     private int _productId;
+    private int _lastLoadedId;
     private bool _isLoading;
     private bool _isCreating;
     private AccountItem? _subAccount;
 
+    protected override async Task OnParametersSetAsync()
+    {
+        var newId = ProductId ?? 0;
+        if (newId > 0 && newId != _lastLoadedId)
+        {
+            await LoadAsync(newId);
+        }
+        else if (newId <= 0 && _lastLoadedId > 0)
+        {
+            Clear();
+        }
+    }
+
     public async Task LoadAsync(int productId)
     {
         _productId = productId;
+        _lastLoadedId = productId;
         await RefreshAsync();
         StateHasChanged();
     }
@@ -75,6 +93,7 @@ else
     public void Clear()
     {
         _productId = 0;
+        _lastLoadedId = 0;
         _subAccount = null;
         StateHasChanged();
     }

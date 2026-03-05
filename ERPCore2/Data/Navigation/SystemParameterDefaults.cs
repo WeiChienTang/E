@@ -104,7 +104,7 @@ public static class SystemParameterDefaults
     public const string DefaultProductSubAccountParentCode = "1231";
 
     /// <summary>預設子科目代碼格式：流水號</summary>
-    public const SubAccountCodeFormat DefaultSubAccountCodeFormat = SubAccountCodeFormat.Sequential;
+    public const SubAccountCodeFormat DefaultSubAccountCodeFormat = SubAccountCodeFormat.EntityCode;
 
     /// <summary>
     /// 將系統參數實體的所有業務欄位重置為預設值

@@ -359,6 +359,7 @@
                 // 基本資訊區段
                 new() { PropertyName = nameof(Employee.Code), Label = L["Field.EmployeeCode"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EmployeeCode"]], IsRequired = true, MaxLength = 20, HelpText = "員工的唯一識別編號，新增時系統會自動產生，也可手動修改" },
                 new() { PropertyName = nameof(Employee.Name), Label = L["Field.FullName"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.FullName"]], IsRequired = true, MaxLength = 10, HelpText = "員工的名字" },
+                new() { PropertyName = nameof(Employee.EnglishName), Label = L["Field.EnglishName"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EnglishName"]], MaxLength = 50, HelpText = "員工英文姓名（護照、國際往來用）" },
                 new()
                 {
                     PropertyName = nameof(Employee.Gender), Label = L["Field.Gender"], FieldType = FormFieldType.Select, HelpText = "員工性別",
@@ -366,14 +367,35 @@
                 },
                 new() { PropertyName = nameof(Employee.BirthDate), Label = L["Field.Birthday"], FieldType = FormFieldType.Date, Placeholder = L["Placeholder.PleaseSelect", L["Field.Birthday"]], HelpText = "員工出生日期" },
                 new() { PropertyName = nameof(Employee.IdNumber), Label = L["Field.IdNumber"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.IdNumber"]], MaxLength = 10, HelpText = "員工身分證字號" },
+                new() { PropertyName = nameof(Employee.Nationality), Label = L["Field.Nationality"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.Nationality"]], MaxLength = 50, HelpText = "員工國籍" },
+                new()
+                {
+                    PropertyName = nameof(Employee.MaritalStatus), Label = L["Field.MaritalStatus"], FieldType = FormFieldType.Select, HelpText = "員工婚姻狀態",
+                    Options = Enum.GetValues<MaritalStatus>().Select(ms => new SelectOption { Text = GetEnumDisplayName(ms), Value = ((int)ms).ToString() }).ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(Employee.BloodType), Label = L["Field.BloodType"], FieldType = FormFieldType.Select, HelpText = "員工血型（緊急醫療用途）",
+                    Options = Enum.GetValues<BloodType>().Select(bt => new SelectOption { Text = GetEnumDisplayName(bt), Value = ((int)bt).ToString() }).ToList()
+                },
                 // 聯絡資訊區段
                 new() { PropertyName = nameof(Employee.Mobile), Label = L["Field.PhoneNumber"], FieldType = FormFieldType.MobilePhone, Placeholder = "0912-345-678", HelpText = "員工個人手機號碼（10碼，以09開頭）", ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.Mobile, IsSaved) },
-                new() { PropertyName = nameof(Employee.Email), Label = L["Field.Email"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.Email"]], MaxLength = 50, HelpText = "員工電子郵件地址", ActionButtons = ContactLinkHelper.CreateEmailButtons(() => editModalComponent?.Entity?.Email, IsSaved) },
+                new() { PropertyName = nameof(Employee.Phone), Label = L["Field.Phone"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.Phone"]], MaxLength = 20, HelpText = "市話或公司分機號碼", ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.Phone, IsSaved) },
+                new() { PropertyName = nameof(Employee.Email), Label = L["Field.Email"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.Email"]], MaxLength = 100, HelpText = "員工電子郵件地址", ActionButtons = ContactLinkHelper.CreateEmailButtons(() => editModalComponent?.Entity?.Email, IsSaved) },
+                new() { PropertyName = nameof(Employee.HomeAddress), Label = L["Field.HomeAddress"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.HomeAddress"]], MaxLength = 200, HelpText = "員工戶籍地址", ActionButtons = ContactLinkHelper.CreateAddressButtons(() => editModalComponent?.Entity?.HomeAddress, IsSaved) },
+                new() { PropertyName = nameof(Employee.MailingAddress), Label = L["Field.MailingAddress"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.MailingAddress"]], MaxLength = 200, HelpText = "員工通訊地址", ActionButtons = GetMailingAddressActionButtons() },
                 new() { PropertyName = nameof(Employee.EmergencyContact), Label = L["Field.EmergencyContact"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EmergencyContact"]], MaxLength = 10, HelpText = "緊急狀況時的聯絡人" },
                 new() { PropertyName = nameof(Employee.EmergencyPhone), Label = L["Field.EmergencyPhone"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EmergencyPhone"]], MaxLength = 20, HelpText = "緊急聯絡人電話號碼", ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.EmergencyPhone, IsSaved) },
+                new() { PropertyName = nameof(Employee.EmergencyContactRelationship), Label = L["Field.EmergencyContactRelationship"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.EmergencyContactRelationship"]], MaxLength = 20, HelpText = "與緊急聯絡人的關係（如：配偶、父母）" },
                 // 組織架構區段
                 new() { PropertyName = nameof(Employee.DepartmentId), Label = L["Entity.Department"], FieldType = FormFieldType.AutoComplete, Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Department"]], MinSearchLength = 0, HelpText = "輸入部門名稱進行搜尋，或直接選擇", ActionButtons = await GetDepartmentActionButtonsAsync() },
                 new() { PropertyName = nameof(Employee.EmployeePositionId), Label = L["Entity.EmployeePosition"], FieldType = FormFieldType.AutoComplete, Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.EmployeePosition"]], MinSearchLength = 0, HelpText = "輸入職位名稱進行搜尋，或直接選擇", ActionButtons = await GetPositionActionButtonsAsync() },
+                new() { PropertyName = nameof(Employee.JobTitle), Label = L["Field.JobTitle"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.JobTitle"]], MaxLength = 50, HelpText = "實際職稱（如：資深軟體工程師）" },
+                new()
+                {
+                    PropertyName = nameof(Employee.EmployeeType), Label = L["Field.EmployeeType"], FieldType = FormFieldType.Select, HelpText = "員工類別（影響勞健保、特休計算）",
+                    Options = Enum.GetValues<EmployeeType>().Select(et => new SelectOption { Text = GetEnumDisplayName(et), Value = ((int)et).ToString() }).ToList()
+                },
                 // 任職資訊區段
                 new() { PropertyName = nameof(Employee.HireDate), Label = L["Field.HireDate"], FieldType = FormFieldType.Date, Placeholder = L["Placeholder.PleaseSelect", L["Field.HireDate"]], HelpText = "員工正式到職的日期" },
                 new() { PropertyName = nameof(Employee.ResignationDate), Label = L["Field.ResignDate"], FieldType = FormFieldType.Date, Placeholder = L["Placeholder.PleaseSelect", L["Field.ResignDate"]], HelpText = "員工離職日期（在職者免填）" },
@@ -392,13 +414,18 @@
 
             var builder = FormSectionHelper<Employee>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
-                    e => e.Code, e => e.Name, e => e.Gender, e => e.BirthDate, e => e.IdNumber,
-                    e => e.Mobile, e => e.Email, e => e.EmergencyContact, e => e.EmergencyPhone)
+                    e => e.Code, e => e.Name, e => e.EnglishName, e => e.Gender, e => e.BirthDate,
+                    e => e.IdNumber, e => e.Nationality, e => e.MaritalStatus, e => e.BloodType)
+                .AddToSection(FormSectionNames.ContactInfo,
+                    e => e.Mobile, e => e.Phone, e => e.Email, e => e.HomeAddress, e => e.MailingAddress,
+                    e => e.EmergencyContact, e => e.EmergencyPhone, e => e.EmergencyContactRelationship)
+                .AddToSection(FormSectionNames.OrganizationStructure,
+                    e => e.DepartmentId, e => e.EmployeePositionId, e => e.JobTitle, e => e.EmployeeType)
                 .AddToSection(FormSectionNames.EmploymentInfo,
-                    e => e.DepartmentId, e => e.EmployeePositionId, e => e.HireDate, e => e.ResignationDate, e => e.EmploymentStatus)
+                    e => e.HireDate, e => e.ResignationDate, e => e.EmploymentStatus)
                 .AddToSection(FormSectionNames.AdditionalData,
                     e => e.Remarks)
-                .GroupIntoTab(L["Tab.EmployeeData"].ToString(), "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData);
+                .GroupIntoTab(L["Tab.EmployeeData"].ToString(), "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.ContactInfo, FormSectionNames.OrganizationStructure, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData);
 
             if (isVehiclesEnabled)
                 builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent(), "EmployeeVehicleTab");
@@ -432,6 +459,53 @@
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(editModalComponent, positionModalManager, nameof(Employee.EmployeePositionId));
     }
 
+    /// <summary>
+    /// 產生通訊地址操作按鈕 - 包含「同戶籍」複製按鈕 + Google Maps 按鈕
+    /// </summary>
+    private List<FieldActionButton> GetMailingAddressActionButtons()
+    {
+        var buttons = new List<FieldActionButton>
+        {
+            new FieldActionButton
+            {
+                Text = "同戶籍",
+                IconClass = "bi bi-copy",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = "將戶籍地址複製到通訊地址",
+                OnClick = async () => await CopyHomeAddressToMailingAddress(),
+                IsDisabled = false
+            }
+        };
+        buttons.AddRange(ContactLinkHelper.CreateAddressButtons(() => editModalComponent?.Entity?.MailingAddress, IsSaved));
+        return buttons;
+    }
+
+    /// <summary>
+    /// 將戶籍地址複製到通訊地址
+    /// </summary>
+    private async Task CopyHomeAddressToMailingAddress()
+    {
+        try
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                if (string.IsNullOrWhiteSpace(editModalComponent.Entity.HomeAddress))
+                {
+                    await NotificationService.ShowWarningAsync("戶籍地址為空，無法複製");
+                    return;
+                }
+                editModalComponent.Entity.MailingAddress = editModalComponent.Entity.HomeAddress;
+                StateHasChanged();
+                await NotificationService.ShowSuccessAsync("已將戶籍地址複製到通訊地址");
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("複製地址時發生錯誤");
+        }
+    }
+
     private static string GetGenderDisplayName(Gender gender)
     {
         var displayAttribute = gender.GetType().GetField(gender.ToString())?.GetCustomAttribute<DisplayAttribute>();
@@ -442,5 +516,11 @@
     {
         var displayAttribute = status.GetType().GetField(status.ToString())?.GetCustomAttribute<DisplayAttribute>();
         return displayAttribute?.Name ?? status.ToString();
+    }
+
+    private static string GetEnumDisplayName(Enum enumValue)
+    {
+        var displayAttribute = enumValue.GetType().GetField(enumValue.ToString())?.GetCustomAttribute<DisplayAttribute>();
+        return displayAttribute?.Name ?? enumValue.ToString();
     }
 }

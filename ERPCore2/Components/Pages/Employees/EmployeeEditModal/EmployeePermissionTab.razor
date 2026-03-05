@@ -1,16 +1,20 @@
-@* 員工權限 Tab - 唯讀顯示員工目前角色所擁有的權限 *@
+@* 員工權限 Tab - 依模組分組顯示員工目前角色所擁有的權限 *@
+@using ERPCore2.Data.Navigation
 @inject IEmployeeService EmployeeService
 @inject IRoleService RoleService
 @inject IStringLocalizer<SharedResource> L
 
 @* ===== 目前角色 ===== *@
-<div class="mb-3 px-1 d-flex align-items-center gap-2">
+<div class="mb-3 px-1 d-flex align-items-center gap-2 flex-wrap">
     <span class="fw-semibold text-secondary">
         <i class="bi bi-person-badge me-1"></i>@L["Label.CurrentRole"]：
     </span>
     @if (currentRole != null)
     {
         <span class="badge bg-dark fs-6">@currentRole.Name</span>
+        <span class="text-muted small ms-2">
+            @grantedCodes.Count / @allPermissionDefinitions.Count()
+        </span>
     }
     else
     {
@@ -28,50 +32,64 @@
 }
 else
 {
-    @* ===== 一般權限區段 ===== *@
-    <div class="mb-4">
-        <div class="d-flex align-items-center gap-2 mb-2 px-1">
-            <h6 class="mb-0 fw-semibold text-secondary">
-                <i class="bi bi-shield me-1"></i>@L["Label.NormalPermissions"]
-            </h6>
-            <span class="badge bg-secondary">@normalPermissions.Count</span>
-        </div>
+    @* ===== 依模組分組顯示 ===== *@
+    <div class="permission-groups">
+        @foreach (var group in groupedPermissions)
+        {
+            var groupGrantedCount = group.Permissions.Count(p => p.IsGranted);
+            var groupTotalCount = group.Permissions.Count;
+            var isAllGranted = groupGrantedCount == groupTotalCount;
+            var isNoneGranted = groupGrantedCount == 0;
 
-        <InteractiveTableComponent TItem="Permission"
-                                  Items="@normalPermissions"
-                                  ColumnDefinitions="@GetPermissionColumnDefinitions()"
-                                  ShowHeader="true"
-                                  ShowRowNumbers="true"
-                                  IsStriped="true"
-                                  IsHoverable="true"
-                                  IsBordered="true"
-                                  IsReadOnly="true"
-                                  ShowBuiltInActions="false"
-                                  EnableAutoEmptyRow="false"
-                                  EmptyMessage="@L["Label.NoPermission"]" />
-    </div>
+            <div class="card mb-3 border @(isAllGranted ? "border-success" : isNoneGranted ? "border-secondary opacity-75" : "border-warning")">
+                @* 分組標題 *@
+                <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between
+                            @(isAllGranted ? "bg-success bg-opacity-10" : isNoneGranted ? "bg-light" : "bg-warning bg-opacity-10")">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="@group.IconClass"></i>
+                        <span class="fw-semibold">@group.GroupName</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge @(isAllGranted ? "bg-success" : isNoneGranted ? "bg-secondary" : "bg-warning text-dark")">
+                            @groupGrantedCount / @groupTotalCount
+                        </span>
+                        @if (isAllGranted)
+                        {
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        }
+                    </div>
+                </div>
 
-    @* ===== 敏感權限區段 ===== *@
-    <div>
-        <div class="d-flex align-items-center gap-2 mb-2 px-1">
-            <h6 class="mb-0 fw-semibold text-secondary">
-                <i class="bi bi-shield-exclamation me-1 text-warning"></i>@L["Label.SensitivePermissions"]
-            </h6>
-            <span class="badge bg-warning text-dark">@sensitivePermissions.Count</span>
-        </div>
-
-        <InteractiveTableComponent TItem="Permission"
-                                  Items="@sensitivePermissions"
-                                  ColumnDefinitions="@GetPermissionColumnDefinitions()"
-                                  ShowHeader="true"
-                                  ShowRowNumbers="true"
-                                  IsStriped="true"
-                                  IsHoverable="true"
-                                  IsBordered="true"
-                                  IsReadOnly="true"
-                                  ShowBuiltInActions="false"
-                                  EnableAutoEmptyRow="false"
-                                  EmptyMessage="@L["Label.NoPermission"]" />
+                @* 權限清單 - 多欄排列 *@
+                <div class="card-body py-2 px-3">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-1">
+                        @foreach (var perm in group.Permissions)
+                        {
+                            <div class="col">
+                                <div class="d-flex align-items-center gap-2 py-1 px-2 rounded @(perm.IsGranted ? "" : "text-muted")">
+                                    @if (perm.IsGranted)
+                                    {
+                                        <i class="bi bi-check-circle-fill @(perm.IsSensitive ? "text-warning" : "text-success")" title="@(perm.IsSensitive ? "敏感權限 - 已授權" : "已授權")"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-circle text-muted opacity-50" title="未授權"></i>
+                                    }
+                                    <span class="small @(perm.IsGranted ? "" : "text-decoration-line-through opacity-50")"
+                                          title="@perm.Remarks">
+                                        @perm.Name
+                                    </span>
+                                    @if (perm.IsSensitive)
+                                    {
+                                        <i class="bi bi-shield-exclamation text-warning small" title="敏感權限"></i>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 }
 
@@ -79,9 +97,29 @@ else
     [Parameter] public int? EmployeeId { get; set; }
 
     private Role? currentRole = null;
-    private List<Permission> normalPermissions = new();
-    private List<Permission> sensitivePermissions = new();
+    private HashSet<string> grantedCodes = new();
+    private List<PermissionGroupViewModel> groupedPermissions = new();
+    private IEnumerable<PermissionDefinition> allPermissionDefinitions = Enumerable.Empty<PermissionDefinition>();
     private int? _lastLoadedEmployeeId;
+
+    // ===== ViewModel =====
+
+    private class PermissionGroupViewModel
+    {
+        public string GroupKey { get; set; } = "";
+        public string GroupName { get; set; } = "";
+        public string IconClass { get; set; } = "bi-folder";
+        public List<PermissionItemViewModel> Permissions { get; set; } = new();
+    }
+
+    private class PermissionItemViewModel
+    {
+        public string Code { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Remarks { get; set; } = "";
+        public bool IsSensitive { get; set; }
+        public bool IsGranted { get; set; }
+    }
 
     // ===== 生命週期 =====
 
@@ -111,8 +149,8 @@ else
             if (employee?.RoleId == null)
             {
                 currentRole = null;
-                normalPermissions = new();
-                sensitivePermissions = new();
+                grantedCodes = new();
+                groupedPermissions = new();
                 StateHasChanged();
                 return;
             }
@@ -120,32 +158,26 @@ else
             currentRole = await RoleService.GetByIdAsync(employee.RoleId.Value);
             if (currentRole == null)
             {
-                normalPermissions = new();
-                sensitivePermissions = new();
+                grantedCodes = new();
+                groupedPermissions = new();
                 StateHasChanged();
                 return;
             }
 
-            var activePermissions = currentRole.RolePermissions
+            // 取得此角色已授權的權限 Code 集合
+            grantedCodes = currentRole.RolePermissions
                 .Where(rp => rp.Status == EntityStatus.Active && rp.Permission != null)
-                .Select(rp => rp.Permission!)
-                .ToList();
+                .Select(rp => rp.Permission!.Code ?? "")
+                .Where(code => !string.IsNullOrEmpty(code))
+                .ToHashSet();
 
-            normalPermissions = activePermissions
-                .Where(p => p.Level == PermissionLevel.Normal)
-                .OrderBy(p => p.Name)
-                .ToList();
-
-            sensitivePermissions = activePermissions
-                .Where(p => p.Level == PermissionLevel.Sensitive)
-                .OrderBy(p => p.Name)
-                .ToList();
+            BuildGroupedPermissions();
         }
         catch (Exception)
         {
             currentRole = null;
-            normalPermissions = new();
-            sensitivePermissions = new();
+            grantedCodes = new();
+            groupedPermissions = new();
         }
         finally
         {
@@ -157,38 +189,53 @@ else
     public void Clear()
     {
         currentRole = null;
-        normalPermissions = new();
-        sensitivePermissions = new();
+        grantedCodes = new();
+        groupedPermissions = new();
         StateHasChanged();
     }
 
-    // ===== 欄位定義 =====
+    // ===== 分組建構 =====
 
-    private List<InteractiveColumnDefinition> GetPermissionColumnDefinitions()
+    /// <summary>
+    /// 依 PermissionRegistry 的 GroupKey 分組，結合 NavigationConfig 取得分組名稱與圖示
+    /// </summary>
+    private void BuildGroupedPermissions()
     {
-        return new List<InteractiveColumnDefinition>
-        {
-            new InteractiveColumnDefinition
+        allPermissionDefinitions = PermissionRegistry.GetAllPermissions();
+
+        // 從 NavigationConfig 取得分組名稱與圖示的對照表
+        var navItems = NavigationConfig.GetAllNavigationItems()
+            .Where(n => n.IsParent)
+            .ToDictionary(
+                n => n.NameKey ?? "",
+                n => (Name: L[n.NameKey ?? n.Name].ToString(), Icon: n.IconClass));
+
+        // 依 GroupKey 分組
+        groupedPermissions = allPermissionDefinitions
+            .GroupBy(p => p.GroupKey)
+            .Select(g =>
             {
-                Title = L["Column.PermissionName"],
-                PropertyName = nameof(Permission.Name),
-                ColumnType = InteractiveColumnType.Display,
-            },
-            new InteractiveColumnDefinition
-            {
-                Title = L["Column.PermissionLevel"],
-                PropertyName = nameof(Permission.Level),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "80px",
-                DisplayFormatter = item =>
+                var navInfo = navItems.GetValueOrDefault(g.Key);
+                return new PermissionGroupViewModel
                 {
-                    if (item is Permission p)
-                        return p.Level == PermissionLevel.Normal
-                            ? L["Permission.Normal"].ToString()
-                            : L["Permission.Sensitive"].ToString();
-                    return "-";
-                }
-            }
-        };
+                    GroupKey = g.Key,
+                    GroupName = navInfo.Name ?? g.Key,
+                    IconClass = navInfo.Icon ?? "bi-folder",
+                    Permissions = g.Select(p => new PermissionItemViewModel
+                    {
+                        Code = p.Code,
+                        Name = p.Name,
+                        Remarks = p.Remarks,
+                        IsSensitive = p.Level == PermissionLevel.Sensitive,
+                        IsGranted = grantedCodes.Contains(p.Code)
+                    })
+                    .OrderByDescending(p => p.IsGranted)  // 已授權排前面
+                    .ThenBy(p => p.Name)
+                    .ToList()
+                };
+            })
+            .OrderByDescending(g => g.Permissions.Any(p => p.IsGranted))  // 有授權的分組排前面
+            .ThenBy(g => g.GroupName)
+            .ToList();
     }
 }

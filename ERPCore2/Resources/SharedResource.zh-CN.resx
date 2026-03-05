@@ -844,6 +844,13 @@
   <data name="Field.PhoneNumber" xml:space="preserve"><value>手机号码</value></data>
   <data name="Field.EmergencyContact" xml:space="preserve"><value>紧急联系人</value></data>
   <data name="Field.EmergencyPhone" xml:space="preserve"><value>紧急联系电话</value></data>
+  <data name="Field.EmergencyContactRelationship" xml:space="preserve"><value>紧急联系人关系</value></data>
+  <data name="Field.Nationality" xml:space="preserve"><value>国籍</value></data>
+  <data name="Field.MaritalStatus" xml:space="preserve"><value>婚姻状态</value></data>
+  <data name="Field.BloodType" xml:space="preserve"><value>血型</value></data>
+  <data name="Field.EmployeeType" xml:space="preserve"><value>员工类别</value></data>
+  <data name="Field.HomeAddress" xml:space="preserve"><value>户籍地址</value></data>
+  <data name="Field.MailingAddress" xml:space="preserve"><value>通讯地址</value></data>
   <data name="Field.HireDate" xml:space="preserve"><value>入职日期</value></data>
   <data name="Field.ResignDate" xml:space="preserve"><value>离职日期</value></data>
   <data name="Field.EmploymentStatus" xml:space="preserve"><value>在职状态</value></data>
@@ -1954,6 +1961,11 @@
   <data name="Composition.Loading" xml:space="preserve"><value>正在加载配方数据...</value></data>
   <data name="Composition.QuickApply" xml:space="preserve"><value>快速套用清单</value></data>
   <data name="Composition.CustomModeShort" xml:space="preserve"><value>自定义</value></data>
+  <data name="Composition.SectionStandard" xml:space="preserve"><value>快速套用</value></data>
+  <data name="Composition.SectionCustomer" xml:space="preserve"><value>客制化</value></data>
+  <data name="Composition.SectionCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="Composition.BatchSelect" xml:space="preserve"><value>批量选择</value></data>
+  <data name="Composition.BatchAddedCount" xml:space="preserve"><value>已新增 {0} 笔组件</value></data>
   <data name="Composition.SelectBOM" xml:space="preserve"><value>选择 BOM 配方</value></data>
   <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>选择 BOM 配方 - {0}</value></data>
   <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>搜索配方编号、规格、客户或类型...</value></data>
@@ -2028,6 +2040,7 @@
   <data name="Message.ConfirmClearAll" xml:space="preserve"><value>确定要清除所有明细吗？</value></data>
   <data name="Composition.RemarksTooltip" xml:space="preserve"><value>选填。可记录组件相关的备注信息（有下一步时仍可编辑）</value></data>
   <data name="Composition.ConfirmSaveEmpty" xml:space="preserve"><value>确定要保存空白的物料清单吗？此品项将不会有任何组件。</value></data>
+  <data name="Composition.CustomModeEmptyError" xml:space="preserve"><value>自定义模式下请至少新增一笔组件明细。</value></data>
   <data name="Composition.OtherCustomer" xml:space="preserve"><value>其他客户</value></data>
   <data name="Field.CompositionName" xml:space="preserve"><value>清单名称</value></data>
   <data name="Label.Unknown" xml:space="preserve"><value>未知</value></data>

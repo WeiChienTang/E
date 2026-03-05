@@ -45,6 +45,18 @@
 </div>
 }
 
+@* 確認開啟自動產生子科目 Modal *@
+<GenericConfirmModalComponent IsVisible="@showEnableAutoCreateModal"
+                              IsVisibleChanged="@(v => showEnableAutoCreateModal = v)"
+                              Title="@L["SubAccount.ConfirmEnableAutoCreateTitle"]"
+                              Icon="bi-toggle-on"
+                              Message="@confirmMessage"
+                              ConfirmButtonText="@L["SubAccount.ConfirmEnableYes"]"
+                              CancelButtonText="@L["SubAccount.ConfirmEnableNo"]"
+                              ConfirmButtonVariant="ButtonVariant.Blue"
+                              OnConfirm="HandleEnableAutoCreateConfirmed"
+                              OnCancel="HandleEnableAutoCreateDeclined" />
+
 @code {
     [Parameter]
     public SystemParameter Model { get; set; } = new();
@@ -67,6 +79,14 @@
     private bool IsBatchCreatingCustomer => isBatchCreating && batchTarget == "customer";
     private bool IsBatchCreatingSupplier => isBatchCreating && batchTarget == "supplier";
     private bool IsBatchCreatingProduct  => isBatchCreating && batchTarget == "product";
+
+    // 確認開啟自動產生 Modal 狀態
+    private bool showEnableAutoCreateModal = false;
+    private string confirmMessage = string.Empty;
+    private Action<bool>? pendingSetFlag = null;
+    private string pendingBatchTarget = string.Empty;
+    private Func<string, Task<(int Created, int Skipped, List<string> Errors)>>? pendingBatchFunc = null;
+    private string pendingEntityLabel = string.Empty;
 
     private List<FormFieldDefinition> allFields = new();
     private Dictionary<string, string> fieldSections = new();
@@ -147,20 +167,108 @@
 
     private async Task HandleBatchCreateCustomerAsync()
     {
+        if (!Model.AutoCreateCustomerSubAccount)
+        {
+            StorePendingBatchCreate(
+                "customer",
+                v => Model.AutoCreateCustomerSubAccount = v,
+                async (createdBy) => await SubAccountService.BatchCreateForAllCustomersAsync(createdBy),
+                L["Entity.Customer"].ToString());
+            return;
+        }
+
         await ExecuteBatchCreateAsync("customer", async (createdBy) =>
             await SubAccountService.BatchCreateForAllCustomersAsync(createdBy), L["Entity.Customer"].ToString());
     }
 
     private async Task HandleBatchCreateSupplierAsync()
     {
+        if (!Model.AutoCreateSupplierSubAccount)
+        {
+            StorePendingBatchCreate(
+                "supplier",
+                v => Model.AutoCreateSupplierSubAccount = v,
+                async (createdBy) => await SubAccountService.BatchCreateForAllSuppliersAsync(createdBy),
+                L["Entity.Supplier"].ToString());
+            return;
+        }
+
         await ExecuteBatchCreateAsync("supplier", async (createdBy) =>
             await SubAccountService.BatchCreateForAllSuppliersAsync(createdBy), L["Entity.Supplier"].ToString());
     }
 
     private async Task HandleBatchCreateProductAsync()
     {
+        if (!Model.AutoCreateProductSubAccount)
+        {
+            StorePendingBatchCreate(
+                "product",
+                v => Model.AutoCreateProductSubAccount = v,
+                async (createdBy) => await SubAccountService.BatchCreateForAllProductsAsync(createdBy),
+                L["Entity.Product"].ToString());
+            return;
+        }
+
         await ExecuteBatchCreateAsync("product", async (createdBy) =>
             await SubAccountService.BatchCreateForAllProductsAsync(createdBy), L["Entity.Product"].ToString());
+    }
+
+    /// <summary>
+    /// 暫存待執行的批次補建資訊，並顯示確認 Modal
+    /// </summary>
+    private void StorePendingBatchCreate(
+        string target,
+        Action<bool> setFlag,
+        Func<string, Task<(int Created, int Skipped, List<string> Errors)>> batchFunc,
+        string entityLabel)
+    {
+        pendingBatchTarget = target;
+        pendingSetFlag = setFlag;
+        pendingBatchFunc = batchFunc;
+        pendingEntityLabel = entityLabel;
+        confirmMessage = string.Format(L["SubAccount.ConfirmEnableAutoCreate"], entityLabel);
+        showEnableAutoCreateModal = true;
+    }
+
+    /// <summary>
+    /// 使用者確認開啟自動產生 → 設定開關 + 執行批次補建
+    /// </summary>
+    private async Task HandleEnableAutoCreateConfirmed()
+    {
+        pendingSetFlag?.Invoke(true);
+        showEnableAutoCreateModal = false;
+        StateHasChanged();
+
+        if (pendingBatchFunc != null)
+        {
+            await ExecuteBatchCreateAsync(pendingBatchTarget, pendingBatchFunc, pendingEntityLabel);
+        }
+        ClearPendingState();
+    }
+
+    /// <summary>
+    /// 使用者選擇不開啟自動產生 → 仍執行批次補建（僅補建，不啟用自動產生）
+    /// </summary>
+    private async Task HandleEnableAutoCreateDeclined()
+    {
+        showEnableAutoCreateModal = false;
+        StateHasChanged();
+
+        if (pendingBatchFunc != null)
+        {
+            await ExecuteBatchCreateAsync(pendingBatchTarget, pendingBatchFunc, pendingEntityLabel);
+        }
+        ClearPendingState();
+    }
+
+    /// <summary>清除暫存的待執行狀態</summary>
+    private void ClearPendingState()
+    {
+        pendingSetFlag = null;
+        pendingBatchFunc = null;
+        pendingBatchTarget = string.Empty;
+        pendingEntityLabel = string.Empty;
+        confirmMessage = string.Empty;
     }
 
     private async Task ExecuteBatchCreateAsync(

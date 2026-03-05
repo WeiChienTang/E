@@ -91,11 +91,37 @@ namespace ERPCore2.Data.Entities
         public DateTime? BirthDate { get; set; }
 
         /// <summary>
+        /// 英文姓名
+        /// </summary>
+        [Display(Name = "英文姓名")]
+        [MaxLength(50)]
+        public string? EnglishName { get; set; }
+
+        /// <summary>
         /// 身分證字號
         /// </summary>
         [Display(Name = "身分證字號")]
         [MaxLength(10)]
         public string? IdNumber { get; set; }
+
+        /// <summary>
+        /// 國籍
+        /// </summary>
+        [Display(Name = "國籍")]
+        [MaxLength(50)]
+        public string? Nationality { get; set; }
+
+        /// <summary>
+        /// 婚姻狀態
+        /// </summary>
+        [Display(Name = "婚姻狀態")]
+        public MaritalStatus? MaritalStatus { get; set; }
+
+        /// <summary>
+        /// 血型
+        /// </summary>
+        [Display(Name = "血型")]
+        public BloodType? BloodType { get; set; }
 
         /// <summary>
         /// 手機號碼
@@ -105,11 +131,32 @@ namespace ERPCore2.Data.Entities
         public string? Mobile { get; set; }
 
         /// <summary>
+        /// 市話/分機
+        /// </summary>
+        [Display(Name = "市話/分機")]
+        [MaxLength(20)]
+        public string? Phone { get; set; }
+
+        /// <summary>
         /// 電子郵件
         /// </summary>
         [Display(Name = "Email")]
         [MaxLength(100)]
         public string? Email { get; set; }
+
+        /// <summary>
+        /// 戶籍地址
+        /// </summary>
+        [Display(Name = "戶籍地址")]
+        [MaxLength(200)]
+        public string? HomeAddress { get; set; }
+
+        /// <summary>
+        /// 通訊地址
+        /// </summary>
+        [Display(Name = "通訊地址")]
+        [MaxLength(200)]
+        public string? MailingAddress { get; set; }
 
         /// <summary>
         /// 緊急聯絡人
@@ -124,6 +171,26 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "緊急聯絡電話")]
         [MaxLength(20)]
         public string? EmergencyPhone { get; set; }
+
+        /// <summary>
+        /// 緊急聯絡人關係
+        /// </summary>
+        [Display(Name = "緊急聯絡人關係")]
+        [MaxLength(20)]
+        public string? EmergencyContactRelationship { get; set; }
+
+        /// <summary>
+        /// 員工類別
+        /// </summary>
+        [Display(Name = "員工類別")]
+        public EmployeeType EmployeeType { get; set; } = EmployeeType.FullTime;
+
+        /// <summary>
+        /// 職稱
+        /// </summary>
+        [Display(Name = "職稱")]
+        [MaxLength(50)]
+        public string? JobTitle { get; set; }
 
         /// <summary>
         /// 到職日期
@@ -194,5 +261,77 @@ namespace ERPCore2.Data.Entities
         
         [Display(Name = "停用")]
         Inactive = 5
+    }
+
+    /// <summary>
+    /// 婚姻狀態
+    /// </summary>
+    public enum MaritalStatus
+    {
+        [Display(Name = "未婚")]
+        Single = 1,
+
+        [Display(Name = "已婚")]
+        Married = 2,
+
+        [Display(Name = "離婚")]
+        Divorced = 3,
+
+        [Display(Name = "喪偶")]
+        Widowed = 4
+    }
+
+    /// <summary>
+    /// 血型
+    /// </summary>
+    public enum BloodType
+    {
+        [Display(Name = "A型")]
+        A = 1,
+
+        [Display(Name = "B型")]
+        B = 2,
+
+        [Display(Name = "O型")]
+        O = 3,
+
+        [Display(Name = "AB型")]
+        AB = 4,
+
+        [Display(Name = "Rh陰性A型")]
+        RhNegativeA = 5,
+
+        [Display(Name = "Rh陰性B型")]
+        RhNegativeB = 6,
+
+        [Display(Name = "Rh陰性O型")]
+        RhNegativeO = 7,
+
+        [Display(Name = "Rh陰性AB型")]
+        RhNegativeAB = 8,
+
+        [Display(Name = "其他")]
+        Other = 99
+    }
+
+    /// <summary>
+    /// 員工類別
+    /// </summary>
+    public enum EmployeeType
+    {
+        [Display(Name = "正職")]
+        FullTime = 1,
+
+        [Display(Name = "兼職")]
+        PartTime = 2,
+
+        [Display(Name = "約聘")]
+        Contract = 3,
+
+        [Display(Name = "實習")]
+        Intern = 4,
+
+        [Display(Name = "派遣")]
+        Dispatch = 5
     }
 }

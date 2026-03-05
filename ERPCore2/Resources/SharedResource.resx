@@ -862,6 +862,13 @@
   <data name="Field.PhoneNumber" xml:space="preserve"><value>手機號碼</value></data>
   <data name="Field.EmergencyContact" xml:space="preserve"><value>緊急聯絡人</value></data>
   <data name="Field.EmergencyPhone" xml:space="preserve"><value>緊急聯絡電話</value></data>
+  <data name="Field.EmergencyContactRelationship" xml:space="preserve"><value>緊急聯絡人關係</value></data>
+  <data name="Field.Nationality" xml:space="preserve"><value>國籍</value></data>
+  <data name="Field.MaritalStatus" xml:space="preserve"><value>婚姻狀態</value></data>
+  <data name="Field.BloodType" xml:space="preserve"><value>血型</value></data>
+  <data name="Field.EmployeeType" xml:space="preserve"><value>員工類別</value></data>
+  <data name="Field.HomeAddress" xml:space="preserve"><value>戶籍地址</value></data>
+  <data name="Field.MailingAddress" xml:space="preserve"><value>通訊地址</value></data>
   <data name="Field.HireDate" xml:space="preserve"><value>到職日期</value></data>
   <data name="Field.ResignDate" xml:space="preserve"><value>離職日期</value></data>
   <data name="Field.EmploymentStatus" xml:space="preserve"><value>在職狀態</value></data>
@@ -1973,6 +1980,11 @@
   <data name="Composition.Loading" xml:space="preserve"><value>正在載入配方資料...</value></data>
   <data name="Composition.QuickApply" xml:space="preserve"><value>快速套用清單</value></data>
   <data name="Composition.CustomModeShort" xml:space="preserve"><value>自定義</value></data>
+  <data name="Composition.SectionStandard" xml:space="preserve"><value>快速套用</value></data>
+  <data name="Composition.SectionCustomer" xml:space="preserve"><value>客製化</value></data>
+  <data name="Composition.SectionCustom" xml:space="preserve"><value>自定義</value></data>
+  <data name="Composition.BatchSelect" xml:space="preserve"><value>批量選擇</value></data>
+  <data name="Composition.BatchAddedCount" xml:space="preserve"><value>已新增 {0} 筆組件</value></data>
   <data name="Composition.SelectBOM" xml:space="preserve"><value>選擇 BOM 配方</value></data>
   <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>選擇 BOM 配方 - {0}</value></data>
   <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>搜尋配方編號、規格、客戶或類型...</value></data>
@@ -2047,6 +2059,7 @@
   <data name="Message.ConfirmClearAll" xml:space="preserve"><value>確定要清除所有明細嗎？</value></data>
   <data name="Composition.RemarksTooltip" xml:space="preserve"><value>選填。可記錄組件相關的備註資訊（有下一步時仍可編輯）</value></data>
   <data name="Composition.ConfirmSaveEmpty" xml:space="preserve"><value>確定要儲存空白的物料清單嗎？此品項將不會有任何組件。</value></data>
+  <data name="Composition.CustomModeEmptyError" xml:space="preserve"><value>自定義模式下請至少新增一筆組件明細。</value></data>
   <data name="Composition.OtherCustomer" xml:space="preserve"><value>其他客戶</value></data>
   <data name="Field.CompositionName" xml:space="preserve"><value>清單名稱</value></data>
   <data name="Label.Unknown" xml:space="preserve"><value>未知</value></data>
@@ -2858,6 +2871,10 @@
   <data name="SubAccount.CreateError" xml:space="preserve"><value>批次補建{0}子科目時發生錯誤：{1}</value></data>
   <data name="SubAccount.CreateErrorNotify" xml:space="preserve"><value>批次補建{0}子科目失敗</value></data>
   <data name="SubAccount.Ellipsis" xml:space="preserve"><value>…</value></data>
+  <data name="SubAccount.ConfirmEnableAutoCreate" xml:space="preserve"><value>{0}子科目自動產生功能目前未啟用。是否一併開啟？開啟後，未來新增{0}時將自動建立對應子科目。</value></data>
+  <data name="SubAccount.ConfirmEnableAutoCreateTitle" xml:space="preserve"><value>啟用自動產生子科目</value></data>
+  <data name="SubAccount.ConfirmEnableYes" xml:space="preserve"><value>開啟並補建</value></data>
+  <data name="SubAccount.ConfirmEnableNo" xml:space="preserve"><value>僅補建</value></data>
 
   <!-- ===== SystemParameter Modal ===== -->
   <data name="SystemParam.Title" xml:space="preserve"><value>系統參數設定</value></data>

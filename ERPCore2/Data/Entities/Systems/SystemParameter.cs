@@ -171,6 +171,6 @@ namespace ERPCore2.Data.Entities
         /// 子科目代碼格式：Sequential（流水號）或 EntityCode（實體代碼）
         /// </summary>
         [Display(Name = "子科目代碼格式")]
-        public SubAccountCodeFormat SubAccountCodeFormat { get; set; } = SubAccountCodeFormat.Sequential;
+        public SubAccountCodeFormat SubAccountCodeFormat { get; set; } = SubAccountCodeFormat.EntityCode;
     }
 }

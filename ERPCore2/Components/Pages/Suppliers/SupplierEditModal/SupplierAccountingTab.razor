@@ -65,14 +65,32 @@ else
 }
 
 @code {
+    /// <summary>廠商 ID（由父元件傳入，用於自動載入資料）</summary>
+    [Parameter] public int? SupplierId { get; set; }
+
     private int _supplierId;
+    private int _lastLoadedId;
     private bool _isLoading;
     private bool _isCreating;
     private List<(string Label, AccountItem? Item)> _rows = new();
 
+    protected override async Task OnParametersSetAsync()
+    {
+        var newId = SupplierId ?? 0;
+        if (newId > 0 && newId != _lastLoadedId)
+        {
+            await LoadAsync(newId);
+        }
+        else if (newId <= 0 && _lastLoadedId > 0)
+        {
+            Clear();
+        }
+    }
+
     public async Task LoadAsync(int supplierId)
     {
         _supplierId = supplierId;
+        _lastLoadedId = supplierId;
         await RefreshAsync();
         StateHasChanged();
     }
@@ -80,6 +98,7 @@ else
     public void Clear()
     {
         _supplierId = 0;
+        _lastLoadedId = 0;
         _rows = new();
         StateHasChanged();
     }

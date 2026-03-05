@@ -844,6 +844,13 @@
   <data name="Field.PhoneNumber" xml:space="preserve"><value>Mobile Phone</value></data>
   <data name="Field.EmergencyContact" xml:space="preserve"><value>Emergency Contact</value></data>
   <data name="Field.EmergencyPhone" xml:space="preserve"><value>Emergency Phone</value></data>
+  <data name="Field.EmergencyContactRelationship" xml:space="preserve"><value>Emergency Contact Relationship</value></data>
+  <data name="Field.Nationality" xml:space="preserve"><value>Nationality</value></data>
+  <data name="Field.MaritalStatus" xml:space="preserve"><value>Marital Status</value></data>
+  <data name="Field.BloodType" xml:space="preserve"><value>Blood Type</value></data>
+  <data name="Field.EmployeeType" xml:space="preserve"><value>Employee Type</value></data>
+  <data name="Field.HomeAddress" xml:space="preserve"><value>Home Address</value></data>
+  <data name="Field.MailingAddress" xml:space="preserve"><value>Mailing Address</value></data>
   <data name="Field.HireDate" xml:space="preserve"><value>Hire Date</value></data>
   <data name="Field.ResignDate" xml:space="preserve"><value>Resignation Date</value></data>
   <data name="Field.EmploymentStatus" xml:space="preserve"><value>Employment Status</value></data>

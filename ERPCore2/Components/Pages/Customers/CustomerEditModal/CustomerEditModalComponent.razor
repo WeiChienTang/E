@@ -136,7 +136,7 @@
 
     private RenderFragment CreateAccountingTabContent() => __builder =>
     {
-        <CustomerAccountingTab @ref="accountingTab" />
+        <CustomerAccountingTab @ref="accountingTab" CustomerId="@CustomerId" />
     };
 
     private RenderFragment CreateVisitTabContent() => __builder =>

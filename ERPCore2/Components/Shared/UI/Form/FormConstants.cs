@@ -20,17 +20,17 @@ public static class FormConstants
     }
 
     /// <summary>
-    /// Font Awesome 圖示 CSS 類別
+    /// Bootstrap Icons 圖示 CSS 類別（線條風格）
     /// </summary>
     public static class Icons
     {
-        public const string Add = "fas fa-plus-circle";
-        public const string Edit = "fas fa-edit";
-        public const string Copy = "fas fa-copy";
-        public const string GoTo = "fas fa-external-link-alt";
-        public const string Delete = "fas fa-trash-alt";
-        public const string Search = "fas fa-search";
-        public const string Default = "fas fa-ellipsis-h";
+        public const string Add = "bi bi-plus-circle";
+        public const string Edit = "bi bi-pencil";
+        public const string Copy = "bi bi-copy";
+        public const string GoTo = "bi bi-box-arrow-up-right";
+        public const string Delete = "bi bi-trash";
+        public const string Search = "bi bi-search";
+        public const string Default = "bi bi-three-dots";
     }
 
     /// <summary>
