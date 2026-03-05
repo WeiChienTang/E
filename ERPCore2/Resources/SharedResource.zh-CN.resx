@@ -1952,7 +1952,7 @@
   <data name="Button.OpenQuotation" xml:space="preserve"><value>打开报价单</value></data>
   <data name="Button.OpenSalesReturn" xml:space="preserve"><value>打开退货单</value></data>
   <data name="Composition.Loading" xml:space="preserve"><value>正在加载配方数据...</value></data>
-  <data name="Composition.QuickApply" xml:space="preserve"><value>快速套用配方</value></data>
+  <data name="Composition.QuickApply" xml:space="preserve"><value>快速套用清单</value></data>
   <data name="Composition.CustomModeShort" xml:space="preserve"><value>自定义</value></data>
   <data name="Composition.SelectBOM" xml:space="preserve"><value>选择 BOM 配方</value></data>
   <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>选择 BOM 配方 - {0}</value></data>
@@ -2027,6 +2027,9 @@
   <data name="Schedule.CountSuffix" xml:space="preserve"><value> 笔</value></data>
   <data name="Message.ConfirmClearAll" xml:space="preserve"><value>确定要清除所有明细吗？</value></data>
   <data name="Composition.RemarksTooltip" xml:space="preserve"><value>选填。可记录组件相关的备注信息（有下一步时仍可编辑）</value></data>
+  <data name="Composition.ConfirmSaveEmpty" xml:space="preserve"><value>确定要保存空白的物料清单吗？此品项将不会有任何组件。</value></data>
+  <data name="Composition.OtherCustomer" xml:space="preserve"><value>其他客户</value></data>
+  <data name="Field.CompositionName" xml:space="preserve"><value>清单名称</value></data>
   <data name="Label.Unknown" xml:space="preserve"><value>未知</value></data>
 
   <!-- ===== Production ===== -->

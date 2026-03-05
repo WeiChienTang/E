@@ -44,30 +44,47 @@
             @if (!IsReadOnly && Compositions.Any())
             {
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small text-muted mb-2">
+                    <label class="composition-section-label">
                         <i class="bi bi-lightning-charge me-1"></i>@L["Composition.QuickApply"]
                     </label>
-                    <div class="d-flex flex-wrap gap-2">
-                        @foreach (var comp in Compositions)
-                        {
-                            var isActive = selectedCompositionId == comp.Id && !isCustomMode;
-                            var isCurrentCustomer = comp.CustomerId == CurrentCustomerId;
+                    <div class="composition-pill-scroll">
+                        <div class="composition-pill-group">
+                            @foreach (var comp in Compositions)
+                            {
+                                var isActive = selectedCompositionId == comp.Id && !isCustomMode;
+                                var isCurrentCustomer = comp.CustomerId.HasValue && comp.CustomerId == CurrentCustomerId;
+                                var isOtherCustomer = comp.CustomerId.HasValue && comp.CustomerId != CurrentCustomerId;
+                                var pillVariant = isActive ? "active" 
+                                                : isCurrentCustomer ? "current-customer" 
+                                                : isOtherCustomer ? "other-customer" 
+                                                : "";
+                                var iconClass = isCurrentCustomer ? "bi-person-check" 
+                                              : isOtherCustomer ? "bi-person-lock" 
+                                              : "bi-diagram-3";
+                                var displayName = !string.IsNullOrEmpty(comp.Name) ? comp.Name : comp.Code;
+                                <button type="button"
+                                        class="composition-pill @pillVariant"
+                                        title="@comp.Code"
+                                        @onclick="() => ApplyComposition(comp.Id)">
+                                    <i class="bi @iconClass"></i>
+                                    <span class="composition-pill-name">@displayName</span>
+                                    @if (isCurrentCustomer)
+                                    {
+                                        <span class="composition-pill-tag tag-current">@L["Composition.CurrentCustomer"]</span>
+                                    }
+                                    else if (isOtherCustomer)
+                                    {
+                                        <span class="composition-pill-tag tag-other">@(comp.Customer?.CompanyName ?? L["Composition.OtherCustomer"].ToString())</span>
+                                    }
+                                </button>
+                            }
                             <button type="button"
-                                    class="btn btn-sm @(isActive ? "btn-primary" : isCurrentCustomer ? "btn-outline-info" : "btn-outline-secondary")"
-                                    @onclick="() => ApplyComposition(comp.Id)">
-                                <i class="bi bi-diagram-3 me-1"></i>
-                                @comp.Code
-                                @if (isCurrentCustomer)
-                                {
-                                    <span class="badge bg-info ms-1" style="font-size: 0.65em;">@L["Composition.CurrentCustomer"]</span>
-                                }
+                                    class="composition-pill custom-mode @(isCustomMode ? "active" : "")"
+                                    @onclick="EnterCustomMode">
+                                <i class="bi bi-stars"></i>
+                                <span class="composition-pill-name">@L["Composition.CustomModeShort"]</span>
                             </button>
-                        }
-                        <button type="button"
-                                class="btn btn-sm @(isCustomMode ? "btn-warning" : "btn-outline-warning")"
-                                @onclick="EnterCustomMode">
-                            <i class="bi bi-stars me-1"></i>@L["Composition.CustomModeShort"]
-                        </button>
+                        </div>
                     </div>
                 </div>
                 <hr class="my-2" />
@@ -96,6 +113,18 @@
     </BodyContent>
 </BaseModalComponent>
 
+@* 空白 BOM 儲存確認對話框 *@
+<GenericConfirmModalComponent IsVisible="@_showEmptyConfirm"
+                             IsVisibleChanged="@((bool v) => _showEmptyConfirm = v)"
+                             Title="@L["Button.Confirm"]"
+                             Icon="bi-exclamation-triangle"
+                             HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                             Message="@L["Composition.ConfirmSaveEmpty"]"
+                             ConfirmButtonText="@L["Button.Confirm"]"
+                             CancelButtonText="@L["Button.Cancel"]"
+                             OnConfirm="@HandleConfirmSaveEmpty"
+                             OnCancel="@(() => _showEmptyConfirm = false)" />
+
 @code {
     // ===== 參數定義 =====
     [Parameter] public bool IsVisible { get; set; }
@@ -108,7 +137,9 @@
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public Func<List<TCompositionDetail>?>? OnRequestCachedData { get; set; }
     [Parameter] public int? SelectedCompositionId { get; set; }  // 初始選中的配方 ID
+    [Parameter] public EventCallback<int?> SelectedCompositionIdChanged { get; set; }
     [Parameter] public bool IsCustomMode { get; set; } = false;  // 是否為自定義模式
+    [Parameter] public EventCallback<bool> IsCustomModeChanged { get; set; }
 
     /// <summary>可用的配方清單（由父元件傳入，用於頂部 pill 按鈕）</summary>
     [Parameter] public List<ProductComposition> Compositions { get; set; } = new();
@@ -132,6 +163,10 @@
     // ===== 配方選擇狀態 =====
     private int? selectedCompositionId;
     private bool isCustomMode;
+    
+    // 空白 BOM 確認狀態
+    private bool _showEmptyConfirm = false;
+    private List<TCompositionDetail>? _pendingSaveDetails;
 
     // ===== 生命週期 =====
     protected override async Task OnParametersSetAsync()
@@ -207,6 +242,10 @@
                     compositionDetails = await CopyFromComposition(DetailId.Value, defaultComposition.Id);
                     FillNavigationProperties(compositionDetails);
                     selectedCompositionId = defaultComposition.Id;
+                    
+                    // 通知父元件 fallback 選擇的配方
+                    await SelectedCompositionIdChanged.InvokeAsync(defaultComposition.Id);
+                    await IsCustomModeChanged.InvokeAsync(false);
                     return;
                 }
             }
@@ -272,6 +311,7 @@ private string GetModalTitle()
         if (!DetailId.HasValue) return;
         
         isLoading = true;
+        _dataLoadCompleted = false;
         StateHasChanged();
 
         try
@@ -280,6 +320,10 @@ private string GetModalTitle()
             FillNavigationProperties(compositionDetails);
             selectedCompositionId = compositionId;
             isCustomMode = false;
+            
+            // 通知父元件選擇狀態變更
+            await SelectedCompositionIdChanged.InvokeAsync(compositionId);
+            await IsCustomModeChanged.InvokeAsync(false);
         }
         catch (Exception ex)
         {
@@ -288,6 +332,7 @@ private string GetModalTitle()
         finally
         {
             isLoading = false;
+            _dataLoadCompleted = true;
             StateHasChanged();
         }
     }
@@ -295,13 +340,24 @@ private string GetModalTitle()
     /// <summary>
     /// 進入自定義模式（清空表格，讓使用者透過 AutoEmptyRow 直接新增）
     /// </summary>
-    private void EnterCustomMode()
+    private async Task EnterCustomMode()
     {
         compositionDetails = new List<TCompositionDetail>();
         selectedCompositionId = null;
         isCustomMode = true;
-        tableComponent?.RefreshEmptyRow();
+        
+        // 通知父元件選擇狀態變更
+        await SelectedCompositionIdChanged.InvokeAsync(null);
+        await IsCustomModeChanged.InvokeAsync(true);
+        
+        // 先 StateHasChanged + await Task.Yield() 讓 Blazor 完成一次真正的渲染
+        // 使子元件 InteractiveTableComponent 的 Items 指向新的空 List
+        // 同步方法中多次 StateHasChanged() 會被 Blazor 批次合併，子元件看不到中間態
         StateHasChanged();
+        await Task.Yield();
+        
+        // 渲染完成後，子元件的 Items 已更新，可安全呼叫 RefreshEmptyRow
+        tableComponent?.RefreshEmptyRow();
     }
 
     // ===== InteractiveTable 配置 =====
@@ -465,6 +521,52 @@ private string GetModalTitle()
                 })
                 .ToList();
 
+            // 空白 BOM 儲存確認：透過 GenericConfirmModalComponent 讓使用者確認
+            if (!validDetails.Any())
+            {
+                _pendingSaveDetails = validDetails;
+                _showEmptyConfirm = true;
+                return;
+            }
+
+            // 有明細資料，直接執行儲存
+            await ExecuteSave(validDetails);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+    
+    /// <summary>
+    /// 使用者確認儲存空白 BOM
+    /// </summary>
+    private async Task HandleConfirmSaveEmpty()
+    {
+        _showEmptyConfirm = false;
+        if (_pendingSaveDetails != null)
+        {
+            await ExecuteSave(_pendingSaveDetails);
+            _pendingSaveDetails = null;
+        }
+    }
+    
+    /// <summary>
+    /// 執行實際儲存（重複檢查 + 呼叫 OnSave）
+    /// </summary>
+    private async Task ExecuteSave(List<TCompositionDetail> validDetails)
+    {
+        try
+        {
             // 檢查重複組件
             if (validDetails.Any())
             {
@@ -501,14 +603,5 @@ private string GetModalTitle()
         {
             await NotificationService.ShowErrorAsync($"{ex.Message}");
         }
-    }
-
-    private async Task HandleCancel()
-    {
-        if (OnCancel.HasDelegate)
-        {
-            await OnCancel.InvokeAsync();
-        }
-        await IsVisibleChanged.InvokeAsync(false);
     }
 }

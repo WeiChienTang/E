@@ -53,7 +53,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var updatedCount = 0;
             foreach (var existing in existingPermissions.Where(p => !string.IsNullOrEmpty(p.Code) && registryCodes.Contains(p.Code)))
             {
-                if (registryLookup.TryGetValue(existing.Code, out var def))
+                if (registryLookup.TryGetValue(existing.Code!, out var def))
                 {
                     if (existing.Name != def.Name || existing.Level != def.Level || existing.Remarks != def.Remarks)
                     {

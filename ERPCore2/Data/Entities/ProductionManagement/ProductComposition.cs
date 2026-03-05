@@ -10,6 +10,10 @@ namespace ERPCore2.Data.Entities
     public class ProductComposition : BaseEntity
     {
         // 基本資訊
+        [MaxLength(100, ErrorMessage = "清單名稱不可超過100個字元")]
+        [Display(Name = "清單名稱")]
+        public string? Name { get; set; }
+
         [Required(ErrorMessage = "成品為必填")]
         [Display(Name = "成品")]
         [ForeignKey(nameof(ParentProduct))]
