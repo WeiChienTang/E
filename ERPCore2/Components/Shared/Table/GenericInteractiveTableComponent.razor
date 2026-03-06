@@ -84,11 +84,15 @@
             @if (Items != null && Items.Any())
             {
                 var itemIndex = 0;
+                // 預先計算空行數量，避免在每行模板中重複計算（O(n) 而非 O(n²)）
+                var cachedEmptyRowCount = (EnableAutoEmptyRow && ShowBuiltInActions && ShowBuiltInDeleteButton && AllowAddNewRow)
+                    ? Items.Count(IsRowEmpty)
+                    : 0;
                 @foreach (var item in Items)
                 {
                     var currentIndex = itemIndex;
                     var canDrag = EnableDrag && (IsDraggable?.Invoke(item) ?? true);
-                    <tr class="@GetRowClass(item, currentIndex) @GetDragDropRowClass(item, currentIndex)" 
+                    <tr class="@GetCombinedRowClass(item, currentIndex)"
                         @onclick="() => HandleRowClick(item)"
                         @onclick:stopPropagation="false"
                         style="@GetRowStyle(canDrag)"
@@ -403,7 +407,31 @@
                         @if (ShowBuiltInActions)
                         {
                             <td class="text-center table-actions-column" style="@GetActionsColumnStyle()" @onclick:stopPropagation="true">
-                                @GetBuiltInActionsTemplate()(item)
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    @if (CustomActionsTemplate != null)
+                                    {
+                                        @CustomActionsTemplate(item)
+                                    }
+                                    @if (ShowBuiltInDeleteButton)
+                                    {
+                                        var isDeleteDisabled = IsReadOnly || (IsDeleteDisabled?.Invoke(item) ?? false);
+                                        var isThisRowEmpty = EnableAutoEmptyRow && IsRowEmpty(item);
+
+                                        if (!isDeleteDisabled && EnableAutoEmptyRow && AllowAddNewRow && isThisRowEmpty && cachedEmptyRowCount <= 1)
+                                        {
+                                            isDeleteDisabled = true;
+                                        }
+
+                                        <GenericButtonComponent Variant="@DeleteButtonVariant"
+                                                               IconClass="@DeleteButtonIcon"
+                                                               Size="@DeleteButtonSize"
+                                                               IsDisabled="@isDeleteDisabled"
+                                                               Title="@(isDeleteDisabled && isThisRowEmpty ? L["Label.KeepOneEmptyRow"].ToString() : (string.IsNullOrEmpty(DeleteButtonTitle) ? L["Button.Delete"].ToString() : DeleteButtonTitle))"
+                                                               OnClick="async () => await HandleBuiltInDelete(item)"
+                                                               StopPropagation="true"
+                                                               CssClass="btn-square" />
+                                    }
+                                </div>
                             </td>
                         }
                     </tr>
@@ -733,10 +761,10 @@
         return "table-header-primary";
     }
 
-    private string GetRowClass(TItem item, int index)
+    private string GetCombinedRowClass(TItem item, int index)
     {
         var classes = new List<string>();
-        
+
         // 使用者自訂的 CSS class
         if (GetRowCssClass != null)
         {
@@ -744,13 +772,21 @@
             if (!string.IsNullOrEmpty(customClass))
                 classes.Add(customClass);
         }
-        
+
         // 如果啟用選取功能，檢查是否為選取的項目
         if (EnableRowSelection && SelectedItems != null && SelectedItems.Contains(item))
-        {
             classes.Add("row-selected");
-        }
-        
+
+        // 正在被拖曳的行
+        if (EnableDrag && DragDropState.IsDragging &&
+            DragDropState.SourceTableId == _uniqueTableId &&
+            DragDropState.DraggedIndex == index)
+            classes.Add("dragging");
+
+        // 拖曳經過的目標行（用於排序時顯示插入位置）
+        if (EnableDrop && _dragOverIndex == index && DragDropState.CanDropTo(DragDropGroup))
+            classes.Add("drag-over");
+
         return string.Join(" ", classes);
     }
 
@@ -1032,10 +1068,8 @@
             {
                 await OnSelectionChanged.InvokeAsync(SelectedItems);
             }
-            
-            StateHasChanged();
         }
-        
+
         // 原有的 OnRowClick 事件
         if (EnableRowClick && OnRowClick.HasDelegate)
         {
@@ -1262,14 +1296,6 @@
         return true;
     }
     
-    /// <summary>
-    /// 判斷值是否為 null 或 empty
-    /// 規則：
-    /// - null → 空
-    /// - string: "" 或 whitespace → 空
-    /// - 數字類型: 0 → 空（因為數字欄位預設值是 0，應視為未填寫）
-    /// - 布林: false → 空
-    /// - 其他類型：只要不是 null 就算有值
     /// <summary>
     /// 判斷值是否為 null 或 empty
     /// 規則：
@@ -1567,49 +1593,6 @@
         }
     }
     
-    private RenderFragment<TItem> GetBuiltInActionsTemplate()
-    {
-        return item => __builder =>
-        {
-            <div class="d-flex align-items-center justify-content-center h-100">
-                @if (CustomActionsTemplate != null)
-                {
-                    @CustomActionsTemplate(item)
-                }
-                @if (ShowBuiltInDeleteButton)
-                {
-                    // 計算是否禁用刪除按鈕
-                    var isDeleteDisabled = IsReadOnly || (IsDeleteDisabled?.Invoke(item) ?? false);
-                    
-                    // 自動空行管理：禁止刪除最後一個空行
-                    if (!isDeleteDisabled && EnableAutoEmptyRow && AllowAddNewRow)
-                    {
-                        var isThisRowEmpty = IsRowEmpty(item);
-                        if (isThisRowEmpty)
-                        {
-                            // 計算空行數量
-                            var emptyRowCount = Items?.Count(i => IsRowEmpty(i)) ?? 0;
-                            // 如果這是唯一的空行，禁止刪除
-                            if (emptyRowCount <= 1)
-                            {
-                                isDeleteDisabled = true;
-                            }
-                        }
-                    }
-                    
-                    <GenericButtonComponent Variant="@DeleteButtonVariant"
-                                           IconClass="@DeleteButtonIcon"
-                                           Size="@DeleteButtonSize"
-                                           IsDisabled="@isDeleteDisabled"
-                                           Title="@(isDeleteDisabled && EnableAutoEmptyRow && IsRowEmpty(item) ? L["Label.KeepOneEmptyRow"].ToString() : (string.IsNullOrEmpty(DeleteButtonTitle) ? L["Button.Delete"].ToString() : DeleteButtonTitle))"
-                                           OnClick="async () => await HandleBuiltInDelete(item)"
-                                           StopPropagation="true"
-                                           CssClass="btn-square" />
-                }
-            </div>
-        };
-    }
-    
     private async Task HandleBuiltInDelete(TItem item)
     {
         if (OnItemDelete.HasDelegate)
@@ -1646,14 +1629,12 @@
                 var newDownIndex = Math.Min(selectedIndex + 1, dropdownItems.Count - 1);
                 column.SetSelectedIndex(item!, newDownIndex);
                 await ScrollSelectedItemIntoView(column, item, newDownIndex);
-                StateHasChanged();
                 break;
-                
+
             case "ArrowUp":
                 var newUpIndex = Math.Max(selectedIndex - 1, 0);
                 column.SetSelectedIndex(item!, newUpIndex);
                 await ScrollSelectedItemIntoView(column, item, newUpIndex);
-                StateHasChanged();
                 break;
                 
             case "Enter":
@@ -1694,15 +1675,12 @@
                     {
                         CheckAndAddEmptyRowIfNeeded();
                     }
-
-                    StateHasChanged();
                 }
                 break;
-                
+
             case "Escape":
                 column.SetShowDropdown(item!, false);
                 column.SetSelectedIndex(item!, -1);
-                StateHasChanged();
                 break;
         }
     }
@@ -1824,9 +1802,6 @@
         {
             CheckAndAddEmptyRowIfNeeded();
         }
-
-        // 🔧 修正：點擊選擇項目後需要觸發 UI 更新，確保商品名稱等資料正確渲染
-        StateHasChanged();
     }
 
     private async Task HandleSearchableSelectItemMouseEnter(InteractiveColumnDefinition column, TItem item, int index)
@@ -1895,30 +1870,6 @@
     }
     
     /// <summary>
-    /// 取得行的拖放相關 CSS class
-    /// </summary>
-    private string GetDragDropRowClass(TItem item, int index)
-    {
-        var classes = new List<string>();
-        
-        // 正在被拖曳的行
-        if (EnableDrag && DragDropState.IsDragging && 
-            DragDropState.SourceTableId == _uniqueTableId && 
-            DragDropState.DraggedIndex == index)
-        {
-            classes.Add("dragging");
-        }
-        
-        // 拖曳經過的目標行（用於排序時顯示插入位置）
-        if (EnableDrop && _dragOverIndex == index && DragDropState.CanDropTo(DragDropGroup))
-        {
-            classes.Add("drag-over");
-        }
-        
-        return string.Join(" ", classes);
-    }
-    
-    /// <summary>
     /// 處理拖曳開始
     /// </summary>
     private async Task HandleDragStart(TItem item, int index)
@@ -1931,27 +1882,23 @@
         {
             await OnDragStart.InvokeAsync(item);
         }
-        
-        StateHasChanged();
     }
-    
+
     /// <summary>
     /// 處理拖曳結束
     /// </summary>
     private async Task HandleDragEnd(TItem item)
     {
         if (!EnableDrag) return;
-        
+
         DragDropState.EndDrag();
         _dragOverIndex = null;
         _isDragOver = false;
-        
+
         if (OnDragEnd.HasDelegate)
         {
             await OnDragEnd.InvokeAsync(item);
         }
-        
-        StateHasChanged();
     }
     
     /// <summary>
@@ -1960,7 +1907,8 @@
     private void HandleTableDragOver()
     {
         if (!EnableDrop || !DragDropState.CanDropTo(DragDropGroup)) return;
-        
+        if (_isDragOver) return;
+
         _isDragOver = true;
         StateHasChanged();
     }
@@ -1970,6 +1918,8 @@
     /// </summary>
     private void HandleTableDragLeave()
     {
+        if (!_isDragOver && _dragOverIndex == null) return;
+
         _isDragOver = false;
         _dragOverIndex = null;
         StateHasChanged();
@@ -1991,7 +1941,8 @@
     private void HandleRowDragEnter(int index)
     {
         if (!EnableDrop || !DragDropState.CanDropTo(DragDropGroup)) return;
-        
+        if (_dragOverIndex == index) return;
+
         _dragOverIndex = index;
         StateHasChanged();
     }

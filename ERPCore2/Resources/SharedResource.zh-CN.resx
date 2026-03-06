@@ -2929,5 +2929,14 @@
   <data name="Preference.Reminder60" xml:space="preserve"><value>1小时前</value></data>
   <data name="Calendar.Reminder" xml:space="preserve"><value>提醒</value></data>
   <data name="Calendar.ReminderUseDefault" xml:space="preserve"><value>使用默认值</value></data>
+  <data name="Button.AddEntity" xml:space="preserve"><value>新增{0}</value></data>
+  <data name="Button.AddEntityTitle" xml:space="preserve"><value>新增{0}数据</value></data>
+  <data name="Label.SearchAndManage" xml:space="preserve"><value>{0}搜索与管理</value></data>
+  <data name="Message.EntityNoResults" xml:space="preserve"><value>没有找到符合条件的{0}数据</value></data>
+  <data name="Message.EntityCannotDelete" xml:space="preserve"><value>此{0}「{1}」无法删除</value></data>
+  <data name="Message.EntityDeleteSuccess" xml:space="preserve"><value>{0}删除成功</value></data>
+  <data name="Message.EntityDeleteFailed" xml:space="preserve"><value>删除失败：{0}</value></data>
+  <data name="Message.EntityDeleteError" xml:space="preserve"><value>删除时发生错误：{0}</value></data>
+  <data name="Message.EntityDeleteConfirm" xml:space="preserve"><value>确定要删除{0}「{1}」吗？</value></data>
 
 </root>

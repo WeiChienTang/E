@@ -168,7 +168,6 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     // 快取定義
     private List<TableColumnDefinition> _cachedColumnDefinitions = new();
     private List<SearchFilterDefinition> _cachedFilterDefinitions = new();
-    private bool _definitionsCacheInvalid = true;
 
     // 快取失效追蹤（條件式重建，避免每次 OnParametersSet 都重建）
     private List<TableColumnDefinition>? _prevColumnDefs;
@@ -236,7 +235,6 @@ public partial class GenericIndexPageComponent<TEntity, TService>
         _prevRemarksColumnTitle    = RemarksColumnTitle;
         _prevCreatedAtColumnTitle  = CreatedAtColumnTitle;
         _prevRemarksFilterTitle    = RemarksFilterTitle;
-        _definitionsCacheInvalid   = true;
         RebuildDefinitionsCache();
     }
 
@@ -244,15 +242,18 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     {
         pageSize = DefaultPageSize;
 
-        if (!string.IsNullOrEmpty(DebugPageName))
-            _isSuperAdmin = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+        // 一次性取得 SuperAdmin 狀態，避免重複查詢 DB
+        bool isSuperAdmin = (!string.IsNullOrEmpty(DebugPageName) || !string.IsNullOrWhiteSpace(RequiredModule))
+            ? await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync()
+            : false;
+        _isSuperAdmin = isSuperAdmin;
 
         // 公司層級模組檢查（阻擋直接輸入網址存取）
         // 只有 IsSuperAdmin=true 的帳號可繞過，System.Admin 權限持有者亦受模組限制
         if (!string.IsNullOrWhiteSpace(RequiredModule))
         {
             var isEnabled = await CompanyModuleService.IsModuleEnabledAsync(RequiredModule);
-            _isModuleEnabled = isEnabled || await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+            _isModuleEnabled = isEnabled || isSuperAdmin;
         }
 
         if (_isModuleEnabled)
@@ -263,10 +264,8 @@ public partial class GenericIndexPageComponent<TEntity, TService>
 
     private void RebuildDefinitionsCache()
     {
-        if (!_definitionsCacheInvalid) return;
         _cachedColumnDefinitions = BuildFinalColumnDefinitions();
         _cachedFilterDefinitions = BuildFinalFilterDefinitions();
-        _definitionsCacheInvalid = false;
     }
 
     private List<TableColumnDefinition> BuildFinalColumnDefinitions()
@@ -317,17 +316,13 @@ public partial class GenericIndexPageComponent<TEntity, TService>
 
         if (AutoAddRemarksFilter && !filters.Any(f => f.PropertyName == "Remarks"))
         {
-            try
+            filters.Add(new SearchFilterDefinition
             {
-                filters.Add(new SearchFilterDefinition
-                {
-                    Name        = "Remarks",
-                    Label       = string.IsNullOrEmpty(RemarksFilterTitle) ? L["Label.Remarks"] : RemarksFilterTitle,
-                    Type        = SearchFilterType.Text,
-                    Placeholder = L["Placeholder.Remarks"]
-                });
-            }
-            catch { /* 如果有錯誤，跳過添加備註篩選器 */ }
+                Name        = "Remarks",
+                Label       = string.IsNullOrEmpty(RemarksFilterTitle) ? L["Label.Remarks"] : RemarksFilterTitle,
+                Type        = SearchFilterType.Text,
+                Placeholder = L["Placeholder.Remarks"]
+            });
         }
 
         return filters;
@@ -335,10 +330,10 @@ public partial class GenericIndexPageComponent<TEntity, TService>
 
     // ===== 智能文字產生 =====
 
-    private string GetAddButtonText()      => !string.IsNullOrWhiteSpace(AddButtonText)      ? AddButtonText      : $"新增{EntityName}";
-    private string GetAddButtonTitle()     => !string.IsNullOrWhiteSpace(AddButtonTitle)     ? AddButtonTitle     : $"新增{EntityName}資料";
-    private string GetSearchSectionTitle() => !string.IsNullOrWhiteSpace(SearchSectionTitle) ? SearchSectionTitle : $"{EntityName}搜尋與管理";
-    private string GetEmptyMessage()       => !string.IsNullOrWhiteSpace(EmptyMessage)       ? EmptyMessage       : $"沒有找到符合條件的{EntityName}資料";
+    private string GetAddButtonText()      => !string.IsNullOrWhiteSpace(AddButtonText)      ? AddButtonText      : string.Format(L["Button.AddEntity"],     EntityName);
+    private string GetAddButtonTitle()     => !string.IsNullOrWhiteSpace(AddButtonTitle)     ? AddButtonTitle     : string.Format(L["Button.AddEntityTitle"], EntityName);
+    private string GetSearchSectionTitle() => !string.IsNullOrWhiteSpace(SearchSectionTitle) ? SearchSectionTitle : string.Format(L["Label.SearchAndManage"], EntityName);
+    private string GetEmptyMessage()       => !string.IsNullOrWhiteSpace(EmptyMessage)       ? EmptyMessage       : string.Format(L["Message.EntityNoResults"], EntityName);
 
     // ===== Debug Badge =====
 

@@ -24,16 +24,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
     /// 當 Modal 已關閉且上次也是關閉狀態時，跳過整棵渲染樹的 diff，
     /// 避免父組件每次 StateHasChanged() 都觸發不必要的子組件渲染。
     /// </summary>
-    protected override bool ShouldRender()
-    {
-        // 需要渲染的情況：
-        //   1. IsVisible=true（Modal 開啟中）
-        //   2. IsVisible=false 但 _renderedVisible=true（剛關閉，需渲染一次讓 BaseModalComponent 更新）
-        if (!IsVisible && !_renderedVisible)
-            return false;
-
-        return true;
-    }
+    protected override bool ShouldRender() => IsVisible || _renderedVisible;
 
     protected override Task OnInitializedAsync()
     {

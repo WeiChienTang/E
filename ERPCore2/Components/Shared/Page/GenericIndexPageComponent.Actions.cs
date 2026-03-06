@@ -25,7 +25,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
             // 步驟 0：前端保護（系統資料保護 / 自訂 CanDelete）
             if (!IsEntityDeletable(entity))
             {
-                await NotificationService.ShowWarningAsync($"此{EntityName}「{displayName}」無法刪除");
+                await NotificationService.ShowWarningAsync(string.Format(L["Message.EntityCannotDelete"], EntityName, displayName));
                 return;
             }
 
@@ -46,7 +46,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
                 var result = await Service.PermanentDeleteAsync(entity.Id);
                 if (!result.IsSuccess)
                 {
-                    await NotificationService.ShowErrorAsync($"刪除失敗：{result.ErrorMessage}");
+                    await NotificationService.ShowErrorAsync(string.Format(L["Message.EntityDeleteFailed"], result.ErrorMessage));
                     return;
                 }
                 deleteSuccess = true;
@@ -61,7 +61,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"刪除時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.EntityDeleteError"], ex.Message));
         }
     }
 
@@ -82,12 +82,12 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     }
 
     private string GetDeleteSuccessMessage() =>
-        !string.IsNullOrWhiteSpace(DeleteSuccessMessage) ? DeleteSuccessMessage : $"{EntityName}刪除成功";
+        !string.IsNullOrWhiteSpace(DeleteSuccessMessage) ? DeleteSuccessMessage : string.Format(L["Message.EntityDeleteSuccess"], EntityName);
 
     private string GetDeleteConfirmMessage(string displayName) =>
         !string.IsNullOrWhiteSpace(DeleteConfirmMessage)
             ? string.Format(DeleteConfirmMessage, displayName)
-            : $"確定要刪除{EntityName}「{displayName}」嗎？";
+            : string.Format(L["Message.EntityDeleteConfirm"], EntityName, displayName);
 
     #endregion
 }

@@ -187,63 +187,30 @@ public partial class GenericEditModalComponent<TEntity, TService>
             if (IdChanged.HasDelegate)
                 await IdChanged.InvokeAsync(targetId);
 
+            TEntity? loadedEntity = null;
+
             if (DataLoader != null)
             {
                 // 暫時清除導航標記，讓 DataLoader 走正常路徑
                 _isNavigating = false;
-
-                var loadedEntity = await DataLoader();
-
-                if (loadedEntity != null)
-                {
-                    Entity = loadedEntity;
-                    editContext = new EditContext(Entity);
-
-                    UpdateAllActionButtons();
-                    await LoadStatusMessageData();
-                    await LoadNavigationStateAsync();
-
-                    if (OnEntityLoaded.HasDelegate)
-                        await OnEntityLoaded.InvokeAsync(targetId);
-
-                    StateHasChanged();
-                }
-                else
-                {
-                    await ShowErrorMessage($"找不到指定的{EntityName}");
-                }
+                loadedEntity = await DataLoader();
             }
             else if (Service != null)
             {
                 // 後備方案：如果沒有 DataLoader，使用 Service 直接載入
                 var getByIdMethod = GetCachedMethod(Service.GetType(), "GetByIdAsync");
-
                 if (getByIdMethod != null)
                 {
                     var getByIdTask = getByIdMethod.Invoke(Service, new object[] { targetId }) as Task<TEntity>;
                     if (getByIdTask != null)
-                    {
-                        var loadedEntity = await getByIdTask;
-                        if (loadedEntity != null)
-                        {
-                            Entity = loadedEntity;
-                            editContext = new EditContext(Entity);
-                            UpdateAllActionButtons();
-                            await LoadStatusMessageData();
-                            await LoadNavigationStateAsync();
-
-                            if (OnEntityLoaded.HasDelegate)
-                                await OnEntityLoaded.InvokeAsync(targetId);
-
-                            StateHasChanged();
-                        }
-                        else
-                        {
-                            await ShowErrorMessage($"找不到指定的{EntityName}");
-                        }
-                    }
+                        loadedEntity = await getByIdTask;
                 }
             }
+
+            if (loadedEntity != null)
+                await ApplyNavigatedEntityAsync(loadedEntity, targetId);
+            else
+                await ShowErrorMessage($"找不到指定的{EntityName}");
         }
         catch (Exception ex)
         {
@@ -254,6 +221,23 @@ public partial class GenericEditModalComponent<TEntity, TService>
         {
             _isNavigating = false;
         }
+    }
+
+    /// <summary>
+    /// 導航載入完成後的共用後續操作（更新狀態、快取、觸發事件）
+    /// </summary>
+    private async Task ApplyNavigatedEntityAsync(TEntity entity, int targetId)
+    {
+        Entity = entity;
+        editContext = new EditContext(Entity);
+        UpdateAllActionButtons();
+        await LoadStatusMessageData();
+        await LoadNavigationStateAsync();
+
+        if (OnEntityLoaded.HasDelegate)
+            await OnEntityLoaded.InvokeAsync(targetId);
+
+        StateHasChanged();
     }
 
     /// <summary>

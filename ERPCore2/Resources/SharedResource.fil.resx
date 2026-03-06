@@ -2916,5 +2916,14 @@
   <data name="Preference.Reminder60" xml:space="preserve"><value>1 oras bago</value></data>
   <data name="Calendar.Reminder" xml:space="preserve"><value>Paalala</value></data>
   <data name="Calendar.ReminderUseDefault" xml:space="preserve"><value>Gumamit ng Default</value></data>
+  <data name="Button.AddEntity" xml:space="preserve"><value>Magdagdag ng {0}</value></data>
+  <data name="Button.AddEntityTitle" xml:space="preserve"><value>Magdagdag ng {0} Data</value></data>
+  <data name="Label.SearchAndManage" xml:space="preserve"><value>Paghahanap at Pamamahala ng {0}</value></data>
+  <data name="Message.EntityNoResults" xml:space="preserve"><value>Walang {0} data na nakakatugma sa pamantayan</value></data>
+  <data name="Message.EntityCannotDelete" xml:space="preserve"><value>Ang {0} na "{1}" ay hindi mabubura</value></data>
+  <data name="Message.EntityDeleteSuccess" xml:space="preserve"><value>Matagumpay na nabura ang {0}</value></data>
+  <data name="Message.EntityDeleteFailed" xml:space="preserve"><value>Nabigo ang pagbura: {0}</value></data>
+  <data name="Message.EntityDeleteError" xml:space="preserve"><value>Nagkaroon ng error sa pagbura: {0}</value></data>
+  <data name="Message.EntityDeleteConfirm" xml:space="preserve"><value>Sigurado ka bang gusto mong burahin ang {0} "{1}"?</value></data>
 
 </root>

@@ -1,5 +1,6 @@
 using ERPCore2.Data;
 using ERPCore2.Components.Shared.UI.Form;
+using ERPCore2.Services;
 using Microsoft.JSInterop;
 
 namespace ERPCore2.Components.Shared.Modal;
@@ -46,26 +47,10 @@ public partial class GenericEditModalComponent<TEntity, TService>
                 var canDeleteMethod = Service != null ? GetCachedMethod(Service.GetType(), "CanDeleteAsync", new[] { typeof(TEntity) }) : null;
                 if (canDeleteMethod != null)
                 {
-                    var task = (Task)canDeleteMethod.Invoke(Service, new object[] { Entity })!;
-                    await task;
-
-                    // 獲取結果
-                    var resultProperty = task.GetType().GetProperty("Result");
-                    if (resultProperty != null)
-                    {
-                        var result = resultProperty.GetValue(task);
-                        var isSuccessProperty = result?.GetType().GetProperty("IsSuccess");
-                        var errorMessageProperty = result?.GetType().GetProperty("ErrorMessage");
-
-                        if (isSuccessProperty != null)
-                        {
-                            canDelete = (bool)isSuccessProperty.GetValue(result)!;
-                            if (!canDelete)
-                            {
-                                canDeleteErrorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? "無法刪除此資料";
-                            }
-                        }
-                    }
+                    var canDeleteResult = await (Task<ServiceResult>)canDeleteMethod.Invoke(Service, new object[] { Entity })!;
+                    canDelete = canDeleteResult.IsSuccess;
+                    if (!canDelete)
+                        canDeleteErrorMessage = canDeleteResult.ErrorMessage ?? "無法刪除此資料";
                 }
                 else
                 {
@@ -97,35 +82,19 @@ public partial class GenericEditModalComponent<TEntity, TService>
             }
             else
             {
-                // 使用快取反射調用服務的 PermanentDeleteAsync 方法（指定參數類型避免多載衝突）
-                var deleteMethod = Service != null ? GetCachedMethod(Service.GetType(), "PermanentDeleteAsync", new[] { typeof(int) }) : null;
-                if (deleteMethod != null)
+                // 優先使用介面直接呼叫，避免反射
+                var genericService = Service as IGenericManagementService<TEntity>;
+                if (genericService != null)
                 {
-                    var task = (Task)deleteMethod.Invoke(Service, new object[] { Entity.Id })!;
-                    await task;
-
-                    // 獲取結果
-                    var resultProperty = task.GetType().GetProperty("Result");
-                    if (resultProperty != null)
+                    var deleteResult = await genericService.PermanentDeleteAsync(Entity.Id);
+                    if (deleteResult.IsSuccess)
                     {
-                        var result = resultProperty.GetValue(task);
-                        var isSuccessProperty = result?.GetType().GetProperty("IsSuccess");
-                        var errorMessageProperty = result?.GetType().GetProperty("ErrorMessage");
-
-                        if (isSuccessProperty != null)
-                        {
-                            var isSuccess = (bool)isSuccessProperty.GetValue(result)!;
-                            if (isSuccess)
-                            {
-                                deleteSuccess = true;
-                            }
-                            else
-                            {
-                                var errorMessage = errorMessageProperty?.GetValue(result)?.ToString() ?? "刪除失敗";
-                                await NotificationService.ShowErrorAsync($"刪除失敗：{errorMessage}");
-                                return;
-                            }
-                        }
+                        deleteSuccess = true;
+                    }
+                    else
+                    {
+                        await NotificationService.ShowErrorAsync($"刪除失敗：{deleteResult.ErrorMessage ?? "刪除失敗"}");
+                        return;
                     }
                 }
                 else
@@ -142,8 +111,8 @@ public partial class GenericEditModalComponent<TEntity, TService>
                 await NotificationService.ShowSuccessAsync(successMessage);
 
                 // 觸發成功事件（通知父組件刷新資料）
-                if (OnSaveSuccess.HasDelegate)
-                    await OnSaveSuccess.InvokeAsync();
+                if (OnDeleteSuccess.HasDelegate)
+                    await OnDeleteSuccess.InvokeAsync();
 
                 // 關閉 Modal
                 await CloseModal();

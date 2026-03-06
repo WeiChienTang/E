@@ -205,14 +205,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
                 ? await genericService.UpdateAsync(entity)
                 : await genericService.CreateAsync(entity);
 
-            var result = new ServiceResult
-            {
-                IsSuccess = serviceResult.IsSuccess,
-                ErrorMessage = serviceResult.ErrorMessage,
-                ValidationErrors = serviceResult.ValidationErrors
-            };
-
-            if (result.IsSuccess)
+            if (serviceResult.IsSuccess)
             {
                 if (AfterSave != null)
                     await AfterSave(entity);
@@ -220,7 +213,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
             }
             else
             {
-                var errorMsg = !string.IsNullOrEmpty(result.ErrorMessage) ? result.ErrorMessage : "儲存失敗";
+                var errorMsg = !string.IsNullOrEmpty(serviceResult.ErrorMessage) ? serviceResult.ErrorMessage : "儲存失敗";
                 await ShowErrorMessage($"{SaveFailureMessage}：{errorMsg}");
                 return false;
             }

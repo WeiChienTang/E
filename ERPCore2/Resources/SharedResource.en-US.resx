@@ -2943,5 +2943,14 @@
   <data name="Preference.Reminder60" xml:space="preserve"><value>1 hour before</value></data>
   <data name="Calendar.Reminder" xml:space="preserve"><value>Reminder</value></data>
   <data name="Calendar.ReminderUseDefault" xml:space="preserve"><value>Use Default</value></data>
+  <data name="Button.AddEntity" xml:space="preserve"><value>Add {0}</value></data>
+  <data name="Button.AddEntityTitle" xml:space="preserve"><value>Add {0} Data</value></data>
+  <data name="Label.SearchAndManage" xml:space="preserve"><value>{0} Search &amp; Management</value></data>
+  <data name="Message.EntityNoResults" xml:space="preserve"><value>No {0} data found matching the criteria</value></data>
+  <data name="Message.EntityCannotDelete" xml:space="preserve"><value>This {0} "{1}" cannot be deleted</value></data>
+  <data name="Message.EntityDeleteSuccess" xml:space="preserve"><value>{0} deleted successfully</value></data>
+  <data name="Message.EntityDeleteFailed" xml:space="preserve"><value>Delete failed: {0}</value></data>
+  <data name="Message.EntityDeleteError" xml:space="preserve"><value>Error occurred during deletion: {0}</value></data>
+  <data name="Message.EntityDeleteConfirm" xml:space="preserve"><value>Are you sure you want to delete {0} "{1}"?</value></data>
 
 </root>

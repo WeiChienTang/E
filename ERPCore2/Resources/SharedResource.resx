@@ -3005,5 +3005,14 @@
   <data name="Preference.ToastDurationNoAutoHide" xml:space="preserve"><value>不自動關閉</value></data>
   <data name="Calendar.Reminder" xml:space="preserve"><value>提醒</value></data>
   <data name="Calendar.ReminderUseDefault" xml:space="preserve"><value>使用預設值</value></data>
+  <data name="Button.AddEntity" xml:space="preserve"><value>新增{0}</value></data>
+  <data name="Button.AddEntityTitle" xml:space="preserve"><value>新增{0}資料</value></data>
+  <data name="Label.SearchAndManage" xml:space="preserve"><value>{0}搜尋與管理</value></data>
+  <data name="Message.EntityNoResults" xml:space="preserve"><value>沒有找到符合條件的{0}資料</value></data>
+  <data name="Message.EntityCannotDelete" xml:space="preserve"><value>此{0}「{1}」無法刪除</value></data>
+  <data name="Message.EntityDeleteSuccess" xml:space="preserve"><value>{0}刪除成功</value></data>
+  <data name="Message.EntityDeleteFailed" xml:space="preserve"><value>刪除失敗：{0}</value></data>
+  <data name="Message.EntityDeleteError" xml:space="preserve"><value>刪除時發生錯誤：{0}</value></data>
+  <data name="Message.EntityDeleteConfirm" xml:space="preserve"><value>確定要刪除{0}「{1}」嗎？</value></data>
 
 </root>

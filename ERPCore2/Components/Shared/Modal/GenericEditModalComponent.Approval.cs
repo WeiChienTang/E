@@ -74,7 +74,10 @@ public partial class GenericEditModalComponent<TEntity, TService>
             bool success = await OnRejectWithReason(rejectReason);
 
             if (success)
+            {
+                await ShowSuccessMessage("審核駁回");
                 await RefreshEntityAsync();
+            }
         }
         catch (Exception ex)
         {

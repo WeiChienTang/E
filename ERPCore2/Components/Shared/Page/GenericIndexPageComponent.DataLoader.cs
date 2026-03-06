@@ -18,18 +18,15 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
 {
     #region 初始化
 
-    private async Task InitializePageAsync()
+    private Task InitializePageAsync() => ExecuteWithLoadingAsync(LoadPageDataAsync, "初始化頁面時發生錯誤");
+
+    /// <summary>統一的 loading 包裝器，消除 InitializePageAsync / RefreshData 重複樣板</summary>
+    private async Task ExecuteWithLoadingAsync(Func<Task> action, string errorPrefix)
     {
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-            await LoadPageDataAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"初始化頁面時發生錯誤: {ex.Message}");
-        }
+        isLoading = true;
+        StateHasChanged();
+        try { await action(); }
+        catch (Exception ex) { Console.Error.WriteLine($"{errorPrefix}: {ex.Message}"); }
         finally
         {
             isLoading = false;
@@ -194,29 +191,16 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
 
     #region 刷新
 
-    private async Task RefreshData()
+    private async Task RefreshData(RefreshMode? overrideMode = null)
     {
-        if (PageRefreshMode == RefreshMode.ForceReload)
+        var mode = overrideMode ?? PageRefreshMode;
+        if (mode == RefreshMode.ForceReload)
         {
             Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
             return;
         }
 
-        try
-        {
-            isLoading = true;
-            StateHasChanged();
-            await LoadPageDataAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"刷新資料時發生錯誤: {ex.Message}");
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        await ExecuteWithLoadingAsync(LoadPageDataAsync, "刷新資料時發生錯誤");
     }
 
     #endregion
@@ -226,19 +210,13 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
     public async Task Refresh() => await RefreshData();
 
     /// <summary>使用指定的刷新方式刷新頁面</summary>
-    public async Task Refresh(RefreshMode mode)
-    {
-        var original = PageRefreshMode;
-        PageRefreshMode = mode;
-        await RefreshData();
-        PageRefreshMode = original;
-    }
+    public Task Refresh(RefreshMode mode) => RefreshData(mode);
 
     /// <summary>平滑刷新 - 僅重新載入資料，不會造成頁面閃爍</summary>
-    public Task SmoothRefresh() => Refresh(RefreshMode.Smooth);
+    public Task SmoothRefresh() => RefreshData(RefreshMode.Smooth);
 
     /// <summary>強制刷新 - 重新載入整個頁面</summary>
-    public Task ForceRefresh() => Refresh(RefreshMode.ForceReload);
+    public Task ForceRefresh() => RefreshData(RefreshMode.ForceReload);
 
     public async Task ReloadData() => await LoadDataAsync();
 

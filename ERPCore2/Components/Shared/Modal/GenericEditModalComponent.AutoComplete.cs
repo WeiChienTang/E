@@ -252,21 +252,21 @@ public partial class GenericEditModalComponent<TEntity, TService>
     /// </summary>
     private Func<string, Task<List<SelectOption>>> CreateAutoSearchFunction(string propertyName)
     {
-        return async (searchTerm) =>
+        return (searchTerm) =>
         {
             try
             {
                 _lastSearchTerms[propertyName] = searchTerm ?? string.Empty;
 
                 if (!AutoCompleteCollections!.ContainsKey(propertyName))
-                    return new List<SelectOption>();
+                    return Task.FromResult(new List<SelectOption>());
 
                 var collection = AutoCompleteCollections[propertyName];
                 var displayProperty = AutoCompleteDisplayProperties?.GetValueOrDefault(propertyName, "Name") ?? "Name";
                 var valueProperty = AutoCompleteValueProperties?.GetValueOrDefault(propertyName, "Id") ?? "Id";
                 var maxResults = AutoCompleteMaxResults?.GetValueOrDefault(propertyName, 100) ?? 100;
 
-                return collection
+                var result = collection
                     .Where(item =>
                     {
                         if (string.IsNullOrEmpty(searchTerm)) return true;
@@ -280,11 +280,12 @@ public partial class GenericEditModalComponent<TEntity, TService>
                         Value = GetPropertyValue(item, valueProperty)?.ToString() ?? string.Empty
                     })
                     .ToList();
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
                 LogError($"AutoSearch_{propertyName}", ex);
-                return new List<SelectOption>();
+                return Task.FromResult(new List<SelectOption>());
             }
         };
     }
