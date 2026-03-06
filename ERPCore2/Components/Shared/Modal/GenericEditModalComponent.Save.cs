@@ -66,7 +66,12 @@ public partial class GenericEditModalComponent<TEntity, TService>
 
                 if (wasNewRecord && Entity != null && Entity.Id > 0)
                 {
-                    bool shouldStayInAddMode = _stayInAddMode || (ShowAddButton && wasNewRecord);
+                    // 只有在使用者明確點擊「新增」按鈕後儲存，才留在新增模式
+                    // _stayInAddMode 由 HandleAddClick() 設定（使用者點擊「新增」按鈕）
+                    // 不能用 (ShowAddButton && wasNewRecord) — 否則任何新增儲存都會觸發，
+                    // 導致父組件在 OnEntitySaved 中關閉 Modal 後，HandleAddClick 還在執行
+                    // 而組件已被 Dispose，造成 CancellationTokenSource has been disposed 錯誤
+                    bool shouldStayInAddMode = _stayInAddMode;
 
                     if (shouldStayInAddMode)
                     {

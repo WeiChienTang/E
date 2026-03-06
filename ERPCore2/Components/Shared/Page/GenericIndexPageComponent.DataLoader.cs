@@ -48,7 +48,7 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
             await InitializeBasicData();
 
         if (ShowStatisticsCards && StatisticsDataLoader != null)
-            StatisticsData = await StatisticsDataLoader();
+            _statisticsData = await StatisticsDataLoader();
 
         await LoadDataAsync();
     }
@@ -71,7 +71,7 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
                 if (token.IsCancellationRequested) return;
 
                 allItems = data;
-                ApplyFilters();
+                ApplyFilters(resetPage: false);
                 StateHasChanged();
             }
         }
@@ -92,7 +92,7 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
     /// <summary>
     /// 套用篩選邏輯並更新分頁快取（同步，StateHasChanged 由 caller 負責）
     /// </summary>
-    private void ApplyFilters()
+    private void ApplyFilters(bool resetPage = true)
     {
         var query = allItems.AsQueryable();
 
@@ -102,7 +102,7 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
 
         filteredItems = query.ToList();
         totalItems    = filteredItems.Count;
-        currentPage   = 1;
+        if (resetPage) currentPage = 1;
 
         UpdatePagedItems();
 
@@ -129,15 +129,7 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
     /// </summary>
     private void UpdateStatisticsData()
     {
-        try
-        {
-            StatisticsData ??= new Dictionary<string, object>();
-            StatisticsData["TotalItems"] = filteredItems.Count;
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"更新統計資料失敗: {ex.Message}");
-        }
+        _statisticsData["TotalItems"] = filteredItems.Count;
     }
 
     private void UpdatePagedItems()
@@ -207,7 +199,7 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
 
     #region 公開 API
 
-    public async Task Refresh() => await RefreshData();
+    public Task Refresh() => RefreshData();
 
     /// <summary>使用指定的刷新方式刷新頁面</summary>
     public Task Refresh(RefreshMode mode) => RefreshData(mode);
@@ -218,7 +210,7 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
     /// <summary>強制刷新 - 重新載入整個頁面</summary>
     public Task ForceRefresh() => RefreshData(RefreshMode.ForceReload);
 
-    public async Task ReloadData() => await LoadDataAsync();
+    public Task ReloadData() => LoadDataAsync();
 
     public void ResetFilters()
     {

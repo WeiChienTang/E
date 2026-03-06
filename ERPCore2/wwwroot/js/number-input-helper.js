@@ -113,3 +113,12 @@ window.NumberInputHelper = {
         }
     }
 };
+
+/**
+ * 安全地設定指定 ID 的輸入框值，取代 eval 方式
+ * 供 GenericInteractiveTableComponent 的 Number 千分位聚焦切換使用
+ */
+window.setInputValue = function (id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+};

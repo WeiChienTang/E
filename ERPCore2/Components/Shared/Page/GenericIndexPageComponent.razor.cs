@@ -84,7 +84,6 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     // 統計卡片
     [Parameter] public bool ShowStatisticsCards { get; set; } = false;
     [Parameter] public List<StatisticsCardConfig>? StatisticsCardConfigs { get; set; }
-    [Parameter] public Dictionary<string, object> StatisticsData { get; set; } = new();
     [Parameter] public Func<Task<Dictionary<string, object>>>? StatisticsDataLoader { get; set; }
 
     // 導航 URL
@@ -164,6 +163,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private List<TEntity> allItems = new();
     private List<TEntity> filteredItems = new();
     private List<TEntity> pagedItems = new();
+    private Dictionary<string, object> _statisticsData = new();
 
     // 快取定義
     private List<TableColumnDefinition> _cachedColumnDefinitions = new();
@@ -177,10 +177,12 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private bool   _prevAutoCreatedAt;
     private bool   _prevShowActions;
     private bool   _prevEnableStandardActions;
-    private string _prevActionsHeader        = "";
-    private string _prevRemarksColumnTitle   = "";
-    private string _prevCreatedAtColumnTitle = "";
-    private string _prevRemarksFilterTitle   = "";
+    private string _prevActionsHeader                       = "";
+    private string _prevRemarksColumnTitle                  = "";
+    private string _prevCreatedAtColumnTitle                = "";
+    private string _prevRemarksFilterTitle                  = "";
+    private RenderFragment<TEntity>? _prevActionsTemplate;
+    private RenderFragment<TEntity>? _prevCustomActionsTemplate;
 
     // 並行載入保護
     private CancellationTokenSource? _loadCts;
@@ -210,16 +212,18 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     {
         // 僅在真正影響 definitions 的參數變更時重建快取，避免每次 re-render 都重建 List
         bool needsRebuild =
-            !ReferenceEquals(ColumnDefinitions, _prevColumnDefs)      ||
-            !ReferenceEquals(FilterDefinitions, _prevFilterDefs)      ||
-            AutoAddRemarksColumn   != _prevAutoRemarksColumn          ||
-            AutoAddRemarksFilter   != _prevAutoRemarksFilter          ||
-            AutoAddCreatedAtColumn != _prevAutoCreatedAt              ||
-            ShowActions            != _prevShowActions                ||
-            EnableStandardActions  != _prevEnableStandardActions      ||
-            ActionsHeader          != _prevActionsHeader              ||
-            RemarksColumnTitle     != _prevRemarksColumnTitle         ||
-            CreatedAtColumnTitle   != _prevCreatedAtColumnTitle       ||
+            !ReferenceEquals(ColumnDefinitions,     _prevColumnDefs)           ||
+            !ReferenceEquals(FilterDefinitions,     _prevFilterDefs)           ||
+            !ReferenceEquals(ActionsTemplate,       _prevActionsTemplate)      ||
+            !ReferenceEquals(CustomActionsTemplate, _prevCustomActionsTemplate)||
+            AutoAddRemarksColumn   != _prevAutoRemarksColumn                   ||
+            AutoAddRemarksFilter   != _prevAutoRemarksFilter                   ||
+            AutoAddCreatedAtColumn != _prevAutoCreatedAt                       ||
+            ShowActions            != _prevShowActions                         ||
+            EnableStandardActions  != _prevEnableStandardActions               ||
+            ActionsHeader          != _prevActionsHeader                       ||
+            RemarksColumnTitle     != _prevRemarksColumnTitle                  ||
+            CreatedAtColumnTitle   != _prevCreatedAtColumnTitle                ||
             RemarksFilterTitle     != _prevRemarksFilterTitle;
 
         if (!needsRebuild) return;
@@ -234,7 +238,9 @@ public partial class GenericIndexPageComponent<TEntity, TService>
         _prevActionsHeader         = ActionsHeader;
         _prevRemarksColumnTitle    = RemarksColumnTitle;
         _prevCreatedAtColumnTitle  = CreatedAtColumnTitle;
-        _prevRemarksFilterTitle    = RemarksFilterTitle;
+        _prevRemarksFilterTitle        = RemarksFilterTitle;
+        _prevActionsTemplate           = ActionsTemplate;
+        _prevCustomActionsTemplate     = CustomActionsTemplate;
         RebuildDefinitionsCache();
     }
 

@@ -196,6 +196,7 @@
 ::deep .modal-dialog.modal-desktop {
     max-width: 95%;
     width: 95%;
+    height: calc(100vh - 3rem);
 }
 
 /* 中等螢幕（≥ 1200px）：90% 寬度，最大 1400px */
@@ -220,6 +221,20 @@
         max-width: 95%;
         width: 95%;
     }
+}
+
+/* Desktop modal：固定高度 flex 佈局，Body 自動撐滿剩餘空間 */
+::deep .modal-dialog.modal-desktop .modal-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+::deep .modal-dialog.modal-desktop .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
 }
 
 /* ===== 確保 Modal 可互動性 ===== */

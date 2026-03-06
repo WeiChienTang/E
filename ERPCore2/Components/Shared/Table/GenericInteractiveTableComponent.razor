@@ -16,7 +16,7 @@
     <table class="table @GetTableClass() interactive-table">
         @if (ShowHeader && ColumnDefinitions != null && ColumnDefinitions.Any())
         {
-            <thead class="@GetHeaderClass()">
+            <thead class="table-header-primary">
                 <tr>
                     @if (ShowRowNumbers)
                     {
@@ -41,7 +41,7 @@
                         var headerStyle = GetColumnWidthStyle(column);
                         if (!string.IsNullOrEmpty(column.Tooltip))
                         {
-                            headerStyle = (headerStyle ?? "") + (string.IsNullOrEmpty(headerStyle) ? "" : " ") + "cursor: help;";
+                            headerStyle = string.IsNullOrEmpty(headerStyle) ? "cursor: help;" : headerStyle + " cursor: help;";
                         }
                         
                         <th scope="col" 
@@ -756,38 +756,26 @@
         return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
     }
 
-    private string GetHeaderClass()
-    {
-        return "table-header-primary";
-    }
-
     private string GetCombinedRowClass(TItem item, int index)
     {
-        var classes = new List<string>();
+        var custom   = GetRowCssClass?.Invoke(item, index);
+        var selected = EnableRowSelection && SelectedItems != null && SelectedItems.Contains(item);
+        var dragging = EnableDrag && DragDropState.IsDragging &&
+                       DragDropState.SourceTableId == _uniqueTableId &&
+                       DragDropState.DraggedIndex == index;
+        var dragOver = EnableDrop && _dragOverIndex == index && DragDropState.CanDropTo(DragDropGroup);
 
-        // 使用者自訂的 CSS class
-        if (GetRowCssClass != null)
-        {
-            var customClass = GetRowCssClass(item, index);
-            if (!string.IsNullOrEmpty(customClass))
-                classes.Add(customClass);
-        }
+        // 最常見情況：沒有任何動態 class，直接返回
+        if (!selected && !dragging && !dragOver)
+            return custom ?? "";
 
-        // 如果啟用選取功能，檢查是否為選取的項目
-        if (EnableRowSelection && SelectedItems != null && SelectedItems.Contains(item))
-            classes.Add("row-selected");
-
-        // 正在被拖曳的行
-        if (EnableDrag && DragDropState.IsDragging &&
-            DragDropState.SourceTableId == _uniqueTableId &&
-            DragDropState.DraggedIndex == index)
-            classes.Add("dragging");
-
-        // 拖曳經過的目標行（用於排序時顯示插入位置）
-        if (EnableDrop && _dragOverIndex == index && DragDropState.CanDropTo(DragDropGroup))
-            classes.Add("drag-over");
-
-        return string.Join(" ", classes);
+        // 少數情況才建 StringBuilder
+        var sb = new System.Text.StringBuilder();
+        if (!string.IsNullOrEmpty(custom)) sb.Append(custom).Append(' ');
+        if (selected)  sb.Append("row-selected ");
+        if (dragging)  sb.Append("dragging ");
+        if (dragOver)  sb.Append("drag-over ");
+        return sb.ToString().TrimEnd();
     }
 
     /// <summary>
@@ -840,22 +828,16 @@
 
     private string? GetCellStyle(InteractiveColumnDefinition column)
     {
-        var parts = new List<string>();
+        var hasWidth = !string.IsNullOrEmpty(column.Width);
+        var hasAlign = (column.ColumnType is InteractiveColumnType.Display
+                        or InteractiveColumnType.Button
+                        or InteractiveColumnType.Custom)
+                       && !string.IsNullOrEmpty(column.TextAlign);
 
-        // 寬度設定（複用 BuildWidthStyles）
-        if (!string.IsNullOrEmpty(column.Width))
-            parts.Add(BuildWidthStyles(column.Width).TrimEnd(';').Trim());
-
-        // 文字對齊設定 (支援 Display、Button 和 Custom 類型)
-        if ((column.ColumnType == InteractiveColumnType.Display ||
-             column.ColumnType == InteractiveColumnType.Button ||
-             column.ColumnType == InteractiveColumnType.Custom)
-            && !string.IsNullOrEmpty(column.TextAlign))
-        {
-            parts.Add($"text-align: {column.TextAlign}");
-        }
-
-        return parts.Any() ? string.Join("; ", parts) + ";" : null;
+        if (!hasWidth && !hasAlign) return null;
+        if (hasWidth && !hasAlign)  return BuildWidthStyles(column.Width!).TrimEnd(';').Trim() + ";";
+        if (!hasWidth)              return $"text-align: {column.TextAlign};";
+        return BuildWidthStyles(column.Width!).TrimEnd(';').Trim() + $"; text-align: {column.TextAlign};";
     }
 
     private string? GetActionsColumnStyle() => _cachedActionsColumnStyle;
@@ -968,21 +950,9 @@
         var selectableItems = GetSelectableItems().ToList();
         
         if (isChecked)
-        {
-            // 全選：添加所有可選取的項目
-            foreach (var item in selectableItems)
-            {
-                SelectedItems.Add(item);
-            }
-        }
+            SelectedItems.UnionWith(selectableItems);   // 全選
         else
-        {
-            // 取消全選：移除所有可選取的項目
-            foreach (var item in selectableItems)
-            {
-                SelectedItems.Remove(item);
-            }
-        }
+            SelectedItems.ExceptWith(selectableItems);  // 取消全選
         
         if (OnSelectionChanged.HasDelegate)
         {
@@ -1483,8 +1453,8 @@
                 ? (decimalValue % 1 == 0 ? decimalValue.ToString("F0") : decimalValue.ToString())
                 : "";
             
-            // 使用 JavaScript 更新輸入框值
-            _ = JSRuntime.InvokeVoidAsync("eval", $"document.getElementById('{inputId}').value = '{plainValue}'");
+            // 使用 JavaScript 更新輸入框值（使用專用 setInputValue 取代 eval）
+            _ = JSRuntime.InvokeVoidAsync("setInputValue", inputId, plainValue);
         }
     }
     
@@ -1841,32 +1811,17 @@
     /// </summary>
     private string GetTableBodyClass()
     {
-        var classes = new List<string>();
-        if (EnableDrop && _isDragOver && DragDropState.CanDropTo(DragDropGroup))
-        {
-            classes.Add("drop-target-active");
-        }
-        return string.Join(" ", classes);
+        return (EnableDrop && _isDragOver && DragDropState.CanDropTo(DragDropGroup)) ? "drop-target-active" : "";
     }
-    
+
     /// <summary>
     /// 取得行的樣式（含拖曳游標）
     /// </summary>
     private string GetRowStyle(bool canDrag)
     {
-        var styles = new List<string>();
-        
-        // 拖曳游標優先（因為拖曳是主要互動）
-        if (canDrag)
-        {
-            styles.Add("cursor: grab");
-        }
-        else if (EnableRowClick || EnableRowSelection)
-        {
-            styles.Add($"cursor: {RowClickCursor}");
-        }
-        
-        return string.Join("; ", styles);
+        if (canDrag) return "cursor: grab";
+        if (EnableRowClick || EnableRowSelection) return $"cursor: {RowClickCursor}";
+        return "";
     }
     
     /// <summary>
