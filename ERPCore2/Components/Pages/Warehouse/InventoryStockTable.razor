@@ -13,7 +13,7 @@
 
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent @ref="tableComponent"
+            <GenericInteractiveTableComponent @ref="tableComponent"
                                       TItem="StockDetailItem"
                                       OnDataChanged="@NotifyDetailsChanged"
                                       Items="@StockDetailItems"
@@ -36,7 +36,7 @@
 
 @code {
     // ===== InteractiveTableComponent 參考 =====
-    private InteractiveTableComponent<StockDetailItem>? tableComponent;
+    private GenericInteractiveTableComponent<StockDetailItem>? tableComponent;
     
     // ===== 私有欄位 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記

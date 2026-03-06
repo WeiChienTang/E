@@ -271,6 +271,7 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
             // 編輯按鈕 - 只有在有有效選擇值時才顯示
             buttons.Add(new FieldActionButton
             {
+                Role = FieldActionButtonRole.Edit,
                 Text = "編輯",
                 Variant = "OutlineSecondary",
                 Size = "Small",
@@ -283,6 +284,7 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
             // 新增按鈕 - 沒有選擇值時顯示
             buttons.Add(new FieldActionButton
             {
+                Role = FieldActionButtonRole.Add,
                 Text = "新增",
                 Variant = "OutlinePrimary",
                 Size = "Small",
@@ -313,6 +315,7 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
         // 新增按鈕 - 永遠顯示，會讀取輸入框的值作為預填
         buttons.Add(new FieldActionButton
         {
+            Role = FieldActionButtonRole.Add,
             Text = "新增",
             Variant = "OutlinePrimary",
             Size = "Small",
@@ -336,6 +339,7 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
         {
             buttons.Add(new FieldActionButton
             {
+                Role = FieldActionButtonRole.Edit,
                 Text = "編輯",
                 Variant = "OutlineSecondary",
                 Size = "Small",

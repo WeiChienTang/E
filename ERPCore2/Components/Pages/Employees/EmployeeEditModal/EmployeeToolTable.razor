@@ -20,7 +20,7 @@
     </div>
 
     @* 工具配給紀錄表格 *@
-    <InteractiveTableComponent TItem="EmployeeTool"
+    <GenericInteractiveTableComponent TItem="EmployeeTool"
                               Items="@(Tools ?? new List<EmployeeTool>())"
                               ColumnDefinitions="@GetColumnDefinitions()"
                               ShowHeader="true"

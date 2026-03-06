@@ -1,4 +1,4 @@
-@* 庫存異動明細表格組件 - 使用 InteractiveTableComponent 統一UI（唯讀顯示） *@
+@* 庫存異動明細表格組件 - 使用 GenericInteractiveTableComponent 統一UI（唯讀顯示） *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
 @using ERPCore2.Helpers
@@ -7,7 +7,7 @@
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-        <InteractiveTableComponent @ref="tableComponent"
+        <GenericInteractiveTableComponent @ref="tableComponent"
                                   TItem="TransactionDetailItem" 
                                   Items="@DetailItems"
                                   ColumnDefinitions="@GetColumnDefinitions()"
@@ -52,7 +52,7 @@
     [Parameter] public bool ShowOperationType { get; set; } = true;
     
     // ===== 內部狀態 =====
-    private InteractiveTableComponent<TransactionDetailItem>? tableComponent;
+    private GenericInteractiveTableComponent<TransactionDetailItem>? tableComponent;
     private List<TransactionDetailItem> DetailItems { get; set; } = new();
     private List<InventoryTransactionDetail>? _previousDetails;
     

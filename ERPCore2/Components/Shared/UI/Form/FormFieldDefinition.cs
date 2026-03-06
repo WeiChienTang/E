@@ -376,6 +376,19 @@ public enum ValidationType
 }
 
 /// <summary>
+/// 欄位操作按鈕的語意角色，用於邏輯判斷（獨立於顯示文字）
+/// </summary>
+public enum FieldActionButtonRole
+{
+    /// <summary>一般按鈕，不參與智能顯示邏輯</summary>
+    Default,
+    /// <summary>新增實體按鈕（AutoComplete 無值時顯示）</summary>
+    Add,
+    /// <summary>編輯實體按鈕（AutoComplete 有值時顯示）</summary>
+    Edit
+}
+
+/// <summary>
 /// 欄位操作按鈕定義
 /// </summary>
 public class FieldActionButton
@@ -384,6 +397,11 @@ public class FieldActionButton
     /// 按鈕文字
     /// </summary>
     public string Text { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 按鈕語意角色（用於邏輯判斷，獨立於顯示文字）
+    /// </summary>
+    public FieldActionButtonRole Role { get; set; } = FieldActionButtonRole.Default;
     
     /// <summary>
     /// 按鈕樣式變體

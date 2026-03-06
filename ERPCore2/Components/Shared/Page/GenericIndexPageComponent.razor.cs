@@ -1,0 +1,350 @@
+using ERPCore2.Data;
+using ERPCore2.Components.Shared.UI.Form;
+using ERPCore2.Components.Shared.Table;
+using ERPCore2.Models.Enums;
+using ERPCore2.Services;
+using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
+using Microsoft.JSInterop;
+
+namespace ERPCore2.Components.Shared.Page;
+
+/// <summary>
+/// 泛型 Index 頁面基底組件（partial class 主檔）
+/// 負責：enum 定義、所有 [Parameter]、私有欄位、公開屬性、生命週期、快取管理、文字 helper
+/// </summary>
+public partial class GenericIndexPageComponent<TEntity, TService>
+    where TEntity : BaseEntity
+    where TService : IGenericManagementService<TEntity>
+{
+    // ===== 刷新方式枚舉 =====
+
+    /// <summary>頁面刷新方式</summary>
+    public enum RefreshMode
+    {
+        /// <summary>平滑刷新 - 僅重新載入資料，不會造成頁面閃爍</summary>
+        Smooth,
+        /// <summary>強制刷新 - 重新載入整個頁面，會造成短暫閃爍但確保完全重置</summary>
+        ForceReload
+    }
+
+    // ===== 參數 =====
+
+    // 權限 / 模組 / Debug
+    [Parameter] public string RequiredPermission { get; set; } = "";
+    [Parameter] public string RequiredModule { get; set; } = "";
+    [Parameter] public string? DebugPageName { get; set; }
+
+    // 頁面行為
+    [Parameter] public RefreshMode PageRefreshMode { get; set; } = RefreshMode.Smooth;
+
+    // 頁面基本文字
+    [Parameter] public string PageTitle { get; set; } = "資料管理";
+    [Parameter] public string PageSubtitle { get; set; } = "管理資料";
+    [Parameter] public string AddButtonText { get; set; } = "";
+    [Parameter] public string AddButtonTitle { get; set; } = "";
+    [Parameter] public string SearchSectionTitle { get; set; } = "";
+    [Parameter] public string EmptyMessage { get; set; } = "";
+    [Parameter] public string ActionsHeader { get; set; } = "";
+
+    // 動作按鈕
+    [Parameter] public bool ShowDefaultActions { get; set; } = true;
+    [Parameter] public bool ShowAddButton { get; set; } = true;
+    [Parameter] public RenderFragment? CustomActionButtons { get; set; }
+
+    /// <summary>
+    /// 自訂額外按鈕（追加在預設按鈕列尾端，不會取代預設按鈕）。
+    /// 與 CustomActionButtons 不同：CustomActionButtons 會完全替換按鈕列，
+    /// 而 CustomIndexButtons 只會在預設按鈕列後方追加。
+    /// </summary>
+    [Parameter] public RenderFragment? CustomIndexButtons { get; set; }
+
+    // 匯出
+    [Parameter] public bool ShowExportExcelButton { get; set; } = false;
+    [Parameter] public bool ShowExportPdfButton { get; set; } = false;
+    [Parameter] public EventCallback OnExportExcelClick { get; set; }
+    [Parameter] public EventCallback OnExportPdfClick { get; set; }
+
+    // 批次操作
+    [Parameter] public bool ShowBatchPrintButton { get; set; } = false;
+    [Parameter] public EventCallback OnBatchPrintClick { get; set; }
+    [Parameter] public bool ShowBarcodePrintButton { get; set; } = false;
+    [Parameter] public EventCallback OnBarcodePrintClick { get; set; }
+    [Parameter] public bool ShowBatchApprovalButton { get; set; } = false;
+    [Parameter] public EventCallback OnBatchApprovalClick { get; set; }
+    [Parameter] public bool ShowImportScheduleButton { get; set; } = false;
+    [Parameter] public EventCallback OnImportScheduleClick { get; set; }
+    [Parameter] public bool ShowBatchDeleteButton { get; set; } = false;
+    [Parameter] public bool IsBatchDeleteDisabled { get; set; } = false;
+    [Parameter] public EventCallback OnBatchDeleteClick { get; set; }
+
+    // 麵包屑
+    [Parameter] public List<BreadcrumbItem> BreadcrumbItems { get; set; } = new();
+
+    // 統計卡片
+    [Parameter] public bool ShowStatisticsCards { get; set; } = false;
+    [Parameter] public List<StatisticsCardConfig>? StatisticsCardConfigs { get; set; }
+    [Parameter] public Dictionary<string, object> StatisticsData { get; set; } = new();
+    [Parameter] public Func<Task<Dictionary<string, object>>>? StatisticsDataLoader { get; set; }
+
+    // 導航 URL
+    [Parameter] public string EntityBasePath { get; set; } = "";
+    [Parameter] public string CreateUrl { get; set; } = "";
+    [Parameter] public string DetailUrl { get; set; } = "";
+    [Parameter] public string EditUrl { get; set; } = "";
+
+    // 服務與資料
+    [Parameter] public TService Service { get; set; } = default!;
+    [Parameter] public Func<Task<List<TEntity>>> DataLoader { get; set; } = default!;
+    [Parameter] public Func<Task> InitializeBasicData { get; set; } = default!;
+
+    // 篩選與表格定義
+    [Parameter] public List<SearchFilterDefinition> FilterDefinitions { get; set; } = new();
+    [Parameter] public List<TableColumnDefinition> ColumnDefinitions { get; set; } = new();
+    [Parameter] public Func<SearchFilterModel, IQueryable<TEntity>, IQueryable<TEntity>> FilterApplier { get; set; } = default!;
+
+    // 自動標準欄位
+    [Parameter] public bool AutoAddRemarksColumn { get; set; } = true;
+    [Parameter] public bool AutoAddCreatedAtColumn { get; set; } = false;
+    [Parameter] public bool AutoAddRemarksFilter { get; set; } = true;
+    [Parameter] public string RemarksColumnTitle { get; set; } = "";
+    [Parameter] public string CreatedAtColumnTitle { get; set; } = "";
+    [Parameter] public string RemarksFilterTitle { get; set; } = "";
+
+    // 搜尋組件
+    [Parameter] public bool AutoSearch { get; set; } = true;
+    [Parameter] public bool ShowSearchButton { get; set; } = true;
+    [Parameter] public int SearchDelayMs { get; set; } = 500;
+
+    // 表格組件
+    [Parameter] public bool ShowActions { get; set; } = true;
+    [Parameter] public bool EnableRowClick { get; set; } = true;
+    [Parameter] public bool EnableSorting { get; set; } = false;
+    [Parameter] public bool IsStriped { get; set; } = true;
+    [Parameter] public bool IsHoverable { get; set; } = true;
+    [Parameter] public bool IsBordered { get; set; } = false;
+    [Parameter] public TableSize TableSize { get; set; } = TableSize.Normal;
+    [Parameter] public bool EnablePagination { get; set; } = true;
+    [Parameter] public bool ShowPageSizeSelector { get; set; } = true;
+    [Parameter] public int DefaultPageSize { get; set; } = 20;
+
+    // 刪除功能
+    [Parameter] public string EntityName { get; set; } = "資料";
+    [Parameter] public Func<TEntity, string> GetEntityDisplayName { get; set; } = entity => entity.Id.ToString();
+    [Parameter] public string DeleteSuccessMessage { get; set; } = "";
+    [Parameter] public string DeleteConfirmMessage { get; set; } = "";
+    [Parameter] public bool EnableStandardActions { get; set; } = true;
+    [Parameter] public bool ShowViewButton { get; set; } = false;
+    [Parameter] public bool ShowEditButton { get; set; } = false;
+    [Parameter] public bool ShowDeleteButton { get; set; } = true;
+    [Parameter] public RenderFragment<TEntity>? CustomActionsTemplate { get; set; }
+
+    /// <summary>
+    /// 判斷特定實體是否可以刪除的函數。
+    /// 如果返回 false，則該實體的刪除按鈕將被隱藏。
+    /// 預設所有實體都可以刪除，除非明確指定判斷邏輯。
+    /// 例如：entity => entity.CreatedBy != "System"
+    /// </summary>
+    [Parameter] public Func<TEntity, bool>? CanDelete { get; set; }
+
+    /// <summary>
+    /// 是否啟用預設的系統資料保護機制。
+    /// 當啟用時，CreatedBy 為 "System" 的資料將不可刪除。預設值：true。
+    /// </summary>
+    [Parameter] public bool EnableSystemDataProtection { get; set; } = true;
+
+    [Parameter] public Func<TEntity, Task<bool>>? CustomDeleteHandler { get; set; }
+    [Parameter] public EventCallback OnAddClick { get; set; }
+    [Parameter] public EventCallback<TEntity> OnRowClick { get; set; }
+    [Parameter] public RenderFragment<TEntity>? ActionsTemplate { get; set; }
+
+    // ===== 私有欄位 =====
+
+    // 資料
+    private List<TEntity> allItems = new();
+    private List<TEntity> filteredItems = new();
+    private List<TEntity> pagedItems = new();
+
+    // 快取定義
+    private List<TableColumnDefinition> _cachedColumnDefinitions = new();
+    private List<SearchFilterDefinition> _cachedFilterDefinitions = new();
+    private bool _definitionsCacheInvalid = true;
+
+    // 快取失效追蹤（條件式重建，避免每次 OnParametersSet 都重建）
+    private List<TableColumnDefinition>? _prevColumnDefs;
+    private List<SearchFilterDefinition>? _prevFilterDefs;
+    private bool   _prevAutoRemarksColumn;
+    private bool   _prevAutoRemarksFilter;
+    private bool   _prevAutoCreatedAt;
+    private bool   _prevShowActions;
+    private bool   _prevEnableStandardActions;
+    private string _prevActionsHeader        = "";
+    private string _prevRemarksColumnTitle   = "";
+    private string _prevCreatedAtColumnTitle = "";
+    private string _prevRemarksFilterTitle   = "";
+
+    // 並行載入保護
+    private CancellationTokenSource? _loadCts;
+
+    // 篩選 / 分頁 / 狀態
+    private SearchFilterModel searchModel = new();
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalItems = 0;
+    private bool isLoading = true;
+    private bool _isModuleEnabled = true;
+    private bool _isSuperAdmin = false;
+
+    // ===== 公開屬性 =====
+
+    public SearchFilterModel SearchModel => searchModel;
+    public List<TEntity> PagedItems => pagedItems;
+    public List<TEntity> FilteredItems => filteredItems;
+    public int CurrentPage => currentPage;
+    public int PageSize => pageSize;
+    public int TotalItems => totalItems;
+    public bool IsLoading => isLoading;
+
+    // ===== 生命週期 =====
+
+    protected override void OnParametersSet()
+    {
+        // 僅在真正影響 definitions 的參數變更時重建快取，避免每次 re-render 都重建 List
+        bool needsRebuild =
+            !ReferenceEquals(ColumnDefinitions, _prevColumnDefs)      ||
+            !ReferenceEquals(FilterDefinitions, _prevFilterDefs)      ||
+            AutoAddRemarksColumn   != _prevAutoRemarksColumn          ||
+            AutoAddRemarksFilter   != _prevAutoRemarksFilter          ||
+            AutoAddCreatedAtColumn != _prevAutoCreatedAt              ||
+            ShowActions            != _prevShowActions                ||
+            EnableStandardActions  != _prevEnableStandardActions      ||
+            ActionsHeader          != _prevActionsHeader              ||
+            RemarksColumnTitle     != _prevRemarksColumnTitle         ||
+            CreatedAtColumnTitle   != _prevCreatedAtColumnTitle       ||
+            RemarksFilterTitle     != _prevRemarksFilterTitle;
+
+        if (!needsRebuild) return;
+
+        _prevColumnDefs            = ColumnDefinitions;
+        _prevFilterDefs            = FilterDefinitions;
+        _prevAutoRemarksColumn     = AutoAddRemarksColumn;
+        _prevAutoRemarksFilter     = AutoAddRemarksFilter;
+        _prevAutoCreatedAt         = AutoAddCreatedAtColumn;
+        _prevShowActions           = ShowActions;
+        _prevEnableStandardActions = EnableStandardActions;
+        _prevActionsHeader         = ActionsHeader;
+        _prevRemarksColumnTitle    = RemarksColumnTitle;
+        _prevCreatedAtColumnTitle  = CreatedAtColumnTitle;
+        _prevRemarksFilterTitle    = RemarksFilterTitle;
+        _definitionsCacheInvalid   = true;
+        RebuildDefinitionsCache();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        pageSize = DefaultPageSize;
+
+        if (!string.IsNullOrEmpty(DebugPageName))
+            _isSuperAdmin = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+
+        // 公司層級模組檢查（阻擋直接輸入網址存取）
+        // 只有 IsSuperAdmin=true 的帳號可繞過，System.Admin 權限持有者亦受模組限制
+        if (!string.IsNullOrWhiteSpace(RequiredModule))
+        {
+            var isEnabled = await CompanyModuleService.IsModuleEnabledAsync(RequiredModule);
+            _isModuleEnabled = isEnabled || await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+        }
+
+        if (_isModuleEnabled)
+            await InitializePageAsync();
+    }
+
+    // ===== 快取管理 =====
+
+    private void RebuildDefinitionsCache()
+    {
+        if (!_definitionsCacheInvalid) return;
+        _cachedColumnDefinitions = BuildFinalColumnDefinitions();
+        _cachedFilterDefinitions = BuildFinalFilterDefinitions();
+        _definitionsCacheInvalid = false;
+    }
+
+    private List<TableColumnDefinition> BuildFinalColumnDefinitions()
+    {
+        var columns = new List<TableColumnDefinition>(ColumnDefinitions);
+
+        if (AutoAddRemarksColumn && !columns.Any(c => c.PropertyName == "Remarks"))
+        {
+            var col = TableColumnDefinition.Text(
+                string.IsNullOrEmpty(RemarksColumnTitle) ? L["Label.Remarks"] : RemarksColumnTitle,
+                nameof(BaseEntity.Remarks));
+            col.HeaderStyle  = "width: 150px;";
+            col.CellCssClass = "text-truncate";
+            columns.Add(col);
+        }
+
+        if (AutoAddCreatedAtColumn && !columns.Any(c => c.PropertyName == "CreatedAt"))
+        {
+            var col = TableColumnDefinition.Date(
+                string.IsNullOrEmpty(CreatedAtColumnTitle) ? L["Label.CreatedAt"] : CreatedAtColumnTitle,
+                nameof(BaseEntity.CreatedAt), "yyyy/MM/dd");
+            col.HeaderStyle  = "width: 100px; text-align: center;";
+            col.CellCssClass = "text-center";
+            columns.Add(col);
+        }
+
+        if (ShowActions && EnableStandardActions && !columns.Any(c => c.PropertyName == "Actions"))
+        {
+            var actionsTemplate = GetFinalActionsTemplate();
+            columns.Add(new TableColumnDefinition
+            {
+                Title          = string.IsNullOrEmpty(ActionsHeader) ? L["Label.Actions"] : ActionsHeader,
+                PropertyName   = "Actions",
+                DataType       = ColumnDataType.Html,
+                HeaderCssClass = "text-center",
+                CellCssClass   = "text-center",
+                HeaderStyle    = "width: 60px;",
+                CustomTemplate = item => actionsTemplate((TEntity)item)
+            });
+        }
+
+        return columns;
+    }
+
+    private List<SearchFilterDefinition> BuildFinalFilterDefinitions()
+    {
+        var filters = new List<SearchFilterDefinition>(FilterDefinitions);
+
+        if (AutoAddRemarksFilter && !filters.Any(f => f.PropertyName == "Remarks"))
+        {
+            try
+            {
+                filters.Add(new SearchFilterDefinition
+                {
+                    Name        = "Remarks",
+                    Label       = string.IsNullOrEmpty(RemarksFilterTitle) ? L["Label.Remarks"] : RemarksFilterTitle,
+                    Type        = SearchFilterType.Text,
+                    Placeholder = L["Placeholder.Remarks"]
+                });
+            }
+            catch { /* 如果有錯誤，跳過添加備註篩選器 */ }
+        }
+
+        return filters;
+    }
+
+    // ===== 智能文字產生 =====
+
+    private string GetAddButtonText()      => !string.IsNullOrWhiteSpace(AddButtonText)      ? AddButtonText      : $"新增{EntityName}";
+    private string GetAddButtonTitle()     => !string.IsNullOrWhiteSpace(AddButtonTitle)     ? AddButtonTitle     : $"新增{EntityName}資料";
+    private string GetSearchSectionTitle() => !string.IsNullOrWhiteSpace(SearchSectionTitle) ? SearchSectionTitle : $"{EntityName}搜尋與管理";
+    private string GetEmptyMessage()       => !string.IsNullOrWhiteSpace(EmptyMessage)       ? EmptyMessage       : $"沒有找到符合條件的{EntityName}資料";
+
+    // ===== Debug Badge =====
+
+    private async Task CopyDebugPageNameAsync()
+    {
+        if (!string.IsNullOrEmpty(DebugPageName))
+            await JSRuntime.InvokeVoidAsync("DebugHelper.copyText", DebugPageName);
+    }
+}

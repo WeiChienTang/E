@@ -34,7 +34,7 @@
         }
         
         <div style="max-height: 400px; overflow: auto;">
-            <InteractiveTableComponent TItem="PendingScheduleDetailDto"
+            <GenericInteractiveTableComponent TItem="PendingScheduleDetailDto"
                                        Items="@Details"
                                        ColumnDefinitions="@_columnDefinitions"
                                        ShowRowNumbers="false"
@@ -50,7 +50,7 @@
                 <EmptyTemplate>
                     <i class="bi bi-inbox me-2"></i>@L["Message.NoSchedulableDetails"]
                 </EmptyTemplate>
-            </InteractiveTableComponent>
+            </GenericInteractiveTableComponent>
         </div>
     </BodyContent>
     

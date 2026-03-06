@@ -144,7 +144,7 @@
             }
 
             @* ===== 組件明細表格 ===== *@
-            <InteractiveTableComponent @ref="tableComponent"
+            <GenericInteractiveTableComponent @ref="tableComponent"
                                       TItem="TCompositionDetail"
                                       Items="@compositionDetails"
                                       ColumnDefinitions="@GetColumnDefinitions()"
@@ -221,7 +221,7 @@
     private List<ERPCore2.Data.Entities.Product> availableProducts = new();
     private List<ERPCore2.Data.Entities.Unit> availableUnits = new();
     private List<ERPCore2.Data.Entities.ProductCategory> _availableCategories = new();
-    private InteractiveTableComponent<TCompositionDetail>? tableComponent;
+    private GenericInteractiveTableComponent<TCompositionDetail>? tableComponent;
     private bool _showProductPicker = false;
     
     // ===== 配方選擇狀態 =====
@@ -415,7 +415,7 @@ private string GetModalTitle()
         await IsCustomModeChanged.InvokeAsync(true);
         
         // 先 StateHasChanged + await Task.Yield() 讓 Blazor 完成一次真正的渲染
-        // 使子元件 InteractiveTableComponent 的 Items 指向新的空 List
+        // 使子元件 GenericInteractiveTableComponent 的 Items 指向新的空 List
         // 同步方法中多次 StateHasChanged() 會被 Blazor 批次合併，子元件看不到中間態
         StateHasChanged();
         await Task.Yield();

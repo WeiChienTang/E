@@ -1,7 +1,7 @@
 @*
     通用搜尋 Modal 組件
     用於快速搜尋並選擇項目（支援頁面導航、報表等）
-    使用 InteractiveTableComponent 統一 UI 風格
+    使用 GenericInteractiveTableComponent 統一 UI 風格
 *@
 @using ERPCore2.Models
 @using ERPCore2.Helpers
@@ -49,7 +49,7 @@
             @* 搜尋結果區域 *@
             @if (hasSearched && searchResults.Any())
             {
-                <InteractiveTableComponent TItem="ISearchableItem"
+                <GenericInteractiveTableComponent TItem="ISearchableItem"
                                           Items="@searchResults"
                                           ColumnDefinitions="@columnDefinitions"
                                           ShowRowNumbers="true"
@@ -74,7 +74,7 @@
                                               Title="@(isEnabled ? string.Format(L["Search.GoToItem"], item.Name) : L["Search.ItemNotAvailable"].ToString())"
                                               OnClick="@(() => HandleItemClick(item))" />
                     </CustomActionsTemplate>
-                </InteractiveTableComponent>
+                </GenericInteractiveTableComponent>
             }
             else if (hasSearched)
             {

@@ -35,7 +35,7 @@
     <!-- 明細表格 -->
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent @ref="tableComponent"
+            <GenericInteractiveTableComponent @ref="tableComponent"
                                      TItem="DetailItem"
                                      OnDataChanged="@SyncToDetails"
                                      Items="@DetailItems"
@@ -56,8 +56,8 @@
 </div>
 
 @code {
-    // ===== InteractiveTableComponent 參考 =====
-    private InteractiveTableComponent<DetailItem>? tableComponent;
+    // ===== GenericInteractiveTableComponent 參考 =====
+    private GenericInteractiveTableComponent<DetailItem>? tableComponent;
     
     // ===== 資料載入完成標記 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記

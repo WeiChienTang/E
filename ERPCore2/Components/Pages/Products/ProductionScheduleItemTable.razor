@@ -28,7 +28,7 @@
         </div>
         
         <div style="max-height: 350px; overflow: auto;">
-            <InteractiveTableComponent TItem="ScheduleItemDto"
+            <GenericInteractiveTableComponent TItem="ScheduleItemDto"
                                        Items="@FilteredItemsList"
                                        ColumnDefinitions="@GetColumnDefinitions()"
                                        ShowHeader="true"
@@ -57,7 +57,7 @@
                         <span class="text-primary fw-bold">@L["Label.DropToSchedule"]</span>
                     </div>
                 </DropZoneEmptyTemplate>
-            </InteractiveTableComponent>
+            </GenericInteractiveTableComponent>
         </div>
     </div>
 </div>

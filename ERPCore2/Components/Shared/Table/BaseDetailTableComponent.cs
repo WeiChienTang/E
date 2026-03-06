@@ -44,7 +44,7 @@ public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem
     protected bool _dataLoadCompleted = true;
     protected bool _hasUndeletableDetails = false;
     public List<TItem> Items { get; protected set; } = new();
-    protected InteractiveTableComponent<TItem>? tableComponent;
+    protected GenericInteractiveTableComponent<TItem>? tableComponent;
 
     // ===== 私有追蹤欄位 =====
 
@@ -56,7 +56,7 @@ public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem
     /// <summary>
     /// InvokeLoadWithCompletionAsync() 是否已至少完成一次。
     /// 用於防止 OnAfterRenderAsync 在中間渲染（Intermediate Render）時提早呼叫
-    /// RefreshEmptyRow()，避免污染 InteractiveTableComponent._previousDataLoadCompleted。
+    /// RefreshEmptyRow()，避免污染 GenericInteractiveTableComponent._previousDataLoadCompleted。
     /// </summary>
     private bool _hasLoadCompleted = false;
 
@@ -102,7 +102,7 @@ public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem
         // 必須加上 _hasLoadCompleted 守衛：
         //   若在 OnInitializedAsync 中途（await LoadProductsAsync() 等）產生中間渲染，
         //   tableComponent 會在 InvokeLoadWithCompletionAsync() 執行前就被賦值。
-        //   此時若提早呼叫 RefreshEmptyRow()，會污染 InteractiveTableComponent
+        //   此時若提早呼叫 RefreshEmptyRow()，會污染 GenericInteractiveTableComponent
         //   的 _previousDataLoadCompleted = true，導致後續真正的 false→true 轉換
         //   無法被偵測，空白行永遠不出現。
         //   加上 _hasLoadCompleted 守衛後，只有在資料真正載入完成後才觸發。

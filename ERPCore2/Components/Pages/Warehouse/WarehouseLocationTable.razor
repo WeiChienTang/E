@@ -1,4 +1,4 @@
-@* 倉庫庫位管理組件 - 使用 InteractiveTableComponent 統一UI *@
+@* 倉庫庫位管理組件 - 使用 GenericInteractiveTableComponent 統一UI *@
 
 @inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
@@ -19,7 +19,7 @@ else
 {
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent @ref="tableComponent"
+            <GenericInteractiveTableComponent @ref="tableComponent"
                                       TItem="LocationItem"
                                       Items="@LocationItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
@@ -38,7 +38,7 @@ else
     [Parameter] public bool IsReadOnly { get; set; } = true;
 
     // ===== 內部狀態 =====
-    private InteractiveTableComponent<LocationItem>? tableComponent;
+    private GenericInteractiveTableComponent<LocationItem>? tableComponent;
     private List<LocationItem> LocationItems { get; set; } = new List<LocationItem>();
     private int? _previousWarehouseId = null;
 
@@ -129,7 +129,7 @@ else
     // ===== 內部類別 =====
     
     /// <summary>
-    /// 庫位項目（用於 InteractiveTableComponent）
+    /// 庫位項目（用於 GenericInteractiveTableComponent）
     /// </summary>
     public class LocationItem
     {

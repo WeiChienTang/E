@@ -18,7 +18,7 @@
         <div class="text-danger small mb-2">@FileError</div>
     }
 
-    <InteractiveTableComponent TItem="DocumentFileViewModel"
+    <GenericInteractiveTableComponent TItem="DocumentFileViewModel"
                               Items="@Items"
                               ColumnDefinitions="@GetFileColumnDefinitions()"
                               ShowRowNumbers="true"

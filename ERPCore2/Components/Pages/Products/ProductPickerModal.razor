@@ -55,7 +55,7 @@
 
     <BodyContent>
         <div style="max-height: 450px; overflow: auto;">
-            <InteractiveTableComponent TItem="Product"
+            <GenericInteractiveTableComponent TItem="Product"
                                        Items="@_filteredProducts"
                                        ColumnDefinitions="@_columnDefinitions"
                                        ShowRowNumbers="false"
@@ -70,7 +70,7 @@
                 <EmptyTemplate>
                     <i class="bi bi-inbox me-2"></i>@L["Message.NoMatchingProducts"]
                 </EmptyTemplate>
-            </InteractiveTableComponent>
+            </GenericInteractiveTableComponent>
         </div>
     </BodyContent>
 </BaseModalComponent>

@@ -1,11 +1,11 @@
-@* 傳票分錄行管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
+@* 傳票分錄行管理組件 - 使用 GenericInteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
 @using ERPCore2.Helpers
 @inject IStringLocalizer<SharedResource> L
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-        <InteractiveTableComponent @ref="tableComponent"
+        <GenericInteractiveTableComponent @ref="tableComponent"
                                   TItem="JournalEntryLineItem"
                                   Items="@lineItems"
                                   ColumnDefinitions="@lineColumns"
@@ -56,7 +56,7 @@
     public bool IsBalanced => TotalDebit == TotalCredit && TotalDebit > 0;
 
     // ===== 內部狀態 =====
-    private InteractiveTableComponent<JournalEntryLineItem>? tableComponent;
+    private GenericInteractiveTableComponent<JournalEntryLineItem>? tableComponent;
     private List<JournalEntryLineItem> lineItems = new();
     private List<InteractiveColumnDefinition> lineColumns = new();
     private bool _dataLoadCompleted = true;
@@ -69,8 +69,8 @@
         public decimal Amount { get; set; } = 0;
         public string? LineDescription { get; set; }
 
-        // 借貸方向字串橋接屬性（供 InteractiveTableComponent Select 欄位使用）
-        // InteractiveTableComponent.ConvertValue 不支援 enum，以字串繞過
+        // 借貸方向字串橋接屬性（供 GenericInteractiveTableComponent Select 欄位使用）
+        // GenericInteractiveTableComponent.ConvertValue 不支援 enum，以字串繞過
         public string DirectionValue
         {
             get => Direction.ToString(); // "Debit" or "Credit"
@@ -218,7 +218,7 @@
                 MaxDisplayItems = 20
             },
 
-            // 借貸方向（Select）— 使用 DirectionValue 字串屬性繞過 InteractiveTableComponent 不支援 enum 的限制
+            // 借貸方向（Select）— 使用 DirectionValue 字串屬性繞過 GenericInteractiveTableComponent 不支援 enum 的限制
             new InteractiveColumnDefinition
             {
                 Title = L["Journal.DebitCredit"],

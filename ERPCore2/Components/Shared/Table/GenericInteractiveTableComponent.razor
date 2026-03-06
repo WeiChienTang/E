@@ -1,5 +1,6 @@
 @* 互動式表格組件 - 支援多種輸入控件和統一的UI風格 *@
 @using System.Reflection
+@using System.Collections.Concurrent
 @using System.Web
 @using ERPCore2.Helpers
 @using Microsoft.Extensions.Localization
@@ -584,7 +585,19 @@
     
     // Number 輸入框編輯狀態追蹤（防止輸入過程中被格式化覆蓋）
     private string? _focusedNumberInputId = null;
-    
+
+    // Reflection 快取（靜態，跨實例共享，避免重複查找 PropertyInfo）
+    private static readonly ConcurrentDictionary<string, PropertyInfo?> _propCache = new();
+
+    // 快取計算結果（僅依賴 [Parameter]，在 OnParametersSet 更新）
+    private string _cachedTableClass = "";
+    private string? _cachedActionsColumnStyle = null;
+    private int _cachedColspan = 0;
+
+    // JS interop 呼叫守衛（避免每次 render 都呼叫）
+    private int _prevItemsCountForDragDrop = -1;   // reinitDragDrop 觸發條件追蹤
+    private bool _prevIsPartiallySelected = false; // setCheckboxIndeterminate 觸發條件追蹤
+
     #endregion
 
     #region 生命週期方法
@@ -606,57 +619,54 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        
+
         //  監控 Items 集合的變化
         if (EnableAutoEmptyRow && Items != null)
         {
             // 計算非空行的數量
             var nonEmptyCount = Items.Count(item => !IsRowEmpty(item));
-            
+
             //  檢測到非空行數量增加（表示父組件載入了資料）
             if (nonEmptyCount > _previousNonEmptyCount)
             {
                 _needsEmptyRowCheck = true;
             }
-            
+
             _previousNonEmptyCount = nonEmptyCount;
         }
+
+        // 更新依賴 Parameter 的快取值（避免 render 時重複計算）
+        _cachedTableClass = ComputeTableClass();
+        _cachedActionsColumnStyle = ComputeActionsColumnStyle();
+        _cachedColspan = ComputeColspan();
     }
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
         
-        // 初始化拖放功能
+        // 初始化拖放功能（只在首次渲染或 Items 數量改變時呼叫，避免每次 render 觸發 JS interop）
         if (EnableDrag || EnableDrop)
         {
-            try
+            var currentItemsCount = Items?.Count ?? 0;
+            if (firstRender || currentItemsCount != _prevItemsCountForDragDrop)
             {
-                await JSRuntime.InvokeVoidAsync("reinitDragDrop");
-            }
-            catch
-            {
-                // 忽略 JS 初始化錯誤
+                _prevItemsCountForDragDrop = currentItemsCount;
+                try { await JSRuntime.InvokeVoidAsync("reinitDragDrop"); }
+                catch { /* 忽略 JS 初始化錯誤 */ }
             }
         }
-        
-        // 更新全選 checkbox 的 indeterminate 狀態
+
+        // 更新全選 checkbox 的 indeterminate 狀態（只在狀態改變時呼叫）
         if (ShowSelectColumn && AllowMultipleSelection)
         {
-            try
+            var partiallySelected = IsPartiallySelected;
+            if (firstRender || partiallySelected != _prevIsPartiallySelected)
             {
-                await JSRuntime.InvokeVoidAsync("setCheckboxIndeterminate", _selectAllCheckboxId, IsPartiallySelected);
+                _prevIsPartiallySelected = partiallySelected;
+                try { await JSRuntime.InvokeVoidAsync("setCheckboxIndeterminate", _selectAllCheckboxId, partiallySelected); }
+                catch { /* 忽略 JS 錯誤 */ }
             }
-            catch
-            {
-                // 忽略 JS 錯誤
-            }
-        }
-        
-        if (EnableAutoEmptyRow)
-        {
-            var itemCount = Items?.Count ?? 0;
-            var nonEmptyCount = Items?.Count(item => !IsRowEmpty(item)) ?? 0;
         }
         
         //  優先處理：如果標記了需要檢查空行（Items 集合變化觸發）
@@ -701,18 +711,20 @@
     #endregion
 
     #region 私有方法
-    private string GetTableClass()
+    private string GetTableClass() => _cachedTableClass;
+
+    private string ComputeTableClass()
     {
         var classes = new List<string>();
-        
+
         if (IsStriped) classes.Add("table-striped");
         if (IsHoverable) classes.Add("table-hover");
         if (IsBordered) classes.Add("table-bordered");
         classes.Add("table-with-column-borders");
-        
+
         if (!string.IsNullOrEmpty(CssClass))
             classes.Add(CssClass);
-            
+
         return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
     }
 
@@ -742,31 +754,35 @@
         return string.Join(" ", classes);
     }
 
-    private string? GetColumnWidthStyle(InteractiveColumnDefinition column)
+    /// <summary>
+    /// 計算 width + min-width 的 CSS style 字串，供 GetColumnWidthStyle 和 GetCellStyle 共用
+    /// </summary>
+    private static string BuildWidthStyles(string width)
     {
-        if (string.IsNullOrEmpty(column.Width))
-            return null;
-            
-        var styles = new List<string> { $"width: {column.Width}" };
-        
-        // 如果是百分比寬度，添加 min-width 防止過度壓縮
-        if (column.Width.EndsWith("%"))
+        var styles = new List<string> { $"width: {width}" };
+
+        if (width.EndsWith("%"))
         {
-            // 根據百分比大小設定合理的最小寬度
-            if (double.TryParse(column.Width.TrimEnd('%'), out var percentage))
+            if (double.TryParse(width.TrimEnd('%'), out var percentage))
             {
-                // 較大百分比（>15%）給予較大最小寬度，較小百分比給予較小最小寬度
                 var minWidth = percentage >= 15 ? "100px" : percentage >= 10 ? "80px" : "60px";
                 styles.Add($"min-width: {minWidth}");
             }
         }
-        // 如果是固定像素寬度，同時設定 min-width 確保不被壓縮
-        else if (column.Width.EndsWith("px"))
+        else if (width.EndsWith("px"))
         {
-            styles.Add($"min-width: {column.Width}");
+            styles.Add($"min-width: {width}");
         }
-        
+
         return string.Join("; ", styles) + ";";
+    }
+
+    private string? GetColumnWidthStyle(InteractiveColumnDefinition column)
+    {
+        if (string.IsNullOrEmpty(column.Width))
+            return null;
+
+        return BuildWidthStyles(column.Width);
     }
 
     /// <summary>
@@ -788,85 +804,62 @@
 
     private string? GetCellStyle(InteractiveColumnDefinition column)
     {
-        var styles = new List<string>();
-        
-        // 寬度設定
+        var parts = new List<string>();
+
+        // 寬度設定（複用 BuildWidthStyles）
         if (!string.IsNullOrEmpty(column.Width))
-        {
-            styles.Add($"width: {column.Width}");
-            
-            // 如果是百分比寬度，添加 min-width 防止過度壓縮
-            if (column.Width.EndsWith("%"))
-            {
-                if (double.TryParse(column.Width.TrimEnd('%'), out var percentage))
-                {
-                    var minWidth = percentage >= 15 ? "100px" : percentage >= 10 ? "80px" : "60px";
-                    styles.Add($"min-width: {minWidth}");
-                }
-            }
-            // 如果是固定像素寬度，同時設定 min-width 確保不被壓縮
-            else if (column.Width.EndsWith("px"))
-            {
-                styles.Add($"min-width: {column.Width}");
-            }
-        }
-        
+            parts.Add(BuildWidthStyles(column.Width).TrimEnd(';').Trim());
+
         // 文字對齊設定 (支援 Display、Button 和 Custom 類型)
-        if ((column.ColumnType == InteractiveColumnType.Display || 
-             column.ColumnType == InteractiveColumnType.Button || 
-             column.ColumnType == InteractiveColumnType.Custom) 
+        if ((column.ColumnType == InteractiveColumnType.Display ||
+             column.ColumnType == InteractiveColumnType.Button ||
+             column.ColumnType == InteractiveColumnType.Custom)
             && !string.IsNullOrEmpty(column.TextAlign))
         {
-            styles.Add($"text-align: {column.TextAlign}");
+            parts.Add($"text-align: {column.TextAlign}");
         }
-        
-        return styles.Any() ? string.Join("; ", styles) + ";" : null;
+
+        return parts.Any() ? string.Join("; ", parts) + ";" : null;
     }
 
-    private string? GetActionsColumnStyle()
+    private string? GetActionsColumnStyle() => _cachedActionsColumnStyle;
+
+    private string? ComputeActionsColumnStyle()
     {
         // 如果有明確設定寬度，直接使用
         if (!string.IsNullOrEmpty(ActionsColumnWidth) && ActionsColumnWidth != "auto")
-        {
             return $"width: {ActionsColumnWidth};";
-        }
-        
+
         // 自動計算剩餘寬度
         if (ColumnDefinitions != null && ColumnDefinitions.Any())
         {
             var totalUsedPercentage = 0m;
             var hasPercentageColumns = false;
-            
+
             foreach (var column in ColumnDefinitions)
             {
                 if (!string.IsNullOrEmpty(column.Width) && column.Width.EndsWith("%"))
                 {
                     hasPercentageColumns = true;
-                    var percentageStr = column.Width.Replace("%", "");
-                    if (decimal.TryParse(percentageStr, out var percentage))
-                    {
+                    if (decimal.TryParse(column.Width.Replace("%", ""), out var percentage))
                         totalUsedPercentage += percentage;
-                    }
                 }
             }
-            
-            // 如果有使用百分比的欄位，計算剩餘空間
+
             if (hasPercentageColumns)
             {
                 var remainingPercentage = 100 - totalUsedPercentage;
-                
-                // 確保至少有 5% 的空間給操作欄位，最多不超過 15%
                 var actionsPercentage = Math.Max(5, Math.Min(15, remainingPercentage));
-                
                 return $"width: {actionsPercentage}%;";
             }
         }
-        
-        // 預設情況：使用固定寬度
+
         return "width: 120px;";
     }
 
-    private int GetColspan()
+    private int GetColspan() => _cachedColspan;
+
+    private int ComputeColspan()
     {
         var columnCount = ColumnDefinitions?.Count ?? 0;
         if (ShowRowNumbers) columnCount++;
@@ -959,10 +952,8 @@
         {
             await OnSelectionChanged.InvokeAsync(SelectedItems);
         }
-        
-        StateHasChanged();
     }
-    
+
     /// <summary>
     /// 處理單一項目的選取變更
     /// </summary>
@@ -995,10 +986,8 @@
         {
             await OnSelectionChanged.InvokeAsync(SelectedItems);
         }
-        
-        StateHasChanged();
     }
-    
+
     #endregion
 
     private async Task HandleRowClick(TItem item)
@@ -1062,19 +1051,20 @@
         // 支援巢狀屬性 例如: "Customer.Name"
         var parts = propertyName.Split('.');
         object? currentValue = item;
-        
+
         foreach (var part in parts)
         {
             if (currentValue == null) return null;
-            
+
             var currentType = currentValue.GetType();
-            var property = currentType.GetProperty(part);
-            
+            var cacheKey = $"{currentType.FullName}.{part}";
+            var property = _propCache.GetOrAdd(cacheKey, _ => currentType.GetProperty(part));
+
             if (property == null) return null;
-            
+
             currentValue = property.GetValue(currentValue);
         }
-        
+
         return currentValue;
     }
 
@@ -1087,22 +1077,28 @@
         {
             var parts = propertyName.Split('.');
             object? currentObj = item;
-            
+
             // 找到最後一個物件
             for (int i = 0; i < parts.Length - 1; i++)
             {
                 if (currentObj == null) return;
-                
-                var property = currentObj.GetType().GetProperty(parts[i]);
+
+                var partName = parts[i];
+                var currentType = currentObj.GetType();
+                var cacheKey = $"{currentType.FullName}.{partName}";
+                var property = _propCache.GetOrAdd(cacheKey, _ => currentType.GetProperty(partName));
                 if (property == null) return;
-                
+
                 currentObj = property.GetValue(currentObj);
             }
-            
+
             if (currentObj == null) return;
-            
+
             // 設定最後的屬性值
-            var finalProperty = currentObj.GetType().GetProperty(parts.Last());
+            var finalType = currentObj.GetType();
+            var lastName = parts.Last();
+            var finalKey = $"{finalType.FullName}.{lastName}";
+            var finalProperty = _propCache.GetOrAdd(finalKey, _ => finalType.GetProperty(lastName));
             if (finalProperty != null && finalProperty.CanWrite)
             {
                 // 型別轉換
@@ -1292,14 +1288,6 @@
     }
     
     /// <summary>
-    /// 檢查是否有空行存在
-    /// </summary>
-    private bool HasEmptyRow()
-    {
-        return Items?.Any(IsRowEmpty) ?? false;
-    }
-    
-    /// <summary>
     /// 統一的空行檢查和管理方法
     /// 核心邏輯：
     /// 1. 當 AllowAddNewRow=true 時，確保至少有一個空行且在最後
@@ -1352,22 +1340,6 @@
             // 只有一個空行且在最後,不需要處理
             _lastEmptyRow = emptyRows[0];
         }
-    }
-    
-    /// <summary>
-    /// 確保至少有一個空行（向下兼容）
-    /// </summary>
-    private void EnsureOneEmptyRow()
-    {
-        CheckAndAddEmptyRowIfNeeded();
-    }
-    
-    /// <summary>
-    /// 在輸入變更後，自動檢查並新增空行
-    /// </summary>
-    private void AutoAddEmptyRowIfNeeded()
-    {
-        CheckAndAddEmptyRowIfNeeded();
     }
     
     #endregion
@@ -1452,7 +1424,7 @@
             // 整行原本是空的 && 這個欄位原本是空的 && 這個欄位現在有值 → 觸發新增空行
             if (wasEmpty && fieldWasEmpty && fieldHasValueNow)
             {
-                AutoAddEmptyRowIfNeeded();
+                CheckAndAddEmptyRowIfNeeded();
                 return;
             }
         }
@@ -1463,7 +1435,7 @@
         //  原有邏輯：整行從空變非空時，檢查是否需要新增空行
         if (EnableAutoEmptyRow && wasEmpty && !isEmptyNow)
         {
-            AutoAddEmptyRowIfNeeded();
+            CheckAndAddEmptyRowIfNeeded();
         }
     }
 
@@ -1548,7 +1520,7 @@
             // 整行原本是空的 && 這個欄位原本是空的 && 這個欄位現在有值 → 觸發新增空行
             if (wasEmpty && fieldWasEmpty && fieldHasValueNow)
             {
-                AutoAddEmptyRowIfNeeded();
+                CheckAndAddEmptyRowIfNeeded();
                 return;
             }
         }
@@ -1557,7 +1529,7 @@
         var isEmptyNow = EnableAutoEmptyRow ? IsRowEmpty(item) : false;
         if (EnableAutoEmptyRow && wasEmpty && !isEmptyNow)
         {
-            AutoAddEmptyRowIfNeeded();
+            CheckAndAddEmptyRowIfNeeded();
         }
     }
 
@@ -1583,7 +1555,7 @@
         //  只有當這一行從空變非空時，才檢查是否需要新增空行
         if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
         {
-            AutoAddEmptyRowIfNeeded();
+            CheckAndAddEmptyRowIfNeeded();
         }
     }
 
@@ -1646,7 +1618,7 @@
             if (OnDataChanged.HasDelegate) await OnDataChanged.InvokeAsync();
 
             // 自動空行管理：確保刪除後還有空行
-            EnsureOneEmptyRow();
+            CheckAndAddEmptyRowIfNeeded();
         }
     }
     
@@ -1720,7 +1692,7 @@
                     //  只有當這一行從空變非空時，才檢查是否需要新增空行
                     if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
                     {
-                        AutoAddEmptyRowIfNeeded();
+                        CheckAndAddEmptyRowIfNeeded();
                     }
 
                     StateHasChanged();
@@ -1788,7 +1760,7 @@
         // 注意：SearchableSelect 通常不會在輸入時就改變空行狀態，而是在選擇項目時
         if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
         {
-            AutoAddEmptyRowIfNeeded();
+            CheckAndAddEmptyRowIfNeeded();
         }
     }
     
@@ -1850,7 +1822,7 @@
         //  只有當這一行從空變非空時，才檢查是否需要新增空行
         if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
         {
-            AutoAddEmptyRowIfNeeded();
+            CheckAndAddEmptyRowIfNeeded();
         }
 
         // 🔧 修正：點擊選擇項目後需要觸發 UI 更新，確保商品名稱等資料正確渲染

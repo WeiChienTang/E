@@ -7,7 +7,7 @@
 @inject IStringLocalizer<SharedResource> L
 
 <div class="card-body p-0">
-    <InteractiveTableComponent TItem="SetoffPaymentItem" 
+    <GenericInteractiveTableComponent TItem="SetoffPaymentItem" 
                                 Items="@PaymentItems"
                                 ColumnDefinitions="@GetPaymentColumnDefinitions()"
                                 IsReadOnly="@IsReadOnly"

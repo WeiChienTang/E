@@ -42,7 +42,7 @@
                     </div>
                 </div>
 
-                <InteractiveTableComponent TItem="ReportDefinition"
+                <GenericInteractiveTableComponent TItem="ReportDefinition"
                                           Items="@FilteredReports"
                                           ColumnDefinitions="@columnDefinitions"
                                           ShowRowNumbers="true"
@@ -67,7 +67,7 @@
                                               Title="@(isEnabled ? $"{L["Report.GoTo"]} {GetLocalizedName(report)}" : L["Report.NotAvailable"].ToString())"
                                               OnClick="@(() => HandlePrintClick(report))" />
                     </CustomActionsTemplate>
-                </InteractiveTableComponent>
+                </GenericInteractiveTableComponent>
 
                 @* 說明區塊 *@
                 <div class="mt-3 text-muted small">

@@ -21,7 +21,7 @@
     </div>
 
     @* 拜訪紀錄表格 *@
-    <InteractiveTableComponent TItem="CustomerVisit"
+    <GenericInteractiveTableComponent TItem="CustomerVisit"
                               Items="@(Visits ?? new List<CustomerVisit>())"
                               ColumnDefinitions="@GetColumnDefinitions()"
                               ShowHeader="true"

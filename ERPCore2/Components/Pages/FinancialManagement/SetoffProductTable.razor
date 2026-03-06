@@ -26,7 +26,7 @@ else
     @* 本次沖款明細編輯 - 直接顯示所有未結清明細 *@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent TItem="SetoffProductDetailItem"
+            <GenericInteractiveTableComponent TItem="SetoffProductDetailItem"
                                       OnDataChanged="@NotifyDetailsChanged"
                                       Items="@SetoffItems"
                                       ColumnDefinitions="@GetSetoffColumnDefinitions()"

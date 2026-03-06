@@ -17,7 +17,7 @@
                                Title="@L["Button.AddTrainingRecord"]" />
     </div>
 
-    <InteractiveTableComponent TItem="EmployeeTrainingRecord"
+    <GenericInteractiveTableComponent TItem="EmployeeTrainingRecord"
                               Items="@trainingRecords"
                               ColumnDefinitions="@GetTrainingColumnDefinitions()"
                               ShowHeader="true"
@@ -47,7 +47,7 @@
                                Title="@L["Button.AddLicense"]" />
     </div>
 
-    <InteractiveTableComponent TItem="EmployeeLicense"
+    <GenericInteractiveTableComponent TItem="EmployeeLicense"
                               Items="@licenses"
                               ColumnDefinitions="@GetLicenseColumnDefinitions()"
                               ShowHeader="true"

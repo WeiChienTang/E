@@ -1,5 +1,5 @@
 @* 
-    多選篩選組件 - 使用 InteractiveTableComponent 實作
+    多選篩選組件 - 使用 GenericGenericInteractiveTableComponent 實作
     提供左右雙欄的項目選擇介面，支援搜尋、全選、清空等功能
 *@
 
@@ -17,7 +17,7 @@
                @bind="searchTerm"
                @bind:event="oninput" />
         <div style="max-height: @ListHeight; overflow: auto;">
-            <InteractiveTableComponent TItem="TItem"
+            <GenericInteractiveTableComponent TItem="TItem"
                                        Items="@AvailableItems"
                                        ColumnDefinitions="@GetAvailableColumnDefinitions()"
                                        ShowHeader="false"
@@ -42,7 +42,7 @@
                @bind="selectedSearchTerm"
                @bind:event="oninput" />
         <div style="max-height: @ListHeight; overflow: auto;">
-            <InteractiveTableComponent TItem="TItem"
+            <GenericInteractiveTableComponent TItem="TItem"
                                        Items="@FilteredSelectedItems"
                                        ColumnDefinitions="@GetSelectedColumnDefinitions()"
                                        ShowHeader="false"

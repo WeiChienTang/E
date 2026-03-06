@@ -8,7 +8,7 @@
 @inject IStringLocalizer<SharedResource> L
 
 <div class="card-body p-0">
-    <InteractiveTableComponent TItem="SetoffPrepaymentItem" 
+    <GenericInteractiveTableComponent TItem="SetoffPrepaymentItem" 
                                 @ref="tableComponent"
                                 Items="@PrepaymentItems"
                                 ColumnDefinitions="@GetPrepaymentColumnDefinitions()"
@@ -37,7 +37,7 @@
 @code {
     // ===== 私有欄位 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
-    private InteractiveTableComponent<SetoffPrepaymentItem>? tableComponent;
+    private GenericInteractiveTableComponent<SetoffPrepaymentItem>? tableComponent;
     
     // ===== 參數定義 =====
     [Parameter] public int? SetoffDocumentId { get; set; }
@@ -354,7 +354,7 @@
                 MatchSourcePrepaymentIds();
             }
         }
-        // 🔑 新增模式：不做任何事，讓 InteractiveTableComponent 自動產生第一行空行
+        // 🔑 新增模式：不做任何事，讓 GenericInteractiveTableComponent 自動產生第一行空行
         // 不呼叫 Clear()，避免清除已自動產生的空行（時序問題）
     }
 

@@ -1,4 +1,4 @@
-@* 盤點明細管理組件 - 使用 InteractiveTableComponent 統一UI *@
+@* 盤點明細管理組件 - 使用 GenericInteractiveTableComponent 統一UI *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
 @using ERPCore2.Helpers
@@ -20,7 +20,7 @@ else
 {
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent @ref="tableComponent"
+            <GenericInteractiveTableComponent @ref="tableComponent"
                                   TItem="StockTakingDetailItem"
                                   OnDataChanged="@NotifyDetailsChanged"
                                   Items="@DetailItems"
@@ -68,7 +68,7 @@ else
     [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new();
 
     // ===== 內部狀態 =====
-    private InteractiveTableComponent<StockTakingDetailItem>? tableComponent;
+    private GenericInteractiveTableComponent<StockTakingDetailItem>? tableComponent;
     private List<StockTakingDetailItem> DetailItems { get; set; } = new();
     private bool _dataLoadCompleted = true;
     private int? _previousWarehouseId = null;
@@ -119,7 +119,7 @@ else
             _previousWarehouseId = SelectedWarehouseId;
             _previousWarehouseLocationId = SelectedWarehouseLocationId;
             
-            // 關鍵修復：設定 _dataLoadCompleted = false，讓 InteractiveTableComponent 能偵測狀態變化
+            // 關鍵修復：設定 _dataLoadCompleted = false，讓 GenericInteractiveTableComponent 能偵測狀態變化
             _dataLoadCompleted = false;
             
             await LoadAvailableProductsAsync();
@@ -131,7 +131,7 @@ else
                 await LoadExistingDetailsAsync();
             }
             
-            // 關鍵修復：設定 _dataLoadCompleted = true，觸發 InteractiveTableComponent 建立空行
+            // 關鍵修復：設定 _dataLoadCompleted = true，觸發 GenericInteractiveTableComponent 建立空行
             _dataLoadCompleted = true;
             
             // 關鍵：載入完成後強制重新渲染，確保 UI 使用最新的 _availableProducts

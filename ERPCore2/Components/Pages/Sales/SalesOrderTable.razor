@@ -50,7 +50,7 @@ else
     
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent @ref="tableComponent"
+            <GenericInteractiveTableComponent @ref="tableComponent"
                                       TItem="SalesItem"
                                       OnDataChanged="@NotifyDetailsChangedAsync"
                                       Items="GetFilteredItems()"

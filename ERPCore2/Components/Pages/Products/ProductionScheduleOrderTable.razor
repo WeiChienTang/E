@@ -21,9 +21,9 @@
                                   ButtonSize="btn-sm" />
         </div>
         
-        @* 明細列表 - 使用 InteractiveTableComponent *@
+        @* 明細列表 - 使用 GenericInteractiveTableComponent *@
         <div style="max-height: 350px; overflow: auto;">
-            <InteractiveTableComponent TItem="PendingScheduleDetailDto"
+            <GenericInteractiveTableComponent TItem="PendingScheduleDetailDto"
                                        Items="@FilteredDetailsList"
                                        ColumnDefinitions="@GetColumnDefinitions()"
                                        ShowHeader="true"

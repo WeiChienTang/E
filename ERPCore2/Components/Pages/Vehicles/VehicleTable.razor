@@ -24,7 +24,7 @@
     </div>
 
     @* 車輛列表表格 *@
-    <InteractiveTableComponent TItem="Vehicle"
+    <GenericInteractiveTableComponent TItem="Vehicle"
                               Items="@(Vehicles ?? new List<Vehicle>())"
                               ColumnDefinitions="@GetColumnDefinitions()"
                               ShowHeader="true"

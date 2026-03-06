@@ -7,7 +7,7 @@
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-        <InteractiveTableComponent @ref="tableComponent"
+        <GenericInteractiveTableComponent @ref="tableComponent"
                                   TItem="ProductSupplier" 
                                   Items="@Items"
                                   ColumnDefinitions="@GetColumnDefinitions()"
@@ -49,8 +49,8 @@
     [Parameter] public string EmptyMessage { get; set; } = "尚未設定供應商品";
     [Parameter] public EventCallback<ProductSupplier> OnItemDeleted { get; set; }
     
-    // ===== InteractiveTableComponent 參考 =====
-    private InteractiveTableComponent<ProductSupplier>? tableComponent;
+    // ===== GenericInteractiveTableComponent 參考 =====
+    private GenericInteractiveTableComponent<ProductSupplier>? tableComponent;
     
     /// <summary>
     /// 計算屬性：是否有供應商品項目
