@@ -307,7 +307,6 @@
                     compositionDetails = await CopyFromComposition(DetailId.Value, defaultComposition.Id);
                     FillNavigationProperties(compositionDetails);
                     selectedCompositionId = defaultComposition.Id;
-                    
                     // 通知父元件 fallback 選擇的配方
                     await SelectedCompositionIdChanged.InvokeAsync(defaultComposition.Id);
                     await IsCustomModeChanged.InvokeAsync(false);
@@ -475,13 +474,10 @@ private string GetModalTitle()
                 item.GetType().GetProperty("ComponentProductId")?.SetValue(item, product.Id);
                 item.GetType().GetProperty("ComponentProduct")?.SetValue(item, product);
                 item.GetType().GetProperty("Quantity")?.SetValue(item, 1m);
-                item.GetType().GetProperty("UnitId")?.SetValue(item, product.UnitId > 0 ? (int?)product.UnitId : null);
-
-                if (product.UnitId > 0)
-                {
-                    var unit = availableUnits.FirstOrDefault(u => u.Id == product.UnitId);
-                    item.GetType().GetProperty("Unit")?.SetValue(item, unit);
-                }
+                var batchEffectiveUnitId = product.ProductionUnitId ?? (product.UnitId > 0 ? (int?)product.UnitId : null);
+                item.GetType().GetProperty("UnitId")?.SetValue(item, batchEffectiveUnitId);
+                var batchUnit = batchEffectiveUnitId.HasValue ? availableUnits.FirstOrDefault(u => u.Id == batchEffectiveUnitId.Value) : null;
+                item.GetType().GetProperty("Unit")?.SetValue(item, batchUnit);
 
                 compositionDetails.Add(item);
             }
@@ -533,7 +529,10 @@ private string GetModalTitle()
                     
                     detail.GetType().GetProperty("ComponentProductId")?.SetValue(detail, product?.Id ?? 0);
                     detail.GetType().GetProperty("ComponentProduct")?.SetValue(detail, product);
-                    detail.GetType().GetProperty("UnitId")?.SetValue(detail, product?.UnitId);
+                    var selEffectiveUnitId = product?.ProductionUnitId ?? (product?.UnitId > 0 ? (int?)product.UnitId : null);
+                    detail.GetType().GetProperty("UnitId")?.SetValue(detail, selEffectiveUnitId);
+                    var selUnit = selEffectiveUnitId.HasValue ? availableUnits.FirstOrDefault(u => u.Id == selEffectiveUnitId.Value) : null;
+                    detail.GetType().GetProperty("Unit")?.SetValue(detail, selUnit);
                     
                     var quantityProp = detail.GetType().GetProperty("Quantity");
                     var currentQuantity = (decimal)(quantityProp?.GetValue(detail) ?? 0m);

@@ -80,6 +80,9 @@
     // ===== 顯示控制參數 =====
     [Parameter] public bool ShowBatchTracking { get; set; } = true;
     [Parameter] public bool ShowAverageCost { get; set; } = true;
+    [Parameter] public string PurchaseUnitName { get; set; } = "";
+    [Parameter] public string ProductionUnitName { get; set; } = "";
+    [Parameter] public decimal? ProductionUnitConversionRate { get; set; }
     
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
@@ -169,25 +172,54 @@
             }
         });
 
-        // 現有庫存欄位（已存在的明細行唯讀，須透過盤點/進出貨流程修改）
+        // 現有庫存欄位（已存在的明細行顯示「數量 單位」，新增行顯示可編輯輸入框）
         columns.Add(new()
         {
             Title = L["Column.CurrentStock"],
             PropertyName = "CurrentStock",
-            ColumnType = InteractiveColumnType.Number,
-            Width = "120px",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "130px",
             CellCssClass = "text-end",
-            MinValue = 0,
-            IsDisabledFunc = item => ((StockDetailItem)item).ExistingDetailEntity != null,
-            TooltipFunc = item => ((StockDetailItem)item).ExistingDetailEntity != null
-                ? "現有庫存量須透過盤點調整、進貨或出貨等流程修改"
-                : null,
-            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            CustomTemplate = item =>
             {
-                var (item, valueString) = args;
-                await OnCurrentStockInput((StockDetailItem)item, valueString);
-            })
+                var stockItem = (StockDetailItem)item;
+                if (stockItem.ExistingDetailEntity != null || IsReadOnly)
+                {
+                    var valueStr = NumberFormatHelper.FormatSmart(stockItem.CurrentStock, useThousandsSeparator: true);
+                    var display = string.IsNullOrEmpty(PurchaseUnitName) ? valueStr : $"{valueStr} {PurchaseUnitName}";
+                    return @<span class="d-block text-end" title="現有庫存量須透過盤點調整、進貨或出貨等流程修改">@display</span>;
+                }
+                else
+                {
+                    return @<input type="number" class="form-control form-control-sm text-end"
+                                   min="0"
+                                   value="@stockItem.CurrentStock.ToString()"
+                                   @onchange="@(async e => await OnCurrentStockInput(stockItem, e.Value?.ToString()))" />;
+                }
+            }
         });
+
+        // 製程庫存欄位（有設製程單位且不同於基本單位時顯示）
+        if (!string.IsNullOrEmpty(ProductionUnitName) && ProductionUnitConversionRate.HasValue && ProductionUnitConversionRate.Value > 0)
+        {
+            var rate = ProductionUnitConversionRate.Value;
+            var productionUnit = ProductionUnitName;
+            columns.Add(new()
+            {
+                Title = L["Field.ProductionUnitStock"],
+                PropertyName = "CurrentStock",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "130px",
+                CellCssClass = "text-end text-muted",
+                DisplayFormatter = item =>
+                {
+                    var stockItem = (StockDetailItem)item!;
+                    var converted = stockItem.CurrentStock * rate;
+                    var valueStr = NumberFormatHelper.FormatSmart(converted, useThousandsSeparator: true);
+                    return string.IsNullOrEmpty(productionUnit) ? valueStr : $"{valueStr} {productionUnit}";
+                }
+            });
+        }
 
         // 平均成本欄位（條件顯示）
         if (ShowAverageCost)

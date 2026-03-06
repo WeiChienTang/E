@@ -45,6 +45,8 @@ namespace ERPCore2.Services
                         .ThenInclude(p => p.ProductCategory)
                     .Include(i => i.Product)
                         .ThenInclude(p => p.Unit)
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p.ProductionUnit)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
@@ -71,6 +73,8 @@ namespace ERPCore2.Services
                 return await context.InventoryStocks
                     .Include(i => i.Product)
                         .ThenInclude(p => p.Unit)
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p.ProductionUnit)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)

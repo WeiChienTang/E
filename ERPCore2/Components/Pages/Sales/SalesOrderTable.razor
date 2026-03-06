@@ -216,6 +216,9 @@ else
     private Dictionary<int, List<SalesOrderCompositionDetail>> compositionDetailsCache = new();
     private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
 
+    // 暫存配方選擇狀態（Key: ExistingDetailEntity.Id，跨 Items.Clear() 重新載入後仍保留）
+    private Dictionary<int, (int? SelectedCompositionId, bool IsCustomComposition, List<SalesOrderCompositionDetail>? CustomDetails)> _pendingCompositionState = new();
+
     // ===== 計算屬性 =====
     
     /// <summary>
@@ -376,7 +379,7 @@ else
         if (ExistingDetails?.Any() != true)
             return;
 
-        foreach (var detail in ExistingDetails)
+        foreach (var detail in ExistingDetails.ToList())
         {
             var salesDetail = detail;
             var systemTaxRate = await SystemParameterService.GetTaxRateAsync();
@@ -402,11 +405,19 @@ else
             try
             {
                 var compositions = await SalesOrderCompositionDetailService.GetBySalesOrderDetailIdAsync(salesDetail.Id);
-                if (compositions?.Any() == true)
+
+                if (_pendingCompositionState.TryGetValue(salesDetail.Id, out var pending))
+                {
+                    // 優先使用暫存狀態（本次會話中已編輯但尚未儲存主單）
+                    salesItem.SelectedCompositionId = pending.SelectedCompositionId;
+                    salesItem.IsCustomComposition = pending.IsCustomComposition;
+                    salesItem.CustomCompositionDetails = pending.CustomDetails ?? compositions;
+                }
+                else if (compositions?.Any() == true)
                 {
                     salesItem.CustomCompositionDetails = compositions;
-                    salesItem.IsCustomComposition = true;
-                    salesItem.SelectedCompositionId = null;
+                    salesItem.SelectedCompositionId = salesDetail.SelectedCompositionId;
+                    salesItem.IsCustomComposition = !salesDetail.SelectedCompositionId.HasValue;
                 }
             }
             catch
@@ -455,6 +466,7 @@ else
                 detail.DiscountPercentage = item.DiscountPercentage;
                 detail.TaxRate = item.TaxRate;
                 detail.Remarks = item.DetailRemarks;
+                detail.SelectedCompositionId = item.IsCustomComposition ? null : item.SelectedCompositionId;
                 if (item.SourceQuotationDetailId.HasValue)
                     detail.QuotationDetailId = item.SourceQuotationDetailId.Value;
             }
@@ -469,6 +481,7 @@ else
                 detail.DiscountPercentage = item.DiscountPercentage;
                 detail.TaxRate = item.TaxRate;
                 detail.Remarks = item.DetailRemarks;
+                detail.SelectedCompositionId = item.IsCustomComposition ? null : item.SelectedCompositionId;
                 if (item.SourceQuotationDetailId.HasValue)
                     detail.QuotationDetailId = item.SourceQuotationDetailId.Value;
             }
@@ -685,8 +698,11 @@ else
         
         var item = Items[selectedSalesItemIndex.Value];
         var detailId = (item.ExistingDetailEntity as SalesOrderDetail)?.Id;
-        
-        return detailId;
+
+        if (detailId.HasValue && detailId.Value > 0) return detailId;
+
+        // 新項目：回傳負數臨時 ID
+        return -(selectedSalesItemIndex.Value + 1);
     }
     
     /// <summary>
@@ -704,7 +720,16 @@ else
             item.CustomCompositionDetails = compositionDetails;
             item.SelectedCompositionId = selectedCompositionId;
             item.IsCustomComposition = isCustomCompositionMode;
-            
+
+            // 將狀態暫存，以防 Items.Clear() 重新載入時遺失（主單尚未儲存時）
+            if (item.ExistingDetailEntity?.Id > 0)
+            {
+                _pendingCompositionState[item.ExistingDetailEntity.Id] = (selectedCompositionId, isCustomCompositionMode, compositionDetails);
+            }
+
+            // 通知父元件明細已變更（確保 SelectedCompositionId 在父元件儲存時被正確寫入 DB）
+            await NotifyDetailsChangedAsync();
+
             await NotificationService.ShowSuccessAsync("BOM 組成已更新（將在銷貨訂單儲存時一併保存）");
             showCompositionModal = false;
         }

@@ -83,7 +83,7 @@
         public int? WarehouseId { get; set; }
         public int? WarehouseLocationId { get; set; }
         public int? InventoryStockDetailId { get; set; } // 新增：庫存明細ID
-        public int IssueQuantity { get; set; }
+        public decimal IssueQuantity { get; set; }
         public decimal UnitCost { get; set; }
         public decimal? AvailableStock { get; set; }
         
@@ -490,8 +490,8 @@
 
     private async Task OnIssueQuantityChanged(DetailItem item, object? value)
     {
-        item.IssueQuantity = InputEventHelper.HandleIntegerInput(value?.ToString());
-        
+        item.IssueQuantity = InputEventHelper.HandleQuantityInput(value?.ToString());
+
         await SyncToDetails();
         StateHasChanged();
     }

@@ -67,13 +67,42 @@ namespace ERPCore2.Data.Entities
         
         [Display(Name = "付款方式")]
         public int? PaymentMethodId { get; set; }
-        
+
         public PaymentMethod? PaymentMethod { get; set; }
-        
+
         [MaxLength(100, ErrorMessage = "付款條件不可超過100個字元")]
         [Display(Name = "付款條件")]
         public string? PaymentTerms { get; set; }
-        
+
+        [Display(Name = "付款日")]
+        public int? PaymentDay { get; set; }
+
+        [MaxLength(100, ErrorMessage = "發票抬頭不可超過100個字元")]
+        [Display(Name = "發票抬頭")]
+        public string? InvoiceTitle { get; set; }
+
+        [Display(Name = "目前應付餘額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CurrentPayable { get; set; } = 0;
+
+        [Display(Name = "廠商狀態")]
+        public SupplierStatus SupplierStatus { get; set; } = SupplierStatus.Active;
+
+        [Display(Name = "廠商類型")]
+        public SupplierType? SupplierType { get; set; }
+
+        [MaxLength(200, ErrorMessage = "帳單地址不可超過200個字元")]
+        [Display(Name = "帳單地址")]
+        public string? BillingAddress { get; set; }
+
+        [MaxLength(50, ErrorMessage = "銀行帳號不可超過50個字元")]
+        [Display(Name = "銀行帳號")]
+        public string? BankAccount { get; set; }
+
+        [MaxLength(100, ErrorMessage = "銀行名稱不可超過100個字元")]
+        [Display(Name = "銀行名稱")]
+        public string? BankName { get; set; }
+
         // 聯絡資訊請使用 IContactService 取得 (OwnerType = "Supplier", OwnerId = this.Id)
         // 地址資訊請使用 IAddressService 取得
         

@@ -22,7 +22,7 @@ namespace ERPCore2.Data.Entities
 
         // Foreign Keys
         [Required(ErrorMessage = "商品單位為必填")]
-        [Display(Name = "採購單位")]
+        [Display(Name = "基本單位")]
         [ForeignKey(nameof(Unit))]
         public int UnitId { get; set; }
 
@@ -83,5 +83,10 @@ namespace ERPCore2.Data.Entities
         /// 供應商關聯列表（商品-供應商綁定）
         /// </summary>
         public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
+
+        /// <summary>
+        /// 客戶關聯列表（商品-客戶銷售條件）
+        /// </summary>
+        public ICollection<ProductCustomer> ProductCustomers { get; set; } = new List<ProductCustomer>();
     }
 }

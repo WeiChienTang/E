@@ -29,15 +29,23 @@ namespace ERPCore2.Data.Entities
         
         [Display(Name = "總數量")]
         [NotMapped]
-        public int TotalQuantity => MaterialIssueDetails?.Sum(d => d.IssueQuantity) ?? 0;
+        public decimal TotalQuantity => MaterialIssueDetails?.Sum(d => d.IssueQuantity) ?? 0;
         
         [Display(Name = "明細筆數")]
         [NotMapped]
         public int DetailCount => MaterialIssueDetails?.Count ?? 0;
         
+        /// <summary>
+        /// 關聯生產排程 ID（選填）- 此領料單對應的生產排程
+        /// </summary>
+        [Display(Name = "關聯生產排程")]
+        [ForeignKey(nameof(ProductionSchedule))]
+        public int? ProductionScheduleId { get; set; }
+
         // Navigation Properties
         public Employee? Employee { get; set; }
         public Department? Department { get; set; }
+        public ProductionSchedule? ProductionSchedule { get; set; }
         public ICollection<MaterialIssueDetail> MaterialIssueDetails { get; set; } = new List<MaterialIssueDetail>();
     }
 }

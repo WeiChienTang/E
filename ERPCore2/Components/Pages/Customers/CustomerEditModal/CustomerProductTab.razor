@@ -1,0 +1,218 @@
+@* 客戶銷售商品 Tab - 自包含元件，顯示此客戶的商品銷售記錄 *@
+@inject IProductCustomerService ProductCustomerService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@if (_isLoading)
+{
+    <div class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">@L["Label.Loading"]</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        <small class="text-muted">@string.Format(L["Label.RecordCount"], _productCustomers.Count)</small>
+        <small class="text-muted fst-italic">
+            <i class="bi bi-info-circle me-1"></i>@L["Customer.AutoSyncNote"]
+        </small>
+    </div>
+
+    <InteractiveTableComponent TItem="ProductCustomer"
+                               Items="@_productCustomers"
+                               ColumnDefinitions="@GetColumnDefinitions()"
+                               ShowHeader="true"
+                               ShowRowNumbers="true"
+                               IsStriped="true"
+                               IsHoverable="true"
+                               IsBordered="true"
+                               ShowBuiltInActions="true"
+                               ShowBuiltInDeleteButton="true"
+                               DeleteButtonVariant="ButtonVariant.Red"
+                               DeleteButtonTitle="@L["Customer.DeleteProductButtonTitle"]"
+                               OnItemDelete="@HandleDeleteItem"
+                               EmptyMessage="@L["Customer.NoProducts"]" />
+}
+
+@* 刪除確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@_showDeleteModal"
+                              IsVisibleChanged="@((bool v) => _showDeleteModal = v)"
+                              Title="@L["Customer.RemoveProduct"]"
+                              Icon="bi-trash"
+                              Message="@string.Format(L["Customer.ConfirmRemoveProduct"], _deletingItem?.Product?.Name ?? L["Column.Product"])"
+                              ConfirmButtonText="@L["Button.ConfirmRemove"]"
+                              CancelButtonText="@L["Button.Cancel"]"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@HandleConfirmDelete"
+                              OnCancel="@(() => _showDeleteModal = false)" />
+
+@code {
+    [Parameter] public int? CustomerId { get; set; }
+
+    private List<ProductCustomer> _productCustomers = new();
+    private bool _isLoading = false;
+    private bool _showDeleteModal = false;
+    private ProductCustomer? _deletingItem = null;
+    private int? _loadedCustomerId;
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (CustomerId != _loadedCustomerId)
+        {
+            _loadedCustomerId = CustomerId;
+            if (CustomerId.HasValue && CustomerId.Value > 0)
+                await LoadAsync(CustomerId.Value);
+            else
+                Clear();
+        }
+    }
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    public async Task LoadAsync(int customerId)
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _productCustomers = await ProductCustomerService.GetByCustomerIdAsync(customerId);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入客戶商品時發生錯誤：{ex.Message}");
+            _productCustomers = new();
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Clear()
+    {
+        _productCustomers = new();
+        StateHasChanged();
+    }
+
+    // ===== 欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = L["Column.ProductCode"],
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                DisplayFormatter = item => item is ProductCustomer pc0 ? pc0.Product?.Code ?? "-" : "-"
+            },
+            new()
+            {
+                Title = L["Column.ProductName"],
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                DisplayFormatter = item => item is ProductCustomer pc1 ? pc1.Product?.Name ?? "-" : "-"
+            },
+            new()
+            {
+                Title = L["Column.CustomerProductCode"],
+                PropertyName = nameof(ProductCustomer.CustomerProductCode),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px",
+                NullDisplayText = "-"
+            },
+            new()
+            {
+                Title = L["Column.CustomerPrice"],
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                TextAlign = "right",
+                DisplayFormatter = item =>
+                {
+                    if (item is not ProductCustomer pc) return "-";
+                    return pc.CustomerPrice.HasValue
+                        ? pc.CustomerPrice.Value.ToString("N0")
+                        : "-";
+                }
+            },
+            new()
+            {
+                Title = L["Column.LastSalePrice"],
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                TextAlign = "right",
+                DisplayFormatter = item =>
+                {
+                    if (item is not ProductCustomer pc) return "-";
+                    return pc.LastSalePrice.HasValue
+                        ? pc.LastSalePrice.Value.ToString("N0")
+                        : "-";
+                }
+            },
+            new()
+            {
+                Title = L["Column.LastSaleDate"],
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                DisplayFormatter = item =>
+                {
+                    if (item is not ProductCustomer pc) return "-";
+                    return pc.LastSaleDate.HasValue
+                        ? pc.LastSaleDate.Value.ToString("yyyy/MM/dd")
+                        : "-";
+                }
+            }
+        };
+    }
+
+    // ===== 刪除處理 =====
+
+    private async Task HandleDeleteItem(ProductCustomer item)
+    {
+        _deletingItem = item;
+        _showDeleteModal = true;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleConfirmDelete()
+    {
+        if (_deletingItem == null) return;
+
+        try
+        {
+            var result = await ProductCustomerService.DeleteAsync(_deletingItem.Id);
+            if (result.IsSuccess)
+            {
+                _productCustomers.RemoveAll(pc => pc.Id == _deletingItem.Id);
+                await NotificationService.ShowSuccessAsync(L["Customer.RemovedFromCatalog"]);
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"移除失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"移除時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            _deletingItem = null;
+            _showDeleteModal = false;
+            StateHasChanged();
+        }
+    }
+}

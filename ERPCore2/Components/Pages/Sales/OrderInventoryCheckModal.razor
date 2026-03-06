@@ -16,8 +16,193 @@
                    CloseOnEscape="true"
                    IsLoading="@isLoading"
                    LoadingMessage="@L["Inventory.LoadingMessage"]"
-                   BodyContent="@BodyContent"
-                   DebugComponentName="OrderInventoryCheckModal" />
+                   DebugComponentName="OrderInventoryCheckModal">
+    <BodyContent>
+        @if (checkResult == null)
+        {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                @L["Inventory.CannotLoad"]
+            </div>
+        }
+        else
+        {
+            @* 統計摘要 *@
+            <div class="inventory-summary @GetSummaryClass() mb-3 p-3 rounded-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <span class="fw-bold">
+                            <i class="bi bi-clipboard-check me-1"></i>
+                            @L["Inventory.SummaryTitle"]
+                        </span>
+                        <span class="badge bg-secondary">
+                            @L["Inventory.TotalItems", checkResult.Items.Count]
+                        </span>
+                        @if (checkResult.InsufficientItemCount > 0)
+                        {
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle me-1"></i>
+                                @L["Inventory.Insufficient"] @checkResult.InsufficientItemCount
+                            </span>
+                        }
+                        @if (checkResult.WarningItemCount > 0)
+                        {
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                @L["Inventory.Warning"] @checkResult.WarningItemCount
+                            </span>
+                        }
+                        @if (checkResult.IsFullySatisfied)
+                        {
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>
+                                @L["Inventory.AllSufficient"]
+                            </span>
+                        }
+                    </div>
+                    <div class="text-end">
+                        <div class="small text-muted mb-1">@L["Inventory.SatisfactionRate"]</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress" style="width: 100px; height: 8px;">
+                                <div class="progress-bar @GetProgressBarClass()"
+                                     style="width: @(checkResult.OverallSatisfactionRate)%"></div>
+                            </div>
+                            <span class="fw-bold @GetSatisfactionTextClass()">
+                                @checkResult.OverallSatisfactionRate.ToString("F0")%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* 項目列表 *@
+            <div class="inventory-item-list">
+                @foreach (var item in checkResult.Items)
+                {
+                    <div class="inventory-item @GetItemBorderClass(item.Status) mb-2 rounded-3">
+                        @* 主項目列 *@
+                        <div class="d-flex align-items-center p-2 gap-2 cursor-pointer @(item.IsComposition && item.Children.Any() ? "item-header" : "")"
+                             @onclick="@(() => ToggleItem(item))">
+
+                            @* 展開/收合按鈕 *@
+                            <div class="expand-btn">
+                                @if (item.IsComposition && item.Children.Any())
+                                {
+                                    <i class="bi @(IsItemExpanded(item) ? "bi-chevron-down" : "bi-chevron-right") text-muted"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-dash text-muted opacity-0"></i>
+                                }
+                            </div>
+
+                            @* 狀態圖示 *@
+                            <div class="status-icon">
+                                <i class="bi @GetStatusIcon(item.Status) @GetStatusIconClass(item.Status) fs-5"></i>
+                            </div>
+
+                            @* 商品資訊 *@
+                            <div class="flex-grow-1 min-width-0">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="fw-bold text-primary">@item.ProductCode</span>
+                                    <span class="text-truncate">@item.ProductName</span>
+                                    @if (!string.IsNullOrEmpty(item.ProductSpecification))
+                                    {
+                                        <span class="badge bg-light text-secondary border">@item.ProductSpecification</span>
+                                    }
+                                    @if (item.IsComposition)
+                                    {
+                                        <span class="badge bg-info text-white">
+                                            <i class="bi bi-diagram-3 me-1"></i>BOM
+                                        </span>
+                                    }
+                                </div>
+                                @* 進度條 *@
+                                @{
+                                    var pct = item.RequiredQuantity > 0
+                                        ? Math.Min(100m, item.AvailableStock / item.RequiredQuantity * 100)
+                                        : 100m;
+                                }
+                                <div class="progress mt-1" style="height: 4px;">
+                                    <div class="progress-bar @GetProgressBarClass(item.Status)"
+                                         style="width: @pct.ToString("F0")%"></div>
+                                </div>
+                            </div>
+
+                            @* 數量資訊 *@
+                            <div class="qty-info text-end text-nowrap">
+                                <div class="small">
+                                    <span class="text-muted">@L["Inventory.Required"]</span>
+                                    <span class="fw-bold ms-1">@NumberFormatHelper.FormatSmart(item.RequiredQuantity)</span>
+                                    <span class="text-muted ms-1">@item.UnitName</span>
+                                </div>
+                                <div class="small">
+                                    <span class="text-muted">@L["Inventory.Stock"]</span>
+                                    <span class="fw-bold ms-1 @GetStatusIconClass(item.Status)">
+                                        @NumberFormatHelper.FormatSmart(item.AvailableStock)
+                                    </span>
+                                </div>
+                                @if (item.ShortageQuantity > 0)
+                                {
+                                    <div class="small">
+                                        <span class="text-muted">@L["Inventory.Shortage"]</span>
+                                        <span class="fw-bold ms-1 text-danger">
+                                            @NumberFormatHelper.FormatSmart(item.ShortageQuantity)
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        @* BOM 子項目（展開後顯示） *@
+                        @if (item.IsComposition && item.Children.Any() && IsItemExpanded(item))
+                        {
+                            <div class="bom-children border-top mx-2 mb-2 pt-2">
+                                @foreach (var child in item.Children)
+                                {
+                                    <div class="bom-child-row d-flex align-items-center gap-2 py-1 px-2 rounded @GetChildRowClass(child.Status)">
+                                        <i class="bi bi-arrow-return-right text-muted small"></i>
+                                        <i class="bi @GetStatusIcon(child.Status) @GetStatusIconClass(child.Status)"></i>
+                                        <span class="fw-bold text-primary small">@child.ProductCode</span>
+                                        <span class="small text-truncate flex-grow-1">@child.ProductName</span>
+                                        @if (child.CompositionMultiplier.HasValue)
+                                        {
+                                            <span class="badge bg-light text-secondary border small">
+                                                ×@child.CompositionMultiplier.Value.ToString("G")
+                                            </span>
+                                        }
+                                        <div class="text-end text-nowrap small">
+                                            <span class="text-muted">@L["Inventory.Required"]</span>
+                                            <span class="fw-bold ms-1">@NumberFormatHelper.FormatSmart(child.RequiredQuantity)</span>
+                                            <span class="text-muted mx-1">|</span>
+                                            <span class="text-muted">@L["Inventory.Stock"]</span>
+                                            <span class="fw-bold ms-1 @GetStatusIconClass(child.Status)">
+                                                @NumberFormatHelper.FormatSmart(child.AvailableStock)
+                                            </span>
+                                            @if (child.ShortageQuantity > 0)
+                                            {
+                                                <span class="text-muted mx-1">|</span>
+                                                <span class="text-muted">@L["Inventory.Shortage"]</span>
+                                                <span class="fw-bold ms-1 text-danger">
+                                                    @NumberFormatHelper.FormatSmart(child.ShortageQuantity)
+                                                </span>
+                                            }
+                                            <span class="text-muted ms-1">@child.UnitName</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="text-muted small text-end mt-2">
+                @L["Inventory.SummaryNote"] @checkResult.CheckedAt.ToString("HH:mm:ss")
+            </div>
+        }
+    </BodyContent>
+</BaseModalComponent>
 
 @code {
     // ===== 參數定義 =====
@@ -30,7 +215,7 @@
     // ===== 私有欄位 =====
     private bool isLoading = false;
     private OrderInventoryCheckResult? checkResult;
-    private Dictionary<object, bool> expandedItems = new();
+    private HashSet<int> expandedItemIds = new();
 
     // ===== 生命週期 =====
     protected override async Task OnParametersSetAsync()
@@ -49,9 +234,7 @@
         try
         {
             checkResult = await SalesOrderService.GetOrderInventoryCheckAsync(SalesOrderId!.Value);
-            
-            // 預設收合所有項目
-            expandedItems.Clear();
+            expandedItemIds.Clear();
         }
         catch (Exception ex)
         {
@@ -67,330 +250,79 @@
     private string GetModalTitle()
     {
         if (!string.IsNullOrEmpty(OrderNumber))
-        {
             return string.Format(L["Inventory.CheckTitleWithOrder"].ToString(), OrderNumber);
-        }
         return L["Inventory.CheckTitle"].ToString();
     }
 
-    private void ToggleExpand(int detailId)
+    // ===== 展開/收合 =====
+    private void ToggleItem(OrderInventoryCheckItem item)
     {
-        if (expandedItems.ContainsKey(detailId))
-        {
-            expandedItems[detailId] = !expandedItems[detailId];
-        }
-        else
-        {
-            expandedItems[detailId] = true;
-        }
-        StateHasChanged();
+        if (!item.IsComposition || !item.Children.Any() || !item.DetailId.HasValue) return;
+        if (!expandedItemIds.Remove(item.DetailId.Value))
+            expandedItemIds.Add(item.DetailId.Value);
     }
 
-    private bool IsExpanded(int detailId)
+    private bool IsItemExpanded(OrderInventoryCheckItem item)
+        => item.DetailId.HasValue && expandedItemIds.Contains(item.DetailId.Value);
+
+    // ===== 樣式輔助 =====
+    private string GetSummaryClass() => checkResult switch
     {
-        return expandedItems.GetValueOrDefault(detailId, false);
-    }
-
-    private void ToggleExpandByKey(string key)
-    {
-        if (expandedItems.ContainsKey(key))
-        {
-            expandedItems[key] = !expandedItems[key];
-        }
-        else
-        {
-            expandedItems[key] = true;
-        }
-        StateHasChanged();
-    }
-
-    private async Task HandleClose()
-    {
-        if (OnClose.HasDelegate)
-        {
-            await OnClose.InvokeAsync();
-        }
-        await IsVisibleChanged.InvokeAsync(false);
-    }
-
-    // ===== Render Fragments =====
-    private RenderFragment BodyContent => builder =>
-    {
-        if (checkResult == null)
-        {
-            builder.OpenElement(0, "div");
-            builder.AddAttribute(1, "class", "text-center text-muted py-4");
-            builder.AddContent(2, L["Inventory.CannotLoad"].ToString());
-            builder.CloseElement();
-            return;
-        }
-
-        // 統計摘要區塊
-        RenderSummaryCard(builder);
-
-        // 明細列表
-        builder.OpenElement(3, "div");
-        builder.AddAttribute(4, "class", "inventory-check-list");
-        
-        foreach (var item in checkResult.Items)
-        {
-            RenderInventoryItem(builder, item);
-        }
-        
-        builder.CloseElement(); // inventory-check-list
+        { InsufficientItemCount: > 0 } => "bg-danger bg-opacity-10 border border-danger border-opacity-25",
+        { WarningItemCount: > 0 }      => "bg-warning bg-opacity-10 border border-warning border-opacity-25",
+        _                              => "bg-success bg-opacity-10 border border-success border-opacity-25"
     };
 
-    private void RenderInventoryItem(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, OrderInventoryCheckItem item)
+    private string GetProgressBarClass() => checkResult switch
     {
-        // 主項目容器 - 單行顯示
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "border-bottom py-2 d-flex align-items-center");
-        
-        // 展開/收合按鈕 (如果有子項目)
-        if (item.IsComposition && item.Children.Any() && item.DetailId.HasValue)
-        {
-            builder.OpenElement(2, "button");
-            builder.AddAttribute(3, "type", "button");
-            builder.AddAttribute(4, "class", "btn btn-sm btn-link text-decoration-none p-0 me-2");
-            builder.AddAttribute(5, "onclick", EventCallback.Factory.Create(this, () => ToggleExpand(item.DetailId.Value)));
-            builder.AddContent(6, IsExpanded(item.DetailId.Value) ? "▼" : "▶");
-            builder.CloseElement(); // button
-        }
-        else
-        {
-            builder.OpenElement(7, "span");
-            builder.AddAttribute(8, "class", "me-2");
-            builder.AddAttribute(9, "style", "width: 16px; display: inline-block;");
-            builder.CloseElement();
-        }
-        
-        // 狀態圖示
-        builder.OpenElement(10, "span");
-        builder.AddAttribute(11, "class", "me-2");
-        builder.AddContent(12, item.StatusIcon);
-        builder.CloseElement();
-        
-        // 產品編號和名稱
-        builder.OpenElement(13, "strong");
-        builder.AddAttribute(14, "class", "me-2");
-        builder.AddContent(15, $"{item.ProductCode}");
-        builder.CloseElement();
-        
-        builder.OpenElement(16, "span");
-        builder.AddAttribute(17, "class", "me-3");
-        builder.AddContent(18, item.ProductName);
-        builder.CloseElement();
-        
-        // 數量資訊 - 單行
-        builder.OpenElement(19, "span");
-        builder.AddAttribute(20, "class", "text-muted small");
-        
-        builder.AddContent(21, L["Inventory.Required"].ToString());
-        builder.OpenElement(22, "strong");
-        builder.AddAttribute(23, "class", "mx-1");
-        builder.AddContent(24, NumberFormatHelper.FormatSmart(item.RequiredQuantity));
-        builder.CloseElement();
+        { InsufficientItemCount: > 0 } => "bg-danger",
+        { WarningItemCount: > 0 }      => "bg-warning",
+        _                              => "bg-success"
+    };
 
-        builder.AddContent(25, " " + L["Inventory.Stock"].ToString());
-        builder.OpenElement(26, "strong");
-        builder.AddAttribute(27, "class", $"mx-1 {item.StatusClass}");
-        builder.AddContent(28, NumberFormatHelper.FormatSmart(item.AvailableStock));
-        builder.CloseElement();
-
-        if (item.ShortageQuantity > 0)
-        {
-            builder.AddContent(29, " " + L["Inventory.Shortage"].ToString());
-            builder.OpenElement(30, "strong");
-            builder.AddAttribute(31, "class", "mx-1 text-danger");
-            builder.AddContent(32, NumberFormatHelper.FormatSmart(item.ShortageQuantity));
-            builder.CloseElement();
-        }
-        
-        builder.AddContent(33, $" ({item.UnitName})");
-        builder.CloseElement(); // text-muted small
-        
-        builder.CloseElement(); // 主項目容器
-        
-        // 子項目 (組成元件)
-        if (item.IsComposition && item.Children.Any() && item.DetailId.HasValue && IsExpanded(item.DetailId.Value))
-        {
-            builder.OpenElement(34, "div");
-            builder.AddAttribute(35, "class", "ps-4 border-start border-2 ms-2");
-            
-            foreach (var child in item.Children)
-            {
-                RenderChildItem(builder, child, level: 2);
-            }
-            
-            builder.CloseElement(); // children container
-        }
-    }
-
-    private void RenderChildItem(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, OrderInventoryCheckItem child, int level)
+    private string GetSatisfactionTextClass() => checkResult switch
     {
-        // 根據層級調整縮排
-        var indentStyle = level > 2 ? $"padding-left: {(level - 2) * 16}px;" : "";
-        
-        // 子項目容器 - 單行顯示
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "py-1 d-flex align-items-center small");
-        builder.AddAttribute(2, "style", indentStyle);
-        
-        // 展開/收合按鈕 (如果有子項目)
-        if (child.IsComposition && child.Children.Any())
-        {
-            var childExpandKey = $"{child.ProductId}_level{level}";
-            var isChildExpanded = expandedItems.GetValueOrDefault(childExpandKey, true);
-            expandedItems.TryAdd(childExpandKey, true);
-            
-            builder.OpenElement(3, "button");
-            builder.AddAttribute(4, "type", "button");
-            builder.AddAttribute(5, "class", "btn btn-sm btn-link text-decoration-none p-0 me-2");
-            builder.AddAttribute(6, "onclick", EventCallback.Factory.Create(this, () => ToggleExpandByKey(childExpandKey)));
-            builder.AddContent(7, isChildExpanded ? "▼" : "▶");
-            builder.CloseElement(); // button
-        }
-        else
-        {
-            builder.OpenElement(8, "span");
-            builder.AddAttribute(9, "class", "me-2");
-            builder.AddAttribute(10, "style", "width: 16px; display: inline-block;");
-            builder.CloseElement();
-        }
-        
-        // 狀態圖示
-        builder.OpenElement(11, "span");
-        builder.AddAttribute(12, "class", "me-2");
-        builder.AddContent(13, child.StatusIcon);
-        builder.CloseElement();
-        
-        // 產品編號和名稱
-        builder.OpenElement(14, "strong");
-        builder.AddAttribute(15, "class", "me-2");
-        builder.AddContent(16, child.ProductCode);
-        builder.CloseElement();
-        
-        builder.OpenElement(17, "span");
-        builder.AddAttribute(18, "class", "me-3");
-        builder.AddContent(19, child.ProductName);
-        builder.CloseElement();
-        
-        // 數量資訊 - 單行
-        builder.OpenElement(20, "span");
-        builder.AddAttribute(21, "class", "text-muted");
-        
-        builder.AddContent(22, L["Inventory.Required"].ToString());
-        builder.OpenElement(23, "strong");
-        builder.AddAttribute(24, "class", "mx-1");
-        builder.AddContent(25, NumberFormatHelper.FormatSmart(child.RequiredQuantity));
-        builder.CloseElement();
+        { InsufficientItemCount: > 0 } => "text-danger",
+        { WarningItemCount: > 0 }      => "text-warning",
+        _                              => "text-success"
+    };
 
-        builder.AddContent(26, " " + L["Inventory.Stock"].ToString());
-        builder.OpenElement(27, "strong");
-        builder.AddAttribute(28, "class", $"mx-1 {child.StatusClass}");
-        builder.AddContent(29, NumberFormatHelper.FormatSmart(child.AvailableStock));
-        builder.CloseElement();
-
-        if (child.ShortageQuantity > 0)
-        {
-            builder.AddContent(30, " " + L["Inventory.Shortage"].ToString());
-            builder.OpenElement(31, "strong");
-            builder.AddAttribute(32, "class", "mx-1 text-danger");
-            builder.AddContent(33, NumberFormatHelper.FormatSmart(child.ShortageQuantity));
-            builder.CloseElement();
-        }
-        
-        builder.AddContent(34, $" ({child.UnitName})");
-        builder.CloseElement(); // text-muted
-        
-        builder.CloseElement(); // 子項目容器
-        
-        // 遞迴渲染：如果有子項目且已展開，遞迴顯示
-        if (child.IsComposition && child.Children.Any())
-        {
-            var childExpandKey = $"{child.ProductId}_level{level}";
-            var isChildExpanded = expandedItems.GetValueOrDefault(childExpandKey, true);
-            
-            if (isChildExpanded)
-            {
-                foreach (var grandChild in child.Children)
-                {
-                    RenderChildItem(builder, grandChild, level + 1);
-                }
-            }
-        }
-    }
-
-    private void RenderSummaryCard(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
+    private string GetProgressBarClass(InventoryStatus status) => status switch
     {
-        if (checkResult == null) return;
+        InventoryStatus.Sufficient   => "bg-success",
+        InventoryStatus.Warning      => "bg-warning",
+        InventoryStatus.Insufficient => "bg-danger",
+        _                            => "bg-secondary"
+    };
 
-        var alertClass = GetOverallAlertClass();
-
-        // 統計摘要卡片
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", $"alert alert-{alertClass} mb-3");
-        builder.AddAttribute(2, "style", "border-left: 5px solid currentColor;");
-        
-        // 標題行
-        builder.OpenElement(3, "div");
-        builder.AddAttribute(4, "class", "d-flex justify-content-between align-items-center");
-        builder.OpenElement(5, "strong");
-        builder.AddContent(6, L["Inventory.SummaryTitle"].ToString());
-        builder.CloseElement(); // strong
-        builder.OpenElement(7, "small");
-        builder.AddAttribute(8, "class", "text-muted");
-        builder.AddContent(9, L["Inventory.SummaryNote"].ToString());
-        builder.CloseElement(); // small
-        builder.CloseElement(); // d-flex
-        
-        builder.CloseElement(); // alert
-    }
-
-    private void ExpandInsufficientItems()
+    private string GetStatusIcon(InventoryStatus status) => status switch
     {
-        if (checkResult == null) return;
+        InventoryStatus.Sufficient   => "bi-check-circle-fill",
+        InventoryStatus.Warning      => "bi-exclamation-triangle-fill",
+        InventoryStatus.Insufficient => "bi-x-circle-fill",
+        _                            => "bi-question-circle"
+    };
 
-        // 找出所有不足的組合產品項目
-        var insufficientItems = checkResult.Items
-            .Where(x => x.Status == InventoryStatus.Insufficient && x.IsComposition && x.DetailId.HasValue)
-            .ToList();
-
-        if (!insufficientItems.Any()) return;
-
-        // 檢查是否所有不足項目都已展開
-        bool allExpanded = insufficientItems.All(x => expandedItems.GetValueOrDefault(x.DetailId!.Value, false));
-
-        // 如果全部已展開則收合，否則展開
-        foreach (var item in insufficientItems)
-        {
-            expandedItems[item.DetailId!.Value] = !allExpanded;
-        }
-        
-        StateHasChanged();
-    }
-
-    private string GetOverallAlertClass()
+    private string GetStatusIconClass(InventoryStatus status) => status switch
     {
-        if (checkResult == null) return "secondary";
-        
-        if (checkResult.InsufficientItemCount > 0)
-            return "danger";
-        
-        if (checkResult.WarningItemCount > 0)
-            return "warning";
-        
-        return "success";
-    }
+        InventoryStatus.Sufficient   => "text-success",
+        InventoryStatus.Warning      => "text-warning",
+        InventoryStatus.Insufficient => "text-danger",
+        _                            => "text-secondary"
+    };
 
-    private string GetStatusBadgeClass(InventoryStatus status)
+    private string GetItemBorderClass(InventoryStatus status) => status switch
     {
-        return status switch
-        {
-            InventoryStatus.Sufficient => "success",
-            InventoryStatus.Warning => "warning",
-            InventoryStatus.Insufficient => "danger",
-            _ => "secondary"
-        };
-    }
+        InventoryStatus.Sufficient   => "item-sufficient",
+        InventoryStatus.Warning      => "item-warning",
+        InventoryStatus.Insufficient => "item-insufficient",
+        _                            => "item-default"
+    };
+
+    private string GetChildRowClass(InventoryStatus status) => status switch
+    {
+        InventoryStatus.Insufficient => "bg-danger bg-opacity-10",
+        InventoryStatus.Warning      => "bg-warning bg-opacity-10",
+        _                            => ""
+    };
 }

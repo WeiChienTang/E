@@ -211,11 +211,7 @@
     {
         try
         {
-            // 載入審核開關設定
-            isManualApproval = await SystemParameterService.IsSalesDeliveryManualApprovalAsync();
-            showApprovalSection = !await SystemParameterService.IsApprovalInfoHiddenAsync();
-
-            // 使用 ModalManagerInitHelper 初始化所有 Manager
+            // 先初始化 Modal Manager（必須在第一個 await 之前，避免中間渲染時 NullReferenceException）
             modalManagers = ModalManagerInitHelper.CreateBuilder<SalesDelivery, ISalesDeliveryService>(
                     () => editModalComponent,
                     NotificationService,
@@ -225,12 +221,13 @@
                 .AddManager<Customer>(nameof(SalesDelivery.CustomerId), "客戶")
                 .AddManager<Employee>(nameof(SalesDelivery.EmployeeId), "業務員")
                 .Build();
-            
-            // 取得個別 Manager 供組件使用
+
             customerModalManager = modalManagers.Get<Customer>(nameof(SalesDelivery.CustomerId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(SalesDelivery.EmployeeId));
-            
-            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
+
+            // 載入審核開關設定
+            isManualApproval = await SystemParameterService.IsSalesDeliveryManualApprovalAsync();
+            showApprovalSection = !await SystemParameterService.IsApprovalInfoHiddenAsync();
         }
         catch (Exception)
         {

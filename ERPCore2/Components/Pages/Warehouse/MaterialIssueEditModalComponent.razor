@@ -5,6 +5,8 @@
 @inject IMaterialIssueService MaterialIssueService
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
+@inject IProductionScheduleItemService ProductionScheduleItemService
+@inject IProductionScheduleDetailService ProductionScheduleDetailService
 @inject INotificationService NotificationService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
@@ -49,6 +51,11 @@
     [Parameter] public int? MaterialIssueId { get; set; }
     [Parameter] public EventCallback<MaterialIssue> OnMaterialIssueSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+
+    /// <summary>
+    /// 從生產排程建立時傳入的排程 ID，會自動載入排程物料需求
+    /// </summary>
+    [Parameter] public int? SourceProductionScheduleId { get; set; }
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<MaterialIssue, IMaterialIssueService>? editModalComponent;
@@ -150,9 +157,16 @@
                     Code = await EntityCodeGenerationHelper.GenerateForEntity<MaterialIssue, IMaterialIssueService>(MaterialIssueService, "MI"),
                     IssueDate = DateTime.Today,
                     Status = EntityStatus.Active,
+                    ProductionScheduleId = SourceProductionScheduleId,
                     MaterialIssueDetails = new List<MaterialIssueDetail>()
                 };
-                
+
+                // 若有來源排程，自動載入待領物料明細
+                if (SourceProductionScheduleId.HasValue)
+                {
+                    await LoadMaterialsFromScheduleAsync(SourceProductionScheduleId.Value);
+                }
+
                 return newMaterialIssue;
             }
 
@@ -172,6 +186,49 @@
                 additionalData: $"載入領料單資料失敗 - ID: {MaterialIssueId}");
             await NotificationService.ShowErrorAsync("載入領料單資料失敗");
             return null;
+        }
+    }
+
+    /// <summary>
+    /// 從生產排程自動載入待領物料到 materialIssueDetails
+    /// 只載入 PendingIssueQuantity > 0 的項目
+    /// </summary>
+    private async Task LoadMaterialsFromScheduleAsync(int scheduleId)
+    {
+        try
+        {
+            // 取得此排程的所有項目
+            var targetItems = await ProductionScheduleItemService.GetByScheduleIdAsync(scheduleId);
+            targetItems = targetItems.Where(i => !i.IsClosed).ToList();
+
+            if (!targetItems.Any()) return;
+
+            var details = new List<MaterialIssueDetail>();
+            foreach (var item in targetItems)
+            {
+                var scheduleDetails = await ProductionScheduleDetailService.GetByScheduleItemIdAsync(item.Id);
+                foreach (var sd in scheduleDetails.Where(d => d.PendingIssueQuantity > 0))
+                {
+                    details.Add(new MaterialIssueDetail
+                    {
+                        ProductId = sd.ComponentProductId,
+                        IssueQuantity = sd.PendingIssueQuantity,
+                        ProductionScheduleDetailId = sd.Id,
+                        Status = EntityStatus.Active
+                    });
+                }
+            }
+
+            if (details.Any())
+            {
+                materialIssueDetails = details;
+                await NotificationService.ShowInfoAsync($"已從生產排程載入 {details.Count} 筆物料需求");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadMaterialsFromScheduleAsync), GetType(),
+                additionalData: $"從排程載入物料失敗 - ScheduleId: {scheduleId}");
         }
     }
 
@@ -348,21 +405,27 @@
 
             // 儲存領料單
             ServiceResult<MaterialIssue> result;
+            var isNewRecord = materialIssue.Id == 0;
+            List<MaterialIssueDetail> oldDetails = new();
+
             if (materialIssue.Id > 0)
             {
-                // 編輯模式：分兩步驟處理
+                // 編輯模式：先載入舊明細（用於計算 IssuedQuantity 差異）
+                var oldMaterialIssue = await MaterialIssueService.GetWithDetailsAsync(materialIssue.Id);
+                oldDetails = oldMaterialIssue?.MaterialIssueDetails?.ToList() ?? new();
+
                 // 步驟 1: 更新主檔和明細（不處理庫存）
                 result = await MaterialIssueService.UpdateAsync(materialIssue);
-                
+
                 if (!result.IsSuccess || result.Data == null)
                 {
                     await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "更新領料單失敗");
                     return false;
                 }
-                
+
                 // 步驟 2: 單獨處理庫存差異
                 var inventoryResult = await MaterialIssueService.UpdateInventoryByDifferenceAsync(result.Data.Id, 0);
-                
+
                 if (!inventoryResult.IsSuccess)
                 {
                     await NotificationService.ShowErrorAsync(inventoryResult.ErrorMessage ?? "更新庫存失敗");
@@ -373,7 +436,7 @@
             {
                 // 新增模式：CreateAsync 已包含庫存處理
                 result = await MaterialIssueService.CreateAsync(materialIssue);
-                
+
                 if (!result.IsSuccess || result.Data == null)
                 {
                     await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存領料單失敗");
@@ -381,11 +444,14 @@
                 }
             }
 
+            // 回寫 ProductionScheduleDetail.IssuedQuantity
+            await UpdateScheduleDetailIssuedQuantityAsync(materialIssueDetails, oldDetails, isNewRecord);
+
             return true;
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveMaterialIssueWrapper), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveMaterialIssueWrapper), GetType(),
                 additionalData: $"儲存領料單失敗 - ID: {materialIssue?.Id}");
             await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
             return false;
@@ -448,4 +514,57 @@
     // ===== 輔助方法 =====
 
     /// <summary>
+    /// 儲存領料單後，回寫對應的 ProductionScheduleDetail.IssuedQuantity
+    /// 新增時直接累加；編輯時計算差異（避免重複累加）
+    /// </summary>
+    private async Task UpdateScheduleDetailIssuedQuantityAsync(
+        List<MaterialIssueDetail> newDetails,
+        List<MaterialIssueDetail> oldDetails,
+        bool isNewRecord)
+    {
+        try
+        {
+            // 收集所有受影響的 ProductionScheduleDetail ID（新舊合集）
+            var allAffectedIds = newDetails
+                .Where(d => d.ProductionScheduleDetailId.HasValue)
+                .Select(d => d.ProductionScheduleDetailId!.Value)
+                .Union(oldDetails
+                    .Where(d => d.ProductionScheduleDetailId.HasValue)
+                    .Select(d => d.ProductionScheduleDetailId!.Value))
+                .Distinct()
+                .ToList();
+
+            foreach (var scheduleDetailId in allAffectedIds)
+            {
+                var sd = await ProductionScheduleDetailService.GetByIdAsync(scheduleDetailId);
+                if (sd == null) continue;
+
+                var newQty = newDetails
+                    .Where(d => d.ProductionScheduleDetailId == scheduleDetailId)
+                    .Sum(d => d.IssueQuantity);
+
+                if (isNewRecord)
+                {
+                    // 新增：直接累加
+                    sd.IssuedQuantity += newQty;
+                }
+                else
+                {
+                    // 編輯：只加差異，避免重複累加
+                    var oldQty = oldDetails
+                        .Where(d => d.ProductionScheduleDetailId == scheduleDetailId)
+                        .Sum(d => d.IssueQuantity);
+                    sd.IssuedQuantity = Math.Max(0, sd.IssuedQuantity + (newQty - oldQty));
+                }
+
+                await ProductionScheduleDetailService.UpdateAsync(sd);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(UpdateScheduleDetailIssuedQuantityAsync), GetType(),
+                additionalData: "回寫排程已領數量失敗");
+            // 不拋出例外，不中斷主流程
+        }
+    }
 }

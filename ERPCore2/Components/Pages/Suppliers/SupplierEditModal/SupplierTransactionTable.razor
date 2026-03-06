@@ -1,9 +1,9 @@
-@* 客戶交易紀錄查詢組件 - 顯示出貨單、退貨單（已實現金流的交易） *@
+@* 廠商交易紀錄查詢組件 - 顯示進貨單、退貨單（已實現金流的交易） *@
 @using ERPCore2.Models
 @using ERPCore2.Models.Enums
 @using ERPCore2.Helpers
-@inject ISalesDeliveryService SalesDeliveryService
-@inject ISalesReturnService SalesReturnService
+@inject IPurchaseReceivingService PurchaseReceivingService
+@inject IPurchaseReturnService PurchaseReturnService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
@@ -21,11 +21,11 @@ else
     <div class="d-flex align-items-center gap-3 mb-2 p-2 rounded border tx-filter-bar">
         <span class="text-muted small fw-semibold me-1">@L["Label.Show"]</span>
         <div class="form-check form-check-inline mb-0">
-            <input class="form-check-input" type="checkbox" id="chk-delivery"
-                   checked="@_showDeliveries"
-                   @onchange="@(e => { _showDeliveries = (bool)e.Value!; })" />
-            <label class="form-check-label small" for="chk-delivery">
-                <span class="badge bg-info me-1"><i class="bi bi-truck"></i></span>@L["Customer.Deliveries"]
+            <input class="form-check-input" type="checkbox" id="chk-receiving"
+                   checked="@_showReceivings"
+                   @onchange="@(e => { _showReceivings = (bool)e.Value!; })" />
+            <label class="form-check-label small" for="chk-receiving">
+                <span class="badge bg-info me-1"><i class="bi bi-box-arrow-in-down"></i></span>@L["Supplier.Receivings"]
             </label>
         </div>
         <div class="form-check form-check-inline mb-0">
@@ -33,7 +33,7 @@ else
                    checked="@_showReturns"
                    @onchange="@(e => { _showReturns = (bool)e.Value!; })" />
             <label class="form-check-label small" for="chk-return">
-                <span class="badge bg-warning text-dark me-1"><i class="bi bi-arrow-return-left"></i></span>@L["Customer.Returns"]
+                <span class="badge bg-warning text-dark me-1"><i class="bi bi-arrow-return-left"></i></span>@L["Supplier.Returns"]
             </label>
         </div>
         @if (_allTransactions.Any())
@@ -51,33 +51,33 @@ else
                                ActionsTemplate="@GetActionsTemplate"
                                ActionsHeader="@L["Label.Actions"]"
                                ActionsColumnWidth="70px"
-                               EmptyMessage="@L["Customer.NoTransactions"]" />
+                               EmptyMessage="@L["Supplier.NoTransactions"]" />
 
     @* 統計摘要（基於全部資料，不受篩選影響） *@
     @if (_allTransactions.Any())
     {
         <div class="d-flex align-items-stretch gap-0 border rounded mt-2 overflow-hidden tx-stats-bar">
 
-            @* 淨銷售額 - 主要指標 *@
-            <div class="d-flex flex-column align-items-center justify-content-center px-3 py-2 border-end tx-net-sales-cell">
-                <span class="text-muted">@L["Customer.NetSales"]</span>
-                <span class="fw-bold fs-5 @(NetSales >= 0 ? "text-success" : "text-danger")">
-                    @NumberFormatHelper.FormatSmartTrim(NetSales, useThousandsSeparator: true)
+            @* 淨採購額 - 主要指標 *@
+            <div class="d-flex flex-column align-items-center justify-content-center px-3 py-2 border-end tx-net-purchase-cell">
+                <span class="text-muted">@L["Supplier.NetPurchase"]</span>
+                <span class="fw-bold fs-5 @(NetPurchase >= 0 ? "text-success" : "text-danger")">
+                    @NumberFormatHelper.FormatSmartTrim(NetPurchase, useThousandsSeparator: true)
                 </span>
             </div>
 
-            @* 出貨 *@
+            @* 進貨 *@
             <div class="d-flex flex-column justify-content-center px-3 py-2 border-end">
-                <span class="text-muted">@L["Customer.Delivery"]</span>
+                <span class="text-muted">@L["Supplier.Receiving"]</span>
                 <span>
-                    <span class="text-success fw-semibold">@string.Format(L["Label.RecordCount"], DeliveryCount)</span>
-                    <span class="text-muted ms-1">@NumberFormatHelper.FormatSmartTrim(DeliveryTotal, useThousandsSeparator: true)</span>
+                    <span class="text-success fw-semibold">@string.Format(L["Label.RecordCount"], ReceivingCount)</span>
+                    <span class="text-muted ms-1">@NumberFormatHelper.FormatSmartTrim(ReceivingTotal, useThousandsSeparator: true)</span>
                 </span>
             </div>
 
             @* 退貨 *@
             <div class="d-flex flex-column justify-content-center px-3 py-2 border-end">
-                <span class="text-muted">@L["Customer.Return"]@(ReturnRate.HasValue ? $"（{ReturnRate.Value:F1}%）" : "")</span>
+                <span class="text-muted">@L["Supplier.Return"]@(ReturnRate.HasValue ? $"（{ReturnRate.Value:F1}%）" : "")</span>
                 <span>
                     <span class="text-danger fw-semibold">@string.Format(L["Label.RecordCount"], ReturnCount)</span>
                     <span class="text-muted ms-1">@NumberFormatHelper.FormatSmartTrim(ReturnTotal, useThousandsSeparator: true)</span>
@@ -88,7 +88,7 @@ else
             @if (LastTxDate.HasValue)
             {
                 <div class="d-flex flex-column justify-content-center px-3 py-2 border-end">
-                    <span class="text-muted">@L["Customer.LastTransaction"]</span>
+                    <span class="text-muted">@L["Supplier.LastTransaction"]</span>
                     <span>
                         <span class="@LastTxRecencyClass fw-semibold">@LastTxDate.Value.ToString("yyyy-MM-dd")</span>
                         <span class="text-muted ms-1">@string.Format(L["Label.DaysAgo"], DaysSinceLastTx)</span>
@@ -96,12 +96,12 @@ else
                 </div>
             }
 
-            @* 平均出貨金額（僅當有出貨單時顯示） *@
-            @if (AvgDelivery.HasValue)
+            @* 平均進貨金額（僅當有進貨單時顯示） *@
+            @if (AvgReceiving.HasValue)
             {
                 <div class="d-flex flex-column justify-content-center px-3 py-2">
-                    <span class="text-muted">@L["Customer.AvgDelivery"]</span>
-                    <span class="text-primary fw-semibold">@NumberFormatHelper.FormatSmartTrim(AvgDelivery.Value, useThousandsSeparator: true)</span>
+                    <span class="text-muted">@L["Supplier.AvgReceiving"]</span>
+                    <span class="text-primary fw-semibold">@NumberFormatHelper.FormatSmartTrim(AvgReceiving.Value, useThousandsSeparator: true)</span>
                 </div>
             }
 
@@ -109,68 +109,68 @@ else
     }
 }
 
-@* 出貨單編輯 Modal *@
-@if (_showDeliveryModal)
+@* 進貨單編輯 Modal *@
+@if (_showReceivingModal)
 {
-    <SalesDeliveryEditModalComponent @ref="_deliveryEditModal"
-                                     IsVisible="@_showDeliveryModal"
-                                     IsVisibleChanged="@((bool v) => _showDeliveryModal = v)"
-                                     SalesDeliveryId="@_selectedDocumentId"
-                                     OnSalesDeliverySaved="@HandleDeliverySaved"
-                                     OnCancel="@(() => _showDeliveryModal = false)" />
+    <PurchaseReceivingEditModalComponent @ref="_receivingEditModal"
+                                         IsVisible="@_showReceivingModal"
+                                         IsVisibleChanged="@((bool v) => _showReceivingModal = v)"
+                                         PurchaseReceivingId="@_selectedDocumentId"
+                                         OnPurchaseReceivingSaved="@HandleReceivingSaved"
+                                         OnCancel="@(() => _showReceivingModal = false)" />
 }
 
 @* 退貨單編輯 Modal *@
 @if (_showReturnModal)
 {
-    <SalesReturnEditModalComponent @ref="_returnEditModal"
-                                   IsVisible="@_showReturnModal"
-                                   IsVisibleChanged="@((bool v) => _showReturnModal = v)"
-                                   SalesReturnId="@_selectedDocumentId"
-                                   OnSalesReturnSaved="@HandleReturnSaved"
-                                   OnCancel="@(() => _showReturnModal = false)" />
+    <PurchaseReturnEditModalComponent @ref="_returnEditModal"
+                                      IsVisible="@_showReturnModal"
+                                      IsVisibleChanged="@((bool v) => _showReturnModal = v)"
+                                      PurchaseReturnId="@_selectedDocumentId"
+                                      OnPurchaseReturnSaved="@HandleReturnSaved"
+                                      OnCancel="@(() => _showReturnModal = false)" />
 }
 
 
 @code {
-    [Parameter] public int? CustomerId { get; set; }
+    [Parameter] public int? SupplierId { get; set; }
 
     private List<RelatedDocumentInfo> _allTransactions = new();
     private List<InteractiveColumnDefinition> _columnDefinitions = new();
     private bool _isLoading = false;
-    private int? _previousCustomerId = null;
+    private int? _previousSupplierId = null;
 
-    private bool _showDeliveries = true;
+    private bool _showReceivings = true;
     private bool _showReturns    = true;
 
     // ===== Modal 狀態 =====
-    private SalesDeliveryEditModalComponent? _deliveryEditModal;
-    private SalesReturnEditModalComponent?   _returnEditModal;
-    private bool _showDeliveryModal = false;
-    private bool _showReturnModal   = false;
+    private PurchaseReceivingEditModalComponent? _receivingEditModal;
+    private PurchaseReturnEditModalComponent?    _returnEditModal;
+    private bool _showReceivingModal = false;
+    private bool _showReturnModal    = false;
     private int? _selectedDocumentId = null;
 
     private List<RelatedDocumentInfo> FilteredTransactions => _allTransactions
-        .Where(t => (_showDeliveries && t.DocumentType == RelatedDocumentType.DeliveryDocument)
+        .Where(t => (_showReceivings && t.DocumentType == RelatedDocumentType.ReceivingDocument)
                  || (_showReturns    && t.DocumentType == RelatedDocumentType.ReturnDocument))
         .ToList();
 
     // ===== 統計屬性（基於全部資料，不受篩選影響） =====
 
-    private int      DeliveryCount   => _allTransactions.Count(t => t.DocumentType == RelatedDocumentType.DeliveryDocument);
+    private int      ReceivingCount  => _allTransactions.Count(t => t.DocumentType == RelatedDocumentType.ReceivingDocument);
     private int      ReturnCount     => _allTransactions.Count(t => t.DocumentType == RelatedDocumentType.ReturnDocument);
 
-    private decimal  DeliveryTotal   => _allTransactions
-        .Where(t => t.DocumentType == RelatedDocumentType.DeliveryDocument && t.TotalAmount.HasValue)
+    private decimal  ReceivingTotal  => _allTransactions
+        .Where(t => t.DocumentType == RelatedDocumentType.ReceivingDocument && t.TotalAmount.HasValue)
         .Sum(t => t.TotalAmount!.Value);
 
     private decimal  ReturnTotal     => _allTransactions
         .Where(t => t.DocumentType == RelatedDocumentType.ReturnDocument && t.TotalAmount.HasValue)
         .Sum(t => t.TotalAmount!.Value);
 
-    private decimal  NetSales        => DeliveryTotal - ReturnTotal;
-    private double?  ReturnRate      => DeliveryTotal > 0 ? (double)(ReturnTotal / DeliveryTotal * 100) : null;
-    private decimal? AvgDelivery     => DeliveryCount > 0 ? DeliveryTotal / DeliveryCount : null;
+    private decimal  NetPurchase     => ReceivingTotal - ReturnTotal;
+    private double?  ReturnRate      => ReceivingTotal > 0 ? (double)(ReturnTotal / ReceivingTotal * 100) : null;
+    private decimal? AvgReceiving    => ReceivingCount > 0 ? ReceivingTotal / ReceivingCount : null;
 
     private DateTime? LastTxDate     => _allTransactions.Any() ? _allTransactions.Max(t => t.DocumentDate) : null;
     private int?     DaysSinceLastTx => LastTxDate.HasValue ? (DateTime.Today - LastTxDate.Value.Date).Days : null;
@@ -192,10 +192,10 @@ else
     {
         await base.OnParametersSetAsync();
 
-        if (CustomerId != _previousCustomerId)
+        if (SupplierId != _previousSupplierId)
         {
-            _previousCustomerId = CustomerId;
-            if (CustomerId.HasValue && CustomerId.Value > 0)
+            _previousSupplierId = SupplierId;
+            if (SupplierId.HasValue && SupplierId.Value > 0)
                 await LoadTransactionsAsync();
             else
                 _allTransactions.Clear();
@@ -204,7 +204,7 @@ else
 
     private async Task LoadTransactionsAsync()
     {
-        if (!CustomerId.HasValue || CustomerId.Value <= 0) return;
+        if (!SupplierId.HasValue || SupplierId.Value <= 0) return;
 
         _isLoading = true;
         StateHasChanged();
@@ -213,28 +213,28 @@ else
         {
             var all = new List<RelatedDocumentInfo>();
 
-            // 載入出貨單
-            var salesDeliveries = await SalesDeliveryService.GetByCustomerIdAsync(CustomerId.Value);
-            all.AddRange(salesDeliveries.Select(sd => new RelatedDocumentInfo
+            // 載入進貨單
+            var receivings = await PurchaseReceivingService.GetBySupplierIdAsync(SupplierId.Value);
+            all.AddRange(receivings.Select(pr => new RelatedDocumentInfo
             {
-                DocumentId = sd.Id,
-                DocumentType = RelatedDocumentType.DeliveryDocument,
-                DocumentNumber = sd.Code ?? string.Empty,
-                DocumentDate = sd.DeliveryDate,
-                TotalAmount = sd.TotalAmountWithTax,
-                Remarks = sd.Remarks
+                DocumentId = pr.Id,
+                DocumentType = RelatedDocumentType.ReceivingDocument,
+                DocumentNumber = pr.Code ?? string.Empty,
+                DocumentDate = pr.ReceiptDate,
+                TotalAmount = pr.PurchaseReceivingTotalAmountIncludingTax,
+                Remarks = pr.Remarks
             }));
 
             // 載入退貨單
-            var salesReturns = await SalesReturnService.GetByCustomerIdAsync(CustomerId.Value);
-            all.AddRange(salesReturns.Select(sr => new RelatedDocumentInfo
+            var returns = await PurchaseReturnService.GetBySupplierIdAsync(SupplierId.Value);
+            all.AddRange(returns.Select(pr => new RelatedDocumentInfo
             {
-                DocumentId = sr.Id,
+                DocumentId = pr.Id,
                 DocumentType = RelatedDocumentType.ReturnDocument,
-                DocumentNumber = sr.Code ?? string.Empty,
-                DocumentDate = sr.ReturnDate,
-                TotalAmount = sr.TotalReturnAmountWithTax,
-                Remarks = sr.Remarks
+                DocumentNumber = pr.Code ?? string.Empty,
+                DocumentDate = pr.ReturnDate,
+                TotalAmount = pr.TotalReturnAmountWithTax,
+                Remarks = pr.Remarks
             }));
 
             // 依日期降序排序，存入全量快取
@@ -290,7 +290,7 @@ else
             },
             new()
             {
-                // 金額欄位：出貨單(綠)=收入實現，退貨單(紅)=負向金流
+                // 金額欄位：進貨單(綠)=支出實現，退貨單(紅)=負向金流
                 Title = L["Column.Amount"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Display,
@@ -305,9 +305,9 @@ else
                     var amount = NumberFormatHelper.FormatSmartTrim(doc.TotalAmount.Value, useThousandsSeparator: true);
                     var cssClass = doc.DocumentType switch
                     {
-                        RelatedDocumentType.DeliveryDocument => "text-success fw-bold",
-                        RelatedDocumentType.ReturnDocument   => "text-danger fw-bold",
-                        _                                    => "text-muted"
+                        RelatedDocumentType.ReceivingDocument => "text-success fw-bold",
+                        RelatedDocumentType.ReturnDocument    => "text-danger fw-bold",
+                        _                                     => "text-muted"
                     };
                     return $"<span class=\"{cssClass}\">{amount}</span>";
                 }
@@ -331,19 +331,19 @@ else
     private void OpenDocumentModal(RelatedDocumentInfo doc)
     {
         _selectedDocumentId = doc.DocumentId;
-        if (doc.DocumentType == RelatedDocumentType.DeliveryDocument)
-            _showDeliveryModal = true;
+        if (doc.DocumentType == RelatedDocumentType.ReceivingDocument)
+            _showReceivingModal = true;
         else if (doc.DocumentType == RelatedDocumentType.ReturnDocument)
             _showReturnModal = true;
     }
 
-    private async Task HandleDeliverySaved(SalesDelivery _)
+    private async Task HandleReceivingSaved(PurchaseReceiving _)
     {
-        _showDeliveryModal = false;
+        _showReceivingModal = false;
         await LoadTransactionsAsync();
     }
 
-    private async Task HandleReturnSaved(SalesReturn _)
+    private async Task HandleReturnSaved(PurchaseReturn _)
     {
         _showReturnModal = false;
         await LoadTransactionsAsync();

@@ -87,7 +87,7 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="materialIssueId">領貨主檔ID</param>
         /// <returns>統計資料（總數量、總成本）</returns>
-        Task<(int TotalQuantity, decimal TotalCost)> GetStatisticsAsync(int materialIssueId);
+        Task<(decimal TotalQuantity, decimal TotalCost)> GetStatisticsAsync(int materialIssueId);
 
         /// <summary>
         /// 計算領貨明細的總成本
@@ -95,6 +95,6 @@ namespace ERPCore2.Services
         /// <param name="issueQuantity">領貨數量</param>
         /// <param name="unitCost">單位成本</param>
         /// <returns>總成本</returns>
-        decimal CalculateTotalCost(int issueQuantity, decimal? unitCost);
+        decimal CalculateTotalCost(decimal issueQuantity, decimal? unitCost);
     }
 }

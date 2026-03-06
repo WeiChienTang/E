@@ -96,5 +96,42 @@ namespace ERPCore2.Models.Schedule
         /// 客戶名稱（顯示用）
         /// </summary>
         public string? CustomerName { get; set; }
+
+        // ===== 領料狀態（從 ProductionScheduleDetail 計算）=====
+
+        /// <summary>
+        /// 是否有 BOM（此商品有對應的物料清單）
+        /// </summary>
+        public bool HasBom { get; set; } = false;
+
+        /// <summary>
+        /// BOM 需求總量（所有 ProductionScheduleDetail.RequiredQuantity 合計）
+        /// </summary>
+        public decimal TotalRequiredMaterialQty { get; set; } = 0;
+
+        /// <summary>
+        /// 已領總量（所有 ProductionScheduleDetail.IssuedQuantity 合計）
+        /// </summary>
+        public decimal TotalIssuedMaterialQty { get; set; } = 0;
+
+        /// <summary>
+        /// 領料狀態
+        /// </summary>
+        public MaterialIssueStatus MaterialIssueStatus =>
+            !HasBom ? MaterialIssueStatus.NoBom :
+            TotalIssuedMaterialQty <= 0 ? MaterialIssueStatus.NotIssued :
+            TotalIssuedMaterialQty < TotalRequiredMaterialQty ? MaterialIssueStatus.PartialIssued :
+            MaterialIssueStatus.FullyIssued;
+    }
+
+    /// <summary>
+    /// 排程項目的領料狀態
+    /// </summary>
+    public enum MaterialIssueStatus
+    {
+        NoBom,          // 無 BOM（無需領料）
+        NotIssued,      // 未領料
+        PartialIssued,  // 部分領料
+        FullyIssued     // 已領完
     }
 }

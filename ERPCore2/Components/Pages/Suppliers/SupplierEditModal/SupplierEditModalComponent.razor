@@ -109,6 +109,7 @@
     private SupplierProductTab? supplierProductTab;
     private SupplierAccountingTab? accountingTab;
     private SupplierVisitTab? visitTab;
+    private SupplierTransactionTab? transactionTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -130,6 +131,11 @@
     private RenderFragment CreateVisitTabContent() => __builder =>
     {
         <SupplierVisitTab @ref="visitTab" SupplierId="@SupplierId" />
+    };
+
+    private RenderFragment CreateTransactionTabContent() => __builder =>
+    {
+        <SupplierTransactionTab @ref="transactionTab" SupplierId="@SupplierId" />
     };
 
     // ===== 生命週期 =====
@@ -181,6 +187,7 @@
                 if (supplierProductTab != null) await supplierProductTab.LoadAsync(loadedEntityId);
                 if (accountingTab != null)      await accountingTab.LoadAsync(loadedEntityId);
                 if (visitTab != null)           await visitTab.LoadAsync(loadedEntityId);
+                if (transactionTab != null)     await transactionTab.LoadAsync(loadedEntityId);
             }
             else
             {
@@ -188,6 +195,7 @@
                 supplierProductTab?.Clear();
                 accountingTab?.Clear();
                 visitTab?.Clear();
+                transactionTab?.Clear();
             }
             StateHasChanged();
         }
@@ -223,6 +231,7 @@
                 vehicleTab?.Clear();
                 supplierProductTab?.Clear();
                 visitTab?.Clear();
+                transactionTab?.Clear();
 
                 var newSupplier = new Supplier
                 {
@@ -491,6 +500,96 @@
                     HelpText = "負責人或是公司聯絡電話",
                     ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.SupplierContactPhone, IsSaved)
                 },
+                new()
+                {
+                    PropertyName = nameof(Supplier.CurrentPayable),
+                    Label = L["Field.CurrentPayable"],
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = true,
+                    HelpText = "目前應付廠商的餘額（系統自動計算，不可手動修改）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.PaymentDay),
+                    Label = L["Field.PaymentDay"],
+                    FieldType = FormFieldType.Number,
+                    Placeholder = L["Placeholder.CollectionDayHint"],
+                    IsRequired = false,
+                    Min = 0,
+                    Max = 30,
+                    HelpText = "每月固定付款日期 (1-30)，輸入 0 表示月底付款。例如：15 表示每月15日"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.InvoiceTitle),
+                    Label = L["Field.InvoiceTitle"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.InvoiceTitle"]],
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "廠商開立發票時使用的抬頭名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.SupplierStatus),
+                    Label = L["Field.SupplierStatus"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "廠商目前的往來狀態",
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = ((int)SupplierStatus.Active).ToString(),    Text = L["SupplierStatus.Active"] },
+                        new() { Value = ((int)SupplierStatus.Inactive).ToString(),  Text = L["SupplierStatus.Inactive"] },
+                        new() { Value = ((int)SupplierStatus.Suspended).ToString(), Text = L["SupplierStatus.Suspended"] }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.SupplierType),
+                    Label = L["Field.SupplierType"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    HelpText = "廠商的類型分類",
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = "",                                                     Text = L["Label.NotSet"] },
+                        new() { Value = ((int)SupplierType.Manufacturer).ToString(),           Text = L["SupplierType.Manufacturer"] },
+                        new() { Value = ((int)SupplierType.Trader).ToString(),                 Text = L["SupplierType.Trader"] },
+                        new() { Value = ((int)SupplierType.Agent).ToString(),                  Text = L["SupplierType.Agent"] },
+                        new() { Value = ((int)SupplierType.ServiceProvider).ToString(),        Text = L["SupplierType.ServiceProvider"] }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.BillingAddress),
+                    Label = L["Field.BillingAddress"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BillingAddress"]],
+                    IsRequired = false,
+                    MaxLength = 200,
+                    HelpText = "發票或帳單郵寄地址（若與聯絡地址相同可留空）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.BankAccount),
+                    Label = L["Field.BankAccount"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankAccount"]],
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "廠商銀行帳號（付款時使用）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.BankName),
+                    Label = L["Field.BankName"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankName"]],
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "廠商銀行名稱（含分行）"
+                },
                 FormFieldConfigurationHelper.CreateRemarksField<Supplier>()
             };
 
@@ -528,8 +627,16 @@
                     s => s.Email)
                 .AddToSection(FormSectionNames.PaymentInfo,
                     s => s.PaymentMethodId,
-                    s => s.PaymentTerms)
+                    s => s.PaymentTerms,
+                    s => s.PaymentDay,
+                    s => s.InvoiceTitle,
+                    s => s.CurrentPayable,
+                    s => s.BankName,
+                    s => s.BankAccount,
+                    s => s.BillingAddress)
                 .AddToSection(FormSectionNames.OtherInfo,
+                    s => s.SupplierStatus,
+                    s => s.SupplierType,
                     s => s.Remarks)
                 .GroupIntoTab(L["Tab.SupplierData"].ToString(), "bi-shop", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo);
 
@@ -542,6 +649,7 @@
             var layout = builder
                 .GroupIntoCustomTab(L["Tab.SupplierProducts"].ToString(), "bi-box-seam", CreateSupplierProductTabContent(), "SupplierProductTab")
                 .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), "SupplierVisitTab")
+                .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), "SupplierTransactionTab")
                 .BuildAll();
 
             formSections = layout.FieldSections;

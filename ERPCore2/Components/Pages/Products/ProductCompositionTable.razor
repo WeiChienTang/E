@@ -99,21 +99,26 @@
     /// </summary>
     private void SyncItemsToCompositionItems()
     {
-        // 如果 Items 有資料但 CompositionItems 為空，進行同步
-        if (Items.Any() && !CompositionItems.Any())
+        if (!Items.Any()) return;
+
+        // 如果 CompositionItems 已有實際選擇商品的列，則不覆蓋（避免覆蓋使用者的編輯中狀態）
+        // 注意：InteractiveTableComponent 的 EnableAutoEmptyRow 會自動加入空白列，
+        // 所以不能用 !CompositionItems.Any()，而必須判斷是否有「真實」的選擇
+        if (CompositionItems.Any(i => i.SelectedProduct != null)) return;
+
+        // 清除自動加入的空白列，從 Items 重新同步
+        CompositionItems.Clear();
+        foreach (var detail in Items.Where(d => d.ComponentProduct != null))
         {
-            foreach (var detail in Items.Where(d => d.ComponentProduct != null))
+            CompositionItems.Add(new CompositionItem
             {
-                CompositionItems.Add(new CompositionItem
-                {
-                    SelectedProduct = detail.ComponentProduct,
-                    ProductSearchValue = GetProductDisplayText(detail.ComponentProduct!),
-                    Quantity = detail.Quantity,
-                    UnitId = detail.UnitId,
-                    Unit = detail.Unit,
-                    ExistingDetailEntity = detail
-                });
-            }
+                SelectedProduct = detail.ComponentProduct,
+                ProductSearchValue = GetProductDisplayText(detail.ComponentProduct!),
+                Quantity = detail.Quantity,
+                UnitId = detail.UnitId,
+                Unit = detail.Unit,
+                ExistingDetailEntity = detail
+            });
         }
     }
 
@@ -356,9 +361,8 @@
             {
                 SelectedProduct = product,
                 ProductSearchValue = GetProductDisplayText(product),
-                Quantity = 1,
-                UnitId = product.UnitId > 0 ? product.UnitId : null,
-                Unit = product.UnitId > 0 ? AvailableUnits.FirstOrDefault(u => u.Id == product.UnitId) : null
+                UnitId = (product.ProductionUnitId ?? (product.UnitId > 0 ? (int?)product.UnitId : null)),
+                Unit = AvailableUnits.FirstOrDefault(u => u.Id == (product.ProductionUnitId ?? (product.UnitId > 0 ? (int?)product.UnitId : null)))
             };
             CompositionItems.Add(item);
         }
@@ -430,11 +434,12 @@
                 item.SelectedProduct = selectedProduct;
                 item.ProductSearchValue = GetProductDisplayText(selectedProduct);
                 
-                // 自動設定該商品的預設單位
-                if (selectedProduct.UnitId > 0)
+                // 自動設定該商品的製程單位（優先），若無則使用基本單位
+                var effectiveUnitId = selectedProduct.ProductionUnitId ?? (selectedProduct.UnitId > 0 ? (int?)selectedProduct.UnitId : null);
+                if (effectiveUnitId.HasValue)
                 {
-                    item.UnitId = selectedProduct.UnitId;
-                    item.Unit = await UnitService.GetByIdAsync(selectedProduct.UnitId);
+                    item.UnitId = effectiveUnitId.Value;
+                    item.Unit = await UnitService.GetByIdAsync(effectiveUnitId.Value);
                 }
             }
         }

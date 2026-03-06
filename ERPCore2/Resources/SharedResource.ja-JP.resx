@@ -1009,6 +1009,16 @@
   <data name="Field.CollectionDay" xml:space="preserve"><value>回収日</value></data>
   <data name="Field.CustomerCode" xml:space="preserve"><value>顧客コード</value></data>
   <data name="Field.CustomerStatus" xml:space="preserve"><value>顧客ステータス</value></data>
+  <data name="Field.CustomerType" xml:space="preserve"><value>顧客種別</value></data>
+  <data name="Field.CustomerSource" xml:space="preserve"><value>顧客獲得経路</value></data>
+  <data name="Field.CreditRating" xml:space="preserve"><value>信用格付け</value></data>
+  <data name="Field.DefaultDiscountRate" xml:space="preserve"><value>デフォルト割引率</value></data>
+  <data name="Field.BillingAddress" xml:space="preserve"><value>請求書送付先</value></data>
+  <data name="Field.BankAccount" xml:space="preserve"><value>銀行口座番号</value></data>
+  <data name="Field.SupplierStatus" xml:space="preserve"><value>仕入先ステータス</value></data>
+  <data name="Field.SupplierType" xml:space="preserve"><value>仕入先種別</value></data>
+  <data name="Field.PaymentDay" xml:space="preserve"><value>支払日</value></data>
+  <data name="Field.CurrentPayable" xml:space="preserve"><value>現在の買掛金</value></data>
   <data name="Field.NextFollowUpDate" xml:space="preserve"><value>次回フォローアップ日</value></data>
   <data name="Field.SalesManager" xml:space="preserve"><value>営業担当者</value></data>
   <data name="Field.VisitContent" xml:space="preserve"><value>訪問内容</value></data>
@@ -1030,7 +1040,7 @@
   <data name="Field.ProductCode" xml:space="preserve"><value>商品コード</value></data>
   <data name="Field.ProductName" xml:space="preserve"><value>商品名</value></data>
   <data name="Field.ProductionUnit" xml:space="preserve"><value>生産単位</value></data>
-  <data name="Field.PurchaseUnit" xml:space="preserve"><value>購買単位</value></data>
+  <data name="Field.PurchaseUnit" xml:space="preserve"><value>基本単位</value></data>
   <data name="Field.ScheduleCode" xml:space="preserve"><value>スケジュールコード</value></data>
   <data name="Field.ScheduleCreator" xml:space="preserve"><value>スケジュール作成者</value></data>
   <data name="Field.ScheduleDate" xml:space="preserve"><value>スケジュール日付</value></data>
@@ -1207,6 +1217,7 @@
   <data name="Tab.SupplierData" xml:space="preserve"><value>仕入先情報</value></data>
   <data name="Tab.AccountingInfo" xml:space="preserve"><value>会計情報</value></data>
   <data name="Tab.SupplierProducts" xml:space="preserve"><value>仕入商品</value></data>
+  <data name="Tab.CustomerProducts" xml:space="preserve"><value>顧客商品</value></data>
   <data name="Tab.CustomerData" xml:space="preserve"><value>顧客情報</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>訪問記録</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>取引記録</value></data>
@@ -1238,6 +1249,35 @@
   <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>顧客にコピー</value></data>
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>この仕入先のデータを新しい顧客としてコピーしますか？</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>コピー後、顧客一覧に新しいレコードが作成されます。</value></data>
+  <data name="Customer.AutoSyncNote" xml:space="preserve"><value>商品リストは受注から自動同期、削除のみ可能</value></data>
+  <data name="Customer.DeleteProductButtonTitle" xml:space="preserve"><value>商品リンクを削除</value></data>
+  <data name="Customer.NoProducts" xml:space="preserve"><value>この顧客の販売商品が登録されていません</value></data>
+  <data name="Customer.RemoveProduct" xml:space="preserve"><value>商品リンクを削除</value></data>
+  <data name="Customer.ConfirmRemoveProduct" xml:space="preserve"><value>「{0}」とこの顧客のリンクを削除しますか？</value></data>
+  <data name="Customer.RemovedFromCatalog" xml:space="preserve"><value>顧客商品リンクを削除しました</value></data>
+  <!-- ===== Enum value display keys ===== -->
+  <data name="CustomerStatus.Active" xml:space="preserve"><value>取引中</value></data>
+  <data name="CustomerStatus.Inactive" xml:space="preserve"><value>停止</value></data>
+  <data name="CustomerStatus.Blacklisted" xml:space="preserve"><value>ブラックリスト</value></data>
+  <data name="SupplierType.Manufacturer" xml:space="preserve"><value>製造業者</value></data>
+  <data name="SupplierType.Trader" xml:space="preserve"><value>商社</value></data>
+  <data name="SupplierType.Agent" xml:space="preserve"><value>代理店</value></data>
+  <data name="SupplierType.ServiceProvider" xml:space="preserve"><value>サービス業者</value></data>
+  <data name="SupplierStatus.Active" xml:space="preserve"><value>取引中</value></data>
+  <data name="SupplierStatus.Inactive" xml:space="preserve"><value>停止</value></data>
+  <data name="SupplierStatus.Suspended" xml:space="preserve"><value>取引停止中</value></data>
+  <data name="CustomerType.Enterprise" xml:space="preserve"><value>法人</value></data>
+  <data name="CustomerType.Individual" xml:space="preserve"><value>個人</value></data>
+  <data name="CustomerType.Government" xml:space="preserve"><value>官公庁</value></data>
+  <data name="CustomerSource.BusinessDevelopment" xml:space="preserve"><value>営業開発</value></data>
+  <data name="CustomerSource.Referral" xml:space="preserve"><value>紹介</value></data>
+  <data name="CustomerSource.Exhibition" xml:space="preserve"><value>展示会</value></data>
+  <data name="CustomerSource.Internet" xml:space="preserve"><value>インターネット／SNS</value></data>
+  <data name="CustomerSource.Other" xml:space="preserve"><value>その他</value></data>
+  <data name="CreditRating.A" xml:space="preserve"><value>A - 優良</value></data>
+  <data name="CreditRating.B" xml:space="preserve"><value>B - 良好</value></data>
+  <data name="CreditRating.C" xml:space="preserve"><value>C - 普通</value></data>
+  <data name="CreditRating.D" xml:space="preserve"><value>D - 注意</value></data>
   <data name="Button.ConfirmCopy" xml:space="preserve"><value>コピーを確認</value></data>
   <!-- ===== Dashboard Widget Picker keys ===== -->
   <data name="Dashboard.AddShortcutTitle" xml:space="preserve"><value>ショートカット項目を追加</value></data>
@@ -1303,6 +1343,8 @@
   <data name="Field.CurrentStock" xml:space="preserve"><value>現在在庫</value></data>
   <data name="Field.AverageCost" xml:space="preserve"><value>平均原価</value></data>
   <data name="Field.ProductUnit" xml:space="preserve"><value>商品単位</value></data>
+  <data name="Field.ProductionUnitConversion" xml:space="preserve"><value>製造換算</value></data>
+  <data name="Field.ProductionUnitStock" xml:space="preserve"><value>製造在庫</value></data>
 
   <!-- ===== Field keys - Material ===== -->
   <data name="Field.MaterialCode" xml:space="preserve"><value>材質コード</value></data>
@@ -1772,6 +1814,14 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>顧客分析チャート</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>訪問記録がありません</value></data>
+  <data name="Supplier.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>
+  <data name="Supplier.NetPurchase" xml:space="preserve"><value>純仕入額</value></data>
+  <data name="Supplier.Receiving" xml:space="preserve"><value>仕入</value></data>
+  <data name="Supplier.Receivings" xml:space="preserve"><value>仕入伝票</value></data>
+  <data name="Supplier.Return" xml:space="preserve"><value>返品</value></data>
+  <data name="Supplier.Returns" xml:space="preserve"><value>返品伝票</value></data>
+  <data name="Supplier.LastTransaction" xml:space="preserve"><value>最終取引</value></data>
+  <data name="Supplier.AvgReceiving" xml:space="preserve"><value>平均仕入</value></data>
   <data name="Supplier.NoVisits" xml:space="preserve"><value>訪問記録がありません</value></data>
   <data name="Customer.NetSales" xml:space="preserve"><value>純売上</value></data>
   <data name="Customer.Delivery" xml:space="preserve"><value>出荷</value></data>
@@ -1800,6 +1850,10 @@
   <data name="Column.SupplierProductCode" xml:space="preserve"><value>仕入先品番</value></data>
   <data name="Column.LastPurchasePrice" xml:space="preserve"><value>直近仕入価格</value></data>
   <data name="Column.LastPurchaseDate" xml:space="preserve"><value>直近仕入日</value></data>
+  <data name="Column.CustomerProductCode" xml:space="preserve"><value>顧客品番</value></data>
+  <data name="Column.CustomerPrice" xml:space="preserve"><value>顧客価格</value></data>
+  <data name="Column.LastSalePrice" xml:space="preserve"><value>直近売価</value></data>
+  <data name="Column.LastSaleDate" xml:space="preserve"><value>直近売日</value></data>
   <data name="Column.IsPreferred" xml:space="preserve"><value>優先</value></data>
   <data name="Column.Product" xml:space="preserve"><value>商品</value></data>
   <data name="Column.Select" xml:space="preserve"><value>選択</value></data>
@@ -1993,6 +2047,11 @@
   <data name="Inventory.Shortage" xml:space="preserve"><value>不足数:</value></data>
   <data name="Inventory.SummaryTitle" xml:space="preserve"><value>在庫状況サマリー</value></data>
   <data name="Inventory.SummaryNote" xml:space="preserve"><value>※ データはDB基準。実際の在庫は現場で確認してください。</value></data>
+  <data name="Inventory.TotalItems" xml:space="preserve"><value>合計 {0} 件</value></data>
+  <data name="Inventory.AllSufficient" xml:space="preserve"><value>全て充足</value></data>
+  <data name="Inventory.SatisfactionRate" xml:space="preserve"><value>充足率</value></data>
+  <data name="Inventory.Insufficient" xml:space="preserve"><value>不足</value></data>
+  <data name="Inventory.Warning" xml:space="preserve"><value>警戒</value></data>
   <data name="Schedule.BatchTransfer" xml:space="preserve"><value>一括スケジュール転送</value></data>
   <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>一括スケジュール転送 - {0}</value></data>
   <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>受注情報</value></data>
@@ -2155,6 +2214,12 @@
   <data name="Label.Completed" xml:space="preserve"><value>完了</value></data>
   <data name="Label.Discontinued" xml:space="preserve"><value>中止</value></data>
   <data name="Label.Closed" xml:space="preserve"><value>クローズ</value></data>
+  <data name="Label.NoBom" xml:space="preserve"><value>BOMなし</value></data>
+  <data name="Label.NotIssued" xml:space="preserve"><value>未出庫</value></data>
+  <data name="Label.PartialIssued" xml:space="preserve"><value>一部出庫</value></data>
+  <data name="Label.FullyIssued" xml:space="preserve"><value>出庫済</value></data>
+  <data name="Label.Issued" xml:space="preserve"><value>出庫</value></data>
+  <data name="Column.MaterialIssue" xml:space="preserve"><value>出庫</value></data>
   <data name="Label.NotClosed" xml:space="preserve"><value>未クローズ</value></data>
   <data name="Label.PlannedQty" xml:space="preserve"><value>計画数量</value></data>
   <data name="Label.CompletionQty" xml:space="preserve"><value>完了数量</value></data>

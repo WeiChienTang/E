@@ -8,6 +8,8 @@
 @inject IProductionScheduleService ProductionScheduleService
 @inject IProductionScheduleReportService ProductionScheduleReportService
 @inject IProductionScheduleItemService ProductionScheduleItemService
+@inject IProductionScheduleDetailService ProductionScheduleDetailService
+@inject IProductCompositionService ProductCompositionService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
 @inject IProductService ProductService
@@ -62,6 +64,26 @@
                                  OnSaved="@HandleScheduleItemSaved"
                                  OnCancel="@(() => showScheduleItemModal = false)" />
 
+@* 儲存後詢問是否建立領料單 *@
+<GenericConfirmModalComponent IsVisible="@showCreateMaterialIssueConfirm"
+                              IsVisibleChanged="@((bool v) => showCreateMaterialIssueConfirm = v)"
+                              Title="建立領料單"
+                              Icon="bi-basket"
+                              Message="生產排程已儲存。是否現在建立對應的領料單？"
+                              SummaryMessage="@materialIssueConfirmSummary"
+                              ConfirmButtonText="建立領料單"
+                              CancelButtonText="稍後再說"
+                              ConfirmButtonVariant="ButtonVariant.Blue"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Info"
+                              OnConfirm="@HandleCreateMaterialIssueConfirmed" />
+
+@* 領料單編輯 Modal（從排程建立）*@
+<MaterialIssueEditModalComponent IsVisible="@showMaterialIssueModal"
+                                 IsVisibleChanged="@((bool v) => showMaterialIssueModal = v)"
+                                 SourceProductionScheduleId="@savedScheduleIdForMaterialIssue"
+                                 OnMaterialIssueSaved="@HandleMaterialIssueSaved"
+                                 OnCancel="@(() => showMaterialIssueModal = false)" />
+
 @code {
     // ===== 參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -95,6 +117,12 @@
     
     // ===== 待刪除項目列表（等待主檔儲存時才真正刪除） =====
     private List<ScheduleItemDto> itemsToDelete = new();
+
+    // ===== 領料單建立相關 =====
+    private bool showCreateMaterialIssueConfirm = false;
+    private bool showMaterialIssueModal = false;
+    private int? savedScheduleIdForMaterialIssue = null;
+    private string materialIssueConfirmSummary = string.Empty;
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
@@ -150,25 +178,39 @@
             scheduleItems = await ProductionScheduleItemService.GetByScheduleIdAsync(scheduleId);
             
             // 將已儲存的排程項目轉換為 DTO 並載入到 currentScheduleItems
-            currentScheduleItems = scheduleItems.Select(item => new ScheduleItemDto
+            var dtos = new List<ScheduleItemDto>();
+            foreach (var item in scheduleItems)
             {
-                Id = item.Id,
-                SalesOrderDetailId = item.SalesOrderDetailId ?? 0,
-                SalesOrderId = item.SalesOrderDetail?.SalesOrderId ?? 0,
-                SalesOrderCode = item.SalesOrderDetail?.SalesOrder?.Code ?? "",
-                ProductId = item.ProductId,
-                ProductCode = item.Product?.Code ?? "",
-                ProductName = item.Product?.Name ?? "未知商品",
-                OrderQuantity = item.SalesOrderDetail?.OrderQuantity ?? 0,
-                ScheduleQuantity = item.ScheduledQuantity,
-                CompletedQuantity = item.CompletedQuantity,
-                Status = item.ProductionItemStatus,
-                CustomerName = item.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName,
-                IsNew = false, // 已儲存的項目
-                SortOrder = item.Priority, // 讀取排序順序
-                CanDelete = item.CompletedQuantity == 0, // 只有尚未開始生產的才可刪除
-                IsClosed = item.IsClosed // 載入結案狀態
-            }).ToList();
+                // 載入此項目的物料需求明細（用於計算領料狀態）
+                var scheduleDetails = await ProductionScheduleDetailService.GetByScheduleItemIdAsync(item.Id);
+                var hasBom = scheduleDetails.Any();
+                var totalRequired = scheduleDetails.Sum(d => d.RequiredQuantity);
+                var totalIssued = scheduleDetails.Sum(d => d.IssuedQuantity);
+
+                dtos.Add(new ScheduleItemDto
+                {
+                    Id = item.Id,
+                    SalesOrderDetailId = item.SalesOrderDetailId ?? 0,
+                    SalesOrderId = item.SalesOrderDetail?.SalesOrderId ?? 0,
+                    SalesOrderCode = item.SalesOrderDetail?.SalesOrder?.Code ?? "",
+                    ProductId = item.ProductId,
+                    ProductCode = item.Product?.Code ?? "",
+                    ProductName = item.Product?.Name ?? "未知商品",
+                    OrderQuantity = item.SalesOrderDetail?.OrderQuantity ?? 0,
+                    ScheduleQuantity = item.ScheduledQuantity,
+                    CompletedQuantity = item.CompletedQuantity,
+                    Status = item.ProductionItemStatus,
+                    CustomerName = item.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName,
+                    IsNew = false,
+                    SortOrder = item.Priority,
+                    CanDelete = item.CompletedQuantity == 0,
+                    IsClosed = item.IsClosed,
+                    HasBom = hasBom,
+                    TotalRequiredMaterialQty = totalRequired,
+                    TotalIssuedMaterialQty = totalIssued
+                });
+            }
+            currentScheduleItems = dtos;
         }
         catch (Exception ex)
         {
@@ -323,7 +365,10 @@
                             await SalesOrderDetailService.UpdateAsync(salesOrderDetail);
                         }
                     }
-                    
+
+                    // 4. 展開 BOM 到 ProductionScheduleDetail（若有 BOM）
+                    await ExpandBomForScheduleItemAsync(scheduleItem.Id, dto.ProductId, dto.ScheduleQuantity);
+
                     // 標記為已儲存
                     dto.IsNew = false;
                     dto.Id = scheduleItem.Id;
@@ -334,25 +379,124 @@
                     failedItems.Add($"{dto.ProductName}: {ex.Message}");
                 }
             }
-            
+
             // 如果有失敗的項目，顯示警告
             if (failedItems.Any())
             {
                 await NotificationService.ShowWarningAsync($"部分項目儲存失敗：\n{string.Join("\n", failedItems)}");
             }
-            
+
             // 重新載入已儲存的排程項目（強制重載，因為資料已變更）
             await LoadScheduleItemsAsync(savedSchedule.Id, forceReload: true);
-            
+
             // 重新載入待排程明細（強制重載）
             await LoadPendingDetailsAsync(forceReload: true);
-            
+
+            // 儲存完成後：檢查是否有需要領料的項目，若有則詢問是否建立領料單
+            await CheckAndPromptMaterialIssueAsync(savedSchedule.Id);
+
             StateHasChanged();
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"儲存排程項目失敗: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// 展開 BOM 為 ProductionScheduleDetail 物料需求明細
+    /// 若商品有 BOM，依排程數量計算各物料的需求量
+    /// </summary>
+    private async Task ExpandBomForScheduleItemAsync(int scheduleItemId, int productId, decimal scheduleQuantity)
+    {
+        try
+        {
+            // 查詢此商品的 BOM（取第一筆，即預設配方）
+            var compositions = await ProductCompositionService.GetCompositionsByProductIdAsync(productId);
+            var composition = compositions.FirstOrDefault();
+            if (composition == null) return; // 無 BOM，略過
+
+            // 取得 BOM 明細（含 ComponentProduct）
+            var compositionWithDetails = await ProductCompositionService.GetByIdAsync(composition.Id);
+            if (compositionWithDetails?.CompositionDetails == null || !compositionWithDetails.CompositionDetails.Any())
+                return;
+
+            // 建立 ProductionScheduleDetail 記錄
+            var details = compositionWithDetails.CompositionDetails.Select(d => new ProductionScheduleDetail
+            {
+                ProductionScheduleItemId = scheduleItemId,
+                ComponentProductId = d.ComponentProductId,
+                ProductCompositionDetailId = d.Id,
+                RequiredQuantity = d.Quantity * scheduleQuantity,
+                IssuedQuantity = 0,
+                Status = EntityStatus.Active,
+                CreatedAt = DateTime.Now
+            }).ToList();
+
+            await ProductionScheduleDetailService.CreateDetailsForItemAsync(scheduleItemId, details);
+        }
+        catch
+        {
+            // BOM 展開失敗不中斷主流程，靜默忽略
+        }
+    }
+
+    /// <summary>
+    /// 檢查是否有需要領料的排程項目，若有則彈出確認 dialog
+    /// </summary>
+    private async Task CheckAndPromptMaterialIssueAsync(int scheduleId)
+    {
+        try
+        {
+            // 重新計算（LoadScheduleItemsAsync 已更新 currentScheduleItems）
+            var itemsNeedingMaterial = currentScheduleItems
+                .Where(x => x.HasBom && x.MaterialIssueStatus != MaterialIssueStatus.FullyIssued)
+                .ToList();
+
+            if (!itemsNeedingMaterial.Any()) return;
+
+            // 計算摘要訊息
+            var pendingCount = itemsNeedingMaterial.Count(x => x.MaterialIssueStatus == MaterialIssueStatus.NotIssued);
+            var partialCount = itemsNeedingMaterial.Count(x => x.MaterialIssueStatus == MaterialIssueStatus.PartialIssued);
+            var summaryParts = new List<string>();
+            if (pendingCount > 0) summaryParts.Add($"未領料：{pendingCount} 項");
+            if (partialCount > 0) summaryParts.Add($"部分領料：{partialCount} 項");
+
+            savedScheduleIdForMaterialIssue = scheduleId;
+            materialIssueConfirmSummary = string.Join("　", summaryParts);
+            showCreateMaterialIssueConfirm = true;
+        }
+        catch
+        {
+            // 不影響主流程
+        }
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 使用者確認建立領料單
+    /// </summary>
+    private Task HandleCreateMaterialIssueConfirmed()
+    {
+        showCreateMaterialIssueConfirm = false;
+        showMaterialIssueModal = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 領料單儲存完成
+    /// </summary>
+    private async Task HandleMaterialIssueSaved(MaterialIssue savedIssue)
+    {
+        showMaterialIssueModal = false;
+        // 重新載入排程項目以更新領料狀態
+        if (savedScheduleIdForMaterialIssue.HasValue)
+        {
+            await LoadScheduleItemsAsync(savedScheduleIdForMaterialIssue.Value, forceReload: true);
+        }
+        savedScheduleIdForMaterialIssue = null;
+        StateHasChanged();
     }
     
     /// <summary>
@@ -433,6 +577,16 @@
         // GenericEditModalComponent 會處理 OnCancel 轉發和 CloseModal
         itemsToDelete.Clear();
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 處理領料按鈕點擊（補充領料）
+    /// </summary>
+    private void HandleRequestMaterialIssue()
+    {
+        savedScheduleIdForMaterialIssue = ProductionScheduleId;
+        showMaterialIssueModal = true;
+        StateHasChanged();
     }
 
     // ===== 資料載入 =====
@@ -648,11 +802,13 @@
             <div class="col-md-6">
                 <ProductionScheduleItemTable Items="@currentScheduleItems"
                                              IsReadOnly="@IsReadOnly"
+                                             HasSavedSchedule="@ProductionScheduleId.HasValue"
                                              OnItemRemoved="@HandleScheduleItemRemoved"
                                              OnQuantityChanged="@HandleScheduleItemQuantityChanged"
                                              OnDetailDropped="@HandleDetailDropped"
                                              OnOrderChanged="@HandleScheduleItemOrderChanged"
-                                             OnIsClosedChanged="@HandleScheduleItemIsClosedChanged" />
+                                             OnIsClosedChanged="@HandleScheduleItemIsClosedChanged"
+                                             OnRequestMaterialIssue="@HandleRequestMaterialIssue" />
             </div>
         </div>
     };

@@ -1009,6 +1009,16 @@
   <data name="Field.CollectionDay" xml:space="preserve"><value>Collection Day</value></data>
   <data name="Field.CustomerCode" xml:space="preserve"><value>Customer Code</value></data>
   <data name="Field.CustomerStatus" xml:space="preserve"><value>Customer Status</value></data>
+  <data name="Field.CustomerType" xml:space="preserve"><value>Customer Type</value></data>
+  <data name="Field.CustomerSource" xml:space="preserve"><value>Customer Source</value></data>
+  <data name="Field.CreditRating" xml:space="preserve"><value>Credit Rating</value></data>
+  <data name="Field.DefaultDiscountRate" xml:space="preserve"><value>Default Discount Rate</value></data>
+  <data name="Field.BillingAddress" xml:space="preserve"><value>Billing Address</value></data>
+  <data name="Field.BankAccount" xml:space="preserve"><value>Bank Account</value></data>
+  <data name="Field.SupplierStatus" xml:space="preserve"><value>Supplier Status</value></data>
+  <data name="Field.SupplierType" xml:space="preserve"><value>Supplier Type</value></data>
+  <data name="Field.PaymentDay" xml:space="preserve"><value>Payment Day</value></data>
+  <data name="Field.CurrentPayable" xml:space="preserve"><value>Current Payable</value></data>
   <data name="Field.NextFollowUpDate" xml:space="preserve"><value>Next Follow-Up Date</value></data>
   <data name="Field.SalesManager" xml:space="preserve"><value>Sales Manager</value></data>
   <data name="Field.VisitContent" xml:space="preserve"><value>Visit Content</value></data>
@@ -1030,7 +1040,7 @@
   <data name="Field.ProductCode" xml:space="preserve"><value>Product Code</value></data>
   <data name="Field.ProductName" xml:space="preserve"><value>Product Name</value></data>
   <data name="Field.ProductionUnit" xml:space="preserve"><value>Production Unit</value></data>
-  <data name="Field.PurchaseUnit" xml:space="preserve"><value>Purchase Unit</value></data>
+  <data name="Field.PurchaseUnit" xml:space="preserve"><value>Base Unit</value></data>
   <data name="Field.ScheduleCode" xml:space="preserve"><value>Schedule Code</value></data>
   <data name="Field.ScheduleCreator" xml:space="preserve"><value>Schedule Creator</value></data>
   <data name="Field.ScheduleDate" xml:space="preserve"><value>Schedule Date</value></data>
@@ -1207,6 +1217,7 @@
   <data name="Tab.SupplierData" xml:space="preserve"><value>Supplier Data</value></data>
   <data name="Tab.AccountingInfo" xml:space="preserve"><value>Accounting Info</value></data>
   <data name="Tab.SupplierProducts" xml:space="preserve"><value>Supplier Products</value></data>
+  <data name="Tab.CustomerProducts" xml:space="preserve"><value>Customer Products</value></data>
   <data name="Tab.CustomerData" xml:space="preserve"><value>Customer Data</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>Visit Records</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>Transaction Records</value></data>
@@ -1238,6 +1249,35 @@
   <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>Copy to Customer</value></data>
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>Are you sure you want to copy this supplier&apos;s data as a new customer?</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>A new record will be created in the customer list after copying.</value></data>
+  <data name="Customer.AutoSyncNote" xml:space="preserve"><value>Product list is auto-synced from sales orders, delete only</value></data>
+  <data name="Customer.DeleteProductButtonTitle" xml:space="preserve"><value>Remove product link</value></data>
+  <data name="Customer.NoProducts" xml:space="preserve"><value>No customer products found for this customer</value></data>
+  <data name="Customer.RemoveProduct" xml:space="preserve"><value>Remove Product Link</value></data>
+  <data name="Customer.ConfirmRemoveProduct" xml:space="preserve"><value>Are you sure you want to remove "{0}" from this customer?</value></data>
+  <data name="Customer.RemovedFromCatalog" xml:space="preserve"><value>Customer product link removed successfully</value></data>
+  <!-- ===== Enum value display keys ===== -->
+  <data name="CustomerStatus.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="CustomerStatus.Inactive" xml:space="preserve"><value>Inactive</value></data>
+  <data name="CustomerStatus.Blacklisted" xml:space="preserve"><value>Blacklisted</value></data>
+  <data name="SupplierType.Manufacturer" xml:space="preserve"><value>Manufacturer</value></data>
+  <data name="SupplierType.Trader" xml:space="preserve"><value>Trader</value></data>
+  <data name="SupplierType.Agent" xml:space="preserve"><value>Agent</value></data>
+  <data name="SupplierType.ServiceProvider" xml:space="preserve"><value>Service Provider</value></data>
+  <data name="SupplierStatus.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="SupplierStatus.Inactive" xml:space="preserve"><value>Inactive</value></data>
+  <data name="SupplierStatus.Suspended" xml:space="preserve"><value>Suspended</value></data>
+  <data name="CustomerType.Enterprise" xml:space="preserve"><value>Enterprise</value></data>
+  <data name="CustomerType.Individual" xml:space="preserve"><value>Individual</value></data>
+  <data name="CustomerType.Government" xml:space="preserve"><value>Government</value></data>
+  <data name="CustomerSource.BusinessDevelopment" xml:space="preserve"><value>Business Development</value></data>
+  <data name="CustomerSource.Referral" xml:space="preserve"><value>Referral</value></data>
+  <data name="CustomerSource.Exhibition" xml:space="preserve"><value>Exhibition / Trade Show</value></data>
+  <data name="CustomerSource.Internet" xml:space="preserve"><value>Internet / Social Media</value></data>
+  <data name="CustomerSource.Other" xml:space="preserve"><value>Other</value></data>
+  <data name="CreditRating.A" xml:space="preserve"><value>A - Excellent</value></data>
+  <data name="CreditRating.B" xml:space="preserve"><value>B - Good</value></data>
+  <data name="CreditRating.C" xml:space="preserve"><value>C - Fair</value></data>
+  <data name="CreditRating.D" xml:space="preserve"><value>D - Caution</value></data>
   <data name="Button.ConfirmCopy" xml:space="preserve"><value>Confirm Copy</value></data>
   <!-- ===== Dashboard Widget Picker keys ===== -->
   <data name="Dashboard.AddShortcutTitle" xml:space="preserve"><value>Add Shortcut Item</value></data>
@@ -1303,6 +1343,8 @@
   <data name="Field.CurrentStock" xml:space="preserve"><value>Current Stock</value></data>
   <data name="Field.AverageCost" xml:space="preserve"><value>Average Cost</value></data>
   <data name="Field.ProductUnit" xml:space="preserve"><value>Product Unit</value></data>
+  <data name="Field.ProductionUnitConversion" xml:space="preserve"><value>Production Conversion</value></data>
+  <data name="Field.ProductionUnitStock" xml:space="preserve"><value>Production Stock</value></data>
 
   <!-- ===== Field keys - Material ===== -->
   <data name="Field.MaterialCode" xml:space="preserve"><value>Material Code</value></data>
@@ -1772,6 +1814,14 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>Customer Analysis Charts</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>No related transaction records</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>No visit records yet</value></data>
+  <data name="Supplier.NoTransactions" xml:space="preserve"><value>No related transaction records</value></data>
+  <data name="Supplier.NetPurchase" xml:space="preserve"><value>Net Purchase</value></data>
+  <data name="Supplier.Receiving" xml:space="preserve"><value>Receiving</value></data>
+  <data name="Supplier.Receivings" xml:space="preserve"><value>Receivings</value></data>
+  <data name="Supplier.Return" xml:space="preserve"><value>Return</value></data>
+  <data name="Supplier.Returns" xml:space="preserve"><value>Returns</value></data>
+  <data name="Supplier.LastTransaction" xml:space="preserve"><value>Last Transaction</value></data>
+  <data name="Supplier.AvgReceiving" xml:space="preserve"><value>Avg Receiving</value></data>
   <data name="Supplier.NoVisits" xml:space="preserve"><value>No visit records yet</value></data>
   <data name="Customer.NetSales" xml:space="preserve"><value>Net Sales</value></data>
   <data name="Customer.Delivery" xml:space="preserve"><value>Delivery</value></data>
@@ -1800,6 +1850,10 @@
   <data name="Column.SupplierProductCode" xml:space="preserve"><value>Supplier Part No.</value></data>
   <data name="Column.LastPurchasePrice" xml:space="preserve"><value>Last Purchase Price</value></data>
   <data name="Column.LastPurchaseDate" xml:space="preserve"><value>Last Purchase Date</value></data>
+  <data name="Column.CustomerProductCode" xml:space="preserve"><value>Customer Part No.</value></data>
+  <data name="Column.CustomerPrice" xml:space="preserve"><value>Customer Price</value></data>
+  <data name="Column.LastSalePrice" xml:space="preserve"><value>Last Sale Price</value></data>
+  <data name="Column.LastSaleDate" xml:space="preserve"><value>Last Sale Date</value></data>
   <data name="Column.IsPreferred" xml:space="preserve"><value>Preferred</value></data>
   <data name="Column.Product" xml:space="preserve"><value>Product</value></data>
   <data name="Column.Select" xml:space="preserve"><value>Select</value></data>
@@ -1993,6 +2047,11 @@
   <data name="Inventory.Shortage" xml:space="preserve"><value>Shortage:</value></data>
   <data name="Inventory.SummaryTitle" xml:space="preserve"><value>Inventory Status Summary</value></data>
   <data name="Inventory.SummaryNote" xml:space="preserve"><value>※ Data from database; verify actual stock on-site</value></data>
+  <data name="Inventory.TotalItems" xml:space="preserve"><value>Total {0} Items</value></data>
+  <data name="Inventory.AllSufficient" xml:space="preserve"><value>All Sufficient</value></data>
+  <data name="Inventory.SatisfactionRate" xml:space="preserve"><value>Satisfaction Rate</value></data>
+  <data name="Inventory.Insufficient" xml:space="preserve"><value>Insufficient</value></data>
+  <data name="Inventory.Warning" xml:space="preserve"><value>Warning</value></data>
   <data name="Schedule.BatchTransfer" xml:space="preserve"><value>Batch Transfer to Schedule</value></data>
   <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>Batch Transfer to Schedule - {0}</value></data>
   <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>Sales Order Info</value></data>
@@ -2155,6 +2214,12 @@
   <data name="Label.Completed" xml:space="preserve"><value>Completed</value></data>
   <data name="Label.Discontinued" xml:space="preserve"><value>Discontinued</value></data>
   <data name="Label.Closed" xml:space="preserve"><value>Closed</value></data>
+  <data name="Label.NoBom" xml:space="preserve"><value>No BOM</value></data>
+  <data name="Label.NotIssued" xml:space="preserve"><value>Not Issued</value></data>
+  <data name="Label.PartialIssued" xml:space="preserve"><value>Partial</value></data>
+  <data name="Label.FullyIssued" xml:space="preserve"><value>Issued</value></data>
+  <data name="Label.Issued" xml:space="preserve"><value>Issued</value></data>
+  <data name="Column.MaterialIssue" xml:space="preserve"><value>Material</value></data>
   <data name="Label.NotClosed" xml:space="preserve"><value>Open</value></data>
   <data name="Label.PlannedQty" xml:space="preserve"><value>Planned Qty</value></data>
   <data name="Label.CompletionQty" xml:space="preserve"><value>Completion Qty</value></data>

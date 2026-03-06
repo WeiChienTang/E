@@ -33,7 +33,8 @@ namespace ERPCore2.Data.Entities
         
         [Required(ErrorMessage = "領貨數量為必填")]
         [Display(Name = "領貨數量")]
-        public int IssueQuantity { get; set; }
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal IssueQuantity { get; set; }
         
         [Display(Name = "單位成本")]
         [Column(TypeName = "decimal(18,4)")]
@@ -44,10 +45,19 @@ namespace ERPCore2.Data.Entities
         [NotMapped]
         public decimal? TotalCost => UnitCost.HasValue ? UnitCost.Value * IssueQuantity : null;
         
+        /// <summary>
+        /// 關聯生產排程明細 ID（選填）- 此領料對應的排程物料需求
+        /// 儲存時會更新對應 ProductionScheduleDetail.IssuedQuantity
+        /// </summary>
+        [Display(Name = "關聯排程物料需求")]
+        [ForeignKey(nameof(ProductionScheduleDetail))]
+        public int? ProductionScheduleDetailId { get; set; }
+
         // Navigation Properties
         public MaterialIssue MaterialIssue { get; set; } = null!;
         public Product Product { get; set; } = null!;
         public Warehouse Warehouse { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }
+        public ProductionScheduleDetail? ProductionScheduleDetail { get; set; }
     }
 }

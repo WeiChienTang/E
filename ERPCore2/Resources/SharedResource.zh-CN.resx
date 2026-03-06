@@ -1009,6 +1009,16 @@
   <data name="Field.CollectionDay" xml:space="preserve"><value>收款日</value></data>
   <data name="Field.CustomerCode" xml:space="preserve"><value>客户代码</value></data>
   <data name="Field.CustomerStatus" xml:space="preserve"><value>客户状态</value></data>
+  <data name="Field.CustomerType" xml:space="preserve"><value>客户类型</value></data>
+  <data name="Field.CustomerSource" xml:space="preserve"><value>客户来源</value></data>
+  <data name="Field.CreditRating" xml:space="preserve"><value>信用评级</value></data>
+  <data name="Field.DefaultDiscountRate" xml:space="preserve"><value>默认折扣率</value></data>
+  <data name="Field.BillingAddress" xml:space="preserve"><value>账单地址</value></data>
+  <data name="Field.BankAccount" xml:space="preserve"><value>银行账号</value></data>
+  <data name="Field.SupplierStatus" xml:space="preserve"><value>供应商状态</value></data>
+  <data name="Field.SupplierType" xml:space="preserve"><value>供应商类型</value></data>
+  <data name="Field.PaymentDay" xml:space="preserve"><value>付款日</value></data>
+  <data name="Field.CurrentPayable" xml:space="preserve"><value>当前应付余额</value></data>
   <data name="Field.NextFollowUpDate" xml:space="preserve"><value>下次跟进日</value></data>
   <data name="Field.SalesManager" xml:space="preserve"><value>业务员</value></data>
   <data name="Field.VisitContent" xml:space="preserve"><value>拜访内容</value></data>
@@ -1030,7 +1040,7 @@
   <data name="Field.ProductCode" xml:space="preserve"><value>商品编号</value></data>
   <data name="Field.ProductName" xml:space="preserve"><value>商品名称</value></data>
   <data name="Field.ProductionUnit" xml:space="preserve"><value>生产单位</value></data>
-  <data name="Field.PurchaseUnit" xml:space="preserve"><value>采购单位</value></data>
+  <data name="Field.PurchaseUnit" xml:space="preserve"><value>基本单位</value></data>
   <data name="Field.ScheduleCode" xml:space="preserve"><value>排程单号</value></data>
   <data name="Field.ScheduleCreator" xml:space="preserve"><value>排程创建人</value></data>
   <data name="Field.ScheduleDate" xml:space="preserve"><value>排程日期</value></data>
@@ -1207,6 +1217,7 @@
   <data name="Tab.SupplierData" xml:space="preserve"><value>供应商资料</value></data>
   <data name="Tab.AccountingInfo" xml:space="preserve"><value>会计信息</value></data>
   <data name="Tab.SupplierProducts" xml:space="preserve"><value>供应商品</value></data>
+  <data name="Tab.CustomerProducts" xml:space="preserve"><value>客户商品</value></data>
   <data name="Tab.CustomerData" xml:space="preserve"><value>客户资料</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>拜访记录</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>交易记录</value></data>
@@ -1242,6 +1253,35 @@
   <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>复制至客户</value></data>
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>确定要将此供应商的资料复制为新客户吗？</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>复制后将在客户清单中建立一笔新资料</value></data>
+  <data name="Customer.AutoSyncNote" xml:space="preserve"><value>商品清单由销售单自动同步，仅可删除</value></data>
+  <data name="Customer.DeleteProductButtonTitle" xml:space="preserve"><value>移除此商品关联</value></data>
+  <data name="Customer.NoProducts" xml:space="preserve"><value>此客户暂无销售商品记录</value></data>
+  <data name="Customer.RemoveProduct" xml:space="preserve"><value>移除商品关联</value></data>
+  <data name="Customer.ConfirmRemoveProduct" xml:space="preserve"><value>确定要移除「{0}」与此客户的关联吗？</value></data>
+  <data name="Customer.RemovedFromCatalog" xml:space="preserve"><value>已成功移除客户商品关联</value></data>
+  <!-- ===== Enum value display keys ===== -->
+  <data name="CustomerStatus.Active" xml:space="preserve"><value>正常往来</value></data>
+  <data name="CustomerStatus.Inactive" xml:space="preserve"><value>停用</value></data>
+  <data name="CustomerStatus.Blacklisted" xml:space="preserve"><value>黑名单</value></data>
+  <data name="SupplierType.Manufacturer" xml:space="preserve"><value>制造商</value></data>
+  <data name="SupplierType.Trader" xml:space="preserve"><value>贸易商</value></data>
+  <data name="SupplierType.Agent" xml:space="preserve"><value>代理商</value></data>
+  <data name="SupplierType.ServiceProvider" xml:space="preserve"><value>服务商</value></data>
+  <data name="SupplierStatus.Active" xml:space="preserve"><value>正常往来</value></data>
+  <data name="SupplierStatus.Inactive" xml:space="preserve"><value>停用</value></data>
+  <data name="SupplierStatus.Suspended" xml:space="preserve"><value>暂停往来</value></data>
+  <data name="CustomerType.Enterprise" xml:space="preserve"><value>企业</value></data>
+  <data name="CustomerType.Individual" xml:space="preserve"><value>个人</value></data>
+  <data name="CustomerType.Government" xml:space="preserve"><value>政府机关</value></data>
+  <data name="CustomerSource.BusinessDevelopment" xml:space="preserve"><value>业务开发</value></data>
+  <data name="CustomerSource.Referral" xml:space="preserve"><value>客户推荐</value></data>
+  <data name="CustomerSource.Exhibition" xml:space="preserve"><value>展览/展示会</value></data>
+  <data name="CustomerSource.Internet" xml:space="preserve"><value>网络/社群</value></data>
+  <data name="CustomerSource.Other" xml:space="preserve"><value>其他</value></data>
+  <data name="CreditRating.A" xml:space="preserve"><value>A - 优良</value></data>
+  <data name="CreditRating.B" xml:space="preserve"><value>B - 良好</value></data>
+  <data name="CreditRating.C" xml:space="preserve"><value>C - 普通</value></data>
+  <data name="CreditRating.D" xml:space="preserve"><value>D - 注意</value></data>
   <data name="Button.ConfirmCopy" xml:space="preserve"><value>确认复制</value></data>
   <!-- ===== Dashboard Widget Picker keys ===== -->
   <data name="Dashboard.AddShortcutTitle" xml:space="preserve"><value>添加快捷项目</value></data>
@@ -1307,6 +1347,8 @@
   <data name="Field.CurrentStock" xml:space="preserve"><value>现有库存</value></data>
   <data name="Field.AverageCost" xml:space="preserve"><value>平均成本</value></data>
   <data name="Field.ProductUnit" xml:space="preserve"><value>商品单位</value></data>
+  <data name="Field.ProductionUnitConversion" xml:space="preserve"><value>制程换算</value></data>
+  <data name="Field.ProductionUnitStock" xml:space="preserve"><value>制程库存</value></data>
 
   <!-- ===== Field keys - Material ===== -->
   <data name="Field.MaterialCode" xml:space="preserve"><value>材质编号</value></data>
@@ -1776,6 +1818,14 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>客户分析图表</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>没有相关交易记录</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>暂无拜访记录</value></data>
+  <data name="Supplier.NoTransactions" xml:space="preserve"><value>没有相关交易记录</value></data>
+  <data name="Supplier.NetPurchase" xml:space="preserve"><value>净采购额</value></data>
+  <data name="Supplier.Receiving" xml:space="preserve"><value>进货</value></data>
+  <data name="Supplier.Receivings" xml:space="preserve"><value>进货单</value></data>
+  <data name="Supplier.Return" xml:space="preserve"><value>退货</value></data>
+  <data name="Supplier.Returns" xml:space="preserve"><value>退货单</value></data>
+  <data name="Supplier.LastTransaction" xml:space="preserve"><value>最后交易</value></data>
+  <data name="Supplier.AvgReceiving" xml:space="preserve"><value>平均进货</value></data>
   <data name="Supplier.NoVisits" xml:space="preserve"><value>暂无拜访记录</value></data>
   <data name="Customer.NetSales" xml:space="preserve"><value>净销售额</value></data>
   <data name="Customer.Delivery" xml:space="preserve"><value>出货</value></data>
@@ -1804,6 +1854,10 @@
   <data name="Column.SupplierProductCode" xml:space="preserve"><value>供应商料号</value></data>
   <data name="Column.LastPurchasePrice" xml:space="preserve"><value>最近采购价</value></data>
   <data name="Column.LastPurchaseDate" xml:space="preserve"><value>最近采购日</value></data>
+  <data name="Column.CustomerProductCode" xml:space="preserve"><value>客户料号</value></data>
+  <data name="Column.CustomerPrice" xml:space="preserve"><value>客户售价</value></data>
+  <data name="Column.LastSalePrice" xml:space="preserve"><value>最近销售价</value></data>
+  <data name="Column.LastSaleDate" xml:space="preserve"><value>最近销售日</value></data>
   <data name="Column.IsPreferred" xml:space="preserve"><value>常用</value></data>
   <data name="Column.Product" xml:space="preserve"><value>商品</value></data>
   <data name="Column.Select" xml:space="preserve"><value>选择</value></data>
@@ -2002,6 +2056,11 @@
   <data name="Inventory.Shortage" xml:space="preserve"><value>缺少:</value></data>
   <data name="Inventory.SummaryTitle" xml:space="preserve"><value>库存状况摘要</value></data>
   <data name="Inventory.SummaryNote" xml:space="preserve"><value>※ 数据来自数据库，实际库存请以现场为准</value></data>
+  <data name="Inventory.TotalItems" xml:space="preserve"><value>共 {0} 项</value></data>
+  <data name="Inventory.AllSufficient" xml:space="preserve"><value>全部充足</value></data>
+  <data name="Inventory.SatisfactionRate" xml:space="preserve"><value>满足率</value></data>
+  <data name="Inventory.Insufficient" xml:space="preserve"><value>不足</value></data>
+  <data name="Inventory.Warning" xml:space="preserve"><value>警戒</value></data>
   <data name="Schedule.BatchTransfer" xml:space="preserve"><value>批量转排程</value></data>
   <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>批量转排程 - {0}</value></data>
   <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>销货订单信息</value></data>
@@ -2168,6 +2227,12 @@
   <data name="Label.Completed" xml:space="preserve"><value>已完成</value></data>
   <data name="Label.Discontinued" xml:space="preserve"><value>已停产</value></data>
   <data name="Label.Closed" xml:space="preserve"><value>已结案</value></data>
+  <data name="Label.NoBom" xml:space="preserve"><value>无需领料</value></data>
+  <data name="Label.NotIssued" xml:space="preserve"><value>未领料</value></data>
+  <data name="Label.PartialIssued" xml:space="preserve"><value>部分领料</value></data>
+  <data name="Label.FullyIssued" xml:space="preserve"><value>已领完</value></data>
+  <data name="Label.Issued" xml:space="preserve"><value>已领</value></data>
+  <data name="Column.MaterialIssue" xml:space="preserve"><value>领料</value></data>
   <data name="Label.NotClosed" xml:space="preserve"><value>未结案</value></data>
   <data name="Label.PlannedQty" xml:space="preserve"><value>计划数量</value></data>
   <data name="Label.CompletionQty" xml:space="preserve"><value>完工数量</value></data>

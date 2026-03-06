@@ -1,5 +1,6 @@
 using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
+using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 using ERPCore2.Components.Shared.Modal;
@@ -34,9 +35,37 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SupplierCode", "廠商編號"),
                             FilterPlaceholder = Fp("Field.SupplierCode", "輸入廠商編號搜尋"),
                             TableOrder = 1,
-                            FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Supplier.Code), s => s.Code)
+                        }
+                    },
+                    {
+                        nameof(Supplier.SupplierType),
+                        new FieldDefinition<Supplier>
+                        {
+                            PropertyName = nameof(Supplier.SupplierType),
+                            DisplayName = Dn("Field.SupplierType", "廠商類型"),
+                            FilterType = SearchFilterType.Select,
+                            FilterPlaceholder = "選擇類型",
+                            TableOrder = 2,
+                            Options = new List<SelectOption>
+                            {
+                                new() { Value = "",                                                    Text = L?["Label.All"].ToString() ?? "全部" },
+                                new() { Value = ((int)SupplierType.Manufacturer).ToString(),          Text = L?["SupplierType.Manufacturer"].ToString() ?? "製造商" },
+                                new() { Value = ((int)SupplierType.Trader).ToString(),                Text = L?["SupplierType.Trader"].ToString() ?? "貿易商" },
+                                new() { Value = ((int)SupplierType.Agent).ToString(),                 Text = L?["SupplierType.Agent"].ToString() ?? "代理商" },
+                                new() { Value = ((int)SupplierType.ServiceProvider).ToString(),       Text = L?["SupplierType.ServiceProvider"].ToString() ?? "服務商" }
+                            },
+                            FilterFunction = (model, query) =>
+                            {
+                                var val = model.GetFilterValue(nameof(Supplier.SupplierType))?.ToString();
+                                if (!string.IsNullOrWhiteSpace(val) && int.TryParse(val, out var intVal))
+                                {
+                                    var type = (SupplierType)intVal;
+                                    query = query.Where(s => s.SupplierType == type);
+                                }
+                                return query;
+                            }
                         }
                     },
                     {
@@ -46,8 +75,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(Supplier.CompanyName),
                             DisplayName = Dn("Field.CompanyName", "公司名稱"),
                             FilterPlaceholder = Fp("Field.CompanyName", "輸入公司名稱搜尋"),
-                            TableOrder = 2,
-                            FilterOrder = 2,
+                            TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Supplier.CompanyName), s => s.CompanyName)
                         }
@@ -60,7 +88,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ContactPerson", "聯絡人"),
                             FilterPlaceholder = Fp("Field.ContactPerson", "輸入聯絡人姓名搜尋"),
                             TableOrder = 3,
-                            FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Supplier.ContactPerson), s => s.ContactPerson, allowNull: true)
                         }
@@ -73,11 +100,54 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.TaxNumber", "統一編號"),
                             FilterPlaceholder = Fp("Field.TaxNumber", "輸入統一編號搜尋"),
                             TableOrder = 4,
-                            FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Supplier.TaxNumber), s => s.TaxNumber, allowNull: true)
                         }
-                    }
+                    },
+                    {
+                        nameof(Supplier.SupplierStatus),
+                        new FieldDefinition<Supplier>
+                        {
+                            PropertyName = nameof(Supplier.SupplierStatus),
+                            DisplayName = Dn("Field.SupplierStatus", "廠商狀態"),
+                            TableOrder = 5,
+                            FilterType = SearchFilterType.Select,
+                            FilterPlaceholder = "選擇狀態",
+                            Options = new List<SelectOption>
+                            {
+                                new() { Value = "",                                               Text = L?["Label.All"].ToString() ?? "全部" },
+                                new() { Value = ((int)SupplierStatus.Active).ToString(),         Text = L?["SupplierStatus.Active"].ToString() ?? "正常往來" },
+                                new() { Value = ((int)SupplierStatus.Inactive).ToString(),       Text = L?["SupplierStatus.Inactive"].ToString() ?? "停用" },
+                                new() { Value = ((int)SupplierStatus.Suspended).ToString(),      Text = L?["SupplierStatus.Suspended"].ToString() ?? "暫停往來" }
+                            },
+                            FilterFunction = (model, query) =>
+                            {
+                                var val = model.GetFilterValue(nameof(Supplier.SupplierStatus))?.ToString();
+                                if (!string.IsNullOrWhiteSpace(val) && int.TryParse(val, out var intVal))
+                                {
+                                    var status = (SupplierStatus)intVal;
+                                    query = query.Where(s => s.SupplierStatus == status);
+                                }
+                                return query;
+                            },
+                            CustomTemplate = item => builder =>
+                            {
+                                var supplier = (Supplier)item;
+                                var (cssClass, text) = supplier.SupplierStatus switch
+                                {
+                                    SupplierStatus.Active    => ("bg-success",   L?["SupplierStatus.Active"].ToString()    ?? "正常往來"),
+                                    SupplierStatus.Inactive  => ("bg-secondary", L?["SupplierStatus.Inactive"].ToString()  ?? "停用"),
+                                    SupplierStatus.Suspended => ("bg-warning",   L?["SupplierStatus.Suspended"].ToString() ?? "暫停往來"),
+                                    _                        => ("bg-secondary", L?["Label.Unknown"].ToString()             ?? "未知")
+                                };
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", $"badge text-white {cssClass}");
+                                builder.AddContent(2, text);
+                                builder.CloseElement();
+                            }
+                        }
+                    },
+
                 };
             }
             catch (Exception ex)

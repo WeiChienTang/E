@@ -578,7 +578,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得領貨明細的統計資料
         /// </summary>
-        public async Task<(int TotalQuantity, decimal TotalCost)> GetStatisticsAsync(int materialIssueId)
+        public async Task<(decimal TotalQuantity, decimal TotalCost)> GetStatisticsAsync(int materialIssueId)
         {
             try
             {
@@ -606,7 +606,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 計算領貨明細的總成本
         /// </summary>
-        public decimal CalculateTotalCost(int issueQuantity, decimal? unitCost)
+        public decimal CalculateTotalCost(decimal issueQuantity, decimal? unitCost)
         {
             return unitCost.HasValue ? issueQuantity * unitCost.Value : 0m;
         }

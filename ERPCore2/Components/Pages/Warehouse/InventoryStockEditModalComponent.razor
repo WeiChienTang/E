@@ -49,6 +49,7 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<Product> availableProducts = new();
+    private List<Unit> availableUnits = new();
     private List<Warehouse> availableWarehouses = new();
     private List<WarehouseLocation> availableWarehouseLocations = new();
     
@@ -155,6 +156,9 @@
             
             // 載入商品列表
             availableProducts = await ProductService.GetAllAsync();
+
+            // 載入單位列表（用於顯示換算資訊）
+            availableUnits = await ProductService.GetUnitsAsync();
             
             // 載入倉庫列表  
             availableWarehouses = await WarehouseService.GetAllAsync();
@@ -330,11 +334,98 @@
             new GenericEditModalComponent<InventoryStock, IInventoryStockService>.CustomModule
             {
                 Title = "",
+                Order = 0,
+                Content = CreateUnitInfoContent()
+            },
+            new GenericEditModalComponent<InventoryStock, IInventoryStockService>.CustomModule
+            {
+                Title = "",
                 Order = 1,
                 Content = CreateStockDetailContent()
             }
         };
     }
+
+    /// <summary>
+    /// 根據商品 ID 取得採購/製程單位換算資訊
+    /// </summary>
+    private (string PurchaseUnit, string ProductionUnit, string ConversionInfo, decimal? ConversionRate) GetProductUnitInfo(int productId)
+    {
+        var product = availableProducts.FirstOrDefault(p => p.Id == productId);
+        if (product == null) return ("", "", "", null);
+
+        var purchaseUnit = availableUnits.FirstOrDefault(u => u.Id == product.UnitId)?.Name ?? "";
+
+        if (!product.ProductionUnitId.HasValue || product.ProductionUnitId.Value == product.UnitId)
+            return (purchaseUnit, purchaseUnit, "", null);
+
+        var productionUnit = availableUnits.FirstOrDefault(u => u.Id == product.ProductionUnitId.Value)?.Name ?? "";
+        var rate = product.ProductionUnitConversionRate;
+        var conversionInfo = rate.HasValue && !string.IsNullOrEmpty(purchaseUnit) && !string.IsNullOrEmpty(productionUnit)
+            ? $"1{purchaseUnit} = {NumberFormatHelper.FormatSmart(rate.Value, useThousandsSeparator: false)}{productionUnit}"
+            : "";
+
+        return (purchaseUnit, productionUnit, conversionInfo, rate);
+    }
+
+    /// <summary>
+    /// 取得目前選定商品的採購單位名稱（傳入明細表格用）
+    /// </summary>
+    private string GetCurrentPurchaseUnitName()
+    {
+        var entity = editModalComponent?.Entity;
+        if (entity == null || entity.ProductId <= 0) return "";
+        return GetProductUnitInfo(entity.ProductId).PurchaseUnit;
+    }
+
+    /// <summary>
+    /// 取得目前選定商品的製程單位名稱（傳入明細表格用）
+    /// </summary>
+    private string GetCurrentProductionUnitName()
+    {
+        var entity = editModalComponent?.Entity;
+        if (entity == null || entity.ProductId <= 0) return "";
+        var info = GetProductUnitInfo(entity.ProductId);
+        return info.ProductionUnit == info.PurchaseUnit ? "" : info.ProductionUnit;
+    }
+
+    /// <summary>
+    /// 取得目前選定商品的單位換算率（傳入明細表格用）
+    /// </summary>
+    private decimal? GetCurrentConversionRate()
+    {
+        var entity = editModalComponent?.Entity;
+        if (entity == null || entity.ProductId <= 0) return null;
+        return GetProductUnitInfo(entity.ProductId).ConversionRate;
+    }
+
+    /// <summary>
+    /// 建立單位換算資訊區塊（顯示在表單下方、明細表格上方）
+    /// </summary>
+    private RenderFragment CreateUnitInfoContent() => __builder =>
+    {
+        var entity = editModalComponent?.Entity;
+        if (entity == null || entity.ProductId <= 0) return;
+
+        var (purchaseUnit, productionUnit, conversionInfo, _) = GetProductUnitInfo(entity.ProductId);
+        if (string.IsNullOrEmpty(purchaseUnit)) return;
+
+        var hasDifferentProductionUnit = !string.IsNullOrEmpty(conversionInfo);
+
+        <div class="alert alert-light border py-2 px-3 mb-2 small d-flex align-items-center gap-3">
+            <i class="bi bi-rulers text-secondary"></i>
+            <span><strong>基本單位：</strong>@purchaseUnit</span>
+            @if (hasDifferentProductionUnit)
+            {
+                <span class="text-muted">|</span>
+                <span><strong>製程換算：</strong>@conversionInfo</span>
+            }
+            else
+            {
+                <span class="text-muted">（製程單位與基本單位相同）</span>
+            }
+        </div>
+    };
 
     /// <summary>
     /// 創建庫存分佈明細內容的 RenderFragment
@@ -359,7 +450,10 @@
                                  OnDetailsChanged="@HandleStockDetailsChanged"
                                  IsReadOnly="@false"
                                  ShowBatchTracking="true"
-                                 ShowAverageCost="true" />
+                                 ShowAverageCost="true"
+                                 PurchaseUnitName="@GetCurrentPurchaseUnitName()"
+                                 ProductionUnitName="@GetCurrentProductionUnitName()"
+                                 ProductionUnitConversionRate="@GetCurrentConversionRate()" />
         </DetailSectionWrapper>
     };
     

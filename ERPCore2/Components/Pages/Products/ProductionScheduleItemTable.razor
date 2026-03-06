@@ -10,6 +10,12 @@
     <div class="card-header bg-warning text-white py-2">
         <div class="d-flex justify-content-between align-items-center">
             <span class="fw-bold"><i class="bi bi-calendar-check me-2"></i>@L["Production.ScheduleItems"]</span>
+            @if (HasSavedSchedule && !IsReadOnly && Items.Any(x => x.HasBom && x.MaterialIssueStatus != MaterialIssueStatus.FullyIssued))
+            {
+                <button class="btn btn-sm btn-light" @onclick="HandleRequestMaterialIssueClick" title="建立補充領料單">
+                    <i class="bi bi-basket me-1"></i>領料
+                </button>
+            }
         </div>
     </div>
     
@@ -93,7 +99,17 @@
     /// 當結案狀態變更時觸發
     /// </summary>
     [Parameter] public EventCallback<(ScheduleItemDto Item, bool IsClosed)> OnIsClosedChanged { get; set; }
-    
+
+    /// <summary>
+    /// 排程是否已儲存（用於控制領料按鈕顯示）
+    /// </summary>
+    [Parameter] public bool HasSavedSchedule { get; set; }
+
+    /// <summary>
+    /// 使用者點擊領料按鈕時觸發
+    /// </summary>
+    [Parameter] public EventCallback OnRequestMaterialIssue { get; set; }
+
     // ===== 內部狀態 =====
     private string searchKeyword = string.Empty;
     
@@ -151,7 +167,7 @@
                 Title = L["Column.ProductCode"],
                 PropertyName = nameof(ScheduleItemDto.ProductCode),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "14%",
+                Width = "60px",
                 CellCssClass = "text-primary fw-bold span"
             },
             new()
@@ -159,7 +175,7 @@
                 Title = L["Column.ProductName"],
                 PropertyName = nameof(ScheduleItemDto.ProductName),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "18%",
+                Width = "120px",
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
@@ -171,7 +187,7 @@
                 Title = L["Column.OrderQty"],
                 PropertyName = nameof(ScheduleItemDto.OrderQuantity),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "50px",
+                Width = "60px",
                 TextAlign = "right",
                 CustomTemplate = item =>
                 {
@@ -184,7 +200,7 @@
                 Title = L["Column.ScheduleQty"],
                 PropertyName = nameof(ScheduleItemDto.ScheduleQuantity),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "50px",
+                Width = "60px",
                 TextAlign = "right",
                 CustomTemplate = item =>
                 {
@@ -197,7 +213,7 @@
                 Title = L["Column.CompletedQty"],
                 PropertyName = nameof(ScheduleItemDto.CompletedQuantity),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "50px",
+                Width = "60px",
                 TextAlign = "right",
                 CustomTemplate = item =>
                 {
@@ -234,12 +250,33 @@
                     var scheduleItem = (ScheduleItemDto)item;
                     return GetStatusBadge(scheduleItem);
                 }
+            },
+            new()
+            {
+                Title = L["Column.MaterialIssue"],
+                PropertyName = nameof(ScheduleItemDto.MaterialIssueStatus),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "10%",
+                TextAlign = "center",
+                CustomTemplate = item =>
+                {
+                    var scheduleItem = (ScheduleItemDto)item;
+                    return GetMaterialIssueStatusBadge(scheduleItem);
+                }
             }
         };
     }
     
     // ===== 事件處理 =====
-    
+
+    private async Task HandleRequestMaterialIssueClick()
+    {
+        if (OnRequestMaterialIssue.HasDelegate)
+        {
+            await OnRequestMaterialIssue.InvokeAsync();
+        }
+    }
+
     private async Task HandleItemDelete(ScheduleItemDto item)
     {
         if (OnItemRemoved.HasDelegate)
@@ -345,7 +382,7 @@
     {
         // 判斷是否為「已停產」：已結案 且 已完成 < 排程量
         var isDiscontinued = item.IsClosed && item.CompletedQuantity < item.ScheduleQuantity;
-        
+
         var (cssClass, text) = isDiscontinued
             ? ("bg-secondary", L["Label.Discontinued"].ToString())
             : item.Status switch
@@ -355,8 +392,23 @@
                 ProductionItemStatus.Discontinued => ("bg-secondary", L["Label.Discontinued"].ToString()),
                 _ => ("bg-warning text-dark", L["Label.InProgress"].ToString())
             };
-        
+
         <span class="badge @cssClass">@text</span>
+    };
+
+    private RenderFragment GetMaterialIssueStatusBadge(ScheduleItemDto item) => __builder =>
+    {
+        var (cssClass, icon, text) = item.MaterialIssueStatus switch
+        {
+            MaterialIssueStatus.NoBom        => ("bg-light text-secondary border", "bi-dash-circle", L["Label.NoBom"].ToString()),
+            MaterialIssueStatus.NotIssued    => ("bg-danger",                     "bi-exclamation-circle", L["Label.NotIssued"].ToString()),
+            MaterialIssueStatus.PartialIssued=> ("bg-warning text-dark",          "bi-hourglass-split", L["Label.PartialIssued"].ToString()),
+            MaterialIssueStatus.FullyIssued  => ("bg-success",                    "bi-check-circle", L["Label.FullyIssued"].ToString()),
+            _                                => ("bg-secondary",                   "bi-question", "")
+        };
+        <span class="badge @cssClass" title="@(item.HasBom ? $"{L["Label.Issued"]}: {item.TotalIssuedMaterialQty}/{item.TotalRequiredMaterialQty}" : "")">
+            <i class="@icon me-1"></i>@text
+        </span>
     };
     
     // ===== 公開方法 =====

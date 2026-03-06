@@ -217,6 +217,9 @@ else
     private Dictionary<int, List<QuotationCompositionDetail>> compositionDetailsCache = new();
     private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
 
+    // 暫存配方選擇狀態（Key: ExistingDetailEntity.Id，跨 Items.Clear() 重新載入後仍保留）
+    private Dictionary<int, (int? SelectedCompositionId, bool IsCustomComposition, List<QuotationCompositionDetail>? CustomDetails)> _pendingCompositionState = new();
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -260,10 +263,18 @@ else
                 var compositionDetails = await QuotationCompositionDetailService
                     .GetByQuotationDetailIdAsync(detail.Id);
 
-                if (compositionDetails.Any())
+                if (_pendingCompositionState.TryGetValue(detail.Id, out var pending))
+                {
+                    // 優先使用暫存狀態（本次會話中已編輯但尚未儲存主單）
+                    item.SelectedCompositionId = pending.SelectedCompositionId;
+                    item.IsCustomComposition = pending.IsCustomComposition;
+                    item.CustomCompositionDetails = pending.CustomDetails ?? compositionDetails;
+                }
+                else if (compositionDetails.Any())
                 {
                     item.CustomCompositionDetails = compositionDetails;
-                    item.IsCustomComposition = true;
+                    item.SelectedCompositionId = detail.SelectedCompositionId;
+                    item.IsCustomComposition = !detail.SelectedCompositionId.HasValue;
                 }
             }
 
@@ -290,6 +301,7 @@ else
             entity.TaxRate = item.TaxRate;
             entity.Specification = item.Specification;
             entity.Remarks = item.Remarks;
+            entity.SelectedCompositionId = item.IsCustomComposition ? null : item.SelectedCompositionId;
             if (item.SelectedUnit != null)
                 entity.UnitId = item.SelectedUnit.Id;
             entities.Add(entity);
@@ -781,13 +793,13 @@ else
     private async Task ShowCompositionEditor(QuotationItem item)
     {
         if (item.SelectedProduct == null) return;
-        
+
         selectedQuotationItemIndex = Items.IndexOf(item);
         selectedCompositionProductName = item.SelectedProduct.Name;
         selectedCompositionProductId = item.SelectedProduct.Id;
         selectedCompositionId = item.SelectedCompositionId;
         isCustomCompositionMode = item.IsCustomComposition;
-        
+
         // 載入可用的配方清單（供 Modal 頂部 pill 按鈕使用）
         availableCompositions = await ProductCompositionService
             .GetCompositionsByProductIdAsync(item.SelectedProduct.Id);
@@ -817,8 +829,17 @@ else
                 item.CustomCompositionDetails = compositionDetails;
                 item.SelectedCompositionId = selectedCompositionId;
                 item.IsCustomComposition = isCustomCompositionMode;
+
+                // 將狀態暫存，以防 Items.Clear() 重新載入時遺失（主單尚未儲存時）
+                if (item.ExistingDetailEntity?.Id > 0)
+                {
+                    _pendingCompositionState[item.ExistingDetailEntity.Id] = (selectedCompositionId, isCustomCompositionMode, compositionDetails);
+                }
+
+                // 通知父元件明細已變更（確保 SelectedCompositionId 在父元件儲存時被正確寫入 DB）
+                await NotifyDetailsChangedAsync();
             }
-            
+
             await NotificationService.ShowSuccessAsync("BOM 組成已更新，請記得儲存報價單以保存變更");
             showCompositionModal = false;
         }

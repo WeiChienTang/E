@@ -1009,6 +1009,16 @@
   <data name="Field.CollectionDay" xml:space="preserve"><value>Araw ng Koleksyon</value></data>
   <data name="Field.CustomerCode" xml:space="preserve"><value>Kodigo ng Customer</value></data>
   <data name="Field.CustomerStatus" xml:space="preserve"><value>Katayuan ng Customer</value></data>
+  <data name="Field.CustomerType" xml:space="preserve"><value>Uri ng Customer</value></data>
+  <data name="Field.CustomerSource" xml:space="preserve"><value>Pinagmulan ng Customer</value></data>
+  <data name="Field.CreditRating" xml:space="preserve"><value>Credit Rating</value></data>
+  <data name="Field.DefaultDiscountRate" xml:space="preserve"><value>Default na Diskwento</value></data>
+  <data name="Field.BillingAddress" xml:space="preserve"><value>Billing Address</value></data>
+  <data name="Field.BankAccount" xml:space="preserve"><value>Bank Account</value></data>
+  <data name="Field.SupplierStatus" xml:space="preserve"><value>Katayuan ng Supplier</value></data>
+  <data name="Field.SupplierType" xml:space="preserve"><value>Uri ng Supplier</value></data>
+  <data name="Field.PaymentDay" xml:space="preserve"><value>Araw ng Pagbabayad</value></data>
+  <data name="Field.CurrentPayable" xml:space="preserve"><value>Kasalukuyang Dapat Bayaran</value></data>
   <data name="Field.NextFollowUpDate" xml:space="preserve"><value>Susunod na Petsa ng Follow-Up</value></data>
   <data name="Field.SalesManager" xml:space="preserve"><value>Tagapamahala ng Benta</value></data>
   <data name="Field.VisitContent" xml:space="preserve"><value>Nilalaman ng Pagbisita</value></data>
@@ -1030,7 +1040,7 @@
   <data name="Field.ProductCode" xml:space="preserve"><value>Kodigo ng Produkto</value></data>
   <data name="Field.ProductName" xml:space="preserve"><value>Pangalan ng Produkto</value></data>
   <data name="Field.ProductionUnit" xml:space="preserve"><value>Yunit ng Produksyon</value></data>
-  <data name="Field.PurchaseUnit" xml:space="preserve"><value>Yunit ng Pagbili</value></data>
+  <data name="Field.PurchaseUnit" xml:space="preserve"><value>Base Unit</value></data>
   <data name="Field.ScheduleCode" xml:space="preserve"><value>Kodigo ng Iskedyul</value></data>
   <data name="Field.ScheduleCreator" xml:space="preserve"><value>Lumikha ng Iskedyul</value></data>
   <data name="Field.ScheduleDate" xml:space="preserve"><value>Petsa ng Iskedyul</value></data>
@@ -1207,6 +1217,7 @@
   <data name="Tab.SupplierData" xml:space="preserve"><value>Data ng Supplier</value></data>
   <data name="Tab.AccountingInfo" xml:space="preserve"><value>Impormasyon sa Accounting</value></data>
   <data name="Tab.SupplierProducts" xml:space="preserve"><value>Mga Produkto ng Supplier</value></data>
+  <data name="Tab.CustomerProducts" xml:space="preserve"><value>Mga Produkto ng Customer</value></data>
   <data name="Tab.CustomerData" xml:space="preserve"><value>Data ng Customer</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>Mga Talaan ng Pagbisita</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>Mga Talaan ng Transaksyon</value></data>
@@ -1238,6 +1249,35 @@
   <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>Kopyahin sa Customer</value></data>
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong kopyahin ang data ng supplier na ito bilang bagong customer?</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>Isang bagong rekord ang malilikha sa listahan ng customer pagkatapos ng pagkopya.</value></data>
+  <data name="Customer.AutoSyncNote" xml:space="preserve"><value>Awtomatikong sini-sync ang produkto mula sa sales order, tanggalin lamang</value></data>
+  <data name="Customer.DeleteProductButtonTitle" xml:space="preserve"><value>Alisin ang link ng produkto</value></data>
+  <data name="Customer.NoProducts" xml:space="preserve"><value>Walang mga produkto ng customer para sa customer na ito</value></data>
+  <data name="Customer.RemoveProduct" xml:space="preserve"><value>Alisin ang Link ng Produkto</value></data>
+  <data name="Customer.ConfirmRemoveProduct" xml:space="preserve"><value>Sigurado ka bang gusto mong alisin ang "{0}" mula sa customer na ito?</value></data>
+  <data name="Customer.RemovedFromCatalog" xml:space="preserve"><value>Matagumpay na naalis ang link ng produkto ng customer</value></data>
+  <!-- ===== Enum value display keys ===== -->
+  <data name="CustomerStatus.Active" xml:space="preserve"><value>Aktibo</value></data>
+  <data name="CustomerStatus.Inactive" xml:space="preserve"><value>Hindi Aktibo</value></data>
+  <data name="CustomerStatus.Blacklisted" xml:space="preserve"><value>Naka-blacklist</value></data>
+  <data name="SupplierType.Manufacturer" xml:space="preserve"><value>Tagagawa</value></data>
+  <data name="SupplierType.Trader" xml:space="preserve"><value>Mangangalakal</value></data>
+  <data name="SupplierType.Agent" xml:space="preserve"><value>Ahente</value></data>
+  <data name="SupplierType.ServiceProvider" xml:space="preserve"><value>Tagapagbigay ng Serbisyo</value></data>
+  <data name="SupplierStatus.Active" xml:space="preserve"><value>Aktibo</value></data>
+  <data name="SupplierStatus.Inactive" xml:space="preserve"><value>Hindi Aktibo</value></data>
+  <data name="SupplierStatus.Suspended" xml:space="preserve"><value>Nasuspinde</value></data>
+  <data name="CustomerType.Enterprise" xml:space="preserve"><value>Negosyo</value></data>
+  <data name="CustomerType.Individual" xml:space="preserve"><value>Indibidwal</value></data>
+  <data name="CustomerType.Government" xml:space="preserve"><value>Gobyerno</value></data>
+  <data name="CustomerSource.BusinessDevelopment" xml:space="preserve"><value>Pagpapaunlad ng Negosyo</value></data>
+  <data name="CustomerSource.Referral" xml:space="preserve"><value>Referral</value></data>
+  <data name="CustomerSource.Exhibition" xml:space="preserve"><value>Eksibisyon / Trade Show</value></data>
+  <data name="CustomerSource.Internet" xml:space="preserve"><value>Internet / Social Media</value></data>
+  <data name="CustomerSource.Other" xml:space="preserve"><value>Iba pa</value></data>
+  <data name="CreditRating.A" xml:space="preserve"><value>A - Napakahusay</value></data>
+  <data name="CreditRating.B" xml:space="preserve"><value>B - Mahusay</value></data>
+  <data name="CreditRating.C" xml:space="preserve"><value>C - Katamtaman</value></data>
+  <data name="CreditRating.D" xml:space="preserve"><value>D - Pag-ingat</value></data>
   <data name="Button.ConfirmCopy" xml:space="preserve"><value>Kumpirmahin ang Pagkopya</value></data>
   <!-- ===== Dashboard Widget Picker keys ===== -->
   <data name="Dashboard.AddShortcutTitle" xml:space="preserve"><value>Magdagdag ng Shortcut na Item</value></data>
@@ -1303,6 +1343,8 @@
   <data name="Field.CurrentStock" xml:space="preserve"><value>Kasalukuyang Stock</value></data>
   <data name="Field.AverageCost" xml:space="preserve"><value>Karaniwang Gastos</value></data>
   <data name="Field.ProductUnit" xml:space="preserve"><value>Yunit ng Produkto</value></data>
+  <data name="Field.ProductionUnitConversion" xml:space="preserve"><value>Conversion ng Produksyon</value></data>
+  <data name="Field.ProductionUnitStock" xml:space="preserve"><value>Production Stock</value></data>
 
   <!-- ===== Field keys - Material ===== -->
   <data name="Field.MaterialCode" xml:space="preserve"><value>Kodigo ng Materyales</value></data>
@@ -1772,6 +1814,14 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Customer</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>Walang kaugnay na mga transaksyon</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>Wala pang mga rekord ng pagbisita</value></data>
+  <data name="Supplier.NoTransactions" xml:space="preserve"><value>Walang kaugnay na mga transaksyon</value></data>
+  <data name="Supplier.NetPurchase" xml:space="preserve"><value>Net na Pagbili</value></data>
+  <data name="Supplier.Receiving" xml:space="preserve"><value>Pagtanggap</value></data>
+  <data name="Supplier.Receivings" xml:space="preserve"><value>Mga Resibo</value></data>
+  <data name="Supplier.Return" xml:space="preserve"><value>Pagbabalik</value></data>
+  <data name="Supplier.Returns" xml:space="preserve"><value>Mga Pagbabalik</value></data>
+  <data name="Supplier.LastTransaction" xml:space="preserve"><value>Huling Transaksyon</value></data>
+  <data name="Supplier.AvgReceiving" xml:space="preserve"><value>Avg Pagtanggap</value></data>
   <data name="Supplier.NoVisits" xml:space="preserve"><value>Wala pang mga rekord ng pagbisita</value></data>
   <data name="Customer.NetSales" xml:space="preserve"><value>Net na Benta</value></data>
   <data name="Customer.Delivery" xml:space="preserve"><value>Pagpapadala</value></data>
@@ -1800,6 +1850,10 @@
   <data name="Column.SupplierProductCode" xml:space="preserve"><value>Part No. ng Supplier</value></data>
   <data name="Column.LastPurchasePrice" xml:space="preserve"><value>Huling Presyo ng Pagbili</value></data>
   <data name="Column.LastPurchaseDate" xml:space="preserve"><value>Huling Petsa ng Pagbili</value></data>
+  <data name="Column.CustomerProductCode" xml:space="preserve"><value>Part No. ng Customer</value></data>
+  <data name="Column.CustomerPrice" xml:space="preserve"><value>Presyo ng Customer</value></data>
+  <data name="Column.LastSalePrice" xml:space="preserve"><value>Huling Presyo ng Benta</value></data>
+  <data name="Column.LastSaleDate" xml:space="preserve"><value>Huling Petsa ng Benta</value></data>
   <data name="Column.IsPreferred" xml:space="preserve"><value>Ginustong</value></data>
   <data name="Column.Product" xml:space="preserve"><value>Produkto</value></data>
   <data name="Column.Select" xml:space="preserve"><value>Piliin</value></data>
@@ -1993,6 +2047,11 @@
   <data name="Inventory.Shortage" xml:space="preserve"><value>Kulang:</value></data>
   <data name="Inventory.SummaryTitle" xml:space="preserve"><value>Buod ng Katayuan ng Imbentaryo</value></data>
   <data name="Inventory.SummaryNote" xml:space="preserve"><value>※ Data mula sa database; beripikahin ang aktwal na stock sa site</value></data>
+  <data name="Inventory.TotalItems" xml:space="preserve"><value>{0} Aytem</value></data>
+  <data name="Inventory.AllSufficient" xml:space="preserve"><value>Lahat ay Sapat</value></data>
+  <data name="Inventory.SatisfactionRate" xml:space="preserve"><value>Antas ng Kasapatan</value></data>
+  <data name="Inventory.Insufficient" xml:space="preserve"><value>Hindi Sapat</value></data>
+  <data name="Inventory.Warning" xml:space="preserve"><value>Babala</value></data>
   <data name="Schedule.BatchTransfer" xml:space="preserve"><value>Batch Transfer sa Schedule</value></data>
   <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>Batch Transfer sa Schedule - {0}</value></data>
   <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>Impormasyon ng Sales Order</value></data>
@@ -2155,6 +2214,12 @@
   <data name="Label.Completed" xml:space="preserve"><value>Nakumpleto</value></data>
   <data name="Label.Discontinued" xml:space="preserve"><value>Itinigil</value></data>
   <data name="Label.Closed" xml:space="preserve"><value>Sarado</value></data>
+  <data name="Label.NoBom" xml:space="preserve"><value>Walang BOM</value></data>
+  <data name="Label.NotIssued" xml:space="preserve"><value>Hindi Ibinigay</value></data>
+  <data name="Label.PartialIssued" xml:space="preserve"><value>Bahagyang Ibinigay</value></data>
+  <data name="Label.FullyIssued" xml:space="preserve"><value>Ganap na Ibinigay</value></data>
+  <data name="Label.Issued" xml:space="preserve"><value>Ibinigay</value></data>
+  <data name="Column.MaterialIssue" xml:space="preserve"><value>Isyu</value></data>
   <data name="Label.NotClosed" xml:space="preserve"><value>Bukas</value></data>
   <data name="Label.PlannedQty" xml:space="preserve"><value>Planong Dami</value></data>
   <data name="Label.CompletionQty" xml:space="preserve"><value>Dami ng Pagkumpleto</value></data>

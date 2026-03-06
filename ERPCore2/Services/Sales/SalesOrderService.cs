@@ -722,6 +722,9 @@ namespace ERPCore2.Services
                         .ThenInclude(sod => sod.Product)
                             .ThenInclude(p => p.Unit)
                     .Include(so => so.SalesOrderDetails)
+                        .ThenInclude(sod => sod.Product)
+                            .ThenInclude(p => p.ProductionUnit)
+                    .Include(so => so.SalesOrderDetails)
                         .ThenInclude(sod => sod.Unit)
                     .FirstOrDefaultAsync(so => so.Id == salesOrderId);
 
@@ -732,11 +735,13 @@ namespace ERPCore2.Services
 
                 // 2. 取得所有明細的組成資料
                 var detailIds = salesOrder.SalesOrderDetails.Select(d => d.Id).ToList();
-                
+
                 var compositionDetails = await context.SalesOrderCompositionDetails
                     .Where(c => detailIds.Contains(c.SalesOrderDetailId))
                     .Include(c => c.ComponentProduct)
                         .ThenInclude(p => p.Unit)
+                    .Include(c => c.ComponentProduct)
+                        .ThenInclude(p => p.ProductionUnit)
                     .Include(c => c.Unit)
                     .ToListAsync();
 
@@ -745,6 +750,9 @@ namespace ERPCore2.Services
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(cd => cd.ComponentProduct)
                             .ThenInclude(p => p.Unit)
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(cd => cd.ComponentProduct)
+                            .ThenInclude(p => p.ProductionUnit)
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(cd => cd.Unit)
                     .ToListAsync();
@@ -843,7 +851,7 @@ namespace ERPCore2.Services
                 ProductCode = detail.Product?.Code ?? "",
                 ProductName = detail.Product?.Name ?? "",
                 ProductSpecification = detail.Product?.Specification,
-                UnitName = detail.Unit?.Name ?? detail.Product?.Unit?.Name ?? "",
+                UnitName = detail.Product?.ProductionUnit?.Name ?? detail.Product?.Unit?.Name ?? detail.Unit?.Name ?? "",
                 RequiredQuantity = detail.OrderQuantity,
                 AvailableStock = availableStock,
                 IsComposition = hasComposition,
@@ -867,7 +875,7 @@ namespace ERPCore2.Services
                         ProductCode = comp.ComponentProduct?.Code ?? "",
                         ProductName = comp.ComponentProduct?.Name ?? "",
                         ProductSpecification = comp.ComponentProduct?.Specification,
-                        UnitName = comp.Unit?.Name ?? comp.ComponentProduct?.Unit?.Name ?? "",
+                        UnitName = comp.ComponentProduct?.ProductionUnit?.Name ?? comp.ComponentProduct?.Unit?.Name ?? comp.Unit?.Name ?? "",
                         RequiredQuantity = requiredQuantity,
                         AvailableStock = compAvailableStock,
                         CompositionMultiplier = comp.Quantity,
@@ -944,7 +952,7 @@ namespace ERPCore2.Services
                     ProductCode = detail.ComponentProduct?.Code ?? "",
                     ProductName = detail.ComponentProduct?.Name ?? "",
                     ProductSpecification = detail.ComponentProduct?.Specification,
-                    UnitName = detail.Unit?.Name ?? detail.ComponentProduct?.Unit?.Name ?? "",
+                    UnitName = detail.ComponentProduct?.ProductionUnit?.Name ?? detail.ComponentProduct?.Unit?.Name ?? detail.Unit?.Name ?? "",
                     RequiredQuantity = requiredQuantity,
                     AvailableStock = compAvailableStock,
                     CompositionMultiplier = detail.Quantity,

@@ -2,6 +2,8 @@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
 @using ERPCore2.Models.Enums
+@using CustomerType = ERPCore2.Models.Enums.CustomerType
+@using CustomerSource = ERPCore2.Models.Enums.CustomerSource
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
 @inject IPaymentMethodService PaymentMethodService
@@ -126,6 +128,7 @@
     private CustomerVisitTab? visitTab;
     private CustomerTransactionTab? transactionTab;
     private CustomerAccountingTab? accountingTab;
+    private CustomerProductTab? productTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -147,6 +150,11 @@
     private RenderFragment CreateTransactionTabContent() => __builder =>
     {
         <CustomerTransactionTab @ref="transactionTab" CustomerId="@CustomerId" />
+    };
+
+    private RenderFragment CreateProductTabContent() => __builder =>
+    {
+        <CustomerProductTab @ref="productTab" CustomerId="@CustomerId" />
     };
 
     // ===== 生命週期 =====
@@ -200,6 +208,7 @@
                 if (visitTab != null)        await visitTab.LoadAsync(loadedEntityId);
                 if (transactionTab != null)  await transactionTab.LoadAsync(loadedEntityId);
                 if (accountingTab != null)   await accountingTab.LoadAsync(loadedEntityId);
+                if (productTab != null)      await productTab.LoadAsync(loadedEntityId);
             }
             else
             {
@@ -207,6 +216,7 @@
                 visitTab?.Clear();
                 transactionTab?.Clear();
                 accountingTab?.Clear();
+                productTab?.Clear();
             }
             StateHasChanged();
         }
@@ -239,6 +249,7 @@
                 vehicleTab?.Clear();
                 visitTab?.Clear();
                 transactionTab?.Clear();
+                productTab?.Clear();
 
                 return new Customer
                 {
@@ -486,10 +497,99 @@
                     HelpText = "客戶目前的往來狀態",
                     Options = new List<SelectOption>
                     {
-                        new() { Value = ((int)CustomerStatus.Active).ToString(),      Text = "正常往來" },
-                        new() { Value = ((int)CustomerStatus.Inactive).ToString(),    Text = "停用" },
-                        new() { Value = ((int)CustomerStatus.Blacklisted).ToString(), Text = "黑名單" }
+                        new() { Value = ((int)CustomerStatus.Active).ToString(),      Text = L["CustomerStatus.Active"] },
+                        new() { Value = ((int)CustomerStatus.Inactive).ToString(),    Text = L["CustomerStatus.Inactive"] },
+                        new() { Value = ((int)CustomerStatus.Blacklisted).ToString(), Text = L["CustomerStatus.Blacklisted"] }
                     }
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.CustomerType),
+                    Label = L["Field.CustomerType"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    HelpText = "客戶的類型分類",
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = "",                                                      Text = L["Label.NotSet"] },
+                        new() { Value = ((int)CustomerType.Enterprise).ToString(),              Text = L["CustomerType.Enterprise"] },
+                        new() { Value = ((int)CustomerType.Individual).ToString(),              Text = L["CustomerType.Individual"] },
+                        new() { Value = ((int)CustomerType.Government).ToString(),              Text = L["CustomerType.Government"] }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.CustomerSource),
+                    Label = L["Field.CustomerSource"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    HelpText = "此客戶的開發來源",
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = "",                                                          Text = L["Label.NotSet"] },
+                        new() { Value = ((int)CustomerSource.BusinessDevelopment).ToString(),       Text = L["CustomerSource.BusinessDevelopment"] },
+                        new() { Value = ((int)CustomerSource.Referral).ToString(),                  Text = L["CustomerSource.Referral"] },
+                        new() { Value = ((int)CustomerSource.Exhibition).ToString(),                Text = L["CustomerSource.Exhibition"] },
+                        new() { Value = ((int)CustomerSource.Internet).ToString(),                  Text = L["CustomerSource.Internet"] },
+                        new() { Value = ((int)CustomerSource.Other).ToString(),                     Text = L["CustomerSource.Other"] }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.CreditRating),
+                    Label = L["Field.CreditRating"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    HelpText = "客戶信用評等（A=優良、B=良好、C=普通、D=注意）",
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = "",                                   Text = L["Label.NotSet"] },
+                        new() { Value = ((int)CreditRating.A).ToString(),    Text = L["CreditRating.A"] },
+                        new() { Value = ((int)CreditRating.B).ToString(),    Text = L["CreditRating.B"] },
+                        new() { Value = ((int)CreditRating.C).ToString(),    Text = L["CreditRating.C"] },
+                        new() { Value = ((int)CreditRating.D).ToString(),    Text = L["CreditRating.D"] }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.DefaultDiscountRate),
+                    Label = L["Field.DefaultDiscountRate"],
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "例如：0.9 表示 9 折",
+                    IsRequired = false,
+                    Min = 0,
+                    Max = 1,
+                    HelpText = "新建銷售訂單時自動帶入的折扣率（0~1，例如 0.9 = 9折），可在訂單上手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.BillingAddress),
+                    Label = L["Field.BillingAddress"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BillingAddress"]],
+                    IsRequired = false,
+                    MaxLength = 200,
+                    HelpText = "發票或帳單郵寄地址（若與聯絡地址相同可留空）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.BankAccount),
+                    Label = L["Field.BankAccount"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankAccount"]],
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "客戶銀行帳號（退款或轉帳時使用）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Customer.BankName),
+                    Label = L["Field.BankName"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankName"]],
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "客戶銀行名稱（含分行）"
                 },
                 new FormFieldDefinition()
                 {
@@ -543,10 +643,17 @@
                     c => c.PaymentDate,
                     c => c.InvoiceTitle,
                     c => c.CreditLimit,
-                    c => c.CurrentBalance)
+                    c => c.CurrentBalance,
+                    c => c.CreditRating,
+                    c => c.DefaultDiscountRate,
+                    c => c.BankName,
+                    c => c.BankAccount,
+                    c => c.BillingAddress)
                 .AddToSection(FormSectionNames.OtherInfo,
                     c => c.EmployeeId,
                     c => c.CustomerStatus,
+                    c => c.CustomerType,
+                    c => c.CustomerSource,
                     c => c.Remarks)
                 .GroupIntoTab(L["Tab.CustomerData"].ToString(), "bi-building", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo);
 
@@ -557,6 +664,7 @@
                 builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent(), "CustomerAccountingTab");
 
             var layout = builder
+                .GroupIntoCustomTab(L["Tab.CustomerProducts"].ToString(), "bi-box-seam", CreateProductTabContent(), "CustomerProductTab")
                 .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), "CustomerVisitTab")
                 .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), "CustomerTransactionTab")
                 .BuildAll();

@@ -59,6 +59,7 @@ namespace ERPCore2.Services
             // 取得商品的物料清單資料
             var productCompositions = await context.ProductCompositionDetails
                 .Include(p => p.ComponentProduct)
+                    .ThenInclude(cp => cp.ProductionUnit)
                 .Include(p => p.Unit)
                 .Where(p => p.ProductCompositionId == context.ProductCompositions
                     .Where(pc => pc.ParentProductId == productId)
@@ -66,152 +67,65 @@ namespace ERPCore2.Services
                     .FirstOrDefault())
                 .ToListAsync();
 
-            // 轉換為銷貨訂單組成明細
+            // 轉換為銷貨訂單組成明細（使用組件商品的製程單位）
             return productCompositions.Select(pc => new SalesOrderCompositionDetail
             {
                 SalesOrderDetailId = salesOrderDetailId,
                 ComponentProductId = pc.ComponentProductId,
                 ComponentProduct = pc.ComponentProduct,
                 Quantity = pc.Quantity,
-                UnitId = pc.UnitId,
-                Unit = pc.Unit,
+                UnitId = pc.ComponentProduct?.ProductionUnitId ?? pc.ComponentProduct?.UnitId ?? pc.UnitId,
+                Unit = pc.ComponentProduct?.ProductionUnit ?? pc.Unit,
                 ComponentCost = pc.ComponentCost,
                 Status = EntityStatus.Active
             }).ToList();
         }
 
         /// <summary>
-        /// 從指定的商品配方複製 BOM 資料到銷貨訂單
+        /// 從指定的商品配方複製 BOM 資料到銷貨訂單（直接複製配方明細，不遞迴展開）
         /// </summary>
         public async Task<List<SalesOrderCompositionDetail>> CopyFromCompositionAsync(
             int salesOrderDetailId, int compositionId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            
-            // 先取得配方主檔，確認父產品
-            var composition = await context.ProductCompositions
-                .Include(pc => pc.ParentProduct)
-                .FirstOrDefaultAsync(pc => pc.Id == compositionId);
-            
-            if (composition == null)
-            {
-                return new List<SalesOrderCompositionDetail>();
-            }
-            
-            // 取得指定配方的組合明細
-            var productCompositions = await context.ProductCompositionDetails
-                .Include(p => p.ComponentProduct)
-                    .ThenInclude(cp => cp.Unit)
-                .Include(p => p.Unit)
-                .Where(p => p.ProductCompositionId == compositionId)
-                .ToListAsync();
 
-            if (productCompositions.Count == 0)
+            // 查詢指定的商品配方
+            var productComposition = await context.ProductCompositions
+                .Include(x => x.CompositionDetails)
+                    .ThenInclude(d => d.ComponentProduct)
+                        .ThenInclude(p => p.ProductionUnit)
+                .Include(x => x.CompositionDetails)
+                    .ThenInclude(d => d.ComponentProduct)
+                        .ThenInclude(p => p.Unit)
+                .Include(x => x.CompositionDetails)
+                    .ThenInclude(d => d.Unit)
+                .FirstOrDefaultAsync(x => x.Id == compositionId);
+
+            if (productComposition == null || !productComposition.CompositionDetails.Any())
             {
                 return new List<SalesOrderCompositionDetail>();
             }
 
-            // 取得所有產品的主檔配方（用於遞迴展開）
-            var allCompositions = await context.ProductCompositions
-                .Include(pc => pc.CompositionDetails)
-                    .ThenInclude(cd => cd.ComponentProduct)
-                        .ThenInclude(cp => cp.Unit)
-                .Include(pc => pc.CompositionDetails)
-                    .ThenInclude(cd => cd.Unit)
-                .ToListAsync();
-
-            var compositionDict = allCompositions
-                .GroupBy(pc => pc.ParentProductId)
-                .ToDictionary(g => g.Key, g => g.FirstOrDefault());
-
+            // 直接複製組合明細（使用組件商品的製程單位）
             var result = new List<SalesOrderCompositionDetail>();
 
-            // 遞迴展開所有組成（扁平化多層 BOM）
-            foreach (var pc in productCompositions)
+            foreach (var detail in productComposition.CompositionDetails)
             {
-                var visited = new HashSet<int>(); // 每個頂層元件獨立的訪問記錄
-                ExpandCompositionRecursively(
-                    pc.ComponentProduct,
-                    pc.ComponentProductId,
-                    pc.Quantity,
-                    pc.UnitId,
-                    salesOrderDetailId,
-                    compositionDict,
-                    result,
-                    visited
-                );
+                var effectiveUnitId = detail.ComponentProduct?.ProductionUnitId ?? detail.ComponentProduct?.UnitId ?? detail.UnitId;
+                result.Add(new SalesOrderCompositionDetail
+                {
+                    SalesOrderDetailId = salesOrderDetailId,
+                    ComponentProductId = detail.ComponentProductId,
+                    ComponentProduct = detail.ComponentProduct!,
+                    Quantity = detail.Quantity,
+                    UnitId = effectiveUnitId,
+                    Unit = detail.ComponentProduct?.ProductionUnit ?? detail.Unit,
+                    ComponentCost = detail.ComponentCost,
+                    Status = EntityStatus.Active
+                });
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// 遞迴展開組合明細（扁平化多層 BOM）
-        /// </summary>
-        private void ExpandCompositionRecursively(
-            Product? componentProduct,
-            int productId,
-            decimal baseQuantity,
-            int? unitId,
-            int salesOrderDetailId,
-            Dictionary<int, ProductComposition?> compositionDict,
-            List<SalesOrderCompositionDetail> result,
-            HashSet<int> visitedProducts)
-        {
-            // 防止循環參照
-            if (visitedProducts.Contains(productId))
-            {
-                return;
-            }
-
-            visitedProducts.Add(productId);
-
-            // 檢查該產品是否有主檔配方
-            if (compositionDict.TryGetValue(productId, out var composition) && composition != null)
-            {
-                // 該產品有配方，遞迴展開其子元件
-                foreach (var detail in composition.CompositionDetails.OrderBy(d => d.Id))
-                {
-                    var expandedQuantity = detail.Quantity * baseQuantity;
-
-                    // 遞迴展開子元件
-                    ExpandCompositionRecursively(
-                        detail.ComponentProduct,
-                        detail.ComponentProductId,
-                        expandedQuantity,
-                        detail.UnitId,
-                        salesOrderDetailId,
-                        compositionDict,
-                        result,
-                        visitedProducts
-                    );
-                }
-            }
-            else
-            {
-                // 該產品沒有配方，是最終元件，加入結果
-                // 檢查是否已經存在（合併相同元件的數量）
-                var existing = result.FirstOrDefault(r => r.ComponentProductId == productId);
-                if (existing != null)
-                {
-                    existing.Quantity += baseQuantity;
-                }
-                else
-                {
-                    result.Add(new SalesOrderCompositionDetail
-                    {
-                        SalesOrderDetailId = salesOrderDetailId,
-                        ComponentProductId = productId,
-                        ComponentProduct = componentProduct!,
-                        Quantity = baseQuantity,
-                        UnitId = unitId ?? componentProduct?.UnitId ?? 0,
-                        ComponentCost = 0,
-                        Status = EntityStatus.Active
-                    });
-                }
-            }
-
-            visitedProducts.Remove(productId);
         }
 
         /// <summary>
@@ -243,8 +157,8 @@ namespace ERPCore2.Services
             // 新增或更新
             int addCount = 0;
             int updateCount = 0;
-            
-            foreach (var detail in compositionDetails)
+
+            foreach (var detail in compositionDetails.Where(x => x.ComponentProductId > 0 && x.Quantity > 0))
             {
                 detail.SalesOrderDetailId = salesOrderDetailId;
                 

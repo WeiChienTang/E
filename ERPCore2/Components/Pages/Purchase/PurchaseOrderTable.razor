@@ -338,8 +338,11 @@ else
                 var isLocked = !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
                 if (isLocked || IsReadOnly)
                 {
+                    var qtyDisplay = string.IsNullOrEmpty(productItem.UnitName)
+                        ? productItem.Quantity.ToString()
+                        : $"{productItem.Quantity} {productItem.UnitName}";
                     return @<div class="d-flex align-items-center" style="min-height: 31px;">
-                        <span>@productItem.Quantity</span>
+                        <span>@qtyDisplay</span>
                     </div>;
                 }
                 return @<input type="number" class="form-control text-end"
@@ -362,7 +365,9 @@ else
             DisplayFormatter = item =>
             {
                 if (item is not ProductItem productItem) return "-";
-                return productItem.ReceivedQuantity.ToString();
+                return string.IsNullOrEmpty(productItem.UnitName)
+                    ? productItem.ReceivedQuantity.ToString()
+                    : $"{productItem.ReceivedQuantity} {productItem.UnitName}";
             }
         });
 

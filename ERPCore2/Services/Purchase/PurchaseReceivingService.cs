@@ -809,10 +809,33 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPurchaseOrderAsync), GetType(), _logger, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPurchaseOrderAsync), GetType(), _logger, new {
                     Method = nameof(GetByPurchaseOrderAsync),
                     ServiceType = GetType().Name,
-                    PurchaseOrderId = purchaseOrderId 
+                    PurchaseOrderId = purchaseOrderId
+                });
+                return new List<PurchaseReceiving>();
+            }
+        }
+
+        public async Task<List<PurchaseReceiving>> GetBySupplierIdAsync(int supplierId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.PurchaseReceivings
+                    .Include(pr => pr.Supplier)
+                    .Where(pr => pr.SupplierId == supplierId)
+                    .OrderByDescending(pr => pr.ReceiptDate)
+                    .ThenBy(pr => pr.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierIdAsync), GetType(), _logger, new {
+                    Method = nameof(GetBySupplierIdAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId
                 });
                 return new List<PurchaseReceiving>();
             }

@@ -26,6 +26,13 @@ namespace ERPCore2.Services
         Task<List<PurchaseReceiving>> GetByPurchaseOrderAsync(int purchaseOrderId);
 
         /// <summary>
+        /// 獲取指定廠商的所有進貨單
+        /// </summary>
+        /// <param name="supplierId">廠商ID</param>
+        /// <returns>進貨單列表</returns>
+        Task<List<PurchaseReceiving>> GetBySupplierIdAsync(int supplierId);
+
+        /// <summary>
         /// 確認進貨單
         /// </summary>
         /// <param name="id">進貨單ID</param>

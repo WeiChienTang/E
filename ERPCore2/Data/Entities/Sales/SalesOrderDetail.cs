@@ -49,6 +49,13 @@ namespace ERPCore2.Data.Entities
         [Range(0, 100, ErrorMessage = "稅率必須介於 0 到 100 之間")]
         public decimal? TaxRate { get; set; }
 
+        /// <summary>
+        /// 使用者選擇的 BOM 配方 ID（用於重新開啟 BOM Modal 時還原選擇狀態）
+        /// null 表示自定義模式或未設定 BOM
+        /// </summary>
+        [Display(Name = "選用配方")]
+        public int? SelectedCompositionId { get; set; }
+
         // Foreign Keys
         [Required(ErrorMessage = "銷貨訂單為必填")]
         [Display(Name = "銷貨訂單")]

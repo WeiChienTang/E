@@ -66,6 +66,7 @@ namespace ERPCore2.Services
                 var productComposition = await context.ProductCompositions
                     .Include(x => x.CompositionDetails)
                         .ThenInclude(d => d.ComponentProduct)
+                            .ThenInclude(p => p.ProductionUnit)
                     .Include(x => x.CompositionDetails)
                         .ThenInclude(d => d.Unit)
                     .Where(x => x.ParentProductId == productId)
@@ -77,17 +78,18 @@ namespace ERPCore2.Services
                     return new List<QuotationCompositionDetail>();
                 }
 
-                // 複製組合明細
+                // 複製組合明細（使用組件商品的製程單位）
                 var quotationCompositionDetails = new List<QuotationCompositionDetail>();
-                
+
                 foreach (var detail in productComposition.CompositionDetails)
                 {
+                    var effectiveUnitId = detail.ComponentProduct?.ProductionUnitId ?? detail.ComponentProduct?.UnitId ?? detail.UnitId;
                     quotationCompositionDetails.Add(new QuotationCompositionDetail
                     {
                         QuotationDetailId = quotationDetailId,
                         ComponentProductId = detail.ComponentProductId,
                         Quantity = detail.Quantity,
-                        UnitId = detail.UnitId,
+                        UnitId = effectiveUnitId,
                         ComponentCost = detail.ComponentCost
                     });
                 }
@@ -114,6 +116,7 @@ namespace ERPCore2.Services
                 var productComposition = await context.ProductCompositions
                     .Include(x => x.CompositionDetails)
                         .ThenInclude(d => d.ComponentProduct)
+                            .ThenInclude(p => p.ProductionUnit)
                     .Include(x => x.CompositionDetails)
                         .ThenInclude(d => d.Unit)
                     .FirstOrDefaultAsync(x => x.Id == compositionId);
@@ -123,17 +126,18 @@ namespace ERPCore2.Services
                     return new List<QuotationCompositionDetail>();
                 }
 
-                // 複製組合明細
+                // 複製組合明細（使用組件商品的製程單位）
                 var quotationCompositionDetails = new List<QuotationCompositionDetail>();
-                
+
                 foreach (var detail in productComposition.CompositionDetails)
                 {
+                    var effectiveUnitId = detail.ComponentProduct?.ProductionUnitId ?? detail.ComponentProduct?.UnitId ?? detail.UnitId;
                     quotationCompositionDetails.Add(new QuotationCompositionDetail
                     {
                         QuotationDetailId = quotationDetailId,
                         ComponentProductId = detail.ComponentProductId,
                         Quantity = detail.Quantity,
-                        UnitId = detail.UnitId,
+                        UnitId = effectiveUnitId,
                         ComponentCost = detail.ComponentCost
                     });
                 }

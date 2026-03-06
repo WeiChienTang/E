@@ -8,6 +8,8 @@ using ERPCore2.Components.Shared.Modal;
 using ERPCore2.Components.Shared.Table;
 using ERPCore2.Components.Shared.Page;
 using ERPCore2.Components.Shared.Statistics;
+using CustomerTypeEnum = ERPCore2.Models.Enums.CustomerType;
+using CustomerSourceEnum = ERPCore2.Models.Enums.CustomerSource;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
@@ -87,10 +89,10 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "選擇狀態",
                             Options = new List<SelectOption>
                             {
-                                new() { Value = "",                                             Text = "全部" },
-                                new() { Value = ((int)CustomerStatus.Active).ToString(),      Text = "正常往來" },
-                                new() { Value = ((int)CustomerStatus.Inactive).ToString(),    Text = "停用" },
-                                new() { Value = ((int)CustomerStatus.Blacklisted).ToString(), Text = "黑名單" }
+                                new() { Value = "",                                             Text = L?["Label.All"].ToString()                  ?? "全部" },
+                                new() { Value = ((int)CustomerStatus.Active).ToString(),      Text = L?["CustomerStatus.Active"].ToString()      ?? "正常往來" },
+                                new() { Value = ((int)CustomerStatus.Inactive).ToString(),    Text = L?["CustomerStatus.Inactive"].ToString()    ?? "停用" },
+                                new() { Value = ((int)CustomerStatus.Blacklisted).ToString(), Text = L?["CustomerStatus.Blacklisted"].ToString() ?? "黑名單" }
                             },
                             FilterFunction = (model, query) =>
                             {
@@ -107,10 +109,10 @@ namespace ERPCore2.FieldConfiguration
                                 var customer = (Customer)item;
                                 var (cssClass, text) = customer.CustomerStatus switch
                                 {
-                                    CustomerStatus.Active      => ("bg-success", "正常往來"),
-                                    CustomerStatus.Inactive    => ("bg-secondary", "停用"),
-                                    CustomerStatus.Blacklisted => ("bg-danger", "黑名單"),
-                                    _                          => ("bg-secondary", "未知")
+                                    CustomerStatus.Active      => ("bg-success",   L?["CustomerStatus.Active"].ToString()      ?? "正常往來"),
+                                    CustomerStatus.Inactive    => ("bg-secondary", L?["CustomerStatus.Inactive"].ToString()    ?? "停用"),
+                                    CustomerStatus.Blacklisted => ("bg-danger",    L?["CustomerStatus.Blacklisted"].ToString() ?? "黑名單"),
+                                    _                          => ("bg-secondary", L?["Label.Unknown"].ToString()               ?? "未知")
                                 };
                                 builder.OpenElement(0, "span");
                                 builder.AddAttribute(1, "class", $"badge text-white {cssClass}");
@@ -118,7 +120,35 @@ namespace ERPCore2.FieldConfiguration
                                 builder.CloseElement();
                             }
                         }
-                    }
+                    },
+                    {
+                        nameof(Customer.CustomerType),
+                        new FieldDefinition<Customer>
+                        {
+                            PropertyName = nameof(Customer.CustomerType),
+                            DisplayName = Dn("Field.CustomerType", "客戶類型"),
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 6,
+                            FilterPlaceholder = "選擇類型",
+                            Options = new List<SelectOption>
+                            {
+                                new() { Value = "",                                                   Text = L?["Label.All"].ToString()                      ?? "全部" },
+                                new() { Value = ((int)CustomerTypeEnum.Enterprise).ToString(),       Text = L?["CustomerType.Enterprise"].ToString()        ?? "企業" },
+                                new() { Value = ((int)CustomerTypeEnum.Individual).ToString(),       Text = L?["CustomerType.Individual"].ToString()        ?? "個人" },
+                                new() { Value = ((int)CustomerTypeEnum.Government).ToString(),       Text = L?["CustomerType.Government"].ToString()        ?? "政府機關" }
+                            },
+                            FilterFunction = (model, query) =>
+                            {
+                                var val = model.GetFilterValue(nameof(Customer.CustomerType))?.ToString();
+                                if (!string.IsNullOrWhiteSpace(val) && int.TryParse(val, out var intVal))
+                                {
+                                    var type = (CustomerTypeEnum)intVal;
+                                    query = query.Where(c => c.CustomerType == type);
+                                }
+                                return query;
+                            }
+                        }
+                    },
                 };
             }
             catch (Exception ex)

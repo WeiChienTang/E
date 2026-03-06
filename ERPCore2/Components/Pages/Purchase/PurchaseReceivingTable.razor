@@ -365,7 +365,15 @@ else
             ColumnType = InteractiveColumnType.Display,
             Width = "100px",
             TextAlign = "right",
-            IsReadOnly = true
+            IsReadOnly = true,
+            DisplayFormatter = item =>
+            {
+                if (item is not ReceivingItem receivingItem) return "-";
+                var unitName = receivingItem.SelectedProduct?.Unit?.Name ?? "";
+                return string.IsNullOrEmpty(unitName)
+                    ? receivingItem.OrderQuantity.ToString()
+                    : $"{receivingItem.OrderQuantity} {unitName}";
+            }
         });
         
         // 3. 入庫數量
@@ -373,20 +381,27 @@ else
         {
             Title = L["Column.ReceivedQuantity"],
             PropertyName = "ReceivedQuantity",
-            ColumnType = InteractiveColumnType.Number,
-            Width = "100px",
-            MinValue = 0,
-            IsDisabledFunc = item =>
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "110px",
+            CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
                 var isEmptyRow = receivingItem.SelectedProduct == null;
-                return !DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+                var isLocked = !DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _,
                     checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow;
-            },
-            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
-            {
-                await OnQuantityChange((ReceivingItem)args.Item1, args.Item2);
-            })
+                if (isLocked || IsReadOnly)
+                {
+                    var unitName = receivingItem.SelectedProduct?.Unit?.Name ?? "";
+                    var display = string.IsNullOrEmpty(unitName)
+                        ? receivingItem.ReceivedQuantity.ToString()
+                        : $"{receivingItem.ReceivedQuantity} {unitName}";
+                    return @<span class="d-block text-end">@display</span>;
+                }
+                return @<input type="number" class="form-control form-control-sm text-end"
+                               min="0"
+                               value="@receivingItem.ReceivedQuantity.ToString()"
+                               @onchange="@(async e => await OnQuantityChange(receivingItem, e.Value?.ToString()))" />;
+            }
         });
         
         // 4. 已退數量（唯讀，顯示累計退貨數量）

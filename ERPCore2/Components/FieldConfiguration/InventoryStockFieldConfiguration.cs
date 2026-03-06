@@ -118,22 +118,85 @@ namespace ERPCore2.FieldConfiguration
                             {
                                 if (data is InventoryStock stock)
                                 {
-                                    // 使用 FormatSmart：整數不顯示小數點，有小數才顯示
-                                    var value = NumberFormatHelper.FormatSmart(stock.TotalCurrentStock);
-                                    builder.AddContent(0, value);
+                                    var valueStr = NumberFormatHelper.FormatSmart(stock.TotalCurrentStock, useThousandsSeparator: true);
+                                    var unitName = stock.Product?.Unit?.Name ?? "";
+                                    builder.AddContent(0, string.IsNullOrEmpty(unitName) ? valueStr : $"{valueStr} {unitName}");
                                 }
                             })
                         }
                     },
                     {
-                        "ProductUnit",
+                        "ProductionUnitStock",
                         new FieldDefinition<InventoryStock>
                         {
-                            PropertyName = "Product.Unit.Name",
-                            DisplayName = Dn("Field.ProductUnit", "商品單位"),
+                            PropertyName = "Product.ProductionUnit.Name",
+                            DisplayName = Dn("Field.ProductionUnitStock", "製程庫存"),
                             FilterType = SearchFilterType.Text,
                             TableOrder = 5,
-                            ShowInFilter = false
+                            ShowInFilter = false,
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is InventoryStock stock)
+                                {
+                                    var product = stock.Product;
+                                    if (product == null || !product.ProductionUnitId.HasValue ||
+                                        product.ProductionUnitId.Value == product.UnitId ||
+                                        !product.ProductionUnitConversionRate.HasValue ||
+                                        product.ProductionUnitConversionRate.Value <= 0)
+                                    {
+                                        builder.AddContent(0, "-");
+                                        return;
+                                    }
+
+                                    var converted = stock.TotalCurrentStock * product.ProductionUnitConversionRate.Value;
+                                    var productionUnitName = product.ProductionUnit?.Name ?? "";
+                                    var valueStr = NumberFormatHelper.FormatSmart(converted, useThousandsSeparator: true);
+                                    builder.AddContent(0, string.IsNullOrEmpty(productionUnitName) ? valueStr : $"{valueStr} {productionUnitName}");
+                                }
+                            })
+                        }
+                    },
+                        
+                    {
+                        "ProductionUnitConversion",
+                        new FieldDefinition<InventoryStock>
+                        {
+                            PropertyName = "Product.ProductionUnit.Name",
+                            DisplayName = Dn("Field.ProductionUnitConversion", "製程換算"),
+                            FilterType = SearchFilterType.Text,
+                            TableOrder = 6,
+                            ShowInFilter = false,
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is InventoryStock stock)
+                                {
+                                    var product = stock.Product;
+                                    if (product == null || !product.ProductionUnitId.HasValue ||
+                                        product.ProductionUnitId.Value == product.UnitId)
+                                    {
+                                        builder.AddContent(0, "-");
+                                        return;
+                                    }
+
+                                    var purchaseUnitName = product.Unit?.Name ?? "";
+                                    var productionUnitName = product.ProductionUnit?.Name ?? "";
+                                    var rate = product.ProductionUnitConversionRate;
+
+                                    if (rate.HasValue && !string.IsNullOrEmpty(purchaseUnitName) && !string.IsNullOrEmpty(productionUnitName))
+                                    {
+                                        var rateStr = NumberFormatHelper.FormatSmart(rate.Value, useThousandsSeparator: false);
+                                        builder.AddContent(0, $"1{purchaseUnitName}={rateStr}{productionUnitName}");
+                                    }
+                                    else if (!string.IsNullOrEmpty(productionUnitName))
+                                    {
+                                        builder.AddContent(0, productionUnitName);
+                                    }
+                                    else
+                                    {
+                                        builder.AddContent(0, "-");
+                                    }
+                                }
+                            })
                         }
                     },
                     {
@@ -143,7 +206,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(InventoryStock.WeightedAverageCost),
                             DisplayName = Dn("Field.AverageCost", "平均成本"),
                             FilterType = SearchFilterType.Text,
-                            TableOrder = 6,
+                            TableOrder = 7,
                             ShowInFilter = false,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
