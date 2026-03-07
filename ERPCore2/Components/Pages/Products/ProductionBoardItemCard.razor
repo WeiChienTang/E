@@ -1,0 +1,102 @@
+@using ERPCore2.Models.Schedule
+@using ERPCore2.Models.Enums
+
+<div class="board-item-card @StatusCssClass @(IsOnBoard ? "on-board" : "in-sidebar")"
+     draggable="true"
+     @ondragstart="HandleDragStart"
+     @ondragend="HandleDragEnd"
+     title="@Item.ProductCode - @Item.ProductName">
+
+    @* 狀態色條 *@
+    <div class="card-status-bar"></div>
+
+    <div class="card-body-inner">
+        @* 商品資訊 *@
+        <div class="card-product">
+            <span class="product-code">@Item.ProductCode</span>
+            <span class="product-name">@Item.ProductName</span>
+        </div>
+
+        @* 客戶與訂單 *@
+        @if (!string.IsNullOrEmpty(Item.CustomerName) || !string.IsNullOrEmpty(Item.SalesOrderCode))
+        {
+            <div class="card-order">
+                @if (!string.IsNullOrEmpty(Item.CustomerName))
+                {
+                    <span class="customer-name">@Item.CustomerName</span>
+                }
+                @if (!string.IsNullOrEmpty(Item.SalesOrderCode))
+                {
+                    <span class="order-code">@Item.SalesOrderCode</span>
+                }
+            </div>
+        }
+
+        @* 數量與交期 *@
+        <div class="card-footer-row">
+            <div class="card-qty">
+                @if (Item.CompletedQuantity > 0)
+                {
+                    <span class="qty-done">@Item.CompletedQuantity</span>
+                    <span class="qty-sep">/</span>
+                }
+                <span class="qty-total">@Item.ScheduledQuantity</span>
+            </div>
+
+            @if (Item.ExpectedDeliveryDate.HasValue)
+            {
+                <div class="card-due @DeliveryUrgencyCss">
+                    @Item.ExpectedDeliveryDate.Value.ToString("MM/dd")
+                </div>
+            }
+        </div>
+
+        @* 狀態 Badge *@
+        <div class="card-status-badge @StatusCssClass">@StatusText</div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public BoardScheduleItemDto Item { get; set; } = default!;
+    [Parameter] public bool IsOnBoard { get; set; } = true;
+    [Parameter] public EventCallback<BoardScheduleItemDto> OnDragStart { get; set; }
+    [Parameter] public EventCallback OnDragEnd { get; set; }
+
+    private string StatusCssClass => Item.ProductionItemStatus switch
+    {
+        ProductionItemStatus.Pending     => "status-pending",
+        ProductionItemStatus.InProgress  => "status-inprogress",
+        ProductionItemStatus.Completed   => "status-completed",
+        ProductionItemStatus.Discontinued => "status-discontinued",
+        _ => "status-pending"
+    };
+
+    private string StatusText => Item.ProductionItemStatus switch
+    {
+        ProductionItemStatus.Pending     => "待生產",
+        ProductionItemStatus.InProgress  => "生產中",
+        ProductionItemStatus.Completed   => "已完成",
+        ProductionItemStatus.Discontinued => "已停產",
+        _ => "待生產"
+    };
+
+    private string DeliveryUrgencyCss
+    {
+        get
+        {
+            if (!Item.ExpectedDeliveryDate.HasValue) return "";
+            var daysLeft = (Item.ExpectedDeliveryDate.Value.Date - DateTime.Today).TotalDays;
+            return daysLeft < 0 ? "due-overdue" : daysLeft <= 3 ? "due-urgent" : "";
+        }
+    }
+
+    private async Task HandleDragStart(DragEventArgs e)
+    {
+        await OnDragStart.InvokeAsync(Item);
+    }
+
+    private async Task HandleDragEnd(DragEventArgs e)
+    {
+        await OnDragEnd.InvokeAsync();
+    }
+}

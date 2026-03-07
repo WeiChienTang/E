@@ -276,9 +276,9 @@
                 currentScheduleItems[i].SortOrder = i;
             }
             
-            // ===== 3. 更新已存在項目的 Priority（排序順序）與 IsClosed（結案狀態）=====
+            // ===== 3. 更新已存在項目的 Priority（排序順序）、IsClosed（結案狀態）、ScheduledQuantity（排程數量）=====
             var existingItems = currentScheduleItems.Where(x => !x.IsNew && x.Id.HasValue).ToList();
-            
+
             foreach (var dto in existingItems)
             {
                 try
@@ -287,21 +287,40 @@
                     if (existingItem != null)
                     {
                         var needUpdate = false;
-                        
+
                         // 檢查是否需要更新排序順序
                         if (existingItem.Priority != dto.SortOrder)
                         {
                             existingItem.Priority = dto.SortOrder;
                             needUpdate = true;
                         }
-                        
+
                         // 檢查是否需要更新結案狀態
                         if (existingItem.IsClosed != dto.IsClosed)
                         {
                             existingItem.IsClosed = dto.IsClosed;
                             needUpdate = true;
                         }
-                        
+
+                        // 檢查是否需要更新排程數量
+                        if (existingItem.ScheduledQuantity != dto.ScheduleQuantity)
+                        {
+                            var delta = dto.ScheduleQuantity - existingItem.ScheduledQuantity;
+                            existingItem.ScheduledQuantity = dto.ScheduleQuantity;
+                            needUpdate = true;
+
+                            // 回寫 SalesOrderDetail.ScheduledQuantity（依差值調整）
+                            if (dto.SalesOrderDetailId > 0)
+                            {
+                                var salesOrderDetail = await SalesOrderDetailService.GetByIdAsync(dto.SalesOrderDetailId);
+                                if (salesOrderDetail != null)
+                                {
+                                    salesOrderDetail.ScheduledQuantity = Math.Max(0, salesOrderDetail.ScheduledQuantity + delta);
+                                    await SalesOrderDetailService.UpdateAsync(salesOrderDetail);
+                                }
+                            }
+                        }
+
                         if (needUpdate)
                         {
                             await ProductionScheduleItemService.UpdateAsync(existingItem);
@@ -310,7 +329,7 @@
                 }
                 catch
                 {
-                    // 排序/結案更新失敗不中斷流程
+                    // 排序/結案/數量更新失敗不中斷流程
                 }
             }
             
@@ -790,16 +809,16 @@
     /// </summary>
     private RenderFragment CreateScheduleItemsContent() => __builder =>
     {
-        <div class="row mt-3">
-            @* 左側：待排程明細表格（以商品為核心） *@
-            <div class="col-md-6">
+        <div class="mt-3">
+            @* 上方：待排程明細表格（點擊或拖曳加入排程） *@
+            <div class="mb-3">
                 <ProductionScheduleOrderTable Details="@pendingDetails"
                                               OnDetailSelected="@HandleDetailSelected"
                                               OnRefreshRequested="@HandleRefreshPendingDetails" />
             </div>
-            
-            @* 右側：排程項目表格（已儲存+新增的項目都在這裡顯示） *@
-            <div class="col-md-6">
+
+            @* 下方：排程項目表格（已儲存+新增的項目都在這裡顯示） *@
+            <div>
                 <ProductionScheduleItemTable Items="@currentScheduleItems"
                                              IsReadOnly="@IsReadOnly"
                                              HasSavedSchedule="@ProductionScheduleId.HasValue"

@@ -179,6 +179,9 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler
 // 註冊導航權限服務
 builder.Services.AddScoped<INavigationPermissionService, NavigationPermissionService>();
 
+// 註冊使用者偏好 Circuit-scoped 快取（由 MainLayout 寫入，各元件讀取）
+builder.Services.AddScoped<IUserPreferenceContext, UserPreferenceContext>();
+
 // Add services to the container.
 builder.Services.AddRazorComponents(options => 
     {

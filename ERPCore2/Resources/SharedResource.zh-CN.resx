@@ -287,6 +287,12 @@
   <data name="Preference.ShowDisabledModules" xml:space="preserve">
     <value>显示已停用模块</value>
   </data>
+  <data name="Preference.PageSize" xml:space="preserve">
+    <value>每页显示条数</value>
+  </data>
+  <data name="Preference.PageSizeUnit" xml:space="preserve">
+    <value>条</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>账号由管理员设置，无法自行修改</value>

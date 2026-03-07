@@ -67,6 +67,8 @@
     private UILanguage _originalLanguage = UILanguage.ZhTW;   // 記錄載入時的語言，用於判斷是否需要 reload
     private ContentZoom _originalZoom = ContentZoom.Medium;    // 記錄載入時的縮放，用於判斷是否需要套用
     private AppTheme _originalTheme = AppTheme.Light;         // 記錄載入時的主題，用於判斷是否需要套用
+    private bool _originalShowDisabledModules = false;         // 記錄載入時的導覽列顯示設定，用於判斷是否需要 reload
+    private int _originalDefaultPageSize = 20;                 // 記錄載入時的每頁筆數，用於判斷是否需要 reload
 
     // 個人資料
     private Employee? currentEmployee = null;
@@ -201,6 +203,8 @@
                 _originalLanguage = employeePreference.Language;
                 _originalZoom = employeePreference.Zoom;
                 _originalTheme = employeePreference.Theme;
+                _originalShowDisabledModules = employeePreference.ShowDisabledModules;
+                _originalDefaultPageSize = employeePreference.DefaultPageSize;
 
                 // 載入員工個人資料
                 currentEmployee = await EmployeeService.GetByIdAsync(currentEmployeeId.Value);
@@ -309,12 +313,30 @@
                 info    = employeePreference.ToastInfoDurationMs
             });
 
-            // 語言若與目前 UI 文化不同，寫入 cookie 並重新載入頁面以套用新語言
+            // 判斷是否需要重新載入頁面
+            // 以下三類設定無法透過 JS 或 Blazor 即時套用，必須 forceLoad 才能生效：
+            //
+            // 1. 語言：需寫入 culture cookie，由 ASP.NET Core RequestLocalization middleware 在下次
+            //    請求時重新套用，所有 IStringLocalizer 資源字串都必須重新解析，無法在現有 circuit 中更新。
+            //
+            // 2. 導覽列顯示（ShowDisabledModules）：NavMenu 在 OnInitializedAsync 讀取一次後
+            //    靜止不動，沒有訂閱任何變更通知。與主題（直接改 DOM attribute）不同，
+            //    導覽列結構需要 Blazor 元件重新初始化才能反映新設定。
+            //
+            // 3. 每頁顯示筆數（DefaultPageSize）：每個 GenericIndexPageComponent 在初始化時
+            //    讀取 UserPreferenceContext 並存入本地 pageSize 變數，之後不再讀取。
+            //    由於影響範圍廣（所有列表頁），實作 event 訂閱機制的成本遠大於效益，
+            //    統一以 forceLoad 處理，與語言切換行為一致。
             var newCultureCode = ERPCore2.Helpers.CultureHelper.ToCultureCode(employeePreference.Language);
             var currentCulture = System.Globalization.CultureInfo.CurrentUICulture.Name;
-            if (newCultureCode != currentCulture)
+            bool needsReload = newCultureCode != currentCulture
+                || employeePreference.ShowDisabledModules != _originalShowDisabledModules
+                || employeePreference.DefaultPageSize != _originalDefaultPageSize;
+
+            if (needsReload)
             {
-                await JSRuntime.InvokeVoidAsync("setCultureCookie", newCultureCode);
+                if (newCultureCode != currentCulture)
+                    await JSRuntime.InvokeVoidAsync("setCultureCookie", newCultureCode);
                 NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
                 return; // forceLoad 後頁面會重整，不需要繼續執行
             }
@@ -346,6 +368,8 @@
         _originalLanguage = UILanguage.ZhTW;
         _originalZoom = ContentZoom.Medium;
         _originalTheme = AppTheme.Light;
+        _originalShowDisabledModules = false;
+        _originalDefaultPageSize = 20;
         newPassword = string.Empty;
         confirmPassword = string.Empty;
         _isSuperAdmin = false;

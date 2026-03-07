@@ -274,10 +274,10 @@
                    CloseOnBackdropClick="true"
                    ShowCloseButton="false"
                    OnClose="HandleUnsavedChangesCancel">
-    <HeaderButtons>
-        <GenericButtonComponent Text="@L["Modal.ConfirmLeave"]"    Variant="ButtonVariant.Red"      OnClick="HandleUnsavedChangesLeave"       Title="@L["Modal.ConfirmLeave"]" />
+    <HeaderButtons>        
         <GenericButtonComponent Text="@L["Modal.SaveAndClose"]"    Variant="ButtonVariant.DarkBlue" OnClick="HandleUnsavedChangesSaveAndClose" Title="@L["Modal.SaveAndClose"]" />
         <GenericButtonComponent Text="@L["Modal.ContinueEditing"]" Variant="ButtonVariant.Green"    OnClick="HandleUnsavedChangesCancel"      Title="@L["Modal.ContinueEditing"]" />
+        <GenericButtonComponent Text="@L["Modal.ConfirmLeave"]"    Variant="ButtonVariant.Red"      OnClick="HandleUnsavedChangesLeave"       Title="@L["Modal.ConfirmLeave"]" />
     </HeaderButtons>
     <BodyContent>
         <div class="text-center py-4">

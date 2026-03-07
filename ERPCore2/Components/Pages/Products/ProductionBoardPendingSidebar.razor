@@ -1,0 +1,118 @@
+@using ERPCore2.Models.Schedule
+@using ERPCore2.Models.Enums
+
+<div class="pending-sidebar">
+    @* 標題列 *@
+    <div class="sidebar-header">
+        <span class="sidebar-title">待排程</span>
+        @if (Items.Count > 0)
+        {
+            <span class="sidebar-count">@Items.Count</span>
+        }
+    </div>
+
+    @* 搜尋列 *@
+    <div class="sidebar-search">
+        <input type="text"
+               class="form-control form-control-sm"
+               placeholder="搜尋商品/客戶..."
+               @bind="searchText"
+               @bind:event="oninput" />
+    </div>
+
+    @* 項目列表 *@
+    <div class="sidebar-items">
+        @if (IsLoading)
+        {
+            <div class="sidebar-loading">載入中...</div>
+        }
+        else if (!FilteredItems.Any())
+        {
+            <div class="sidebar-empty">
+                @if (string.IsNullOrEmpty(searchText))
+                {
+                    <span>所有項目已排程</span>
+                }
+                else
+                {
+                    <span>查無符合項目</span>
+                }
+            </div>
+        }
+        else
+        {
+            @foreach (var item in FilteredItems)
+            {
+                <div class="sidebar-item-wrapper @(IsDraggingItemId == item.Id ? "dragging" : "")"
+                     draggable="true"
+                     @ondragstart="() => HandleDragStart(item)"
+                     @ondragend="HandleDragEnd"
+                     title="@item.ProductCode - @item.ProductName">
+
+                    <div class="sidebar-card">
+                        <div class="scard-product">
+                            <span class="scard-code">@item.ProductCode</span>
+                            <span class="scard-name">@item.ProductName</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(item.CustomerName))
+                        {
+                            <div class="scard-customer">@item.CustomerName</div>
+                        }
+                        <div class="scard-footer">
+                            <span class="scard-qty">數量：@item.ScheduledQuantity</span>
+                            @if (item.ExpectedDeliveryDate.HasValue)
+                            {
+                                <span class="scard-due @GetDeliveryUrgencyCss(item.ExpectedDeliveryDate)">
+                                    @item.ExpectedDeliveryDate.Value.ToString("MM/dd")
+                                </span>
+                            }
+                        </div>
+                        @if (!string.IsNullOrEmpty(item.SalesOrderCode))
+                        {
+                            <div class="scard-order">@item.SalesOrderCode</div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<BoardPendingItemDto> Items { get; set; } = new();
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public EventCallback<BoardPendingItemDto> OnDragStart { get; set; }
+    [Parameter] public EventCallback OnDragEnd { get; set; }
+
+    private string searchText = string.Empty;
+    private int? IsDraggingItemId;
+
+    private IEnumerable<BoardPendingItemDto> FilteredItems =>
+        string.IsNullOrWhiteSpace(searchText)
+            ? Items.OrderBy(i => i.ExpectedDeliveryDate).ThenBy(i => i.Priority)
+            : Items.Where(i =>
+                i.ProductCode.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                i.ProductName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                (i.CustomerName?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (i.SalesOrderCode?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false))
+              .OrderBy(i => i.ExpectedDeliveryDate).ThenBy(i => i.Priority);
+
+    private async Task HandleDragStart(BoardPendingItemDto item)
+    {
+        IsDraggingItemId = item.Id;
+        await OnDragStart.InvokeAsync(item);
+    }
+
+    private async Task HandleDragEnd()
+    {
+        IsDraggingItemId = null;
+        await OnDragEnd.InvokeAsync();
+    }
+
+    private static string GetDeliveryUrgencyCss(DateTime? date)
+    {
+        if (!date.HasValue) return "";
+        var daysLeft = (date.Value.Date - DateTime.Today).TotalDays;
+        return daysLeft < 0 ? "due-overdue" : daysLeft <= 3 ? "due-urgent" : "";
+    }
+}

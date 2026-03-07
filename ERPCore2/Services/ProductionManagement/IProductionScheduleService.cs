@@ -32,5 +32,11 @@ namespace ERPCore2.Services
         /// 取得排程詳細資訊（含明細）
         /// </summary>
         Task<ProductionSchedule?> GetWithDetailsAsync(int id);
+
+        /// <summary>
+        /// 取得或建立指定日期的每日批次排程（Code = PS-YYYYMMDD）
+        /// 看板拖曳時呼叫，自動建立當日批次並回傳
+        /// </summary>
+        Task<ServiceResult<ProductionSchedule>> GetOrCreateDailyBatchAsync(DateTime date, int? createdByEmployeeId = null);
     }
 }

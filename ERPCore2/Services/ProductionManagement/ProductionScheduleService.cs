@@ -281,6 +281,48 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<ServiceResult<ProductionSchedule>> GetOrCreateDailyBatchAsync(DateTime date, int? createdByEmployeeId = null)
+        {
+            try
+            {
+                var dateOnly = date.Date;
+                var code = $"PS-{dateOnly:yyyyMMdd}";
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 嘗試找現有的當日批次
+                var existing = await context.ProductionSchedules
+                    .FirstOrDefaultAsync(ps => ps.Code == code);
+
+                if (existing != null)
+                    return ServiceResult<ProductionSchedule>.Success(existing);
+
+                // 建立新的當日批次
+                var newSchedule = new ProductionSchedule
+                {
+                    Code = code,
+                    ScheduleDate = dateOnly,
+                    ScheduleStatus = ScheduleStatus.Draft,
+                    CreatedByEmployeeId = createdByEmployeeId
+                };
+
+                context.ProductionSchedules.Add(newSchedule);
+                await context.SaveChangesAsync();
+
+                return ServiceResult<ProductionSchedule>.Success(newSchedule);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetOrCreateDailyBatchAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetOrCreateDailyBatchAsync),
+                    ServiceType = GetType().Name,
+                    Date = date
+                });
+                return ServiceResult<ProductionSchedule>.Failure("建立每日批次排程時發生錯誤");
+            }
+        }
+
         // 覆寫刪除前檢查
         protected override async Task<ServiceResult> CanDeleteAsync(ProductionSchedule entity)
         {

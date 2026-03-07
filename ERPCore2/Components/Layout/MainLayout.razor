@@ -17,6 +17,7 @@
 @inject INavigationSearchService NavigationSearchService
 @inject IReportSearchService ReportSearchService
 @inject IEmployeePreferenceService EmployeePreferenceService
+@inject IUserPreferenceContext UserPreferenceContext
 @inject ERPCore2.Services.PersonalTools.IPersonalNotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
@@ -322,6 +323,7 @@
                     _currentPreference = preference;
                     await JSRuntime.InvokeVoidAsync("setContentZoom", (int)preference.Zoom);
                     await JSRuntime.InvokeVoidAsync("setAppTheme", (int)preference.Theme);
+                    UserPreferenceContext.DefaultPageSize = preference.DefaultPageSize;
 
                     // 套用使用者自訂 Toast 訊息顯示時長
                     await JSRuntime.InvokeVoidAsync("setToastDelays", new

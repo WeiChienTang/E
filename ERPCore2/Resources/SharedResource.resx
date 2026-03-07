@@ -308,6 +308,12 @@
   <data name="Preference.ShowDisabledModules" xml:space="preserve">
     <value>顯示停用模組</value>
   </data>
+  <data name="Preference.PageSize" xml:space="preserve">
+    <value>每頁顯示筆數</value>
+  </data>
+  <data name="Preference.PageSizeUnit" xml:space="preserve">
+    <value>筆</value>
+  </data>
   <!-- ===== 員工帳號 ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>帳號由管理員設定，無法自行修改</value>

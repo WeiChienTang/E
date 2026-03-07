@@ -177,8 +177,8 @@
                                     var isDisabled = IsReadOnly || column.IsDisabled;
                                     var validationClass = GetValidationCssClass(item, column.PropertyName);
                                     
-                                    <input type="text" 
-                                           class="form-control @validationClass" 
+                                    <input type="text"
+                                           class="form-control form-control-sm @validationClass"
                                            value="@stringValue"
                                            placeholder="@column.Placeholder"
                                            title="@column.Tooltip"
@@ -225,9 +225,9 @@
                                     @if (column.UseThousandsSeparator)
                                     {
                                         // 使用千分位：用 text 輸入框 + 格式化
-                                        <input type="text" 
+                                        <input type="text"
                                                id="@inputId"
-                                               class="form-control text-end @validationClass" 
+                                               class="form-control form-control-sm text-end @validationClass"
                                                value="@stringValue"
                                                placeholder="@column.Placeholder"
                                                title="@tooltip"
@@ -241,8 +241,8 @@
                                     else
                                     {
                                         // 不使用千分位：用原生 number 輸入框
-                                        <input type="number" 
-                                               class="form-control @validationClass" 
+                                        <input type="number"
+                                               class="form-control form-control-sm @validationClass"
                                                value="@stringValue"
                                                placeholder="@column.Placeholder"
                                                title="@tooltip"
@@ -263,7 +263,7 @@
                                     var isDisabled = IsReadOnly || column.IsDisabled || (column.IsDisabledFunc?.Invoke(item!) ?? false);
                                     var validationClass = GetValidationCssClass(item, column.PropertyName);
                                     
-                                    <select class="form-select @validationClass"
+                                    <select class="form-select form-select-sm @validationClass"
                                             value="@selectedValue"
                                             title="@column.Title"
                                             disabled="@isDisabled"
@@ -298,8 +298,8 @@
                                     var tooltip = column.TooltipFunc?.Invoke(item!) ?? column.Tooltip;
                                     
                                     <div class="position-relative">
-                                        <input type="text" 
-                                               class="form-control @validationClass" 
+                                        <input type="text"
+                                               class="form-control form-control-sm @validationClass"
                                                value="@searchValue"
                                                placeholder="@column.Placeholder"
                                                title="@tooltip"
@@ -748,6 +748,7 @@
         if (IsStriped) classes.Add("table-striped");
         if (IsHoverable) classes.Add("table-hover");
         if (IsBordered) classes.Add("table-bordered");
+        classes.Add("table-sm");
         classes.Add("table-with-column-borders");
 
         if (!string.IsNullOrEmpty(CssClass))
@@ -1870,6 +1871,9 @@
     
     /// <summary>
     /// 處理表格層級的 dragleave
+    /// 注意：瀏覽器在 cursor 於 tbody 子元素間移動時會短暫觸發 dragleave，
+    /// 不呼叫 StateHasChanged 以避免每次 row 切換都重新渲染造成閃爍。
+    /// 狀態清除由 HandleDragEnd / HandleTableDrop 負責。
     /// </summary>
     private void HandleTableDragLeave()
     {
@@ -1877,21 +1881,23 @@
 
         _isDragOver = false;
         _dragOverIndex = null;
-        StateHasChanged();
+        // 刻意不呼叫 StateHasChanged：避免 dragleave↔dragenter 快速循環造成閃爍
     }
-    
+
     /// <summary>
     /// 處理行層級的 dragover
     /// </summary>
     private void HandleRowDragOver(int index)
     {
         if (!EnableDrop || !DragDropState.CanDropTo(DragDropGroup)) return;
-        
+
         _dragOverIndex = index;
     }
-    
+
     /// <summary>
     /// 處理行層級的 dragenter
+    /// 只更新目標 index，不呼叫 StateHasChanged 避免每個 row 都觸發 re-render 造成閃爍。
+    /// drop-target-active 的顯示由 HandleTableDragOver 的 StateHasChanged 負責。
     /// </summary>
     private void HandleRowDragEnter(int index)
     {
@@ -1899,7 +1905,7 @@
         if (_dragOverIndex == index) return;
 
         _dragOverIndex = index;
-        StateHasChanged();
+        // 刻意不呼叫 StateHasChanged：drop 時才需要精確的 _dragOverIndex，視覺 row 指示非必要
     }
     
     /// <summary>

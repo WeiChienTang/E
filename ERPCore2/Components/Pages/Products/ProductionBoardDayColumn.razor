@@ -1,0 +1,63 @@
+@using ERPCore2.Models.Schedule
+@using ERPCore2.Models.Enums
+
+<div class="board-day-column @(IsToday ? "is-today" : "") @(IsDragOver ? "drag-over" : "")"
+     @ondragover:preventDefault="true"
+     @ondragover="HandleDragOver"
+     @ondragleave="HandleDragLeave"
+     @ondrop="HandleDrop">
+
+    @* 日期標題 *@
+    <div class="day-header">
+        <span class="day-name">@Date.ToString("ddd")</span>
+        <span class="day-number @(IsToday ? "today-badge" : "")">@Date.Day</span>
+        @if (Items.Count > 0)
+        {
+            <span class="item-count">@Items.Count</span>
+        }
+    </div>
+
+    @* 卡片列表 *@
+    <div class="day-items">
+        @foreach (var item in Items.OrderBy(i => i.Priority).ThenBy(i => i.ExpectedDeliveryDate))
+        {
+            <ProductionBoardItemCard
+                Item="@item"
+                IsOnBoard="true"
+                OnDragStart="@(dto => OnItemDragStart.InvokeAsync(dto))"
+                OnDragEnd="@OnItemDragEnd" />
+        }
+
+        @if (!Items.Any())
+        {
+            <div class="day-empty-hint">拖曳至此</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public DateTime Date { get; set; }
+    [Parameter] public List<BoardScheduleItemDto> Items { get; set; } = new();
+    [Parameter] public bool IsToday { get; set; }
+    [Parameter] public EventCallback<BoardScheduleItemDto> OnItemDragStart { get; set; }
+    [Parameter] public EventCallback OnItemDragEnd { get; set; }
+    [Parameter] public EventCallback<DateTime> OnDrop { get; set; }
+
+    private bool IsDragOver { get; set; }
+
+    private void HandleDragOver(DragEventArgs e)
+    {
+        IsDragOver = true;
+    }
+
+    private void HandleDragLeave(DragEventArgs e)
+    {
+        IsDragOver = false;
+    }
+
+    private async Task HandleDrop(DragEventArgs e)
+    {
+        IsDragOver = false;
+        await OnDrop.InvokeAsync(Date);
+    }
+}

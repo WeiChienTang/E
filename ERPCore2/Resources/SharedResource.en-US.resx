@@ -287,6 +287,12 @@
   <data name="Preference.ShowDisabledModules" xml:space="preserve">
     <value>Show Disabled Modules</value>
   </data>
+  <data name="Preference.PageSize" xml:space="preserve">
+    <value>Rows Per Page</value>
+  </data>
+  <data name="Preference.PageSizeUnit" xml:space="preserve">
+    <value>rows</value>
+  </data>
   <!-- ===== Employee Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>Account is set by administrator and cannot be changed</value>

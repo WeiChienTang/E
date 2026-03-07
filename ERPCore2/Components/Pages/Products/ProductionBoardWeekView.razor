@@ -1,0 +1,249 @@
+@using ERPCore2.Models.Schedule
+@using ERPCore2.Models.Enums
+@using ERPCore2.Data.Entities
+@inject IProductionScheduleItemService ScheduleItemService
+@inject IProductionScheduleService ScheduleService
+@inject INotificationService NotificationService
+@inject INavigationPermissionService NavigationPermissionService
+
+<div class="board-week-view">
+
+    @* 工具列：週導航 *@
+    <div class="board-toolbar">
+        <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousWeek" title="上一週">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+
+        <span class="week-label">
+            @WeekStart.ToString("yyyy/MM/dd") – @WeekEnd.ToString("MM/dd")
+        </span>
+
+        <button class="btn btn-sm btn-outline-secondary" @onclick="NextWeek" title="下一週">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+
+        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="GoToToday">今天</button>
+
+        @if (IsLoading)
+        {
+            <span class="ms-3 text-secondary" style="font-size:0.8rem;">
+                <span class="spinner-border spinner-border-sm me-1"></span>載入中...
+            </span>
+        }
+    </div>
+
+    @* 主體：sidebar + 週視圖 *@
+    <div class="board-body">
+        @* 左側 Sidebar：未排程項目 *@
+        <ProductionBoardPendingSidebar
+            Items="@pendingItems"
+            IsLoading="@IsLoading"
+            OnDragStart="@HandlePendingDragStart"
+            OnDragEnd="@HandleDragEnd" />
+
+        @* 週視圖主體 *@
+        <div class="board-week-columns">
+            @foreach (var day in WeekDays)
+            {
+                <ProductionBoardDayColumn
+                    Date="@day"
+                    Items="@GetItemsForDay(day)"
+                    IsToday="@(day.Date == DateTime.Today)"
+                    OnItemDragStart="@HandleBoardItemDragStart"
+                    OnItemDragEnd="@HandleDragEnd"
+                    OnDrop="@(date => HandleDropOnDay(date))" />
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    // ── 週導航 ──
+    private DateTime WeekStart { get; set; } = GetMonday(DateTime.Today);
+    private DateTime WeekEnd   => WeekStart.AddDays(6);
+    private IEnumerable<DateTime> WeekDays => Enumerable.Range(0, 7).Select(d => WeekStart.AddDays(d));
+
+    // ── 資料 ──
+    private List<BoardScheduleItemDto> boardItems = new();
+    private List<BoardPendingItemDto>  pendingItems = new();
+    private bool IsLoading;
+
+    // ── 當前員工 ID（自動建立每日批次使用）──
+    private int? currentEmployeeId;
+
+    // ── 拖曳狀態 ──
+    private BoardScheduleItemDto? draggingBoardItem;
+    private BoardPendingItemDto?  draggingPendingItem;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var empId = await NavigationPermissionService.GetCurrentEmployeeIdAsync();
+        currentEmployeeId = empId > 0 ? empId : null;
+        await LoadDataAsync();
+    }
+
+    // ── 資料載入 ──
+
+    private async Task LoadDataAsync()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        try
+        {
+            // 平行載入：看板上的已排程項目 + 側欄待排程項目
+            var boardTask   = ScheduleItemService.GetByDateRangeAsync(WeekStart, WeekEnd);
+            var pendingTask = ScheduleItemService.GetUnscheduledAsync();
+            await Task.WhenAll(boardTask, pendingTask);
+
+            boardItems   = MapToBoardDtos(boardTask.Result);
+            pendingItems = MapToPendingDtos(pendingTask.Result);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync("載入看板資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private static List<BoardScheduleItemDto> MapToBoardDtos(List<ProductionScheduleItem> items)
+    {
+        return items.Select(i => new BoardScheduleItemDto
+        {
+            Id                    = i.Id,
+            ProductionScheduleId  = i.ProductionScheduleId,
+            ProductionScheduleCode = i.ProductionSchedule?.Code ?? string.Empty,
+            ProductId             = i.ProductId,
+            ProductCode           = i.Product?.Code ?? string.Empty,
+            ProductName           = i.Product?.Name ?? string.Empty,
+            ScheduledQuantity     = i.ScheduledQuantity,
+            CompletedQuantity     = i.CompletedQuantity,
+            ProductionItemStatus  = i.ProductionItemStatus,
+            Priority              = i.Priority,
+            PlannedStartDate      = i.PlannedStartDate,
+            PlannedEndDate        = i.PlannedEndDate,
+            SalesOrderDetailId    = i.SalesOrderDetailId,
+            SalesOrderCode        = i.SalesOrderDetail?.SalesOrder?.Code,
+            CustomerName          = i.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName,
+            ExpectedDeliveryDate  = i.SalesOrderDetail?.SalesOrder?.ExpectedDeliveryDate,
+            IsClosed              = i.IsClosed
+        }).ToList();
+    }
+
+    private static List<BoardPendingItemDto> MapToPendingDtos(List<ProductionScheduleItem> items)
+    {
+        return items.Select(i => new BoardPendingItemDto
+        {
+            Id                    = i.Id,
+            ProductionScheduleId  = i.ProductionScheduleId,
+            ProductionScheduleCode = i.ProductionSchedule?.Code ?? string.Empty,
+            ProductId             = i.ProductId,
+            ProductCode           = i.Product?.Code ?? string.Empty,
+            ProductName           = i.Product?.Name ?? string.Empty,
+            ScheduledQuantity     = i.ScheduledQuantity,
+            CompletedQuantity     = i.CompletedQuantity,
+            ProductionItemStatus  = i.ProductionItemStatus,
+            Priority              = i.Priority,
+            SalesOrderDetailId    = i.SalesOrderDetailId,
+            SalesOrderCode        = i.SalesOrderDetail?.SalesOrder?.Code,
+            CustomerName          = i.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName,
+            ExpectedDeliveryDate  = i.SalesOrderDetail?.SalesOrder?.ExpectedDeliveryDate,
+            IsClosed              = i.IsClosed
+        }).ToList();
+    }
+
+    // ── 週導航 ──
+
+    private async Task PreviousWeek()
+    {
+        WeekStart = WeekStart.AddDays(-7);
+        await LoadDataAsync();
+    }
+
+    private async Task NextWeek()
+    {
+        WeekStart = WeekStart.AddDays(7);
+        await LoadDataAsync();
+    }
+
+    private async Task GoToToday()
+    {
+        WeekStart = GetMonday(DateTime.Today);
+        await LoadDataAsync();
+    }
+
+    // ── 拖曳處理 ──
+
+    private void HandleBoardItemDragStart(BoardScheduleItemDto item)
+    {
+        draggingBoardItem  = item;
+        draggingPendingItem = null;
+    }
+
+    private void HandlePendingDragStart(BoardPendingItemDto item)
+    {
+        draggingPendingItem = item;
+        draggingBoardItem   = null;
+    }
+
+    private void HandleDragEnd()
+    {
+        draggingBoardItem  = null;
+        draggingPendingItem = null;
+    }
+
+    private async Task HandleDropOnDay(DateTime targetDate)
+    {
+        if (draggingBoardItem != null)
+        {
+            await MoveExistingItemAsync(draggingBoardItem.Id, targetDate);
+        }
+        else if (draggingPendingItem != null)
+        {
+            await AssignPendingItemAsync(draggingPendingItem, targetDate);
+        }
+
+        draggingBoardItem   = null;
+        draggingPendingItem = null;
+        await LoadDataAsync();
+    }
+
+    private async Task MoveExistingItemAsync(int itemId, DateTime targetDate)
+    {
+        var result = await ScheduleItemService.UpdatePlannedDateAsync(itemId, targetDate.Date);
+        if (!result.IsSuccess)
+            await NotificationService.ShowErrorAsync($"移動失敗：{result.ErrorMessage}");
+    }
+
+    private async Task AssignPendingItemAsync(BoardPendingItemDto pending, DateTime targetDate)
+    {
+        // 1. 取得或建立當日批次
+        var batchResult = await ScheduleService.GetOrCreateDailyBatchAsync(targetDate.Date, currentEmployeeId);
+        if (!batchResult.IsSuccess)
+        {
+            await NotificationService.ShowErrorAsync($"建立每日批次失敗：{batchResult.ErrorMessage}");
+            return;
+        }
+
+        // 2. 若該項目已屬於其他批次，直接更新 PlannedStartDate；
+        //    若需搬移批次，可在此擴充邏輯（目前僅更新日期）
+        var result = await ScheduleItemService.UpdatePlannedDateAsync(pending.Id, targetDate.Date);
+        if (!result.IsSuccess)
+            await NotificationService.ShowErrorAsync($"排程失敗：{result.ErrorMessage}");
+    }
+
+    // ── 輔助 ──
+
+    private List<BoardScheduleItemDto> GetItemsForDay(DateTime day)
+        => boardItems.Where(i => i.PlannedStartDate?.Date == day.Date).ToList();
+
+    private static DateTime GetMonday(DateTime date)
+    {
+        var diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
+        return date.AddDays(-diff).Date;
+    }
+}

@@ -1,0 +1,53 @@
+.view-mode-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 4px;
+}
+
+.tab-btn {
+    padding: 5px 16px;
+    font-size: 0.85rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+}
+
+.board-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 180px);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-secondary);
+}
+
+[data-bs-theme=dark] .tab-btn {
+    background: #21262d;
+    border-color: #30363d;
+    color: #8b949e;
+}
+
+[data-bs-theme=dark] .tab-btn:hover {
+    background: #161b22;
+    color: #e6edf3;
+}
+
+[data-bs-theme=dark] .board-container {
+    border-color: #30363d;
+    background: #161b22;
+}

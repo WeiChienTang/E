@@ -125,7 +125,11 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     [Parameter] public TableSize TableSize { get; set; } = TableSize.Normal;
     [Parameter] public bool EnablePagination { get; set; } = true;
     [Parameter] public bool ShowPageSizeSelector { get; set; } = true;
-    [Parameter] public int DefaultPageSize { get; set; } = 20;
+    /// <summary>
+    /// 每頁顯示筆數。預設 0 表示使用使用者偏好設定（由 IUserPreferenceContext 提供）；
+    /// 明確傳入正整數時以傳入值為準，忽略使用者偏好。
+    /// </summary>
+    [Parameter] public int DefaultPageSize { get; set; } = 0;
 
     // 刪除功能
     [Parameter] public string EntityName { get; set; } = "資料";
@@ -246,7 +250,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
 
     protected override async Task OnInitializedAsync()
     {
-        pageSize = DefaultPageSize;
+        pageSize = DefaultPageSize > 0 ? DefaultPageSize : UserPreferenceContext.DefaultPageSize;
 
         // 一次性取得 SuperAdmin 狀態，避免重複查詢 DB
         bool isSuperAdmin = (!string.IsNullOrEmpty(DebugPageName) || !string.IsNullOrWhiteSpace(RequiredModule))

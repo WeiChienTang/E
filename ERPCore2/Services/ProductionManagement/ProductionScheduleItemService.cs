@@ -525,6 +525,96 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<List<ProductionScheduleItem>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                var endOfDay = endDate.Date.AddDays(1).AddTicks(-1);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductionScheduleItems
+                    .Include(psi => psi.ProductionSchedule)
+                    .Include(psi => psi.Product)
+                    .Include(psi => psi.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
+                            .ThenInclude(so => so!.Customer)
+                    .Where(psi => psi.PlannedStartDate.HasValue
+                               && psi.PlannedStartDate >= startDate.Date
+                               && psi.PlannedStartDate <= endOfDay
+                               && !psi.IsClosed)
+                    .OrderBy(psi => psi.PlannedStartDate)
+                    .ThenBy(psi => psi.Priority)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByDateRangeAsync), GetType(), _logger, new { startDate, endDate });
+                return new List<ProductionScheduleItem>();
+            }
+        }
+
+        public async Task<List<ProductionScheduleItem>> GetUnscheduledAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductionScheduleItems
+                    .Include(psi => psi.ProductionSchedule)
+                    .Include(psi => psi.Product)
+                    .Include(psi => psi.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
+                            .ThenInclude(so => so!.Customer)
+                    .Where(psi => psi.PlannedStartDate == null && !psi.IsClosed
+                               && psi.ProductionItemStatus != ProductionItemStatus.Completed)
+                    .OrderBy(psi => psi.SalesOrderDetail!.SalesOrder!.ExpectedDeliveryDate)
+                    .ThenBy(psi => psi.Priority)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetUnscheduledAsync), GetType(), _logger, null);
+                return new List<ProductionScheduleItem>();
+            }
+        }
+
+        public async Task<ServiceResult> UpdatePlannedDateAsync(int itemId, DateTime? plannedStartDate)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var item = await context.ProductionScheduleItems.FirstOrDefaultAsync(psi => psi.Id == itemId);
+                if (item == null)
+                    return ServiceResult.Failure("排程項目不存在");
+
+                item.PlannedStartDate = plannedStartDate.HasValue ? plannedStartDate.Value.Date : null;
+                item.UpdatedAt = DateTime.Now;
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdatePlannedDateAsync), GetType(), _logger, new { itemId, plannedStartDate });
+                return ServiceResult.Failure("更新計畫日期時發生錯誤");
+            }
+        }
+
+        public async Task<Dictionary<int, decimal>> GetScheduledQuantityMapAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductionScheduleItems
+                    .Where(psi => psi.SalesOrderDetailId.HasValue && !psi.IsClosed)
+                    .GroupBy(psi => psi.SalesOrderDetailId!.Value)
+                    .Select(g => new { SalesOrderDetailId = g.Key, Total = g.Sum(x => x.ScheduledQuantity) })
+                    .ToDictionaryAsync(x => x.SalesOrderDetailId, x => x.Total);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetScheduledQuantityMapAsync), GetType(), _logger, null);
+                return new Dictionary<int, decimal>();
+            }
+        }
+
         // 覆寫刪除前檢查
         protected override async Task<ServiceResult> CanDeleteAsync(ProductionScheduleItem entity)
         {

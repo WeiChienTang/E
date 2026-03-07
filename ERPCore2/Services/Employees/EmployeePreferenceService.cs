@@ -74,6 +74,7 @@ namespace ERPCore2.Services
                     existing.ToastWarningDurationMs     = preference.ToastWarningDurationMs;
                     existing.ToastInfoDurationMs        = preference.ToastInfoDurationMs;
                     existing.ShowDisabledModules        = preference.ShowDisabledModules;
+                    existing.DefaultPageSize            = preference.DefaultPageSize;
                     existing.UpdatedAt = DateTime.Now;
                 }
 

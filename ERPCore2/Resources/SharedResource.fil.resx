@@ -287,6 +287,12 @@
   <data name="Preference.ShowDisabledModules" xml:space="preserve">
     <value>Ipakita ang Mga Disabled na Module</value>
   </data>
+  <data name="Preference.PageSize" xml:space="preserve">
+    <value>Mga Hilera sa Bawat Pahina</value>
+  </data>
+  <data name="Preference.PageSizeUnit" xml:space="preserve">
+    <value>hilera</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>Itinakda ng administrator ang account at hindi maaaring baguhin</value>

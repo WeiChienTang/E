@@ -106,6 +106,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "顯示停用模組")]
         public bool ShowDisabledModules { get; set; } = false;
 
+        /// <summary>每頁顯示筆數（10 / 20 / 50 / 100），預設 20</summary>
+        [Display(Name = "每頁顯示筆數")]
+        public int DefaultPageSize { get; set; } = 20;
+
         // 導航屬性
         public Employee? Employee { get; set; }
     }

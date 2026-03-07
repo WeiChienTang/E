@@ -8,25 +8,46 @@
 
 @rendermode InteractiveServer
 
-<GenericIndexPageComponent TEntity="ProductionSchedule" 
-                        TService="IProductionScheduleService"
-                        Service="@ProductionScheduleService"
-                        EntityBasePath="/production-schedules"                          
-                        PageTitle="@L["Page.ProductionScheduleTitle"]"
-                        PageSubtitle="@L["Page.ProductionScheduleSubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyProductionScheduleFilters"
-                        BreadcrumbItems="@breadcrumbItems"
-                        FilterDefinitions="@filterDefinitions"
-                        ColumnDefinitions="@columnDefinitions"
-                        EntityName="@L["Entity.ProductionSchedule"]"
-                        GetEntityDisplayName="@(schedule => schedule.Code)"
-                        RequiredPermission="@PermissionRegistry.ProductionSchedule.Read"
-                        RequiredModule="ProductionManagement"
-                        OnAddClick="@modalHandler.ShowAddModalAsync"
-                        OnRowClick="@modalHandler.ShowEditModalAsync"
-                        DebugPageName="ProductionScheduleIndex"
-                        @ref="indexComponent"/>
+@* 看板/清單切換 Tab *@
+<div class="view-mode-tabs mb-2">
+    <button class="tab-btn @(viewMode == ViewMode.List ? "active" : "")"
+            @onclick='() => viewMode = ViewMode.List'>
+        <i class="bi bi-list-ul me-1"></i>清單
+    </button>
+    <button class="tab-btn @(viewMode == ViewMode.Board ? "active" : "")"
+            @onclick='() => viewMode = ViewMode.Board'>
+        <i class="bi bi-kanban me-1"></i>看板
+    </button>
+</div>
+
+@if (viewMode == ViewMode.List)
+{
+    <GenericIndexPageComponent TEntity="ProductionSchedule"
+                            TService="IProductionScheduleService"
+                            Service="@ProductionScheduleService"
+                            EntityBasePath="/production-schedules"
+                            PageTitle="@L["Page.ProductionScheduleTitle"]"
+                            PageSubtitle="@L["Page.ProductionScheduleSubtitle"]"
+                            DataLoader="@LoadDataAsync"
+                            FilterApplier="@ApplyProductionScheduleFilters"
+                            BreadcrumbItems="@breadcrumbItems"
+                            FilterDefinitions="@filterDefinitions"
+                            ColumnDefinitions="@columnDefinitions"
+                            EntityName="@L["Entity.ProductionSchedule"]"
+                            GetEntityDisplayName="@(schedule => schedule.Code)"
+                            RequiredPermission="@PermissionRegistry.ProductionSchedule.Read"
+                            RequiredModule="ProductionManagement"
+                            OnAddClick="@modalHandler.ShowAddModalAsync"
+                            OnRowClick="@modalHandler.ShowEditModalAsync"
+                            DebugPageName="ProductionScheduleIndex"
+                            @ref="indexComponent"/>
+}
+else
+{
+    <div class="board-container">
+        <ProductionBoardWeekView />
+    </div>
+}
 
 @* 生產排程編輯 Modal *@
 <ProductionScheduleEditModalComponent IsVisible="@showEditModal"
@@ -36,19 +57,24 @@
                                      OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
+    private enum ViewMode { List, Board }
+
+    // 檢視模式
+    private ViewMode viewMode = ViewMode.List;
+
     // 組件參考
     private GenericIndexPageComponent<ProductionSchedule, IProductionScheduleService> indexComponent = default!;
-    
+
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingScheduleId = null;
-    
+
     // Modal 處理器
     private ModalHandler<ProductionSchedule, GenericIndexPageComponent<ProductionSchedule, IProductionScheduleService>> modalHandler = default!;
-    
+
     // 欄位配置
     private ProductionScheduleFieldConfiguration fieldConfiguration = default!;
-    
+
     // 配置相關
     private List<BreadcrumbItem> breadcrumbItems = new();
     private List<SearchFilterDefinition> filterDefinitions = new();

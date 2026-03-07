@@ -108,7 +108,8 @@
       "Bash(del \"C:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Migrations\\\\20260302031527_RemoveDocumentCategorySource.cs\" \"C:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Migrations\\\\20260302031527_RemoveDocumentCategorySource.Designer.cs\")",
       "Bash(while read file)",
       "Bash(do basename \"$file\")",
-      "Bash(/dev/null:*)"
+      "Bash(/dev/null:*)",
+      "Bash(sqlcmd -S \".\\\\SQLEXPRESS\" -d ERPCore2 -E -Q \"IF NOT EXISTS \\(SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID\\(''ProductionSchedules''\\) AND name = ''ScheduleStatus''\\) BEGIN ALTER TABLE ProductionSchedules ADD ScheduleStatus INT NOT NULL DEFAULT 1; PRINT ''Column added''; END ELSE BEGIN PRINT ''Column already exists''; END\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

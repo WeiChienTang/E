@@ -1,0 +1,147 @@
+.board-item-card {
+    position: relative;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    cursor: grab;
+    overflow: hidden;
+    transition: box-shadow 0.15s, transform 0.1s;
+    user-select: none;
+}
+
+.board-item-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+.board-item-card:active {
+    cursor: grabbing;
+}
+
+/* 狀態色條（左邊框） */
+.card-status-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+}
+
+.status-pending .card-status-bar    { background: #6c757d; }
+.status-inprogress .card-status-bar { background: #0d6efd; }
+.status-completed .card-status-bar  { background: #198754; }
+.status-discontinued .card-status-bar { background: #dc3545; }
+
+.card-body-inner {
+    padding: 6px 8px 6px 12px;
+}
+
+.card-product {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 3px;
+}
+
+.product-code {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.product-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.card-order {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.customer-name,
+.order-code {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 1px 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 110px;
+}
+
+.card-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-qty {
+    font-size: 0.75rem;
+    color: var(--text-primary);
+}
+
+.qty-done {
+    color: #198754;
+    font-weight: 600;
+}
+
+.qty-sep {
+    color: var(--text-secondary);
+    margin: 0 2px;
+}
+
+.qty-total {
+    font-weight: 600;
+}
+
+.card-due {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border-color);
+}
+
+.due-urgent  { color: #fd7e14; border-color: #fd7e14; }
+.due-overdue { color: #dc3545; border-color: #dc3545; background: rgba(220,53,69,0.08); }
+
+.card-status-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.status-pending .card-status-badge    { background: #6c757d22; color: #6c757d; }
+.status-inprogress .card-status-badge { background: #0d6efd22; color: #0d6efd; }
+.status-completed .card-status-badge  { background: #19875422; color: #198754; }
+.status-discontinued .card-status-badge { background: #dc354522; color: #dc3545; }
+
+/* 看板上的卡片比 sidebar 稍大 */
+.on-board.board-item-card { font-size: 0.85rem; }
+.in-sidebar.board-item-card { font-size: 0.8rem; }
+
+/* Dark mode */
+[data-bs-theme=dark] .board-item-card {
+    background: #1c2128;
+    border-color: #30363d;
+}
+
+[data-bs-theme=dark] .customer-name,
+[data-bs-theme=dark] .order-code {
+    background: #0d1117;
+    border-color: #30363d;
+}

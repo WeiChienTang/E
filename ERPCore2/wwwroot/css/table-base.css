@@ -515,7 +515,8 @@
 .interactive-table .form-select,
 .interactive-table tbody .form-control,
 .interactive-table tbody .form-select {
-    padding: 0.1rem 0.5rem !important;
+    padding: 0 0.5rem !important;
+    margin: -1px 0;             /* 吸收 1px border，使 input 高度與純文字行一致 */
     font-size: 1rem !important;
     border-radius: 0.25rem;
     border: 1px solid #d1d5db;

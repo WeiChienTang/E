@@ -287,6 +287,12 @@
   <data name="Preference.ShowDisabledModules" xml:space="preserve">
     <value>無効モジュールを表示</value>
   </data>
+  <data name="Preference.PageSize" xml:space="preserve">
+    <value>1ページあたりの行数</value>
+  </data>
+  <data name="Preference.PageSizeUnit" xml:space="preserve">
+    <value>行</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>アカウントは管理者が設定するため、変更できません</value>
