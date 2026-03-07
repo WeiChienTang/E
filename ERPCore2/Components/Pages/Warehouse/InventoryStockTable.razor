@@ -193,7 +193,7 @@
                 {
                     return @<input type="number" class="form-control form-control-sm text-end"
                                    min="0"
-                                   value="@stockItem.CurrentStock.ToString()"
+                                   value="@(stockItem.CurrentStock == 0 ? "" : stockItem.CurrentStock.ToString())"
                                    @onchange="@(async e => await OnCurrentStockInput(stockItem, e.Value?.ToString()))" />;
                 }
             }

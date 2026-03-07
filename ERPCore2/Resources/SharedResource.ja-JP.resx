@@ -1089,6 +1089,7 @@
   <data name="Field.TransactionCode" xml:space="preserve"><value>取引コード</value></data>
   <data name="Field.TransactionDate" xml:space="preserve"><value>取引日付</value></data>
   <data name="Field.TransactionType" xml:space="preserve"><value>取引タイプ</value></data>
+  <data name="Field.Warehouse" xml:space="preserve"><value>倉庫</value></data>
   <data name="Field.WarehouseCode" xml:space="preserve"><value>倉庫コード</value></data>
   <data name="Field.WarehouseName" xml:space="preserve"><value>倉庫名</value></data>
   <data name="Field.Zone" xml:space="preserve"><value>ゾーン</value></data>
@@ -1372,6 +1373,7 @@
   <data name="Field.BelongsToWarehouse" xml:space="preserve"><value>所属倉庫</value></data>
   <data name="Field.NetAmount" xml:space="preserve"><value>純額</value></data>
   <data name="Field.MeasurementUnit" xml:space="preserve"><value>計量単位</value></data>
+  <data name="Field.TotalItems" xml:space="preserve"><value>棚卸項目数</value></data>
   <data name="Field.CompletedItems" xml:space="preserve"><value>完了済み項目数</value></data>
   <data name="Field.DifferenceItems" xml:space="preserve"><value>差異項目数</value></data>
   <data name="Field.DifferenceAmount" xml:space="preserve"><value>在庫差損益</value></data>

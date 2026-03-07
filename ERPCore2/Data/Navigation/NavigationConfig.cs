@@ -385,19 +385,16 @@ public static class NavigationConfig
                         QuickActionId = "NewCompositionCategory",
                         QuickActionName = "新增物料清單類型"
                     },
-                    new NavigationItem
-                    {
-                        Name = "生產排程",
-                        NameKey = "Nav.ProductionSchedules",
-                        Description = "管理生產排程的詳細資料",
-                        Route = "/production-schedules",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "商品管理",
-                        RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
-                        SearchKeywords = new List<string> { "生產排程", "排程管理", "production schedule" },
-                        QuickActionId = "NewProductionSchedule",
-                        QuickActionName = "新增生產排程"
-                    },
+                    NavigationActionHelper.CreateActionItem(
+                        name: "生產排程",
+                        description: "管理生產排程的詳細資料",
+                        iconClass: "bi bi-kanban",
+                        actionId: "OpenProductionScheduleBoard",
+                        category: "商品管理",
+                        requiredPermission: PermissionRegistry.ProductionSchedule.Read,
+                        searchKeywords: new List<string> { "生產排程", "排程管理", "production schedule" },
+                        nameKey: "Nav.ProductionSchedules"
+                    ),
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {

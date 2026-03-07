@@ -516,17 +516,35 @@
 .interactive-table tbody .form-control,
 .interactive-table tbody .form-select {
     padding: 0 0.5rem !important;
-    margin: -1px 0;             /* 吸收 1px border，使 input 高度與純文字行一致 */
+    min-height: unset !important;   /* 覆寫 Bootstrap min-height (~38px)，防止撐高 row */
+    height: auto !important;
+    line-height: 1.4 !important;    /* 與 td 的 line-height 一致 */
+    margin: 0;
     font-size: 1rem !important;
     border-radius: 0.25rem;
-    border: 1px solid #d1d5db;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid transparent;          /* 平常透明，不顯示框 */
+    background-color: transparent !important; /* 融入 td 背景 */
+    box-shadow: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* 聚焦效果 — 藍色邊框 + 光暈 */
+/* Hover 時顯示淡底色，暗示可互動 */
+.interactive-table tbody tr:not(:hover) .form-control,
+.interactive-table tbody tr:not(:hover) .form-select {
+    border-color: transparent;
+}
+
+.interactive-table tbody tr:hover .form-control:not(:focus),
+.interactive-table tbody tr:hover .form-select:not(:focus) {
+    border-color: rgba(0, 0, 0, 0.15);
+    background-color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* 聚焦效果 — 藍色邊框 + 光暈，白色背景 */
 .interactive-table .form-control:focus,
 .interactive-table .form-select:focus {
     border-color: var(--primary-blue, #1E3A8A) !important;
+    background-color: #fff !important;
     box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.15) !important;
     outline: none;
 }
@@ -1042,10 +1060,18 @@ tr.dragging .drag-handle {
     color: var(--text-primary) !important;
 }
 
-/* 輸入控件聚焦 */
+/* 輸入控件 hover（深色模式 — 覆寫硬編碼的白色半透明背景） */
+[data-bs-theme=dark] .interactive-table tbody tr:hover .form-control:not(:focus),
+[data-bs-theme=dark] .interactive-table tbody tr:hover .form-select:not(:focus) {
+    border-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 輸入控件聚焦（深色模式 — 補全 background-color，避免繼承淺色模式的 #fff） */
 [data-bs-theme=dark] .interactive-table .form-control:focus,
 [data-bs-theme=dark] .interactive-table .form-select:focus {
     border-color: var(--primary-blue) !important;
+    background-color: var(--bg-tertiary) !important;
     box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2) !important;
 }
 

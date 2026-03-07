@@ -1089,6 +1089,7 @@
   <data name="Field.TransactionCode" xml:space="preserve"><value>异动单号</value></data>
   <data name="Field.TransactionDate" xml:space="preserve"><value>异动日期</value></data>
   <data name="Field.TransactionType" xml:space="preserve"><value>异动类型</value></data>
+  <data name="Field.Warehouse" xml:space="preserve"><value>仓库</value></data>
   <data name="Field.WarehouseCode" xml:space="preserve"><value>仓库代码</value></data>
   <data name="Field.WarehouseName" xml:space="preserve"><value>仓库名称</value></data>
   <data name="Field.Zone" xml:space="preserve"><value>区域</value></data>
@@ -1376,6 +1377,7 @@
   <data name="Field.BelongsToWarehouse" xml:space="preserve"><value>所属仓库</value></data>
   <data name="Field.NetAmount" xml:space="preserve"><value>净额</value></data>
   <data name="Field.MeasurementUnit" xml:space="preserve"><value>计量单位</value></data>
+  <data name="Field.TotalItems" xml:space="preserve"><value>盘点项目数</value></data>
   <data name="Field.CompletedItems" xml:space="preserve"><value>已盘点数</value></data>
   <data name="Field.DifferenceItems" xml:space="preserve"><value>差异项目数</value></data>
   <data name="Field.DifferenceAmount" xml:space="preserve"><value>盘盈盘亏</value></data>

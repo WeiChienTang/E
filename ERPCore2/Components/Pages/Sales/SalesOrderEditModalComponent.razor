@@ -124,16 +124,6 @@
                                      OnCancel="@(() => showSetoffDocumentModal = false)" />
 }
 
-@* 生產排程編輯 Modal *@
-@if (showProductionScheduleModal)
-{
-    <ProductionScheduleEditModalComponent @ref="productionScheduleEditModal"
-                                         IsVisible="@showProductionScheduleModal"
-                                         IsVisibleChanged="@HandleProductionScheduleModalVisibleChanged"
-                                         ProductionScheduleId="@selectedProductionScheduleId"
-                                         OnProductionScheduleSaved="@HandleScheduleCreated"
-                                         OnCancel="@HandleProductionScheduleModalClosed" />
-}
 
 @* 訂單庫存檢視 Modal *@
 @if (showInventoryCheckModal)
@@ -213,11 +203,6 @@
     private SalesDeliveryEditModalComponent? salesDeliveryEditModal;
     private bool showSalesDeliveryModal = false;
     private int? selectedSalesDeliveryId = null;
-    
-    // 生產排程編輯 Modal
-    private ProductionScheduleEditModalComponent? productionScheduleEditModal;
-    private bool showProductionScheduleModal = false;
-    private int? selectedProductionScheduleId = null;
     
     // 訂單庫存檢視 Modal
     private bool showInventoryCheckModal = false;
@@ -887,13 +872,6 @@
                 showSalesDeliveryModal = true;
                 StateHasChanged();
             }
-            else if (args.type == RelatedDocumentType.ProductionSchedule)
-            {
-                // 開啟生產排程
-                selectedProductionScheduleId = args.id;
-                showProductionScheduleModal = true;
-                StateHasChanged();
-            }
             else
             {
                 await NotificationService.ShowWarningAsync("不支援的單據類型", "提示");
@@ -1211,11 +1189,6 @@
                                   Variant="ButtonVariant.Green" 
                                   OnClick="HandleCreateDeliveryFromOrder" />
             
-            @* 批次排程管理按鈕 *@
-            <GenericButtonComponent Text="@L["Button.ScheduleManagement"]"
-                                  Variant="ButtonVariant.Yellow"
-                                  OnClick="HandleBatchTransferToSchedule" />
-
             @* 庫存檢視按鈕 - 有不足時顯示警告樣式 *@
             @if (isInventoryCheckLoading)
             {
@@ -1409,32 +1382,6 @@
     }
 
     /// <summary>
-    /// 排程管理 - 直接開啟生產排程編輯 Modal
-    /// </summary>
-    private async Task HandleBatchTransferToSchedule()
-    {
-        try
-        {
-            // 驗證訂單資料
-            if (!SalesOrderId.HasValue || editModalComponent?.Entity == null)
-            {
-                await NotificationService.ShowWarningAsync("無法排程管理：訂單資料不存在");
-                return;
-            }
-            
-            // 直接開啟生產排程編輯 Modal（新增模式）
-            selectedProductionScheduleId = null;
-            showProductionScheduleModal = true;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchTransferToSchedule), GetType(), 
-                additionalData: $"開啟生產排程 Modal 失敗 - OrderId: {SalesOrderId}");
-        }
-    }
-    
-    /// <summary>
     /// 檢查訂單是否有庫存不足的狀況
     /// 只檢查第一層主要明細，不包含子材料
     /// </summary>
@@ -1507,96 +1454,6 @@
         }
     }
     
-    /// <summary>
-    /// 處理生產排程 Modal 可見性變更事件
-    /// 當 Modal 關閉時刷新明細資料（處理刪除排程後的回寫）
-    /// </summary>
-    private async Task HandleProductionScheduleModalVisibleChanged(bool visible)
-    {
-        var wasVisible = showProductionScheduleModal;
-        showProductionScheduleModal = visible;
-        
-        // 如果是從顯示變成隱藏（Modal 關閉），刷新明細資料
-        if (wasVisible && !visible && SalesOrderId.HasValue)
-        {
-            try
-            {
-                // 重新載入訂單明細（刷新已排程數量）
-                await LoadSalesOrderDetails(SalesOrderId.Value);
-                
-                // 刷新 Table 元件
-                if (salesOrderDetailManager != null)
-                {
-                    await salesOrderDetailManager.RefreshDetailsAsync();
-                }
-                
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleProductionScheduleModalVisibleChanged), GetType(), 
-                    additionalData: $"刷新明細資料失敗 - OrderId: {SalesOrderId}");
-            }
-        }
-    }
-    
-    /// <summary>
-    /// 處理生產排程 Modal 關閉事件（取消或刪除後）
-    /// </summary>
-    private async Task HandleProductionScheduleModalClosed()
-    {
-        showProductionScheduleModal = false;
-        selectedProductionScheduleId = null;
-        
-        // 刷新明細資料（處理刪除排程後的回寫）
-        if (SalesOrderId.HasValue)
-        {
-            try
-            {
-                await LoadSalesOrderDetails(SalesOrderId.Value);
-                
-                if (salesOrderDetailManager != null)
-                {
-                    await salesOrderDetailManager.RefreshDetailsAsync();
-                }
-                
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleProductionScheduleModalClosed), GetType(), 
-                    additionalData: $"刷新明細資料失敗 - OrderId: {SalesOrderId}");
-            }
-        }
-    }
-    
-    /// <summary>
-    /// 處理排程儲存成功事件
-    /// </summary>
-    private async Task HandleScheduleCreated(ProductionSchedule schedule)
-    {
-        try
-        {
-            // 關閉 Modal
-            showProductionScheduleModal = false;
-            selectedProductionScheduleId = null;
-            
-            // 重新載入訂單明細（刷新已排程數量）
-            if (SalesOrderId.HasValue)
-            {
-                await LoadSalesOrderDetails(SalesOrderId.Value);
-            }
-            
-            await NotificationService.ShowSuccessAsync($"排程儲存成功：{schedule.Code}");
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleScheduleCreated), GetType(), 
-                additionalData: $"處理排程儲存事件失敗 - ScheduleId: {schedule?.Id}");
-        }
-    }
-
     /// <summary>
     /// 儲存邏輯 - 同時儲存主檔和明細
     /// </summary>

@@ -1,0 +1,42 @@
+@* 生產排程看板 Modal - 以 Desktop 全屏 Modal 呈現週看板 *@
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="生產排程看板"
+                    Icon="bi bi-kanban"
+                    Size="BaseModalComponent.ModalSize.Desktop"
+                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                    UseWhiteCloseButton="true"
+                    AllowFullscreen="true"
+                    BodyCssClass="p-0"
+                    OnClose="@HandleClose"
+                    DebugComponentName="ProductionBoardModalComponent">
+
+    <BodyContent>
+        @if (IsVisible)
+        {
+            <ProductionBoardWeekView @key="@boardKey" />
+        }
+    </BodyContent>
+
+</BaseModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private int boardKey = 0;
+    private bool _wasVisible = false;
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible && !_wasVisible)
+            boardKey++; // 每次開啟強制重新掛載子元件，確保資料刷新
+        _wasVisible = IsVisible;
+    }
+
+    private void HandleClose()
+    {
+        // 關閉時不需額外清理，重新開啟時 boardKey++ 會重建元件
+    }
+}

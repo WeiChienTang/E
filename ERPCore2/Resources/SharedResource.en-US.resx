@@ -1089,6 +1089,7 @@
   <data name="Field.TransactionCode" xml:space="preserve"><value>Transaction Code</value></data>
   <data name="Field.TransactionDate" xml:space="preserve"><value>Transaction Date</value></data>
   <data name="Field.TransactionType" xml:space="preserve"><value>Transaction Type</value></data>
+  <data name="Field.Warehouse" xml:space="preserve"><value>Warehouse</value></data>
   <data name="Field.WarehouseCode" xml:space="preserve"><value>Warehouse Code</value></data>
   <data name="Field.WarehouseName" xml:space="preserve"><value>Warehouse Name</value></data>
   <data name="Field.Zone" xml:space="preserve"><value>Zone</value></data>
@@ -1372,6 +1373,7 @@
   <data name="Field.BelongsToWarehouse" xml:space="preserve"><value>Warehouse</value></data>
   <data name="Field.NetAmount" xml:space="preserve"><value>Net Amount</value></data>
   <data name="Field.MeasurementUnit" xml:space="preserve"><value>Unit of Measure</value></data>
+  <data name="Field.TotalItems" xml:space="preserve"><value>Total Items</value></data>
   <data name="Field.CompletedItems" xml:space="preserve"><value>Completed Items</value></data>
   <data name="Field.DifferenceItems" xml:space="preserve"><value>Difference Items</value></data>
   <data name="Field.DifferenceAmount" xml:space="preserve"><value>Inventory Gain/Loss</value></data>

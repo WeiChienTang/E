@@ -32,8 +32,8 @@
             }
             else if (roles.Any())
             {
-                <div class="row align-items-end">
-                    <div class="col-md-8">
+                <div class="row align-items-center g-2">
+                    <div class="col-md-4">
                         <select id="roleSelect"
                                 class="form-select"
                                 @onchange="HandleRoleSelectionChanged"
@@ -48,17 +48,17 @@
                         </select>
                     </div>
 
-                    @* 操作按鈕組 *@
-                    @if (selectedRole != null)
-                    {
-                        <div class="col-md-4">
-                            <div class="d-flex gap-2 justify-content-end flex-wrap mt-3 mt-md-0">
-                                <div class="dropdown">
-                                    <GenericButtonComponent Text="@L["Button.Copy"]"
-                                                        Variant="ButtonVariant.Gray"
-                                                        Size="ButtonSize.Small"
-                                                        IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
-                                                        AdditionalAttributes="@GetCopyButtonAttributes()" />
+                    @* 操作按鈕組 — 始終顯示，未選擇權限組前禁用 *@
+                    <div class="col-md-8">
+                        <div class="d-flex gap-2 justify-content-end flex-wrap">
+                            <div class="dropdown">
+                                <GenericButtonComponent Text="@L["Button.Copy"]"
+                                                    Variant="ButtonVariant.Gray"
+                                                    Size="ButtonSize.Small"
+                                                    IsDisabled="@(isSaving || selectedRole == null || IsAdminRole(selectedRole))"
+                                                    AdditionalAttributes="@GetCopyButtonAttributes()" />
+                                @if (selectedRole != null)
+                                {
                                     <ul class="dropdown-menu">
                                         <li><h6 class="dropdown-header">@L["Label.SelectCopyTarget"]</h6></li>
                                         @foreach (var role in roles.Where(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
@@ -74,29 +74,29 @@
                                             <li><span class="dropdown-item-text text-muted">@L["Label.None"]</span></li>
                                         }
                                     </ul>
-                                </div>
-                                <GenericButtonComponent Text="@L["Button.SelectAll"]"
-                                                    Variant="ButtonVariant.Green"
-                                                    Size="ButtonSize.Small"
-                                                    OnClick="SelectAllPermissions"
-                                                    IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
-                                                    AdditionalAttributes="@GetSelectAllButtonAttributes()" />
-                                <GenericButtonComponent Text="@L["Button.ClearAll"]"
-                                                    Variant="ButtonVariant.Yellow"
-                                                    Size="ButtonSize.Small"
-                                                    OnClick="ClearAllPermissions"
-                                                    IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
-                                                    AdditionalAttributes="@GetClearAllButtonAttributes()" />
-                                <GenericButtonComponent Text="@L["Button.Save"]"
-                                                    Variant="ButtonVariant.DarkBlue"
-                                                    Size="ButtonSize.Small"
-                                                    OnClick="SaveRolePermissions"
-                                                    IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
-                                                    IsLoading="@isSaving"
-                                                    AdditionalAttributes="@GetSaveButtonAttributes()" />
+                                }
                             </div>
+                            <GenericButtonComponent Text="@L["Button.SelectAll"]"
+                                                Variant="ButtonVariant.Green"
+                                                Size="ButtonSize.Small"
+                                                OnClick="SelectAllPermissions"
+                                                IsDisabled="@(isSaving || selectedRole == null || IsAdminRole(selectedRole))"
+                                                AdditionalAttributes="@GetSelectAllButtonAttributes()" />
+                            <GenericButtonComponent Text="@L["Button.ClearAll"]"
+                                                Variant="ButtonVariant.Yellow"
+                                                Size="ButtonSize.Small"
+                                                OnClick="ClearAllPermissions"
+                                                IsDisabled="@(isSaving || selectedRole == null || IsAdminRole(selectedRole))"
+                                                AdditionalAttributes="@GetClearAllButtonAttributes()" />
+                            <GenericButtonComponent Text="@L["Button.Save"]"
+                                                Variant="ButtonVariant.DarkBlue"
+                                                Size="ButtonSize.Small"
+                                                OnClick="SaveRolePermissions"
+                                                IsDisabled="@(isSaving || selectedRole == null || IsAdminRole(selectedRole))"
+                                                IsLoading="@isSaving"
+                                                AdditionalAttributes="@GetSaveButtonAttributes()" />
                         </div>
-                    }
+                    </div>
                 </div>
             }
             else

@@ -3,33 +3,38 @@
 @using ERPCore2.Data.Entities
 @inject IProductionScheduleItemService ScheduleItemService
 @inject IProductionScheduleService ScheduleService
+@inject IProductionScheduleDetailService ScheduleDetailService
+@inject ISalesOrderService SalesOrderService
+@inject ISalesOrderDetailService SalesOrderDetailService
+@inject IProductCompositionService ProductCompositionService
 @inject INotificationService NotificationService
 @inject INavigationPermissionService NavigationPermissionService
 
 <div class="board-week-view">
 
-    @* 工具列：週導航 *@
+    @* 工具列：週導航 + 新增按鈕 *@
     <div class="board-toolbar">
-        <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousWeek" title="上一週">
-            <i class="bi bi-chevron-left"></i>
-        </button>
+        <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+            IconClass="bi bi-chevron-left" OnClick="PreviousWeek" Title="上一週" />
 
         <span class="week-label">
             @WeekStart.ToString("yyyy/MM/dd") – @WeekEnd.ToString("MM/dd")
         </span>
 
-        <button class="btn btn-sm btn-outline-secondary" @onclick="NextWeek" title="下一週">
-            <i class="bi bi-chevron-right"></i>
-        </button>
+        <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+            IconClass="bi bi-chevron-right" OnClick="NextWeek" Title="下一週" />
 
-        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="GoToToday">今天</button>
+        <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue" Size="ButtonSize.Small"
+            Text="今天" OnClick="GoToToday" CssClass="ms-2" />
 
-        @if (IsLoading)
-        {
-            <span class="ms-3 text-secondary" style="font-size:0.8rem;">
-                <span class="spinner-border spinner-border-sm me-1"></span>載入中...
-            </span>
-        }
+        <div class="ms-auto d-flex align-items-center gap-2">
+            @if (IsLoading)
+            {
+                <span class="text-secondary" style="font-size:0.8rem;">
+                    <span class="spinner-border spinner-border-sm me-1"></span>載入中...
+                </span>
+            }
+        </div>
     </div>
 
     @* 主體：sidebar + 週視圖 *@
@@ -51,11 +56,42 @@
                     IsToday="@(day.Date == DateTime.Today)"
                     OnItemDragStart="@HandleBoardItemDragStart"
                     OnItemDragEnd="@HandleDragEnd"
+                    OnItemClick="@HandleCardClick"
                     OnDrop="@(date => HandleDropOnDay(date))" />
             }
         </div>
     </div>
 </div>
+
+@* 卡片快速編輯 Modal *@
+<ProductionBoardItemEditModal
+    IsVisible="@showEditModal"
+    IsVisibleChanged="@((bool v) => showEditModal = v)"
+    Item="@editingItem"
+    OnSaved="@LoadDataAsync"
+    OnDeleted="@LoadDataAsync" />
+
+
+@* 領料確認 Dialog *@
+<GenericConfirmModalComponent
+    IsVisible="@showMaterialIssueConfirm"
+    IsVisibleChanged="@((bool v) => showMaterialIssueConfirm = v)"
+    Title="建立領料單"
+    Icon="bi-basket"
+    Message="已排入排程。是否現在建立對應的領料單？"
+    ConfirmButtonText="建立領料單"
+    CancelButtonText="稍後再說"
+    ConfirmButtonVariant="ButtonVariant.Blue"
+    HeaderColor="BaseModalComponent.HeaderVariant.Info"
+    OnConfirm="@HandleMaterialIssueConfirmed" />
+
+@* 領料單編輯 Modal *@
+<MaterialIssueEditModalComponent
+    IsVisible="@showMaterialIssueModal"
+    IsVisibleChanged="@((bool v) => showMaterialIssueModal = v)"
+    SourceProductionScheduleId="@pendingMaterialIssueBatchId"
+    OnMaterialIssueSaved="@HandleMaterialIssueSaved"
+    OnCancel="@(() => showMaterialIssueModal = false)" />
 
 @code {
     // ── 週導航 ──
@@ -68,12 +104,21 @@
     private List<BoardPendingItemDto>  pendingItems = new();
     private bool IsLoading;
 
-    // ── 當前員工 ID（自動建立每日批次使用）──
+    // ── 當前員工 ID（建立每日批次使用）──
     private int? currentEmployeeId;
 
     // ── 拖曳狀態 ──
     private BoardScheduleItemDto? draggingBoardItem;
     private BoardPendingItemDto?  draggingPendingItem;
+
+    // ── 卡片編輯 Modal ──
+    private bool showEditModal;
+    private BoardScheduleItemDto? editingItem;
+
+    // ── 領料單流程 ──
+    private bool showMaterialIssueConfirm;
+    private bool showMaterialIssueModal;
+    private int? pendingMaterialIssueBatchId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,13 +135,13 @@
         StateHasChanged();
         try
         {
-            // 平行載入：看板上的已排程項目 + 側欄待排程項目
-            var boardTask   = ScheduleItemService.GetByDateRangeAsync(WeekStart, WeekEnd);
-            var pendingTask = ScheduleItemService.GetUnscheduledAsync();
-            await Task.WhenAll(boardTask, pendingTask);
+            var boardTask        = ScheduleItemService.GetByDateRangeAsync(WeekStart, WeekEnd);
+            var scheduledMapTask = ScheduleItemService.GetScheduledQuantityMapAsync();
+            var salesOrdersTask  = SalesOrderService.GetAllAsync();
+            await Task.WhenAll(boardTask, scheduledMapTask, salesOrdersTask);
 
             boardItems   = MapToBoardDtos(boardTask.Result);
-            pendingItems = MapToPendingDtos(pendingTask.Result);
+            pendingItems = await BuildPendingItemsAsync(salesOrdersTask.Result, scheduledMapTask.Result);
         }
         catch (Exception ex)
         {
@@ -110,49 +155,66 @@
         }
     }
 
+    /// <summary>從銷貨訂單明細建立待排清單（PendingQuantity > 0 才列入）</summary>
+    private async Task<List<BoardPendingItemDto>> BuildPendingItemsAsync(
+        List<SalesOrder> orders,
+        Dictionary<int, decimal> scheduledMap)
+    {
+        var result = new List<BoardPendingItemDto>();
+        foreach (var order in orders)
+        {
+            var details = await SalesOrderDetailService.GetBySalesOrderIdWithIncludesAsync(order.Id);
+            foreach (var detail in details)
+            {
+                var scheduled = scheduledMap.TryGetValue(detail.Id, out var sq) ? sq : 0m;
+                var pending   = detail.OrderQuantity - scheduled;
+                if (pending <= 0) continue;
+
+                result.Add(new BoardPendingItemDto
+                {
+                    SalesOrderDetailId   = detail.Id,
+                    SalesOrderId         = order.Id,
+                    SalesOrderCode       = order.Code ?? string.Empty,
+                    OrderDate            = order.OrderDate,
+                    ExpectedDeliveryDate = order.ExpectedDeliveryDate,
+                    CustomerName         = order.Customer?.CompanyName
+                                          ?? detail.SalesOrder?.Customer?.CompanyName
+                                          ?? string.Empty,
+                    ProductId   = detail.ProductId,
+                    ProductCode = detail.Product?.Code ?? string.Empty,
+                    ProductName = detail.Product?.Name ?? string.Empty,
+                    OrderQuantity     = detail.OrderQuantity,
+                    ScheduledQuantity = scheduled
+                });
+            }
+        }
+        return result
+            .OrderBy(d => d.ExpectedDeliveryDate ?? DateTime.MaxValue)
+            .ThenBy(d => d.CustomerName)
+            .ToList();
+    }
+
     private static List<BoardScheduleItemDto> MapToBoardDtos(List<ProductionScheduleItem> items)
     {
         return items.Select(i => new BoardScheduleItemDto
         {
-            Id                    = i.Id,
-            ProductionScheduleId  = i.ProductionScheduleId,
+            Id                     = i.Id,
+            ProductionScheduleId   = i.ProductionScheduleId,
             ProductionScheduleCode = i.ProductionSchedule?.Code ?? string.Empty,
-            ProductId             = i.ProductId,
-            ProductCode           = i.Product?.Code ?? string.Empty,
-            ProductName           = i.Product?.Name ?? string.Empty,
-            ScheduledQuantity     = i.ScheduledQuantity,
-            CompletedQuantity     = i.CompletedQuantity,
-            ProductionItemStatus  = i.ProductionItemStatus,
-            Priority              = i.Priority,
-            PlannedStartDate      = i.PlannedStartDate,
-            PlannedEndDate        = i.PlannedEndDate,
-            SalesOrderDetailId    = i.SalesOrderDetailId,
-            SalesOrderCode        = i.SalesOrderDetail?.SalesOrder?.Code,
-            CustomerName          = i.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName,
-            ExpectedDeliveryDate  = i.SalesOrderDetail?.SalesOrder?.ExpectedDeliveryDate,
-            IsClosed              = i.IsClosed
-        }).ToList();
-    }
-
-    private static List<BoardPendingItemDto> MapToPendingDtos(List<ProductionScheduleItem> items)
-    {
-        return items.Select(i => new BoardPendingItemDto
-        {
-            Id                    = i.Id,
-            ProductionScheduleId  = i.ProductionScheduleId,
-            ProductionScheduleCode = i.ProductionSchedule?.Code ?? string.Empty,
-            ProductId             = i.ProductId,
-            ProductCode           = i.Product?.Code ?? string.Empty,
-            ProductName           = i.Product?.Name ?? string.Empty,
-            ScheduledQuantity     = i.ScheduledQuantity,
-            CompletedQuantity     = i.CompletedQuantity,
-            ProductionItemStatus  = i.ProductionItemStatus,
-            Priority              = i.Priority,
-            SalesOrderDetailId    = i.SalesOrderDetailId,
-            SalesOrderCode        = i.SalesOrderDetail?.SalesOrder?.Code,
-            CustomerName          = i.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName,
-            ExpectedDeliveryDate  = i.SalesOrderDetail?.SalesOrder?.ExpectedDeliveryDate,
-            IsClosed              = i.IsClosed
+            ProductId              = i.ProductId,
+            ProductCode            = i.Product?.Code ?? string.Empty,
+            ProductName            = i.Product?.Name ?? string.Empty,
+            ScheduledQuantity      = i.ScheduledQuantity,
+            CompletedQuantity      = i.CompletedQuantity,
+            ProductionItemStatus   = i.ProductionItemStatus,
+            Priority               = i.Priority,
+            PlannedStartDate       = i.PlannedStartDate,
+            PlannedEndDate         = i.PlannedEndDate,
+            SalesOrderDetailId     = i.SalesOrderDetailId,
+            SalesOrderCode         = i.SalesOrderDetail?.SalesOrder?.Code,
+            CustomerName           = i.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName,
+            ExpectedDeliveryDate   = i.SalesOrderDetail?.SalesOrder?.ExpectedDeliveryDate,
+            IsClosed               = i.IsClosed
         }).ToList();
     }
 
@@ -176,11 +238,20 @@
         await LoadDataAsync();
     }
 
+    // ── 卡片點擊 → 快速編輯 ──
+
+    private void HandleCardClick(BoardScheduleItemDto item)
+    {
+        editingItem = item;
+        showEditModal = true;
+        StateHasChanged();
+    }
+
     // ── 拖曳處理 ──
 
     private void HandleBoardItemDragStart(BoardScheduleItemDto item)
     {
-        draggingBoardItem  = item;
+        draggingBoardItem   = item;
         draggingPendingItem = null;
     }
 
@@ -192,24 +263,31 @@
 
     private void HandleDragEnd()
     {
-        draggingBoardItem  = null;
+        draggingBoardItem   = null;
         draggingPendingItem = null;
     }
 
     private async Task HandleDropOnDay(DateTime targetDate)
     {
+        int? droppedItemId  = null;
+        int? droppedBatchId = null;
+
         if (draggingBoardItem != null)
         {
             await MoveExistingItemAsync(draggingBoardItem.Id, targetDate);
         }
         else if (draggingPendingItem != null)
         {
-            await AssignPendingItemAsync(draggingPendingItem, targetDate);
+            (droppedBatchId, droppedItemId) = await AssignPendingItemAsync(draggingPendingItem, targetDate);
         }
 
         draggingBoardItem   = null;
         draggingPendingItem = null;
         await LoadDataAsync();
+
+        // 側欄項目首次排入日期後，檢查是否需要建立領料單
+        if (droppedItemId.HasValue && droppedBatchId.HasValue)
+            await CheckMaterialIssueAfterDropAsync(droppedItemId.Value, droppedBatchId.Value);
     }
 
     private async Task MoveExistingItemAsync(int itemId, DateTime targetDate)
@@ -219,21 +297,116 @@
             await NotificationService.ShowErrorAsync($"移動失敗：{result.ErrorMessage}");
     }
 
-    private async Task AssignPendingItemAsync(BoardPendingItemDto pending, DateTime targetDate)
+    private async Task<(int? BatchId, int? ItemId)> AssignPendingItemAsync(BoardPendingItemDto pending, DateTime targetDate)
     {
-        // 1. 取得或建立當日批次
         var batchResult = await ScheduleService.GetOrCreateDailyBatchAsync(targetDate.Date, currentEmployeeId);
         if (!batchResult.IsSuccess)
         {
             await NotificationService.ShowErrorAsync($"建立每日批次失敗：{batchResult.ErrorMessage}");
-            return;
+            return (null, null);
         }
 
-        // 2. 若該項目已屬於其他批次，直接更新 PlannedStartDate；
-        //    若需搬移批次，可在此擴充邏輯（目前僅更新日期）
-        var result = await ScheduleItemService.UpdatePlannedDateAsync(pending.Id, targetDate.Date);
-        if (!result.IsSuccess)
-            await NotificationService.ShowErrorAsync($"排程失敗：{result.ErrorMessage}");
+        // 建立新排程項目，直接指定日期（不再經由側欄 ProductionScheduleItem）
+        var item = new ProductionScheduleItem
+        {
+            ProductionScheduleId  = batchResult.Data!.Id,
+            ProductId             = pending.ProductId,
+            SalesOrderDetailId    = pending.SalesOrderDetailId > 0 ? pending.SalesOrderDetailId : null,
+            ScheduledQuantity     = pending.PendingQuantity,
+            CompletedQuantity     = 0,
+            ProductionItemStatus  = ProductionItemStatus.Pending,
+            PlannedStartDate      = targetDate.Date,
+            Status                = EntityStatus.Active,
+            CreatedAt             = DateTime.Now
+        };
+
+        var createResult = await ScheduleItemService.CreateAsync(item);
+        if (!createResult.IsSuccess)
+        {
+            await NotificationService.ShowErrorAsync($"建立排程項目失敗：{createResult.ErrorMessage}");
+            return (null, null);
+        }
+
+        // 回寫 SalesOrderDetail.ScheduledQuantity
+        if (pending.SalesOrderDetailId > 0)
+        {
+            var detail = await SalesOrderDetailService.GetByIdAsync(pending.SalesOrderDetailId);
+            if (detail != null)
+            {
+                detail.ScheduledQuantity += pending.PendingQuantity;
+                await SalesOrderDetailService.UpdateAsync(detail);
+            }
+        }
+
+        // 展開 BOM，建立 ProductionScheduleDetail
+        await ExpandBomAsync(item.Id, pending.ProductId, pending.PendingQuantity);
+
+        return (batchResult.Data!.Id, item.Id);
+    }
+
+    private async Task ExpandBomAsync(int itemId, int productId, decimal qty)
+    {
+        try
+        {
+            var compositions = await ProductCompositionService.GetCompositionsByProductIdAsync(productId);
+            var composition  = compositions.FirstOrDefault();
+            if (composition == null) return;
+
+            var full = await ProductCompositionService.GetByIdAsync(composition.Id);
+            if (full?.CompositionDetails == null || !full.CompositionDetails.Any()) return;
+
+            var details = full.CompositionDetails.Select(d => new ProductionScheduleDetail
+            {
+                ProductionScheduleItemId  = itemId,
+                ComponentProductId        = d.ComponentProductId,
+                ProductCompositionDetailId = d.Id,
+                RequiredQuantity          = d.Quantity * qty,
+                IssuedQuantity            = 0,
+                Status                    = EntityStatus.Active,
+                CreatedAt                 = DateTime.Now
+            }).ToList();
+
+            await ScheduleDetailService.CreateDetailsForItemAsync(itemId, details);
+        }
+        catch
+        {
+            // BOM 展開失敗不中斷主流程
+        }
+    }
+
+    // ── 領料單流程 ──
+
+    /// <summary>側欄項目拖曳至日期後，檢查該項目是否有未領料的 BOM 明細</summary>
+    private async Task CheckMaterialIssueAfterDropAsync(int itemId, int batchId)
+    {
+        try
+        {
+            var details = await ScheduleDetailService.GetByScheduleItemIdAsync(itemId);
+            if (details.Any(d => d.IssuedQuantity < d.RequiredQuantity))
+            {
+                pendingMaterialIssueBatchId = batchId;
+                showMaterialIssueConfirm = true;
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // 不影響主流程
+        }
+    }
+
+    private void HandleMaterialIssueConfirmed()
+    {
+        showMaterialIssueConfirm = false;
+        showMaterialIssueModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleMaterialIssueSaved(MaterialIssue savedIssue)
+    {
+        showMaterialIssueModal = false;
+        pendingMaterialIssueBatchId = null;
+        await LoadDataAsync();
     }
 
     // ── 輔助 ──

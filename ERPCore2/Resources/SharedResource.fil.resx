@@ -1089,6 +1089,7 @@
   <data name="Field.TransactionCode" xml:space="preserve"><value>Kodigo ng Transaksyon</value></data>
   <data name="Field.TransactionDate" xml:space="preserve"><value>Petsa ng Transaksyon</value></data>
   <data name="Field.TransactionType" xml:space="preserve"><value>Uri ng Transaksyon</value></data>
+  <data name="Field.Warehouse" xml:space="preserve"><value>Bodega</value></data>
   <data name="Field.WarehouseCode" xml:space="preserve"><value>Kodigo ng Bodega</value></data>
   <data name="Field.WarehouseName" xml:space="preserve"><value>Pangalan ng Bodega</value></data>
   <data name="Field.Zone" xml:space="preserve"><value>Sona</value></data>
@@ -1372,6 +1373,7 @@
   <data name="Field.BelongsToWarehouse" xml:space="preserve"><value>Bodega</value></data>
   <data name="Field.NetAmount" xml:space="preserve"><value>Netong Halaga</value></data>
   <data name="Field.MeasurementUnit" xml:space="preserve"><value>Yunit ng Sukat</value></data>
+  <data name="Field.TotalItems" xml:space="preserve"><value>Kabuuang mga Item</value></data>
   <data name="Field.CompletedItems" xml:space="preserve"><value>Natapos na mga Item</value></data>
   <data name="Field.DifferenceItems" xml:space="preserve"><value>Mga Item na may Pagkakaiba</value></data>
   <data name="Field.DifferenceAmount" xml:space="preserve"><value>Kita/Pagkawala sa Imbentaryo</value></data>

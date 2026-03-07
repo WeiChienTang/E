@@ -3,9 +3,10 @@
 
 <div class="board-item-card @StatusCssClass @(IsOnBoard ? "on-board" : "in-sidebar")"
      draggable="true"
+     @onclick="HandleClick"
      @ondragstart="HandleDragStart"
      @ondragend="HandleDragEnd"
-     title="@Item.ProductCode - @Item.ProductName">
+     title="@Item.ProductCode - @Item.ProductName（點擊編輯）">
 
     @* 狀態色條 *@
     <div class="card-status-bar"></div>
@@ -37,10 +38,10 @@
             <div class="card-qty">
                 @if (Item.CompletedQuantity > 0)
                 {
-                    <span class="qty-done">@Item.CompletedQuantity</span>
+                    <span class="qty-done">@NumberFormatHelper.FormatSmart(Item.CompletedQuantity)</span>
                     <span class="qty-sep">/</span>
                 }
-                <span class="qty-total">@Item.ScheduledQuantity</span>
+                <span class="qty-total">@NumberFormatHelper.FormatSmart(Item.ScheduledQuantity)</span>
             </div>
 
             @if (Item.ExpectedDeliveryDate.HasValue)
@@ -61,6 +62,7 @@
     [Parameter] public bool IsOnBoard { get; set; } = true;
     [Parameter] public EventCallback<BoardScheduleItemDto> OnDragStart { get; set; }
     [Parameter] public EventCallback OnDragEnd { get; set; }
+    [Parameter] public EventCallback<BoardScheduleItemDto> OnClick { get; set; }
 
     private string StatusCssClass => Item.ProductionItemStatus switch
     {
@@ -88,6 +90,11 @@
             var daysLeft = (Item.ExpectedDeliveryDate.Value.Date - DateTime.Today).TotalDays;
             return daysLeft < 0 ? "due-overdue" : daysLeft <= 3 ? "due-urgent" : "";
         }
+    }
+
+    private async Task HandleClick()
+    {
+        await OnClick.InvokeAsync(Item);
     }
 
     private async Task HandleDragStart(DragEventArgs e)

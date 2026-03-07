@@ -1,5 +1,4 @@
 @using ERPCore2.Models.Schedule
-@using ERPCore2.Models.Enums
 
 <div class="pending-sidebar">
     @* 標題列 *@
@@ -13,11 +12,10 @@
 
     @* 搜尋列 *@
     <div class="sidebar-search">
-        <input type="text"
-               class="form-control form-control-sm"
-               placeholder="搜尋商品/客戶..."
-               @bind="searchText"
-               @bind:event="oninput" />
+        <SearchInputComponent @bind-Value="searchText"
+            Placeholder="搜尋商品/客戶/訂單..."
+            CssClass="input-group-sm"
+            ButtonSize="btn-sm" />
     </div>
 
     @* 項目列表 *@
@@ -31,7 +29,7 @@
             <div class="sidebar-empty">
                 @if (string.IsNullOrEmpty(searchText))
                 {
-                    <span>所有項目已排程</span>
+                    <span>所有訂單項目已排程完畢</span>
                 }
                 else
                 {
@@ -43,11 +41,11 @@
         {
             @foreach (var item in FilteredItems)
             {
-                <div class="sidebar-item-wrapper @(IsDraggingItemId == item.Id ? "dragging" : "")"
+                <div class="sidebar-item-wrapper @(IsDraggingItemId == item.SalesOrderDetailId ? "dragging" : "")"
                      draggable="true"
                      @ondragstart="() => HandleDragStart(item)"
                      @ondragend="HandleDragEnd"
-                     title="@item.ProductCode - @item.ProductName">
+                     title="拖曳到日期欄以排入生產排程">
 
                     <div class="sidebar-card">
                         <div class="scard-product">
@@ -59,7 +57,7 @@
                             <div class="scard-customer">@item.CustomerName</div>
                         }
                         <div class="scard-footer">
-                            <span class="scard-qty">數量：@item.ScheduledQuantity</span>
+                            <span class="scard-qty">待排：@NumberFormatHelper.FormatSmart(item.PendingQuantity) / @NumberFormatHelper.FormatSmart(item.OrderQuantity)</span>
                             @if (item.ExpectedDeliveryDate.HasValue)
                             {
                                 <span class="scard-due @GetDeliveryUrgencyCss(item.ExpectedDeliveryDate)">
@@ -84,22 +82,30 @@
     [Parameter] public EventCallback<BoardPendingItemDto> OnDragStart { get; set; }
     [Parameter] public EventCallback OnDragEnd { get; set; }
 
-    private string searchText = string.Empty;
     private int? IsDraggingItemId;
+    private string searchText = string.Empty;
 
-    private IEnumerable<BoardPendingItemDto> FilteredItems =>
-        string.IsNullOrWhiteSpace(searchText)
-            ? Items.OrderBy(i => i.ExpectedDeliveryDate).ThenBy(i => i.Priority)
-            : Items.Where(i =>
-                i.ProductCode.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                i.ProductName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                (i.CustomerName?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (i.SalesOrderCode?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false))
-              .OrderBy(i => i.ExpectedDeliveryDate).ThenBy(i => i.Priority);
+    private IEnumerable<BoardPendingItemDto> FilteredItems
+    {
+        get
+        {
+            var items = Items.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                var term = searchText;
+                items = items.Where(i =>
+                    i.ProductCode.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    i.ProductName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    i.CustomerName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    i.SalesOrderCode.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+            return items.OrderBy(i => i.ExpectedDeliveryDate).ThenBy(i => i.CustomerName);
+        }
+    }
 
     private async Task HandleDragStart(BoardPendingItemDto item)
     {
-        IsDraggingItemId = item.Id;
+        IsDraggingItemId = item.SalesOrderDetailId;
         await OnDragStart.InvokeAsync(item);
     }
 

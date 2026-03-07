@@ -25,7 +25,8 @@
                 Item="@item"
                 IsOnBoard="true"
                 OnDragStart="@(dto => OnItemDragStart.InvokeAsync(dto))"
-                OnDragEnd="@OnItemDragEnd" />
+                OnDragEnd="@OnItemDragEnd"
+                OnClick="@(dto => OnItemClick.InvokeAsync(dto))" />
         }
 
         @if (!Items.Any())
@@ -42,6 +43,7 @@
     [Parameter] public EventCallback<BoardScheduleItemDto> OnItemDragStart { get; set; }
     [Parameter] public EventCallback OnItemDragEnd { get; set; }
     [Parameter] public EventCallback<DateTime> OnDrop { get; set; }
+    [Parameter] public EventCallback<BoardScheduleItemDto> OnItemClick { get; set; }
 
     private bool IsDragOver { get; set; }
 

@@ -341,7 +341,7 @@ else
                     var qtyDisplay = string.IsNullOrEmpty(productItem.UnitName)
                         ? productItem.Quantity.ToString()
                         : $"{productItem.Quantity} {productItem.UnitName}";
-                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
+                    return @<div class="d-flex align-items-center">
                         <span>@qtyDisplay</span>
                     </div>;
                 }
@@ -391,7 +391,7 @@ else
                 var isLocked = !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
                 if (isLocked || IsReadOnly)
                 {
-                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
+                    return @<div class="d-flex align-items-center justify-content-end">
                         <span>@productItem.Price.ToString("N2")</span>
                     </div>;
                 }
@@ -420,7 +420,7 @@ else
                     var isLocked = !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
                     if (isLocked || IsReadOnly)
                     {
-                        return @<div class="d-flex align-items-center" style="min-height: 31px;">
+                        return @<div class="d-flex align-items-center">
                             <span>@productItem.TaxRate%</span>
                         </div>;
                     }
@@ -468,7 +468,7 @@ else
                 var isFullyReceived = productItem.ReceivedQuantity >= productItem.Quantity && productItem.Quantity > 0;
                 var isDisabled = IsReadOnly || isFullyReceived;
                 var tooltip = isFullyReceived ? L["Message.FullyReceived"].ToString() : null;
-                return @<div class="form-check form-switch d-flex justify-content-center align-items-center" style="min-height: 31px;">
+                return @<div class="form-check form-switch d-flex justify-content-center align-items-center">
                     <input class="form-check-input"
                            type="checkbox"
                            checked="@productItem.IsReceivingCompleted"
@@ -508,7 +508,7 @@ else
                 if (isFieldReadOnly)
                 {
                     var displayText = string.IsNullOrEmpty(productItem.Remarks) ? L["Label.NoRemarks"].ToString() : productItem.Remarks;
-                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
+                    return @<div class="d-flex align-items-center">
                         <span class="text-muted">@displayText</span>
                     </div>;
                 }

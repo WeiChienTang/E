@@ -536,6 +536,44 @@ function getTopMostModal(visibleModals) {
     return topModal || visibleModals[visibleModals.length - 1];
 }
 
+// ===== 全景模式（瀏覽器 Fullscreen API）=====
+
+window.enterFullscreen = function () {
+    var el = document.documentElement;
+    if (el.requestFullscreen) return el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
+};
+
+window.exitFullscreen = function () {
+    if (document.exitFullscreen) return document.exitFullscreen();
+    else if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+};
+
+window.isFullscreen = function () {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+};
+
+window.setupFullscreenChangeListener = function (dotNetHelper) {
+    window._fullscreenDotNetHelper = dotNetHelper;
+    window._fullscreenChangeHandler = function () {
+        var isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        try {
+            window._fullscreenDotNetHelper.invokeMethodAsync('OnFullscreenChanged', isFs).catch(function () {});
+        } catch (e) {}
+    };
+    document.addEventListener('fullscreenchange', window._fullscreenChangeHandler);
+    document.addEventListener('webkitfullscreenchange', window._fullscreenChangeHandler);
+};
+
+window.cleanupFullscreenChangeListener = function () {
+    if (window._fullscreenChangeHandler) {
+        document.removeEventListener('fullscreenchange', window._fullscreenChangeHandler);
+        document.removeEventListener('webkitfullscreenchange', window._fullscreenChangeHandler);
+        window._fullscreenChangeHandler = null;
+    }
+    window._fullscreenDotNetHelper = null;
+};
+
 // 頁面卸載時清理所有 ESC 鍵監聽器
 window.addEventListener('beforeunload', function () {
     // 清理所有 DotNet 引用

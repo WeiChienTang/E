@@ -91,6 +91,10 @@
                        Category="@currentReportCategory"
                        OnReportSelected="@HandleReportSelected" />
 
+@* 生產排程看板 Modal *@
+<ProductionBoardModalComponent IsVisible="@showProductionBoard"
+                               IsVisibleChanged="@((bool visible) => showProductionBoard = visible)" />
+
 @* 權限組權限管理 Modal *@
 <RolePermissionManagement IsVisible="@showRolePermissionManagement"
                          IsVisibleChanged="@((bool visible) => showRolePermissionManagement = visible)" />
@@ -146,6 +150,13 @@
             }
         </button>
     }
+
+    @* 全景模式按鈕 *@
+    <button class="personal-tool-btn @(_isPageFullscreen ? "tool-btn-active" : "tool-btn-inactive")"
+            @onclick="TogglePageFullscreen"
+            title="@(_isPageFullscreen ? "退出全景模式" : "全景模式")">
+        <span class="bi @(_isPageFullscreen ? "bi-fullscreen-exit" : "bi-fullscreen")"></span>
+    </button>
 
     @* 便條貼按鈕：啟用時顯示 *@
     @if (_currentPreference?.EnableStickyNote ?? true)
@@ -224,6 +235,12 @@
     // 通用報表篩選 Modal 狀態（存放當前要篩選的報表 ID，空字串表示關閉）
     private string currentFilterReportId = string.Empty;
     
+    // 生產排程看板 Modal 狀態
+    private bool showProductionBoard = false;
+
+    // 全景模式狀態
+    private bool _isPageFullscreen = false;
+
     // 角色權限管理 Modal 狀態
     private bool showRolePermissionManagement = false;
 
@@ -292,6 +309,7 @@
 
         // 註册所有 Action 處理器
         actionRegistry.Register("OpenAccountsReceivableReport", OpenAccountsReceivableReport);
+        actionRegistry.Register("OpenProductionScheduleBoard", OpenProductionScheduleBoard);
         actionRegistry.Register("OpenRolePermissionManagement", OpenRolePermissionManagement);
         actionRegistry.Register("OpenSystemParameterSettings", OpenSystemParameterSettings);
         actionRegistry.Register("OpenPersonalPreference", OpenPersonalPreference);
@@ -358,6 +376,7 @@
                 };
                 _dotNetRef = DotNetObjectReference.Create(this);
                 await JSRuntime.InvokeVoidAsync("KeyboardShortcuts.initialize", _dotNetRef, shortcutConfig);
+                await JSRuntime.InvokeVoidAsync("setupFullscreenChangeListener", _dotNetRef);
             }
             catch
             {
@@ -495,6 +514,22 @@
     }
     
     /// <summary>
+    /// 開啟生產排程看板 Modal
+    /// </summary>
+    public void OpenProductionScheduleBoard()
+    {
+        try
+        {
+            showProductionBoard = true;
+            StateHasChanged();
+        }
+        catch
+        {
+            // 忽略開啟生產排程看板失敗
+        }
+    }
+
+    /// <summary>
     /// 開啟角色權限管理 Modal
     /// JavaScript 可呼叫此方法
     /// </summary>
@@ -564,6 +599,31 @@
         {
             // 忽略重新載入偏好失敗
         }
+    }
+
+    /// <summary>
+    /// 全景模式狀態同步（由 JS fullscreenchange 事件回呼）
+    /// </summary>
+    [JSInvokable]
+    public void OnFullscreenChanged(bool isFullscreen)
+    {
+        _isPageFullscreen = isFullscreen;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 切換全頁全景模式
+    /// </summary>
+    private async Task TogglePageFullscreen()
+    {
+        try
+        {
+            if (_isPageFullscreen)
+                await JSRuntime.InvokeVoidAsync("exitFullscreen");
+            else
+                await JSRuntime.InvokeVoidAsync("enterFullscreen");
+        }
+        catch { }
     }
 
     /// <summary>
@@ -882,6 +942,15 @@
         {
             // 清理 JavaScript 快捷鍵監聽器
             await JSRuntime.InvokeVoidAsync("KeyboardShortcuts.dispose");
+        }
+        catch
+        {
+            // 忽略清理錯誤
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("cleanupFullscreenChangeListener");
         }
         catch
         {
