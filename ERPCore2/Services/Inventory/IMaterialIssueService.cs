@@ -64,5 +64,12 @@ namespace ERPCore2.Services
         /// <param name="updatedBy">更新人員ID</param>
         /// <returns>更新結果</returns>
         Task<ServiceResult> UpdateInventoryByDifferenceAsync(int id, int updatedBy = 0);
+
+        /// <summary>
+        /// 取得指定商品最近一次領料所使用的倉庫和庫位
+        /// </summary>
+        /// <param name="productId">商品ID</param>
+        /// <returns>(WarehouseId, WarehouseLocationId) 或 null（無歷史記錄）</returns>
+        Task<(int WarehouseId, int? WarehouseLocationId)?> GetLastIssuedLocationForProductAsync(int productId);
     }
 }

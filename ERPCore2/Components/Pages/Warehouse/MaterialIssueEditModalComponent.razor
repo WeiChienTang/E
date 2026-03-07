@@ -400,6 +400,10 @@
                 return false;
             }
 
+            // CustomValidator 在使用 SaveHandler 時不會被 GenericEditModalComponent 自動呼叫，需手動執行
+            if (!await ValidateMaterialIssueDetailsAsync(materialIssue))
+                return false;
+
             // 設定明細
             materialIssue.MaterialIssueDetails = materialIssueDetails;
 

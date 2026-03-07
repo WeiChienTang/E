@@ -92,7 +92,8 @@ ShowPrintButton="true"
     private List<CompositionCategory> availableCompositionCategories = new();
     private List<ProductCompositionDetail> compositionDetails = new();
     private bool isDetailDataReady = false;
-    
+    private int _detailsDataVersion = 0;
+
     // ===== Modal 管理器 =====
     private CustomerEditModalComponent? customerEditModal;
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
@@ -180,16 +181,9 @@ ShowPrintButton="true"
                 .AddField(nameof(ProductComposition.CreatedByEmployeeId), "Name", availableEmployees)
                 .Build();
             
-            // 如果是編輯模式，載入現有的明細資料
-            if (CompositionId.HasValue && CompositionId.Value > 0)
-            {
-                await LoadCompositionDetailsAsync();
-            }
-            else
-            {
-                compositionDetails = new List<ProductCompositionDetail>();
-            }
-            
+            // 明細資料改由 LoadCompositionData (DataLoader) 負責載入，以正確支援上下筆導覽
+            compositionDetails = new List<ProductCompositionDetail>();
+
             isDetailDataReady = true;
         }
         catch (Exception ex)
@@ -254,8 +248,8 @@ ShowPrintButton="true"
                 return newComposition;
             }
 
-            var composition = await ProductCompositionService.GetByIdAsync(CompositionId.Value);            
-            
+            var composition = await ProductCompositionService.GetByIdAsync(CompositionId.Value);
+
             if (composition == null)
             {
                 // 如果找不到商品物料清單，建立新的預設實體
@@ -264,6 +258,11 @@ ShowPrintButton="true"
                     Status = EntityStatus.Active
                 };
             }
+
+            // 每次導覽（含初次開啟編輯）都重新載入明細，並遞增版本號通知 Table 重載
+            await LoadCompositionDetailsAsync();
+            _detailsDataVersion++;
+
             return composition;
         }
         catch (Exception ex)
@@ -434,15 +433,16 @@ ShowPrintButton="true"
                               IsPreconditionMet="@(editModalComponent?.Entity?.ParentProductId > 0)"
                               PreconditionMessage="請先選擇商品後再進行材料清單管理">
             <ProductCompositionTable @ref="detailManager"
-                                                     @key="@editModalComponent!.Entity.Id"
-                                                     Items="@compositionDetails"
-                                                     AvailableProducts="@availableComponentProducts"
-                                                     AvailableUnits="@availableUnits"
-                                                     ParentEntityId="@(CompositionId ?? 0)"
-                                                     ParentProductId="@(editModalComponent!.Entity.ParentProductId)"
-                                                     IsReadOnly="false"
-                                                     ItemsChanged="@HandleDetailsChanged"
-                                                     EmptyMessage="尚未新增材料" />
+                                     @key="@(editModalComponent?.Entity?.Id ?? 0)"
+                                     ExistingDetails="@compositionDetails"
+                                     DataVersion="@_detailsDataVersion"
+                                     MainEntity="@editModalComponent?.Entity"
+                                     AvailableProducts="@availableComponentProducts"
+                                     AvailableUnits="@availableUnits"
+                                     ParentProductId="@(editModalComponent?.Entity?.ParentProductId ?? 0)"
+                                     IsReadOnly="false"
+                                     OnDetailsChanged="@HandleDetailsChanged"
+                                     EmptyMessage="尚未新增材料" />
         </DetailSectionWrapper>
     };
     
@@ -450,6 +450,7 @@ ShowPrintButton="true"
     private void HandleDetailsChanged(List<ProductCompositionDetail> details)
     {
         editModalComponent?.MarkDirty();
+        // 僅更新快取，不遞增 DataVersion（避免 Table 重新載入覆蓋使用者的編輯中狀態）
         compositionDetails = details;
         StateHasChanged();
     }
@@ -561,6 +562,8 @@ ShowPrintButton="true"
                         return false;
                     }
                 }
+                // 清空已處理的刪除 ID，避免重複刪除（例如使用者儲存後繼續編輯再次儲存）
+                detailManager.ClearDeletedDetailIds();
                 
                 // 儲存或更新明細
                 foreach (var detail in validDetails)

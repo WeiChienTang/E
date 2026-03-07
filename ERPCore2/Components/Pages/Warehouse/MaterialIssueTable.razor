@@ -2,6 +2,7 @@
 
 @inject IProductService ProductService
 @inject IInventoryStockService InventoryStockService
+@inject IMaterialIssueService MaterialIssueService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
@@ -173,7 +174,7 @@
                 {
                     ProductId = detail.ProductId,
                     SelectedProduct = product,
-                    WarehouseId = detail.WarehouseId,
+                    WarehouseId = detail.WarehouseId > 0 ? (int?)detail.WarehouseId : null,
                     WarehouseLocationId = detail.WarehouseLocationId,
                     IssueQuantity = detail.IssueQuantity,
                     UnitCost = detail.UnitCost ?? 0m,
@@ -184,19 +185,24 @@
                 if (item.ProductId.HasValue)
                 {
                     item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(item.ProductId.Value);
-                    
-                    // 找到對應的庫存明細ID
+
                     if (item.WarehouseId.HasValue)
                     {
-                        var stockDetail = item.AvailableWarehouseLocations.FirstOrDefault(d => 
-                            d.WarehouseId == item.WarehouseId.Value && 
+                        // 已有倉庫（從現有領料單載入）：找到對應的庫存明細ID
+                        var stockDetail = item.AvailableWarehouseLocations.FirstOrDefault(d =>
+                            d.WarehouseId == item.WarehouseId.Value &&
                             d.WarehouseLocationId == item.WarehouseLocationId);
-                        
+
                         if (stockDetail != null)
                         {
                             item.InventoryStockDetailId = stockDetail.Id;
                             item.AvailableStock = stockDetail.AvailableStock;
                         }
+                    }
+                    else
+                    {
+                        // 無倉庫（從排程載入的新項目）：嘗試自動選取
+                        await AutoSelectWarehouseAsync(item);
                     }
                 }
 
@@ -394,6 +400,7 @@
                 UnitCost = 0m, // Product 實體中沒有 Cost 屬性,預設為 0
                 AvailableWarehouseLocations = availableLocations
             };
+            await AutoSelectWarehouseAsync(newItem);
 
             // 將新項目加到列表
             DetailItems.Add(newItem);
@@ -450,13 +457,14 @@
         
         // 載入該商品的可用倉庫位置清單
         item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(product.Id);
-        
-        // 重置選擇
+
+        // 重置選擇後嘗試自動選取
         item.InventoryStockDetailId = null;
         item.WarehouseId = null;
         item.WarehouseLocationId = null;
         item.AvailableStock = null;
-        
+        await AutoSelectWarehouseAsync(item);
+
         await SyncToDetails();
         StateHasChanged();
     }
@@ -554,14 +562,52 @@
 
     // ===== 輔助方法 =====
 
+    /// <summary>
+    /// 根據以下優先順序自動選取倉庫庫位：
+    /// 1. 若只有一個可用庫位 → 直接選取
+    /// 2. 若有歷史領料記錄且仍在可用清單中 → 選取歷史庫位
+    /// 3. 否則保持未選取，由使用者手動選擇
+    /// </summary>
+    private async Task AutoSelectWarehouseAsync(DetailItem item)
+    {
+        if (!item.AvailableWarehouseLocations.Any()) return;
+
+        InventoryStockDetail? target = null;
+
+        if (item.AvailableWarehouseLocations.Count == 1)
+        {
+            // 只有一個可用庫位，直接選取
+            target = item.AvailableWarehouseLocations[0];
+        }
+        else if (item.ProductId.HasValue)
+        {
+            // 查詢歷史最後一次領料的庫位
+            var lastLocation = await MaterialIssueService.GetLastIssuedLocationForProductAsync(item.ProductId.Value);
+            if (lastLocation.HasValue)
+            {
+                target = item.AvailableWarehouseLocations.FirstOrDefault(d =>
+                    d.WarehouseId == lastLocation.Value.WarehouseId &&
+                    d.WarehouseLocationId == lastLocation.Value.WarehouseLocationId);
+            }
+        }
+
+        if (target != null)
+        {
+            item.InventoryStockDetailId = target.Id;
+            item.WarehouseId = target.WarehouseId;
+            item.WarehouseLocationId = target.WarehouseLocationId;
+            item.AvailableStock = target.AvailableStock;
+        }
+    }
+
     private async Task SyncToDetails()
     {
         Details.Clear();
         
         foreach (var item in DetailItems)
         {
-            // 只有在有商品ID、倉庫ID、且領貨數量大於0時才加入
-            if (item.ProductId.HasValue && item.WarehouseId.HasValue && item.IssueQuantity > 0)
+            // 只有在有商品ID、有效倉庫ID（>0）、且領貨數量大於0時才加入
+            if (item.ProductId.HasValue && item.WarehouseId.HasValue && item.WarehouseId.Value > 0 && item.IssueQuantity > 0)
             {
                 Details.Add(new MaterialIssueDetail
                 {

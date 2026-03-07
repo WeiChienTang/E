@@ -785,6 +785,33 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<(int WarehouseId, int? WarehouseLocationId)?> GetLastIssuedLocationForProductAsync(int productId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var lastDetail = await context.MaterialIssueDetails
+                    .Include(d => d.MaterialIssue)
+                    .Where(d => d.ProductId == productId && d.WarehouseId > 0)
+                    .OrderByDescending(d => d.MaterialIssue.IssueDate)
+                    .ThenByDescending(d => d.Id)
+                    .FirstOrDefaultAsync();
+
+                if (lastDetail == null) return null;
+                return (lastDetail.WarehouseId, lastDetail.WarehouseLocationId);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastIssuedLocationForProductAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetLastIssuedLocationForProductAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId
+                });
+                return null;
+            }
+        }
+
         #endregion
     }
 }

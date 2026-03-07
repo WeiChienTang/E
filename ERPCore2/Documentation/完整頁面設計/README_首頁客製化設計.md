@@ -1,447 +1,167 @@
 # 首頁客製化設計
 
-## 概述
-
-讓每位使用者可以自訂首頁，首頁採用**動態面板**架構：
-
-- **自訂面板**：使用者可建立多個面板，每個面板有自訂標題
-- **混合內容**：每個面板可同時包含頁面連結、快速功能和圖表介面
-- **頁面連結**：卡片點擊後導航至對應頁面或開啟全域 Modal
-- **快速功能**：卡片點擊後直接在首頁開啟業務 EditModal（新增模式）
-- **圖表介面**：卡片點擊後開啟對應模組的圖表分析 Modal
-
-```
-┌──────────────────────────────────────────┐
-│ 常用功能                     [編輯]      │
-│ ─────────────────────────────────────── │
-│ [員工管理] [新增採購單] [客戶圖表] ...   │
-│                                          │
-│ 銷售區                       [編輯]      │
-│ ─────────────────────────────────────── │
-│ [訂單管理] [新增訂單] [客戶管理] ...     │
-│                                          │
-│ [+ 新增面板]                             │
-└──────────────────────────────────────────┘
-```
+## 更新日期
+2026-03-07
 
 ---
 
-## 設計原則
+## 概述
 
-1. **動態面板架構**：使用者可自訂面板數量（上限 6 個）與標題
-2. **混合內容**：每個面板可同時包含頁面連結（Route/Action）、快速功能（QuickAction）與圖表介面（ChartWidget）
-3. **單一資料來源**：以 `NavigationConfig` 作為可選項目的唯一來源
-4. **每人獨立配置**：每位員工有自己的首頁佈局，互不影響
-5. **權限自動過濾**：使用者只能看到自己有權限的功能
-6. **預設配置**：新使用者首次登入自動套用預設面板組合
-7. **同項目可重複**：同一個項目可出現在不同面板中
-8. **QuickAction 與 NavigationItem 合一**：快速功能不是獨立項目，而是現有導航項目的附加屬性
-9. **ChartWidget 是 Action 的標記**：圖表介面項目本質上是 Action 類型，透過 `IsChartWidget = true` 標記後從「頁面連結」移至「圖表介面」Tab 獨立顯示
+首頁採用**動態面板**架構，每位使用者可自訂面板數量（上限 6 個）與標題。每個面板可混合包含三種類型的項目：**頁面連結**（導航至 Index 頁面或開啟全域 Modal）、**快速功能**（在首頁直接開啟業務 EditModal 新增模式）、**圖表介面**（開啟對應模組的圖表分析 Modal）。
+
+---
+
+## 檔案結構
+
+| 檔案 | 路徑 | 說明 |
+|------|------|------|
+| 首頁 | `Components/Pages/Home.razor` | 動態面板渲染、編輯模式、拖曳排序 |
+| 捷徑卡片 | `Components/Shared/Dashboard/DashboardShortcutCard.razor` | 單一捷徑卡片元件 |
+| 項目選擇器 | `Components/Shared/Dashboard/DashboardWidgetPickerModal.razor` | 新增項目 Modal（三個 Tab） |
+| 圖示選擇器 | `Components/Shared/Dashboard/IconPickerModal.razor` | 面板圖示選擇 Modal |
+| 快速功能宿主 | `Components/Shared/Dashboard/QuickActionModalHost.razor` | 集中管理所有 QuickAction Modal |
+| 導航配置 | `Data/Navigation/NavigationConfig.cs` | 唯一資料來源（含 QuickAction 衍生 + ChartWidget 篩選） |
+| 預設配置 | `Data/Navigation/DashboardDefaults.cs` | 預設面板定義、面板限制、可選圖示清單 |
+| 服務介面 | `Services/Dashboard/IDashboardService.cs` | 面板 CRUD + 項目管理 |
+| 服務實作 | `Services/Dashboard/DashboardService.cs` | 服務實作 |
+| 面板 Entity | `Data/Entities/Employees/EmployeeDashboardPanel.cs` | 面板資料表 |
+| 項目 Entity | `Data/Entities/Employees/EmployeeDashboardConfig.cs` | 面板項目配置資料表 |
 
 ---
 
 ## 三種導航項目類型
 
 | 類型 | 枚舉值 | 處理層級 | 用途 |
-|------|--------|---------|------|
+|------|--------|----------|------|
 | Route | `NavigationItemType.Route` | `NavigationManager.NavigateTo()` | 導航至 Index 頁面 |
-| Action | `NavigationItemType.Action` | MainLayout 的 `CascadingParameter` | 開啟全域 Modal（報表中心、權限管理、圖表分析等） |
-| QuickAction | `NavigationItemType.QuickAction` | Home.razor 自行處理 | 在首頁直接開啟業務 EditModal（新增模式） |
+| Action | `NavigationItemType.Action` | MainLayout `CascadingParameter` | 開啟全域 Modal（報表中心、圖表分析等） |
+| QuickAction | `NavigationItemType.QuickAction` | `Home.razor` 自行處理 | 在首頁直接開啟業務 EditModal（新增模式） |
 
-**Action vs QuickAction 的關鍵差異**：Action 的 Modal 宣告在 MainLayout（全站可用），QuickAction 的 Modal 宣告在 Home.razor（僅首頁使用）。
-
-**QuickAction 是衍生的**：NavigationConfig 裡不存在 `ItemType = QuickAction` 的項目。QuickAction 項目是從設有 `QuickActionId` 屬性的現有 Route/Action 項目自動衍生而來。
-
-**ChartWidget 是 Action 的子集**：`IsChartWidget = true` 的項目本質上是 `ItemType = Action`，會透過 MainLayout 的 Handler 開啟圖表 Modal。標記後會從「頁面連結」Tab 移除，改在「圖表介面」Tab 獨立顯示。
+**重要**：`NavigationConfig.cs` 中不存在 `ItemType = QuickAction` 的項目。QuickAction 是從設有 `QuickActionId` 屬性的現有 Route/Action 項目**自動衍生**而來。
 
 ---
 
-## QuickAction 合一設計
+## NavigationItem 擴充屬性
 
-### 核心概念
-
-幾乎每個功能性的 NavigationItem 都有對應的 EditModal，因此 QuickAction 能力是 NavigationItem 本身的可選屬性，而非另外建立一筆項目。
-
-### NavigationItem 的 QuickAction 屬性
+### QuickAction 屬性（設定後自動衍生快速功能項目）
 
 | 屬性 | 型別 | 說明 |
 |------|------|------|
-| `QuickActionId` | string? | 設定後表示此項目支援快速功能，Home.razor 透過此 Id 對應 Modal |
-| `QuickActionName` | string? | 快速功能顯示名稱（預設「新增」+ Name） |
-| `QuickActionDescription` | string? | 快速功能描述（預設「快速開啟{Name}新增畫面」） |
-| `QuickActionIconClass` | string? | 快速功能圖示（預設 `"bi bi-plus-circle-fill"`） |
+| `QuickActionId` | `string?` | 設定後表示此項目支援快速功能，對應 `QuickActionModalHost._registry` 的 Key |
+| `QuickActionName` | `string?` | 快速功能顯示名稱（選填，預設「新增」+ Name） |
+| `QuickActionDescription` | `string?` | 快速功能描述（選填） |
+| `QuickActionIconClass` | `string?` | 快速功能圖示（選填，預設 `bi bi-plus-circle-fill`） |
 
-### 自動衍生機制
-
-`NavigationConfig.DeriveQuickActionItems()` 私有方法會：
-1. 掃描所有扁平化的導航項目
-2. 篩選出 `QuickActionId` 不為空的項目
-3. 為每個符合條件的項目產生一個 `ItemType = QuickAction` 的衍生 NavigationItem
-4. 衍生項目繼承原項目的 `Category`、`RequiredPermission` 等屬性
-
----
-
-## ChartWidget 標記設計
-
-### 核心概念
-
-圖表 Modal（如 `CustomerChartModalComponent`）是 Action 類型，透過 MainLayout Handler 開啟。設定 `IsChartWidget = true` 後，該項目會：
-- 從 `GetShortcutWidgetItems()`（頁面連結）移除
-- 改由 `GetChartWidgetItems()` 回傳
-- 在 Picker Modal 的「圖表介面」Tab 獨立顯示
-
-### NavigationItem 的 ChartWidget 屬性
+### ChartWidget 屬性（設定後移至圖表介面 Tab）
 
 | 屬性 | 型別 | 說明 |
 |------|------|------|
-| `IsChartWidget` | bool | `true` 表示此項目為圖表介面，會出現在「圖表介面」Tab，預設 `false` |
-
-### 範例
-
-```csharp
-// NavigationConfig.cs 中的客戶圖表項目
-new NavigationItem
-{
-    Name = "客戶圖表",
-    NameKey = "Nav.CustomerCharts",
-    Description = "依多維度查看客戶統計分析圖表",
-    IconClass = "bi bi-bar-chart-fill",
-    ItemType = NavigationItemType.Action,
-    ActionId = "OpenCustomerCharts",
-    Category = "客戶關係管理",
-    RequiredPermission = "Customer.Read",
-    SearchKeywords = new List<string> { "客戶圖表", "客戶分析", "統計分析", "customer chart" },
-    IsChartWidget = true   // ← 標記後從「頁面連結」移至「圖表介面」Tab
-}
-```
+| `IsChartWidget` | `bool` | `true` 表示此項目為圖表介面，從「頁面連結」Tab 移至「圖表介面」Tab，預設 `false` |
 
 ---
 
-## 架構設計
+## NavigationConfig 主要方法
 
-### 資料來源
+| 方法 | 說明 |
+|------|------|
+| `GetAllNavigationItems()` | 取得完整導航樹 |
+| `GetShortcutWidgetItems()` | 取得頁面連結項目（Route + Action，不含 IsChartWidget） |
+| `GetQuickActionWidgetItems()` | 取得快速功能項目（衍生 QuickAction） |
+| `GetChartWidgetItems()` | 取得圖表介面項目（IsChartWidget = true 的 Action） |
+| `GetNavigationItemByKey(key)` | 根據識別鍵取得導航項目 |
+| `DeriveQuickActionItems()` | [私有] 從有 QuickActionId 的項目自動衍生 QuickAction |
 
-```
-NavigationConfig（靜態類）
-  ├─ GetAllNavigationItems()        → 取得完整導航樹
-  ├─ GetDashboardWidgetItems()      → 取得所有可作為捷徑的項目（Route + Action[非圖表] + 衍生 QuickAction）
-  ├─ GetShortcutWidgetItems()       → 取得頁面連結項目（Route + Action，不含 IsChartWidget）
-  ├─ GetQuickActionWidgetItems()    → 取得快速功能項目（衍生 QuickAction）
-  ├─ GetChartWidgetItems()          → 取得圖表介面項目（IsChartWidget = true 的 Action）
-  ├─ DeriveQuickActionItems()       → [私有] 從有 QuickActionId 的項目自動衍生 QuickAction
-  ├─ GetNavigationItemByKey(key)    → 根據識別鍵取得導航項目
-  └─ GetCategoryIcon(category)      → 根據分類取得對應圖示（備援用）
+---
 
-DashboardDefaults（靜態類）
-  ├─ MaxPanelCount                  → 面板最大數量限制（6）
-  ├─ MaxPanelTitleLength            → 面板標題最大長度（20）
-  ├─ DefaultPanelDefinitions        → 預設面板定義清單
-  ├─ AvailableIcons                 → 可選用的面板圖示清單（精選 Bootstrap Icons）
-  ├─ GetNavigationItemKey(item)     → 從 NavigationItem 生成識別鍵
-  ├─ IsQuickActionKey(key)          → 判斷 Key 是否為 QuickAction 類型
-  └─ GetDefaultItemSortOrder(...)   → 取得預設面板中項目的排序
+## DashboardDefaults 常數與配置
 
-IconOption（圖示選項類別）
-  ├─ IconClass                      → Bootstrap Icon CSS class
-  ├─ DisplayName                    → 圖示顯示名稱
-  └─ Category                       → 圖示分類（常用 / 商業 / 文件 / 系統 / 資料 / 人員 / 物流）
+| 成員 | 說明 |
+|------|------|
+| `MaxPanelCount` | 面板最大數量（6） |
+| `MaxPanelTitleLength` | 面板標題最大長度（20） |
+| `DefaultPanelDefinitions` | 預設面板定義清單（新用戶首次登入自動套用） |
+| `AvailableIcons` | 可選用的面板圖示清單（精選 Bootstrap Icons，依分類） |
+| `GetNavigationItemKey(item)` | 從 NavigationItem 生成識別鍵 |
+| `IsQuickActionKey(key)` | 判斷 Key 是否為 QuickAction 類型 |
 
-EmployeeDashboardPanel（資料表）
-  └─ 儲存員工的面板定義（Title + SortOrder + IconClass）
+---
 
-EmployeeDashboardConfig（資料表）
-  └─ 儲存面板內的項目配置（NavigationItemKey + SortOrder）
-```
+## NavigationItemKey 識別鍵格式
 
-### 資料流程
+| 類型 | 格式 | 範例 |
+|------|------|------|
+| Route | 路由路徑 | `/employees`、`/purchase/orders` |
+| Action（含圖表） | `Action:{ActionId}` | `Action:OpenCustomerCharts` |
+| QuickAction | `QuickAction:{ActionId}` | `QuickAction:NewPurchaseOrder` |
 
-```
-首頁載入
-  ├─ DashboardService.GetEmployeePanelsAsync(employeeId)
-  │     ├─ 查詢 EmployeeDashboardPanel（含 DashboardConfigs）
-  │     ├─ 如果配置為空且未初始化 → InitializeDefaultDashboardAsync()
-  │     ├─ 用 NavigationItemKey 對應 NavigationConfig
-  │     ├─ 過濾權限
-  │     └─ 回傳 List<DashboardPanelWithItems>
-  └─ Home.razor 動態迴圈渲染所有面板
-
-點擊捷徑卡片
-  ├─ Route      → NavigationManager.NavigateTo(navItem.Route)
-  ├─ Action     → NavigationActionHandler.Invoke(navItem.ActionId)（MainLayout 處理，含圖表 Modal）
-  └─ QuickAction → quickActionHost.Open(navItem.ActionId)（開啟對應 Modal）
-
-開啟 Picker Modal
-  ├─ 平行載入三種清單
-  │     ├─ GetAvailableWidgetsAsync(employeeId, false)     → availableShortcutWidgets
-  │     ├─ GetAvailableWidgetsAsync(employeeId, true)      → availableQuickActionWidgets
-  │     └─ GetAvailableChartWidgetsAsync(employeeId)       → availableChartWidgets
-  └─ DashboardWidgetPickerModal 顯示三個 Tab
-```
+圖表介面項目與一般 Action 使用相同識別鍵格式，儲存層無需區分。
 
 ---
 
 ## 資料表設計
 
-### Employee（員工表 - 相關欄位）
+### Employee（相關欄位）
 
-| 欄位 | 型別 | 說明 |
-|------|------|------|
-| HasInitializedDashboard | bool | 是否已初始化首頁儀表板（預設 false） |
-
-**初始化邏輯**：`false` 表示新用戶，首次登入時自動套用預設配置。`true` 表示已初始化，即使配置為空也不會自動重置。
+| 欄位 | 說明 |
+|------|------|
+| `HasInitializedDashboard` | 是否已初始化儀表板。`false` 表示新用戶，首次載入自動套用預設配置；`true` 表示已初始化，配置為空時不重置 |
 
 ### EmployeeDashboardPanel（員工儀表板面板表）
 
-一筆記錄 = 一個使用者自訂的面板。
-
 | 欄位 | 型別 | 說明 |
 |------|------|------|
-| Id | int (PK) | 繼承 BaseEntity |
-| EmployeeId | int (FK) | 所屬員工 |
-| Title | string(50) | 面板標題（使用者自訂，最長 20 字） |
-| SortOrder | int | 面板排序（數字越小越前面） |
-| IconClass | string(50)? | 面板圖示（選填，預設 `bi-grid-fill`） |
-
-**索引**：`(EmployeeId, SortOrder)`
+| `EmployeeId` | int (FK) | 所屬員工 |
+| `Title` | string(50) | 面板標題 |
+| `SortOrder` | int | 面板排序 |
+| `IconClass` | string(50)? | 面板圖示（選填，預設 `bi-grid-fill`） |
 
 ### EmployeeDashboardConfig（員工儀表板項目配置表）
 
-一筆記錄 = 一個被選用的捷徑、快速功能或圖表介面。
-
 | 欄位 | 型別 | 說明 |
 |------|------|------|
-| Id | int (PK) | 繼承 BaseEntity |
-| PanelId | int (FK) | 所屬面板 |
-| EmployeeId | int (FK) | 所屬員工（冗餘，方便查詢） |
-| NavigationItemKey | string(200) | 導航項目識別鍵（對應 NavigationConfig） |
-| SortOrder | int | 顯示排序（數字越小越前面） |
-| IsVisible | bool | 是否顯示（預留，允許暫時隱藏而不刪除） |
-| WidgetSettings | string(max)? | JSON 格式的個人化參數（預留給未來進階功能） |
+| `PanelId` | int (FK) | 所屬面板 |
+| `EmployeeId` | int (FK) | 所屬員工（冗餘，方便查詢） |
+| `NavigationItemKey` | string(200) | 導航項目識別鍵（對應 NavigationConfig） |
+| `SortOrder` | int | 顯示排序 |
+| `IsVisible` | bool | 是否顯示（預留，允許暫時隱藏而不刪除） |
+| `WidgetSettings` | string(max)? | JSON 格式個人化參數（預留） |
 
-**複合唯一索引**：`PanelId + NavigationItemKey`（同一面板內項目不重複，但允許跨面板重複）
-
-### NavigationItemKey 識別鍵格式
-
-| 類型 | 格式 | 範例 |
-|------|------|------|
-| Route | 路由路徑 | `/employees`、`/purchase/orders` |
-| Action（含圖表） | `Action:{ActionId}` | `Action:OpenCustomerCharts`、`Action:OpenCustomerReportIndex` |
-| QuickAction | `QuickAction:{ActionId}` | `QuickAction:NewPurchaseOrder` |
-
-圖表介面項目的識別鍵格式與一般 Action 相同（`Action:{ActionId}`），儲存層無需區分。
-
----
-
-## 檔案結構
-
-```
-Models/
-├─ Enums/
-│   └─ NavigationItemType.cs               # Route / Action / QuickAction 枚舉
-└─ Navigation/
-    └─ NavigationItem.cs                   # 導航項目模型（含 QuickAction 可選屬性 + IsChartWidget 屬性）
-
-Helpers/Common/
-└─ NavigationActionHelper.cs               # CreateActionItem 工廠方法 + ActionHandlerRegistry
-
-Data/
-├─ Navigation/
-│   ├─ NavigationConfig.cs                 # 導航選單配置（唯一資料來源 + QuickAction 衍生 + ChartWidget 篩選）
-│   └─ DashboardDefaults.cs                # 預設面板定義
-├─ Entities/Employees/
-│   ├─ EmployeeDashboardPanel.cs           # 面板 Entity
-│   └─ EmployeeDashboardConfig.cs          # 面板項目 Entity
-
-Services/Dashboard/
-├─ IDashboardService.cs                    # 服務介面（面板 CRUD + 項目管理）
-└─ DashboardService.cs                     # 服務實作
-
-Components/
-├─ Pages/
-│   └─ Home.razor                          # 首頁（動態面板 + QuickActionModalHost 引用）
-└─ Shared/
-    └─ Dashboard/
-        ├─ DashboardShortcutCard.razor      # 捷徑卡片元件
-        ├─ DashboardShortcutCard.razor.css  # 卡片樣式
-        ├─ DashboardWidgetPickerModal.razor # 項目選擇 Modal（三個 Tab：頁面連結 / 快速功能 / 圖表介面）
-        ├─ IconPickerModal.razor            # 面板圖示選擇 Modal
-        └─ QuickActionModalHost.razor       # 集中管理所有 QuickAction Modal
-```
+**複合唯一索引**：`PanelId + NavigationItemKey`（同面板內不重複，跨面板允許重複）
 
 ---
 
 ## 元件設計
 
-### Home.razor
+### DashboardWidgetPickerModal 參數
 
-```
-Home.razor
-├─ 動態面板迴圈
-│   ├─ 面板圖示（編輯模式下可點擊更換）
-│   ├─ 面板標題（編輯模式下可修改）
-│   ├─ [編輯] / [完成] [刪除] 按鈕
-│   ├─ DashboardShortcutCard × N（Route + Action + QuickAction + ChartWidget 混放）
-│   └─ 編輯模式：拖曳排序 + 移除按鈕 + [新增項目] 卡片
-├─ [新增區塊] [恢復預設] 按鈕
-├─ DashboardWidgetPickerModal（三個 Tab：頁面連結 / 快速功能 / 圖表介面）
-├─ IconPickerModal（面板圖示選擇）
-├─ GenericConfirmModalComponent（重置/刪除確認）
-├─ BaseModalComponent（新增面板）
-└─ <QuickActionModalHost @ref="quickActionHost" />
-```
+| 參數 | 型別 | 說明 |
+|------|------|------|
+| `AvailableShortcutWidgets` | `List<NavigationItem>` | 可選的頁面連結項目 |
+| `AvailableQuickActionWidgets` | `List<NavigationItem>` | 可選的快速功能項目 |
+| `AvailableChartWidgets` | `List<NavigationItem>` | 可選的圖表介面項目 |
+| `ExistingWidgetKeys` | `HashSet<string>` | 已存在的識別鍵集合（已加入者置灰） |
+| `OnConfirm` | `EventCallback<List<string>>` | 確認新增事件，傳回選取的識別鍵清單 |
 
-### DashboardWidgetPickerModal.razor
+搜尋模式下合併顯示三種類型的結果。
 
-| Parameter | 型別 | 說明 |
-|-----------|------|------|
-| AvailableShortcutWidgets | List\<NavigationItem\> | 可選的頁面連結項目（Route + Action，不含 IsChartWidget） |
-| AvailableQuickActionWidgets | List\<NavigationItem\> | 可選的快速功能項目（QuickAction） |
-| AvailableChartWidgets | List\<NavigationItem\> | 可選的圖表介面項目（IsChartWidget = true 的 Action） |
-| ExistingWidgetKeys | HashSet\<string\> | 已存在的識別鍵集合 |
-| OnConfirm | EventCallback\<List\<string\>\> | 確認新增事件 |
+### IconPickerModal 參數
 
-**三個 Tab 設計**：頂部有「頁面連結」、「快速功能」、「圖表介面」三個 Tab，使用者可切換查看不同類型的項目，選擇後一起新增到面板中。搜尋模式會合併顯示三種類型的結果。
+| 參數 | 型別 | 說明 |
+|------|------|------|
+| `IsVisible` | `bool` | Modal 是否顯示 |
+| `IsVisibleChanged` | `EventCallback<bool>` | 顯示狀態變更事件 |
+| `CurrentIcon` | `string?` | 目前選用的圖示（標示當前選擇） |
+| `OnConfirm` | `EventCallback<string>` | 確認選擇事件，傳回選中的圖示 CSS class |
 
-### IconPickerModal.razor
-
-面板圖示選擇 Modal，提供分類瀏覽的 Bootstrap Icons 選擇介面。
-
-| Parameter | 型別 | 說明 |
-|-----------|------|------|
-| IsVisible | bool | Modal 是否顯示 |
-| IsVisibleChanged | EventCallback\<bool\> | 顯示狀態變更事件 |
-| CurrentIcon | string? | 目前的圖示（用於標示當前選擇） |
-| OnConfirm | EventCallback\<string\> | 確認選擇事件，傳回選中的圖示 CSS class |
-
-**圖示分類**：常用、商業、文件、系統、資料、人員、物流（共約 40 個精選圖示）。
-
-### QuickActionModalHost.razor
-
-使用 DynamicComponent + 靜態註冊表（Registry）集中管理所有快速功能 Modal：
+### QuickActionModalHost 機制
 
 | 功能 | 說明 |
 |------|------|
-| `_registry` | 靜態字典，映射 QuickActionId → (元件類型, Id參數名, 額外參數) |
-| `_quickActionPermissions` | 靜態字典，從 `NavigationConfig.GetQuickActionWidgetItems()` 衍生，映射 QuickActionId → RequiredPermission |
+| `_registry` | 靜態字典：`QuickActionId → (元件類型, Id參數名, 額外參數字典?)` |
 | `ConfiguredActionIds` | Parameter，接收已配置的 QuickAction Id 清單進行預渲染 |
 | `Open(actionId)` | 公開方法，根據 QuickActionId 開啟對應 Modal |
-| 延遲開啟機制 | 確保 firstRender 在 IsVisible=false 時完成，避免 ActionButtons 問題 |
-| **權限守衛** | `OnParametersSetAsync` 呼叫 `NavigationPermissionService.CanAccessAsync` 檢查每個 QuickAction 的 `RequiredPermission`，未授權者不加入 `_activeActionIds`，Modal 不渲染也無法開啟 |
-
----
-
-## 如何新增快速功能（只需兩步）
-
-### 步驟 1：在現有的 NavigationItem 上設定 QuickActionId
-
-在 `NavigationConfig.cs` 中找到要開放快速功能的項目，加上 QuickAction 屬性：
-
-```csharp
-new NavigationItem
-{
-    Name = "採購管理",
-    Description = "管理採購訂單",
-    Route = "/purchase/orders",
-    IconClass = "bi bi-caret-right-fill",
-    Category = "採購管理",
-    RequiredPermission = "PurchaseOrder.Read",
-    SearchKeywords = new List<string> { "採購單", "訂購單", "purchase order", "PO" },
-    // 加上以下屬性即可支援快速功能
-    QuickActionId = "NewPurchaseOrder",
-    QuickActionName = "新增採購單",        // 選填，預設「新增」+ Name
-}
-```
-
-**完成第一步！** 系統會自動衍生一個 QuickAction 項目出現在「新增快速功能」選單中。
-
-### 步驟 2：在 QuickActionModalHost.razor 註冊 Modal
-
-在 `Components/Shared/Dashboard/QuickActionModalHost.razor` 的 `_registry` 字典中新增一行：
-
-```csharp
-["NewPurchaseOrder"] = new(typeof(PurchaseOrderEditModalComponent), "PurchaseOrderId"),
-```
-
-如果有額外參數（例如 SetoffDocument 的 DefaultSetoffType）：
-
-```csharp
-["NewARSetoff"] = new(typeof(SetoffDocumentEditModalComponent), "SetoffDocumentId",
-    new() { ["DefaultSetoffType"] = SetoffType.AccountsReceivable }),
-```
-
-### 步驟 3（選擇性）：設為預設
-
-在 `DashboardDefaults.cs` 的 `DefaultPanelDefinitions` 對應面板的 `ItemKeys` 清單新增識別鍵。
-
-### 注意事項
-
-- `RequiredPermission` 應使用已存在於 PermissionSeeder 的權限碼（通常是 `.Read`），否則所有使用者都無法看到此項目
-- QuickAction Modal **不可使用 `@if` 包裹**，否則 ActionButtons 會失效
-- `QuickActionModalHost` 的權限守衛自動繼承 NavigationItem 上的 `RequiredPermission`，新增快速功能時**無需**在 QuickActionModalHost 額外設定權限
-
----
-
-## 如何新增圖表介面選項（只需兩步）
-
-### 步驟 1：在 NavigationConfig.cs 新增 NavigationItem，設定 IsChartWidget = true
-
-圖表介面項目是 `ItemType = Action` 加上 `IsChartWidget = true` 的組合。**不使用** `NavigationActionHelper.CreateActionItem()`，直接宣告 NavigationItem 以便設定 `IsChartWidget`：
-
-```csharp
-new NavigationItem
-{
-    Name = "廠商圖表",
-    NameKey = "Nav.SupplierCharts",
-    Description = "依多維度查看廠商統計分析圖表",
-    IconClass = "bi bi-bar-chart-fill",
-    ItemType = NavigationItemType.Action,
-    ActionId = "OpenSupplierCharts",
-    Category = "供應鏈管理",
-    RequiredPermission = "Supplier.Read",
-    SearchKeywords = new List<string> { "廠商圖表", "廠商分析", "supplier chart" },
-    IsChartWidget = true   // ← 標記後自動出現在「圖表介面」Tab
-}
-```
-
-**完成第一步！** 此項目會自動出現在 Picker Modal 的「圖表介面」Tab 中，且不會出現在「頁面連結」Tab。
-
-### 步驟 2：在 MainLayout.razor 新增 Handler 與 Modal
-
-```csharp
-// @code 區塊：新增狀態與方法
-private bool showSupplierCharts = false;
-
-protected override void OnInitialized()
-{
-    actionRegistry.Register("OpenSupplierCharts", OpenSupplierCharts);
-}
-
-public void OpenSupplierCharts()
-{
-    try { showSupplierCharts = true; StateHasChanged(); }
-    catch { }
-}
-```
-
-```razor
-@* Razor 區塊：宣告 Modal（不可用 @if 包裹） *@
-<SupplierChartModalComponent IsVisible="@showSupplierCharts"
-                             IsVisibleChanged="@((bool visible) => showSupplierCharts = visible)" />
-```
-
-### 步驟 3（選擇性）：設為預設
-
-在 `DashboardDefaults.cs` 的 `DefaultPanelDefinitions` 對應面板的 `ItemKeys` 加入 `"Action:OpenSupplierCharts"`。
-
----
-
-## 如何新增頁面連結選項
-
-在 `NavigationConfig.cs` 的 `GetAllNavigationItems()` 中新增 Route 或 Action 項目即可。新項目自動出現在「新增項目」選單的「頁面連結」Tab 中。
-
-> 注意：若要出現在「圖表介面」Tab，請改用上方的「如何新增圖表介面選項」流程。
-
-（選擇性）在 `DashboardDefaults.DefaultPanelDefinitions` 對應面板加入預設。
+| 權限守衛 | `OnParametersSetAsync` 呼叫 `NavigationPermissionService.CanAccessAsync` 檢查 `RequiredPermission`，未授權者不渲染 Modal 也無法開啟 |
+| 延遲開啟機制 | 確保 firstRender 在 `IsVisible=false` 時完成，避免 ActionButtons 問題 |
 
 ---
 
@@ -451,7 +171,7 @@ public void OpenSupplierCharts()
 
 | 方法 | 說明 |
 |------|------|
-| `GetEmployeePanelsAsync(employeeId)` | 取得員工所有面板（含項目） |
+| `GetEmployeePanelsAsync(employeeId)` | 取得員工所有面板（含項目，Include 一次載入） |
 | `CreatePanelAsync(employeeId, title)` | 建立新面板 |
 | `UpdatePanelTitleAsync(panelId, title)` | 更新面板標題 |
 | `UpdatePanelIconAsync(panelId, iconClass)` | 更新面板圖示 |
@@ -462,8 +182,8 @@ public void OpenSupplierCharts()
 
 | 方法 | 說明 |
 |------|------|
-| `GetAvailableWidgetsAsync(employeeId, isQuickAction)` | 取得頁面連結或快速功能的可用項目 |
-| `GetAvailableChartWidgetsAsync(employeeId)` | 取得圖表介面的可用項目（IsChartWidget = true） |
+| `GetAvailableWidgetsAsync(employeeId, isQuickAction)` | 取得頁面連結或快速功能的可用項目（含權限過濾） |
+| `GetAvailableChartWidgetsAsync(employeeId)` | 取得圖表介面的可用項目 |
 | `GetPanelExistingKeysAsync(panelId)` | 取得面板已有項目 Key |
 | `AddWidgetBatchAsync(panelId, keys)` | 批次新增項目 |
 | `RemoveWidgetAsync(configId)` | 移除項目 |
@@ -473,44 +193,60 @@ public void OpenSupplierCharts()
 
 | 方法 | 說明 |
 |------|------|
-| `InitializeDefaultDashboardAsync(employeeId)` | 初始化預設面板 |
-| `ResetPanelToDefaultAsync(panelId)` | 重置單一面板 |
-| `ResetAllPanelsToDefaultAsync(employeeId)` | 重置所有面板 |
+| `InitializeDefaultDashboardAsync(employeeId)` | 初始化預設面板（新用戶首次登入觸發） |
+| `ResetPanelToDefaultAsync(panelId)` | 重置單一面板至預設 |
+| `ResetAllPanelsToDefaultAsync(employeeId)` | 重置所有面板至預設 |
 
 ---
 
-## 效能考量
+## 重要設計規則
 
-- **Modal 常駐渲染**：QuickAction 的 Modal 不使用 `@if` 條件渲染（避免 `setupButtonTabNavigation` 問題），但 `IsVisible = false` 時 BaseModalComponent 不會顯示任何內容
-- **權限快取**：`OnParametersSetAsync` 中的 `NavigationPermissionService.CanAccessAsync` 使用 10 分鐘記憶體快取，大量 QuickAction 預渲染時不會重複查詢資料庫
-- **Include 載入**：`GetEmployeePanelsAsync` 使用 `Include` 一次載入面板與項目
-- **新用戶初始化**：`InitializeDefaultDashboardAsync` 建立預設面板結構，只需一次查詢觸發
-- **平行載入**：開啟 Picker Modal 時，三種類型的可用項目使用 `Task.WhenAll` 平行載入
+### 1. QuickAction Modal 不使用 @if 條件渲染
+
+`QuickActionModalHost` 中的 Modal 必須常駐 DOM，以 `IsVisible = false` 控制顯示。使用 `@if` 包裹會導致 ActionButtons（`setupButtonTabNavigation`）失效。
+
+### 2. 圖表介面不使用 CreateActionItem() 建立
+
+圖表介面項目需要直接宣告 `NavigationItem` 以設定 `IsChartWidget = true`，`NavigationActionHelper.CreateActionItem()` 不支援此屬性。
+
+### 3. 權限自動繼承
+
+`QuickActionModalHost` 的權限守衛自動從 `NavigationConfig` 的 `RequiredPermission` 繼承，新增快速功能時無需在 `QuickActionModalHost` 額外設定權限。
+
+### 4. MainLayout Modal 同樣不使用 @if
+
+MainLayout 中的圖表 Modal 宣告不使用 `@if` 包裹，原因同 QuickAction。
+
+### 5. Picker Modal 平行載入
+
+開啟 Picker Modal 時，三種類型的可用項目使用 `Task.WhenAll` 平行載入，避免序列等待。
+
+### 6. 權限快取
+
+`NavigationPermissionService.CanAccessAsync` 使用 10 分鐘記憶體快取，大量 QuickAction 預渲染時不重複查詢資料庫。
 
 ---
 
-## 快速參考
+## 新增功能快速參考
 
 ### 新增頁面連結
-1. 在 `NavigationConfig.cs` 的 `GetAllNavigationItems()` 新增 Route 或 Action 項目（`IsChartWidget` 保持預設 `false`）
-2. （選擇性）在 `DashboardDefaults.DefaultPanelDefinitions` 對應面板的 `ItemKeys` 加入
+1. 在 `NavigationConfig.GetAllNavigationItems()` 新增 Route 或 Action 項目（`IsChartWidget` 保持預設 `false`）
+2. （選擇性）在 `DashboardDefaults.DefaultPanelDefinitions` 對應面板的 `ItemKeys` 加入識別鍵
 
 ### 新增快速功能
-1. 在 `NavigationConfig.cs` 的現有 NavigationItem 上設定 `QuickActionId`（和可選的 `QuickActionName`）
-2. 在 `QuickActionModalHost.razor` 的 `_registry` 新增 Modal 註冊（**不用 @if 包裹**）
-3. （選擇性）在 `DashboardDefaults.DefaultPanelDefinitions` 對應面板加入
+1. 在 `NavigationConfig.cs` 的現有 NavigationItem 設定 `QuickActionId`（和選填的 `QuickActionName`）
+2. 在 `QuickActionModalHost._registry` 新增 `QuickActionId → (元件類型, Id參數名)` 對應（勿用 `@if` 包裹）
+3. （選擇性）在 `DashboardDefaults.DefaultPanelDefinitions` 對應面板加入 `QuickAction:{ActionId}`
 
 ### 新增圖表介面
-1. 在 `NavigationConfig.cs` 新增 NavigationItem（`ItemType = Action`，**`IsChartWidget = true`**，**不用** `CreateActionItem()`）
-2. 在 `MainLayout.razor` 新增 Handler 和 Modal 宣告（**不用 @if 包裹**）
-3. （選擇性）在 `DashboardDefaults.DefaultPanelDefinitions` 對應面板加入
+1. 在 `NavigationConfig.cs` 直接宣告 NavigationItem，設定 `ItemType = Action` 且 `IsChartWidget = true`（不使用 `CreateActionItem()`）
+2. 在 `MainLayout.razor` 的 `OnInitialized` 註冊 Handler，並宣告 Modal（勿用 `@if` 包裹）
+3. （選擇性）在 `DashboardDefaults.DefaultPanelDefinitions` 對應面板加入 `Action:{ActionId}`
 
-### 識別鍵格式
-- Route 類型：`/path/to/page`
-- Action 類型（含圖表）：`Action:ActionId`
-- QuickAction 類型：`QuickAction:ActionId`
+---
 
-### 面板限制
-- 最多 **6 個**面板
-- 標題最長 **20 字元**
-- 同一項目可出現在多個面板中
+## 相關文件
+
+- [README_完整頁面設計總綱.md](README_完整頁面設計總綱.md)
+- [README_Index頁面設計.md](README_Index頁面設計.md)
+- [README_EditModal設計.md](README_EditModal設計.md)

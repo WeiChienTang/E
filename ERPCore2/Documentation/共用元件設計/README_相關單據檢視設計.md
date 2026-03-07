@@ -1,321 +1,134 @@
-# 相關單據檢視 Modal 設計文件
+# 相關單據檢視設計
+
+## 更新日期
+2026-03-07
+
+---
 
 ## 概述
 
-`Components/Shared/RelatedDocument/` 資料夾提供了一套完整的「相關單據檢視」解決方案，用於在 ERP 系統中顯示與特定項目關聯的單據清單（如入庫記錄、退貨記錄、沖款記錄等）。
-
-此架構採用**組件化設計**，將顯示邏輯、配置與範本分離，便於擴充新的單據類型。
+`Components/Shared/RelatedDocument/` 提供「相關單據檢視」解決方案，用於顯示與特定項目關聯的單據清單（如入庫、退貨、沖款記錄等）。採用**組件化設計**，將顯示邏輯、配置與範本分離，便於擴充新的單據類型。
 
 ---
 
-## 資料夾結構
+## 檔案結構
 
-```
-Components/Shared/RelatedDocument/
-├── RelatedDocumentsModalComponent.razor    # 主要 Modal 組件
-├── InventoryTransactionRelatedModal.razor  # 庫存異動專用 Modal
-├── Components/
-│   └── RelatedDocumentSectionComponent.razor  # 單據區塊子組件
-├── Config/
-│   └── DocumentSectionConfig.cs              # 單據類型配置
-└── Templates/                                 # 各類型詳細欄位範本
-    ├── CompositionDetailsTemplate.razor
-    ├── InventoryTransactionDetailsTemplate.razor
-    ├── ReceivingDetailsTemplate.razor
-    ├── ReturnDetailsTemplate.razor
-    ├── SalesOrderDetailsTemplate.razor
-    ├── SetoffDetailsTemplate.razor
-    └── SupplierRecommendationDetailsTemplate.razor
-```
+| 檔案 | 路徑 | 說明 |
+|------|------|------|
+| 主要 Modal | `Components/Shared/RelatedDocument/RelatedDocumentsModalComponent.razor` | 自動依單據類型分組顯示 |
+| 庫存異動 Modal | `Components/Shared/RelatedDocument/InventoryTransactionRelatedModal.razor` | 庫存異動專用 Modal |
+| 區塊子元件 | `Components/Shared/RelatedDocument/Components/RelatedDocumentSectionComponent.razor` | 單一類型的單據區塊 |
+| 區塊配置 | `Components/Shared/RelatedDocument/Config/DocumentSectionConfig.cs` | 各單據類型的標題、圖示、顏色配置 |
+| 詳細欄位範本 | `Components/Shared/RelatedDocument/Templates/*.razor` | 各類型詳細欄位 RenderFragment |
+| 資料模型 | `Models/Documents/RelatedDocument.cs` | `RelatedDocumentInfo` 定義 |
+| 類型枚舉 | `Models/Enums/RelatedDocumentType.cs` | `RelatedDocumentType` 枚舉 |
+| 輔助方法 | `Helpers/RelatedDocumentsHelper.cs` | 服務層輔助方法 |
 
 ---
 
-## 核心組件說明
+## RelatedDocumentsModalComponent 參數
 
-### 1. RelatedDocumentsModalComponent
-
-主要的相關單據檢視 Modal，自動根據單據類型分組顯示。
-
-**參數：**
-
-| 參數名稱 | 類型 | 說明 |
-|---------|------|------|
-| `IsVisible` | `bool` | 控制 Modal 顯示/隱藏 |
-| `IsVisibleChanged` | `EventCallback<bool>` | 雙向綁定回調 |
+| 參數 | 型別 | 說明 |
+|------|------|------|
+| `IsVisible` | `bool` | Modal 是否顯示 |
+| `IsVisibleChanged` | `EventCallback<bool>` | 顯示狀態變更事件 |
 | `ProductName` | `string` | 顯示於標題的商品名稱 |
-| `RelatedDocuments` | `List<RelatedDocumentInfo>?` | 相關單據資料清單 |
+| `RelatedDocuments` | `List<RelatedDocumentInfo>?` | 相關單據資料清單（null 時顯示載入中） |
 | `IsLoading` | `bool` | 載入狀態 |
-| `OnDocumentClick` | `EventCallback<RelatedDocumentInfo>` | 點擊單據時觸發 |
-| `OnAddNew` | `EventCallback` | 點擊新增按鈕時觸發 |
+| `OnDocumentClick` | `EventCallback<RelatedDocumentInfo>` | 點擊單據列觸發 |
+| `OnAddNew` | `EventCallback` | 點擊新增按鈕觸發 |
 
-### 2. RelatedDocumentSectionComponent
+---
 
-單一類型的單據區塊組件，由主 Modal 內部使用。
+## RelatedDocumentSectionComponent 參數
 
-**參數：**
-
-| 參數名稱 | 類型 | 說明 |
-|---------|------|------|
+| 參數 | 型別 | 說明 |
+|------|------|------|
 | `Documents` | `List<RelatedDocumentInfo>` | 該類型的單據清單 |
-| `Config` | `DocumentSectionConfig` | 區塊顯示配置 |
-| `DetailsTemplate` | `RenderFragment<RelatedDocumentInfo>?` | 自訂詳細欄位範本 |
-| `OnDocumentClick` | `EventCallback<RelatedDocumentInfo>` | 點擊事件回調 |
+| `Config` | `DocumentSectionConfig` | 區塊顯示配置（標題、圖示、顏色） |
+| `DetailsTemplate` | `RenderFragment<RelatedDocumentInfo>?` | 自訂詳細欄位範本（選填） |
+| `OnDocumentClick` | `EventCallback<RelatedDocumentInfo>` | 點擊事件回呼 |
 
-### 3. DocumentSectionConfig
+---
 
-定義各單據類型的顯示配置（標題、圖示、顏色等）。
+## DocumentSectionConfig 屬性
 
-```csharp
-public class DocumentSectionConfig
-{
-    public string Title { get; init; }        // 區塊標題
-    public string Icon { get; init; }         // Bootstrap Icons 類別
-    public string TextColor { get; init; }    // 文字顏色
-    public string BadgeColor { get; init; }   // Badge 背景顏色
-    public bool ShowAddButton { get; init; }  // 是否顯示新增按鈕
-    public string AddButtonText { get; init; } // 新增按鈕文字
-}
-```
+| 屬性 | 型別 | 說明 |
+|------|------|------|
+| `Title` | `string` | 區塊標題 |
+| `Icon` | `string` | Bootstrap Icons 類別名稱 |
+| `TextColor` | `string` | 文字顏色（Bootstrap 色彩名稱） |
+| `BadgeColor` | `string` | Badge 背景顏色 |
+| `ShowAddButton` | `bool` | 是否顯示新增按鈕 |
+| `AddButtonText` | `string` | 新增按鈕文字 |
+
+---
+
+## RelatedDocumentInfo 欄位
+
+| 欄位 | 型別 | 說明 |
+|------|------|------|
+| `DocumentId` | `int` | 單據 ID |
+| `DocumentType` | `RelatedDocumentType` | 單據類型 |
+| `DocumentNumber` | `string` | 單據編號 |
+| `DocumentDate` | `DateTime` | 單據日期 |
+| `Quantity` | `decimal?` | 相關數量 |
+| `UnitPrice` | `decimal?` | 單價 |
+| `Amount` | `decimal?` | 相關金額 |
+| `CurrentAmount` | `decimal?` | 本次金額 |
+| `TotalAmount` | `decimal?` | 累計金額 |
+| `Remarks` | `string?` | 備註 |
+| `Icon` | `string`（計算屬性） | 根據 `DocumentType` 自動取得圖示 |
+| `BadgeColor` | `string`（計算屬性） | 根據 `DocumentType` 自動取得顏色 |
+| `TypeDisplayName` | `string`（計算屬性） | 類型顯示名稱 |
 
 ---
 
 ## 支援的單據類型
 
-| 類型 | 說明 | 圖示 | 顏色 |
-|------|------|------|------|
-| `ProductComposition` | 商品物料清單 (BOM) | diagram-3 | purple |
-| `SalesOrder` | 銷貨訂單 | cart-check | primary |
-| `ReceivingDocument` | 入庫記錄 | box-seam | info |
-| `ReturnDocument` | 退貨記錄 | arrow-return-left | warning |
-| `SetoffDocument` | 沖款記錄 | cash-coin | success |
-| `DeliveryDocument` | 出貨記錄 | truck | info |
-| `ProductionSchedule` | 生產排程 | calendar-check | dark |
-| `SupplierRecommendation` | 供應商推薦 | shop | success |
-| `InventoryTransaction` | 庫存異動記錄 | arrow-left-right | secondary |
+| 枚舉值 | 說明 | 圖示 | 顏色 |
+|--------|------|------|------|
+| `ProductComposition` | 商品物料清單 (BOM) | `diagram-3` | purple |
+| `SalesOrder` | 銷貨訂單 | `cart-check` | primary |
+| `ReceivingDocument` | 入庫記錄 | `box-seam` | info |
+| `ReturnDocument` | 退貨記錄 | `arrow-return-left` | warning |
+| `SetoffDocument` | 沖款記錄 | `cash-coin` | success |
+| `DeliveryDocument` | 出貨記錄 | `truck` | info |
+| `ProductionSchedule` | 生產排程 | `calendar-check` | dark |
+| `SupplierRecommendation` | 供應商推薦 | `shop` | success |
+| `InventoryTransaction` | 庫存異動記錄 | `arrow-left-right` | secondary |
 
 ---
 
-## 使用範例
+## 重要設計規則
 
-### 基本使用（參考 PurchaseOrderTable.razor）
+### 1. 自動分組
 
-#### 步驟 1：宣告狀態變數
+`RelatedDocumentsModalComponent` 內部依 `DocumentType` 自動分組，呼叫端只需傳入扁平的 `List<RelatedDocumentInfo>`，無需預先分類。
 
-```csharp
-@code {
-    // 相關單據查看狀態
-    private bool showRelatedDocumentsModal = false;
-    private string selectedProductName = string.Empty;
-    private List<RelatedDocumentInfo>? relatedDocuments = null;
-    private bool isLoadingRelatedDocuments = false;
-}
-```
+### 2. 懶載入模式
 
-#### 步驟 2：放置 Modal 組件
+開啟 Modal 時先設 `IsLoading = true`、`RelatedDocuments = null`，非同步取得資料後再更新 `RelatedDocuments` 並設 `IsLoading = false`，避免阻塞 UI。
 
-```razor
-<!-- 相關單據查看 Modal -->
-<RelatedDocumentsModalComponent 
-    IsVisible="@showRelatedDocumentsModal"
-    IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
-    ProductName="@selectedProductName"
-    RelatedDocuments="@relatedDocuments"
-    IsLoading="@isLoadingRelatedDocuments"
-    OnDocumentClick="@HandleRelatedDocumentClick" />
-```
+### 3. 點擊事件由呼叫端處理
 
-#### 步驟 3：顯示相關單據方法
+`OnDocumentClick` 傳回 `RelatedDocumentInfo`，呼叫端自行決定開啟對應 EditModal 或導航行為；元件本身不持有路由邏輯。
 
-```csharp
-/// <summary>
-/// 顯示相關單據（入庫單）
-/// </summary>
-private async Task ShowRelatedDocuments(ProductItem item)
-{
-    if (item.ExistingDetailEntity is not PurchaseOrderDetail detail || detail.Id <= 0)
-    {
-        await NotificationService.ShowWarningAsync("此商品尚未儲存，無法查看相關單據");
-        return;
-    }
+### 4. Templates 目錄的範本為可選
 
-    selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
-    
-    // 顯示 Modal 並設定載入狀態
-    showRelatedDocumentsModal = true;
-    isLoadingRelatedDocuments = true;
-    relatedDocuments = null;
-    StateHasChanged();
-
-    try
-    {
-        // 從服務取得相關單據資料
-        relatedDocuments = await SomeService.GetRelatedDocumentsAsync(detail.Id);
-    }
-    catch (Exception ex)
-    {
-        await NotificationService.ShowErrorAsync($"載入相關單據失敗: {ex.Message}");
-    }
-    finally
-    {
-        isLoadingRelatedDocuments = false;
-        StateHasChanged();
-    }
-}
-```
-
-#### 步驟 4：處理點擊事件
-
-```csharp
-/// <summary>
-/// 處理點擊相關單據的事件
-/// </summary>
-private async Task HandleRelatedDocumentClick(RelatedDocumentInfo document)
-{
-    // 觸發事件，讓父組件處理開啟相關單據
-    if (OnOpenRelatedDocument.HasDelegate)
-    {
-        await OnOpenRelatedDocument.InvokeAsync((document.DocumentType, document.DocumentId));
-    }
-    else
-    {
-        // 預設行為：顯示通知
-        await NotificationService.ShowInfoAsync($"開啟單據: {document.DocumentNumber}");
-    }
-}
-```
-
-### 在表格操作欄位使用
-
-```razor
-private RenderFragment<ProductItem> GetCustomActionsTemplate => item => __builder =>
-{
-    if (DetailLockHelper.CanDeleteItem(item, out _))
-    {
-        // 可刪除：顯示刪除按鈕
-        <GenericButtonComponent Variant="ButtonVariant.Red"
-                               Icon="trash"
-                               OnClick="@(() => HandleItemDelete(item))" />
-    }
-    else
-    {
-        // 已被使用：顯示查看按鈕
-        <GenericButtonComponent Variant="ButtonVariant.Blue"
-                               Icon="eye"
-                               Tooltip="查看相關單據"
-                               OnClick="@(() => ShowRelatedDocuments(item))" />
-    }
-};
-```
+若不指定 `DetailsTemplate`，`RelatedDocumentSectionComponent` 使用預設顯示格式。詳細欄位需自訂時，在 `Templates/` 建立對應的 `.razor` 範本並在主 Modal 的 `GetDetailsTemplate` 方法中註冊。
 
 ---
 
-## 擴充新的單據類型
+## 擴充新單據類型快速參考
 
-### 步驟 1：新增 Enum 值
-
-在 `Models/Enums/RelatedDocumentType.cs` 新增：
-
-```csharp
-/// <summary>
-/// 新單據類型
-/// </summary>
-NewDocumentType,
-```
-
-### 步驟 2：新增配置
-
-在 `Config/DocumentSectionConfig.cs` 的 `GetConfig` 方法新增：
-
-```csharp
-RelatedDocumentType.NewDocumentType => new()
-{
-    Title = "新單據類型",
-    Icon = "file-text",        // Bootstrap Icons 名稱
-    TextColor = "primary",
-    BadgeColor = "primary",
-    ShowAddButton = false
-},
-```
-
-### 步驟 3：新增詳細欄位範本（可選）
-
-在 `Templates/` 資料夾建立 `NewDocumentDetailsTemplate.razor`：
-
-```razor
-@* 新單據類型詳細欄位範本 *@
-@using ERPCore2.Models
-
-<span class="text-muted">
-    <i class="bi bi-calendar3 me-1"></i>@Document.DocumentDate.ToString("yyyy-MM-dd")
-</span>
-@if (Document.Quantity.HasValue)
-{
-    <span class="text-muted">
-        <i class="bi bi-hash me-1"></i>數量: @Document.Quantity.Value
-    </span>
-}
-
-@code {
-    [Parameter, EditorRequired]
-    public RelatedDocumentInfo Document { get; set; } = null!;
-}
-```
-
-### 步驟 4：註冊範本
-
-在 `RelatedDocumentsModalComponent.razor` 的 `GetDetailsTemplate` 方法新增：
-
-```csharp
-RelatedDocumentType.NewDocumentType => doc => 
-    @<NewDocumentDetailsTemplate Document="@doc" />,
-```
-
-### 步驟 5：更新 RelatedDocumentInfo
-
-在 `Models/Documents/RelatedDocument.cs` 的 `Icon` 和 `BadgeColor` 屬性新增對應值。
+1. 在 `Models/Enums/RelatedDocumentType.cs` 新增枚舉值
+2. 在 `Config/DocumentSectionConfig.cs` 的 `GetConfig` 方法新增對應配置（Title / Icon / TextColor / BadgeColor）
+3. （選填）在 `Templates/` 建立詳細欄位 `.razor` 範本，參數為 `[Parameter] RelatedDocumentInfo Document`
+4. （選填）在 `RelatedDocumentsModalComponent.GetDetailsTemplate` 方法中將新類型對應至範本
 
 ---
 
-## 資料模型
+## 相關文件
 
-### RelatedDocumentInfo
-
-```csharp
-public class RelatedDocumentInfo
-{
-    public int DocumentId { get; set; }           // 單據 ID
-    public RelatedDocumentType DocumentType { get; set; }  // 單據類型
-    public string DocumentNumber { get; set; }    // 單據編號
-    public DateTime DocumentDate { get; set; }    // 單據日期
-    public decimal? Quantity { get; set; }        // 相關數量
-    public decimal? UnitPrice { get; set; }       // 單價
-    public decimal? Amount { get; set; }          // 相關金額
-    public decimal? CurrentAmount { get; set; }   // 本次金額
-    public decimal? TotalAmount { get; set; }     // 累計金額
-    public string? Remarks { get; set; }          // 備註
-    
-    // 計算屬性
-    public string Icon { get; }                   // 根據類型自動取得圖示
-    public string BadgeColor { get; }             // 根據類型自動取得顏色
-    public string TypeDisplayName { get; }        // 類型顯示名稱
-}
-```
-
----
-
-## 設計特點
-
-1. **自動分組**：Modal 自動根據 `DocumentType` 將單據分組顯示
-2. **可擴充**：透過配置和範本機制，輕鬆新增單據類型
-3. **一致性**：統一的 UI 風格與互動體驗
-4. **單行設計**：採用精簡的單行列表，資訊密度高
-5. **懶載入**：支援非同步載入，避免阻塞 UI
-
----
-
-## 相關檔案
-
-- `Models/Documents/RelatedDocument.cs` - 資料模型定義
-- `Models/Enums/RelatedDocumentType.cs` - 單據類型枚舉
-- `Helpers/RelatedDocumentsHelper.cs` - 服務層輔助方法
-- [README_共用元件設計總綱.md](README_共用元件設計總綱.md) - 共用元件設計總綱
+- [README_共用元件設計總綱.md](README_共用元件設計總綱.md)
