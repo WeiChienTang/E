@@ -18,6 +18,8 @@
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadProductCategoryData"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="商品類型草稿已儲存，請記得補齊必填資料"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(ProductCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.ProductCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.ProductCategory"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductCategory"]]"
@@ -43,8 +45,7 @@
     // ===== 必要方法 =====
     private Task<ProductCategory?> LoadProductCategoryData()
         => EditDataLoaderHelper.LoadOrCreateAsync<ProductCategory, IProductCategoryService>(
-            ProductCategoryId, ProductCategoryService, NotificationService, "商品類型", "PCAT", PrefilledValues,
-            p => p.Name = string.Empty);
+            ProductCategoryId, ProductCategoryService, NotificationService, "商品類型", "PCAT", PrefilledValues);
 
     protected override void OnParametersSet()
     {

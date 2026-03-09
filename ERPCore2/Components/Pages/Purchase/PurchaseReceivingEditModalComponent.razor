@@ -50,6 +50,8 @@
                           UseGenericSave="true"
                           CustomValidator="@ValidatePurchaseReceivingDetailsAsync"
                           AfterSave="@SavePurchaseReceivingDetailsAsync"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.PurchaseReceiving"]]"
                           SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseReceiving"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseReceiving"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseReceiving"]]"
                           RequiredPermission="@PermissionRegistry.PurchaseReceiving.Read"
@@ -267,9 +269,10 @@
     /// </summary>
     private RenderFragment? GetCustomActionButtons() => __builder =>
     {
-        @* 轉庫退出按鈕 - 只在進貨單已儲存時顯示 *@
-        @if (editModalComponent?.Entity != null && 
-            PurchaseReceivingId.HasValue)
+        @* 轉庫退出按鈕 - 只在進貨單已儲存且非草稿時顯示 *@
+        @if (editModalComponent?.Entity != null &&
+            PurchaseReceivingId.HasValue &&
+            editModalComponent.Entity.IsDraft != true)
         {
             <GenericButtonComponent Text="@L["Button.ConvertToReturn"]"
                                   Variant="ButtonVariant.Yellow" 
@@ -302,7 +305,7 @@
             }
 
             // 2. 驗證廠商資料
-            if (editModalComponent.Entity.SupplierId <= 0)
+            if (!(editModalComponent.Entity.SupplierId > 0))
             {
                 await NotificationService.ShowWarningAsync("進貨單缺少廠商資訊，無法轉庫退出");
                 return;
@@ -340,7 +343,7 @@
                 await Task.Yield(); // 讓 Blazor 完成 PurchaseReturnEditModalComponent 的渲染
             }
             await purchaseReturnEditModal!.ShowAddModalWithPrefilledReceiving(
-                editModalComponent.Entity.SupplierId,
+                editModalComponent.Entity.SupplierId.Value,
                 PurchaseReceivingId.Value
             );
         }
@@ -374,7 +377,7 @@
             }
 
             // 2. 驗證廠商資料
-            if (editModalComponent.Entity.SupplierId <= 0)
+            if (!(editModalComponent.Entity.SupplierId > 0))
             {
                 await NotificationService.ShowWarningAsync("進貨單缺少廠商資訊，無法轉沖款");
                 return;
@@ -404,7 +407,7 @@
                 await Task.Yield(); // 讓 Blazor 完成 SetoffDocumentEditModalComponent 的渲染
             }
             await setoffDocumentEditModal!.ShowAddModalWithPrefilledReceiving(
-                editModalComponent.Entity.SupplierId,
+                editModalComponent.Entity.SupplierId.Value,
                 PurchaseReceivingId.Value
             );
         }
@@ -486,7 +489,7 @@
                 {
                     Code = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseReceiving, IPurchaseReceivingService>(PurchaseReceivingService, DbContext),
                     ReceiptDate = DateTime.Now,
-                    SupplierId = PrefilledSupplierId ?? 0,
+                    SupplierId = PrefilledSupplierId,
                 };
 
                 // 如果有預填採購單，初始化篩選狀態
@@ -1050,7 +1053,7 @@
 
             // 載入廠商資訊 Tab
             if (supplierInfoTab != null && editModalComponent?.Entity?.SupplierId > 0)
-                await supplierInfoTab.LoadAsync(editModalComponent.Entity.SupplierId);
+                await supplierInfoTab.LoadAsync(editModalComponent.Entity.SupplierId.Value);
             else
                 supplierInfoTab?.Clear();
 

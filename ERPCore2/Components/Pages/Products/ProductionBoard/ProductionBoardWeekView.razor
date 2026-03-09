@@ -7,6 +7,7 @@
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject IProductCompositionService ProductCompositionService
+@inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
 @inject INavigationPermissionService NavigationPermissionService
 
@@ -90,12 +91,14 @@
 
     @* 主體：sidebar + 週視圖 *@
     <div class="board-body">
-        @* 左側 Sidebar：未排程項目 *@
+        @* 左側 Sidebar：未排程項目（支援接收看板卡片拖曳退回） *@
         <ProductionBoardPendingSidebar
             Items="@pendingItems"
             IsLoading="@IsLoading"
             OnDragStart="@HandlePendingDragStart"
-            OnDragEnd="@HandleDragEnd" />
+            OnDragEnd="@HandleDragEnd"
+            IsDropTarget="@(draggingBoardItem != null && draggingBoardItem.CompletedQuantity == 0)"
+            OnBoardItemDropped="@HandleDropOnSidebar" />
 
         @* 週視圖主體 *@
         <div class="board-week-columns">
@@ -368,6 +371,44 @@
             await CheckMaterialIssueAfterDropAsync(droppedItemId.Value, droppedBatchId.Value);
     }
 
+    private async Task HandleDropOnSidebar()
+    {
+        if (draggingBoardItem == null) return;
+        var item = draggingBoardItem;
+        draggingBoardItem = null;
+
+        if (item.CompletedQuantity > 0)
+        {
+            await NotificationService.ShowWarningAsync("已有完成數量，無法退回待排清單");
+            return;
+        }
+
+        await ReturnBoardItemAsync(item);
+        await LoadDataAsync();
+    }
+
+    private async Task ReturnBoardItemAsync(BoardScheduleItemDto item)
+    {
+        try
+        {
+            var result = await ScheduleItemService.ReturnToSidebarAsync(item.Id);
+            if (!result.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync($"退回失敗：{result.ErrorMessage}");
+                return;
+            }
+
+            var msg = result.Data
+                ? "已退回待排清單（注意：有領料記錄，請手動確認庫存是否需要沖銷）"
+                : "已退回待排清單";
+            await NotificationService.ShowSuccessAsync(msg);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"退回失敗：{ex.Message}");
+        }
+    }
+
     private async Task MoveExistingItemAsync(int itemId, DateTime targetDate)
     {
         var result = await ScheduleItemService.UpdatePlannedDateAsync(itemId, targetDate.Date);
@@ -426,8 +467,43 @@
             item.ProductionItemStatus = ProductionItemStatus.InProgress;
             await ScheduleItemService.UpdateAsync(item);
         }
+        else
+        {
+            // 檢查每項 BOM 組件的可用庫存，不足時顯示警告（不阻擋）
+            await CheckBomStockWarningAsync(bomDetails);
+        }
 
         return (batchResult.Data!.Id, item.Id);
+    }
+
+    /// <summary>
+    /// 檢查 BOM 組件庫存是否充足，不足時以 Warning 通知（不阻擋排程）
+    /// </summary>
+    private async Task CheckBomStockWarningAsync(List<ProductionScheduleDetail> bomDetails)
+    {
+        try
+        {
+            var shortItems = new List<string>();
+            foreach (var d in bomDetails.Where(d => d.RequiredQuantity > 0))
+            {
+                var stocks = await InventoryStockService.GetByProductIdAsync(d.ComponentProductId);
+                var available = stocks.Sum(s => s.TotalAvailableStock);
+                if (available < d.RequiredQuantity)
+                {
+                    var productName = d.ComponentProduct?.Name ?? $"ID:{d.ComponentProductId}";
+                    shortItems.Add($"{productName}（需 {NumberFormatHelper.FormatSmart(d.RequiredQuantity)}，現有 {NumberFormatHelper.FormatSmart(available)}）");
+                }
+            }
+            if (shortItems.Any())
+            {
+                var detail = string.Join("、", shortItems);
+                await NotificationService.ShowWarningAsync($"物料庫存不足：{detail}，請安排採購或調撥後再領料");
+            }
+        }
+        catch
+        {
+            // 庫存查詢失敗不阻擋主流程
+        }
     }
 
     private async Task ExpandBomAsync(int itemId, int productId, decimal qty)

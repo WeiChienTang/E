@@ -58,7 +58,7 @@ namespace ERPCore2.Services.Reports
             Supplier? supplier = null;
             if (purchaseReturn.SupplierId > 0)
             {
-                supplier = await _supplierService.GetByIdAsync(purchaseReturn.SupplierId);
+                supplier = await _supplierService.GetByIdAsync(purchaseReturn.SupplierId.Value);
             }
 
             Company? company = await _companyService.GetPrimaryCompanyAsync();

@@ -11,20 +11,18 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(Code), IsUnique = true)]
     public class Product : BaseEntity
     {
-        [Required(ErrorMessage = "商品名稱為必填")]
         [MaxLength(100, ErrorMessage = "商品名稱不可超過100個字元")]
         [Display(Name = "商品名稱")]
-        public string Name { get; set; } = string.Empty;
+        public string? Name { get; set; }
 
         [MaxLength(50, ErrorMessage = "條碼編號不可超過50個字元")]
         [Display(Name = "條碼編號")]
         public string? Barcode { get; set; }
 
         // Foreign Keys
-        [Required(ErrorMessage = "商品單位為必填")]
         [Display(Name = "基本單位")]
         [ForeignKey(nameof(Unit))]
-        public int UnitId { get; set; }
+        public int? UnitId { get; set; }
 
         [Display(Name = "製程單位")]
         [ForeignKey(nameof(ProductionUnit))]

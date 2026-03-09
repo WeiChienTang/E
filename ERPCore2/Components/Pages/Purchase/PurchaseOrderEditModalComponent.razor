@@ -49,7 +49,8 @@
                           OnEntitySaved="@OnPurchaseOrderSaved"
                           OnCancel="@OnCancel"
                           OnTaxMethodChanged="@(() => HandleDetailsChanged(purchaseOrderDetails))"
-                          CustomValidator="@ValidatePurchaseOrderDetailsAsync"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.PurchaseOrder"]]"
                           ShowPrintButton = "true"
                           PrintButtonText="@L["Button.Print"]"
                           ReportService="@PurchaseOrderReportService"
@@ -583,15 +584,15 @@
                 {
                     // 修正：使用 CSS 隱藏而非條件卸載，避免元件重建
                     // 當 SupplierId <= 0 時隱藏 Table，但不卸載元件
-                    @if (editModalComponent.Entity.SupplierId <= 0)
+                    @if (!editModalComponent.Entity.SupplierId.HasValue || editModalComponent.Entity.SupplierId.Value <= 0)
                     {
                         <div class="alert alert-info text-center" role="alert">
                             <i class="fas fa-info-circle me-2"></i>
                             請先選擇廠商後再進行採購明細管理
                         </div>
                     }
-                    
-                    <div style="@(editModalComponent.Entity.SupplierId > 0 ? "" : "display:none")">
+
+                    <div style="@(editModalComponent.Entity.SupplierId.HasValue && editModalComponent.Entity.SupplierId.Value > 0 ? "" : "display:none")">
                         <PurchaseOrderTable @ref="purchaseOrderDetailManager"
                                                    Products="@availableProducts"
                                                    SelectedSupplierId="@editModalComponent.Entity.SupplierId"
@@ -748,7 +749,7 @@
 
             // 載入廠商資訊 Tab
             if (supplierTab != null && editModalComponent?.Entity?.SupplierId > 0)
-                await supplierTab.LoadAsync(editModalComponent.Entity.SupplierId);
+                await supplierTab.LoadAsync(editModalComponent.Entity.SupplierId.Value);
             else
                 supplierTab?.Clear();
 
@@ -860,6 +861,8 @@
         }
         catch (Exception ex)
         {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ValidatePurchaseOrderDetailsAsync), GetType(),
+                additionalData: "驗證採購單明細時發生錯誤");
             await NotificationService.ShowErrorAsync($"驗證明細時發生錯誤：{ex.Message}");
             return false;
         }
@@ -870,12 +873,17 @@
     /// </summary>
     private async Task<bool> SavePurchaseOrderWrapper(PurchaseOrder purchaseOrder)
     {
-        // 先執行自訂驗證
-        if (!await ValidatePurchaseOrderDetailsAsync(purchaseOrder))
+        // 草稿模式跳過明細驗證
+        if (!purchaseOrder.IsDraft)
         {
-            return false;
+            var validDetails = purchaseOrderDetails.Where(d => d.ProductId > 0).ToList();
+            if (!validDetails.Any())
+            {
+                editModalComponent!.PendingSaveError = "採購單必須至少包含一筆明細資料";
+                return false;
+            }
         }
-        
+
         var result = await SavePurchaseOrderWithDetails(purchaseOrder, isPreApprovalSave: false);
         
         // 儲存成功後允許轉進貨
@@ -941,11 +949,11 @@
             await SavePurchaseOrderDetails(result.Data.Id);
 
             // 自動同步供應商商品目錄（方案C：從採購歷史自動維護）
-            if (purchaseOrder.SupplierId > 0)
-                await SyncProductSuppliersAsync(purchaseOrder.SupplierId, purchaseOrder.OrderDate);
+            if (purchaseOrder.SupplierId.HasValue && purchaseOrder.SupplierId.Value > 0)
+                await SyncProductSuppliersAsync(purchaseOrder.SupplierId.Value, purchaseOrder.OrderDate);
 
-            // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
-            if (!isManualApproval && !result.Data.IsApproved)
+            // 自動審核：草稿不自動審核；若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
+            if (!purchaseOrder.IsDraft && !isManualApproval && !result.Data.IsApproved)
                 await PurchaseOrderService.ApproveOrderAsync(result.Data.Id, null);
 
             return true;
@@ -1207,24 +1215,27 @@
     /// </summary>
     private RenderFragment? GetCustomActionButtons() => __builder =>
     {
-        @* 轉進貨單按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
-        <GenericButtonComponent Text="@L["Button.ConvertToReceiving"]"
-                              Variant="ButtonVariant.Green" 
-                              OnClick="HandleCreateReceivingFromOrder" />
-        
-        @* 複製訊息按鈕 - 使用按鈕群組包含設定圖示 *@
-        <div class="btn-group me-2" role="group">
-            <GenericButtonComponent Text="@L["Button.CopyMessage"]"
-                                  Variant="ButtonVariant.Blue" 
-                                  IsDisabled="@(!canCopyMessage)"
-                                  OnClick="HandleCopyMessage" />
-            <button type="button" 
-                    class="btn btn-outline-secondary btn-sm" 
-                    title="訊息範本設定"
-                    @onclick="HandleOpenTemplateSettings">
-                <i class="bi bi-gear"></i>
-            </button>
-        </div>
+        @if (PurchaseOrderId.HasValue && editModalComponent?.Entity?.IsDraft != true)
+        {
+            @* 轉進貨單按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
+            <GenericButtonComponent Text="@L["Button.ConvertToReceiving"]"
+                                  Variant="ButtonVariant.Green"
+                                  OnClick="HandleCreateReceivingFromOrder" />
+
+            @* 複製訊息按鈕 - 使用按鈕群組包含設定圖示 *@
+            <div class="btn-group me-2" role="group">
+                <GenericButtonComponent Text="@L["Button.CopyMessage"]"
+                                      Variant="ButtonVariant.Blue"
+                                      IsDisabled="@(!canCopyMessage)"
+                                      OnClick="HandleCopyMessage" />
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        title="訊息範本設定"
+                        @onclick="HandleOpenTemplateSettings">
+                    <i class="bi bi-gear"></i>
+                </button>
+            </div>
+        }
     };
     
     // ===== 相關單據開啟處理方法 =====
@@ -1325,7 +1336,7 @@
             }
 
             // 檢查是否有廠商資料
-            if (editModalComponent.Entity.SupplierId <= 0)
+            if (!editModalComponent.Entity.SupplierId.HasValue || editModalComponent.Entity.SupplierId.Value <= 0)
             {
                 await NotificationService.ShowWarningAsync("採購單缺少廠商資訊，無法轉進貨單");
                 return;
@@ -1358,7 +1369,7 @@
 
             // 直接開啟進貨單 Modal，使用 Entity.Id 作為採購單 ID（最可靠的來源）
             await purchaseReceivingEditModal!.ShowAddModalWithPrefilledOrder(
-                editModalComponent.Entity.SupplierId,
+                editModalComponent.Entity.SupplierId.Value,
                 editModalComponent.Entity.Id  // 使用 Entity.Id 而非 PurchaseOrderId 參數
             );
         }

@@ -64,7 +64,7 @@ namespace ERPCore2.Services.Reports
             Customer? customer = null;
             if (salesOrder.CustomerId > 0)
             {
-                customer = await _customerService.GetByIdAsync(salesOrder.CustomerId);
+                customer = await _customerService.GetByIdAsync(salesOrder.CustomerId.Value);
             }
 
             Employee? employee = null;

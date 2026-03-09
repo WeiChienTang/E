@@ -19,6 +19,8 @@
                           FormSections="@formSections"
                           DataLoader="@LoadVehicleTypeData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.VehicleType"]]"
                           SaveSuccessMessage="@(VehicleTypeId.HasValue ? L["Message.UpdateSuccess", L["Entity.VehicleType"]].ToString() : L["Message.CreateSuccess", L["Entity.VehicleType"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.VehicleType"]]"
                           RequiredPermission="@PermissionRegistry.VehicleType.Read"

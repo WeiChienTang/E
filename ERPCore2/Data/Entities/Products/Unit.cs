@@ -11,10 +11,9 @@ namespace ERPCore2.Data.Entities
     public class Unit : BaseEntity
     {
         
-        [Required(ErrorMessage = "單位名稱為必填")]
         [MaxLength(20, ErrorMessage = "單位名稱不可超過20個字元")]
         [Display(Name = "單位名稱")]
-        public string Name { get; set; } = string.Empty;
+        public string? Name { get; set; }
 
         [MaxLength(50, ErrorMessage = "英文名稱不可超過50個字元")]
         [Display(Name = "英文名稱")]

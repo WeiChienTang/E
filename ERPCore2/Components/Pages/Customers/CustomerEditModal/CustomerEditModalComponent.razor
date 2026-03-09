@@ -38,6 +38,8 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadCustomerData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="客戶草稿已儲存，請記得補齊必填資料"
                           SaveSuccessMessage="@(CustomerId.HasValue ? L["Message.UpdateSuccess", L["Entity.Customer"]].ToString() : L["Message.CreateSuccess", L["Entity.Customer"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Customer"]]"
                           RequiredPermission="@PermissionRegistry.Customer.Read"
@@ -758,7 +760,7 @@
 
     private RenderFragment? GetCustomActionButtons() => __builder =>
     {
-        if (editModalComponent?.Entity != null && CustomerId.HasValue)
+        if (editModalComponent?.Entity != null && CustomerId.HasValue && editModalComponent.Entity.IsDraft != true)
         {
             <GenericButtonComponent Text="複製至廠商"
                                     Variant="ButtonVariant.Green"

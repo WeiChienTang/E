@@ -18,6 +18,8 @@
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadSizeData"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="尺寸草稿已儲存，請記得補齊必填資料"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(SizeId.HasValue ? L["Message.UpdateSuccess", L["Entity.Size"]].ToString() : L["Message.CreateSuccess", L["Entity.Size"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Size"]]"
@@ -43,8 +45,7 @@
     // ===== 必要方法 =====
     private Task<Size?> LoadSizeData()
         => EditDataLoaderHelper.LoadOrCreateAsync<Size, ISizeService>(
-            SizeId, SizeService, NotificationService, "尺寸", "SIZE", PrefilledValues,
-            s => s.Name = string.Empty);
+            SizeId, SizeService, NotificationService, "尺寸", "SIZE", PrefilledValues);
     protected override void OnParametersSet()
     {
         if (IsVisible)

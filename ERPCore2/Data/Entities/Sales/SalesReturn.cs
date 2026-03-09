@@ -88,10 +88,9 @@ namespace ERPCore2.Data.Entities
             !string.IsNullOrEmpty(RejectReason) ? (ApprovedByUser?.Name ?? "") : "";
 
         // Foreign Keys
-        [Required(ErrorMessage = "客戶為必填")]
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]
-        public int CustomerId { get; set; }
+        public int? CustomerId { get; set; }
 
         [Display(Name = "處理員工")]
         [ForeignKey(nameof(Employee))]
@@ -102,7 +101,7 @@ namespace ERPCore2.Data.Entities
         public int? ReturnReasonId { get; set; }
 
         // Navigation Properties
-        public Customer Customer { get; set; } = null!;
+        public Customer? Customer { get; set; }
         public Employee? Employee { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public EntitySalesReturnReason? ReturnReason { get; set; }

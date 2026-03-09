@@ -43,6 +43,8 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadQuotationData"
                           SaveHandler="@SaveQuotationWithDetails"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.Quotation"]]"
                           SaveSuccessMessage="@(QuotationId.HasValue ? L["Message.UpdateSuccess", L["Entity.Quotation"]].ToString() : L["Message.CreateSuccess", L["Entity.Quotation"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Quotation"]]"
                           RequiredPermission="@PermissionRegistry.Quotation.Read"
@@ -247,7 +249,7 @@
                     Code = await EntityCodeGenerationHelper.GenerateForEntity<Quotation, IQuotationService>(QuotationService, DbContext),
                     QuotationDate = DateTime.Today,
                     Status = EntityStatus.Active,
-                    CompanyId = primaryCompany?.Id ?? 0 // 設定預設公司
+                    CompanyId = primaryCompany?.Id // 設定預設公司
                 };
 
                 // 初始化空的子集合
@@ -668,17 +670,21 @@
                 return false;
             }
 
-            // 檢查公司欄位是否有資料
-            if (quotation.CompanyId <= 0)
+            // 非草稿模式才執行必填欄位驗證
+            if (!quotation.IsDraft)
             {
-                await NotificationService.ShowWarningAsync("請選擇公司後再進行儲存");
-                return false;
-            }
+                // 檢查公司欄位是否有資料
+                if (!(quotation.CompanyId > 0))
+                {
+                    editModalComponent!.PendingSaveError = "請選擇公司後再進行儲存";
+                    return false;
+                }
 
-            // 先執行明細驗證
-            if (!await ValidateQuotationDetailsAsync(quotation))
-            {
-                return false;
+                // 先執行明細驗證
+                if (!await ValidateQuotationDetailsAsync(quotation))
+                {
+                    return false;
+                }
             }
 
             //  修改：審核通過或已轉單後仍允許儲存（用於更新明細的執行狀態）
@@ -769,7 +775,7 @@
             await SaveQuotationDetails(result.Data.Id);
 
             // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
-            if (!isManualApproval && !result.Data.IsApproved)
+            if (!quotation.IsDraft && !isManualApproval && !result.Data.IsApproved)
                 await QuotationService.ApproveAsync(result.Data.Id, null);
 
             return true;
@@ -1168,7 +1174,8 @@
         {
             if (editModalComponent?.Entity != null &&
                 QuotationId.HasValue &&
-                QuotationId.Value > 0)
+                QuotationId.Value > 0 &&
+                editModalComponent.Entity.IsDraft != true)
             {
                 shouldShowButton = true;
             }
@@ -1241,8 +1248,8 @@
             if (salesOrderEditModal != null)
             {
                 await salesOrderEditModal.ShowAddModalWithPrefilledQuotation(
-                    editModalComponent.Entity.CustomerId,
-                    editModalComponent.Entity.CompanyId,
+                    editModalComponent.Entity.CustomerId ?? 0,
+                    editModalComponent.Entity.CompanyId ?? 0,
                     editModalComponent.Entity.EmployeeId,
                     QuotationId.Value
                 );
@@ -1495,7 +1502,7 @@
         {
             // 載入客戶資訊 Tab
             if (customerInfoTab != null && editModalComponent?.Entity?.CustomerId > 0)
-                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId);
+                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId.Value);
             else
                 customerInfoTab?.Clear();
 

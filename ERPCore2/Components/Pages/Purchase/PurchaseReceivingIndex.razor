@@ -21,6 +21,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
+                          ShowDraftTab="true"
                           DataLoader="@LoadPurchaseReceivingsAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyPurchaseReceivingFilters"
@@ -133,7 +134,7 @@
     /// <summary>
     /// 載入進貨單資料
     /// </summary>
-    private Task<List<PurchaseReceiving>> LoadPurchaseReceivingsAsync() => DataLoaderHelper.LoadAsync(() => PurchaseReceivingService.GetAllAsync(), "進貨單", NotificationService, GetType());
+    private Task<List<PurchaseReceiving>> LoadPurchaseReceivingsAsync() => DataLoaderHelper.LoadAsync(() => PurchaseReceivingService.GetAllIncludingDraftsAsync(), "進貨單", NotificationService, GetType());
 
     /// <summary>
     /// 載入基礎資料

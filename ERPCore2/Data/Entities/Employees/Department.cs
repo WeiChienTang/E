@@ -13,9 +13,8 @@ namespace ERPCore2.Data.Entities
         /// 部門名稱
         /// </summary>
         [Display(Name = "部門名稱")]
-        [Required(ErrorMessage = "請輸入部門名稱")]
         [MaxLength(50, ErrorMessage = "部門名稱不可超過50個字元")]
-        public string Name { get; set; } = string.Empty;
+        public string? Name { get; set; }
 
         /// <summary>
         /// 上級部門ID

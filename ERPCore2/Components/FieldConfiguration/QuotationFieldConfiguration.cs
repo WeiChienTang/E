@@ -80,7 +80,7 @@ namespace ERPCore2.FieldConfiguration
                                 Value = c.Id.ToString() 
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
-                                model, query, nameof(Quotation.CustomerId), q => q.CustomerId)
+                                model, query, nameof(Quotation.CustomerId), q => q.CustomerId ?? 0)
                         }
                     },
                     {

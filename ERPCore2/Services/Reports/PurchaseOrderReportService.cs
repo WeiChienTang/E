@@ -56,15 +56,15 @@ namespace ERPCore2.Services.Reports
             var orderDetails = await _purchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
 
             Supplier? supplier = null;
-            if (purchaseOrder.SupplierId > 0)
+            if (purchaseOrder.SupplierId.HasValue && purchaseOrder.SupplierId.Value > 0)
             {
-                supplier = await _supplierService.GetByIdAsync(purchaseOrder.SupplierId);
+                supplier = await _supplierService.GetByIdAsync(purchaseOrder.SupplierId.Value);
             }
 
             Company? company = null;
-            if (purchaseOrder.CompanyId > 0)
+            if (purchaseOrder.CompanyId.HasValue && purchaseOrder.CompanyId.Value > 0)
             {
-                company = await _companyService.GetByIdAsync(purchaseOrder.CompanyId);
+                company = await _companyService.GetByIdAsync(purchaseOrder.CompanyId.Value);
             }
 
             var allProducts = await _productService.GetAllAsync();

@@ -30,6 +30,8 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadMaintenanceData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.VehicleMaintenance"]]"
                           SaveSuccessMessage="@(VehicleMaintenanceId.HasValue ? L["Message.UpdateSuccess", L["Entity.VehicleMaintenance"]].ToString() : L["Message.CreateSuccess", L["Entity.VehicleMaintenance"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.VehicleMaintenance"]]"
                           RequiredPermission="@PermissionRegistry.VehicleMaintenance.Read"

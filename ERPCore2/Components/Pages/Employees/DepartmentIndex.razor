@@ -12,6 +12,7 @@
                         PageTitle="@L["Page.DepartmentTitle"]"
                         PageSubtitle="@L["Page.DepartmentSubtitle"]"
                         DataLoader="@LoadDataAsync"
+                        ShowDraftTab="true"
                         FilterApplier="@ApplyDepartmentFilters"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
@@ -85,7 +86,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "部門設定", "#", NotificationService, GetType());
 
     // 載入部門資料
-    private Task<List<Department>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => DepartmentService.GetAllAsync(), "部門", NotificationService, GetType());
+    private Task<List<Department>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => DepartmentService.GetAllIncludingDraftsAsync(), "部門", NotificationService, GetType());
 
     private IQueryable<Department> ApplyDepartmentFilters(SearchFilterModel searchModel, IQueryable<Department> query)
     {

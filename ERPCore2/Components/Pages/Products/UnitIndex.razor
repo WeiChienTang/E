@@ -14,6 +14,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
+                          ShowDraftTab="true"
                           DataLoader="@LoadUnitsAsync"
                           FilterApplier="@ApplyUnitFilters"
                           GetEntityDisplayName="@(unit => unit.Name)"
@@ -82,7 +83,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "單位維護", "#", NotificationService, GetType());
 
     // 載入單位資料
-    private Task<List<Unit>> LoadUnitsAsync() => DataLoaderHelper.LoadAsync(() => UnitService.GetAllAsync(), "單位", NotificationService, GetType());
+    private Task<List<Unit>> LoadUnitsAsync() => DataLoaderHelper.LoadAsync(() => UnitService.GetAllIncludingDraftsAsync(), "單位", NotificationService, GetType());
 
     private IQueryable<Unit> ApplyUnitFilters(SearchFilterModel searchModel, IQueryable<Unit> query)
     {

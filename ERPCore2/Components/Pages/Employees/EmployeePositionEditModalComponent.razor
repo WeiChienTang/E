@@ -19,6 +19,8 @@
                           FormSections="@formSections"
                           DataLoader="@LoadEmployeePositionData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="職位草稿已儲存，請記得補齊必填資料"
                           SaveSuccessMessage="@(EmployeePositionId.HasValue ? L["Message.UpdateSuccess", L["Entity.EmployeePosition"]].ToString() : L["Message.CreateSuccess", L["Entity.EmployeePosition"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeePosition"]]"
                           RequiredPermission="@PermissionRegistry.EmployeePosition.Read"
@@ -43,8 +45,7 @@
     // ===== 生命週期 =====
     private Task<EmployeePosition?> LoadEmployeePositionData()
         => EditDataLoaderHelper.LoadOrCreateAsync<EmployeePosition, IEmployeePositionService>(
-            EmployeePositionId, EmployeePositionService, NotificationService, "職位", "POS", PrefilledValues,
-            p => p.Name = string.Empty);
+            EmployeePositionId, EmployeePositionService, NotificationService, "職位", "POS", PrefilledValues);
     protected override void OnParametersSet()
     {
         if (IsVisible)

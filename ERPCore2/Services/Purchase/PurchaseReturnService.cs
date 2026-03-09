@@ -222,7 +222,7 @@ namespace ERPCore2.Services
                 // 廠商篩選（RelatedEntityIds 對應廠商ID列表）
                 if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
                 {
-                    query = query.Where(pr => criteria.RelatedEntityIds.Contains(pr.SupplierId));
+                    query = query.Where(pr => pr.SupplierId.HasValue && criteria.RelatedEntityIds.Contains(pr.SupplierId.Value));
                 }
 
                 // 單據編號關鍵字搜尋
@@ -338,14 +338,18 @@ namespace ERPCore2.Services
                     return result;
                 }
 
-                // 檢查供應商是否存在
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var supplierExists = await context.Suppliers.AnyAsync(s => s.Id == entity.SupplierId);
-                if (!supplierExists)
+                // 檢查供應商是否存在（草稿允許不填）
+                if (!entity.IsDraft)
                 {
-                    result.IsSuccess = false;
-                    result.ErrorMessage = "指定的供應商不存在";
-                    return result;
+                    using var context = await _contextFactory.CreateDbContextAsync();
+                    var supplierExists = entity.SupplierId.HasValue &&
+                        await context.Suppliers.AnyAsync(s => s.Id == entity.SupplierId.Value);
+                    if (!supplierExists)
+                    {
+                        result.IsSuccess = false;
+                        result.ErrorMessage = "指定的供應商不存在";
+                        return result;
+                    }
                 }
 
                 result.IsSuccess = true;

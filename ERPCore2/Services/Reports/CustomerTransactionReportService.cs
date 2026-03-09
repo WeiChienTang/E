@@ -92,13 +92,13 @@ namespace ERPCore2.Services.Reports
                     deliveries = deliveries.Where(d => d.Status != EntityStatus.Inactive).ToList();
 
                 if (criteria.CustomerIds.Any())
-                    deliveries = deliveries.Where(d => criteria.CustomerIds.Contains(d.CustomerId)).ToList();
+                    deliveries = deliveries.Where(d => d.CustomerId.HasValue && criteria.CustomerIds.Contains(d.CustomerId.Value)).ToList();
 
                 foreach (var d in deliveries)
                 {
                     transactions.Add(new TransactionRecord
                     {
-                        CustomerId = d.CustomerId,
+                        CustomerId = d.CustomerId ?? 0,
                         CustomerCode = d.Customer?.Code ?? "",
                         CustomerName = d.Customer?.CompanyName ?? "未知客戶",
                         TransactionDate = d.DeliveryDate,
@@ -121,13 +121,13 @@ namespace ERPCore2.Services.Reports
                     returns = returns.Where(r => r.Status != EntityStatus.Inactive).ToList();
 
                 if (criteria.CustomerIds.Any())
-                    returns = returns.Where(r => criteria.CustomerIds.Contains(r.CustomerId)).ToList();
+                    returns = returns.Where(r => r.CustomerId.HasValue && criteria.CustomerIds.Contains(r.CustomerId.Value)).ToList();
 
                 foreach (var r in returns)
                 {
                     transactions.Add(new TransactionRecord
                     {
-                        CustomerId = r.CustomerId,
+                        CustomerId = r.CustomerId ?? 0,
                         CustomerCode = r.Customer?.Code ?? "",
                         CustomerName = r.Customer?.CompanyName ?? "未知客戶",
                         TransactionDate = r.ReturnDate,

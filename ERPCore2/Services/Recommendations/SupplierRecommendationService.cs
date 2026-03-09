@@ -110,13 +110,13 @@ namespace ERPCore2.Services
 
                 // 3.2 加入未綁定但有採購歷史的供應商
                 var bindingSupplierIds = bindingData.Select(b => b.SupplierId).ToList();
-                var historyOnlySuppliers = historyData.Where(h => !bindingSupplierIds.Contains(h.SupplierId));
+                var historyOnlySuppliers = historyData.Where(h => h.SupplierId.HasValue && !bindingSupplierIds.Contains(h.SupplierId.Value));
 
                 foreach (var history in historyOnlySuppliers)
                 {
                     recommendations.Add(new SupplierRecommendation
                     {
-                        SupplierId = history.SupplierId,
+                        SupplierId = history.SupplierId!.Value,
                         SupplierName = history.SupplierName,
                         SupplierCode = history.SupplierCode,
                         IsPreferred = false,

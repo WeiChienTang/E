@@ -11,12 +11,11 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(Code), IsUnique = true)]
     public class VehicleMaintenance : BaseEntity
     {
-        [Required(ErrorMessage = "所屬車輛為必填")]
         [Display(Name = "所屬車輛")]
         [ForeignKey(nameof(Vehicle))]
-        public int VehicleId { get; set; }
+        public int? VehicleId { get; set; }
 
-        public Vehicle Vehicle { get; set; } = null!;
+        public Vehicle? Vehicle { get; set; }
 
         [Required(ErrorMessage = "保養類型為必填")]
         [Display(Name = "保養類型")]

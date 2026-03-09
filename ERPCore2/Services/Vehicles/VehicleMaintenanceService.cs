@@ -106,7 +106,7 @@ namespace ERPCore2.Services
                     }
                 }
 
-                if (entity.VehicleId <= 0)
+                if (!entity.IsDraft && !(entity.VehicleId > 0))
                 {
                     errors.Add("所屬車輛為必填欄位");
                 }

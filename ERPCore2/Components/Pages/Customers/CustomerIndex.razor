@@ -15,6 +15,7 @@
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
                       DataLoader="@LoadCustomersAsync"
+                      ShowDraftTab="true"
                       FilterApplier="@ApplyCustomerFilters"
                       GetEntityDisplayName="@(customer => customer.CompanyName)"
                       RequiredPermission="@PermissionRegistry.Customer.Read"
@@ -80,7 +81,7 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("客戶管理", NotificationService, GetType());
     // 載入客戶資料
-    private Task<List<Customer>> LoadCustomersAsync() => DataLoaderHelper.LoadAsync(() => CustomerService.GetAllAsync(),"客戶",NotificationService,GetType());
+    private Task<List<Customer>> LoadCustomersAsync() => DataLoaderHelper.LoadAsync(() => CustomerService.GetAllIncludingDraftsAsync(),"客戶",NotificationService,GetType());
 
     private IQueryable<Customer> ApplyCustomerFilters(SearchFilterModel searchModel, IQueryable<Customer> query)
     {

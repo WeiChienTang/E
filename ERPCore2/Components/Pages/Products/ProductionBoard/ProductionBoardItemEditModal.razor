@@ -17,14 +17,14 @@
                     DebugComponentName="ProductionBoardItemEditModal">
 
     <HeaderButtons>
-        @if (showDeleteConfirm)
+        @if (showReturnConfirm)
         {
             <div class="d-flex align-items-center gap-2">
-                <span class="text-danger small fw-semibold">確定刪除此項目？</span>
-                <GenericButtonComponent Variant="ButtonVariant.Red" Size="ButtonSize.Small"
-                    Text="確定" OnClick="HandleDeleteConfirmed" />
+                <span class="text-warning small fw-semibold">確定退回至待排清單？</span>
+                <GenericButtonComponent Variant="ButtonVariant.Orange" Size="ButtonSize.Small"
+                    Text="確定退回" OnClick="HandleReturnConfirmed" />
                 <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                    Text="取消" OnClick="@(() => showDeleteConfirm = false)" />
+                    Text="取消" OnClick="@(() => showReturnConfirm = false)" />
             </div>
         }
         else
@@ -40,11 +40,11 @@
                         IsDisabled="@(isProcessing || materialComplete)"
                         IsLoading="@isProcessing" />
                 }
-                <GenericButtonComponent Variant="ButtonVariant.Red" Size="ButtonSize.Small"
-                    Text="刪除"
-                    OnClick="@(() => showDeleteConfirm = true)"
+                <GenericButtonComponent Variant="ButtonVariant.Orange" Size="ButtonSize.Small"
+                    Text="退回"
+                    OnClick="@(() => showReturnConfirm = true)"
                     IsDisabled="@(Item?.CompletedQuantity > 0)"
-                    Title="@(Item?.CompletedQuantity > 0 ? "已有完成數量，無法刪除" : "刪除此排程項目")" />
+                    Title="@(Item?.CompletedQuantity > 0 ? "已有完成數量，無法退回" : "退回至待排清單，還原訂單排程數量")" />
             </div>
         }
     </HeaderButtons>
@@ -137,7 +137,7 @@
 
     private decimal editQuantity;
     private bool isProcessing;
-    private bool showDeleteConfirm;
+    private bool showReturnConfirm;
     private decimal completeQty;
     private bool hasBom;
     private bool materialComplete;
@@ -148,7 +148,7 @@
         if (Item != null && IsVisible)
         {
             editQuantity = decimal.Parse(Item.ScheduledQuantity.ToString("G"));
-            showDeleteConfirm = false;
+            showReturnConfirm = false;
             completeQty = 0;
             await LoadMaterialStatusAsync();
         }
@@ -289,35 +289,34 @@
         }
     }
 
-    private async Task HandleDeleteConfirmed()
+    private async Task HandleReturnConfirmed()
     {
         if (Item == null) return;
         try
         {
-            var item = await ScheduleItemService.GetByIdAsync(Item.Id);
-            if (item?.SalesOrderDetailId.HasValue == true)
+            var result = await ScheduleItemService.ReturnToSidebarAsync(Item.Id);
+            if (!result.IsSuccess)
             {
-                var detail = await SalesOrderDetailService.GetByIdAsync(item.SalesOrderDetailId!.Value);
-                if (detail != null)
-                {
-                    detail.ScheduledQuantity = Math.Max(0, detail.ScheduledQuantity - item.ScheduledQuantity);
-                    await SalesOrderDetailService.UpdateAsync(detail);
-                }
+                await NotificationService.ShowErrorAsync($"退回失敗：{result.ErrorMessage}");
+                return;
             }
-            await ScheduleItemService.PermanentDeleteAsync(Item.Id);
-            await NotificationService.ShowSuccessAsync("已刪除");
+
+            var msg = result.Data
+                ? "已退回待排清單（注意：此項目有領料記錄，請手動確認庫存是否需要沖銷）"
+                : "已退回待排清單，訂單排程數量已還原";
+            await NotificationService.ShowSuccessAsync(msg);
             await IsVisibleChanged.InvokeAsync(false);
             await OnDeleted.InvokeAsync();
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"刪除失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"退回失敗：{ex.Message}");
         }
     }
 
     private async Task HandleCancel()
     {
-        showDeleteConfirm = false;
+        showReturnConfirm = false;
         await IsVisibleChanged.InvokeAsync(false);
     }
 }

@@ -230,11 +230,11 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     return ServiceResult.Failure("進貨單號為必填");
 
-                if (entity.SupplierId <= 0)
+                if (!entity.IsDraft && !(entity.SupplierId > 0))
                     return ServiceResult.Failure("廠商為必填");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                
+
                 // 檢查進貨單號是否重複
                 bool exists;
                 if (entity.Id == 0)
@@ -247,16 +247,19 @@ namespace ERPCore2.Services
                     exists = await context.PurchaseReceivings
                         .AnyAsync(pr => pr.Code == entity.Code && pr.Id != entity.Id);
                 }
-                
+
                 if (exists)
                     return ServiceResult.Failure("進貨單號已存在");
 
-                // 檢查供應商
-                var supplier = await context.Suppliers
-                    .FirstOrDefaultAsync(s => s.Id == entity.SupplierId);
-                
-                if (supplier == null)
-                    return ServiceResult.Failure("指定的供應商不存在");
+                // 檢查供應商（草稿允許不填）
+                if (!entity.IsDraft)
+                {
+                    var supplier = await context.Suppliers
+                        .FirstOrDefaultAsync(s => s.Id == entity.SupplierId);
+
+                    if (supplier == null)
+                        return ServiceResult.Failure("指定的供應商不存在");
+                }
 
                 return ServiceResult.Success();
             }
@@ -1338,7 +1341,7 @@ namespace ERPCore2.Services
                 // 廠商篩選（RelatedEntityIds 對應廠商ID列表）
                 if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
                 {
-                    query = query.Where(pr => criteria.RelatedEntityIds.Contains(pr.SupplierId));
+                    query = query.Where(pr => pr.SupplierId.HasValue && criteria.RelatedEntityIds.Contains(pr.SupplierId.Value));
                 }
 
                 // 單據編號關鍵字搜尋

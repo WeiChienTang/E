@@ -18,6 +18,8 @@
                           FormFields="@formFields"
                           FormSections="@formSections"
                           DataLoader="@LoadUnitData"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="單位草稿已儲存，請記得補齊必填資料"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(UnitId.HasValue ? L["Message.UpdateSuccess", L["Entity.Unit"]].ToString() : L["Message.CreateSuccess", L["Entity.Unit"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Unit"]]"
@@ -43,8 +45,7 @@
     // ===== 必要方法 =====
     private Task<Unit?> LoadUnitData()
         => EditDataLoaderHelper.LoadOrCreateAsync<Unit, IUnitService>(
-            UnitId, UnitService, NotificationService, "單位", "UNIT", PrefilledValues,
-            u => u.Name = string.Empty);
+            UnitId, UnitService, NotificationService, "單位", "UNIT", PrefilledValues);
     protected override void OnParametersSet()
     {
         if (IsVisible)

@@ -51,7 +51,7 @@ namespace ERPCore2.FieldConfiguration
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
-                                model, query, nameof(VehicleMaintenance.VehicleId), vm => vm.VehicleId)
+                                model, query, nameof(VehicleMaintenance.VehicleId), vm => vm.VehicleId ?? 0)
                         }
                     },
                     {

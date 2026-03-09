@@ -77,17 +77,16 @@ namespace ERPCore2.Data.Entities
             !string.IsNullOrEmpty(RejectReason) ? (ApprovedByUser?.Name ?? "") : "";
 
         // Foreign Keys
-        [Required(ErrorMessage = "供應商為必填")]
         [Display(Name = "供應商")]
         [ForeignKey(nameof(Supplier))]
-        public int SupplierId { get; set; }
+        public int? SupplierId { get; set; }
 
         [Display(Name = "退出原因")]
         [ForeignKey(nameof(ReturnReason))]
         public int? ReturnReasonId { get; set; }
 
         // Navigation Properties
-        public Supplier Supplier { get; set; } = null!;
+        public Supplier? Supplier { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public EntityPurchaseReturnReason? ReturnReason { get; set; }
         public ICollection<PurchaseReturnDetail> PurchaseReturnDetails { get; set; } = new List<PurchaseReturnDetail>();

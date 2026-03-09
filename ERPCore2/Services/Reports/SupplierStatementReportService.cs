@@ -94,13 +94,13 @@ namespace ERPCore2.Services.Reports
                     periodReceivings = periodReceivings.Where(r => r.Status != EntityStatus.Inactive).ToList();
 
                 if (criteria.SupplierIds.Any())
-                    periodReceivings = periodReceivings.Where(r => criteria.SupplierIds.Contains(r.SupplierId)).ToList();
+                    periodReceivings = periodReceivings.Where(r => r.SupplierId.HasValue && criteria.SupplierIds.Contains(r.SupplierId.Value)).ToList();
 
                 foreach (var r in periodReceivings)
                 {
                     periodTransactions.Add(new StatementTransaction
                     {
-                        SupplierId = r.SupplierId,
+                        SupplierId = r.SupplierId ?? 0,
                         SupplierCode = r.Supplier?.Code ?? "",
                         SupplierName = r.Supplier?.CompanyName ?? "未知廠商",
                         TransactionDate = r.ReceiptDate,
@@ -119,13 +119,13 @@ namespace ERPCore2.Services.Reports
                     preReceivings = preReceivings.Where(r => r.Status != EntityStatus.Inactive).ToList();
 
                 if (criteria.SupplierIds.Any())
-                    preReceivings = preReceivings.Where(r => criteria.SupplierIds.Contains(r.SupplierId)).ToList();
+                    preReceivings = preReceivings.Where(r => r.SupplierId.HasValue && criteria.SupplierIds.Contains(r.SupplierId.Value)).ToList();
 
                 foreach (var r in preReceivings)
                 {
                     prePeriodTransactions.Add(new StatementTransaction
                     {
-                        SupplierId = r.SupplierId,
+                        SupplierId = r.SupplierId ?? 0,
                         SupplierCode = r.Supplier?.Code ?? "",
                         SupplierName = r.Supplier?.CompanyName ?? "未知廠商",
                         DebitAmount = r.PurchaseReceivingTotalAmountIncludingTax,
@@ -144,13 +144,13 @@ namespace ERPCore2.Services.Reports
                     periodReturns = periodReturns.Where(r => r.Status != EntityStatus.Inactive).ToList();
 
                 if (criteria.SupplierIds.Any())
-                    periodReturns = periodReturns.Where(r => criteria.SupplierIds.Contains(r.SupplierId)).ToList();
+                    periodReturns = periodReturns.Where(r => r.SupplierId.HasValue && criteria.SupplierIds.Contains(r.SupplierId.Value)).ToList();
 
                 foreach (var r in periodReturns)
                 {
                     periodTransactions.Add(new StatementTransaction
                     {
-                        SupplierId = r.SupplierId,
+                        SupplierId = r.SupplierId ?? 0,
                         SupplierCode = r.Supplier?.Code ?? "",
                         SupplierName = r.Supplier?.CompanyName ?? "未知廠商",
                         TransactionDate = r.ReturnDate,
@@ -169,13 +169,13 @@ namespace ERPCore2.Services.Reports
                     preReturns = preReturns.Where(r => r.Status != EntityStatus.Inactive).ToList();
 
                 if (criteria.SupplierIds.Any())
-                    preReturns = preReturns.Where(r => criteria.SupplierIds.Contains(r.SupplierId)).ToList();
+                    preReturns = preReturns.Where(r => r.SupplierId.HasValue && criteria.SupplierIds.Contains(r.SupplierId.Value)).ToList();
 
                 foreach (var r in preReturns)
                 {
                     prePeriodTransactions.Add(new StatementTransaction
                     {
-                        SupplierId = r.SupplierId,
+                        SupplierId = r.SupplierId ?? 0,
                         SupplierCode = r.Supplier?.Code ?? "",
                         SupplierName = r.Supplier?.CompanyName ?? "未知廠商",
                         DebitAmount = 0,

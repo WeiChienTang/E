@@ -615,6 +615,51 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<ServiceResult<bool>> ReturnToSidebarAsync(int itemId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var item = await context.ProductionScheduleItems
+                    .Include(i => i.ScheduleDetails)
+                    .FirstOrDefaultAsync(i => i.Id == itemId);
+
+                if (item == null)
+                    return ServiceResult<bool>.Failure("找不到排程項目");
+
+                if (item.CompletedQuantity > 0)
+                    return ServiceResult<bool>.Failure("已有完成數量，無法退回待排清單");
+
+                // 檢查是否有已發出的領料記錄
+                var hasIssuedMaterials = item.ScheduleDetails?.Any(d => d.IssuedQuantity > 0) ?? false;
+
+                // 扣回 SalesOrderDetail.ScheduledQuantity
+                if (item.SalesOrderDetailId.HasValue)
+                {
+                    var detail = await context.SalesOrderDetails
+                        .FirstOrDefaultAsync(d => d.Id == item.SalesOrderDetailId.Value);
+                    if (detail != null)
+                    {
+                        detail.ScheduledQuantity = Math.Max(0, detail.ScheduledQuantity - item.ScheduledQuantity);
+                    }
+                }
+
+                // 刪除明細與主檔
+                if (item.ScheduleDetails?.Any() == true)
+                    context.ProductionScheduleDetails.RemoveRange(item.ScheduleDetails);
+                context.ProductionScheduleItems.Remove(item);
+
+                await context.SaveChangesAsync();
+                return ServiceResult<bool>.Success(hasIssuedMaterials);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReturnToSidebarAsync), GetType(), _logger, new { itemId });
+                return ServiceResult<bool>.Failure("退回待排清單時發生錯誤");
+            }
+        }
+
         // 覆寫刪除前檢查
         protected override async Task<ServiceResult> CanDeleteAsync(ProductionScheduleItem entity)
         {

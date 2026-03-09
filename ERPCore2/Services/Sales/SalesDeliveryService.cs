@@ -123,7 +123,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("出貨單號不能為空");
 
-                if (entity.CustomerId <= 0)
+                if (!entity.IsDraft && !(entity.CustomerId > 0))
                     errors.Add("客戶為必選項目");
 
                 if (entity.DeliveryDate == default)

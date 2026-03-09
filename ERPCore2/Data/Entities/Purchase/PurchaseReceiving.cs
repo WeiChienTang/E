@@ -78,13 +78,12 @@ namespace ERPCore2.Data.Entities
             !string.IsNullOrEmpty(RejectReason) ? (ApprovedByUser?.Name ?? "") : "";
 
         // Foreign Keys
-        [Required(ErrorMessage = "供應商為必填")]
         [Display(Name = "供應商")]
         [ForeignKey(nameof(Supplier))]
-        public int SupplierId { get; set; }
+        public int? SupplierId { get; set; }
 
         // Navigation Properties
-        public Supplier Supplier { get; set; } = null!;
+        public Supplier? Supplier { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public ICollection<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; } = new List<PurchaseReceivingDetail>();
     }

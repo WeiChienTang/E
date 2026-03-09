@@ -22,6 +22,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
+                          ShowDraftTab="true"
                           DataLoader="@LoadSalesDeliveriesAsync"
                           FilterApplier="@ApplySalesDeliveryFilters"
                           GetEntityDisplayName="@(delivery => delivery.Code)"
@@ -163,7 +164,7 @@
     private Task<List<SalesDelivery>> LoadSalesDeliveriesAsync()
     {
         return DataLoaderHelper.LoadAsync<SalesDelivery>(
-            () => SalesDeliveryService.GetAllAsync(),
+            () => SalesDeliveryService.GetAllIncludingDraftsAsync(),
             "銷貨單",
             NotificationService,
             GetType());

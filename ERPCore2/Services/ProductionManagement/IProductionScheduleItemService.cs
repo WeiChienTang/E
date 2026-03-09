@@ -83,5 +83,13 @@ namespace ERPCore2.Services
         /// 批次取得所有排程項目的已排程數量（key = SalesOrderDetailId），解決 N+1 問題
         /// </summary>
         Task<Dictionary<int, decimal>> GetScheduledQuantityMapAsync();
+
+        /// <summary>
+        /// 將排程項目退回待排清單。
+        /// 條件：CompletedQuantity == 0。
+        /// 同時扣回 SalesOrderDetail.ScheduledQuantity。
+        /// 回傳 bool = true 表示退回前有已發出的領料記錄，應提示使用者手動沖銷。
+        /// </summary>
+        Task<ServiceResult<bool>> ReturnToSidebarAsync(int itemId);
     }
 }

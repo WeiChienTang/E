@@ -84,23 +84,21 @@ namespace ERPCore2.Data.Entities
             !string.IsNullOrEmpty(RejectReason) ? (ApprovedByUser?.Name ?? "") : "";
 
         // Foreign Keys
-        [Required(ErrorMessage = "公司為必填")]
         [Display(Name = "公司")]
         [ForeignKey(nameof(Company))]
-        public int CompanyId { get; set; }
+        public int? CompanyId { get; set; }
 
-        [Required(ErrorMessage = "客戶為必填")]
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]
-        public int CustomerId { get; set; }  // 客戶直接關聯
+        public int? CustomerId { get; set; }  // 客戶直接關聯
 
         [Display(Name = "員工")]
         [ForeignKey(nameof(Employee))]
         public int? EmployeeId { get; set; }
 
         // Navigation Properties
-        public Company Company { get; set; } = null!;
-        public Customer Customer { get; set; } = null!;
+        public Company? Company { get; set; }
+        public Customer? Customer { get; set; }
         public Employee? Employee { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public ICollection<SalesOrderDetail> SalesOrderDetails { get; set; } = new List<SalesOrderDetail>();

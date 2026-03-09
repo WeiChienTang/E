@@ -23,6 +23,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
+                          ShowDraftTab="true"
                           DataLoader="@LoadSalesReturnsAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplySalesReturnFilters"
@@ -152,7 +153,7 @@
     /// <summary>
     /// 載入退貨單資料
     /// </summary>
-    private Task<List<SalesReturn>> LoadSalesReturnsAsync() => DataLoaderHelper.LoadAsync(() => SalesReturnService.GetAllAsync(), "退貨單", NotificationService, GetType());
+    private Task<List<SalesReturn>> LoadSalesReturnsAsync() => DataLoaderHelper.LoadAsync(() => SalesReturnService.GetAllIncludingDraftsAsync(), "退貨單", NotificationService, GetType());
 
     /// <summary>
     /// 載入基礎資料

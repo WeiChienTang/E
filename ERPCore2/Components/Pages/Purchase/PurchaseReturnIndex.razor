@@ -24,6 +24,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
+                          ShowDraftTab="true"
                           DataLoader="@LoadPurchaseReturnsAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyPurchaseReturnFilters"
@@ -147,7 +148,7 @@
     /// <summary>
     /// 載入進貨退出資料
     /// </summary>
-    private Task<List<PurchaseReturn>> LoadPurchaseReturnsAsync() => DataLoaderHelper.LoadAsync(() => PurchaseReturnService.GetAllAsync(), "進貨退出", NotificationService, GetType());
+    private Task<List<PurchaseReturn>> LoadPurchaseReturnsAsync() => DataLoaderHelper.LoadAsync(() => PurchaseReturnService.GetAllIncludingDraftsAsync(), "進貨退出", NotificationService, GetType());
 
     /// <summary>
     /// 載入基礎資料

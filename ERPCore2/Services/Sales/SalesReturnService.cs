@@ -137,7 +137,7 @@ namespace ERPCore2.Services
                 if (entity.ReturnDate > DateTime.Today)
                     errors.Add("退回日期不能大於今天");
 
-                if (entity.CustomerId <= 0)
+                if (!entity.IsDraft && !(entity.CustomerId > 0))
                     errors.Add("必須選擇客戶");
 
                 if (!string.IsNullOrWhiteSpace(entity.Code) &&
@@ -483,7 +483,7 @@ namespace ERPCore2.Services
                 // 篩選條件 2: 客戶ID列表（RelatedEntityIds 在銷貨退回單中代表客戶ID）
                 if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
                 {
-                    query = query.Where(sr => criteria.RelatedEntityIds.Contains(sr.CustomerId));
+                    query = query.Where(sr => sr.CustomerId.HasValue && criteria.RelatedEntityIds.Contains(sr.CustomerId.Value));
                 }
 
                 // 篩選條件 3: 倉庫ID（透過明細關聯的銷貨出貨明細）

@@ -25,6 +25,7 @@
                           GetEntityDisplayName="@(order => order.Code)"
                           RequiredPermission="@PermissionRegistry.PurchaseOrder.Read"
                           RequiredModule="Purchase"
+                          ShowDraftTab="true"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
                           ShowBatchApprovalButton="@isManualApproval"
@@ -132,8 +133,8 @@
 
     private async Task LoadCompaniesAsync() => companies = await DataLoaderHelper.LoadAsync(() => CompanyService.GetAllAsync(), "公司", NotificationService, GetType());
 
-    // 載入採購單資料
-    private Task<List<PurchaseOrder>> LoadPurchaseOrdersAsync() => DataLoaderHelper.LoadAsync(() => PurchaseOrderService.GetAllAsync(), "採購單", NotificationService, GetType());
+    // 載入採購單資料（含草稿）
+    private Task<List<PurchaseOrder>> LoadPurchaseOrdersAsync() => DataLoaderHelper.LoadAsync(() => PurchaseOrderService.GetAllIncludingDraftsAsync(), "採購單", NotificationService, GetType());
 
     // 篩選方法 - 現在已由 FilterHelper 處理所有錯誤情況
     private IQueryable<PurchaseOrder> ApplyPurchaseOrderFilters(SearchFilterModel searchModel, IQueryable<PurchaseOrder> query)

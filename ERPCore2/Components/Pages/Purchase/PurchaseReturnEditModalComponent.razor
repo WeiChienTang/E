@@ -41,8 +41,9 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           DataLoader="@LoadPurchaseReturnData"
                           UseGenericSave="false"
-                          CustomValidator="@ValidatePurchaseReturnDetailsAsync"
                           SaveHandler="@SavePurchaseReturnWithDetails"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.PurchaseReturn"]]"
                           SaveSuccessMessage="@(PurchaseReturnId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseReturn"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseReturn"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseReturn"]]"
                           RequiredPermission="@PermissionRegistry.PurchaseReturn.Read"
@@ -138,7 +139,7 @@
 
             // 載入廠商資訊 Tab
             if (supplierInfoTab != null && editModalComponent?.Entity?.SupplierId > 0)
-                await supplierInfoTab.LoadAsync(editModalComponent.Entity.SupplierId);
+                await supplierInfoTab.LoadAsync(editModalComponent.Entity.SupplierId.Value);
             else
                 supplierInfoTab?.Clear();
 
@@ -235,7 +236,7 @@
                         Code = number,
                         ReturnDate = DateTime.Today,
                         Status = EntityStatus.Active,
-                        SupplierId = PrefilledSupplierId ?? 0
+                        SupplierId = PrefilledSupplierId
                     };
                     
                     //  如果是從進貨單轉單，繼承進貨單的稅率算法
@@ -995,8 +996,8 @@
     /// </summary>
     private RenderFragment? GetCustomActionButtons() => __builder =>
     {
-        @* 轉沖款按鈕 - 只在進貨退出已儲存時顯示 *@
-        @if (editModalComponent?.Entity != null && PurchaseReturnId.HasValue)
+        @* 轉沖款按鈕 - 只在進貨退出已儲存且非草稿時顯示 *@
+        @if (editModalComponent?.Entity != null && PurchaseReturnId.HasValue && editModalComponent.Entity.IsDraft != true)
         {
             <GenericButtonComponent Text="@L["Button.ConvertToSetoff"]"
                                   Variant="ButtonVariant.Green" 
@@ -1026,7 +1027,7 @@
             }
 
             // 2. 驗證廠商資料
-            if (editModalComponent.Entity.SupplierId <= 0)
+            if (!(editModalComponent.Entity.SupplierId > 0))
             {
                 await NotificationService.ShowWarningAsync("進貨退出缺少廠商資訊，無法轉沖款");
                 return;
@@ -1056,7 +1057,7 @@
                 await Task.Yield(); // 讓 Blazor 完成 SetoffDocumentEditModalComponent 的渲染
             }
             await setoffDocumentEditModal!.ShowAddModalWithPrefilledPurchaseReturn(
-                editModalComponent.Entity.SupplierId,
+                editModalComponent.Entity.SupplierId.Value,
                 PurchaseReturnId.Value
             );
         }
@@ -1295,43 +1296,48 @@
             {
                 return false;
             }
-            
-            // 先執行自訂驗證
-            if (!await ValidatePurchaseReturnDetailsAsync(purchaseReturn))
+
+            // 草稿模式跳過業務驗證
+            if (!purchaseReturn.IsDraft)
             {
-                return false;
+                var validDetails = purchaseReturnDetails.Where(d => d.ProductId > 0 && d.ReturnQuantity > 0).ToList();
+                if (!validDetails.Any())
+                {
+                    editModalComponent!.PendingSaveError = "至少需要一筆退貨明細";
+                    return false;
+                }
             }
-            
+
             if (PurchaseReturnService == null)
             {
                 return false;
             }
-            
+
             if (purchaseReturnDetails == null)
             {
                 purchaseReturnDetails = new List<PurchaseReturnDetail>();
             }
-                        
+
             // 呼叫服務的 SaveWithDetailsAsync 方法
             // 審核守衛：人工審核模式下，需核准後才更新庫存；自動審核模式下，儲存即更新
             bool shouldUpdateInventory = ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, purchaseReturn.IsApproved);
             var result = await PurchaseReturnService.SaveWithDetailsAsync(purchaseReturn, purchaseReturnDetails, shouldUpdateInventory);
-            
+
             if (result == null)
             {
                 return false;
             }
-            
+
             if (result.IsSuccess)
             {
                 // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
-                if (!isManualApproval && result.Data != null && !result.Data.IsApproved)
+                if (!purchaseReturn.IsDraft && !isManualApproval && result.Data != null && !result.Data.IsApproved)
                     await PurchaseReturnService.ApproveAsync(result.Data.Id, null);
                 return true;
             }
             else
             {
-                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
+                editModalComponent!.PendingSaveError = result.ErrorMessage;
                 return false;
             }
         }

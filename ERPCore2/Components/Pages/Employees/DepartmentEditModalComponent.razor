@@ -23,6 +23,8 @@
                           DataLoader="@LoadDepartmentData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="部門草稿已儲存，請記得補齊必填資料"
                           SaveSuccessMessage="@(DepartmentId.HasValue ? L["Message.UpdateSuccess", L["Entity.Department"]].ToString() : L["Message.CreateSuccess", L["Entity.Department"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Department"]]"
                           RequiredPermission="@PermissionRegistry.Department.Read"
@@ -94,8 +96,7 @@
 
     private Task<Department?> LoadDepartmentData()
         => EditDataLoaderHelper.LoadOrCreateAsync<Department, IDepartmentService>(
-            DepartmentId, DepartmentService, NotificationService, "部門", "DEPT", PrefilledValues,
-            d => d.Name = string.Empty);
+            DepartmentId, DepartmentService, NotificationService, "部門", "DEPT", PrefilledValues);
 
     protected override void OnParametersSet()
     {

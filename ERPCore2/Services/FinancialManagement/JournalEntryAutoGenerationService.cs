@@ -169,8 +169,11 @@ namespace ERPCore2.Services
                 if (doc == null)
                     return (false, "找不到指定的進貨入庫單");
 
+                if (!doc.SupplierId.HasValue)
+                    return (false, "進貨入庫單缺少廠商資料，無法自動生成傳票");
+
                 var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
-                var payable   = await GetAPAccountForSupplierAsync(doc.SupplierId);
+                var payable   = await GetAPAccountForSupplierAsync(doc.SupplierId.Value);
                 var inputVat  = await _accountItemService.GetByCodeAsync(InputVatCode);
 
                 if (inventory == null || payable == null)
@@ -251,8 +254,11 @@ namespace ERPCore2.Services
                 if (doc == null)
                     return (false, "找不到指定的進貨退回單");
 
+                if (!doc.SupplierId.HasValue)
+                    return (false, "進貨退回單缺少廠商資料，無法自動生成傳票");
+
                 var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
-                var payable   = await GetAPAccountForSupplierAsync(doc.SupplierId);
+                var payable   = await GetAPAccountForSupplierAsync(doc.SupplierId.Value);
                 var inputVat  = await _accountItemService.GetByCodeAsync(InputVatCode);
 
                 if (inventory == null || payable == null)
@@ -332,7 +338,10 @@ namespace ERPCore2.Services
                 if (doc == null)
                     return (false, "找不到指定的銷貨出貨單");
 
-                var receivable  = await GetARAccountForCustomerAsync(doc.CustomerId);
+                if (!doc.CustomerId.HasValue)
+                    return (false, "銷貨出貨單缺少客戶資料，無法自動生成傳票");
+
+                var receivable  = await GetARAccountForCustomerAsync(doc.CustomerId.Value);
                 var revenue     = await _accountItemService.GetByCodeAsync(SalesRevenueCode);
                 var outputVat   = await _accountItemService.GetByCodeAsync(OutputVatCode);
 
@@ -348,7 +357,7 @@ namespace ERPCore2.Services
                         AccountItemId = receivable.Id,
                         Direction = AccountDirection.Debit,
                         Amount = doc.TotalAmountWithTax,
-                        LineDescription = $"應收帳款－{doc.Customer?.CompanyName ?? doc.CustomerId.ToString()}"
+                        LineDescription = $"應收帳款－{doc.Customer?.CompanyName ?? doc.CustomerId?.ToString() ?? ""}"
                     },
                     new JournalEntryLine
                     {
@@ -445,7 +454,10 @@ namespace ERPCore2.Services
                 if (doc == null)
                     return (false, "找不到指定的銷貨退回單");
 
-                var receivable  = await GetARAccountForCustomerAsync(doc.CustomerId);
+                if (!doc.CustomerId.HasValue)
+                    return (false, "銷貨退回單缺少客戶資料，無法自動生成傳票");
+
+                var receivable  = await GetARAccountForCustomerAsync(doc.CustomerId.Value);
                 var revenue     = await _accountItemService.GetByCodeAsync(SalesRevenueCode);
                 var outputVat   = await _accountItemService.GetByCodeAsync(OutputVatCode);
 
@@ -483,7 +495,7 @@ namespace ERPCore2.Services
                     AccountItemId = receivable.Id,
                     Direction = AccountDirection.Credit,
                     Amount = doc.TotalReturnAmountWithTax,
-                    LineDescription = $"應收帳款沖回－{doc.Customer?.CompanyName ?? doc.CustomerId.ToString()}"
+                    LineDescription = $"應收帳款沖回－{doc.Customer?.CompanyName ?? doc.CustomerId?.ToString() ?? ""}"
                 });
 
                 // 銷貨退回成本沖回：借 商品存貨(1231) / 貸 銷貨成本(5111)

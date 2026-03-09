@@ -134,7 +134,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("銷貨單號不能為空");
 
-                if (entity.CustomerId <= 0)
+                if (!entity.IsDraft && !(entity.CustomerId > 0))
                     errors.Add("客戶為必選項目");
 
                 if (entity.OrderDate == default)
@@ -642,7 +642,7 @@ namespace ERPCore2.Services
                 // 關聯實體篩選（客戶）
                 if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
                 {
-                    query = query.Where(so => criteria.RelatedEntityIds.Contains(so.CustomerId));
+                    query = query.Where(so => so.CustomerId.HasValue && criteria.RelatedEntityIds.Contains(so.CustomerId.Value));
                 }
 
                 // 公司篩選（如果需要）

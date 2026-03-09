@@ -10,6 +10,7 @@
                         EntityBasePath="/product-categories"                          
                         PageTitle="@L["Page.ProductCategoryTitle"]"
                         PageSubtitle="@L["Page.ProductCategorySubtitle"]"
+                        ShowDraftTab="true"
                         DataLoader="@LoadDataAsync"
                         FilterApplier="@ApplyProductCategoryFilters"
                         BreadcrumbItems="@breadcrumbItems"
@@ -81,7 +82,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "商品類型管理", "#", NotificationService, GetType());
 
     // 載入商品分類資料
-    private Task<List<ProductCategory>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => ProductCategoryService.GetAllAsync(), "商品分類", NotificationService, GetType());
+    private Task<List<ProductCategory>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => ProductCategoryService.GetAllIncludingDraftsAsync(), "商品分類", NotificationService, GetType());
 
     private IQueryable<ProductCategory> ApplyProductCategoryFilters(SearchFilterModel searchModel, IQueryable<ProductCategory> query)
     {

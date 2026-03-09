@@ -69,7 +69,7 @@ namespace ERPCore2.Services.Reports
             Customer? customer = null;
             if (salesReturn.CustomerId > 0)
             {
-                customer = await _customerService.GetByIdAsync(salesReturn.CustomerId);
+                customer = await _customerService.GetByIdAsync(salesReturn.CustomerId.Value);
             }
 
             Employee? employee = null;
@@ -152,7 +152,7 @@ namespace ERPCore2.Services.Reports
                 if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
                 {
                     filteredReturns = filteredReturns
-                        .Where(r => criteria.RelatedEntityIds.Contains(r.CustomerId))
+                        .Where(r => r.CustomerId.HasValue && criteria.RelatedEntityIds.Contains(r.CustomerId.Value))
                         .ToList();
                 }
 
@@ -198,7 +198,7 @@ namespace ERPCore2.Services.Reports
             if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
             {
                 filteredReturns = filteredReturns
-                    .Where(r => criteria.RelatedEntityIds.Contains(r.CustomerId))
+                    .Where(r => r.CustomerId.HasValue && criteria.RelatedEntityIds.Contains(r.CustomerId.Value))
                     .ToList();
             }
 
@@ -300,7 +300,7 @@ namespace ERPCore2.Services.Reports
                 foreach (var detail in returnDetails)
                 {
                     var product = productDict.GetValueOrDefault(detail.ProductId);
-                    var unit = product != null ? unitDict.GetValueOrDefault(product.UnitId) : null;
+                    var unit = product?.UnitId.HasValue == true ? unitDict.GetValueOrDefault(product.UnitId!.Value) : null;
                     
                     // 組合商品名稱與規格說明
                     var productName = product?.Name ?? "";

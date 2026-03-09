@@ -90,7 +90,7 @@ namespace ERPCore2.Services.Reports
             // 篩選指定客戶
             if (criteria.CustomerIds.Any())
             {
-                deliveries = deliveries.Where(d => criteria.CustomerIds.Contains(d.CustomerId)).ToList();
+                deliveries = deliveries.Where(d => d.CustomerId.HasValue && criteria.CustomerIds.Contains(d.CustomerId.Value)).ToList();
             }
 
             // 按客戶彙總
@@ -98,7 +98,7 @@ namespace ERPCore2.Services.Reports
                 .GroupBy(d => new { d.CustomerId, CustomerCode = d.Customer?.Code ?? "", CustomerName = d.Customer?.CompanyName ?? "未知客戶" })
                 .Select(g => new CustomerSalesAnalysisItem
                 {
-                    CustomerId = g.Key.CustomerId,
+                    CustomerId = g.Key.CustomerId ?? 0,
                     CustomerCode = g.Key.CustomerCode,
                     CustomerName = g.Key.CustomerName,
                     DeliveryCount = g.Count(),

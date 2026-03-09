@@ -67,7 +67,7 @@ namespace ERPCore2.Services.Reports
             Customer? customer = null;
             if (salesDelivery.CustomerId > 0)
             {
-                customer = await _customerService.GetByIdAsync(salesDelivery.CustomerId);
+                customer = await _customerService.GetByIdAsync(salesDelivery.CustomerId.Value);
             }
 
             Employee? employee = null;
@@ -150,7 +150,7 @@ namespace ERPCore2.Services.Reports
                 if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
                 {
                     filteredDeliveries = filteredDeliveries
-                        .Where(d => criteria.RelatedEntityIds.Contains(d.CustomerId))
+                        .Where(d => d.CustomerId.HasValue && criteria.RelatedEntityIds.Contains(d.CustomerId.Value))
                         .ToList();
                 }
 
@@ -196,7 +196,7 @@ namespace ERPCore2.Services.Reports
             if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
             {
                 filteredDeliveries = filteredDeliveries
-                    .Where(d => criteria.RelatedEntityIds.Contains(d.CustomerId))
+                    .Where(d => d.CustomerId.HasValue && criteria.RelatedEntityIds.Contains(d.CustomerId.Value))
                     .ToList();
             }
 

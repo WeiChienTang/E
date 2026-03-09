@@ -13,10 +13,9 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 職位名稱
         /// </summary>
-        [Required(ErrorMessage = "職位名稱為必填")]
         [MaxLength(50, ErrorMessage = "職位名稱不可超過50個字元")]
         [Display(Name = "職位名稱")]
-        public string Name { get; set; } = string.Empty;
+        public string? Name { get; set; }
 
         // 導航屬性
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();

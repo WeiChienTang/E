@@ -16,6 +16,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
+                          ShowDraftTab="true"
                           DataLoader="@LoadProductsAsync"
                           FilterApplier="@ApplyProductFilters"
                           GetEntityDisplayName="@(product => product.Name)"
@@ -124,7 +125,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("商品管理", NotificationService, GetType());
 
     // 載入商品資料
-    private Task<List<Product>> LoadProductsAsync() => DataLoaderHelper.LoadAsync(() => ProductService.GetAllAsync(), "商品", NotificationService, GetType());
+    private Task<List<Product>> LoadProductsAsync() => DataLoaderHelper.LoadAsync(() => ProductService.GetAllIncludingDraftsAsync(), "商品", NotificationService, GetType());
 
     // 載入商品分類資料
     private async Task LoadProductCategoriesAsync() => productCategories = await DataLoaderHelper.LoadAsync(() => ProductService.GetProductCategoriesAsync(), "商品分類", NotificationService, GetType());

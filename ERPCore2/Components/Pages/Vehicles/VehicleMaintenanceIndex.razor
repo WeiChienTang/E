@@ -21,6 +21,7 @@
                           RequiredModule="Vehicles"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
+                          ShowDraftTab="true"
                           DebugPageName="VehicleMaintenanceIndex"
                           @ref="indexComponent" />
 
@@ -72,7 +73,7 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("車輛管理", "保養紀錄維護", "#", NotificationService, GetType());
 
-    private Task<List<VehicleMaintenance>> LoadMaintenancesAsync() => DataLoaderHelper.LoadAsync(() => VehicleMaintenanceService.GetAllAsync(), "保養紀錄", NotificationService, GetType());
+    private Task<List<VehicleMaintenance>> LoadMaintenancesAsync() => DataLoaderHelper.LoadAsync(() => VehicleMaintenanceService.GetAllIncludingDraftsAsync(), "保養紀錄", NotificationService, GetType());
 
     private IQueryable<VehicleMaintenance> ApplyMaintenanceFilters(SearchFilterModel searchModel, IQueryable<VehicleMaintenance> query)
     {

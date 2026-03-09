@@ -44,6 +44,8 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadSalesOrderData"
                           SaveHandler="@SaveSalesOrderWithDetails"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.SalesOrder"]]"
                           SaveSuccessMessage="@(SalesOrderId.HasValue ? L["Message.UpdateSuccess", L["Entity.SalesOrder"]].ToString() : L["Message.CreateSuccess", L["Entity.SalesOrder"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SalesOrder"]]"
                           RequiredPermission="@PermissionRegistry.SalesOrder.Read"
@@ -318,7 +320,7 @@
                 
                 // 取得預設公司
                 var primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
-                newOrder.CompanyId = primaryCompany?.Id ?? 0;
+                newOrder.CompanyId = primaryCompany?.Id;
                 
                 // 如果是從報價單轉單，載入報價單資料
                 if (PrefilledQuotationId.HasValue)
@@ -983,7 +985,7 @@
 
             // 載入客戶資訊 Tab
             if (customerInfoTab != null && editModalComponent?.Entity?.CustomerId > 0)
-                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId);
+                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId.Value);
             else
                 customerInfoTab?.Clear();
 
@@ -1199,9 +1201,10 @@
     /// </summary>
     private RenderFragment? GetCustomActionButtons() => __builder =>
     {
-        @* 轉銷貨出貨單按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
-        @if (editModalComponent?.Entity != null && 
-            SalesOrderId.HasValue)
+        @* 轉銷貨出貨單按鈕 - 新增模式需先儲存，編輯模式直接可用，草稿不顯示 *@
+        @if (editModalComponent?.Entity != null &&
+            SalesOrderId.HasValue &&
+            editModalComponent.Entity.IsDraft != true)
         {
             
             <GenericButtonComponent Text="@L["Button.ConvertToDelivery"]"
@@ -1314,7 +1317,7 @@
 
             // 直接開啟銷貨出貨單 Modal，使用 Entity.Id 作為訂單 ID（最可靠的來源）
             await salesDeliveryEditModal!.ShowAddModalWithPrefilledOrder(
-                editModalComponent.Entity.CustomerId,
+                editModalComponent.Entity.CustomerId ?? 0,
                 editModalComponent.Entity.Id  // 使用 Entity.Id 而非 SalesOrderId 參數
             );
         }
@@ -1520,27 +1523,31 @@
                 return false;
             }
 
-            // 1. 先進行明細驗證 (檢查單價是否為0)
-            if (salesOrderDetailManager != null)
+            // 非草稿模式才執行明細驗證
+            if (!salesOrder.IsDraft)
             {
-                var isValid = await salesOrderDetailManager.ValidateAsync();
-                if (!isValid)
+                // 1. 先進行明細驗證 (檢查單價是否為0)
+                if (salesOrderDetailManager != null)
                 {
-                    // ValidateAsync 內部已顯示錯誤訊息，直接返回
-                    return false;
+                    var isValid = await salesOrderDetailManager.ValidateAsync();
+                    if (!isValid)
+                    {
+                        // ValidateAsync 內部已顯示錯誤訊息，直接返回
+                        return false;
+                    }
                 }
-            }
-            else
-            {
-                // 如果沒有管理器引用，進行基本檢查
-                var invalidPriceDetails = salesOrderDetails
-                    .Where(d => d.ProductId > 0 && d.UnitPrice < 0)
-                    .ToList();
-                
-                if (invalidPriceDetails.Any())
+                else
                 {
-                    await NotificationService.ShowErrorAsync("所有商品的單價不可為負數，請檢查並修正");
-                    return false;
+                    // 如果沒有管理器引用，進行基本檢查
+                    var invalidPriceDetails = salesOrderDetails
+                        .Where(d => d.ProductId > 0 && d.UnitPrice < 0)
+                        .ToList();
+
+                    if (invalidPriceDetails.Any())
+                    {
+                        editModalComponent!.PendingSaveError = "所有商品的單價不可為負數，請檢查並修正";
+                        return false;
+                    }
                 }
             }
 
@@ -1576,7 +1583,7 @@
             await SaveSalesOrderCompositionDetails(result.Data.Id);
 
             // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
-            if (!isManualApproval && !result.Data.IsApproved)
+            if (!salesOrder.IsDraft && !isManualApproval && !result.Data.IsApproved)
                 await SalesOrderService.ApproveAsync(result.Data.Id, null);
 
             return true;

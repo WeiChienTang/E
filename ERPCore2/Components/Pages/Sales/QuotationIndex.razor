@@ -20,6 +20,7 @@
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
+                      ShowDraftTab="true"
                       DataLoader="@LoadQuotationsAsync"
                       FilterApplier="@ApplyQuotationFilters"
                       GetEntityDisplayName="@(quotation => quotation.Code)"
@@ -146,7 +147,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("報價管理", NotificationService, GetType());
 
     // 載入報價單資料
-    private Task<List<Quotation>> LoadQuotationsAsync() => DataLoaderHelper.LoadAsync(() => QuotationService.GetAllAsync(), "報價單", NotificationService, GetType());
+    private Task<List<Quotation>> LoadQuotationsAsync() => DataLoaderHelper.LoadAsync(() => QuotationService.GetAllIncludingDraftsAsync(), "報價單", NotificationService, GetType());
 
     // 載入客戶資料
     private async Task LoadCustomersAsync() => customers = await DataLoaderHelper.LoadAsync(() => CustomerService.GetAllAsync(), "客戶", NotificationService, GetType());

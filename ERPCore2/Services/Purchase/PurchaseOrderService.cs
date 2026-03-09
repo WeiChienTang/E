@@ -277,7 +277,7 @@ namespace ERPCore2.Services
                 // 廠商篩選（RelatedEntityIds 對應廠商ID列表）
                 if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
                 {
-                    query = query.Where(po => criteria.RelatedEntityIds.Contains(po.SupplierId));
+                    query = query.Where(po => po.SupplierId.HasValue && criteria.RelatedEntityIds.Contains(po.SupplierId.Value));
                 }
 
                 // 公司篩選

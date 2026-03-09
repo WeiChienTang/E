@@ -94,7 +94,7 @@ namespace ERPCore2.Services.Reports
                     allDeliveries = allDeliveries.Where(d => d.Status != EntityStatus.Inactive).ToList();
 
                 if (criteria.CustomerIds.Any())
-                    allDeliveries = allDeliveries.Where(d => criteria.CustomerIds.Contains(d.CustomerId)).ToList();
+                    allDeliveries = allDeliveries.Where(d => d.CustomerId.HasValue && criteria.CustomerIds.Contains(d.CustomerId.Value)).ToList();
 
                 // 期間內出貨
                 var periodDeliveries = allDeliveries
@@ -105,7 +105,7 @@ namespace ERPCore2.Services.Reports
                 {
                     periodTransactions.Add(new StatementTransaction
                     {
-                        CustomerId = d.CustomerId,
+                        CustomerId = d.CustomerId ?? 0,
                         CustomerCode = d.Customer?.Code ?? "",
                         CustomerName = d.Customer?.CompanyName ?? "未知客戶",
                         TransactionDate = d.DeliveryDate,
@@ -125,7 +125,7 @@ namespace ERPCore2.Services.Reports
                 {
                     prePeriodTransactions.Add(new StatementTransaction
                     {
-                        CustomerId = d.CustomerId,
+                        CustomerId = d.CustomerId ?? 0,
                         CustomerCode = d.Customer?.Code ?? "",
                         CustomerName = d.Customer?.CompanyName ?? "未知客戶",
                         DebitAmount = d.TotalAmountWithTax,
@@ -144,13 +144,13 @@ namespace ERPCore2.Services.Reports
                     periodReturns = periodReturns.Where(r => r.Status != EntityStatus.Inactive).ToList();
 
                 if (criteria.CustomerIds.Any())
-                    periodReturns = periodReturns.Where(r => criteria.CustomerIds.Contains(r.CustomerId)).ToList();
+                    periodReturns = periodReturns.Where(r => r.CustomerId.HasValue && criteria.CustomerIds.Contains(r.CustomerId.Value)).ToList();
 
                 foreach (var r in periodReturns)
                 {
                     periodTransactions.Add(new StatementTransaction
                     {
-                        CustomerId = r.CustomerId,
+                        CustomerId = r.CustomerId ?? 0,
                         CustomerCode = r.Customer?.Code ?? "",
                         CustomerName = r.Customer?.CompanyName ?? "未知客戶",
                         TransactionDate = r.ReturnDate,
@@ -170,13 +170,13 @@ namespace ERPCore2.Services.Reports
                     preReturns = preReturns.Where(r => r.Status != EntityStatus.Inactive).ToList();
 
                 if (criteria.CustomerIds.Any())
-                    preReturns = preReturns.Where(r => criteria.CustomerIds.Contains(r.CustomerId)).ToList();
+                    preReturns = preReturns.Where(r => r.CustomerId.HasValue && criteria.CustomerIds.Contains(r.CustomerId.Value)).ToList();
 
                 foreach (var r in preReturns)
                 {
                     prePeriodTransactions.Add(new StatementTransaction
                     {
-                        CustomerId = r.CustomerId,
+                        CustomerId = r.CustomerId ?? 0,
                         CustomerCode = r.Customer?.Code ?? "",
                         CustomerName = r.Customer?.CompanyName ?? "未知客戶",
                         DebitAmount = 0,

@@ -47,8 +47,9 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           DataLoader="@LoadSalesReturnData"
                           UseGenericSave="false"
-                          CustomValidator="@ValidateSalesReturnDetailsAsync"
                           SaveHandler="@SaveSalesReturnWithDetails"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.SalesReturn"]]"
                           SaveSuccessMessage="@(SalesReturnId.HasValue ? L["Message.UpdateSuccess", L["Entity.SalesReturn"]].ToString() : L["Message.CreateSuccess", L["Entity.SalesReturn"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SalesReturn"]]"
                           RequiredPermission="@PermissionRegistry.SalesReturn.Read"
@@ -939,7 +940,7 @@
 
             // 載入客戶資訊 Tab
             if (customerInfoTab != null && editModalComponent?.Entity?.CustomerId > 0)
-                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId);
+                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId.Value);
             else
                 customerInfoTab?.Clear();
 
@@ -1165,18 +1166,41 @@
             {
                 return false;
             }
-            
-            // 先執行自訂驗證
-            if (!await ValidateSalesReturnDetailsAsync(salesReturn))
+
+            // 非草稿模式才執行必填欄位驗證
+            if (!salesReturn.IsDraft)
             {
-                return false;
+                if (!ApprovalConfigHelper.CanSaveWhenApproved(isManualApproval, salesReturn.IsApproved))
+                {
+                    editModalComponent!.PendingSaveError = "銷貨退回單已核准，無法修改";
+                    return false;
+                }
+
+                if (!(salesReturn.CustomerId > 0))
+                {
+                    editModalComponent!.PendingSaveError = "請選擇客戶";
+                    return false;
+                }
+
+                if (salesReturnDetailManager != null)
+                {
+                    bool isValidDetails = await salesReturnDetailManager.ValidateAsync();
+                    if (!isValidDetails) return false;
+                }
+
+                var validDetails = salesReturnDetails?.Where(d => d.ProductId > 0 && d.ReturnQuantity > 0).ToList() ?? new List<SalesReturnDetail>();
+                if (!validDetails.Any())
+                {
+                    editModalComponent!.PendingSaveError = "至少需要一筆退貨明細";
+                    return false;
+                }
             }
-            
+
             if (SalesReturnService == null)
             {
                 return false;
             }
-            
+
             if (salesReturnDetails == null)
             {
                 salesReturnDetails = new List<SalesReturnDetail>();
@@ -1232,21 +1256,21 @@
                         
             // 呼叫服務的 SaveWithDetailsAsync 方法
             var result = await SalesReturnService.SaveWithDetailsAsync(salesReturn, salesReturnDetails);
-            
+
             if (result == null)
             {
                 return false;
             }
-            
+
             if (!result.IsSuccess)
             {
-                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
+                editModalComponent!.PendingSaveError = result.ErrorMessage;
                 return false;
             }
 
             //  關鍵：儲存成功後，使用差異計算更新庫存
             // 審核守衛：人工審核模式下，需核准後才更新庫存；自動審核模式下，儲存即更新
-            if (result.Data != null)
+            if (!salesReturn.IsDraft && result.Data != null)
             {
                 if (ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, result.Data.IsApproved))
                 {
@@ -1401,8 +1425,8 @@
     /// </summary>
     private RenderFragment? GetCustomActionButtons() => __builder =>
     {
-        @* 轉沖款按鈕 - 只在銷貨退回已儲存時顯示 *@
-        @if (editModalComponent?.Entity != null && SalesReturnId.HasValue)
+        @* 轉沖款按鈕 - 只在銷貨退回已儲存且非草稿時顯示 *@
+        @if (editModalComponent?.Entity != null && SalesReturnId.HasValue && editModalComponent.Entity.IsDraft != true)
         {
             <GenericButtonComponent Text="@L["Button.ConvertToSetoff"]"
                                   Variant="ButtonVariant.Green"
@@ -1457,7 +1481,7 @@
             
             // 5. 呼叫沖款單組件的公開方法
             await setoffDocumentEditModal!.ShowAddModalWithPrefilledSalesReturn(
-                editModalComponent.Entity.CustomerId,
+                editModalComponent.Entity.CustomerId ?? 0,
                 SalesReturnId.Value
             );
         }

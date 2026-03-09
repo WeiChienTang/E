@@ -44,6 +44,8 @@
                           UseGenericSave="true"
                           CustomValidator="@ValidateSalesDeliveryDetailsAsync"
                           AfterSave="@SaveSalesDeliveryDetailsAsync"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.SalesDelivery"]]"
                           SaveSuccessMessage="@(SalesDeliveryId.HasValue ? L["Message.UpdateSuccess", L["Entity.SalesDelivery"]].ToString() : L["Message.CreateSuccess", L["Entity.SalesDelivery"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SalesDelivery"]]"
                           RequiredPermission="@PermissionRegistry.SalesDelivery.Read"
@@ -793,7 +795,7 @@
 
             // 載入客戶資訊 Tab
             if (customerInfoTab != null && editModalComponent?.Entity?.CustomerId > 0)
-                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId);
+                await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId.Value);
             else
                 customerInfoTab?.Clear();
 
@@ -1149,7 +1151,7 @@
 
             //  關鍵1：更新庫存（使用差異計算方式，避免重複累加）
             // 審核守衛：人工審核模式下，需核准後才更新庫存；自動審核模式下，儲存即更新
-            if (ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, salesDelivery.IsApproved))
+            if (!salesDelivery.IsDraft && ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, salesDelivery.IsApproved))
             {
                 var inventoryUpdateResult = await SalesDeliveryService.UpdateInventoryByDifferenceAsync(salesDelivery.Id);
                 if (!inventoryUpdateResult.IsSuccess)
@@ -1187,7 +1189,7 @@
             }
 
             // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
-            if (!isManualApproval && !salesDelivery.IsApproved)
+            if (!salesDelivery.IsDraft && !isManualApproval && !salesDelivery.IsApproved)
                 await SalesDeliveryService.ApproveAsync(salesDelivery.Id, null);
         }
         catch (Exception ex)
@@ -1280,8 +1282,8 @@
     {
         return __builder =>
         {
-            @* 轉退貨按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
-            @if (canCreateReturn)
+            @* 轉退貨按鈕 - 新增模式需先儲存，編輯模式直接可用，草稿不顯示 *@
+            @if (canCreateReturn && editModalComponent?.Entity?.IsDraft != true)
             {
                 <GenericButtonComponent Text="@L["Button.ConvertToSalesReturn"]"
                                       Variant="ButtonVariant.Red"
@@ -1364,7 +1366,7 @@
 
             // 直接開啟退貨單 Modal，使用 Entity.Id 作為出貨單 ID（最可靠的來源）
             await salesReturnEditModal!.ShowAddModalWithPrefilledDelivery(
-                editModalComponent.Entity.CustomerId,
+                editModalComponent.Entity.CustomerId ?? 0,
                 editModalComponent.Entity.Id  // 使用 Entity.Id 而非 SalesDeliveryId 參數
             );
         }
@@ -1521,7 +1523,7 @@
             
             // 5. 呼叫沖款單組件的公開方法
             await setoffDocumentEditModal!.ShowAddModalWithPrefilledDelivery(
-                editModalComponent.Entity.CustomerId,
+                editModalComponent.Entity.CustomerId ?? 0,
                 SalesDeliveryId.Value
             );
         }

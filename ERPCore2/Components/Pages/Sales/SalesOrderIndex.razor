@@ -20,6 +20,7 @@
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
+                      ShowDraftTab="true"
                       DataLoader="@LoadSalesOrdersAsync"
                       FilterApplier="@ApplySalesOrderFilters"
                       GetEntityDisplayName="@(salesOrder => salesOrder.Code)"
@@ -141,7 +142,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("銷售管理", "銷貨管理", "#", NotificationService, GetType());
 
     // 載入訂單資料
-    private Task<List<SalesOrder>> LoadSalesOrdersAsync() => DataLoaderHelper.LoadAsync(() => SalesOrderService.GetAllAsync(), "訂單", NotificationService, GetType());
+    private Task<List<SalesOrder>> LoadSalesOrdersAsync() => DataLoaderHelper.LoadAsync(() => SalesOrderService.GetAllIncludingDraftsAsync(), "訂單", NotificationService, GetType());
 
     // 載入客戶資料
     private async Task LoadCustomersAsync() => customers = await DataLoaderHelper.LoadAsync(() => CustomerService.GetAllAsync(), "客戶", NotificationService, GetType());

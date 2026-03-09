@@ -195,7 +195,7 @@ namespace ERPCore2.Services.Reports
             // 篩選車輛 ID
             if (criteria.RelatedEntityIds.Any())
             {
-                results = results.Where(m => criteria.RelatedEntityIds.Contains(m.VehicleId)).ToList();
+                results = results.Where(m => m.VehicleId.HasValue && criteria.RelatedEntityIds.Contains(m.VehicleId.Value)).ToList();
             }
 
             // 日期範圍
@@ -232,7 +232,7 @@ namespace ERPCore2.Services.Reports
             // 篩選車輛
             if (criteria.VehicleIds.Any())
             {
-                results = results.Where(m => criteria.VehicleIds.Contains(m.VehicleId)).ToList();
+                results = results.Where(m => m.VehicleId.HasValue && criteria.VehicleIds.Contains(m.VehicleId.Value)).ToList();
             }
 
             // 篩選保養類型

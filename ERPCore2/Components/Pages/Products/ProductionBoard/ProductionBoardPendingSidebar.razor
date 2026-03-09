@@ -1,6 +1,11 @@
 @using ERPCore2.Models.Schedule
 
-<div class="pending-sidebar">
+<div class="pending-sidebar @(IsDropTarget ? "drop-target" : "") @(IsDragOver ? "drag-over" : "")"
+     @ondragover:preventDefault="true"
+     @ondragover="HandleDragOver"
+     @ondragleave="HandleDragLeave"
+     @ondrop="HandleDrop">
+
     @* 標題列 *@
     <div class="sidebar-header">
         <span class="sidebar-title">待排程</span>
@@ -9,6 +14,14 @@
             <span class="sidebar-count">@Items.Count</span>
         }
     </div>
+
+    @* 退回提示（拖曳看板卡片時顯示） *@
+    @if (IsDropTarget)
+    {
+        <div class="sidebar-drop-hint">
+            <i class="bi bi-arrow-left-circle me-1"></i>拖曳至此退回待排
+        </div>
+    }
 
     @* 搜尋列 *@
     <div class="sidebar-search">
@@ -81,9 +94,12 @@
     [Parameter] public bool IsLoading { get; set; }
     [Parameter] public EventCallback<BoardPendingItemDto> OnDragStart { get; set; }
     [Parameter] public EventCallback OnDragEnd { get; set; }
+    [Parameter] public bool IsDropTarget { get; set; }
+    [Parameter] public EventCallback OnBoardItemDropped { get; set; }
 
     private int? IsDraggingItemId;
     private string searchText = string.Empty;
+    private bool IsDragOver;
 
     private IEnumerable<BoardPendingItemDto> FilteredItems
     {
@@ -113,6 +129,24 @@
     {
         IsDraggingItemId = null;
         await OnDragEnd.InvokeAsync();
+    }
+
+    private void HandleDragOver(DragEventArgs e)
+    {
+        if (IsDropTarget)
+            IsDragOver = true;
+    }
+
+    private void HandleDragLeave(DragEventArgs e)
+    {
+        IsDragOver = false;
+    }
+
+    private async Task HandleDrop(DragEventArgs e)
+    {
+        IsDragOver = false;
+        if (IsDropTarget && OnBoardItemDropped.HasDelegate)
+            await OnBoardItemDropped.InvokeAsync();
     }
 
     private static string GetDeliveryUrgencyCss(DateTime? date)

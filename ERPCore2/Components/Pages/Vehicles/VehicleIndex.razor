@@ -21,6 +21,7 @@
                           RequiredModule="Vehicles"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
+                          ShowDraftTab="true"
                           DebugPageName="VehicleIndex"
                           @ref="indexComponent" />
 
@@ -72,7 +73,7 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("車輛管理", "車輛維護", "#", NotificationService, GetType());
 
-    private Task<List<Vehicle>> LoadVehiclesAsync() => DataLoaderHelper.LoadAsync(() => VehicleService.GetAllAsync(), "車輛", NotificationService, GetType());
+    private Task<List<Vehicle>> LoadVehiclesAsync() => DataLoaderHelper.LoadAsync(() => VehicleService.GetAllIncludingDraftsAsync(), "車輛", NotificationService, GetType());
 
     private IQueryable<Vehicle> ApplyVehicleFilters(SearchFilterModel searchModel, IQueryable<Vehicle> query)
     {

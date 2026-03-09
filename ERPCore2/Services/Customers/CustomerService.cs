@@ -45,13 +45,36 @@ namespace ERPCore2.Services
         #region 覆寫基底方法
 
         /// <summary>
-        /// 覆寫建立方法 - 建立後自動產生子科目（若系統參數啟用）
+        /// 覆寫建立方法 - 建立後自動產生子科目（草稿不建立）
         /// </summary>
         public override async Task<ServiceResult<Customer>> CreateAsync(Customer entity)
         {
             var result = await base.CreateAsync(entity);
-            if (result.IsSuccess)
+            if (result.IsSuccess && !entity.IsDraft)
                 await _subAccountService.GetOrCreateCustomerSubAccountAsync(entity.Id, entity.CreatedBy ?? "system");
+            return result;
+        }
+
+        /// <summary>
+        /// 覆寫更新方法 - 草稿轉正式時補建子科目
+        /// </summary>
+        public override async Task<ServiceResult<Customer>> UpdateAsync(Customer entity)
+        {
+            bool wasOriginallyDraft = false;
+            try
+            {
+                using var checkCtx = await _contextFactory.CreateDbContextAsync();
+                var existing = await checkCtx.Set<Customer>().AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == entity.Id);
+                wasOriginallyDraft = existing?.IsDraft == true;
+            }
+            catch { }
+
+            var result = await base.UpdateAsync(entity);
+
+            if (result.IsSuccess && wasOriginallyDraft && !entity.IsDraft)
+                await _subAccountService.GetOrCreateCustomerSubAccountAsync(entity.Id, entity.UpdatedBy ?? "system");
+
             return result;
         }
 

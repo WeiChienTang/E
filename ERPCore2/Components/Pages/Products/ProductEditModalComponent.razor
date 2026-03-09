@@ -41,6 +41,8 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadProductData"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="商品草稿已儲存，請記得補齊必填資料"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(ProductId.HasValue ? L["Message.UpdateSuccess", L["Entity.Product"]].ToString() : L["Message.CreateSuccess", L["Entity.Product"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Product"]]"
@@ -705,26 +707,29 @@
     /// </summary>
     private RenderFragment? CustomActionButtons => __builder =>
     {
-        @* 物料清單操作按鈕組 *@
-        <div class="d-flex gap-2">
-            @* 查看物料清單清單 *@
-            <GenericButtonComponent
-                Text="查看清單"
-                OnClick="@ShowProductCompositions"
-                Title="查看商品物料清單清單"
-                Variant="ButtonVariant.Blue"
-                Size="ButtonSize.Small">
-            </GenericButtonComponent>
+        @if (ProductId.HasValue && editModalComponent?.Entity?.IsDraft != true)
+        {
+            @* 物料清單操作按鈕組 *@
+            <div class="d-flex gap-2">
+                @* 查看物料清單清單 *@
+                <GenericButtonComponent
+                    Text="查看清單"
+                    OnClick="@ShowProductCompositions"
+                    Title="查看商品物料清單清單"
+                    Variant="ButtonVariant.Blue"
+                    Size="ButtonSize.Small">
+                </GenericButtonComponent>
 
-            @* 新增物料清單 *@
-            <GenericButtonComponent
-                Text="新增清單"
-                OnClick="@HandleAddNewCompositionDirect"
-                Title="直接新增商品物料清單"
-                Variant="ButtonVariant.DarkBlue"
-                Size="ButtonSize.Small">
-            </GenericButtonComponent>
-        </div>
+                @* 新增物料清單 *@
+                <GenericButtonComponent
+                    Text="新增清單"
+                    OnClick="@HandleAddNewCompositionDirect"
+                    Title="直接新增商品物料清單"
+                    Variant="ButtonVariant.DarkBlue"
+                    Size="ButtonSize.Small">
+                </GenericButtonComponent>
+            </div>
+        }
     };
     
     /// <summary>
@@ -867,7 +872,7 @@
         if (!entity.ProductionUnitId.HasValue) return false;
         
         // 如果沒有基本單位（尚未選擇），也顯示（讓使用者輸入換算率）
-        if (entity.UnitId <= 0) return true;
+        if (!entity.UnitId.HasValue || entity.UnitId <= 0) return true;
         
         // 製程單位與基本單位不同時才顯示
         return entity.ProductionUnitId.Value != entity.UnitId;

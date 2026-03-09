@@ -34,6 +34,8 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadSupplierData"
                           SaveHandler="@SaveSupplier"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="廠商草稿已儲存，請記得補齊必填資料"
                           OnSaveSuccess="@OnSaveSuccess"
                           RequiredPermission="@PermissionRegistry.Supplier.Read"
                           OnCancel="@OnCancel"
@@ -236,9 +238,6 @@
                 var newSupplier = new Supplier
                 {
                     Code = await EntityCodeGenerationHelper.GenerateForEntity<Supplier, ISupplierService>(SupplierService, "S"),
-                    CompanyName = "",
-                    ContactPerson = "",
-                    TaxNumber = "",
                     Status = EntityStatus.Active
                 };
 
@@ -262,9 +261,6 @@
             return new Supplier
             {
                 Code = "",
-                CompanyName = "",
-                ContactPerson = "",
-                TaxNumber = "",
                 Status = EntityStatus.Active
             };
         }
@@ -293,11 +289,20 @@
     {
         try
         {
-            var validationResult = await SupplierService.ValidateAsync(entity);
-            if (!validationResult.IsSuccess)
+            if (!entity.IsDraft)
             {
-                _ = NotificationService.ShowErrorAsync(validationResult.ErrorMessage);
-                return false;
+                bool isDraftEligible = editModalComponent?.ShowDraftButton == true &&
+                                       (!SupplierId.HasValue || editModalComponent?.WasOriginallyDraft == true);
+
+                var validationResult = await SupplierService.ValidateAsync(entity);
+                if (!validationResult.IsSuccess)
+                {
+                    if (isDraftEligible)
+                        editModalComponent!.PendingSaveError = validationResult.ErrorMessage;
+                    else
+                        _ = NotificationService.ShowErrorAsync(validationResult.ErrorMessage);
+                    return false;
+                }
             }
 
             ServiceResult result;
@@ -757,7 +762,7 @@
 
     private RenderFragment? GetCustomActionButtons() => __builder =>
     {
-        if (editModalComponent?.Entity != null && SupplierId.HasValue)
+        if (editModalComponent?.Entity != null && SupplierId.HasValue && editModalComponent.Entity.IsDraft != true)
         {
             <GenericButtonComponent Text="@L["Supplier.CopyToCustomerTitle"]"
                                     Variant="ButtonVariant.Green"

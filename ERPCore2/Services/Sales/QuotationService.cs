@@ -126,7 +126,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("報價單號不能為空");
 
-                if (entity.CustomerId <= 0)
+                if (!entity.IsDraft && !(entity.CustomerId > 0))
                     errors.Add("客戶為必選項目");
 
                 if (entity.QuotationDate == default)
@@ -597,7 +597,7 @@ namespace ERPCore2.Services
                 // 關聯實體篩選（客戶）
                 if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
                 {
-                    query = query.Where(q => criteria.RelatedEntityIds.Contains(q.CustomerId));
+                    query = query.Where(q => q.CustomerId.HasValue && criteria.RelatedEntityIds.Contains(q.CustomerId.Value));
                 }
 
                 // 單據編號關鍵字搜尋
