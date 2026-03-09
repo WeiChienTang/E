@@ -104,10 +104,10 @@
             <div class="d-flex gap-2">
                 @if (ShowSaveButton)
                 {
-                    <GenericButtonComponent Text="@SaveButtonText" 
-                                          Variant="ButtonVariant.DarkBlue" 
-                                          OnClick="HandleSave" 
-                                          IsDisabled="@(IsSubmitting || IsLoading)" 
+                    <GenericButtonComponent Text="@SaveButtonText"
+                                          Variant="ButtonVariant.DarkBlue"
+                                          OnClick="HandleSave"
+                                          IsDisabled="@(IsSubmitting || IsLoading)"
                                           IsLoading="@IsSubmitting" />
                 }
                 
@@ -205,6 +205,7 @@
                                     FieldDefinitions="@GetProcessedFormFields()"
                                     FieldSections="@FormSections"
                                     TabDefinitions="@TabDefinitions"
+                                    DisableSecondaryTabs="@(!Id.HasValue || Entity?.IsDraft == true)"
                                     OnFieldChanged="@HandleFieldChanged"
                                     OnTabChanged="@HandleTabChanged" />
             </div>
@@ -285,8 +286,12 @@
                    CloseOnBackdropClick="true"
                    ShowCloseButton="false"
                    OnClose="HandleUnsavedChangesCancel">
-    <HeaderButtons>        
+    <HeaderButtons>
         <GenericButtonComponent Text="@L["Modal.SaveAndClose"]"    Variant="ButtonVariant.DarkBlue" OnClick="HandleUnsavedChangesSaveAndClose" Title="@L["Modal.SaveAndClose"]" />
+        @if (ShowDraftButton)
+        {
+            <GenericButtonComponent Text="@L["Button.SaveDraft"]"  Variant="ButtonVariant.Gray" OnClick="HandleUnsavedChangesSaveDraft"   Title="@L["Button.SaveDraft"]" />
+        }
         <GenericButtonComponent Text="@L["Modal.ContinueEditing"]" Variant="ButtonVariant.Green"    OnClick="HandleUnsavedChangesCancel"      Title="@L["Modal.ContinueEditing"]" />
         <GenericButtonComponent Text="@L["Modal.ConfirmLeave"]"    Variant="ButtonVariant.Red"      OnClick="HandleUnsavedChangesLeave"       Title="@L["Modal.ConfirmLeave"]" />
     </HeaderButtons>
@@ -296,6 +301,40 @@
         </div>
     </BodyContent>
 </BaseModalComponent>
+
+@* 儲存為草稿確認 Modal（儲存時驗證失敗 → 詢問是否改存草稿） *@
+@if (_showSaveAsDraftModal)
+{
+    <BaseModalComponent IsVisible="@_showSaveAsDraftModal"
+                       IsVisibleChanged="@((bool v) => { if (!v) _saveAsDraftTcs?.TrySetResult(false); })"
+                       Title="@L["Modal.SaveAsDraftTitle"]"
+                       Icon="bi-exclamation-circle"
+                       Size="BaseModalComponent.ModalSize.Default"
+                       HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                       CloseOnEscape="true"
+                       CloseOnBackdropClick="true"
+                       ShowCloseButton="false"
+                       OnClose="HandleSaveAsDraftCancel">
+        <HeaderButtons>
+            <GenericButtonComponent Text="@L["Button.SaveDraft"]"      Variant="ButtonVariant.Gray"    OnClick="HandleSaveAsDraftConfirm" Title="@L["Button.SaveDraft"]" />
+            <GenericButtonComponent Text="@L["Modal.ContinueEditing"]" Variant="ButtonVariant.DarkBlue" OnClick="HandleSaveAsDraftCancel"  Title="@L["Modal.ContinueEditing"]" />
+        </HeaderButtons>
+        <BodyContent>
+            <div class="py-3 px-2">
+                <p class="mb-2">@L["Modal.SaveAsDraftMessage"]</p>
+                @if (!string.IsNullOrEmpty(_draftValidationErrors))
+                {
+                    <ul class="mb-0 text-danger small">
+                        @foreach (var err in _draftValidationErrors.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            <li>@err.Trim()</li>
+                        }
+                    </ul>
+                }
+            </div>
+        </BodyContent>
+    </BaseModalComponent>
+}
 
 @* 內建報表預覽 Modal（當有設定 ReportService 時自動啟用） *@
 @if (ReportService != null)
@@ -473,6 +512,13 @@
     [Parameter] public bool EnableSystemDataProtection { get; set; } = true;
     [Parameter] public Func<TEntity, Task<bool>>? CustomDeleteHandler { get; set; }
     
+    // 草稿功能參數
+    /// <summary>是否顯示「儲存草稿」按鈕（預設 false）</summary>
+    [Parameter] public bool ShowDraftButton { get; set; } = false;
+
+    /// <summary>草稿儲存成功訊息</summary>
+    [Parameter] public string DraftSuccessMessage { get; set; } = "草稿已儲存";
+
     // 訊息設定
     [Parameter] public string LoadingMessage { get; set; } = "載入資料中...";
     
@@ -584,6 +630,24 @@
     private TaskCompletionSource<int>? _unsavedChangesConfirmTcs;
     private bool _cancelledByUser = false;   // 使用者選擇「繼續編輯」或「儲存關閉」，需阻擋 BaseModal 的 IsVisibleChanged(false)
     private bool _forceCloseOnNextSave = false; // 儲存關閉：儲存成功後強制關閉
+
+    // 儲存為草稿確認 Modal（儲存時驗證失敗 → 詢問是否改存草稿）
+    private bool _showSaveAsDraftModal = false;
+    private TaskCompletionSource<bool>? _saveAsDraftTcs;
+    private string? _draftValidationErrors;
+    private bool _savedAsDraft = false;  // 本次儲存是否最終以草稿方式完成
+
+    /// <summary>
+    /// 供 SaveHandler 回傳驗證錯誤（不顯示 toast，改由草稿 dialog 顯示）
+    /// HandleSave() 讀取後清除
+    /// </summary>
+    public string? PendingSaveError { get; set; }
+
+    /// <summary>
+    /// 本次儲存前 Entity 的原始 IsDraft 狀態
+    /// HandleSave() 在設定 Entity.IsDraft=false 之前寫入，供 SaveHandler 判斷是否為草稿升級嘗試
+    /// </summary>
+    public bool WasOriginallyDraft { get; private set; }
     
     // ===== 內建列印狀態 =====
     private bool _showReportPreviewModal = false;

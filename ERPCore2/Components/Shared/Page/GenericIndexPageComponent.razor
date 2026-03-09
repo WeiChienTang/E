@@ -118,11 +118,31 @@ else
                                              ShowSearchButton="@ShowSearchButton"
                                              SearchDelayMs="@SearchDelayMs" />
 
-                @* 搜尋與表格分隔線 *@
-                <div class="search-table-divider"></div>
+                @* 草稿/正式資料切換按鈕（僅在 ShowDraftTab 時顯示） *@
+                @if (ShowDraftTab)
+                {
+                    <div class="index-draft-tab-btn-group pt-3">
+                        <button type="button"
+                                class="index-draft-tab-btn @(!_showingDrafts ? "active" : "")"
+                                @onclick="@(() => SwitchDraftTab(false))">
+                            <i class="bi bi-check-circle me-1"></i>
+                            @L["Label.Official"]
+                        </button>
+                        <button type="button"
+                                class="index-draft-tab-btn @(_showingDrafts ? "active" : "")"
+                                @onclick="@(() => SwitchDraftTab(true))">
+                            <i class="bi bi-pencil-square me-1"></i>
+                            @L["Label.Draft"]
+                            @if (_draftCount > 0)
+                            {
+                                <span class="badge bg-danger ms-1">@_draftCount</span>
+                            }
+                        </button>
+                    </div>
+                }
 
                 @* 列表表格 *@
-                <div>
+                <div class="pt-3">
                     <GenericTableComponent TItem="TEntity"
                                           Items="@PagedItems"
                                           ColumnDefinitions="@_cachedColumnDefinitions"

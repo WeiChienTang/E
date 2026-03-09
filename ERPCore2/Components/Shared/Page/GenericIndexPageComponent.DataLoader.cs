@@ -100,9 +100,19 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
             ? FilterApplier(searchModel, query)
             : ApplyStandardFilters(searchModel, query);
 
+        // 草稿 Tab：依 _showingDrafts 過濾 IsDraft；無 Tab 時預設排除草稿
+        if (ShowDraftTab)
+            query = query.Where(e => e.IsDraft == _showingDrafts);
+        else
+            query = query.Where(e => !e.IsDraft);
+
         filteredItems = query.ToList();
         totalItems    = filteredItems.Count;
         if (resetPage) currentPage = 1;
+
+        // 計算草稿總數（供 Tab badge 顯示，以 allItems 為基準）
+        if (ShowDraftTab)
+            _draftCount = allItems.Count(e => e.IsDraft);
 
         UpdatePagedItems();
 
@@ -211,6 +221,15 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
     public Task ForceRefresh() => RefreshData(RefreshMode.ForceReload);
 
     public Task ReloadData() => LoadDataAsync();
+
+    /// <summary>切換草稿/正式資料 Tab（保留搜尋條件，僅切換 IsDraft 篩選）</summary>
+    private async Task SwitchDraftTab(bool showDrafts)
+    {
+        _showingDrafts = showDrafts;
+        ApplyFilters(resetPage: true);
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
 
     public void ResetFilters()
     {

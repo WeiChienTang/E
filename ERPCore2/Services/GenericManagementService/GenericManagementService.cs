@@ -43,14 +43,36 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var dbSet = context.Set<T>();
-                
+
                 return await dbSet
+                    .Where(x => !x.IsDraft)
                     .OrderByDescending(x => x.CreatedAt)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
+                return new List<T>();
+            }
+        }
+
+        /// <summary>
+        /// 取得所有資料（含草稿）— 用於草稿 Tab 的 Index 頁面 DataLoader
+        /// </summary>
+        public virtual async Task<List<T>> GetAllIncludingDraftsAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+
+                return await dbSet
+                    .OrderByDescending(x => x.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllIncludingDraftsAsync), GetType(), _logger);
                 return new List<T>();
             }
         }
@@ -105,11 +127,14 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 驗證實體
-                var validationResult = await ValidateAsync(entity);
-                if (!validationResult.IsSuccess)
+                // 草稿模式跳過驗證，允許必填欄位為空
+                if (!entity.IsDraft)
                 {
-                    return ServiceResult<T>.Failure(validationResult.ErrorMessage);
+                    var validationResult = await ValidateAsync(entity);
+                    if (!validationResult.IsSuccess)
+                    {
+                        return ServiceResult<T>.Failure(validationResult.ErrorMessage);
+                    }
                 }
 
                 // 設定建立資訊
@@ -166,11 +191,14 @@ namespace ERPCore2.Services
                     return ServiceResult<T>.Failure("找不到要更新的資料");
                 }
 
-                // 驗證實體
-                var validationResult = await ValidateAsync(entity);
-                if (!validationResult.IsSuccess)
+                // 草稿模式跳過驗證，允許必填欄位為空
+                if (!entity.IsDraft)
                 {
-                    return ServiceResult<T>.Failure(validationResult.ErrorMessage);
+                    var validationResult = await ValidateAsync(entity);
+                    if (!validationResult.IsSuccess)
+                    {
+                        return ServiceResult<T>.Failure(validationResult.ErrorMessage);
+                    }
                 }
 
                 // 保持原建立資訊

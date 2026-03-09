@@ -191,6 +191,10 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     // 並行載入保護
     private CancellationTokenSource? _loadCts;
 
+    // 草稿 Tab 參數
+    /// <summary>是否顯示正式/草稿切換按鈕（預設 false）</summary>
+    [Parameter] public bool ShowDraftTab { get; set; } = false;
+
     // 篩選 / 分頁 / 狀態
     private SearchFilterModel searchModel = new();
     private int currentPage = 1;
@@ -199,6 +203,10 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private bool isLoading = true;
     private bool _isModuleEnabled = true;
     private bool _isSuperAdmin = false;
+
+    // 草稿 Tab 內部狀態
+    private bool _showingDrafts = false;
+    private int _draftCount = 0;
 
     // ===== 公開屬性 =====
 

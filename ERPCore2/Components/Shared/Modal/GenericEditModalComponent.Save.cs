@@ -29,6 +29,12 @@ public partial class GenericEditModalComponent<TEntity, TService>
                 return;
             }
 
+            // 記錄原始草稿狀態（用於儲存失敗時還原，以及判斷是否顯示草稿 dialog）
+            bool wasOriginallyDraft = Entity.IsDraft;
+            WasOriginallyDraft = wasOriginallyDraft; // 暴露給 SaveHandler 使用
+            // 正式儲存時清除草稿旗標
+            Entity.IsDraft = false;
+
             // 自動設定審計欄位
             try
             {
@@ -48,19 +54,44 @@ public partial class GenericEditModalComponent<TEntity, TService>
             bool success;
 
             if (UseGenericSave)
-                success = await GenericSave(Entity);
+                success = await GenericSave(Entity, wasOriginallyDraft);
             else if (SaveHandler != null)
+            {
                 success = await SaveHandler(Entity);
+                // 新增模式 或 編輯草稿模式，才提供草稿選項；編輯正式記錄時直接顯示錯誤
+                if (!success && ShowDraftButton && (!Id.HasValue || wasOriginallyDraft))
+                {
+                    _draftValidationErrors = PendingSaveError; // 讀取 SaveHandler 回傳的錯誤（無 toast）
+                    PendingSaveError = null;
+                    _saveAsDraftTcs = new TaskCompletionSource<bool>();
+                    _showSaveAsDraftModal = true;
+                    StateHasChanged();
+                    bool confirmed = await _saveAsDraftTcs.Task;
+                    if (confirmed)
+                    {
+                        Entity.IsDraft = true;
+                        success = await SaveHandler(Entity);
+                        if (success)
+                            _savedAsDraft = true;
+                        else
+                            Entity.IsDraft = false;
+                    }
+                }
+            }
             else
             {
                 await ShowErrorMessage("未設定儲存處理程序");
                 return;
             }
 
+            // 儲存失敗時還原草稿狀態（確保 Tab 停用與草稿標記保持正確）
+            if (!success && wasOriginallyDraft)
+                Entity.IsDraft = true;
+
             if (success)
             {
                 _isDirty = false;
-                await ShowSuccessMessage(SaveSuccessMessage);
+                await ShowSuccessMessage(_savedAsDraft ? DraftSuccessMessage : SaveSuccessMessage);
 
                 bool wasNewRecord = !Id.HasValue;
 
@@ -107,7 +138,8 @@ public partial class GenericEditModalComponent<TEntity, TService>
                 if (OnSaveSuccess.HasDelegate)
                     await OnSaveSuccess.InvokeAsync();
 
-                if (CloseOnSave || _forceCloseOnNextSave)
+                // 草稿儲存不自動關閉（除非強制），正式儲存依 CloseOnSave 決定
+                if ((!_savedAsDraft && CloseOnSave) || _forceCloseOnNextSave)
                     await CloseModal();
             }
             else
@@ -127,8 +159,130 @@ public partial class GenericEditModalComponent<TEntity, TService>
         finally
         {
             _forceCloseOnNextSave = false;
+            _savedAsDraft = false;
+            WasOriginallyDraft = false; // 清除，避免下次儲存誤判
             IsSubmitting = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task HandleSaveDraft()
+    {
+        if (IsSubmitting) return;
+
+        try
+        {
+            IsSubmitting = true;
+            StateHasChanged();
+
+            if (Entity == null)
+            {
+                await ShowErrorMessage("實體資料不存在");
+                return;
+            }
+
+            // 設定草稿旗標
+            Entity.IsDraft = true;
+
+            // 自動設定審計欄位
+            try
+            {
+                var currentUserName = await CurrentUserHelper.GetCurrentUserFullNameAsync(AuthenticationStateProvider);
+                if (!string.IsNullOrEmpty(currentUserName))
+                {
+                    if (!Id.HasValue)
+                        Entity.CreatedBy = currentUserName;
+                    Entity.UpdatedBy = currentUserName;
+                }
+            }
+            catch { }
+
+            bool success;
+
+            if (UseGenericSave)
+                success = await GenericSaveDraft(Entity);
+            else if (SaveHandler != null)
+                success = await SaveHandler(Entity);
+            else
+            {
+                await ShowErrorMessage("未設定儲存處理程序");
+                return;
+            }
+
+            if (success)
+            {
+                _isDirty = false;
+                await ShowSuccessMessage(DraftSuccessMessage);
+
+                bool wasNewRecord = !Id.HasValue;
+                if (wasNewRecord && Entity != null && Entity.Id > 0)
+                {
+                    _lastId = Entity.Id;
+                    Id = Entity.Id;
+                    if (IdChanged.HasDelegate)
+                        await IdChanged.InvokeAsync(Entity.Id);
+                    await LoadAllData();
+                }
+
+                if (OnEntitySaved.HasDelegate && Entity != null)
+                    await OnEntitySaved.InvokeAsync(Entity);
+                if (OnSaveSuccess.HasDelegate)
+                    await OnSaveSuccess.InvokeAsync();
+
+                if (_forceCloseOnNextSave)
+                    await CloseModal();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"草稿儲存時發生錯誤：{ex.Message}");
+            LogError("HandleSaveDraft", ex);
+        }
+        finally
+        {
+            _forceCloseOnNextSave = false;
+            IsSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<bool> GenericSaveDraft(TEntity entity)
+    {
+        try
+        {
+            // 草稿不執行 CustomValidator，但仍執行 BeforeSave / AfterSave
+            if (BeforeSave != null)
+                await BeforeSave(entity);
+
+            var genericService = Service as IGenericManagementService<TEntity>;
+            if (genericService == null)
+            {
+                await ShowErrorMessage("服務未實作泛型管理介面");
+                return false;
+            }
+
+            ServiceResult<TEntity> serviceResult = Id.HasValue
+                ? await genericService.UpdateAsync(entity)
+                : await genericService.CreateAsync(entity);
+
+            if (serviceResult.IsSuccess)
+            {
+                if (AfterSave != null)
+                    await AfterSave(entity);
+                return true;
+            }
+            else
+            {
+                var errorMsg = !string.IsNullOrEmpty(serviceResult.ErrorMessage) ? serviceResult.ErrorMessage : "草稿儲存失敗";
+                await ShowErrorMessage(errorMsg);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"草稿儲存失敗：{ex.Message}");
+            LogError("GenericSaveDraft", ex);
+            return false;
         }
     }
 
@@ -151,6 +305,11 @@ public partial class GenericEditModalComponent<TEntity, TService>
                         _forceCloseOnNextSave = true;
                         _cancelledByUser = true;
                         await HandleSave();
+                        return;
+                    case 3: // 儲存草稿後離開
+                        _forceCloseOnNextSave = true;
+                        _cancelledByUser = true;
+                        await HandleSaveDraft();
                         return;
                     // case 1: 確定離開，繼續執行關閉流程
                 }
@@ -175,6 +334,12 @@ public partial class GenericEditModalComponent<TEntity, TService>
         _unsavedChangesConfirmTcs?.TrySetResult(1);
     }
 
+    private void HandleUnsavedChangesSaveDraft()
+    {
+        _showUnsavedChangesModal = false;
+        _unsavedChangesConfirmTcs?.TrySetResult(3);
+    }
+
     private void HandleUnsavedChangesSaveAndClose()
     {
         _showUnsavedChangesModal = false;
@@ -187,9 +352,23 @@ public partial class GenericEditModalComponent<TEntity, TService>
         _unsavedChangesConfirmTcs?.TrySetResult(0);
     }
 
+    // ===== 儲存為草稿確認 Modal 處理 =====
+
+    private void HandleSaveAsDraftConfirm()
+    {
+        _showSaveAsDraftModal = false;
+        _saveAsDraftTcs?.TrySetResult(true);
+    }
+
+    private void HandleSaveAsDraftCancel()
+    {
+        _showSaveAsDraftModal = false;
+        _saveAsDraftTcs?.TrySetResult(false);
+    }
+
     // ===== 通用 Save 方法 =====
 
-    private async Task<bool> GenericSave(TEntity entity)
+    private async Task<bool> GenericSave(TEntity entity, bool wasOriginallyDraft = false)
     {
         try
         {
@@ -219,6 +398,42 @@ public partial class GenericEditModalComponent<TEntity, TService>
             else
             {
                 var errorMsg = !string.IsNullOrEmpty(serviceResult.ErrorMessage) ? serviceResult.ErrorMessage : "儲存失敗";
+
+                // 新增模式 或 編輯草稿模式，才提供草稿選項；編輯正式記錄時直接顯示錯誤
+                if (ShowDraftButton && (!Id.HasValue || wasOriginallyDraft))
+                {
+                    _draftValidationErrors = errorMsg;
+                    _saveAsDraftTcs = new TaskCompletionSource<bool>();
+                    _showSaveAsDraftModal = true;
+                    StateHasChanged();
+
+                    bool confirmed = await _saveAsDraftTcs.Task;
+                    if (!confirmed)
+                        return false;
+
+                    // 使用者確認：改存草稿
+                    entity.IsDraft = true;
+
+                    ServiceResult<TEntity> draftResult = Id.HasValue
+                        ? await genericService.UpdateAsync(entity)
+                        : await genericService.CreateAsync(entity);
+
+                    if (draftResult.IsSuccess)
+                    {
+                        _savedAsDraft = true;
+                        if (AfterSave != null)
+                            await AfterSave(entity);
+                        return true;
+                    }
+                    else
+                    {
+                        entity.IsDraft = false;
+                        var draftErr = !string.IsNullOrEmpty(draftResult.ErrorMessage) ? draftResult.ErrorMessage : "草稿儲存失敗";
+                        await ShowErrorMessage(draftErr);
+                        return false;
+                    }
+                }
+
                 await ShowErrorMessage($"{SaveFailureMessage}：{errorMsg}");
                 return false;
             }

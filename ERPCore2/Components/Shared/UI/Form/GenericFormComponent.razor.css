@@ -481,6 +481,16 @@
     color: #fff;
 }
 
+/* 停用的 Tab（新增/草稿模式下的次要 Tab） */
+.form-tab-btn.tab-disabled,
+.form-tab-btn.tab-disabled:hover {
+    color: var(--text-muted, #adb5bd);
+    background-color: var(--bg-secondary);
+    border-color: var(--border-light, #dee2e6);
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
 /* Tab 按鈕圖示 */
 .form-tab-btn i {
     font-size: 1rem;

@@ -11,9 +11,14 @@ namespace ERPCore2.Services
         #region 基本 CRUD 操作
         
         /// <summary>
-        /// 取得所有資料（不含已刪除）
+        /// 取得所有正式資料（不含草稿）
         /// </summary>
         Task<List<T>> GetAllAsync();
+
+        /// <summary>
+        /// 取得所有資料（含草稿）— 用於草稿 Tab 的 Index 頁面 DataLoader
+        /// </summary>
+        Task<List<T>> GetAllIncludingDraftsAsync();
         
         /// <summary>
         /// 取得所有啟用的資料

@@ -42,6 +42,8 @@
                           RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="員工草稿已儲存，請記得補齊必填資料"
                           ShowPrintButton="true"
                           PrintButtonText="@L["Button.Print"]"
                           ReportService="@EmployeeDetailReportService"
@@ -294,23 +296,32 @@
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(entity.Code))
+            if (!entity.IsDraft)
             {
-                await NotificationService.ShowErrorAsync("員工編號為必填");
-                return false;
-            }
+                // 新增模式 或 草稿編輯模式 + ShowDraftButton：錯誤不顯示 toast，改由草稿 dialog 顯示
+                bool isDraftEligible = editModalComponent?.ShowDraftButton == true &&
+                                       (!EmployeeId.HasValue || editModalComponent?.WasOriginallyDraft == true);
+                var errors = new List<string>();
 
-            if (string.IsNullOrWhiteSpace(entity.Name))
-            {
-                await NotificationService.ShowErrorAsync("員工姓名為必填");
-                return false;
-            }
+                if (string.IsNullOrWhiteSpace(entity.Code))
+                    errors.Add("員工編號為必填");
+                if (string.IsNullOrWhiteSpace(entity.Name))
+                    errors.Add("員工姓名為必填");
+                if (!string.IsNullOrWhiteSpace(entity.Code))
+                {
+                    var codeExists = await EmployeeService.IsEmployeeCodeExistsAsync(entity.Code, EmployeeId);
+                    if (codeExists)
+                        errors.Add($"員工編號 '{entity.Code}' 已存在，請使用其他編號");
+                }
 
-            var employeeCodeExists = await EmployeeService.IsEmployeeCodeExistsAsync(entity.Code, EmployeeId);
-            if (employeeCodeExists)
-            {
-                await NotificationService.ShowErrorAsync($"員工編號 '{entity.Code}' 已存在，請使用其他編號");
-                return false;
+                if (errors.Any())
+                {
+                    if (isDraftEligible)
+                        editModalComponent!.PendingSaveError = string.Join("; ", errors);
+                    else
+                        await NotificationService.ShowErrorAsync(string.Join("；", errors));
+                    return false;
+                }
             }
 
             ServiceResult result = EmployeeId.HasValue

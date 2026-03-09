@@ -59,6 +59,13 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
     public List<FormTabDefinition>? TabDefinitions { get; set; }
 
     /// <summary>
+    /// 是否停用非第一個 Tab（新增模式或草稿模式下使用）
+    /// true = 除第一個 Tab 外，其餘 Tab 按鈕皆呈現灰色且無法點擊
+    /// </summary>
+    [Parameter]
+    public bool DisableSecondaryTabs { get; set; } = false;
+
+    /// <summary>
     /// Tab 切換事件（傳回新的 Tab 索引）
     /// 供父元件追蹤目前 Tab，用於 Debug Bar 顯示組件名稱
     /// </summary>

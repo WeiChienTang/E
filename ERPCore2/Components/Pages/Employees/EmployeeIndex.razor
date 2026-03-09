@@ -24,6 +24,7 @@
                         GetEntityDisplayName="@(employee => employee.Name?.Trim() ?? "")"
                         RequiredPermission="@PermissionRegistry.Employee.Read"
                         RequiredModule="Employees"
+                        ShowDraftTab="true"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         DebugPageName="EmployeeIndex"
@@ -166,7 +167,7 @@
     /// </summary>
     private async Task<List<Employee>> LoadEmployeesAsync()
     {
-        var employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
+        var employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllIncludingDraftsAsync(), "員工", NotificationService, GetType());
         
         // 如果當前使用者不是 SuperAdmin，過濾掉 SuperAdmin 帳號
         if (!isCurrentUserSuperAdmin)

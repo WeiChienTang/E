@@ -37,7 +37,8 @@
                         var index = i;
                         var tab = TabDefinitions[i];
                         <button type="button"
-                                class="form-tab-btn @(_activeTabIndex == index ? "active" : "")"
+                                class="form-tab-btn @(_activeTabIndex == index ? "active" : "") @(DisableSecondaryTabs && index > 0 ? "tab-disabled" : "")"
+                                disabled="@(DisableSecondaryTabs && index > 0)"
                                 @onclick="@(() => SetActiveTab(index))">
                             @if (!string.IsNullOrEmpty(tab.Icon))
                             {

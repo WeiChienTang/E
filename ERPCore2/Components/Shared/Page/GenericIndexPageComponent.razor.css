@@ -161,3 +161,66 @@
     color: #f85149 !important;
     box-shadow: 0 2px 4px rgba(248, 81, 73, 0.2);
 }
+
+/* ===== 草稿/正式切換按鈕群組（視覺與 form-tab-btn 一致）===== */
+
+.index-draft-tab-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.5rem 0 0 0;
+}
+
+.index-draft-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+.index-draft-tab-btn:hover {
+    color: var(--primary-blue);
+    background-color: rgba(var(--primary-blue-rgb), 0.1);
+    border-color: rgba(var(--primary-blue-rgb), 0.4);
+}
+
+.index-draft-tab-btn.active {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    font-weight: 600;
+}
+
+.index-draft-tab-btn.active:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    color: #fff;
+}
+
+.index-draft-tab-btn i {
+    font-size: 1rem;
+}
+
+@media (max-width: 576px) {
+    .index-draft-tab-btn-group {
+        gap: 0.25rem;
+    }
+
+    .index-draft-tab-btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.9rem;
+    }
+}
+
+[data-bs-theme=dark] .index-draft-tab-btn.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}

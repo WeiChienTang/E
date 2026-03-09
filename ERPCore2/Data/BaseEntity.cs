@@ -61,5 +61,12 @@ namespace ERPCore2.Data
         [Display(Name = "備註")]
         [MaxLength(500, ErrorMessage = "備註不可超過120個字元")]
         public string? Remarks { get; set; }
+
+        /// <summary>
+        /// 是否為草稿（資料尚未填寫完整）
+        /// true = 草稿，允許必填欄位為空；false = 正式記錄（預設）
+        /// </summary>
+        [Display(Name = "草稿")]
+        public bool IsDraft { get; set; } = false;
     }
 }
