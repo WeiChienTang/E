@@ -148,7 +148,7 @@ namespace ERPCore2.Services
                     .Include(psi => psi.Product)
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
-                    .Where(psi => psi.Product.Name.Contains(searchTerm) ||
+                    .Where(psi => psi.Product!.Name!.Contains(searchTerm) ||
                                  (psi.Product.Code != null && psi.Product.Code.Contains(searchTerm)) ||
                                  (psi.ProductionSchedule.Code != null && psi.ProductionSchedule.Code.Contains(searchTerm)))
                     .OrderByDescending(psi => psi.ProductionSchedule.ScheduleDate)

@@ -44,7 +44,7 @@ namespace ERPCore2.Services.Payroll
 
                 return await context.EmployeeSalaries
                     .Include(x => x.Employee)
-                    .Where(x => x.Employee.Name.ToUpper().Contains(upper) ||
+                    .Where(x => x.Employee!.Name!.ToUpper().Contains(upper) ||
                                 (x.Employee.Code != null && x.Employee.Code.ToUpper().Contains(upper)))
                     .OrderBy(x => x.Employee.Name)
                     .ThenByDescending(x => x.EffectiveDate)

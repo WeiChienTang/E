@@ -234,10 +234,10 @@ namespace ERPCore2.Services
                 // 排序：先按廠商分組，同廠商內再按日期和單據編號排序
                 // 這樣列印時同一廠商的退貨單會集中在一起
                 query = criteria.SortDirection == SortDirection.Ascending
-                    ? query.OrderBy(pr => pr.Supplier.CompanyName)
+                    ? query.OrderBy(pr => pr.Supplier!.CompanyName)
                            .ThenBy(pr => pr.ReturnDate)
                            .ThenBy(pr => pr.Code)
-                    : query.OrderBy(pr => pr.Supplier.CompanyName)
+                    : query.OrderBy(pr => pr.Supplier!.CompanyName)
                            .ThenByDescending(pr => pr.ReturnDate)
                            .ThenBy(pr => pr.Code);
 
@@ -308,7 +308,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
                     .Where(pr => (pr.Code != null && pr.Code.Contains(searchTerm)) ||
-                         (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)))
+                         (pr.Supplier != null && pr.Supplier.CompanyName!.Contains(searchTerm)))
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.Code)
                     .ToListAsync();

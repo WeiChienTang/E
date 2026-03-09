@@ -309,7 +309,7 @@
             availableProductCategories = productCategories;
             productCategoryOptions = productCategories.Select(pc => new SelectOption
             {
-                Text = pc.Name,
+                Text = pc.Name!,
                 Value = pc.Id.ToString()
             }).ToList();
 
@@ -318,7 +318,7 @@
             availableSuppliers = suppliers;
             supplierOptions = suppliers.Select(s => new SelectOption
             {
-                Text = s.CompanyName,
+                Text = s.CompanyName!,
                 Value = s.Id.ToString()
             }).ToList();
 
@@ -327,7 +327,7 @@
             availableUnits = units;
             unitOptions = units.Select(u => new SelectOption
             {
-                Text = u.Name,
+                Text = u.Name!,
                 Value = u.Id.ToString()
             }).ToList();
 
@@ -336,7 +336,7 @@
             availableSizes = sizes;
             sizeOptions = sizes.Select(s => new SelectOption
             {
-                Text = s.Name,
+                Text = s.Name!,
                 Value = s.Id.ToString()
             }).ToList();
             

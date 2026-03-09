@@ -100,7 +100,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Where(po => ((po.Code != null && po.Code.Contains(searchTerm)) ||
-                                (po.Supplier != null && po.Supplier.CompanyName.Contains(searchTerm)) ||
+                                (po.Supplier != null && po.Supplier.CompanyName!.Contains(searchTerm)) ||
                                 (po.Company != null && po.Company.CompanyName.Contains(searchTerm)) ||
                                 (po.PurchasePersonnel != null && po.PurchasePersonnel.Contains(searchTerm)) ||
                                 (po.Remarks != null && po.Remarks.Contains(searchTerm))))
@@ -331,10 +331,10 @@ namespace ERPCore2.Services
                 // 排序：先按廠商分組，同廠商內再按日期和單據編號排序
                 // 這樣列印時同一廠商的採購單會集中在一起
                 query = criteria.SortDirection == SortDirection.Ascending
-                    ? query.OrderBy(po => po.Supplier.CompanyName)
+                    ? query.OrderBy(po => po.Supplier!.CompanyName)
                            .ThenBy(po => po.OrderDate)
                            .ThenBy(po => po.Code)
-                    : query.OrderBy(po => po.Supplier.CompanyName)
+                    : query.OrderBy(po => po.Supplier!.CompanyName)
                            .ThenByDescending(po => po.OrderDate)
                            .ThenBy(po => po.Code);
 

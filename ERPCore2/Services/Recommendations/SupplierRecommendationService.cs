@@ -91,8 +91,8 @@ namespace ERPCore2.Services
                     recommendations.Add(new SupplierRecommendation
                     {
                         SupplierId = binding.SupplierId,
-                        SupplierName = binding.SupplierName,
-                        SupplierCode = binding.SupplierCode,
+                        SupplierName = binding.SupplierName!,
+                        SupplierCode = binding.SupplierCode!,
                         SupplierProductCode = binding.SupplierProductCode,
                         IsPreferred = binding.IsPreferred,
                         Priority = binding.Priority,
@@ -117,8 +117,8 @@ namespace ERPCore2.Services
                     recommendations.Add(new SupplierRecommendation
                     {
                         SupplierId = history.SupplierId!.Value,
-                        SupplierName = history.SupplierName,
-                        SupplierCode = history.SupplierCode,
+                        SupplierName = history.SupplierName!,
+                        SupplierCode = history.SupplierCode!,
                         IsPreferred = false,
                         Priority = 999,
                         LastPurchasePrice = history.LastPurchasePrice,

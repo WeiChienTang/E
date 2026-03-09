@@ -76,7 +76,7 @@ namespace ERPCore2.Services
                     .Where(vm => ((vm.Code != null && vm.Code.ToLower().Contains(lowerSearchTerm)) ||
                          (vm.Description != null && vm.Description.ToLower().Contains(lowerSearchTerm)) ||
                          (vm.ServiceProvider != null && vm.ServiceProvider.ToLower().Contains(lowerSearchTerm)) ||
-                         vm.Vehicle.LicensePlate.ToLower().Contains(lowerSearchTerm)))
+                         vm.Vehicle!.LicensePlate.ToLower().Contains(lowerSearchTerm)))
                     .OrderByDescending(vm => vm.MaintenanceDate)
                     .ToListAsync();
             }

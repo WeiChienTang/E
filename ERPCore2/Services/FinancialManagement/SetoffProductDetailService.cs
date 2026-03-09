@@ -247,7 +247,7 @@ namespace ERPCore2.Services
                     SourceDetailId = d.Id,
                     SourceDocumentNumber = d.Code ?? string.Empty,
                     ProductId = d.ProductId,
-                    ProductName = d.ProductName,
+                    ProductName = d.ProductName!,
                     ProductCode = d.ProductCode,
                     TotalAmount = CalculateTaxInclusiveAmount(d.SubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
                     PaidAmount = d.TotalReceivedAmount,
@@ -283,7 +283,7 @@ namespace ERPCore2.Services
                     SourceDetailId = d.Id,
                     SourceDocumentNumber = d.Code ?? string.Empty,
                     ProductId = d.ProductId,
-                    ProductName = d.ProductName,
+                    ProductName = d.ProductName!,
                     ProductCode = d.ProductCode,
                     TotalAmount = CalculateTaxInclusiveAmount(d.ReturnSubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
                     PaidAmount = d.TotalPaidAmount,
@@ -319,7 +319,7 @@ namespace ERPCore2.Services
                     SourceDetailId = d.Id,
                     SourceDocumentNumber = d.Code ?? string.Empty,
                     ProductId = d.ProductId,
-                    ProductName = d.ProductName,
+                    ProductName = d.ProductName!,
                     ProductCode = d.ProductCode,
                     TotalAmount = CalculateTaxInclusiveAmount(d.SubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
                     PaidAmount = d.TotalReceivedAmount,
@@ -401,7 +401,7 @@ namespace ERPCore2.Services
                     SourceDetailId = d.Id,
                     SourceDocumentNumber = d.Code ?? string.Empty,
                     ProductId = d.ProductId,
-                    ProductName = d.ProductName,
+                    ProductName = d.ProductName!,
                     ProductCode = d.ProductCode,
                     TotalAmount = CalculateTaxInclusiveAmount(d.SubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
                     PaidAmount = d.TotalPaidAmount,
@@ -437,7 +437,7 @@ namespace ERPCore2.Services
                     SourceDetailId = d.Id,
                     SourceDocumentNumber = d.Code ?? string.Empty,
                     ProductId = d.ProductId,
-                    ProductName = d.ProductName,
+                    ProductName = d.ProductName!,
                     ProductCode = d.ProductCode,
                     TotalAmount = CalculateTaxInclusiveAmount(d.ReturnSubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
                     PaidAmount = d.TotalReceivedAmount,
@@ -511,7 +511,7 @@ namespace ERPCore2.Services
                                 SourceDetailId = salesDetail.Id,
                                 SourceDocumentNumber = salesDetail.SalesOrder.Code ?? string.Empty,
                                 ProductId = salesDetail.ProductId,
-                                ProductName = salesDetail.Product.Name,
+                                ProductName = salesDetail.Product!.Name!,
                                 ProductCode = salesDetail.Product.Code ?? string.Empty,
                                 TotalAmount = CalculateTaxInclusiveAmount(
                                     salesDetail.SubtotalAmount,
@@ -538,7 +538,7 @@ namespace ERPCore2.Services
                                 SourceDetailId = salesReturnDetail.Id,
                                 SourceDocumentNumber = salesReturnDetail.SalesReturn.Code ?? string.Empty,
                                 ProductId = salesReturnDetail.ProductId,
-                                ProductName = salesReturnDetail.Product.Name,
+                                ProductName = salesReturnDetail.Product!.Name!,
                                 ProductCode = salesReturnDetail.Product.Code ?? string.Empty,
                                 TotalAmount = CalculateTaxInclusiveAmount(
                                     salesReturnDetail.ReturnSubtotalAmount,
@@ -565,7 +565,7 @@ namespace ERPCore2.Services
                                 SourceDetailId = purchaseDetail.Id,
                                 SourceDocumentNumber = purchaseDetail.PurchaseReceiving.Code ?? string.Empty,
                                 ProductId = purchaseDetail.ProductId,
-                                ProductName = purchaseDetail.Product.Name,
+                                ProductName = purchaseDetail.Product!.Name!,
                                 ProductCode = purchaseDetail.Product.Code ?? string.Empty,
                                 TotalAmount = CalculateTaxInclusiveAmount(
                                     purchaseDetail.SubtotalAmount,
@@ -592,7 +592,7 @@ namespace ERPCore2.Services
                                 SourceDetailId = purchaseReturnDetail.Id,
                                 SourceDocumentNumber = purchaseReturnDetail.PurchaseReturn.Code ?? string.Empty,
                                 ProductId = purchaseReturnDetail.ProductId,
-                                ProductName = purchaseReturnDetail.Product.Name,
+                                ProductName = purchaseReturnDetail.Product!.Name!,
                                 ProductCode = purchaseReturnDetail.Product.Code ?? string.Empty,
                                 TotalAmount = CalculateTaxInclusiveAmount(
                                     purchaseReturnDetail.ReturnSubtotalAmount,
@@ -619,7 +619,7 @@ namespace ERPCore2.Services
                                 SourceDetailId = salesDeliveryDetail.Id,
                                 SourceDocumentNumber = salesDeliveryDetail.SalesDelivery.Code ?? string.Empty,
                                 ProductId = salesDeliveryDetail.ProductId,
-                                ProductName = salesDeliveryDetail.Product.Name,
+                                ProductName = salesDeliveryDetail.Product!.Name!,
                                 ProductCode = salesDeliveryDetail.Product.Code ?? string.Empty,
                                 TotalAmount = CalculateTaxInclusiveAmount(
                                     salesDeliveryDetail.SubtotalAmount,
@@ -1053,7 +1053,7 @@ namespace ERPCore2.Services
                     .Include(d => d.Product)
                     .Where(d =>
                         (d.SetoffDocument.Code != null && d.SetoffDocument.Code.ToLower().Contains(searchTermLower)) ||
-                        d.Product.Name.ToLower().Contains(searchTermLower) ||
+                        d.Product!.Name!.ToLower().Contains(searchTermLower) ||
                         (d.Product.Code != null && d.Product.Code.ToLower().Contains(searchTermLower)))
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();

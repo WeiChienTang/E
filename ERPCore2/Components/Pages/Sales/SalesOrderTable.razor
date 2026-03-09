@@ -644,7 +644,7 @@ else
         if (item.SelectedProduct == null) return;
         
         selectedSalesItemIndex = Items.IndexOf(item);
-        selectedCompositionProductName = item.SelectedProduct.Name;
+        selectedCompositionProductName = item.SelectedProduct.Name ?? string.Empty;
         selectedCompositionProductId = item.SelectedProduct.Id;
         selectedCompositionId = item.SelectedCompositionId;
         isCustomCompositionMode = item.IsCustomComposition;

@@ -57,7 +57,7 @@
             prefilled[nameof(EmployeeBankAccount.EmployeeId)] = PrefilledEmployeeId.Value;
 
         return EditDataLoaderHelper.LoadOrCreateAsync<EmployeeBankAccount, IEmployeeBankAccountService>(
-            BankAccountId, BankAccountService, NotificationService, "銀行帳戶", null,
+            BankAccountId, BankAccountService, NotificationService, "銀行帳戶", string.Empty,
             prefilled.Count > 0 ? prefilled : null,
             b => b.IsPrimary = true);
     }

@@ -143,7 +143,7 @@ namespace ERPCore2.Services
                         .ThenInclude(psi => psi.Product)
                     .Include(psa => psa.SalesOrderDetail)
                         .ThenInclude(sod => sod.SalesOrder)
-                    .Where(psa => psa.ProductionScheduleItem.Product.Name.Contains(searchTerm) ||
+                    .Where(psa => psa.ProductionScheduleItem!.Product!.Name!.Contains(searchTerm) ||
                                  (psa.ProductionScheduleItem.Product.Code != null && 
                                   psa.ProductionScheduleItem.Product.Code.Contains(searchTerm)) ||
                                  (psa.SalesOrderDetail.SalesOrder.Code != null && 

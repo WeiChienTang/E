@@ -863,7 +863,7 @@ namespace ERPCore2.Services.Reports
                     if (additionalData["ProductDict"] is Dictionary<int, Product> productDict &&
                         productDict.ContainsKey(orderDetail.ProductId))
                     {
-                        return productDict[orderDetail.ProductId].Name;
+                        return productDict[orderDetail.ProductId].Name!;
                     }
                     return $"商品ID: {orderDetail.ProductId}";
                 }

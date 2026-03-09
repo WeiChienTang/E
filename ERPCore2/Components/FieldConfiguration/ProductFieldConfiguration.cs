@@ -85,10 +85,10 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Size", "尺寸"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            Options = _sizes.Select(s => new SelectOption 
-                            { 
-                                Text = s.Name, 
-                                Value = s.Id.ToString() 
+                            Options = _sizes.Select(s => new SelectOption
+                            {
+                                Text = s.Name!,
+                                Value = s.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Product.SizeId), p => p.SizeId)
@@ -103,10 +103,10 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CategoryName", "商品分類"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
-                            Options = _productCategories.Select(pc => new SelectOption 
-                            { 
-                                Text = pc.Name, 
-                                Value = pc.Id.ToString() 
+                            Options = _productCategories.Select(pc => new SelectOption
+                            {
+                                Text = pc.Name!,
+                                Value = pc.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Product.ProductCategoryId), p => p.ProductCategoryId)
@@ -121,10 +121,10 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PurchaseUnit", "採購單位"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 6,
-                            Options = _units.Select(u => new SelectOption 
-                            { 
-                                Text = u.Name, 
-                                Value = u.Id.ToString() 
+                            Options = _units.Select(u => new SelectOption
+                            {
+                                Text = u.Name!,
+                                Value = u.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Product.UnitId), p => p.UnitId)
@@ -139,10 +139,10 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ProductionUnit", "製程單位"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 7,
-                            Options = _units.Select(u => new SelectOption 
-                            { 
-                                Text = u.Name, 
-                                Value = u.Id.ToString() 
+                            Options = _units.Select(u => new SelectOption
+                            {
+                                Text = u.Name!,
+                                Value = u.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Product.ProductionUnitId), p => p.ProductionUnitId)

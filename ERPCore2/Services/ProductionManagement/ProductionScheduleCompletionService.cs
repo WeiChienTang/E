@@ -145,7 +145,7 @@ namespace ERPCore2.Services
                     .Include(psc => psc.ProductionScheduleItem)
                         .ThenInclude(psi => psi.Product)
                     .Include(psc => psc.Warehouse)
-                    .Where(psc => psc.ProductionScheduleItem.Product.Name.Contains(searchTerm) ||
+                    .Where(psc => psc.ProductionScheduleItem!.Product!.Name!.Contains(searchTerm) ||
                                  (psc.ProductionScheduleItem.Product.Code != null && 
                                   psc.ProductionScheduleItem.Product.Code.Contains(searchTerm)) ||
                                  (psc.BatchNumber != null && psc.BatchNumber.Contains(searchTerm)))

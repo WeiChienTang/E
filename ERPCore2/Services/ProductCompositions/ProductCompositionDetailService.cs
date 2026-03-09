@@ -201,7 +201,7 @@ namespace ERPCore2.Services
                 {
                     var lowerSearchTerm = searchTerm.ToLower();
                     query = query.Where(pcd =>
-                        pcd.ComponentProduct.Name.ToLower().Contains(lowerSearchTerm) ||
+                        pcd.ComponentProduct!.Name!.ToLower().Contains(lowerSearchTerm) ||
                         (pcd.ComponentProduct.Code != null && pcd.ComponentProduct.Code.ToLower().Contains(lowerSearchTerm)));
                 }
 

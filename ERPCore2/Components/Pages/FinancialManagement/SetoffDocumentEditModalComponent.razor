@@ -1196,7 +1196,7 @@
                     var supplier = suppliers.FirstOrDefault(s => s.Id == supplierId);
                     if (supplier != null)
                     {
-                        editModalComponent.Entity.RelatedPartyName = supplier.CompanyName;
+                        editModalComponent.Entity.RelatedPartyName = supplier.CompanyName ?? string.Empty;
                     }
 
                 }

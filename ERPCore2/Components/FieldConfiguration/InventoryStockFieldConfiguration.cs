@@ -91,7 +91,7 @@ namespace ERPCore2.FieldConfiguration
                             TableOrder = 3,
                             Options = _productCategories.Select(pc => new SelectOption
                             {
-                                Text = pc.Name,
+                                Text = pc.Name!,
                                 Value = pc.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => {

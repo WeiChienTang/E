@@ -99,7 +99,7 @@ namespace ERPCore2.Services
                     .Include(qd => qd.Product)
                     .Include(qd => qd.Unit)
                     .Where(qd => (
-                        qd.Product.Name.ToLower().Contains(lowerSearchTerm) ||
+                        qd.Product!.Name.ToLower().Contains(lowerSearchTerm) ||
                         (qd.Product.Code != null && qd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
                         (qd.Quotation.Code != null && qd.Quotation.Code.ToLower().Contains(lowerSearchTerm))
                     ))

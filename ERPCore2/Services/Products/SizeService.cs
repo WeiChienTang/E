@@ -254,7 +254,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
                     .Include(s => s.Products)
-                    .Where(s => s.Name.Contains(sizeName))
+                    .Where(s => s.Name != null && s.Name.Contains(sizeName))
                     .OrderBy(s => s.Name)
                     .ToListAsync();
             }

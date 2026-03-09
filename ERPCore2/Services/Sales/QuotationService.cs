@@ -608,10 +608,10 @@ namespace ERPCore2.Services
 
                 // 排序：先按客戶分組，同客戶內再按日期和單據編號排序
                 query = criteria.SortDirection == SortDirection.Ascending
-                    ? query.OrderBy(q => q.Customer.CompanyName)
+                    ? query.OrderBy(q => q.Customer!.CompanyName)
                            .ThenBy(q => q.QuotationDate)
                            .ThenBy(q => q.Code)
-                    : query.OrderBy(q => q.Customer.CompanyName)
+                    : query.OrderBy(q => q.Customer!.CompanyName)
                            .ThenByDescending(q => q.QuotationDate)
                            .ThenBy(q => q.Code);
 

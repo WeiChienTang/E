@@ -242,7 +242,7 @@ public class SupplierChartService : ISupplierChartService
             .Select(s => new ChartDetailItem
             {
                 Id       = s.Id,
-                Name     = s.CompanyName,
+                Name     = s.CompanyName!,
                 SubLabel = s.Code
             })
             .ToListAsync();
@@ -280,7 +280,7 @@ public class SupplierChartService : ISupplierChartService
             .Select(s => new ChartDetailItem
             {
                 Id       = s.Id,
-                Name     = s.CompanyName,
+                Name     = s.CompanyName!,
                 SubLabel = s.Code
             })
             .ToListAsync();
@@ -310,7 +310,7 @@ public class SupplierChartService : ISupplierChartService
             .Select(s => new ChartDetailItem
             {
                 Id       = s.Id,
-                Name     = s.CompanyName,
+                Name     = s.CompanyName!,
                 SubLabel = s.Code
             })
             .ToListAsync();
@@ -361,7 +361,7 @@ public class SupplierChartService : ISupplierChartService
         return raw.Select(x => new ChartDetailItem
         {
             Id       = x.Id,
-            Name     = x.CompanyName,
+            Name     = x.CompanyName!,
             SubLabel = $"NT${x.CurrentPayable:N0}"
         }).ToList();
     }

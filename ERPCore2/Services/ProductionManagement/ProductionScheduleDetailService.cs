@@ -151,7 +151,7 @@ namespace ERPCore2.Services
                     .Include(psd => psd.ComponentProduct)
                     .Include(psd => psd.ProductCompositionDetail)
                     .Include(psd => psd.Warehouse)
-                    .Where(psd => psd.ComponentProduct.Name.Contains(searchTerm) ||
+                    .Where(psd => psd.ComponentProduct!.Name!.Contains(searchTerm) ||
                                  (psd.ComponentProduct.Code != null && psd.ComponentProduct.Code.Contains(searchTerm)) ||
                                  (psd.ProductionScheduleItem.ProductionSchedule.Code != null && 
                                   psd.ProductionScheduleItem.ProductionSchedule.Code.Contains(searchTerm)))

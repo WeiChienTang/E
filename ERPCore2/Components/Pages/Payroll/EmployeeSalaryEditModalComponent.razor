@@ -58,7 +58,7 @@
             prefilled[nameof(EmployeeSalary.EmployeeId)] = PrefilledEmployeeId.Value;
 
         return EditDataLoaderHelper.LoadOrCreateAsync<EmployeeSalary, IEmployeeSalaryService>(
-            EmployeeSalaryId, EmployeeSalaryService, NotificationService, "員工薪資設定", null,
+            EmployeeSalaryId, EmployeeSalaryService, NotificationService, "員工薪資設定", string.Empty,
             prefilled.Count > 0 ? prefilled : null,
             s =>
             {

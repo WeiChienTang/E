@@ -73,7 +73,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .Where(pc => (pc.Name.Contains(searchTerm) ||
+                    .Where(pc => (pc.Name != null && pc.Name.Contains(searchTerm) ||
                                 (pc.Code != null && pc.Code.Contains(searchTerm))))
                     .OrderBy(pc => pc.Name)
                     .ToListAsync();

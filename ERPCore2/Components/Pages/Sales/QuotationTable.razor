@@ -795,7 +795,7 @@ else
         if (item.SelectedProduct == null) return;
 
         selectedQuotationItemIndex = Items.IndexOf(item);
-        selectedCompositionProductName = item.SelectedProduct.Name;
+        selectedCompositionProductName = item.SelectedProduct.Name ?? string.Empty;
         selectedCompositionProductId = item.SelectedProduct.Id;
         selectedCompositionId = item.SelectedCompositionId;
         isCustomCompositionMode = item.IsCustomComposition;

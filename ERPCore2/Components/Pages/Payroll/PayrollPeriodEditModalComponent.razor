@@ -45,7 +45,7 @@
 
     private Task<PayrollPeriod?> LoadData() =>
         EditDataLoaderHelper.LoadOrCreateAsync<PayrollPeriod, IPayrollPeriodService>(
-            PayrollPeriodId, PeriodService, NotificationService, "薪資週期", null, null,
+            PayrollPeriodId, PeriodService, NotificationService, "薪資週期", string.Empty, null,
             p =>
             {
                 p.Year = DateTime.Today.Year - 1911;

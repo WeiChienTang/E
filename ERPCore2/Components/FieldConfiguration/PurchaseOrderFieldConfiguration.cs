@@ -62,7 +62,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = Fp("Field.PurchasingCompany", "輸入公司名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, "Company.CompanyName", po => po.Company.CompanyName)
+                                model, query, "Company.CompanyName", po => po.Company!.CompanyName)
                         }
                     },
                     {

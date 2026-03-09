@@ -49,7 +49,7 @@ namespace ERPCore2.Services
                 var normalizedSearch = searchTerm.Trim().ToUpper();
                 
                 return await context.EmployeePositions
-                    .Where(ep => (ep.Name.ToUpper().Contains(normalizedSearch) ||
+                    .Where(ep => (ep.Name != null && ep.Name.ToUpper().Contains(normalizedSearch) ||
                                  (ep.Code != null && ep.Code.ToUpper().Contains(normalizedSearch))))
                     .OrderBy(ep => ep.Name)
                     .ToListAsync();

@@ -93,7 +93,7 @@ namespace ERPCore2.Services
                     .Include(sd => sd.Employee)
                     .Where(sd =>
                         (sd.Code != null && sd.Code.Contains(searchTerm)) ||
-                        (sd.Customer.CompanyName != null && sd.Customer.CompanyName.Contains(searchTerm)) ||
+                        (sd.Customer!.CompanyName != null && sd.Customer.CompanyName.Contains(searchTerm)) ||
                         (sd.Employee != null && sd.Employee.Name != null && sd.Employee.Name.Contains(searchTerm)) ||
                         (sd.DeliveryAddress != null && sd.DeliveryAddress.Contains(searchTerm)))
                     .OrderByDescending(sd => sd.DeliveryDate)

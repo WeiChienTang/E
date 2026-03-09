@@ -91,7 +91,7 @@ namespace ERPCore2.FieldConfiguration
                             NullDisplayText = Nd("Label.Unassigned", "未指派"),
                             Options = _departments.Select(d => new SelectOption
                             {
-                                Text = d.Name,
+                                Text = d.Name!,
                                 Value = d.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
@@ -111,7 +111,7 @@ namespace ERPCore2.FieldConfiguration
                             NullDisplayText = Nd("Label.Unassigned", "未指派"),
                             Options = _employeePositions.Select(p => new SelectOption
                             {
-                                Text = p.Name,
+                                Text = p.Name!,
                                 Value = p.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(

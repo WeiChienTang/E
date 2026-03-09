@@ -63,7 +63,7 @@
         return option.ToString() ?? "";
     };
     [Parameter] public Func<Unit, int> GetUnitOptionId { get; set; } = unit => unit.Id;
-    [Parameter] public Func<Unit, string> GetUnitOptionDisplayText { get; set; } = unit => unit.Name;
+    [Parameter] public Func<Unit, string> GetUnitOptionDisplayText { get; set; } = unit => unit.Name!;
     
     // ===== 委派參數 - Setter =====
     [Parameter] public Action<TProductSupplierEntity, int?> SetSupplierId { get; set; } = (item, supplierId) => { };
