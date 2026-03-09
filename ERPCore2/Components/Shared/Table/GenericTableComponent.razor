@@ -7,9 +7,11 @@
 @inject IStringLocalizer<SharedResource> L
 @typeparam TItem
 
+<div class="generic-table-wrapper">
 <div class="table-responsive table-container-hover">
     <table class="table @GetTableClass() @(EnableColumnResize ? "resizable-table" : "")"
            id="@TableId">
+
         @if (ShowHeader && ColumnDefinitions != null && ColumnDefinitions.Any())
         {
             <thead class="@GetHeaderClass()">
@@ -46,9 +48,11 @@
             {
                 @foreach (var item in Items)
                 {
-                    <tr class="@GetRowClass(item)" 
+                    <tr class="@GetRowClass(item)"
                         @onclick="() => HandleRowClick(item)"
-                        style="@(EnableRowClick ? $"cursor: {RowClickCursor};" : "")">
+                        style="@(EnableRowClick ? $"cursor: {RowClickCursor};" : "")"
+                        @oncontextmenu="(e) => HandleContextMenu(e, item)"
+                        @oncontextmenu:preventDefault="@_hasContextMenu">
                         
                         @foreach (var column in ColumnDefinitions ?? new List<TableColumnDefinition>())
                         {                            <td class="@column.CellCssClass" style="@column.CellStyle">
@@ -86,6 +90,45 @@
     </table>
 </div>
 
+@* 右鍵選單覆蓋層 + 選單本體（position: fixed，不受 overflow 影響） *@
+@if (_contextMenuVisible && _contextMenuTarget != null && ContextMenuItems != null)
+{
+    <div class="table-context-menu-overlay"
+         @onclick="CloseContextMenu"
+         @oncontextmenu="CloseContextMenu"
+         @oncontextmenu:preventDefault="true"></div>
+    <div class="table-context-menu"
+         id="@_contextMenuId"
+         style="left: @(_contextMenuX.ToString("F0"))px; top: @(_contextMenuY.ToString("F0"))px;"
+         @oncontextmenu:stopPropagation="true">
+        @foreach (var menuItem in ContextMenuItems)
+        {
+            if (menuItem.IsVisible != null && !menuItem.IsVisible(_contextMenuTarget))
+                continue;
+
+            if (menuItem.IsDivider)
+            {
+                <div class="table-context-menu-divider"></div>
+            }
+            else
+            {
+                var isDisabled = menuItem.IsDisabled?.Invoke(_contextMenuTarget) ?? false;
+                <button class="table-context-menu-item @menuItem.CssClass @(isDisabled ? "disabled" : "")"
+                        disabled="@isDisabled"
+                        @onclick="async () => await HandleContextMenuItemClick(menuItem)"
+                        @onclick:stopPropagation="true">
+                    @if (!string.IsNullOrEmpty(menuItem.IconClass))
+                    {
+                        <i class="@menuItem.IconClass me-2"></i>
+                    }
+                    @menuItem.Label
+                </button>
+            }
+        }
+    </div>
+}
+</div>@* end generic-table-wrapper *@
+
 @code {
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
     [Parameter] public List<TableColumnDefinition>? ColumnDefinitions { get; set; }
@@ -105,6 +148,47 @@
     [Parameter] public EventCallback<string> OnSort { get; set; }
     [Parameter] public bool EnableColumnResize { get; set; } = true;
     [Parameter] public string TableId { get; set; } = Guid.NewGuid().ToString("N")[..8];
+
+    // 右鍵選單
+    [Parameter] public List<ContextMenuItem<TItem>>? ContextMenuItems { get; set; }
+
+    // 右鍵選單私有狀態
+    private bool _contextMenuVisible = false;
+    private double _contextMenuX = 0;
+    private double _contextMenuY = 0;
+    private TItem? _contextMenuTarget = default;
+    private string _contextMenuId = "";
+    private bool _hasContextMenu = false;
+
+    protected override void OnParametersSet()
+    {
+        _hasContextMenu = ContextMenuItems != null && ContextMenuItems.Any();
+    }
+
+    private void HandleContextMenu(MouseEventArgs e, TItem item)
+    {
+        if (!_hasContextMenu) return;
+
+        _contextMenuTarget = item;
+        _contextMenuX = e.ClientX;
+        _contextMenuY = e.ClientY;
+        _contextMenuVisible = true;
+    }
+
+    private void CloseContextMenu()
+    {
+        _contextMenuVisible = false;
+        _contextMenuTarget = default;
+    }
+
+    private async Task HandleContextMenuItemClick(ContextMenuItem<TItem> menuItem)
+    {
+        var target = _contextMenuTarget;
+        CloseContextMenu();
+
+        if (menuItem.OnClick != null && target != null)
+            await menuItem.OnClick(target);
+    }
 
     private string GetTableClass()
     {
@@ -331,12 +415,25 @@
         return "bg-secondary";
     }
 
+    protected override void OnInitialized()
+    {
+        _contextMenuId = $"ctx-menu-{Guid.NewGuid():N}";
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && EnableColumnResize)
         {
             await JSRuntime.InvokeVoidAsync("tableColumnResizer.init", TableId);
         }
+
+        // 選單顯示後呼叫 JS 做視窗邊界修正（避免選單超出視窗）
+        if (_contextMenuVisible)
+        {
+            try { await JSRuntime.InvokeVoidAsync("tableContextMenu.adjustPosition", _contextMenuId); }
+            catch { /* 忽略 JS 錯誤 */ }
+        }
+
         await base.OnAfterRenderAsync(firstRender);
     }
 }
@@ -423,4 +520,27 @@ window.tableColumnResizer = {
         this.nextStartWidth = 0;
     }
 };
+
+// 右鍵選單：顯示後修正超出視窗邊界的位置（加 guard 防止與 GenericInteractiveTableComponent 重複定義）
+if (!window.tableContextMenu) {
+    window.tableContextMenu = {
+        adjustPosition: function(menuId) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+
+            const rect = menu.getBoundingClientRect();
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            let x = parseFloat(menu.style.left) || 0;
+            let y = parseFloat(menu.style.top)  || 0;
+
+            if (x + rect.width  > vw) x = Math.max(0, x - rect.width);
+            if (y + rect.height > vh) y = Math.max(0, y - rect.height);
+
+            menu.style.left = x + 'px';
+            menu.style.top  = y + 'px';
+        }
+    };
+}
 </script>

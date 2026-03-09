@@ -66,6 +66,31 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Warehouse))]
         public int? WarehouseId { get; set; }
 
+        // 用料結算（最後一次完工時填入）
+        [Display(Name = "實際消耗量")]
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal ActualUsedQty { get; set; } = 0;
+
+        [Display(Name = "退料量")]
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal ReturnQty { get; set; } = 0;
+
+        [Display(Name = "退料目標倉庫")]
+        [ForeignKey(nameof(ReturnWarehouse))]
+        public int? ReturnWarehouseId { get; set; }
+
+        [Display(Name = "退料目標庫位")]
+        [ForeignKey(nameof(ReturnWarehouseLocation))]
+        public int? ReturnLocationId { get; set; }
+
+        [Display(Name = "損耗量")]
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal ScrapQty { get; set; } = 0;
+
+        [Display(Name = "損耗備註")]
+        [MaxLength(500)]
+        public string? ScrapReason { get; set; }
+
         // Navigation Properties
         /// <summary>
         /// 生產排程項目
@@ -86,5 +111,15 @@ namespace ERPCore2.Data.Entities
         /// 領料倉庫
         /// </summary>
         public Warehouse? Warehouse { get; set; }
+
+        /// <summary>
+        /// 退料目標倉庫
+        /// </summary>
+        public Warehouse? ReturnWarehouse { get; set; }
+
+        /// <summary>
+        /// 退料目標庫位
+        /// </summary>
+        public WarehouseLocation? ReturnWarehouseLocation { get; set; }
     }
 }

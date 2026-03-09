@@ -25,6 +25,8 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadWarehouseLocationData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.WarehouseLocation"]]"
                           SaveSuccessMessage="@(WarehouseLocationId.HasValue ? L["Message.UpdateSuccess", L["Entity.WarehouseLocation"]].ToString() : L["Message.CreateSuccess", L["Entity.WarehouseLocation"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WarehouseLocation"]]"
                           RequiredPermission="@PermissionRegistry.WarehouseLocation.Read"

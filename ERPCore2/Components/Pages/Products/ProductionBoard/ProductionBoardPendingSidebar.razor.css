@@ -188,3 +188,23 @@
     background: #1c2128;
     border-color: #30363d;
 }
+
+/* 待審核訂單灰化樣式 */
+.sidebar-item-wrapper.not-approved {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.sidebar-item-wrapper.not-approved .sidebar-card {
+    border-style: dashed;
+}
+
+.scard-pending-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #ffc107;
+    color: #333;
+    margin-bottom: 4px;
+}

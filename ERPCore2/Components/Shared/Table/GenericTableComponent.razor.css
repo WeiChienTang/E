@@ -1,0 +1,66 @@
+/* 外層包裝（確保選單的 position: fixed 從視窗計算，不受父層 overflow 干擾） */
+.generic-table-wrapper {
+    position: relative;
+}
+
+/* 右鍵選單覆蓋層 — 透明全螢幕，點擊即關閉選單 */
+.table-context-menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: transparent;
+    cursor: default;
+}
+
+/* 右鍵選單本體 */
+.table-context-menu {
+    position: fixed;
+    z-index: 1041;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    min-width: 160px;
+    padding: 4px 0;
+    user-select: none;
+}
+
+/* 選單項目 */
+.table-context-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    transition: background-color 0.12s;
+    white-space: nowrap;
+}
+
+.table-context-menu-item:hover:not(:disabled):not(.disabled) {
+    background: var(--bg-secondary);
+}
+
+.table-context-menu-item:disabled,
+.table-context-menu-item.disabled {
+    opacity: 0.45;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* 分隔線 */
+.table-context-menu-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+/* Dark mode — 僅調整陰影深度，其餘顏色已由 CSS 變數處理 */
+[data-bs-theme=dark] .table-context-menu {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}

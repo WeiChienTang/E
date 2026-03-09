@@ -36,12 +36,11 @@ namespace ERPCore2.Data.Entities
         public int? MaxCapacity { get; set; }
         
         // Foreign Keys
-        [Required(ErrorMessage = "倉庫為必填")]
         [Display(Name = "倉庫")]
         [ForeignKey(nameof(Warehouse))]
-        public int WarehouseId { get; set; }
-        
+        public int? WarehouseId { get; set; }
+
         // Navigation Properties
-        public Warehouse Warehouse { get; set; } = null!;
+        public Warehouse? Warehouse { get; set; }
     }
 }

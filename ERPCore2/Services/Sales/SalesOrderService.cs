@@ -759,7 +759,8 @@ namespace ERPCore2.Services
 
                 // 建立產品組成字典，方便快速查詢
                 var productCompositionDict = productCompositions
-                    .GroupBy(pc => pc.ParentProductId)
+                    .Where(pc => pc.ParentProductId.HasValue)
+                    .GroupBy(pc => pc.ParentProductId!.Value)
                     .ToDictionary(
                         g => g.Key,
                         g => g.FirstOrDefault() // 取第一個配方（如果有多個配方的話）
@@ -780,12 +781,12 @@ namespace ERPCore2.Services
 
                 // 4. 批次查詢所有產品的庫存
                 var inventoryStocks = await context.InventoryStocks
-                    .Where(i => productIds.Contains(i.ProductId))
+                    .Where(i => i.ProductId.HasValue && productIds.Contains(i.ProductId.Value))
                     .Include(i => i.InventoryStockDetails)
                     .ToListAsync();
 
                 var stockDictionary = inventoryStocks
-                    .ToDictionary(i => i.ProductId, i => (decimal)i.TotalAvailableStock);
+                    .ToDictionary(i => i.ProductId!.Value, i => (decimal)i.TotalAvailableStock);
 
                 // 5. 建立檢查結果
                 var result = new OrderInventoryCheckResult

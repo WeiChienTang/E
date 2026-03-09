@@ -617,7 +617,8 @@ else
             // 載入所有有 BOM 組成的商品 ID
             var allCompositions = await ProductCompositionService.GetAllAsync();
             productsWithComposition = allCompositions
-                .Select(pc => pc.ParentProductId)
+                .Where(pc => pc.ParentProductId.HasValue)
+                .Select(pc => pc.ParentProductId!.Value)
                 .ToHashSet();
         }
         catch (Exception ex)

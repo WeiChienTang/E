@@ -62,7 +62,7 @@
                         }
                         <GenericButtonComponent Variant="@(isEnabled ? ButtonVariant.DarkBlue : ButtonVariant.Gray)"
                                               Size="ButtonSize.Small"
-                                              Text="@L["Report.GoTo"]"
+                                              IconClass="bi bi-arrow-right-circle-fill"
                                               IsDisabled="@(!isEnabled)"
                                               Title="@(isEnabled ? $"{L["Report.GoTo"]} {GetLocalizedName(report)}" : L["Report.NotAvailable"].ToString())"
                                               OnClick="@(() => HandlePrintClick(report))" />

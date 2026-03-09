@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260302050551_AddSupplierVisit")]
-    partial class AddSupplierVisit
+    [Migration("20260309230126_初始化")]
+    partial class 初始化
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -69,6 +69,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsDetailAccount")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<int?>("LinkedCustomerId")
@@ -170,6 +173,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -235,6 +241,9 @@ namespace ERPCore2.Migrations
                     b.Property<int>("EventType")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -293,6 +302,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -376,6 +388,9 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsDefault")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("LogoPath")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -455,6 +470,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit");
 
@@ -506,6 +524,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -560,6 +581,9 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsBaseCurrency")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -599,6 +623,18 @@ namespace ERPCore2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BankAccount")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("BillingAddress")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -633,11 +669,23 @@ namespace ERPCore2.Migrations
                     b.Property<decimal?>("CreditLimit")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("CreditRating")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("CurrentBalance")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("CustomerSource")
+                        .HasColumnType("int");
+
                     b.Property<int>("CustomerStatus")
                         .HasColumnType("int");
+
+                    b.Property<int?>("CustomerType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("DefaultDiscountRate")
+                        .HasColumnType("decimal(5,4)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(100)
@@ -653,6 +701,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("InvoiceTitle")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("JobTitle")
                         .HasMaxLength(50)
@@ -744,6 +795,9 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("EmployeeId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("NextFollowUpDate")
                         .HasColumnType("datetime2");
 
@@ -754,10 +808,6 @@ namespace ERPCore2.Migrations
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Result")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -814,6 +864,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("RecordDisplayName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -868,13 +921,29 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("DeputyManagerId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int?>("ManagerId")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("ParentDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -892,7 +961,11 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DeputyManagerId");
+
                     b.HasIndex("ManagerId");
+
+                    b.HasIndex("ParentDepartmentId");
 
                     b.ToTable("Departments");
                 });
@@ -919,7 +992,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("DocumentCategoryId")
+                    b.Property<int?>("DocumentCategoryId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("ExpiryDate")
@@ -935,6 +1008,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<long?>("FileSize")
                         .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("IssuedBy")
                         .HasMaxLength(200)
@@ -1002,6 +1078,9 @@ namespace ERPCore2.Migrations
                     b.Property<int>("DefaultAccessLevel")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1066,6 +1145,9 @@ namespace ERPCore2.Migrations
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("MimeType")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -1109,6 +1191,9 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime?>("BirthDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("BloodType")
+                        .HasColumnType("int");
+
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1131,6 +1216,10 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("EmergencyContactRelationship")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("EmergencyPhone")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
@@ -1138,8 +1227,15 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("EmployeePositionId")
                         .HasColumnType("int");
 
+                    b.Property<int>("EmployeeType")
+                        .HasColumnType("int");
+
                     b.Property<int>("EmploymentStatus")
                         .HasColumnType("int");
+
+                    b.Property<string>("EnglishName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("FailedLoginAttempts")
                         .HasColumnType("int");
@@ -1153,9 +1249,16 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime?>("HireDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("HomeAddress")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("IdNumber")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsSuperAdmin")
                         .HasColumnType("bit");
@@ -1163,8 +1266,19 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsSystemUser")
                         .HasColumnType("bit");
 
+                    b.Property<string>("JobTitle")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("MailingAddress")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("MaritalStatus")
+                        .HasColumnType("int");
 
                     b.Property<string>("Mobile")
                         .HasMaxLength(20)
@@ -1174,9 +1288,17 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(25)
                         .HasColumnType("nvarchar(25)");
 
+                    b.Property<string>("Nationality")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("Password")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -1238,6 +1360,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsVisible")
                         .HasColumnType("bit");
@@ -1308,6 +1433,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -1365,6 +1493,9 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("IssuedDate")
                         .HasColumnType("datetime2");
 
@@ -1421,8 +1552,10 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -1464,11 +1597,23 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("DefaultPageSize")
+                        .HasColumnType("int");
+
                     b.Property<int>("DefaultReminderMinutes")
                         .HasColumnType("int");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("EnableCalendar")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnableStickyNote")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Language")
                         .HasColumnType("int");
@@ -1500,13 +1645,31 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("ShowCalendarBadge")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("ShowDisabledModules")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("ShowNoteBadge")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowUnsavedChangesWarning")
                         .HasColumnType("bit");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<int>("Theme")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ToastErrorDurationMs")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ToastInfoDurationMs")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ToastSuccessDurationMs")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ToastWarningDurationMs")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1551,6 +1714,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -1614,6 +1780,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -1688,6 +1857,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<string>("InnerException")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsResolved")
                         .HasColumnType("bit");
@@ -1783,6 +1955,9 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("InventoryStockId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
@@ -1872,7 +2047,10 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("ProductId")
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ProductId")
                         .HasColumnType("int");
 
                     b.Property<string>("Remarks")
@@ -1892,7 +2070,8 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[ProductId] IS NOT NULL");
 
                     b.ToTable("InventoryStocks");
                 });
@@ -1942,6 +2121,9 @@ namespace ERPCore2.Migrations
                     b.Property<int>("InventoryStockId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("LastTransactionDate")
                         .HasColumnType("datetime2");
 
@@ -1980,9 +2162,9 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseLocationId");
 
-                    b.HasIndex("InventoryStockId", "WarehouseId", "WarehouseLocationId")
+                    b.HasIndex("InventoryStockId", "WarehouseId", "WarehouseLocationId", "BatchNumber")
                         .IsUnique()
-                        .HasFilter("[WarehouseLocationId] IS NOT NULL");
+                        .HasFilter("[WarehouseLocationId] IS NOT NULL AND [BatchNumber] IS NOT NULL");
 
                     b.ToTable("InventoryStockDetails");
                 });
@@ -2011,6 +2193,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int?>("InventoryStockId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -2111,6 +2296,9 @@ namespace ERPCore2.Migrations
                     b.Property<int>("InventoryTransactionId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("OperationNote")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -2199,6 +2387,9 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("NumberPrefix")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
@@ -2274,6 +2465,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("FiscalYear")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsReversed")
                         .HasColumnType("bit");
@@ -2369,6 +2563,9 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Direction")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<int>("JournalEntryId")
                         .HasColumnType("int");
 
@@ -2427,6 +2624,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -2476,8 +2676,14 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("EmployeeId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("IssueDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("ProductionScheduleId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -2500,6 +2706,8 @@ namespace ERPCore2.Migrations
                         .HasFilter("[Code] IS NOT NULL");
 
                     b.HasIndex("IssueDate");
+
+                    b.HasIndex("ProductionScheduleId");
 
                     b.HasIndex("DepartmentId", "IssueDate");
 
@@ -2527,13 +2735,19 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("IssueQuantity")
-                        .HasColumnType("int");
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("IssueQuantity")
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<int>("MaterialIssueId")
                         .HasColumnType("int");
 
                     b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductionScheduleDetailId")
                         .HasColumnType("int");
 
                     b.Property<string>("Remarks")
@@ -2562,6 +2776,8 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductionScheduleDetailId");
 
                     b.HasIndex("WarehouseId");
 
@@ -2598,6 +2814,9 @@ namespace ERPCore2.Migrations
                     b.Property<decimal>("Height")
                         .HasPrecision(8, 2)
                         .HasColumnType("decimal(8,2)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<decimal?>("LeftMargin")
                         .HasPrecision(6, 2)
@@ -2669,6 +2888,9 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsDefault")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -2693,6 +2915,674 @@ namespace ERPCore2.Migrations
                     b.ToTable("PaymentMethods");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.EmployeeBankAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("BankCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("BranchCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("BranchName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("EmployeeBankAccounts");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.EmployeeSalary", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("BaseSalary")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("DependentCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("ExpiryDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("HealthInsuredAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("LaborInsuredSalary")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("MealAllowance")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("PositionAllowance")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("SalaryType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaxType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TransportAllowance")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("VoluntaryRetirementRate")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EffectiveDate");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("EmployeeSalaries");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.HealthInsuranceGrade", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Grade")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("InsuredAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("SalaryFrom")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal?>("SalaryTo")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HealthInsuranceGrades");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.InsuranceRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("HealthInsuranceEmployeeRate")
+                        .HasColumnType("decimal(6,4)");
+
+                    b.Property<decimal>("HealthInsuranceEmployerRate")
+                        .HasColumnType("decimal(6,4)");
+
+                    b.Property<decimal>("LaborInsuranceEmployeeRate")
+                        .HasColumnType("decimal(6,4)");
+
+                    b.Property<decimal>("LaborInsuranceEmployerRate")
+                        .HasColumnType("decimal(6,4)");
+
+                    b.Property<decimal>("MealTaxFreeLimit")
+                        .HasColumnType("decimal(10,0)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("RetirementEmployerRate")
+                        .HasColumnType("decimal(6,4)");
+
+                    b.Property<decimal>("TransportTaxFreeLimit")
+                        .HasColumnType("decimal(10,0)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InsuranceRates");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.LaborInsuranceGrade", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Grade")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("InsuredSalary")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("SalaryFrom")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal?>("SalaryTo")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LaborInsuranceGrades");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.MinimumWage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("HourlyAmount")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("MonthlyAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MinimumWages");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.MonthlyAttendanceSummary", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AbsentDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("ActualWorkDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("HolidayOvertimeHours")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<bool>("IsLocked")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("NationalHolidayHours")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("OvertimeHours1")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("OvertimeHours2")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("ScheduledWorkDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("SickLeaveDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year", "Month");
+
+                    b.HasIndex("EmployeeId", "Year", "Month")
+                        .IsUnique()
+                        .HasDatabaseName("UX_MonthlyAttendance_Employee_Period");
+
+                    b.ToTable("MonthlyAttendanceSummaries");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsInsuranceBasis")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRetirementBasis")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystemItem")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTaxable")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ItemType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
+                    b.ToTable("PayrollItems");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollPeriod", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ClosedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PeriodStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year", "Month")
+                        .IsUnique();
+
+                    b.ToTable("PayrollPeriods");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AbsentDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("ActualWorkDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<DateTime?>("CalculatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CalculatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("EmployerHealthInsurance")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("EmployerLaborInsurance")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("EmployerRetirement")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("GrossIncome")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("HealthInsuranceAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("HolidayOvertimeHours")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("LaborInsuranceSalary")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("NationalHolidayHours")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("NetPay")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("OvertimeHours1")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("OvertimeHours2")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<int>("PayrollPeriodId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("ScheduledWorkDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("SickLeaveDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TaxableIncome")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("TotalDeduction")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("WithholdingTax")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PayrollPeriodId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("PayrollRecords");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollRecordDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<int>("PayrollItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PayrollRecordId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Remark")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("UnitAmount")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PayrollItemId");
+
+                    b.HasIndex("PayrollRecordId");
+
+                    b.ToTable("PayrollRecordDetails");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.WithholdingTaxTable", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DependentCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("SalaryFrom")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal?>("SalaryTo")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("WithholdingTaxTables");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.Permission", b =>
                 {
                     b.Property<int>("Id")
@@ -2711,6 +3601,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Level")
                         .HasColumnType("int");
@@ -2761,6 +3654,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -2823,6 +3719,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<decimal>("NewPrice")
                         .HasColumnType("decimal(18,2)");
@@ -2898,6 +3797,9 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsDefault")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -2949,8 +3851,10 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -2983,7 +3887,7 @@ namespace ERPCore2.Migrations
                     b.Property<decimal?>("TaxRate")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<int>("UnitId")
+                    b.Property<int?>("UnitId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -3029,11 +3933,13 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsSaleable")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -3088,7 +3994,14 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ParentProductId")
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ParentProductId")
                         .HasColumnType("int");
 
                     b.Property<string>("Remarks")
@@ -3148,6 +4061,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ProductCompositionId")
                         .HasColumnType("int");
 
@@ -3184,6 +4100,85 @@ namespace ERPCore2.Migrations
                     b.ToTable("ProductCompositionDetails");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.ProductCustomer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("CustomerPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CustomerProductCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal?>("DiscountRate")
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPreferred")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastSaleDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("LastSalePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("LeadTimeDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "CustomerId" }, "IX_ProductCustomer_CustomerId");
+
+                    b.HasIndex(new[] { "ProductId", "IsPreferred", "Priority" }, "IX_ProductCustomer_ProductId_IsPreferred_Priority");
+
+                    b.HasIndex(new[] { "ProductId", "CustomerId" }, "UX_ProductCustomer_ProductId_CustomerId")
+                        .IsUnique();
+
+                    b.ToTable("ProductCustomers");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductSupplier", b =>
                 {
                     b.Property<int>("Id")
@@ -3202,6 +4197,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsPreferred")
                         .HasColumnType("bit");
@@ -3289,6 +4287,9 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -3298,6 +4299,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<DateTime>("ScheduleDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("ScheduleStatus")
+                        .HasColumnType("int");
 
                     b.Property<int?>("SourceDocumentId")
                         .HasColumnType("int");
@@ -3355,6 +4359,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<int>("ProductionScheduleItemId")
                         .HasColumnType("int");
@@ -3428,6 +4435,9 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("InventoryTransactionId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ProductionScheduleItemId")
                         .HasColumnType("int");
 
@@ -3484,6 +4494,9 @@ namespace ERPCore2.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("ActualUsedQty")
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -3502,6 +4515,9 @@ namespace ERPCore2.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<decimal>("IssuedQuantity")
                         .HasColumnType("decimal(18,4)");
 
@@ -3518,6 +4534,22 @@ namespace ERPCore2.Migrations
                     b.Property<decimal>("RequiredQuantity")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
+
+                    b.Property<int?>("ReturnLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ReturnQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int?>("ReturnWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ScrapQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("ScrapReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -3541,6 +4573,10 @@ namespace ERPCore2.Migrations
                     b.HasIndex("ComponentProductId");
 
                     b.HasIndex("ProductCompositionDetailId");
+
+                    b.HasIndex("ReturnLocationId");
+
+                    b.HasIndex("ReturnWarehouseId");
 
                     b.HasIndex("WarehouseId");
 
@@ -3579,6 +4615,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("IsClosed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("PlannedEndDate")
@@ -3661,7 +4700,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("CompanyId")
+                    b.Property<int?>("CompanyId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -3675,6 +4714,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("OrderDate")
@@ -3698,7 +4740,7 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<int>("SupplierId")
+                    b.Property<int?>("SupplierId")
                         .HasColumnType("int");
 
                     b.Property<int>("TaxCalculationMethod")
@@ -3761,6 +4803,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<DateTime?>("ExpectedDeliveryDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsReceivingCompleted")
                         .HasColumnType("bit");
@@ -3846,6 +4891,9 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsApproved")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsJournalized")
                         .HasColumnType("bit");
 
@@ -3869,7 +4917,7 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<int>("SupplierId")
+                    b.Property<int?>("SupplierId")
                         .HasColumnType("int");
 
                     b.Property<int>("TaxCalculationMethod")
@@ -3920,6 +4968,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsReceivingCompleted")
                         .HasColumnType("bit");
@@ -4017,6 +5068,9 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsApproved")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsJournalized")
                         .HasColumnType("bit");
 
@@ -4043,7 +5097,7 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<int>("SupplierId")
+                    b.Property<int?>("SupplierId")
                         .HasColumnType("int");
 
                     b.Property<int>("TaxCalculationMethod")
@@ -4096,6 +5150,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsSettled")
                         .HasColumnType("bit");
@@ -4180,6 +5237,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -4222,7 +5282,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("CompanyId")
+                    b.Property<int?>("CompanyId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -4232,7 +5292,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
                     b.Property<string>("DeliveryTerms")
@@ -4246,6 +5306,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<string>("PaymentTerms")
@@ -4331,6 +5394,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18,4)");
 
@@ -4391,6 +5457,9 @@ namespace ERPCore2.Migrations
                     b.Property<decimal>("DiscountPercentage")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
@@ -4403,6 +5472,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("SelectedCompositionId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Specification")
                         .HasMaxLength(500)
@@ -4456,6 +5528,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("PaperSettingId")
                         .HasColumnType("int");
@@ -4518,6 +5593,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -4560,6 +5638,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<int>("PermissionId")
                         .HasColumnType("int");
@@ -4621,7 +5702,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
                     b.Property<string>("DeliveryAddress")
@@ -4641,6 +5722,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsJournalized")
@@ -4732,6 +5816,9 @@ namespace ERPCore2.Migrations
                     b.Property<decimal>("DiscountPercentage")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsSettled")
                         .HasColumnType("bit");
 
@@ -4814,7 +5901,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("CompanyId")
+                    b.Property<int?>("CompanyId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -4824,7 +5911,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
                     b.Property<string>("DeliveryTerms")
@@ -4841,6 +5928,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("OrderDate")
@@ -4919,6 +6009,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18,2)");
 
@@ -4979,10 +6072,16 @@ namespace ERPCore2.Migrations
                     b.Property<decimal>("DiscountPercentage")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsSettled")
                         .HasColumnType("bit");
 
                     b.Property<decimal>("OrderQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("ProducedQuantity")
                         .HasColumnType("decimal(18,3)");
 
                     b.Property<int>("ProductId")
@@ -5000,6 +6099,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<decimal>("ScheduledQuantity")
                         .HasColumnType("decimal(18,3)");
+
+                    b.Property<int?>("SelectedCompositionId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -5071,7 +6173,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("DiscountAmount")
@@ -5081,6 +6183,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsJournalized")
@@ -5167,6 +6272,9 @@ namespace ERPCore2.Migrations
                     b.Property<decimal>("DiscountPercentage")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsSettled")
                         .HasColumnType("bit");
 
@@ -5235,6 +6343,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -5289,6 +6400,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<decimal>("CurrentSetoffAmount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsJournalized")
                         .HasColumnType("bit");
@@ -5387,6 +6501,9 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<int?>("PaymentMethodId")
                         .HasColumnType("int");
 
@@ -5447,6 +6564,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<int>("PrepaymentTypeId")
                         .HasColumnType("int");
@@ -5520,6 +6640,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -5589,6 +6712,9 @@ namespace ERPCore2.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
@@ -5653,8 +6779,10 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -5710,6 +6838,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -5775,6 +6906,9 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsAdjustmentGenerated")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -5815,7 +6949,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("WarehouseId")
+                    b.Property<int?>("WarehouseId")
                         .HasColumnType("int");
 
                     b.Property<int?>("WarehouseLocationId")
@@ -5871,6 +7005,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsAdjusted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<int>("ProductId")
@@ -5930,12 +7067,23 @@ namespace ERPCore2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BankAccount")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("BillingAddress")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("CompanyName")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -5958,6 +7106,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<decimal>("CurrentPayable")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -5966,6 +7117,13 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("InvoiceTitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("JobTitle")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -5973,6 +7131,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("MobilePhone")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("PaymentDay")
+                        .HasColumnType("int");
 
                     b.Property<int?>("PaymentMethodId")
                         .HasColumnType("int");
@@ -5999,6 +7160,12 @@ namespace ERPCore2.Migrations
                     b.Property<string>("SupplierContactPhone")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("SupplierStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SupplierType")
+                        .HasColumnType("int");
 
                     b.Property<string>("TaxNumber")
                         .HasMaxLength(8)
@@ -6055,6 +7222,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("LeadTimeDays")
                         .HasColumnType("int");
@@ -6128,6 +7298,9 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("EmployeeId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("NextFollowUpDate")
                         .HasColumnType("datetime2");
 
@@ -6138,10 +7311,6 @@ namespace ERPCore2.Migrations
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Result")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -6178,6 +7347,10 @@ namespace ERPCore2.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccruedPayrollAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<bool>("AutoCreateCustomerSubAccount")
                         .HasColumnType("bit");
@@ -6219,38 +7392,87 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<bool>("EnableInventoryTransferApproval")
+                    b.Property<string>("HealthInsuranceExpenseAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("HideApprovalInfoSection")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("EnablePurchaseOrderApproval")
+                    b.Property<bool>("InventoryTransferManualApproval")
+                        .HasColumnType("bit")
+                        .HasColumnName("EnableInventoryTransferApproval");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("EnablePurchaseReceivingApproval")
-                        .HasColumnType("bit");
+                    b.Property<string>("LaborInsuranceExpenseAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
-                    b.Property<bool>("EnablePurchaseReturnApproval")
-                        .HasColumnType("bit");
+                    b.Property<int>("LateTolerance")
+                        .HasColumnType("int");
 
-                    b.Property<bool>("EnableQuotationApproval")
-                        .HasColumnType("bit");
+                    b.Property<string>("OvertimeExpenseAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
-                    b.Property<bool>("EnableSalesDeliveryApproval")
-                        .HasColumnType("bit");
+                    b.Property<int>("OvertimeRoundingUnit")
+                        .HasColumnType("int");
 
-                    b.Property<bool>("EnableSalesOrderApproval")
-                        .HasColumnType("bit");
+                    b.Property<int>("PayrollCutoffDay")
+                        .HasColumnType("int");
 
-                    b.Property<bool>("EnableSalesReturnApproval")
-                        .HasColumnType("bit");
+                    b.Property<string>("PayrollExpenseAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("PayrollPayDay")
+                        .HasColumnType("int");
 
                     b.Property<string>("ProductSubAccountParentCode")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<bool>("PurchaseOrderManualApproval")
+                        .HasColumnType("bit")
+                        .HasColumnName("EnablePurchaseOrderApproval");
+
+                    b.Property<bool>("PurchaseReceivingManualApproval")
+                        .HasColumnType("bit")
+                        .HasColumnName("EnablePurchaseReceivingApproval");
+
+                    b.Property<bool>("PurchaseReturnManualApproval")
+                        .HasColumnType("bit")
+                        .HasColumnName("EnablePurchaseReturnApproval");
+
+                    b.Property<bool>("QuotationManualApproval")
+                        .HasColumnType("bit")
+                        .HasColumnName("EnableQuotationApproval");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RetirementExpenseAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("SalaryMonthDivisor")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("SalesDeliveryManualApproval")
+                        .HasColumnType("bit")
+                        .HasColumnName("EnableSalesDeliveryApproval");
+
+                    b.Property<bool>("SalesOrderManualApproval")
+                        .HasColumnType("bit")
+                        .HasColumnName("EnableSalesOrderApproval");
+
+                    b.Property<bool>("SalesReturnManualApproval")
+                        .HasColumnType("bit")
+                        .HasColumnName("EnableSalesReturnApproval");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -6288,6 +7510,22 @@ namespace ERPCore2.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("VoluntaryRetirementAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("WithholdingHealthInsuranceAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("WithholdingLaborInsuranceAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("WithholdingTaxAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
 
@@ -6328,6 +7566,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<string>("Remarks")
@@ -6385,8 +7626,10 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
@@ -6439,6 +7682,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<string>("Remarks")
@@ -6528,6 +7774,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("InsurancePolicyNumber")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastMaintenanceDate")
                         .HasColumnType("datetime2");
@@ -6638,6 +7887,9 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("EmployeeId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("MaintenanceDate")
                         .HasColumnType("datetime2");
 
@@ -6668,7 +7920,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("VehicleId")
+                    b.Property<int?>("VehicleId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -6706,6 +7958,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -6762,6 +8017,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -6817,6 +8075,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Level")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
@@ -6847,7 +8108,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("WarehouseId")
+                    b.Property<int?>("WarehouseId")
                         .HasColumnType("int");
 
                     b.Property<string>("Zone")
@@ -6858,7 +8119,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseId", "Code")
                         .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                        .HasFilter("[WarehouseId] IS NOT NULL AND [Code] IS NOT NULL");
 
                     b.ToTable("WarehouseLocations");
                 });
@@ -6887,6 +8148,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<decimal?>("DisposalFee")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<decimal?>("NetAmount")
                         .HasColumnType("decimal(18,2)");
@@ -6917,16 +8181,16 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("VehicleId")
+                    b.Property<int?>("VehicleId")
                         .HasColumnType("int");
 
-                    b.Property<int>("WarehouseId")
+                    b.Property<int?>("WarehouseId")
                         .HasColumnType("int");
 
                     b.Property<int?>("WarehouseLocationId")
                         .HasColumnType("int");
 
-                    b.Property<int>("WasteTypeId")
+                    b.Property<int?>("WasteTypeId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -6970,6 +8234,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -7030,6 +8297,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -7131,11 +8401,23 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Department", b =>
                 {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "DeputyManager")
+                        .WithMany()
+                        .HasForeignKey("DeputyManagerId");
+
                     b.HasOne("ERPCore2.Data.Entities.Employee", "Manager")
                         .WithMany()
                         .HasForeignKey("ManagerId");
 
+                    b.HasOne("ERPCore2.Data.Entities.Department", "ParentDepartment")
+                        .WithMany("SubDepartments")
+                        .HasForeignKey("ParentDepartmentId");
+
+                    b.Navigation("DeputyManager");
+
                     b.Navigation("Manager");
+
+                    b.Navigation("ParentDepartment");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Document", b =>
@@ -7143,8 +8425,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.DocumentCategory", "DocumentCategory")
                         .WithMany("Documents")
                         .HasForeignKey("DocumentCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("DocumentCategory");
                 });
@@ -7301,8 +8582,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Product", "Product")
                         .WithMany("InventoryStocks")
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Product");
                 });
@@ -7442,9 +8722,15 @@ namespace ERPCore2.Migrations
                         .WithMany()
                         .HasForeignKey("EmployeeId");
 
+                    b.HasOne("ERPCore2.Data.Entities.ProductionSchedule", "ProductionSchedule")
+                        .WithMany()
+                        .HasForeignKey("ProductionScheduleId");
+
                     b.Navigation("Department");
 
                     b.Navigation("Employee");
+
+                    b.Navigation("ProductionSchedule");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.MaterialIssueDetail", b =>
@@ -7461,6 +8747,10 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ERPCore2.Data.Entities.ProductionScheduleDetail", "ProductionScheduleDetail")
+                        .WithMany()
+                        .HasForeignKey("ProductionScheduleDetailId");
+
                     b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
                         .WithMany()
                         .HasForeignKey("WarehouseId")
@@ -7475,9 +8765,82 @@ namespace ERPCore2.Migrations
 
                     b.Navigation("Product");
 
+                    b.Navigation("ProductionScheduleDetail");
+
                     b.Navigation("Warehouse");
 
                     b.Navigation("WarehouseLocation");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.EmployeeBankAccount", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.EmployeeSalary", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.MonthlyAttendanceSummary", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollRecord", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.Payroll.PayrollPeriod", "Period")
+                        .WithMany("Records")
+                        .HasForeignKey("PayrollPeriodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Period");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollRecordDetail", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Payroll.PayrollItem", "Item")
+                        .WithMany("Details")
+                        .HasForeignKey("PayrollItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.Payroll.PayrollRecord", "Record")
+                        .WithMany("Details")
+                        .HasForeignKey("PayrollRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("Record");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PriceHistory", b =>
@@ -7522,8 +8885,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Unit", "Unit")
                         .WithMany("Products")
                         .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ProductCategory");
 
@@ -7552,8 +8914,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Product", "ParentProduct")
                         .WithMany("ProductCompositions")
                         .HasForeignKey("ParentProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CompositionCategory");
 
@@ -7588,6 +8949,25 @@ namespace ERPCore2.Migrations
                     b.Navigation("ProductComposition");
 
                     b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.ProductCustomer", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
+                        .WithMany("ProductCustomers")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.Product", "Product")
+                        .WithMany("ProductCustomers")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductSupplier", b =>
@@ -7709,6 +9089,14 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "ReturnWarehouseLocation")
+                        .WithMany()
+                        .HasForeignKey("ReturnLocationId");
+
+                    b.HasOne("ERPCore2.Data.Entities.Warehouse", "ReturnWarehouse")
+                        .WithMany()
+                        .HasForeignKey("ReturnWarehouseId");
+
                     b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
                         .WithMany()
                         .HasForeignKey("WarehouseId")
@@ -7719,6 +9107,10 @@ namespace ERPCore2.Migrations
                     b.Navigation("ProductCompositionDetail");
 
                     b.Navigation("ProductionScheduleItem");
+
+                    b.Navigation("ReturnWarehouse");
+
+                    b.Navigation("ReturnWarehouseLocation");
 
                     b.Navigation("Warehouse");
                 });
@@ -7772,15 +9164,12 @@ namespace ERPCore2.Migrations
 
                     b.HasOne("ERPCore2.Data.Entities.Company", "Company")
                         .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CompanyId");
 
                     b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
                         .WithMany()
@@ -7829,9 +9218,7 @@ namespace ERPCore2.Migrations
 
                     b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
                         .WithMany()
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SupplierId");
 
                     b.Navigation("ApprovedByUser");
 
@@ -7892,8 +9279,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ApprovedByUser");
 
@@ -7958,15 +9344,12 @@ namespace ERPCore2.Migrations
 
                     b.HasOne("ERPCore2.Data.Entities.Company", "Company")
                         .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CompanyId");
 
                     b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
                         .WithMany()
@@ -8077,9 +9460,7 @@ namespace ERPCore2.Migrations
 
                     b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
                         .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CustomerId");
 
                     b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
                         .WithMany()
@@ -8149,15 +9530,12 @@ namespace ERPCore2.Migrations
 
                     b.HasOne("ERPCore2.Data.Entities.Company", "Company")
                         .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CompanyId");
 
                     b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
                         .WithMany()
@@ -8251,8 +9629,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
                         .WithMany()
@@ -8432,8 +9809,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
                         .WithMany()
                         .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "WarehouseLocation")
                         .WithMany()
@@ -8579,9 +9955,7 @@ namespace ERPCore2.Migrations
 
                     b.HasOne("ERPCore2.Data.Entities.Vehicle", "Vehicle")
                         .WithMany("VehicleMaintenances")
-                        .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("VehicleId");
 
                     b.Navigation("Employee");
 
@@ -8593,8 +9967,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
                         .WithMany("WarehouseLocations")
                         .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Warehouse");
                 });
@@ -8609,14 +9982,11 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Vehicle", "Vehicle")
                         .WithMany()
                         .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
                         .WithMany()
-                        .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("WarehouseId");
 
                     b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "WarehouseLocation")
                         .WithMany()
@@ -8625,8 +9995,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.WasteType", "WasteType")
                         .WithMany("WasteRecords")
                         .HasForeignKey("WasteTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Customer");
 
@@ -8658,9 +10027,16 @@ namespace ERPCore2.Migrations
                     b.Navigation("ProductCompositions");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.Customer", b =>
+                {
+                    b.Navigation("ProductCustomers");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.Department", b =>
                 {
                     b.Navigation("Employees");
+
+                    b.Navigation("SubDepartments");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Document", b =>
@@ -8719,6 +10095,21 @@ namespace ERPCore2.Migrations
                     b.Navigation("MaterialIssueDetails");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollItem", b =>
+                {
+                    b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollPeriod", b =>
+                {
+                    b.Navigation("Records");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollRecord", b =>
+                {
+                    b.Navigation("Details");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.Permission", b =>
                 {
                     b.Navigation("RolePermissions");
@@ -8736,6 +10127,8 @@ namespace ERPCore2.Migrations
                     b.Navigation("InventoryStocks");
 
                     b.Navigation("ProductCompositions");
+
+                    b.Navigation("ProductCustomers");
 
                     b.Navigation("ProductSuppliers");
                 });

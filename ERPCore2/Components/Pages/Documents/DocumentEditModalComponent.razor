@@ -22,6 +22,8 @@
                           FormSections="@formSections"
                           DataLoader="@LoadData"
                           SaveHandler="@HandleSaveAsync"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.Document"]]"
                           SaveSuccessMessage="@(DocumentId.HasValue ? L["Message.UpdateSuccess", L["Entity.Document"]].ToString() : L["Message.CreateSuccess", L["Entity.Document"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Document"]]"
                           RequiredPermission="@PermissionRegistry.Document.Read"
@@ -154,11 +156,20 @@
     {
         try
         {
-            var activeFiles = fileViewModels.Where(f => !f.IsDeleted).ToList();
-            if (!activeFiles.Any())
+            if (!entity.IsDraft)
             {
-                fileError = L["Message.AtLeastOneFile"];
-                return false;
+                bool isDraftEligible = editModalComponent?.ShowDraftButton == true &&
+                                       (!DocumentId.HasValue || editModalComponent?.WasOriginallyDraft == true);
+
+                var activeFiles = fileViewModels.Where(f => !f.IsDeleted).ToList();
+                if (!activeFiles.Any())
+                {
+                    if (isDraftEligible)
+                        editModalComponent!.PendingSaveError = L["Message.AtLeastOneFile"];
+                    else
+                        fileError = L["Message.AtLeastOneFile"];
+                    return false;
+                }
             }
 
             // 儲存 Document 主體

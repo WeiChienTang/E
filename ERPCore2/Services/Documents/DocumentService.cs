@@ -147,7 +147,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Title))
                     errors.Add("文件標題為必填欄位");
 
-                if (entity.DocumentCategoryId <= 0)
+                if (!entity.DocumentCategoryId.HasValue || entity.DocumentCategoryId.Value <= 0)
                     errors.Add("請選擇檔案分類");
 
                 if (errors.Any())

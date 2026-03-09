@@ -69,27 +69,30 @@ namespace ERPCore2.Services
                     return ServiceResult<MaterialIssue>.Failure("領料單沒有明細資料，無法扣除庫存");
                 }
 
-                // 3. 逐筆扣除庫存
+                // 3. 逐筆扣除庫存（FIFO），並將加權平均成本寫回明細
                 foreach (var detail in details)
                 {
-                    // 扣除庫存（ReduceStockAsync 內部已經會建立庫存交易記錄）
-                    var reduceResult = await _inventoryStockService.ReduceStockAsync(
+                    var reduceResult = await _inventoryStockService.ReduceStockWithFIFOAsync(
                         detail.ProductId,
                         detail.WarehouseId,
                         detail.IssueQuantity,
                         InventoryTransactionTypeEnum.MaterialIssue,
                         materialIssue.Code ?? $"MI-{materialIssue.Id}",
                         detail.WarehouseLocationId,
-                        $"領料單號：{materialIssue.Code}",
-                        sourceDocumentType: InventorySourceDocumentTypes.MaterialIssue,
-                        sourceDocumentId: materialIssue.Id);
+                        $"領料單號：{materialIssue.Code}");
 
                     if (!reduceResult.IsSuccess)
                     {
                         await transaction.RollbackAsync();
                         return ServiceResult<MaterialIssue>.Failure($"扣除庫存失敗：{reduceResult.ErrorMessage}");
                     }
+
+                    // 將 FIFO 回傳的加權平均成本寫入明細
+                    if (reduceResult.Data > 0)
+                        detail.UnitCost = reduceResult.Data;
                 }
+
+                await context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
                 return ServiceResult<MaterialIssue>.Success(materialIssue);
@@ -127,10 +130,13 @@ namespace ERPCore2.Services
                     if (existingEntity == null)
                         return ServiceResult<MaterialIssue>.Failure("找不到要更新的資料");
 
-                    // 驗證實體
-                    var validationResult = await ValidateAsync(entity);
-                    if (!validationResult.IsSuccess)
-                        return ServiceResult<MaterialIssue>.Failure(validationResult.ErrorMessage);
+                    // 草稿模式跳過驗證；非草稿才執行完整驗證
+                    if (!entity.IsDraft)
+                    {
+                        var validationResult = await ValidateAsync(entity);
+                        if (!validationResult.IsSuccess)
+                            return ServiceResult<MaterialIssue>.Failure(validationResult.ErrorMessage);
+                    }
 
                     // 保持原建立資訊
                     entity.CreatedAt = existingEntity.CreatedAt;

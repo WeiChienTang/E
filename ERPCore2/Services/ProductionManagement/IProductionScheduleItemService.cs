@@ -1,5 +1,6 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
+using ERPCore2.Models.Schedule;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -47,7 +48,10 @@ namespace ERPCore2.Services
         /// <summary>
         /// 完成生產入庫
         /// </summary>
-        Task<ServiceResult> CompleteProductionAsync(int itemId, decimal completedQuantity, int? warehouseId = null, int? warehouseLocationId = null);
+        /// <param name="settlements">用料結算（最後一次完工時傳入，null 表示批次完工不做結算）</param>
+        Task<ServiceResult> CompleteProductionAsync(int itemId, decimal completedQuantity,
+            int? warehouseId = null, int? warehouseLocationId = null,
+            List<MaterialSettlementDto>? settlements = null);
 
         /// <summary>
         /// 批次建立排程項目（從銷售訂單轉排程）
@@ -83,6 +87,16 @@ namespace ERPCore2.Services
         /// 批次取得所有排程項目的已排程數量（key = SalesOrderDetailId），解決 N+1 問題
         /// </summary>
         Task<Dictionary<int, decimal>> GetScheduledQuantityMapAsync();
+
+        /// <summary>
+        /// 查詢同商品最近一次完工入庫的倉庫/庫位（用於預填）
+        /// </summary>
+        Task<(int? WarehouseId, int? LocationId)> GetLastCompletionWarehouseAsync(int productId);
+
+        /// <summary>
+        /// 批次更新同日內卡片的優先順序（日內拖曳排序）
+        /// </summary>
+        Task<ServiceResult> UpdatePrioritiesAsync(List<(int Id, int Priority)> updates);
 
         /// <summary>
         /// 將排程項目退回待排清單。

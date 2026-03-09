@@ -16,6 +16,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
+                          ShowDraftTab="true"
                           DataLoader="@LoadSalesReturnReasonsAsync"
                           FilterApplier="@ApplySalesReturnReasonFilters"
                           GetEntityDisplayName="@(reason => reason.Name)"
@@ -87,7 +88,7 @@
     /// <summary>
     /// 載入銷貨退貨原因資料
     /// </summary>
-    private Task<List<SalesReturnReason>> LoadSalesReturnReasonsAsync() => DataLoaderHelper.LoadAsync(() => SalesReturnReasonService.GetAllAsync(), "銷貨退貨原因", NotificationService, GetType());
+    private Task<List<SalesReturnReason>> LoadSalesReturnReasonsAsync() => DataLoaderHelper.LoadAsync(() => SalesReturnReasonService.GetAllIncludingDraftsAsync(), "銷貨退貨原因", NotificationService, GetType());
 
     /// <summary>
     /// 應用銷貨退貨原因篩選器

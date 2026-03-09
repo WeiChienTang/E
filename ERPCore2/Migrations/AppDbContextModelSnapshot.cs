@@ -989,7 +989,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("DocumentCategoryId")
+                    b.Property<int?>("DocumentCategoryId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("ExpiryDate")
@@ -2047,7 +2047,7 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int?>("ProductId")
                         .HasColumnType("int");
 
                     b.Property<string>("Remarks")
@@ -2067,7 +2067,8 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[ProductId] IS NOT NULL");
 
                     b.ToTable("InventoryStocks");
                 });
@@ -3997,7 +3998,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("ParentProductId")
+                    b.Property<int?>("ParentProductId")
                         .HasColumnType("int");
 
                     b.Property<string>("Remarks")
@@ -4490,6 +4491,9 @@ namespace ERPCore2.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("ActualUsedQty")
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -4528,6 +4532,22 @@ namespace ERPCore2.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
+                    b.Property<int?>("ReturnLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ReturnQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int?>("ReturnWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ScrapQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("ScrapReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -4550,6 +4570,10 @@ namespace ERPCore2.Migrations
                     b.HasIndex("ComponentProductId");
 
                     b.HasIndex("ProductCompositionDetailId");
+
+                    b.HasIndex("ReturnLocationId");
+
+                    b.HasIndex("ReturnWarehouseId");
 
                     b.HasIndex("WarehouseId");
 
@@ -6054,6 +6078,9 @@ namespace ERPCore2.Migrations
                     b.Property<decimal>("OrderQuantity")
                         .HasColumnType("decimal(18,3)");
 
+                    b.Property<decimal>("ProducedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
@@ -6919,7 +6946,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("WarehouseId")
+                    b.Property<int?>("WarehouseId")
                         .HasColumnType("int");
 
                     b.Property<int?>("WarehouseLocationId")
@@ -8078,7 +8105,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("WarehouseId")
+                    b.Property<int?>("WarehouseId")
                         .HasColumnType("int");
 
                     b.Property<string>("Zone")
@@ -8089,7 +8116,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseId", "Code")
                         .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
+                        .HasFilter("[WarehouseId] IS NOT NULL AND [Code] IS NOT NULL");
 
                     b.ToTable("WarehouseLocations");
                 });
@@ -8151,16 +8178,16 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("VehicleId")
+                    b.Property<int?>("VehicleId")
                         .HasColumnType("int");
 
-                    b.Property<int>("WarehouseId")
+                    b.Property<int?>("WarehouseId")
                         .HasColumnType("int");
 
                     b.Property<int?>("WarehouseLocationId")
                         .HasColumnType("int");
 
-                    b.Property<int>("WasteTypeId")
+                    b.Property<int?>("WasteTypeId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -8395,8 +8422,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.DocumentCategory", "DocumentCategory")
                         .WithMany("Documents")
                         .HasForeignKey("DocumentCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("DocumentCategory");
                 });
@@ -8553,8 +8579,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Product", "Product")
                         .WithMany("InventoryStocks")
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Product");
                 });
@@ -8886,8 +8911,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Product", "ParentProduct")
                         .WithMany("ProductCompositions")
                         .HasForeignKey("ParentProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CompositionCategory");
 
@@ -9062,6 +9086,14 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "ReturnWarehouseLocation")
+                        .WithMany()
+                        .HasForeignKey("ReturnLocationId");
+
+                    b.HasOne("ERPCore2.Data.Entities.Warehouse", "ReturnWarehouse")
+                        .WithMany()
+                        .HasForeignKey("ReturnWarehouseId");
+
                     b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
                         .WithMany()
                         .HasForeignKey("WarehouseId")
@@ -9072,6 +9104,10 @@ namespace ERPCore2.Migrations
                     b.Navigation("ProductCompositionDetail");
 
                     b.Navigation("ProductionScheduleItem");
+
+                    b.Navigation("ReturnWarehouse");
+
+                    b.Navigation("ReturnWarehouseLocation");
 
                     b.Navigation("Warehouse");
                 });
@@ -9770,8 +9806,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
                         .WithMany()
                         .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "WarehouseLocation")
                         .WithMany()
@@ -9929,8 +9964,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
                         .WithMany("WarehouseLocations")
                         .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Warehouse");
                 });
@@ -9945,14 +9979,11 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Vehicle", "Vehicle")
                         .WithMany()
                         .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
                         .WithMany()
-                        .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("WarehouseId");
 
                     b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "WarehouseLocation")
                         .WithMany()
@@ -9961,8 +9992,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.WasteType", "WasteType")
                         .WithMany("WasteRecords")
                         .HasForeignKey("WasteTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Customer");
 

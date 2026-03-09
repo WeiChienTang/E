@@ -14,10 +14,9 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "清單名稱")]
         public string? Name { get; set; }
 
-        [Required(ErrorMessage = "成品為必填")]
         [Display(Name = "成品")]
         [ForeignKey(nameof(ParentProduct))]
-        public int ParentProductId { get; set; }
+        public int? ParentProductId { get; set; }
 
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]
@@ -40,7 +39,7 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 成品（父商品）
         /// </summary>
-        public Product ParentProduct { get; set; } = null!;
+        public Product? ParentProduct { get; set; }
 
         /// <summary>
         /// 客戶

@@ -14,7 +14,7 @@ namespace ERPCore2.Data.Entities
         public string Title { get; set; } = string.Empty;
 
         [Display(Name = "檔案分類")]
-        public int DocumentCategoryId { get; set; }
+        public int? DocumentCategoryId { get; set; }
         public DocumentCategory? DocumentCategory { get; set; }
 
         [MaxLength(200, ErrorMessage = "發文機關不可超過200個字元")]

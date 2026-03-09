@@ -77,7 +77,7 @@ namespace ERPCore2.FieldConfiguration
                                 Value = w.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
-                                model, query, nameof(StockTaking.WarehouseId), st => st.WarehouseId)
+                                model, query, nameof(StockTaking.WarehouseId), st => st.WarehouseId ?? 0)
                         }
                     },
                     {

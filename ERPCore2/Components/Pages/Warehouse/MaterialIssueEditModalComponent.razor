@@ -33,6 +33,8 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           DataLoader="@LoadMaterialIssueData"
                           SaveHandler="@SaveMaterialIssueWrapper"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.MaterialIssue"]]"
                           SaveSuccessMessage="@(MaterialIssueId.HasValue ? L["Message.UpdateSuccess", L["Entity.MaterialIssue"]].ToString() : L["Message.CreateSuccess", L["Entity.MaterialIssue"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.MaterialIssue"]]"
                           RequiredPermission="@PermissionRegistry.MaterialIssue.Read"
@@ -561,9 +563,33 @@
                 return false;
             }
 
-            // CustomValidator 在使用 SaveHandler 時不會被 GenericEditModalComponent 自動呼叫，需手動執行
-            if (!await ValidateMaterialIssueDetailsAsync(materialIssue))
-                return false;
+            if (!materialIssue.IsDraft)
+            {
+                // 草稿模式跳過明細驗證；非草稿才執行，錯誤依情境路由
+                bool isDraftEligible = editModalComponent?.ShowDraftButton == true &&
+                                       (!MaterialIssueId.HasValue || editModalComponent?.WasOriginallyDraft == true);
+
+                var validationErrors = new List<string>();
+
+                if (!materialIssueDetails.Any())
+                    validationErrors.Add("請至少新增一筆領料明細");
+                else
+                {
+                    var invalidDetails = materialIssueDetails.Where(d =>
+                        d.ProductId <= 0 || d.WarehouseId <= 0 || d.IssueQuantity <= 0).ToList();
+                    if (invalidDetails.Any())
+                        validationErrors.Add("存在無效的明細資料，請檢查商品、倉庫和數量是否都已填寫");
+                }
+
+                if (validationErrors.Any())
+                {
+                    if (isDraftEligible)
+                        editModalComponent!.PendingSaveError = string.Join("; ", validationErrors);
+                    else
+                        await NotificationService.ShowErrorAsync(string.Join("；", validationErrors));
+                    return false;
+                }
+            }
 
             // 設定明細
             materialIssue.MaterialIssueDetails = materialIssueDetails;

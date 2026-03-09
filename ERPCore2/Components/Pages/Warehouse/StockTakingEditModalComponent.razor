@@ -35,6 +35,8 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           DataLoader="@LoadStockTakingData"
                           SaveHandler="@SaveStockTakingWrapper"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.StockTaking"]]"
                           SaveSuccessMessage="@(StockTakingId.HasValue ? L["Message.UpdateSuccess", L["Entity.StockTaking"]].ToString() : L["Message.CreateSuccess", L["Entity.StockTaking"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.StockTaking"]]"
                           RequiredPermission="@PermissionRegistry.StockTaking.Read"
@@ -656,7 +658,12 @@
 
             if (!result.IsSuccess)
             {
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存盤點單失敗");
+                bool isDraftEligible = editModalComponent?.ShowDraftButton == true &&
+                                       (!StockTakingId.HasValue || editModalComponent?.WasOriginallyDraft == true);
+                if (isDraftEligible)
+                    editModalComponent!.PendingSaveError = result.ErrorMessage ?? "儲存盤點單失敗";
+                else
+                    await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存盤點單失敗");
                 return false;
             }
 

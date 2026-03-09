@@ -132,6 +132,12 @@
 .on-board.board-item-card  { font-size: 1rem; }
 .in-sidebar.board-item-card { font-size: 0.95rem; }
 
+/* 日內拖曳中的卡片（半透明淡化） */
+.board-item-card.sort-dragging {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
 /* Dark mode */
 [data-bs-theme=dark] .board-item-card {
     background: #1c2128;

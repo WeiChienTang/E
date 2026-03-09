@@ -22,10 +22,9 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "盤點日期")]
         public DateTime TakingDate { get; set; } = DateTime.Now;
 
-        [Required(ErrorMessage = "倉庫為必填")]
         [Display(Name = "倉庫")]
         [ForeignKey(nameof(Warehouse))]
-        public int WarehouseId { get; set; }
+        public int? WarehouseId { get; set; }
 
         [Display(Name = "倉庫位置")]
         [ForeignKey(nameof(WarehouseLocation))]
@@ -85,7 +84,7 @@ namespace ERPCore2.Data.Entities
         public decimal CompletionRate => TotalItems > 0 ? (decimal)CompletedItems / TotalItems * 100 : 0;
 
         // Navigation Properties
-        public Warehouse Warehouse { get; set; } = null!;
+        public Warehouse? Warehouse { get; set; }
         public WarehouseLocation? WarehouseLocation { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public ICollection<StockTakingDetail> StockTakingDetails { get; set; } = new List<StockTakingDetail>();

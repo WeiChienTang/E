@@ -22,6 +22,7 @@
                         RequiredModule="ProductionManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
+                        ShowDraftTab="true"
                         DebugPageName="CompositionCategoryIndex"
                         @ref="indexComponent"/>
 
@@ -85,7 +86,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("生產管理", "物料清單類型", "#", NotificationService, GetType());
 
     // 載入物料清單類型資料
-    private Task<List<CompositionCategory>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => CompositionCategoryService.GetAllAsync(), "物料清單類型", NotificationService, GetType());
+    private Task<List<CompositionCategory>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => CompositionCategoryService.GetAllIncludingDraftsAsync(), "物料清單類型", NotificationService, GetType());
 
     private IQueryable<CompositionCategory> ApplyCompositionCategoryFilters(SearchFilterModel searchModel, IQueryable<CompositionCategory> query)
     {

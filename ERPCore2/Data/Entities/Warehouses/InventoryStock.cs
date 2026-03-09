@@ -63,13 +63,12 @@ namespace ERPCore2.Data.Entities
             .Max(d => d.LastTransactionDate);
         
         // Foreign Keys
-        [Required(ErrorMessage = "商品為必填")]
         [Display(Name = "商品")]
         [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
-        
+        public int? ProductId { get; set; }
+
         // Navigation Properties
-        public Product Product { get; set; } = null!;
+        public Product? Product { get; set; }
         public ICollection<InventoryStockDetail> InventoryStockDetails { get; set; } = new List<InventoryStockDetail>();
         public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
         public ICollection<InventoryReservation> InventoryReservations { get; set; } = new List<InventoryReservation>();

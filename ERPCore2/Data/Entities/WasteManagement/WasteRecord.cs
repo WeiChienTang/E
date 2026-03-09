@@ -54,28 +54,25 @@ namespace ERPCore2.Data.Entities
 
         // ===== 外鍵 =====
 
-        [Required(ErrorMessage = "車輛為必填")]
         [Display(Name = "車輛")]
         [ForeignKey(nameof(Vehicle))]
-        public int VehicleId { get; set; }
-        public Vehicle Vehicle { get; set; } = null!;
+        public int? VehicleId { get; set; }
+        public Vehicle? Vehicle { get; set; }
 
-        [Required(ErrorMessage = "磅秤類型為必填")]
         [Display(Name = "磅秤類型")]
         [ForeignKey(nameof(WasteType))]
-        public int WasteTypeId { get; set; }
-        public WasteType WasteType { get; set; } = null!;
+        public int? WasteTypeId { get; set; }
+        public WasteType? WasteType { get; set; }
 
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]
         public int? CustomerId { get; set; }
         public Customer? Customer { get; set; }
 
-        [Required(ErrorMessage = "入庫倉庫為必填")]
         [Display(Name = "入庫倉庫")]
         [ForeignKey(nameof(Warehouse))]
-        public int WarehouseId { get; set; }
-        public Warehouse Warehouse { get; set; } = null!;
+        public int? WarehouseId { get; set; }
+        public Warehouse? Warehouse { get; set; }
 
         [Display(Name = "入庫庫位")]
         [ForeignKey(nameof(WarehouseLocation))]

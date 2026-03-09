@@ -85,5 +85,11 @@ namespace ERPCore2.Services
         /// <param name="context">外部 DbContext（用於 Transaction 內）</param>
         /// <returns>執行結果</returns>
         Task<ServiceResult> RecalculateDeliveredQuantityAsync(int salesOrderDetailId, Data.Context.AppDbContext context);
+
+        /// <summary>
+        /// 取得生產看板 Sidebar 所需的所有訂單明細（一次查詢）
+        /// 排除已駁回訂單；已審核/待審核訂單皆回傳，由 IsApproved 欄位區分
+        /// </summary>
+        Task<List<SalesOrderDetail>> GetForProductionBoardAsync();
     }
 }

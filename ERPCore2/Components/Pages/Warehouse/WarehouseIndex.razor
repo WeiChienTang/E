@@ -21,6 +21,7 @@
                         RequiredModule="Warehouse"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
+                        ShowDraftTab="true"
                         DebugPageName="WarehouseIndex"
                         @ref="indexComponent" />
 
@@ -80,7 +81,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("庫存管理", "倉庫維護", null, NotificationService, GetType());
 
     // 載入倉庫資料
-    private Task<List<Warehouse>> LoadWarehousesAsync() => DataLoaderHelper.LoadAsync(() => WarehouseService.GetAllAsync(), "倉庫", NotificationService, GetType());
+    private Task<List<Warehouse>> LoadWarehousesAsync() => DataLoaderHelper.LoadAsync(() => WarehouseService.GetAllIncludingDraftsAsync(), "倉庫", NotificationService, GetType());
 
     // 自定義篩選邏輯
     private IQueryable<Warehouse> ApplyWarehouseFilters(SearchFilterModel searchModel, IQueryable<Warehouse> query)

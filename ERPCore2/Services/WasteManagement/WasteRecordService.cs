@@ -64,7 +64,7 @@ namespace ERPCore2.Services
                 return await context.WasteRecords
                     .Include(wr => wr.Vehicle)
                     .Include(wr => wr.WasteType)
-                        .ThenInclude(wt => wt.Product)
+                        .ThenInclude(wt => wt!.Product)
                     .Include(wr => wr.Customer)
                     .Include(wr => wr.Warehouse)
                     .Include(wr => wr.WarehouseLocation)
@@ -94,9 +94,9 @@ namespace ERPCore2.Services
                     .Include(wr => wr.Warehouse)
                     .Include(wr => wr.WarehouseLocation)
                     .Where(wr => (wr.Code != null && wr.Code.ToLower().Contains(lowerSearchTerm)) ||
-                                 wr.Vehicle.LicensePlate.ToLower().Contains(lowerSearchTerm) ||
-                                 wr.WasteType.Name.ToLower().Contains(lowerSearchTerm) ||
-                                 wr.Warehouse.Name.ToLower().Contains(lowerSearchTerm) ||
+                                 (wr.Vehicle != null && wr.Vehicle.LicensePlate.ToLower().Contains(lowerSearchTerm)) ||
+                                 (wr.WasteType != null && wr.WasteType.Name.ToLower().Contains(lowerSearchTerm)) ||
+                                 (wr.Warehouse != null && wr.Warehouse.Name.ToLower().Contains(lowerSearchTerm)) ||
                                  (wr.Customer != null && wr.Customer.CompanyName != null &&
                                   wr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)))
                     .OrderByDescending(wr => wr.RecordDate)
@@ -116,13 +116,13 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (entity.VehicleId <= 0)
+                if (!entity.VehicleId.HasValue || entity.VehicleId.Value <= 0)
                     errors.Add("車輛為必填欄位");
 
-                if (entity.WasteTypeId <= 0)
+                if (!entity.WasteTypeId.HasValue || entity.WasteTypeId.Value <= 0)
                     errors.Add("磅秤類型為必填欄位");
 
-                if (entity.WarehouseId <= 0)
+                if (!entity.WarehouseId.HasValue || entity.WarehouseId.Value <= 0)
                     errors.Add("入庫倉庫為必填欄位");
 
                 if (!entity.TotalWeight.HasValue || entity.TotalWeight.Value <= 0)
@@ -131,7 +131,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 // 若同時選擇了車輛與客戶，驗證車輛的所屬客戶是否相符
-                if (entity.VehicleId > 0 && entity.CustomerId.HasValue)
+                if (entity.VehicleId.HasValue && entity.VehicleId.Value > 0 && entity.CustomerId.HasValue)
                 {
                     var vehicle = await context.Vehicles
                         .AsNoTracking()
@@ -143,7 +143,7 @@ namespace ERPCore2.Services
                 }
 
                 // 若同時選擇了倉庫與庫位，驗證庫位是否屬於所選倉庫
-                if (entity.WarehouseId > 0 && entity.WarehouseLocationId.HasValue)
+                if (entity.WarehouseId.HasValue && entity.WarehouseId.Value > 0 && entity.WarehouseLocationId.HasValue)
                 {
                     var location = await context.WarehouseLocations
                         .AsNoTracking()
@@ -285,7 +285,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的磅秤紀錄");
 
                 // 若磅秤類型無關聯商品，跳過入庫
-                if (!wasteRecord.WasteType.ProductId.HasValue)
+                if (wasteRecord.WasteType == null || !wasteRecord.WasteType.ProductId.HasValue)
                     return ServiceResult.Success();
 
                 var quantity = wasteRecord.TotalWeight ?? 0;
@@ -294,7 +294,7 @@ namespace ERPCore2.Services
 
                 return await _inventoryStockService.AddStockAsync(
                     wasteRecord.WasteType.ProductId.Value,
-                    wasteRecord.WarehouseId,
+                    wasteRecord.WarehouseId!.Value,
                     quantity,
                     InventoryTransactionTypeEnum.WasteReceiving,
                     wasteRecord.Code ?? string.Empty,
@@ -354,7 +354,7 @@ namespace ERPCore2.Services
             if (wasteRecord == null)
                 return ServiceResult.Failure("找不到指定的磅秤紀錄");
 
-            if (!wasteRecord.WasteType.ProductId.HasValue)
+            if (wasteRecord.WasteType == null || !wasteRecord.WasteType.ProductId.HasValue)
                 return ServiceResult.Success();
 
             // 查詢此磅秤紀錄的所有庫存異動明細（含 Delete 操作，用於計算正確淨值）

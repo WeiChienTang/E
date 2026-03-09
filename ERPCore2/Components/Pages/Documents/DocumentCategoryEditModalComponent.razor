@@ -19,6 +19,8 @@
                           FormSections="@formSections"
                           DataLoader="@LoadData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.DocumentCategory"]]"
                           SaveSuccessMessage="@(DocumentCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.DocumentCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.DocumentCategory"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.DocumentCategory"]]"
                           RequiredPermission="@PermissionRegistry.Document.Manage"

@@ -35,6 +35,8 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadCompositionData"
                           SaveHandler="@SaveCompositionWithDetails"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.ProductComposition"]]"
                           SaveSuccessMessage="@(CompositionId.HasValue ? L["Message.UpdateSuccess", L["Entity.ProductComposition"]].ToString() : L["Message.CreateSuccess", L["Entity.ProductComposition"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductComposition"]]"
                           RequiredPermission="@PermissionRegistry.ProductComposition.Read"
@@ -463,28 +465,31 @@ ShowPrintButton="true"
                 return false;
             }
             
-            // ========== 第一步：先驗證明細資料（包含 UI 驗證） ==========
-            if (detailManager != null)
+            if (!composition.IsDraft)
             {
-                var isValid = await detailManager.ValidateAsync();
-                if (!isValid)
+                // ========== 第一步：先驗證明細資料（包含 UI 驗證） ==========
+                if (detailManager != null)
                 {
-                    return false;
-                }
-            }
-            
-            // ========== 第二步：進階驗證 - 檢查循環參考（成品不能包含自己） ==========
-            if (detailManager != null)
-            {
-                var validDetails = detailManager.GetNonEmptyItems();
-                
-                // 檢查是否有組件與成品相同（循環參考）
-                foreach (var detail in validDetails)
-                {
-                    if (detail.ComponentProductId == composition.ParentProductId)
+                    var isValid = await detailManager.ValidateAsync();
+                    if (!isValid)
                     {
-                        await NotificationService.ShowErrorAsync("明細驗證失敗：組件不能是成品本身（會造成循環參考）");
                         return false;
+                    }
+                }
+
+                // ========== 第二步：進階驗證 - 檢查循環參考（成品不能包含自己） ==========
+                if (detailManager != null)
+                {
+                    var validDetails = detailManager.GetNonEmptyItems();
+
+                    // 檢查是否有組件與成品相同（循環參考）
+                    foreach (var detail in validDetails)
+                    {
+                        if (detail.ComponentProductId == composition.ParentProductId)
+                        {
+                            await NotificationService.ShowErrorAsync("明細驗證失敗：組件不能是成品本身（會造成循環參考）");
+                            return false;
+                        }
                     }
                 }
             }

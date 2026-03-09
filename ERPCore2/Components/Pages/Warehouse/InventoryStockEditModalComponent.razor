@@ -25,6 +25,8 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           DataLoader="@LoadInventoryStockData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.InventoryStock"]]"
                           CustomValidator="@ValidateBeforeSave"
                           SaveSuccessMessage="@(InventoryStockId.HasValue ? L["Message.UpdateSuccess", L["Entity.InventoryStock"]].ToString() : L["Message.CreateSuccess", L["Entity.InventoryStock"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.InventoryStock"]]"
@@ -90,6 +92,10 @@
     {
         try
         {
+            // 草稿模式跳過所有 UI 驗證
+            if (entity.IsDraft)
+                return true;
+
             // 檢查明細管理器是否存在
             if (inventoryStockDetailManager == null)
             {
@@ -350,8 +356,8 @@
     private string GetCurrentPurchaseUnitName()
     {
         var entity = editModalComponent?.Entity;
-        if (entity == null || entity.ProductId <= 0) return "";
-        return GetProductUnitInfo(entity.ProductId).PurchaseUnit;
+        if (entity == null || !entity.ProductId.HasValue || entity.ProductId.Value <= 0) return "";
+        return GetProductUnitInfo(entity.ProductId.Value).PurchaseUnit;
     }
 
     /// <summary>
@@ -360,8 +366,8 @@
     private string GetCurrentProductionUnitName()
     {
         var entity = editModalComponent?.Entity;
-        if (entity == null || entity.ProductId <= 0) return "";
-        var info = GetProductUnitInfo(entity.ProductId);
+        if (entity == null || !entity.ProductId.HasValue || entity.ProductId.Value <= 0) return "";
+        var info = GetProductUnitInfo(entity.ProductId.Value);
         return info.ProductionUnit == info.PurchaseUnit ? "" : info.ProductionUnit;
     }
 
@@ -371,8 +377,8 @@
     private decimal? GetCurrentConversionRate()
     {
         var entity = editModalComponent?.Entity;
-        if (entity == null || entity.ProductId <= 0) return null;
-        return GetProductUnitInfo(entity.ProductId).ConversionRate;
+        if (entity == null || !entity.ProductId.HasValue || entity.ProductId.Value <= 0) return null;
+        return GetProductUnitInfo(entity.ProductId.Value).ConversionRate;
     }
 
     /// <summary>
@@ -381,9 +387,9 @@
     private RenderFragment CreateUnitInfoContent() => __builder =>
     {
         var entity = editModalComponent?.Entity;
-        if (entity == null || entity.ProductId <= 0) return;
+        if (entity == null || !entity.ProductId.HasValue || entity.ProductId.Value <= 0) return;
 
-        var (purchaseUnit, productionUnit, conversionInfo, _) = GetProductUnitInfo(entity.ProductId);
+        var (purchaseUnit, productionUnit, conversionInfo, _) = GetProductUnitInfo(entity.ProductId.Value);
         if (string.IsNullOrEmpty(purchaseUnit)) return;
 
         var hasDifferentProductionUnit = !string.IsNullOrEmpty(conversionInfo);

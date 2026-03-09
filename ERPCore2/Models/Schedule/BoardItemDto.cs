@@ -103,5 +103,8 @@ namespace ERPCore2.Models.Schedule
 
         /// <summary>待排數量 = 訂單量 - 已排程量</summary>
         public decimal PendingQuantity => OrderQuantity - ScheduledQuantity;
+
+        /// <summary>訂單是否已審核（false = 待審核，UI 灰化且鎖定拖曳）</summary>
+        public bool IsApproved { get; set; } = true;
     }
 }

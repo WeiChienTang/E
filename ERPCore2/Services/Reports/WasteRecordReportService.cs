@@ -194,7 +194,7 @@ namespace ERPCore2.Services.Reports
                 var kw = criteria.DocumentNumberKeyword;
                 results = results.Where(r =>
                     (r.Code != null && r.Code.Contains(kw, StringComparison.OrdinalIgnoreCase)) ||
-                    r.Vehicle.LicensePlate.Contains(kw, StringComparison.OrdinalIgnoreCase)).ToList();
+                    (r.Vehicle != null && r.Vehicle.LicensePlate.Contains(kw, StringComparison.OrdinalIgnoreCase))).ToList();
             }
 
             return results.OrderBy(r => r.WasteType?.Name).ThenBy(r => r.RecordDate).ToList();
@@ -209,17 +209,17 @@ namespace ERPCore2.Services.Reports
                 results = results.Where(r => r.Status == EntityStatus.Active).ToList();
 
             if (criteria.WasteTypeIds.Any())
-                results = results.Where(r => criteria.WasteTypeIds.Contains(r.WasteTypeId)).ToList();
+                results = results.Where(r => r.WasteTypeId.HasValue && criteria.WasteTypeIds.Contains(r.WasteTypeId.Value)).ToList();
 
             if (criteria.VehicleIds.Any())
-                results = results.Where(r => criteria.VehicleIds.Contains(r.VehicleId)).ToList();
+                results = results.Where(r => r.VehicleId.HasValue && criteria.VehicleIds.Contains(r.VehicleId.Value)).ToList();
 
             if (criteria.CustomerIds.Any())
                 results = results.Where(r => r.CustomerId.HasValue &&
                     criteria.CustomerIds.Contains(r.CustomerId.Value)).ToList();
 
             if (criteria.WarehouseIds.Any())
-                results = results.Where(r => criteria.WarehouseIds.Contains(r.WarehouseId)).ToList();
+                results = results.Where(r => r.WarehouseId.HasValue && criteria.WarehouseIds.Contains(r.WarehouseId.Value)).ToList();
 
             if (criteria.StartDate.HasValue)
                 results = results.Where(r => r.RecordDate >= criteria.StartDate.Value).ToList();
@@ -232,7 +232,7 @@ namespace ERPCore2.Services.Reports
                 var kw = criteria.Keyword;
                 results = results.Where(r =>
                     (r.Code != null && r.Code.Contains(kw, StringComparison.OrdinalIgnoreCase)) ||
-                    r.Vehicle.LicensePlate.Contains(kw, StringComparison.OrdinalIgnoreCase)).ToList();
+                    (r.Vehicle != null && r.Vehicle.LicensePlate.Contains(kw, StringComparison.OrdinalIgnoreCase))).ToList();
             }
 
             return results.OrderBy(r => r.WasteType?.Name).ThenBy(r => r.RecordDate).ToList();

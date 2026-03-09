@@ -29,6 +29,7 @@
                         RequiredModule="Warehouse"
                         OnAddClick="@HandleAddClick"
                         OnRowClick="@HandleEditClick"
+                        ShowDraftTab="true"
                         DebugPageName="MaterialIssueIndex"
                         @ref="indexComponent"/>
 
@@ -116,7 +117,7 @@
         }
     }
 
-    private Task<List<MaterialIssue>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => MaterialIssueService.GetAllAsync(), "領料", NotificationService, GetType());
+    private Task<List<MaterialIssue>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => MaterialIssueService.GetAllIncludingDraftsAsync(), "領料", NotificationService, GetType());
 
     // ===== 篩選方法 =====
 

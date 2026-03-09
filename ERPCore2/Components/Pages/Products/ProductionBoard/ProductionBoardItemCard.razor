@@ -1,7 +1,7 @@
 @using ERPCore2.Models.Schedule
 @using ERPCore2.Models.Enums
 
-<div class="board-item-card @StatusCssClass @(IsOnBoard ? "on-board" : "in-sidebar")"
+<div class="board-item-card @StatusCssClass @(IsOnBoard ? "on-board" : "in-sidebar") @(IsSortDragging ? "sort-dragging" : "")"
      draggable="true"
      @onclick="HandleClick"
      @ondragstart="HandleDragStart"
@@ -60,6 +60,7 @@
 @code {
     [Parameter, EditorRequired] public BoardScheduleItemDto Item { get; set; } = default!;
     [Parameter] public bool IsOnBoard { get; set; } = true;
+    [Parameter] public bool IsSortDragging { get; set; }
     [Parameter] public EventCallback<BoardScheduleItemDto> OnDragStart { get; set; }
     [Parameter] public EventCallback OnDragEnd { get; set; }
     [Parameter] public EventCallback<BoardScheduleItemDto> OnClick { get; set; }

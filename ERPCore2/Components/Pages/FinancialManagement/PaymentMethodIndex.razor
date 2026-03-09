@@ -16,6 +16,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
+                        ShowDraftTab="true"
                         EntityName="@L["Entity.PaymentMethod"]"
                         GetEntityDisplayName="@(pm => pm.Name)"
                         RequiredPermission="@PermissionRegistry.PaymentMethod.Read"
@@ -83,7 +84,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("財務管理", "付款方式管理", null, NotificationService, GetType());
 
     // 載入付款方式資料
-    private async Task<List<PaymentMethod>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(PaymentMethodService.GetAllAsync, "付款方式", NotificationService, GetType());
+    private async Task<List<PaymentMethod>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(PaymentMethodService.GetAllIncludingDraftsAsync, "付款方式", NotificationService, GetType());
 
     private IQueryable<PaymentMethod> ApplyPaymentMethodFilters(SearchFilterModel searchModel, IQueryable<PaymentMethod> query)
     {

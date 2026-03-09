@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
+using ERPCore2.Models.Schedule;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -13,14 +14,21 @@ namespace ERPCore2.Services
     /// </summary>
     public class ProductionScheduleItemService : GenericManagementService<ProductionScheduleItem>, IProductionScheduleItemService
     {
-        public ProductionScheduleItemService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        private readonly IInventoryStockService _inventoryStockService;
+
+        public ProductionScheduleItemService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            IInventoryStockService inventoryStockService) : base(contextFactory)
         {
+            _inventoryStockService = inventoryStockService;
         }
 
         public ProductionScheduleItemService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ProductionScheduleItem>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ProductionScheduleItem>> logger,
+            IInventoryStockService inventoryStockService) : base(contextFactory, logger)
         {
+            _inventoryStockService = inventoryStockService;
         }
 
         // 覆寫 GetAllAsync 以包含相關資料
@@ -331,8 +339,9 @@ namespace ERPCore2.Services
                 if (item == null)
                     return ServiceResult.Failure("生產排程項目不存在");
 
-                if (item.ProductionItemStatus != ProductionItemStatus.Pending)
-                    return ServiceResult.Failure("只有待生產的項目可以開始生產");
+                if (item.ProductionItemStatus != ProductionItemStatus.Pending &&
+                    item.ProductionItemStatus != ProductionItemStatus.WaitingMaterial)
+                    return ServiceResult.Failure("只有待生產或等待領料的項目可以開始生產");
 
                 // 更新狀態
                 item.ProductionItemStatus = ProductionItemStatus.InProgress;
@@ -358,12 +367,14 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> CompleteProductionAsync(int itemId, decimal completedQuantity, int? warehouseId = null, int? warehouseLocationId = null)
+        public async Task<ServiceResult> CompleteProductionAsync(int itemId, decimal completedQuantity,
+            int? warehouseId = null, int? warehouseLocationId = null,
+            List<MaterialSettlementDto>? settlements = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                
+
                 var item = await context.ProductionScheduleItems
                     .FirstOrDefaultAsync(psi => psi.Id == itemId);
 
@@ -380,36 +391,140 @@ namespace ERPCore2.Services
                 if (newTotalCompleted > item.ScheduledQuantity)
                     return ServiceResult.Failure($"完成數量超過排程數量（排程: {item.ScheduledQuantity}, 已完成: {item.CompletedQuantity}, 本次: {completedQuantity}）");
 
-                // 建立完成入庫紀錄
+                // D7：若尚未設定開始時間，自動補設
+                if (item.ActualStartDate == null)
+                    item.ActualStartDate = DateTime.Now;
+
+                var effectiveWarehouseId = warehouseId ?? item.WarehouseId;
+                var effectiveLocationId = warehouseLocationId ?? item.WarehouseLocationId;
+                var isLastCompletion = newTotalCompleted >= item.ScheduledQuantity;
+
+                // 取得 BOM 組件明細，計算成品成本（D1/D6：每次完工都計算當下加權平均）
+                var schedule = await context.ProductionSchedules
+                    .FirstOrDefaultAsync(ps => ps.Id == item.ProductionScheduleId);
+                var transactionCode = schedule?.Code ?? $"PS-{item.ProductionScheduleId}";
+
+                var bomDetails = await context.ProductionScheduleDetails
+                    .Where(d => d.ProductionScheduleItemId == itemId && d.Status == EntityStatus.Active)
+                    .ToListAsync();
+
+                decimal? productionUnitCost = null;
+
+                if (bomDetails.Any())
+                {
+                    // 對每個 BOM 組件，從所有關聯領料明細計算加權平均成本
+                    foreach (var bomDetail in bomDetails)
+                    {
+                        var relatedIssues = await context.MaterialIssueDetails
+                            .Where(d => d.ProductionScheduleDetailId == bomDetail.Id && d.UnitCost.HasValue && d.Status == EntityStatus.Active)
+                            .ToListAsync();
+
+                        if (relatedIssues.Any())
+                        {
+                            var totalQty = relatedIssues.Sum(d => d.IssueQuantity);
+                            var totalCost = relatedIssues.Sum(d => d.IssueQuantity * d.UnitCost!.Value);
+                            bomDetail.ActualUnitCost = totalQty > 0 ? totalCost / totalQty : null;
+                        }
+                    }
+
+                    // 計算成品單位成本（物料總成本 / 排程數量）
+                    var totalMaterialCost = bomDetails.Sum(d => d.RequiredQuantity * (d.ActualUnitCost ?? 0));
+                    productionUnitCost = item.ScheduledQuantity > 0
+                        ? totalMaterialCost / item.ScheduledQuantity
+                        : null;
+                }
+
+                // 寫入成品庫存
+                if (effectiveWarehouseId.HasValue)
+                {
+                    var stockResult = await _inventoryStockService.AddStockAsync(
+                        item.ProductId,
+                        effectiveWarehouseId.Value,
+                        completedQuantity,
+                        InventoryTransactionTypeEnum.ProductionCompletion,
+                        transactionCode,
+                        unitCost: productionUnitCost,
+                        locationId: effectiveLocationId,
+                        remarks: $"生產完工入庫 排程:{transactionCode}",
+                        sourceDocumentType: InventorySourceDocumentTypes.ProductionCompletion,
+                        sourceDocumentId: itemId);
+
+                    if (!stockResult.IsSuccess)
+                        return ServiceResult.Failure($"寫入成品庫存失敗：{stockResult.ErrorMessage}");
+                }
+
+                // 建立完工紀錄
                 var completion = new ProductionScheduleCompletion
                 {
                     ProductionScheduleItemId = itemId,
                     CompletedQuantity = completedQuantity,
                     CompletionDate = DateTime.Now,
-                    WarehouseId = warehouseId ?? item.WarehouseId,
-                    WarehouseLocationId = warehouseLocationId ?? item.WarehouseLocationId,
+                    ActualUnitCost = productionUnitCost,
+                    WarehouseId = effectiveWarehouseId,
+                    WarehouseLocationId = effectiveLocationId,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now
                 };
-
                 context.ProductionScheduleCompletions.Add(completion);
 
                 // 更新項目的已完成數量
                 item.CompletedQuantity = newTotalCompleted;
                 item.UpdatedAt = DateTime.Now;
 
-                // 檢查是否全部完成
-                if (item.CompletedQuantity >= item.ScheduledQuantity)
+                // 最後一次完工：自動結案（D7/§3.6）
+                if (isLastCompletion)
                 {
                     item.ProductionItemStatus = ProductionItemStatus.Completed;
                     item.ActualEndDate = DateTime.Now;
+                    item.IsClosed = true;
+
+                    // 更新 SalesOrderDetail.ProducedQuantity（§4.10）
+                    if (item.SalesOrderDetailId.HasValue)
+                    {
+                        var salesDetail = await context.SalesOrderDetails
+                            .FirstOrDefaultAsync(d => d.Id == item.SalesOrderDetailId.Value);
+                        if (salesDetail != null)
+                            salesDetail.ProducedQuantity += newTotalCompleted;
+                    }
+
+                    // 用料結算：退料入庫（§3.5，settlements != null 時執行）
+                    if (settlements != null && bomDetails.Any())
+                    {
+                        foreach (var settlement in settlements)
+                        {
+                            var bomDetail = bomDetails.FirstOrDefault(d => d.Id == settlement.ProductionScheduleDetailId);
+                            if (bomDetail == null) continue;
+
+                            // 寫回結算欄位
+                            bomDetail.ActualUsedQty = settlement.ActualUsedQty;
+                            bomDetail.ReturnQty = settlement.ReturnQty;
+                            bomDetail.ReturnWarehouseId = settlement.ReturnWarehouseId;
+                            bomDetail.ReturnLocationId = settlement.ReturnLocationId;
+                            bomDetail.ScrapQty = settlement.ScrapQty;
+                            bomDetail.ScrapReason = settlement.ScrapReason;
+
+                            // 退料入庫
+                            if (settlement.ReturnQty > 0 && settlement.ReturnWarehouseId.HasValue)
+                            {
+                                var returnResult = await _inventoryStockService.AddStockAsync(
+                                    bomDetail.ComponentProductId,
+                                    settlement.ReturnWarehouseId.Value,
+                                    settlement.ReturnQty,
+                                    InventoryTransactionTypeEnum.MaterialReturn,
+                                    transactionCode,
+                                    locationId: settlement.ReturnLocationId,
+                                    remarks: $"生產退料 排程:{transactionCode}",
+                                    sourceDocumentType: InventorySourceDocumentTypes.ProductionCompletion,
+                                    sourceDocumentId: itemId);
+
+                                if (!returnResult.IsSuccess)
+                                    return ServiceResult.Failure($"退料入庫失敗：{returnResult.ErrorMessage}");
+                            }
+                        }
+                    }
                 }
 
-                // TODO: 增加成品庫存、扣除 InProductionStock
-                // 這部分需要在 Phase 3 實作，需要與 InventoryStockService 整合
-
                 await context.SaveChangesAsync();
-
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -657,6 +772,55 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReturnToSidebarAsync), GetType(), _logger, new { itemId });
                 return ServiceResult<bool>.Failure("退回待排清單時發生錯誤");
+            }
+        }
+
+        public async Task<ServiceResult> UpdatePrioritiesAsync(List<(int Id, int Priority)> updates)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var ids = updates.Select(u => u.Id).ToList();
+                var items = await context.ProductionScheduleItems
+                    .Where(i => ids.Contains(i.Id))
+                    .ToListAsync();
+
+                foreach (var item in items)
+                {
+                    var update = updates.FirstOrDefault(u => u.Id == item.Id);
+                    item.Priority = update.Priority;
+                    item.UpdatedAt = DateTime.Now;
+                }
+
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdatePrioritiesAsync), GetType(), _logger, new { Count = updates.Count });
+                return ServiceResult.Failure("更新優先順序失敗");
+            }
+        }
+
+        public async Task<(int? WarehouseId, int? LocationId)> GetLastCompletionWarehouseAsync(int productId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var lastCompletion = await context.ProductionScheduleCompletions
+                    .Include(c => c.ProductionScheduleItem)
+                    .Where(c =>
+                        c.ProductionScheduleItem.ProductId == productId &&
+                        c.WarehouseId.HasValue &&
+                        c.Status == EntityStatus.Active)
+                    .OrderByDescending(c => c.CompletionDate)
+                    .FirstOrDefaultAsync();
+
+                return (lastCompletion?.WarehouseId, lastCompletion?.WarehouseLocationId);
+            }
+            catch
+            {
+                return (null, null);
             }
         }
 

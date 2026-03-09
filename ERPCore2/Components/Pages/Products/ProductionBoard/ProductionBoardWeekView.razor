@@ -39,7 +39,7 @@
             <button type="button" class="btn @(statusFilter == ProductionItemStatus.Completed ? "btn-success" : "btn-outline-secondary")"
                     @onclick="() => statusFilter = ProductionItemStatus.Completed">已完成</button>
         </div>
-
+    
         @* 9.2 批次完工 *@
         <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
             IconClass="bi bi-check2-all" Text="批次完工" CssClass="ms-2"
@@ -108,10 +108,12 @@
                     Date="@day"
                     Items="@GetItemsForDay(day)"
                     IsToday="@(day.Date == DateTime.Today)"
+                    DraggingBoardItem="@draggingBoardItem"
                     OnItemDragStart="@HandleBoardItemDragStart"
                     OnItemDragEnd="@HandleDragEnd"
                     OnItemClick="@HandleCardClick"
-                    OnDrop="@(date => HandleDropOnDay(date))" />
+                    OnDrop="@(date => HandleDropOnDay(date))"
+                    OnIntraDayReorder="@(args => HandleIntraDayReorder(args, day))" />
             }
         </div>
     </div>
@@ -218,11 +220,11 @@
         {
             var boardTask        = ScheduleItemService.GetByDateRangeAsync(WeekStart, WeekEnd);
             var scheduledMapTask = ScheduleItemService.GetScheduledQuantityMapAsync();
-            var salesOrdersTask  = SalesOrderService.GetAllAsync();
-            await Task.WhenAll(boardTask, scheduledMapTask, salesOrdersTask);
+            var pendingDetailsTask = SalesOrderDetailService.GetForProductionBoardAsync();
+            await Task.WhenAll(boardTask, scheduledMapTask, pendingDetailsTask);
 
             boardItems   = MapToBoardDtos(boardTask.Result);
-            pendingItems = await BuildPendingItemsAsync(salesOrdersTask.Result, scheduledMapTask.Result);
+            pendingItems = BuildPendingItems(pendingDetailsTask.Result, scheduledMapTask.Result);
         }
         catch (Exception ex)
         {
@@ -236,38 +238,36 @@
         }
     }
 
-    /// <summary>從銷貨訂單明細建立待排清單（PendingQuantity > 0 才列入）</summary>
-    private async Task<List<BoardPendingItemDto>> BuildPendingItemsAsync(
-        List<SalesOrder> orders,
+    /// <summary>從預載的訂單明細建立待排清單（已過濾已駁回，已消除 N+1）</summary>
+    private List<BoardPendingItemDto> BuildPendingItems(
+        List<SalesOrderDetail> details,
         Dictionary<int, decimal> scheduledMap)
     {
         var result = new List<BoardPendingItemDto>();
-        foreach (var order in orders)
+        foreach (var detail in details)
         {
-            var details = await SalesOrderDetailService.GetBySalesOrderIdWithIncludesAsync(order.Id);
-            foreach (var detail in details)
-            {
-                var scheduled = scheduledMap.TryGetValue(detail.Id, out var sq) ? sq : 0m;
-                var pending   = detail.OrderQuantity - scheduled;
-                if (pending <= 0) continue;
+            var order = detail.SalesOrder;
+            if (order == null) continue;
 
-                result.Add(new BoardPendingItemDto
-                {
-                    SalesOrderDetailId   = detail.Id,
-                    SalesOrderId         = order.Id,
-                    SalesOrderCode       = order.Code ?? string.Empty,
-                    OrderDate            = order.OrderDate,
-                    ExpectedDeliveryDate = order.ExpectedDeliveryDate,
-                    CustomerName         = order.Customer?.CompanyName
-                                          ?? detail.SalesOrder?.Customer?.CompanyName
-                                          ?? string.Empty,
-                    ProductId   = detail.ProductId,
-                    ProductCode = detail.Product?.Code ?? string.Empty,
-                    ProductName = detail.Product?.Name ?? string.Empty,
-                    OrderQuantity     = detail.OrderQuantity,
-                    ScheduledQuantity = scheduled
-                });
-            }
+            var scheduled = scheduledMap.TryGetValue(detail.Id, out var sq) ? sq : 0m;
+            var pending   = detail.OrderQuantity - scheduled;
+            if (pending <= 0) continue;
+
+            result.Add(new BoardPendingItemDto
+            {
+                SalesOrderDetailId   = detail.Id,
+                SalesOrderId         = order.Id,
+                SalesOrderCode       = order.Code ?? string.Empty,
+                OrderDate            = order.OrderDate,
+                ExpectedDeliveryDate = order.ExpectedDeliveryDate,
+                CustomerName         = order.Customer?.CompanyName ?? string.Empty,
+                ProductId            = detail.ProductId,
+                ProductCode          = detail.Product?.Code ?? string.Empty,
+                ProductName          = detail.Product?.Name ?? string.Empty,
+                OrderQuantity        = detail.OrderQuantity,
+                ScheduledQuantity    = scheduled,
+                IsApproved           = order.IsApproved
+            });
         }
         return result
             .OrderBy(d => d.ExpectedDeliveryDate ?? DateTime.MaxValue)
@@ -460,18 +460,10 @@
         // 展開 BOM，建立 ProductionScheduleDetail
         await ExpandBomAsync(item.Id, pending.ProductId, pending.PendingQuantity);
 
-        // 若無 BOM 需求（無需領料），直接升格為 InProgress
+        // 檢查每項 BOM 組件的可用庫存，不足時顯示警告（不阻擋）
         var bomDetails = await ScheduleDetailService.GetByScheduleItemIdAsync(item.Id);
-        if (!bomDetails.Any(d => d.RequiredQuantity > 0))
-        {
-            item.ProductionItemStatus = ProductionItemStatus.InProgress;
-            await ScheduleItemService.UpdateAsync(item);
-        }
-        else
-        {
-            // 檢查每項 BOM 組件的可用庫存，不足時顯示警告（不阻擋）
+        if (bomDetails.Any(d => d.RequiredQuantity > 0))
             await CheckBomStockWarningAsync(bomDetails);
-        }
 
         return (batchResult.Data!.Id, item.Id);
     }
@@ -608,6 +600,54 @@
 
         if (upgraded)
             await LoadDataAsync();
+    }
+
+    // ── 日內排序 ──
+
+    private async Task HandleIntraDayReorder((BoardScheduleItemDto Dragged, int TargetSlot) args, DateTime day)
+    {
+        var dragged = args.Dragged;
+        var targetSlot = args.TargetSlot;
+
+        // 取得該天所有卡片（依目前優先序排序，與 DayColumn 內相同邏輯）
+        var dayItems = boardItems
+            .Where(i => i.PlannedStartDate?.Date == day.Date)
+            .OrderBy(i => i.Priority)
+            .ThenBy(i => i.ExpectedDeliveryDate)
+            .ToList();
+
+        // 從清單移除被拖曳的項目
+        dayItems.RemoveAll(i => i.Id == dragged.Id);
+
+        // 插入到目標位置（clamp 防止越界）
+        var insertAt = Math.Clamp(targetSlot, 0, dayItems.Count);
+        dayItems.Insert(insertAt, dragged);
+
+        // 指派新 Priority（步距 10，方便未來插入）
+        var updates = dayItems
+            .Select((item, idx) => (item.Id, Priority: (idx + 1) * 10))
+            .ToList();
+
+        // 即時更新本地資料（不等 DB，讓 UI 立即反映）
+        foreach (var (id, priority) in updates)
+        {
+            var local = boardItems.FirstOrDefault(i => i.Id == id);
+            if (local != null) local.Priority = priority;
+        }
+        draggingBoardItem = null;
+        StateHasChanged();
+
+        // 持久化到 DB
+        try
+        {
+            var result = await ScheduleItemService.UpdatePrioritiesAsync(updates);
+            if (!result.IsSuccess)
+                await NotificationService.ShowWarningAsync($"排序儲存失敗：{result.ErrorMessage}");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowWarningAsync($"排序儲存失敗：{ex.Message}");
+        }
     }
 
     // ── 輔助 ──

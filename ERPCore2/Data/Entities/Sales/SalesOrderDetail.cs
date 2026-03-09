@@ -97,6 +97,13 @@ namespace ERPCore2.Data.Entities
         [NotMapped]
         public decimal PendingScheduleQuantity => OrderQuantity - ScheduledQuantity;
 
+        /// <summary>
+        /// 已完工入庫數量 - 實際生產並入庫的數量
+        /// </summary>
+        [Display(Name = "已完工數量")]
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal ProducedQuantity { get; set; } = 0;
+
         // Navigation Properties
         public SalesOrder SalesOrder { get; set; } = null!;
         public QuotationDetail? QuotationDetail { get; set; }

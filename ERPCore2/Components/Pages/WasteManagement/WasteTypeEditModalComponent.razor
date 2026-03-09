@@ -25,6 +25,8 @@
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           DataLoader="@LoadWasteTypeData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.WasteType"]]"
                           SaveSuccessMessage="@(WasteTypeId.HasValue ? L["Message.UpdateSuccess", L["Entity.WasteType"]].ToString() : L["Message.CreateSuccess", L["Entity.WasteType"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WasteType"]]"
                           RequiredPermission="@PermissionRegistry.WasteType.Read"

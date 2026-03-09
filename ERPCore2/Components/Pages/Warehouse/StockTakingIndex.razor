@@ -31,6 +31,7 @@
                           RequiredModule="Warehouse"
                           OnAddClick="@HandleAddClick"
                           OnRowClick="@HandleEditClick"
+                          ShowDraftTab="true"
                           DebugPageName="StockTakingIndex"
                           @ref="indexComponent" />
 
@@ -126,7 +127,7 @@
     }
 
     private Task<List<StockTaking>> LoadDataAsync() =>
-        DataLoaderHelper.LoadAsync(() => StockTakingService.GetAllAsync(), "盤點單", NotificationService, GetType());
+        DataLoaderHelper.LoadAsync(() => StockTakingService.GetAllIncludingDraftsAsync(), "盤點單", NotificationService, GetType());
 
     // ===== 篩選方法 =====
 

@@ -263,7 +263,7 @@ namespace ERPCore2.Services.Reports
             if (criteria.ParentProductIds.Any())
             {
                 results = results.Where(c =>
-                    criteria.ParentProductIds.Contains(c.ParentProductId)).ToList();
+                    c.ParentProductId.HasValue && criteria.ParentProductIds.Contains(c.ParentProductId.Value)).ToList();
             }
 
             // 關鍵字搜尋

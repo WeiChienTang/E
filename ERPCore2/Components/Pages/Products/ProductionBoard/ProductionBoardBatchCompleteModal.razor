@@ -1,7 +1,9 @@
 @* 批次完工確認 Modal - 選取本週生產中項目，批次輸入入庫數量一次確認 *@
 @using ERPCore2.Models.Schedule
 @using ERPCore2.Models.Enums
+@using ERPCore2.Data.Entities
 @inject IProductionScheduleItemService ScheduleItemService
+@inject IWarehouseService WarehouseService
 @inject INotificationService NotificationService
 
 <BaseModalComponent IsVisible="@IsVisible"
@@ -31,7 +33,7 @@
         {
             <div class="mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <span class="text-muted" style="font-size:0.88rem;">
-                    勾選項目並調整入庫數量，確認後一次完工。數量為 0 的項目將略過。
+                    勾選項目並調整入庫數量與倉庫，確認後一次完工。數量為 0 或未選倉庫的項目將略過。
                 </span>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="SelectAll">全選</button>
@@ -50,6 +52,7 @@
                             <th class="text-end">已完成</th>
                             <th class="text-end">剩餘</th>
                             <th style="width:130px;" class="text-end">本次入庫</th>
+                            <th style="width:140px;">入庫倉庫</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -83,6 +86,17 @@
                                            disabled="@(!row.IsSelected)"
                                            style="max-width:110px;margin-left:auto;" />
                                 </td>
+                                <td>
+                                    <select class="form-select form-select-sm"
+                                            disabled="@(!row.IsSelected)"
+                                            @bind="row.WarehouseId">
+                                        <option value="">請選擇</option>
+                                        @foreach (var wh in warehouses)
+                                        {
+                                            <option value="@wh.Id">@wh.Name</option>
+                                        }
+                                    </select>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -104,14 +118,18 @@
     [Parameter] public EventCallback OnCompleted { get; set; }
 
     private List<BatchCompleteRow> rows = new();
+    private List<Warehouse> warehouses = new();
     private bool isProcessing;
 
-    private bool HasValidRows => rows.Any(r => r.IsSelected && r.InputQty > 0);
+    private bool HasValidRows => rows.Any(r => r.IsSelected && r.InputQty > 0 && r.WarehouseId.HasValue);
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         if (IsVisible)
+        {
+            warehouses = await WarehouseService.GetAllAsync();
             BuildRows();
+        }
     }
 
     private void BuildRows()
@@ -121,8 +139,8 @@
                      && i.ScheduledQuantity - i.CompletedQuantity > 0)
             .Select(i => new BatchCompleteRow
             {
-                Item     = i,
-                InputQty = i.ScheduledQuantity - i.CompletedQuantity,
+                Item       = i,
+                InputQty   = i.ScheduledQuantity - i.CompletedQuantity,
                 IsSelected = true
             })
             .ToList();
@@ -133,7 +151,7 @@
 
     private async Task HandleSubmit()
     {
-        var activeRows = rows.Where(r => r.IsSelected && r.InputQty > 0).ToList();
+        var activeRows = rows.Where(r => r.IsSelected && r.InputQty > 0 && r.WarehouseId.HasValue).ToList();
         if (!activeRows.Any()) return;
 
         isProcessing = true;
@@ -142,23 +160,16 @@
             int successCount = 0;
             foreach (var row in activeRows)
             {
-                var result = await ScheduleItemService.CompleteProductionAsync(row.Item.Id, row.InputQty);
+                // settlements=null → 批次完工，跳過用料結算
+                var result = await ScheduleItemService.CompleteProductionAsync(
+                    row.Item.Id, row.InputQty,
+                    row.WarehouseId, null,
+                    settlements: null);
+
                 if (!result.IsSuccess)
                 {
                     await NotificationService.ShowWarningAsync($"{row.Item.ProductName} 入庫失敗：{result.ErrorMessage}");
                     continue;
-                }
-
-                // 若已全部完成，升格為 Completed（與單張卡片邏輯一致）
-                var totalCompleted = row.Item.CompletedQuantity + row.InputQty;
-                if (totalCompleted >= row.Item.ScheduledQuantity)
-                {
-                    var schedItem = await ScheduleItemService.GetByIdAsync(row.Item.Id);
-                    if (schedItem != null)
-                    {
-                        schedItem.ProductionItemStatus = ProductionItemStatus.Completed;
-                        await ScheduleItemService.UpdateAsync(schedItem);
-                    }
                 }
                 successCount++;
             }
@@ -187,5 +198,6 @@
         public BoardScheduleItemDto Item { get; set; } = default!;
         public decimal InputQty { get; set; }
         public bool IsSelected { get; set; }
+        public int? WarehouseId { get; set; }
     }
 }

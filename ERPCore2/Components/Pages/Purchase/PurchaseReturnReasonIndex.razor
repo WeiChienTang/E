@@ -16,6 +16,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
+                          ShowDraftTab="true"
                           DataLoader="@LoadPurchaseReturnReasonsAsync"
                           FilterApplier="@ApplyPurchaseReturnReasonFilters"
                           GetEntityDisplayName="@(reason => reason.Name)"
@@ -89,7 +90,7 @@
     /// 載入進貨退出原因資料
     /// </summary>
     private Task<List<PurchaseReturnReason>> LoadPurchaseReturnReasonsAsync() =>
-        DataLoaderHelper.LoadAsync(() => PurchaseReturnReasonService.GetAllAsync(), "進貨退出原因", NotificationService, GetType());
+        DataLoaderHelper.LoadAsync(() => PurchaseReturnReasonService.GetAllIncludingDraftsAsync(), "進貨退出原因", NotificationService, GetType());
 
     /// <summary>
     /// 應用進貨退出原因篩選器

@@ -19,6 +19,8 @@
                           FormSections="@formSections"
                           DataLoader="@LoadPaymentMethodData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.PaymentMethod"]]"
                           SaveSuccessMessage="@(PaymentMethodId.HasValue ? L["Message.UpdateSuccess", L["Entity.PaymentMethod"]].ToString() : L["Message.CreateSuccess", L["Entity.PaymentMethod"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PaymentMethod"]]"
                           RequiredPermission="@PermissionRegistry.PaymentMethod.Read"

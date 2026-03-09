@@ -54,13 +54,17 @@
         {
             @foreach (var item in FilteredItems)
             {
-                <div class="sidebar-item-wrapper @(IsDraggingItemId == item.SalesOrderDetailId ? "dragging" : "")"
-                     draggable="true"
-                     @ondragstart="() => HandleDragStart(item)"
+                <div class="sidebar-item-wrapper @(IsDraggingItemId == item.SalesOrderDetailId ? "dragging" : "") @(!item.IsApproved ? "not-approved" : "")"
+                     draggable="@(item.IsApproved ? "true" : "false")"
+                     @ondragstart="() => (item.IsApproved ? HandleDragStart(item) : Task.CompletedTask)"
                      @ondragend="HandleDragEnd"
-                     title="拖曳到日期欄以排入生產排程">
+                     title="@(item.IsApproved ? "拖曳到日期欄以排入生產排程" : "待審核訂單，審核通過後才可排程")">
 
                     <div class="sidebar-card">
+                        @if (!item.IsApproved)
+                        {
+                            <div class="scard-pending-badge">待審核</div>
+                        }
                         <div class="scard-product">
                             <span class="scard-code">@item.ProductCode</span>
                             <span class="scard-name">@item.ProductName</span>

@@ -24,7 +24,7 @@
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.InventoryStock"]"
-                        GetEntityDisplayName="@(stock => $"{GetProductName(stock.ProductId)}")"
+                        GetEntityDisplayName="@(stock => $"{GetProductName(stock.ProductId ?? 0)}")"
                         RequiredPermission="@PermissionRegistry.InventoryStock.Read"
                         RequiredModule="Warehouse"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
@@ -34,6 +34,7 @@
                         StatisticsDataLoader="@LoadStatisticsDataAsync"
                         ShowImportScheduleButton="true"
                         OnImportScheduleClick="@HandleImportScheduleClick"
+                        ShowDraftTab="true"
                         DebugPageName="InventoryStockIndex"
                         @ref="indexComponent"/>
 
@@ -152,7 +153,7 @@
         }
     }
 
-    private Task<List<InventoryStock>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => InventoryStockService.GetAllAsync(), "庫存", NotificationService, GetType());
+    private Task<List<InventoryStock>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => InventoryStockService.GetAllIncludingDraftsAsync(), "庫存", NotificationService, GetType());
 
     // ===== 事件處理方法 =====
 

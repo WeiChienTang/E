@@ -21,6 +21,7 @@
                           RequiredModule="WasteManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
+                          ShowDraftTab="true"
                           DebugPageName="WasteTypeIndex"
                           @ref="indexComponent" />
 
@@ -74,7 +75,7 @@
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("磅秤管理", "磅秤類型維護", "#", NotificationService, GetType());
 
     private Task<List<WasteType>> LoadWasteTypesAsync() =>
-        DataLoaderHelper.LoadAsync(() => WasteTypeService.GetAllAsync(), "磅秤類型", NotificationService, GetType());
+        DataLoaderHelper.LoadAsync(() => WasteTypeService.GetAllIncludingDraftsAsync(), "磅秤類型", NotificationService, GetType());
 
     private IQueryable<WasteType> ApplyWasteTypeFilters(SearchFilterModel searchModel, IQueryable<WasteType> query) =>
         fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWasteTypeFilters), GetType());

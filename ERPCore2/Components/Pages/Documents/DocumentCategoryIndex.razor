@@ -16,6 +16,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
+                        ShowDraftTab="true"
                         EntityName="@L["Entity.DocumentCategory"]"
                         GetEntityDisplayName="@(c => c.Name)"
                         RequiredPermission="@PermissionRegistry.Document.Manage"
@@ -68,7 +69,7 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("檔案管理", "檔案分類", null, NotificationService, GetType());
 
-    private async Task<List<DocumentCategory>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(DocumentCategoryService.GetAllAsync, "檔案分類", NotificationService, GetType());
+    private async Task<List<DocumentCategory>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(DocumentCategoryService.GetAllIncludingDraftsAsync, "檔案分類", NotificationService, GetType());
 
     private IQueryable<DocumentCategory> ApplyFilters(SearchFilterModel searchModel, IQueryable<DocumentCategory> query)
     {

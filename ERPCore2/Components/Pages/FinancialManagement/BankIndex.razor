@@ -16,6 +16,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
+                        ShowDraftTab="true"
                         EntityName="@L["Entity.Bank"]"
                         GetEntityDisplayName="@(bank => bank.BankName)"
                         RequiredPermission="@PermissionRegistry.Bank.Read"
@@ -85,7 +86,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("財務管理", "銀行設定", null, NotificationService, GetType());
 
     // 載入銀行資料
-    private async Task<List<Bank>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(BankService.GetAllAsync, "銀行", NotificationService, GetType());
+    private async Task<List<Bank>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(BankService.GetAllIncludingDraftsAsync, "銀行", NotificationService, GetType());
 
     private IQueryable<Bank> ApplyBankFilters(SearchFilterModel searchModel, IQueryable<Bank> query)
     {

@@ -19,6 +19,8 @@
                           FormSections="@formSections"
                           DataLoader="@LoadWarehouseData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.Warehouse"]]"
                           SaveSuccessMessage="@(WarehouseId.HasValue ? L["Message.UpdateSuccess", L["Entity.Warehouse"]].ToString() : L["Message.CreateSuccess", L["Entity.Warehouse"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Warehouse"]]"
                           RequiredPermission="@PermissionRegistry.Warehouse.Read"

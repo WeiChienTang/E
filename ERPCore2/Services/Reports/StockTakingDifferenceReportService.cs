@@ -200,7 +200,7 @@ namespace ERPCore2.Services.Reports
             if (criteria.WarehouseIds.Any())
             {
                 stockTakings = stockTakings
-                    .Where(st => criteria.WarehouseIds.Contains(st.WarehouseId))
+                    .Where(st => st.WarehouseId.HasValue && criteria.WarehouseIds.Contains(st.WarehouseId.Value))
                     .ToList();
             }
 

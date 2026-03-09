@@ -41,25 +41,56 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
+                    .Where(i => !i.IsDraft)
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.ProductCategory)
+                        .ThenInclude(p => p!.ProductCategory)
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.Unit)
+                        .ThenInclude(p => p!.Unit)
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.ProductionUnit)
+                        .ThenInclude(p => p!.ProductionUnit)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.WarehouseLocation)
                     .AsQueryable()
-                    .OrderBy(i => i.Product!.Code)
+                    .OrderBy(i => i.Product == null ? "" : i.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new {
                     Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
+                    ServiceType = GetType().Name
+                });
+                return new List<InventoryStock>();
+            }
+        }
+
+        public override async Task<List<InventoryStock>> GetAllIncludingDraftsAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.InventoryStocks
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p!.ProductCategory)
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p!.Unit)
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p!.ProductionUnit)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
+                    .AsQueryable()
+                    .OrderBy(i => i.Product == null ? "" : i.Product.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllIncludingDraftsAsync), GetType(), _logger, new {
+                    Method = nameof(GetAllIncludingDraftsAsync),
+                    ServiceType = GetType().Name
                 });
                 return new List<InventoryStock>();
             }
@@ -72,9 +103,9 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.Unit)
+                        .ThenInclude(p => p!.Unit)
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.ProductionUnit)
+                        .ThenInclude(p => p!.ProductionUnit)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
@@ -106,9 +137,9 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.ProductCategory)
+                        .ThenInclude(p => p!.ProductCategory)
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.Unit)
+                        .ThenInclude(p => p!.Unit)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
@@ -133,9 +164,13 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 草稿模式跳過必填驗證
+                if (entity.IsDraft)
+                    return ServiceResult.Success();
+
                 var errors = new List<string>();
 
-                if (entity.ProductId <= 0)
+                if (!entity.ProductId.HasValue || entity.ProductId.Value <= 0)
                     errors.Add("必須選擇商品");
 
                 // 新結構：驗證明細（如果有）
@@ -488,7 +523,7 @@ namespace ERPCore2.Services
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.WarehouseLocation)
                     .Where(i => i.InventoryStockDetails.Any(d => d.WarehouseId == warehouseId))
-                    .OrderBy(i => i.Product.Code)
+                    .OrderBy(i => i.Product == null ? "" : i.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -580,7 +615,7 @@ namespace ERPCore2.Services
                     .Where(i => i.InventoryStockDetails.Any(d => 
                               d.MinStockLevel.HasValue && 
                               d.CurrentStock <= d.MinStockLevel.Value))
-                    .OrderBy(i => i.Product.Code)
+                    .OrderBy(i => i.Product == null ? "" : i.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -1424,9 +1459,9 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// FIFO 方式減少庫存
+        /// FIFO 方式減少庫存，回傳加權平均成本
         /// </summary>
-        public async Task<ServiceResult> ReduceStockWithFIFOAsync(int productId, int warehouseId, decimal quantity,
+        public async Task<ServiceResult<decimal>> ReduceStockWithFIFOAsync(int productId, int warehouseId, decimal quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
             int? locationId = null, string? remarks = null, int? salesOrderDetailId = null)
         {
@@ -1434,31 +1469,41 @@ namespace ERPCore2.Services
             {
                 // 取得該商品在指定倉庫的所有批號庫存，按批次日期排序 (FIFO)
                 var batchDetails = await GetBatchDetailsByProductAndWarehouseAsync(productId, warehouseId, locationId);
-                
+
                 var totalAvailable = batchDetails.Sum(b => b.AvailableStock);
                 if (totalAvailable < quantity)
-                    return ServiceResult.Failure($"庫存不足，可用：{totalAvailable}，需要：{quantity}");
+                    return ServiceResult<decimal>.Failure($"庫存不足，可用：{totalAvailable}，需要：{quantity}");
 
                 var remainingQuantity = quantity;
                 var reductionDetails = new List<BatchReductionDetail>();
+                // 累計成本：Σ(扣減量 × 批次成本)，用於計算加權平均
+                decimal totalCostAccumulated = 0m;
+                decimal totalQtyAccumulated = 0m;
 
                 // 按批次日期順序扣減 (FIFO)
                 foreach (var detail in batchDetails.OrderBy(d => d.BatchDate).ThenBy(d => d.Id))
                 {
                     if (remainingQuantity <= 0) break;
-                    
+
                     var availableFromThis = detail.AvailableStock;
                     if (availableFromThis <= 0) continue;
-                    
+
                     var reduceFromThis = Math.Min(availableFromThis, remainingQuantity);
-                    
-                    reductionDetails.Add(new BatchReductionDetail 
+
+                    reductionDetails.Add(new BatchReductionDetail
                     {
                         BatchId = detail.Id,
                         BatchNumber = detail.BatchNumber,
                         ReduceQuantity = reduceFromThis
                     });
-                    
+
+                    // 累計此批成本
+                    if (detail.AverageCost.HasValue)
+                    {
+                        totalCostAccumulated += reduceFromThis * detail.AverageCost.Value;
+                        totalQtyAccumulated += reduceFromThis;
+                    }
+
                     remainingQuantity -= reduceFromThis;
                 }
 
@@ -1466,14 +1511,19 @@ namespace ERPCore2.Services
                 foreach (var detail in reductionDetails)
                 {
                     var result = await ReduceStockFromSpecificBatchAsync(
-                        detail.BatchId, detail.ReduceQuantity, 
+                        detail.BatchId, detail.ReduceQuantity,
                         transactionType, transactionNumber, remarks, salesOrderDetailId);
-                        
+
                     if (!result.IsSuccess)
-                        return result;
+                        return ServiceResult<decimal>.Failure(result.ErrorMessage ?? "FIFO庫存扣減失敗");
                 }
 
-                return ServiceResult.Success();
+                // 計算加權平均成本
+                var weightedAvgCost = totalQtyAccumulated > 0
+                    ? totalCostAccumulated / totalQtyAccumulated
+                    : 0m;
+
+                return ServiceResult<decimal>.Success(weightedAvgCost);
             }
             catch (Exception ex)
             {
@@ -1488,7 +1538,7 @@ namespace ERPCore2.Services
                     LocationId = locationId,
                     Remarks = remarks
                 });
-                return ServiceResult.Failure("FIFO庫存扣減失敗");
+                return ServiceResult<decimal>.Failure("FIFO庫存扣減失敗");
             }
         }
 
@@ -1632,9 +1682,9 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.InventoryStocks
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.ProductCategory)
+                        .ThenInclude(p => p!.ProductCategory)
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.Unit)
+                        .ThenInclude(p => p!.Unit)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
@@ -1651,7 +1701,7 @@ namespace ERPCore2.Services
 
                 if (categoryId.HasValue)
                 {
-                    query = query.Where(i => i.Product.ProductCategoryId == categoryId.Value);
+                    query = query.Where(i => i.Product != null && i.Product.ProductCategoryId == categoryId.Value);
                 }
 
                 return await query
@@ -1684,9 +1734,9 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.ProductCategory)
+                        .ThenInclude(p => p!.ProductCategory)
                     .Include(i => i.Product)
-                        .ThenInclude(p => p.Unit)
+                        .ThenInclude(p => p!.Unit)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
@@ -1695,7 +1745,7 @@ namespace ERPCore2.Services
                                d.MinStockLevel.HasValue && 
                                d.CurrentStock <= d.MinStockLevel.Value))
                     .OrderBy(i => i.TotalCurrentStock)
-                    .ThenBy(i => i.Product.Code)
+                    .ThenBy(i => i.Product == null ? "" : i.Product.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -2152,7 +2202,7 @@ namespace ERPCore2.Services
                     .Include(d => d.WarehouseLocation)
                     .Where(d => (!d.MinStockLevel.HasValue || d.MinStockLevel.Value == 0) &&
                                (!d.MaxStockLevel.HasValue || d.MaxStockLevel.Value == 0))
-                    .OrderBy(d => d.InventoryStock.Product.Name)
+                    .OrderBy(d => d.InventoryStock == null || d.InventoryStock.Product == null ? "" : d.InventoryStock.Product.Name)
                     .ThenBy(d => d.Warehouse.Name)
                     .ThenBy(d => d.WarehouseLocation!.Name)
                     .ToListAsync();
@@ -2263,7 +2313,7 @@ namespace ERPCore2.Services
                     .Where(d => d.MinStockLevel.HasValue && 
                                d.MinStockLevel.Value > 0 && 
                                d.CurrentStock < d.MinStockLevel.Value)
-                    .OrderBy(d => d.InventoryStock.Product.Name)
+                    .OrderBy(d => d.InventoryStock == null || d.InventoryStock.Product == null ? "" : d.InventoryStock.Product.Name)
                     .ThenBy(d => d.Warehouse.Name)
                     .ThenBy(d => d.WarehouseLocation!.Name)
                     .ToListAsync();
@@ -2292,7 +2342,7 @@ namespace ERPCore2.Services
                     .Where(d => d.MaxStockLevel.HasValue && 
                                d.MaxStockLevel.Value > 0 && 
                                d.CurrentStock > d.MaxStockLevel.Value)
-                    .OrderBy(d => d.InventoryStock.Product.Name)
+                    .OrderBy(d => d.InventoryStock == null || d.InventoryStock.Product == null ? "" : d.InventoryStock.Product.Name)
                     .ThenBy(d => d.Warehouse.Name)
                     .ThenBy(d => d.WarehouseLocation!.Name)
                     .ToListAsync();

@@ -19,6 +19,8 @@
                           FormSections="@formSections"
                           DataLoader="@LoadCurrencyData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.Currency"]]"
                           SaveSuccessMessage="@(CurrencyId.HasValue ? L["Message.UpdateSuccess", L["Entity.Currency"]].ToString() : L["Message.CreateSuccess", L["Entity.Currency"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Currency"]]"
                           RequiredPermission="@PermissionRegistry.Currency.Read"

@@ -81,8 +81,8 @@ namespace ERPCore2.Services
         // 庫存交易查詢
         Task<List<InventoryTransaction>> GetInventoryTransactionsBySalesOrderAsync(int salesOrderId);
         
-        // FIFO 庫存扣減
-        Task<ServiceResult> ReduceStockWithFIFOAsync(int productId, int warehouseId, decimal quantity,
+        // FIFO 庫存扣減（回傳加權平均成本）
+        Task<ServiceResult<decimal>> ReduceStockWithFIFOAsync(int productId, int warehouseId, decimal quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
             int? locationId = null, string? remarks = null, int? salesOrderDetailId = null);
         

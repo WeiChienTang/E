@@ -72,7 +72,7 @@ namespace ERPCore2.FieldConfiguration
                                 Value = p.Id.ToString() 
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
-                                model, query, nameof(ProductComposition.ParentProductId), pc => pc.ParentProductId),
+                                model, query, nameof(ProductComposition.ParentProductId), pc => pc.ParentProductId ?? 0),
                             CustomTemplate = item => builder =>
                             {
                                 var composition = (ProductComposition)item;

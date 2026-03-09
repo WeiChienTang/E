@@ -130,7 +130,7 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 基本驗證
-                if (entity.ParentProductId <= 0)
+                if (!entity.ParentProductId.HasValue || entity.ParentProductId.Value <= 0)
                     errors.Add("請選擇成品");
 
                 // 檢查物料清單編號是否重複（參考 PurchaseOrderService 的做法）

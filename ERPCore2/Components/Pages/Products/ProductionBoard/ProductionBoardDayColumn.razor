@@ -1,11 +1,11 @@
 @using ERPCore2.Models.Schedule
 @using ERPCore2.Models.Enums
 
-<div class="board-day-column @(IsToday ? "is-today" : "") @(IsDragOver ? "drag-over" : "")"
+<div class="board-day-column @(IsToday ? "is-today" : "") @(IsExternalDragOver ? "drag-over" : "")"
      @ondragover:preventDefault="true"
-     @ondragover="HandleDragOver"
-     @ondragleave="HandleDragLeave"
-     @ondrop="HandleDrop">
+     @ondragover="HandleColumnDragOver"
+     @ondragleave="HandleColumnDragLeave"
+     @ondrop="HandleColumnDrop">
 
     @* 日期標題 *@
     <div class="day-header">
@@ -17,16 +17,52 @@
         }
     </div>
 
-    @* 卡片列表 *@
+    @* 卡片列表 + 日內排序插槽 *@
     <div class="day-items">
-        @foreach (var item in Items.OrderBy(i => i.Priority).ThenBy(i => i.ExpectedDeliveryDate))
+        @{
+            var sorted = Items.OrderBy(i => i.Priority).ThenBy(i => i.ExpectedDeliveryDate).ToList();
+            var isSameDayDrag = DraggingBoardItem != null && sorted.Any(i => i.Id == DraggingBoardItem.Id);
+        }
+
+        @* 最頂端插槽 *@
+        @if (isSameDayDrag)
         {
+            <div class="sort-dropzone @(hoveredSlot == 0 ? "sort-dropzone-active" : "")"
+                 @ondragover:preventDefault="true"
+                 @ondrop:stopPropagation="true"
+                 @ondragover="() => hoveredSlot = 0"
+                 @ondragleave="() => { if (hoveredSlot == 0) hoveredSlot = -1; }"
+                 @ondrop="() => HandleSortDrop(0)">
+                <div class="sort-dropzone-indicator"></div>
+            </div>
+        }
+
+        @for (int i = 0; i < sorted.Count; i++)
+        {
+            var item = sorted[i];
+            var slotAfter = i + 1;
+            var isDraggingThis = DraggingBoardItem?.Id == item.Id;
+
             <ProductionBoardItemCard
                 Item="@item"
                 IsOnBoard="true"
+                IsSortDragging="@isDraggingThis"
                 OnDragStart="@(dto => OnItemDragStart.InvokeAsync(dto))"
                 OnDragEnd="@OnItemDragEnd"
                 OnClick="@(dto => OnItemClick.InvokeAsync(dto))" />
+
+            @* 每張卡片下方的插槽 *@
+            @if (isSameDayDrag && !isDraggingThis)
+            {
+                <div class="sort-dropzone @(hoveredSlot == slotAfter ? "sort-dropzone-active" : "")"
+                     @ondragover:preventDefault="true"
+                     @ondrop:stopPropagation="true"
+                     @ondragover="() => hoveredSlot = slotAfter"
+                     @ondragleave="() => { if (hoveredSlot == slotAfter) hoveredSlot = -1; }"
+                     @ondrop="() => HandleSortDrop(slotAfter)">
+                    <div class="sort-dropzone-indicator"></div>
+                </div>
+            }
         }
 
         @if (!Items.Any())
@@ -40,26 +76,47 @@
     [Parameter, EditorRequired] public DateTime Date { get; set; }
     [Parameter] public List<BoardScheduleItemDto> Items { get; set; } = new();
     [Parameter] public bool IsToday { get; set; }
+    [Parameter] public BoardScheduleItemDto? DraggingBoardItem { get; set; }
     [Parameter] public EventCallback<BoardScheduleItemDto> OnItemDragStart { get; set; }
     [Parameter] public EventCallback OnItemDragEnd { get; set; }
-    [Parameter] public EventCallback<DateTime> OnDrop { get; set; }
     [Parameter] public EventCallback<BoardScheduleItemDto> OnItemClick { get; set; }
+    [Parameter] public EventCallback<DateTime> OnDrop { get; set; }
+    /// <summary>日內排序：(拖曳項目, 插入位置 index in sorted list)</summary>
+    [Parameter] public EventCallback<(BoardScheduleItemDto Dragged, int TargetSlot)> OnIntraDayReorder { get; set; }
 
-    private bool IsDragOver { get; set; }
+    private bool IsExternalDragOver { get; set; }
+    private int hoveredSlot = -1;
 
-    private void HandleDragOver(DragEventArgs e)
+    private bool IsSameDayDrag =>
+        DraggingBoardItem != null &&
+        Items.Any(i => i.Id == DraggingBoardItem.Id);
+
+    private void HandleColumnDragOver(DragEventArgs e)
     {
-        IsDragOver = true;
+        if (!IsSameDayDrag)
+            IsExternalDragOver = true;
     }
 
-    private void HandleDragLeave(DragEventArgs e)
+    private void HandleColumnDragLeave(DragEventArgs e)
     {
-        IsDragOver = false;
+        IsExternalDragOver = false;
+        hoveredSlot = -1;
     }
 
-    private async Task HandleDrop(DragEventArgs e)
+    private async Task HandleColumnDrop(DragEventArgs e)
     {
-        IsDragOver = false;
-        await OnDrop.InvokeAsync(Date);
+        IsExternalDragOver = false;
+        hoveredSlot = -1;
+
+        // 日內排序 drop 已由 sort-dropzone 的 @ondrop 處理，這裡只處理跨天移動
+        if (!IsSameDayDrag)
+            await OnDrop.InvokeAsync(Date);
+    }
+
+    private async Task HandleSortDrop(int targetSlot)
+    {
+        hoveredSlot = -1;
+        if (DraggingBoardItem == null || !IsSameDayDrag) return;
+        await OnIntraDayReorder.InvokeAsync((DraggingBoardItem, targetSlot));
     }
 }

@@ -3176,6 +3176,7 @@
   <data name="Button.SaveDraft" xml:space="preserve"><value>下書きを保存</value></data>
   <data name="Label.Draft" xml:space="preserve"><value>下書き</value></data>
   <data name="Label.Official" xml:space="preserve"><value>正式</value></data>
+  <data name="Message.DraftSuccess" xml:space="preserve"><value>{0}の下書きを保存しました。必須項目を入力してください。</value></data>
   <data name="Message.DraftWarning" xml:space="preserve"><value>このレコードは下書きです。必須項目を入力してください。</value></data>
   <data name="Modal.SaveAsDraftTitle" xml:space="preserve"><value>データが不完全です</value></data>
   <data name="Modal.SaveAsDraftMessage" xml:space="preserve"><value>以下の必須項目または条件が満たされていません。下書きとして保存しますか？下書きは正式なレポートには表示されません。</value></data>

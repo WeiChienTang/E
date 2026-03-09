@@ -34,6 +34,8 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadWasteRecordData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.WasteRecord"]]"
                           SaveSuccessMessage="@(WasteRecordId.HasValue ? L["Message.UpdateSuccess", L["Entity.WasteRecord"]].ToString() : L["Message.CreateSuccess", L["Entity.WasteRecord"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WasteRecord"]]"
                           ShowPrintButton="true"

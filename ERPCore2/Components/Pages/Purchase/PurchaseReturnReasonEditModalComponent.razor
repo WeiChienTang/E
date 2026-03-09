@@ -19,6 +19,8 @@
                           FormSections="@formSections"
                           DataLoader="@LoadPurchaseReturnReasonData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.PurchaseReturnReason"]]"
                           SaveSuccessMessage="@(PurchaseReturnReasonId.HasValue ? L["Message.UpdateSuccess", L["Entity.PurchaseReturnReason"]].ToString() : L["Message.CreateSuccess", L["Entity.PurchaseReturnReason"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PurchaseReturnReason"]]"
                           RequiredPermission="@PermissionRegistry.PurchaseReturnReason.Read"

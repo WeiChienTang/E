@@ -198,12 +198,12 @@ else
                 
                 if (warehouseDetails?.Any() == true)
                 {
-                    productIds.Add(stock.ProductId);
+                    if (stock.ProductId.HasValue) productIds.Add(stock.ProductId.Value);
                 }
                 else if (stock.TotalCurrentStock > 0 && !SelectedWarehouseLocationId.HasValue)
                 {
                     // 如果沒有指定庫位且主檔有庫存，也加入
-                    productIds.Add(stock.ProductId);
+                    if (stock.ProductId.HasValue) productIds.Add(stock.ProductId.Value);
                 }
             }
             

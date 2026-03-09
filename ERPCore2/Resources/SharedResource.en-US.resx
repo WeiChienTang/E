@@ -3203,6 +3203,7 @@
   <data name="Button.SaveDraft" xml:space="preserve"><value>Save Draft</value></data>
   <data name="Label.Draft" xml:space="preserve"><value>Draft</value></data>
   <data name="Label.Official" xml:space="preserve"><value>Official</value></data>
+  <data name="Message.DraftSuccess" xml:space="preserve"><value>{0} draft saved. Please remember to complete all required fields.</value></data>
   <data name="Message.DraftWarning" xml:space="preserve"><value>This record is a draft. Please complete all required fields.</value></data>
   <data name="Modal.SaveAsDraftTitle" xml:space="preserve"><value>Incomplete Data</value></data>
   <data name="Modal.SaveAsDraftMessage" xml:space="preserve"><value>The following required fields or conditions are not met. Would you like to save as a draft instead? Drafts will not appear in official reports.</value></data>

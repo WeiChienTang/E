@@ -583,6 +583,38 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        /// <summary>
+        /// 取得生產看板 Sidebar 所需的所有訂單明細（一次查詢，消除 N+1）
+        /// 排除已駁回訂單（有 RejectReason）；IsApproved 回傳，供 UI 灰化未審核項目
+        /// </summary>
+        public async Task<List<SalesOrderDetail>> GetForProductionBoardAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SalesOrderDetails
+                    .Include(d => d.SalesOrder)
+                        .ThenInclude(so => so.Customer)
+                    .Include(d => d.Product)
+                    .Where(d =>
+                        d.Status == EntityStatus.Active &&
+                        d.SalesOrder.Status == EntityStatus.Active &&
+                        d.SalesOrder.RejectReason == null &&   // 排除已駁回
+                        d.OrderQuantity > d.ScheduledQuantity) // 只取尚有待排量
+                    .OrderBy(d => d.SalesOrder.ExpectedDeliveryDate)
+                    .ThenBy(d => d.SalesOrderId)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetForProductionBoardAsync), GetType(), _logger, new {
+                    Method = nameof(GetForProductionBoardAsync),
+                    ServiceType = GetType().Name
+                });
+                return new List<SalesOrderDetail>();
+            }
+        }
     }
 }
 

@@ -3176,6 +3176,7 @@
   <data name="Button.SaveDraft" xml:space="preserve"><value>I-save ang Draft</value></data>
   <data name="Label.Draft" xml:space="preserve"><value>Draft</value></data>
   <data name="Label.Official" xml:space="preserve"><value>Opisyal</value></data>
+  <data name="Message.DraftSuccess" xml:space="preserve"><value>Nai-save ang draft ng {0}. Mangyaring kumpletuhin ang lahat ng kinakailangang field.</value></data>
   <data name="Message.DraftWarning" xml:space="preserve"><value>Ang record na ito ay draft. Mangyaring kumpletuhin ang lahat ng kinakailangang field.</value></data>
   <data name="Modal.SaveAsDraftTitle" xml:space="preserve"><value>Hindi Kumpleto ang Data</value></data>
   <data name="Modal.SaveAsDraftMessage" xml:space="preserve"><value>Ang mga sumusunod na kinakailangang field o kondisyon ay hindi natutugunan. Gusto mo bang i-save bilang draft? Ang mga draft ay hindi lilitaw sa mga opisyal na ulat.</value></data>

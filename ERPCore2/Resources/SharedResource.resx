@@ -3267,6 +3267,7 @@
   <data name="Button.SaveDraft" xml:space="preserve"><value>儲存草稿</value></data>
   <data name="Label.Draft" xml:space="preserve"><value>草稿</value></data>
   <data name="Label.Official" xml:space="preserve"><value>正式</value></data>
+  <data name="Message.DraftSuccess" xml:space="preserve"><value>{0}草稿已儲存，請記得補齊必填資料</value></data>
   <data name="Message.DraftWarning" xml:space="preserve"><value>此記錄為草稿，請記得補齊必填資料</value></data>
   <data name="Modal.SaveAsDraftTitle" xml:space="preserve"><value>資料不完整</value></data>
   <data name="Modal.SaveAsDraftMessage" xml:space="preserve"><value>以下必填欄位或條件尚未符合，是否改為儲存草稿？草稿不會出現在正式報表中，請記得日後補齊。</value></data>

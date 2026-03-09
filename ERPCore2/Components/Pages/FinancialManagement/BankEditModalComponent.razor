@@ -19,6 +19,8 @@
                           FormSections="@formSections"
                           DataLoader="@LoadBankData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.Bank"]]"
                           SaveSuccessMessage="@(BankId.HasValue ? L["Message.UpdateSuccess", L["Entity.Bank"]].ToString() : L["Message.CreateSuccess", L["Entity.Bank"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Bank"]]"
                           RequiredPermission="@PermissionRegistry.Bank.Read"

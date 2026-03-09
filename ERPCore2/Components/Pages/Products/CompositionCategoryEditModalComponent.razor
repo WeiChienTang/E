@@ -19,6 +19,8 @@
                           FormSections="@formSections"
                           DataLoader="@LoadCompositionCategoryData"
                           UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.CompositionCategory"]]"
                           SaveSuccessMessage="@(CompositionCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.CompositionCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.CompositionCategory"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.CompositionCategory"]]"
                           RequiredPermission="@PermissionRegistry.CompositionCategory.Read"

@@ -33,22 +33,48 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.WarehouseLocations
+                    .Where(wl => !wl.IsDraft)
                     .Include(wl => wl.Warehouse)
                     .AsQueryable()
-                    .OrderBy(wl => wl.Warehouse.Name)
+                    .OrderBy(wl => wl.Warehouse == null ? "" : wl.Warehouse.Name)
                     .ThenBy(wl => wl.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(
-                    ex, 
-                    nameof(GetAllAsync), 
-                    GetType(), 
+                    ex,
+                    nameof(GetAllAsync),
+                    GetType(),
                     _logger,
                     new { ServiceType = GetType().Name }
                 );
                 throw;
+            }
+        }
+
+        public override async Task<List<WarehouseLocation>> GetAllIncludingDraftsAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.WarehouseLocations
+                    .Include(wl => wl.Warehouse)
+                    .AsQueryable()
+                    .OrderBy(wl => wl.Warehouse == null ? "" : wl.Warehouse.Name)
+                    .ThenBy(wl => wl.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex,
+                    nameof(GetAllIncludingDraftsAsync),
+                    GetType(),
+                    _logger,
+                    new { ServiceType = GetType().Name }
+                );
+                return new List<WarehouseLocation>();
             }
         }
 
@@ -104,6 +130,13 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 必填欄位檢查
+                if (!entity.WarehouseId.HasValue || entity.WarehouseId.Value <= 0)
+                    return ServiceResult.Failure("必須選擇倉庫");
+
+                if (string.IsNullOrWhiteSpace(entity.Name))
+                    return ServiceResult.Failure("庫位名稱為必填");
+
                 using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查在同一倉庫中庫位編號是否重複
                 var codeExists = await context.WarehouseLocations
@@ -157,10 +190,10 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
-                    .Where(wl => ((wl.Code != null && wl.Code.Contains(searchTerm)) || 
+                    .Where(wl => ((wl.Code != null && wl.Code.Contains(searchTerm)) ||
                                  (wl.Name != null && wl.Name.Contains(searchTerm)) ||
-                                 (wl.Warehouse.Name != null && wl.Warehouse.Name.Contains(searchTerm))))
-                    .OrderBy(wl => wl.Warehouse.Name)
+                                 (wl.Warehouse != null && wl.Warehouse.Name != null && wl.Warehouse.Name.Contains(searchTerm))))
+                    .OrderBy(wl => wl.Warehouse == null ? "" : wl.Warehouse.Name)
                     .ThenBy(wl => wl.Code)
                     .ToListAsync();
             }

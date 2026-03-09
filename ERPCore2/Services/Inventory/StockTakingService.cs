@@ -207,7 +207,7 @@ namespace ERPCore2.Services
                     var takingDetails = stockItems.Select(item => new StockTakingDetail
                     {
                         StockTakingId = stockTaking.Id,
-                        ProductId = item.InventoryStock.ProductId,
+                        ProductId = item.InventoryStock.ProductId!.Value,
                         WarehouseLocationId = item.WarehouseLocationId,
                         SystemStock = item.CurrentStock,
                         UnitCost = item.AverageCost,
@@ -718,7 +718,7 @@ namespace ERPCore2.Services
                             {
                                 var result = await _inventoryStockService.AdjustStockAsync(
                                     item.ProductId,
-                                    stockTaking.WarehouseId,
+                                    stockTaking.WarehouseId!.Value,
                                     item.ActualStock.Value,  // 調整後的新數量
                                     adjustmentNumber,
                                     $"盤點調整 - {stockTaking.TakingNumber}",
@@ -867,6 +867,10 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 草稿模式跳過必填驗證
+                if (stockTaking.IsDraft)
+                    return ServiceResult.Success();
+
                 var errors = new List<string>();
 
                 if(stockTaking.TakingPersonnel == null || stockTaking.TakingPersonnel.Trim() == "")
@@ -875,7 +879,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(stockTaking.TakingNumber))
                     errors.Add("盤點單號不能為空");
 
-                if (stockTaking.WarehouseId <= 0)
+                if (!stockTaking.WarehouseId.HasValue || stockTaking.WarehouseId.Value <= 0)
                     errors.Add("必須選擇倉庫");
 
                 if (stockTaking.TakingDate == default)
@@ -950,6 +954,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.StockTakings
+                    .Where(st => !st.IsDraft)
                     .Include(st => st.Warehouse)
                     .Include(st => st.WarehouseLocation)
                     .Include(st => st.ApprovedByUser)
@@ -960,6 +965,26 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
+                return new List<StockTaking>();
+            }
+        }
+
+        public override async Task<List<StockTaking>> GetAllIncludingDraftsAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.StockTakings
+                    .Include(st => st.Warehouse)
+                    .Include(st => st.WarehouseLocation)
+                    .Include(st => st.ApprovedByUser)
+                    .AsQueryable()
+                    .OrderByDescending(st => st.TakingDate)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllIncludingDraftsAsync), GetType(), _logger);
                 return new List<StockTaking>();
             }
         }
@@ -977,7 +1002,7 @@ namespace ERPCore2.Services
                     .Include(st => st.WarehouseLocation)
                     .Include(st => st.ApprovedByUser)
                     .Where(st => (st.TakingNumber.Contains(searchTerm) ||
-                                 st.Warehouse.Name.Contains(searchTerm) ||
+                                 (st.Warehouse != null && st.Warehouse.Name.Contains(searchTerm)) ||
                                  (st.TakingPersonnel != null && st.TakingPersonnel.Contains(searchTerm))))
                     .OrderByDescending(st => st.TakingDate)
                     .ToListAsync();
@@ -1127,7 +1152,7 @@ namespace ERPCore2.Services
                     
                     var result = await _inventoryStockService.AdjustStockAsync(
                         detail.ProductId,
-                        stockTaking.WarehouseId,
+                        stockTaking.WarehouseId!.Value,
                         detail.SystemStock,  // 還原到盤點前的數量
                         rollbackNumber,
                         $"盤點單刪除回滾 - {stockTaking.TakingNumber}",
@@ -1196,7 +1221,7 @@ namespace ERPCore2.Services
 
                 case StockTakingTypeEnum.Specific:
                     if (specificProductIds != null && specificProductIds.Any())
-                        query = query.Where(i => specificProductIds.Contains(i.InventoryStock.ProductId));
+                        query = query.Where(i => i.InventoryStock.ProductId.HasValue && specificProductIds.Contains(i.InventoryStock.ProductId.Value));
                     break;
 
                 case StockTakingTypeEnum.Cycle:

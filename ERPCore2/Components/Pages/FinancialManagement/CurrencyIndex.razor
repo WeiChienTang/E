@@ -16,6 +16,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
+                        ShowDraftTab="true"
                         EntityName="@L["Entity.Currency"]"
                         GetEntityDisplayName="@(currency => currency.Name)"
                         RequiredPermission="@PermissionRegistry.Currency.Read"
@@ -85,7 +86,7 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("財務管理", "貨幣設定", null, NotificationService, GetType());
 
     // 載入貨幣資料
-    private async Task<List<Currency>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(CurrencyService.GetAllAsync, "貨幣", NotificationService, GetType());
+    private async Task<List<Currency>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(CurrencyService.GetAllIncludingDraftsAsync, "貨幣", NotificationService, GetType());
 
     private IQueryable<Currency> ApplyCurrencyFilters(SearchFilterModel searchModel, IQueryable<Currency> query)
     {
