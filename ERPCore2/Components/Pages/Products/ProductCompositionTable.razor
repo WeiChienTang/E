@@ -234,33 +234,46 @@
                 MaxDisplayItems = 20
             },
 
-            // 製程單位 - 唯讀顯示
-            new()
-            {
-                Title = L["Column.ProductionUnit"],
-                Tooltip = "材料的製程單位（由商品設定決定）",
-                PropertyName = "ProductionUnitName",
-                ColumnType = InteractiveColumnType.Display,
-                Width = "100px",
-                DisplayFormatter = (item) => GetProductionUnitName((CompositionItem)item!),
-                ExcludeFromEmptyCheck = true
-            },
-
-            // 所需數量
+            // 所需數量 + 製程單位（合併顯示）
             new()
             {
                 Title = L["Column.RequiredQuantity"],
-                Tooltip = "輸入此材料所需的數量",
+                Tooltip = "輸入此材料所需的數量（單位由商品設定決定）",
                 PropertyName = nameof(CompositionItem.Quantity),
-                ColumnType = InteractiveColumnType.Number,
-                Width = "120px",
-                CellCssClass = "text-end",
-                MinValue = 0,
-                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "180px",
+                ExcludeFromEmptyCheck = true,
+                CustomTemplate = context =>
                 {
-                    var (item, value) = args;
-                    await OnQuantityChanged((CompositionItem)item, value);
-                })
+                    var item = (CompositionItem)context;
+                    return __builder =>
+                    {
+                        var unitName = GetProductionUnitName(item);
+                        if (!string.IsNullOrEmpty(unitName))
+                        {
+                            <div class="input-group input-group-sm">
+                                <input type="number"
+                                       class="form-control text-end"
+                                       value="@NumberFormatHelper.FormatForInput(item.Quantity)"
+                                       min="0"
+                                       step="any"
+                                       disabled="@IsReadOnly"
+                                       @oninput="@(async e => await OnQuantityChanged(item, e.Value?.ToString()))" />
+                                <span class="input-group-text">@unitName</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="number"
+                                   class="form-control form-control-sm text-end"
+                                   value="@NumberFormatHelper.FormatForInput(item.Quantity)"
+                                   min="0"
+                                   step="any"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async e => await OnQuantityChanged(item, e.Value?.ToString()))" />
+                        }
+                    };
+                }
             },
         };
     }

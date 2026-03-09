@@ -1,4 +1,5 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Data.Entities.Payroll;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -116,6 +117,20 @@ namespace ERPCore2.Data.Context
       public DbSet<DocumentFile> DocumentFiles { get; set; }
       public DbSet<StickyNote> StickyNotes { get; set; }
       public DbSet<CalendarEvent> CalendarEvents { get; set; }
+
+      // ── 薪資模組 ──────────────────────────────────────────────────────────
+      public DbSet<PayrollPeriod> PayrollPeriods { get; set; }
+      public DbSet<PayrollItem> PayrollItems { get; set; }
+      public DbSet<EmployeeSalary> EmployeeSalaries { get; set; }
+      public DbSet<PayrollRecord> PayrollRecords { get; set; }
+      public DbSet<PayrollRecordDetail> PayrollRecordDetails { get; set; }
+      public DbSet<EmployeeBankAccount> EmployeeBankAccounts { get; set; }
+      public DbSet<MinimumWage> MinimumWages { get; set; }
+      public DbSet<LaborInsuranceGrade> LaborInsuranceGrades { get; set; }
+      public DbSet<HealthInsuranceGrade> HealthInsuranceGrades { get; set; }
+      public DbSet<WithholdingTaxTable> WithholdingTaxTables { get; set; }
+      public DbSet<InsuranceRate> InsuranceRates { get; set; }
+      public DbSet<MonthlyAttendanceSummary> MonthlyAttendanceSummaries { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1392,6 +1407,79 @@ namespace ERPCore2.Data.Context
                               .WithMany(d => d.DocumentFiles)
                               .HasForeignKey(df => df.DocumentId)
                               .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  // ── 薪資模組 ────────────────────────────────────────────────────────────
+
+                  // 同年同月只能有一個薪資週期
+                  modelBuilder.Entity<PayrollPeriod>(entity =>
+                  {
+                        entity.HasIndex(e => new { e.Year, e.Month }).IsUnique();
+                        entity.HasMany(e => e.Records)
+                              .WithOne(r => r.Period)
+                              .HasForeignKey(r => r.PayrollPeriodId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  // 薪資項目代碼唯一
+                  modelBuilder.Entity<PayrollItem>(entity =>
+                  {
+                        entity.HasIndex(e => e.Code).IsUnique();
+                  });
+
+                  // 員工薪資設定：同員工多筆（歷史），無唯一限制
+                  modelBuilder.Entity<EmployeeSalary>(entity =>
+                  {
+                        entity.HasIndex(e => e.EmployeeId);
+                        entity.HasIndex(e => e.EffectiveDate);
+                        entity.HasOne(e => e.Employee)
+                              .WithMany()
+                              .HasForeignKey(e => e.EmployeeId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  // 同週期同員工只能有一筆薪資單
+                  modelBuilder.Entity<PayrollRecord>(entity =>
+                  {
+                        entity.HasIndex(e => new { e.PayrollPeriodId, e.EmployeeId }).IsUnique();
+                        entity.HasOne(e => e.Employee)
+                              .WithMany()
+                              .HasForeignKey(e => e.EmployeeId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                        entity.HasMany(e => e.Details)
+                              .WithOne(d => d.Record)
+                              .HasForeignKey(d => d.PayrollRecordId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  modelBuilder.Entity<PayrollRecordDetail>(entity =>
+                  {
+                        entity.HasOne(e => e.Item)
+                              .WithMany(i => i.Details)
+                              .HasForeignKey(e => e.PayrollItemId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  modelBuilder.Entity<EmployeeBankAccount>(entity =>
+                  {
+                        entity.HasIndex(e => e.EmployeeId);
+                        entity.HasOne(e => e.Employee)
+                              .WithMany()
+                              .HasForeignKey(e => e.EmployeeId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  modelBuilder.Entity<MonthlyAttendanceSummary>(entity =>
+                  {
+                        // 每員工每月只能有一筆出勤彙總
+                        entity.HasIndex(e => new { e.EmployeeId, e.Year, e.Month })
+                              .IsUnique()
+                              .HasDatabaseName("UX_MonthlyAttendance_Employee_Period");
+                        entity.HasIndex(e => new { e.Year, e.Month });
+                        entity.HasOne(e => e.Employee)
+                              .WithMany()
+                              .HasForeignKey(e => e.EmployeeId)
+                              .OnDelete(DeleteBehavior.Restrict);
                   });
 
                   // 便條貼（個人工具）

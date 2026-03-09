@@ -4,6 +4,7 @@
 @using ERPCore2.Components.Shared.PersonalTools
 @using ERPCore2.Components.Pages.Reports
 @using ERPCore2.Components.Pages.Employees
+@using ERPCore2.Components.Pages.Suppliers
 @using ERPCore2.Helpers
 @using ERPCore2.Services
 @using ERPCore2.Services.Reports.Interfaces
@@ -102,6 +103,10 @@
 @* 客戶分析圖表 Modal *@
 <CustomerChartModalComponent IsVisible="@showCustomerCharts"
                              IsVisibleChanged="@((bool visible) => showCustomerCharts = visible)" />
+
+@* 廠商分析圖表 Modal *@
+<SupplierChartModalComponent IsVisible="@showSupplierCharts"
+                             IsVisibleChanged="@((bool visible) => showSupplierCharts = visible)" />
 
 @* 系統參數設定 Modal *@
 <SystemParameterSettingsModal IsVisible="@showSystemParameterSettings"
@@ -246,6 +251,9 @@
 
     // 客戶分析圖表 Modal 狀態
     private bool showCustomerCharts = false;
+
+    // 廠商分析圖表 Modal 狀態
+    private bool showSupplierCharts = false;
     
     // 系統參數設定 Modal 狀態
     private bool showSystemParameterSettings = false;
@@ -275,6 +283,9 @@
 
     // Action 處理器註册表
     private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;
+
+    // 允許目前使用者查看的報表 ActionId 集合（在 firstRender 後預算，供同步 SearchReports 使用）
+    private HashSet<string> _allowedReportIds = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -315,6 +326,7 @@
         actionRegistry.Register("OpenPersonalPreference", OpenPersonalPreference);
         actionRegistry.Register("OpenCustomerReportIndex", OpenCustomerReportIndex);
         actionRegistry.Register("OpenCustomerCharts", OpenCustomerCharts);
+        actionRegistry.Register("OpenSupplierCharts", OpenSupplierCharts);
         actionRegistry.Register("OpenSupplierReportIndex", OpenSupplierReportIndex);        
         actionRegistry.Register("OpenProductReportIndex", OpenProductReportIndex);
         actionRegistry.Register("OpenPurchaseReportIndex", OpenPurchaseReportIndex);
@@ -396,6 +408,35 @@
             {
                 // 忽略初始化錯誤
             }
+
+            // 預算允許目前使用者查看的報表 ID 集合（供同步 SearchReports 使用）
+            await BuildAllowedReportIdsAsync();
+        }
+    }
+
+    /// <summary>
+    /// 計算目前使用者可查看的報表 ActionId 集合（模組啟用 + 使用者權限雙重過濾）
+    /// 結果快取於 _allowedReportIds，供同步 SearchReports 使用
+    /// </summary>
+    private async Task BuildAllowedReportIdsAsync()
+    {
+        try
+        {
+            var allowed = new HashSet<string>();
+            foreach (var r in Data.ReportRegistry.GetAllReports())
+            {
+                if (!string.IsNullOrEmpty(r.ModuleKey) &&
+                    !await NavigationPermissionService.IsModuleEnabledAsync(r.ModuleKey)) continue;
+                if (!string.IsNullOrEmpty(r.RequiredPermission) &&
+                    !await NavigationPermissionService.CanAccessAsync(r.RequiredPermission)) continue;
+                if (!string.IsNullOrEmpty(r.ActionId))
+                    allowed.Add(r.ActionId);
+            }
+            _allowedReportIds = allowed;
+        }
+        catch
+        {
+            // 忽略初始化錯誤，保留空集合（搜尋結果將為空，不影響其他功能）
         }
     }
 
@@ -670,6 +711,16 @@
     }
     
     /// <summary>
+    /// 開啟廠商分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenSupplierCharts()
+    {
+        try { showSupplierCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
     /// 開啟廠商報表中心 Modal（保留供 JSInvokable 使用）
     /// </summary>
     [JSInvokable]
@@ -805,6 +856,7 @@
     private List<ISearchableItem> SearchReports(string searchTerm)
     {
         return ReportSearchService.SearchReports(searchTerm, onlyEnabled: true)
+            .Where(r => _allowedReportIds.Contains(r.ActionId ?? ""))
             .Cast<ISearchableItem>()
             .ToList();
     }
@@ -821,11 +873,13 @@
             var navItem = NavigationConfig.GetFlattenedNavigationItems()
                 .FirstOrDefault(item => item.ItemType == NavigationItemType.Action && item.ActionId == actionId);
 
-            // 若有 ModuleKey，檢查模組是否啟用（CanAccessModuleAsync 內部已處理 SuperAdmin 繞過）
+            // 若有 ModuleKey，檢查公司層級模組是否啟用（IsModuleEnabledAsync 內部已處理 SuperAdmin 繞過）
+            // 注意：此處故意使用 IsModuleEnabledAsync 而非 CanAccessModuleAsync，
+            //       ModuleKey 只做公司層級開關，用戶層級存取由下方 RequiredPermission 負責
             if (!string.IsNullOrEmpty(navItem?.ModuleKey))
             {
-                var canAccess = await NavigationPermissionService.CanAccessModuleAsync(navItem.ModuleKey);
-                if (!canAccess)
+                var moduleEnabled = await NavigationPermissionService.IsModuleEnabledAsync(navItem.ModuleKey);
+                if (!moduleEnabled)
                 {
                     _showModuleDisabledModal = true;
                     StateHasChanged();

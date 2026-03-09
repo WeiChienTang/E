@@ -42,7 +42,7 @@ else
                                       OnItemDelete="@HandleItemDelete"
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
                                       EnableAutoEmptyRow="true"
-                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
+                                      AllowAddNewRow="@(!IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@CreateNewEmptyItem" />
         </div>

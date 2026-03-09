@@ -6,7 +6,9 @@
 
 @using ERPCore2.Data
 @using ERPCore2.Models.Reports
+@using ERPCore2.Services
 @inject IStringLocalizer<SharedResource> L
+@inject INavigationPermissionService NavigationPermissionService
 
 <GenericReportIndexModalComponent IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
@@ -49,26 +51,30 @@
     
     // ===== 生命週期方法 =====
     
-    protected override void OnInitialized()
-    {
-        LoadReports();
-    }
-    
-    protected override void OnParametersSet()
-    {
-        // 當 Category 參數變更時重新載入
-        LoadReports();
-    }
-    
-    // ===== 私有方法 =====
-    
-    private void LoadReports()
+    protected override async Task OnParametersSetAsync()
     {
         if (!string.IsNullOrEmpty(Category))
         {
             categoryConfig = ReportCategoryConfig.GetConfig(Category);
-            reports = ReportRegistry.GetReportsByCategory(Category);
+            var all = ReportRegistry.GetReportsByCategory(Category);
+            reports = await FilterAllowedAsync(all);
         }
+    }
+
+    // ===== 私有方法 =====
+
+    private async Task<List<ReportDefinition>> FilterAllowedAsync(List<ReportDefinition> source)
+    {
+        var result = new List<ReportDefinition>();
+        foreach (var r in source)
+        {
+            if (!string.IsNullOrEmpty(r.ModuleKey) &&
+                !await NavigationPermissionService.IsModuleEnabledAsync(r.ModuleKey)) continue;
+            if (!string.IsNullOrEmpty(r.RequiredPermission) &&
+                !await NavigationPermissionService.CanAccessAsync(r.RequiredPermission)) continue;
+            result.Add(r);
+        }
+        return result;
     }
     
     // ===== 事件處理方法 =====

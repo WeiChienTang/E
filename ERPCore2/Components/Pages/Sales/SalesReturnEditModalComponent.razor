@@ -56,6 +56,7 @@
                           ApprovalPermission="@PermissionRegistry.SalesReturn.Approve"
                           OnApprove="@HandleSalesReturnApprove"
                           OnRejectWithReason="@HandleSalesReturnRejectWithReason"
+                          HasDownstreamActions="@hasUndeletableDetails"
                           CanPrintCheck="@GetCanPrintCheck()"
                           OnEntitySaved="@OnSalesReturnSaved"
                           OnCancel="@OnCancel"
@@ -1026,6 +1027,7 @@
 
         <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
                                   Message="@EditModalMessages.UndeletableDetailsWarning"
+                                  SubMessage="@EditModalMessages.UndeletableDetailsHint"
                                   Compact="true" />
     };
 
@@ -1332,7 +1334,7 @@
                               OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                               OnOpenRelatedDocument="@HandleOpenRelatedDocument"
                               IsEditMode="@SalesReturnId.HasValue"
-                              IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)" />
+                              IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, false)" />
         </DetailSectionWrapper>
     };
     

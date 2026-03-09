@@ -31,7 +31,7 @@ else
                                       Items="@Items"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       EnableAutoEmptyRow="true"
-                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
+                                      AllowAddNewRow="@(!IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@CreateNewEmptyItem"
                                       IsReadOnly="@IsReadOnly"

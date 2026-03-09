@@ -1,0 +1,97 @@
+@* 薪資管理設定 Tab *@
+@inject IStringLocalizer<SharedResource> L
+
+<GenericFormComponent TModel="SystemParameter"
+                      Model="@Model"
+                      FieldDefinitions="@allFields"
+                      FieldSections="@fieldSections" />
+
+@code {
+    [Parameter]
+    public SystemParameter Model { get; set; } = new();
+
+    private List<FormFieldDefinition> allFields = new();
+    private Dictionary<string, string> fieldSections = new();
+
+    protected override void OnInitialized()
+    {
+        var basicSection   = L["Section.PayrollBasicSettings"].ToString();
+        var attendSection  = L["Section.PayrollAttendanceRules"].ToString();
+        var accountSection = L["Section.PayrollAccountCodes"].ToString();
+
+        allFields = new List<FormFieldDefinition>
+        {
+            // ── 薪資計算基本設定 ──────────────────────────────────────
+            new() { PropertyName = "PayrollPayDay",
+                    Label = L["Field.PayrollPayDay"],
+                    FieldType = FormFieldType.Number, Min = 1, Max = 31, IsRequired = true },
+            new() { PropertyName = "PayrollCutoffDay",
+                    Label = L["Field.PayrollCutoffDay"],
+                    FieldType = FormFieldType.Number, Min = 1, Max = 31, IsRequired = true },
+            new() { PropertyName = "SalaryMonthDivisor",
+                    Label = L["Field.SalaryMonthDivisor"],
+                    FieldType = FormFieldType.Number, Min = 0, Max = 31, IsRequired = true },
+
+            // ── 出勤計算規則 ──────────────────────────────────────────
+            new() { PropertyName = "OvertimeRoundingUnit",
+                    Label = L["Field.OvertimeRoundingUnit"],
+                    FieldType = FormFieldType.Number, Min = 1, Max = 60, IsRequired = true },
+            new() { PropertyName = "LateTolerance",
+                    Label = L["Field.LateTolerance"],
+                    FieldType = FormFieldType.Number, Min = 0, Max = 60, IsRequired = true },
+
+            // ── 薪資會計科目（Phase 4 預先設定） ──────────────────────
+            new() { PropertyName = "PayrollExpenseAccountCode",
+                    Label = L["Field.PayrollExpenseAccount"],
+                    FieldType = FormFieldType.Text, MaxLength = 20 },
+            new() { PropertyName = "OvertimeExpenseAccountCode",
+                    Label = L["Field.OvertimeExpenseAccount"],
+                    FieldType = FormFieldType.Text, MaxLength = 20 },
+            new() { PropertyName = "LaborInsuranceExpenseAccountCode",
+                    Label = L["Field.LaborInsuranceExpenseAccount"],
+                    FieldType = FormFieldType.Text, MaxLength = 20 },
+            new() { PropertyName = "HealthInsuranceExpenseAccountCode",
+                    Label = L["Field.HealthInsuranceExpenseAccount"],
+                    FieldType = FormFieldType.Text, MaxLength = 20 },
+            new() { PropertyName = "RetirementExpenseAccountCode",
+                    Label = L["Field.RetirementExpenseAccount"],
+                    FieldType = FormFieldType.Text, MaxLength = 20 },
+            new() { PropertyName = "AccruedPayrollAccountCode",
+                    Label = L["Field.AccruedPayrollAccount"],
+                    FieldType = FormFieldType.Text, MaxLength = 20 },
+            new() { PropertyName = "WithholdingLaborInsuranceAccountCode",
+                    Label = L["Field.WithholdingLaborInsuranceAccount"],
+                    FieldType = FormFieldType.Text, MaxLength = 20 },
+            new() { PropertyName = "WithholdingHealthInsuranceAccountCode",
+                    Label = L["Field.WithholdingHealthInsuranceAccount"],
+                    FieldType = FormFieldType.Text, MaxLength = 20 },
+            new() { PropertyName = "WithholdingTaxAccountCode",
+                    Label = L["Field.WithholdingTaxAccount"],
+                    FieldType = FormFieldType.Text, MaxLength = 20 },
+            new() { PropertyName = "VoluntaryRetirementAccountCode",
+                    Label = L["Field.VoluntaryRetirementAccount"],
+                    FieldType = FormFieldType.Text, MaxLength = 20 },
+        };
+
+        fieldSections = new Dictionary<string, string>
+        {
+            { "PayrollPayDay",       basicSection },
+            { "PayrollCutoffDay",    basicSection },
+            { "SalaryMonthDivisor",  basicSection },
+
+            { "OvertimeRoundingUnit", attendSection },
+            { "LateTolerance",        attendSection },
+
+            { "PayrollExpenseAccountCode",              accountSection },
+            { "OvertimeExpenseAccountCode",             accountSection },
+            { "LaborInsuranceExpenseAccountCode",       accountSection },
+            { "HealthInsuranceExpenseAccountCode",      accountSection },
+            { "RetirementExpenseAccountCode",           accountSection },
+            { "AccruedPayrollAccountCode",              accountSection },
+            { "WithholdingLaborInsuranceAccountCode",   accountSection },
+            { "WithholdingHealthInsuranceAccountCode",  accountSection },
+            { "WithholdingTaxAccountCode",              accountSection },
+            { "VoluntaryRetirementAccountCode",         accountSection },
+        };
+    }
+}

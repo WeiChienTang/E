@@ -22,6 +22,8 @@
                     CloseOnBackdropClick="false"
                     IsLoading="@isLoading"
                     ErrorMessage="@errorMessage"
+                    ShowFooter="@(systemParameter.Id > 0)"
+                    AuditInfo="@GetAuditInfo()"
                     OnClose="@HandleClose"
                     DebugComponentName="@DebugName">
     <HeaderButtons>
@@ -54,21 +56,6 @@
                               TabDefinitions="@tabDefinitions"
                               OnTabChanged="@HandleTabChanged" />
 
-        @* ===== 底部審計資訊 ===== *@
-        @if (systemParameter.Id > 0)
-        {
-            <div class="mt-4 pt-3 border-top">
-                <div class="text-muted small d-flex flex-wrap gap-3">
-                    <span><strong>@L["SystemParam.CreatedAt"]</strong>@systemParameter.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
-                    <span><strong>@L["SystemParam.CreatedBy"]</strong>@(systemParameter.CreatedBy ?? L["SystemParam.System"].ToString())</span>
-                    @if (systemParameter.UpdatedAt.HasValue)
-                    {
-                        <span><strong>@L["SystemParam.UpdatedAt"]</strong>@systemParameter.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
-                        <span><strong>@L["SystemParam.UpdatedBy"]</strong>@(systemParameter.UpdatedBy ?? L["SystemParam.System"].ToString())</span>
-                    }
-                </div>
-            </div>
-        }
     </BodyContent>
 </BaseModalComponent>
 
@@ -109,6 +96,7 @@
     private bool isSuperAdmin = false;
     private bool hasSubAccountRead = false;
     private bool hasSubAccountBatchCreate = false;
+    private bool hasPayrollRateTable = false;
 
     // ===== 表單欄位與 Tab 定義（所有 Tab 使用 CustomContent，欄位定義為空） =====
 
@@ -151,6 +139,11 @@
                                Model="@systemParameter"
                                IsDisabled="@(isSaving || isLoading)"
                                CanBatchCreate="@hasSubAccountBatchCreate" />
+    };
+
+    private RenderFragment CreatePayrollSettingsTabContent() => __builder =>
+    {
+        <PayrollSettingsTab Model="@systemParameter" />
     };
 
     private RenderFragment CreateCertificateTabContent() => __builder =>
@@ -209,6 +202,20 @@
                 SectionNames = new(),
                 CustomContent = CreateSubAccountTabContent(),
                 DebugComponentName = "SubAccountSettingsTab"
+            });
+        }
+
+        // 有 Payroll.RateTable 權限（或 SuperAdmin）才加入薪資管理 Tab
+        await CheckPayrollPermissionsAsync();
+        if (hasPayrollRateTable || isSuperAdmin)
+        {
+            tabDefinitions.Add(new FormTabDefinition
+            {
+                Label = L["Tab.PayrollSettings"],
+                Icon = "bi bi-cash-coin",
+                SectionNames = new(),
+                CustomContent = CreatePayrollSettingsTabContent(),
+                DebugComponentName = "PayrollSettingsTab"
             });
         }
 
@@ -271,6 +278,26 @@
         {
             hasSubAccountRead = false;
             hasSubAccountBatchCreate = false;
+        }
+    }
+
+    private async Task CheckPayrollPermissionsAsync()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState?.User;
+            if (user?.Identity?.IsAuthenticated != true) return;
+
+            var employeeIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(employeeIdClaim, out int employeeId)) return;
+
+            var result = await PermissionService.HasPermissionAsync(employeeId, PermissionRegistry.Payroll.RateTable);
+            hasPayrollRateTable = result.IsSuccess && result.Data;
+        }
+        catch
+        {
+            hasPayrollRateTable = false;
         }
     }
 
@@ -394,6 +421,20 @@
         {
             await IsVisibleChanged.InvokeAsync(false);
         }
+    }
+
+    // ===== 審計資訊 =====
+
+    private BaseModalComponent.ModalAuditInfo? GetAuditInfo()
+    {
+        if (systemParameter.Id == 0) return null;
+        return new BaseModalComponent.ModalAuditInfo
+        {
+            CreatedAt = systemParameter.CreatedAt,
+            CreatedBy = systemParameter.CreatedBy ?? L["SystemParam.System"].ToString(),
+            UpdatedAt = systemParameter.UpdatedAt,
+            UpdatedBy = !string.IsNullOrEmpty(systemParameter.UpdatedBy) ? systemParameter.UpdatedBy : (systemParameter.UpdatedAt.HasValue ? L["SystemParam.System"].ToString() : null)
+        };
     }
 
     // ===== 恢復預設 =====

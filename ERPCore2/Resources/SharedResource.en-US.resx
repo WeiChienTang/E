@@ -293,6 +293,21 @@
   <data name="Preference.PageSizeUnit" xml:space="preserve">
     <value>rows</value>
   </data>
+  <data name="Preference.OperationBehavior" xml:space="preserve">
+    <value>Operation Preferences</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarning" xml:space="preserve">
+    <value>Confirm before leaving unsaved forms</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningOn" xml:space="preserve">
+    <value>Ask to confirm</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningOff" xml:space="preserve">
+    <value>Leave directly</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningDesc" xml:space="preserve">
+    <value>When disabled, closing a form with unsaved changes will not prompt for confirmation. Make sure you are in the habit of saving manually before leaving.</value>
+  </data>
   <!-- ===== Employee Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>Account is set by administrator and cannot be changed</value>
@@ -377,6 +392,9 @@
   </data>
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>Customer Charts</value>
+  </data>
+  <data name="Nav.SupplierCharts" xml:space="preserve">
+    <value>Supplier Charts</value>
   </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>Visit Report</value>
@@ -732,6 +750,7 @@
   <data name="Button.ConvertToSalesReturn" xml:space="preserve"><value>Convert to Sales Return</value></data>
   <data name="Button.ConvertToSetoff" xml:space="preserve"><value>Convert to Setoff</value></data>
   <data name="Button.ConvertToDelivery" xml:space="preserve"><value>Convert to Sales</value></data>
+  <data name="Button.ViewSchedule" xml:space="preserve"><value>View Schedule</value></data>
   <data name="Button.ConvertToOrder" xml:space="preserve"><value>Convert to Order</value></data>
   <data name="Button.CopyMessage" xml:space="preserve"><value>Copy Message</value></data>
   <data name="Button.CheckInventory" xml:space="preserve"><value>Check Inventory</value></data>
@@ -935,6 +954,10 @@
   <data name="Field.DepartmentCode" xml:space="preserve"><value>Department Code</value></data>
   <data name="Field.DepartmentName" xml:space="preserve"><value>Department Name</value></data>
   <data name="Field.DepartmentManager" xml:space="preserve"><value>Department Manager</value></data>
+  <data name="Field.DeputyManager" xml:space="preserve"><value>Deputy Manager</value></data>
+  <data name="Field.ParentDepartment" xml:space="preserve"><value>Parent Department</value></data>
+  <data name="Field.DepartmentPhone" xml:space="preserve"><value>Department Phone</value></data>
+  <data name="Field.DepartmentLocation" xml:space="preserve"><value>Office Location</value></data>
   <!-- ===== Position Field keys ===== -->
   <data name="Field.PositionCode" xml:space="preserve"><value>Position Code</value></data>
   <data name="Field.PositionName" xml:space="preserve"><value>Position Name</value></data>
@@ -1149,6 +1172,206 @@
   <!-- ===== Tab additional keys ===== -->
   <data name="Tab.ModuleManagement" xml:space="preserve"><value>Module Management</value></data>
   <data name="Tab.SubAccountSettings" xml:space="preserve"><value>Sub Account Settings</value></data>
+  <data name="Tab.PayrollSettings" xml:space="preserve"><value>Payroll</value></data>
+  <data name="Tab.Payroll" xml:space="preserve"><value>Payroll History</value></data>
+  <data name="Nav.PayrollGroup" xml:space="preserve"><value>Payroll</value></data>
+  <data name="Nav.PayrollCalculation" xml:space="preserve"><value>Payroll Processing</value></data>
+  <data name="Nav.PayrollSalaryConfig" xml:space="preserve"><value>Employee Salary Settings</value></data>
+  <data name="Nav.PayrollItems" xml:space="preserve"><value>Payroll Items</value></data>
+  <data name="Nav.PayrollPeriods" xml:space="preserve"><value>Payroll Periods</value></data>
+  <data name="Section.PayrollBasicSettings" xml:space="preserve"><value>Basic Payroll Settings</value></data>
+  <data name="Section.PayrollAttendanceRules" xml:space="preserve"><value>Attendance Rules</value></data>
+  <data name="Section.PayrollAccountCodes" xml:space="preserve"><value>Payroll Account Codes (Phase 4)</value></data>
+  <data name="Field.PayrollPayDay" xml:space="preserve"><value>Pay Day</value></data>
+  <data name="Field.PayrollCutoffDay" xml:space="preserve"><value>Payroll Cutoff Day</value></data>
+  <data name="Field.SalaryMonthDivisor" xml:space="preserve"><value>Monthly Salary Divisor</value></data>
+  <data name="Field.OvertimeRoundingUnit" xml:space="preserve"><value>Overtime Rounding (min)</value></data>
+  <data name="Field.LateTolerance" xml:space="preserve"><value>Late Tolerance (min)</value></data>
+  <data name="Field.PayrollExpenseAccount" xml:space="preserve"><value>Salary Expense Account</value></data>
+  <data name="Field.OvertimeExpenseAccount" xml:space="preserve"><value>Overtime Expense Account</value></data>
+  <data name="Field.LaborInsuranceExpenseAccount" xml:space="preserve"><value>Labor Insurance (Employer)</value></data>
+  <data name="Field.HealthInsuranceExpenseAccount" xml:space="preserve"><value>Health Insurance (Employer)</value></data>
+  <data name="Field.RetirementExpenseAccount" xml:space="preserve"><value>Retirement Contribution Account</value></data>
+  <data name="Field.AccruedPayrollAccount" xml:space="preserve"><value>Accrued Payroll Account</value></data>
+  <data name="Field.WithholdingLaborInsuranceAccount" xml:space="preserve"><value>W/H Labor Insurance</value></data>
+  <data name="Field.WithholdingHealthInsuranceAccount" xml:space="preserve"><value>W/H Health Insurance</value></data>
+  <data name="Field.WithholdingTaxAccount" xml:space="preserve"><value>W/H Income Tax</value></data>
+  <data name="Field.VoluntaryRetirementAccount" xml:space="preserve"><value>W/H Voluntary Retirement</value></data>
+  <!-- ===== Payroll Domain keys ===== -->
+  <data name="Payroll.Income" xml:space="preserve"><value>Income</value></data>
+  <data name="Payroll.Deduction" xml:space="preserve"><value>Deduction</value></data>
+  <data name="Payroll.Salary" xml:space="preserve"><value>Salary</value></data>
+  <data name="Payroll.Allowance" xml:space="preserve"><value>Allowance</value></data>
+  <data name="Payroll.Overtime" xml:space="preserve"><value>Overtime</value></data>
+  <data name="Payroll.Bonus" xml:space="preserve"><value>Bonus</value></data>
+  <data name="Payroll.Legal" xml:space="preserve"><value>Statutory</value></data>
+  <data name="Payroll.Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Payroll.SystemItemLocked" xml:space="preserve"><value>System item, cannot be deleted</value></data>
+  <data name="Field.PayrollItemCode" xml:space="preserve"><value>Code</value></data>
+  <data name="Field.PayrollItemName" xml:space="preserve"><value>Name</value></data>
+  <data name="Field.PayrollItemType" xml:space="preserve"><value>Type</value></data>
+  <data name="Field.PayrollItemCategory" xml:space="preserve"><value>Category</value></data>
+  <data name="Field.PayrollItemIsSystem" xml:space="preserve"><value>System Built-in</value></data>
+  <data name="Field.PayrollItemIsTaxable" xml:space="preserve"><value>Taxable</value></data>
+  <data name="Field.PayrollItemIsInsuranceBasis" xml:space="preserve"><value>Insurance Basis</value></data>
+  <data name="Field.PayrollItemIsRetirementBasis" xml:space="preserve"><value>Retirement Basis</value></data>
+  <data name="Entity.PayrollItem" xml:space="preserve"><value>Payroll Item</value></data>
+  <data name="Page.PayrollItemsTitle" xml:space="preserve"><value>Payroll Items</value></data>
+  <data name="Page.PayrollItemsSubtitle" xml:space="preserve"><value>Manage income and deduction items for payroll calculation</value></data>
+  <!-- ===== EmployeeSalary keys ===== -->
+  <data name="Entity.EmployeeSalary" xml:space="preserve"><value>Employee Salary</value></data>
+  <data name="Page.EmployeeSalaryTitle" xml:space="preserve"><value>Employee Salary Settings</value></data>
+  <data name="Page.EmployeeSalarySubtitle" xml:space="preserve"><value>Manage base salary, allowances and insurance settings</value></data>
+  <data name="Field.SalaryType" xml:space="preserve"><value>Salary Type</value></data>
+  <data name="Field.BaseSalary" xml:space="preserve"><value>Base Salary</value></data>
+  <data name="Field.PositionAllowance" xml:space="preserve"><value>Position Allowance</value></data>
+  <data name="Field.MealAllowance" xml:space="preserve"><value>Meal Allowance</value></data>
+  <data name="Field.TransportAllowance" xml:space="preserve"><value>Transport Allowance</value></data>
+  <data name="Field.LaborInsuredSalary" xml:space="preserve"><value>Labor Insurance Salary</value></data>
+  <data name="Field.HealthInsuredAmount" xml:space="preserve"><value>Health Insurance Amount</value></data>
+  <data name="Field.DependentCount" xml:space="preserve"><value>Dependents</value></data>
+  <data name="Field.TaxWithholdingType" xml:space="preserve"><value>Tax Withholding Type</value></data>
+  <data name="Field.VoluntaryRetirementRate" xml:space="preserve"><value>Voluntary Retirement Rate (%)</value></data>
+  <data name="Field.EffectiveDate" xml:space="preserve"><value>Effective Date</value></data>
+  <data name="Payroll.Monthly" xml:space="preserve"><value>Monthly</value></data>
+  <data name="Payroll.Hourly" xml:space="preserve"><value>Hourly</value></data>
+  <data name="Payroll.CurrentActive" xml:space="preserve"><value>Currently Active</value></data>
+  <data name="Payroll.TaxStandard" xml:space="preserve"><value>Standard (Salary Tax Table)</value></data>
+  <data name="Payroll.TaxResident" xml:space="preserve"><value>Resident (5% of Monthly Salary)</value></data>
+  <data name="Payroll.TaxNonResident" xml:space="preserve"><value>Non-Resident (18% of Monthly Salary)</value></data>
+  <!-- ===== EmployeeBankAccount keys ===== -->
+  <data name="Entity.EmployeeBankAccount" xml:space="preserve"><value>Bank Account</value></data>
+  <data name="Page.EmployeeBankAccountTitle" xml:space="preserve"><value>Employee Bank Accounts</value></data>
+  <data name="Page.EmployeeBankAccountSubtitle" xml:space="preserve"><value>Manage employee bank accounts for payroll transfer</value></data>
+  <data name="Field.BranchCode" xml:space="preserve"><value>Branch Code</value></data>
+  <data name="Field.BranchName" xml:space="preserve"><value>Branch Name</value></data>
+  <data name="Field.AccountNumber" xml:space="preserve"><value>Account Number</value></data>
+  <data name="Field.BankAccountHolder" xml:space="preserve"><value>Account Holder Name</value></data>
+  <data name="Field.IsPrimary" xml:space="preserve"><value>Primary Account</value></data>
+  <data name="Payroll.PrimaryAccount" xml:space="preserve"><value>Primary</value></data>
+  <!-- ===== PayrollPeriod keys ===== -->
+  <data name="Entity.PayrollPeriod" xml:space="preserve"><value>Payroll Period</value></data>
+  <data name="Page.PayrollPeriodTitle" xml:space="preserve"><value>Payroll Period Management</value></data>
+  <data name="Page.PayrollPeriodSubtitle" xml:space="preserve"><value>Manage monthly payroll period opening and closing</value></data>
+  <data name="Field.PayrollYear" xml:space="preserve"><value>Year (ROC)</value></data>
+  <data name="Field.PayrollMonth" xml:space="preserve"><value>Month</value></data>
+  <data name="Field.PeriodStatus" xml:space="preserve"><value>Period Status</value></data>
+  <data name="Field.PayrollRecordCount" xml:space="preserve"><value>Record Count</value></data>
+  <data name="Field.ClosedAt" xml:space="preserve"><value>Closed At</value></data>
+  <data name="Field.ClosedBy" xml:space="preserve"><value>Closed By</value></data>
+  <data name="Payroll.PeriodDraft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Payroll.PeriodProcessing" xml:space="preserve"><value>Processing</value></data>
+  <data name="Payroll.PeriodClosed" xml:space="preserve"><value>Closed</value></data>
+  <data name="Payroll.OpenPeriod" xml:space="preserve"><value>Open Payroll Period</value></data>
+  <data name="Payroll.ClosePeriod" xml:space="preserve"><value>Close Period</value></data>
+  <data name="Payroll.OpenPeriodHint" xml:space="preserve"><value>After opening, payroll can be calculated. Once closed, no further changes are allowed.</value></data>
+  <data name="Page.PayrollTitle" xml:space="preserve"><value>Payroll Calculation</value></data>
+  <data name="Page.PayrollSubtitle" xml:space="preserve"><value>Calculate and confirm employee payslips by pay period</value></data>
+  <data name="Payroll.CalculateAll" xml:space="preserve"><value>Calculate All</value></data>
+  <data name="Payroll.CalculateEmployee" xml:space="preserve"><value>Calculate</value></data>
+  <data name="Payroll.ConfirmRecord" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Payroll.UnconfirmRecord" xml:space="preserve"><value>Unconfirm</value></data>
+  <data name="Payroll.ViewPayslip" xml:space="preserve"><value>Payslip</value></data>
+  <data name="Payroll.SelectPeriod" xml:space="preserve"><value>Select Pay Period</value></data>
+  <data name="Payroll.NoPeriods" xml:space="preserve"><value>No pay periods available</value></data>
+  <data name="Payroll.RecordList" xml:space="preserve"><value>Payslip List</value></data>
+  <data name="Payroll.NotCalculated" xml:space="preserve"><value>Not Calculated</value></data>
+  <data name="Payroll.RecordDraft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Payroll.RecordConfirmed" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="Payroll.StatTotal" xml:space="preserve"><value>Total Payslips</value></data>
+  <data name="Payroll.StatGross" xml:space="preserve"><value>Total Gross</value></data>
+  <data name="Payroll.StatNet" xml:space="preserve"><value>Total Net</value></data>
+  <data name="Payroll.StatConfirmed" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="Payroll.AttendanceDays" xml:space="preserve"><value>Attendance</value></data>
+  <data name="Payroll.GrossIncome" xml:space="preserve"><value>Gross Income</value></data>
+  <data name="Payroll.TotalDeduction" xml:space="preserve"><value>Total Deduction</value></data>
+  <data name="Payroll.NetPay" xml:space="preserve"><value>Net Pay</value></data>
+  <data name="Payroll.PayslipTitle" xml:space="preserve"><value>Payslip</value></data>
+  <data name="Payroll.PayslipPeriod" xml:space="preserve"><value>Pay Period</value></data>
+  <data name="Payroll.IncomeItems" xml:space="preserve"><value>Income Items</value></data>
+  <data name="Payroll.DeductionItems" xml:space="preserve"><value>Deduction Items</value></data>
+  <data name="Payroll.InsuranceSnapshot" xml:space="preserve"><value>Insurance Snapshot (Employer)</value></data>
+  <data name="Payroll.EmployerLaborInsurance" xml:space="preserve"><value>Employer Labor Insurance</value></data>
+  <data name="Payroll.EmployerHealthInsurance" xml:space="preserve"><value>Employer Health Insurance</value></data>
+  <data name="Payroll.EmployerRetirement" xml:space="preserve"><value>Employer Retirement Contribution</value></data>
+  <data name="Payroll.TaxableIncome" xml:space="preserve"><value>Taxable Income</value></data>
+  <data name="Payroll.CalculatedAt" xml:space="preserve"><value>Calculated At</value></data>
+  <data name="Payroll.CalculatedBy" xml:space="preserve"><value>Calculated By</value></data>
+  <data name="Payroll.NoPayrollRecords" xml:space="preserve"><value>No payroll records found</value></data>
+  <!-- ===== Payroll Phase 2 Rate Table keys ===== -->
+  <data name="Nav.MinimumWage" xml:space="preserve"><value>Minimum Wage</value></data>
+  <data name="Nav.InsuranceRate" xml:space="preserve"><value>Insurance Rate Settings</value></data>
+  <data name="Nav.LaborInsuranceGrade" xml:space="preserve"><value>Labor Insurance Grade Table</value></data>
+  <data name="Nav.HealthInsuranceGrade" xml:space="preserve"><value>Health Insurance Grade Table</value></data>
+  <data name="Nav.WithholdingTaxTable" xml:space="preserve"><value>Withholding Tax Table</value></data>
+  <data name="Page.MinimumWageTitle" xml:space="preserve"><value>Minimum Wage</value></data>
+  <data name="Page.MinimumWageSubtitle" xml:space="preserve"><value>Maintain historical minimum wage (monthly/hourly)</value></data>
+  <data name="Page.InsuranceRateTitle" xml:space="preserve"><value>Insurance Rate Settings</value></data>
+  <data name="Page.InsuranceRateSubtitle" xml:space="preserve"><value>Maintain labor, health insurance and retirement rates</value></data>
+  <data name="Page.LaborInsuranceGradeTitle" xml:space="preserve"><value>Labor Insurance Grade Table</value></data>
+  <data name="Page.LaborInsuranceGradeSubtitle" xml:space="preserve"><value>Maintain labor insurance insured salary grade table</value></data>
+  <data name="Page.HealthInsuranceGradeTitle" xml:space="preserve"><value>Health Insurance Grade Table</value></data>
+  <data name="Page.HealthInsuranceGradeSubtitle" xml:space="preserve"><value>Maintain national health insurance insured amount grade table</value></data>
+  <data name="Page.WithholdingTaxTableTitle" xml:space="preserve"><value>Withholding Tax Table</value></data>
+  <data name="Page.WithholdingTaxTableSubtitle" xml:space="preserve"><value>Maintain salary income withholding tax table</value></data>
+  <data name="Field.MonthlyMinWage" xml:space="preserve"><value>Monthly Minimum Wage</value></data>
+  <data name="Field.HourlyMinWage" xml:space="preserve"><value>Hourly Minimum Wage</value></data>
+  <data name="Field.LaborInsEERate" xml:space="preserve"><value>Labor Ins. Employee Rate</value></data>
+  <data name="Field.LaborInsERRate" xml:space="preserve"><value>Labor Ins. Employer Rate</value></data>
+  <data name="Field.HealthInsEERate" xml:space="preserve"><value>Health Ins. Employee Rate</value></data>
+  <data name="Field.HealthInsERRate" xml:space="preserve"><value>Health Ins. Employer Rate</value></data>
+  <data name="Field.RetirementERRate" xml:space="preserve"><value>Retirement Employer Rate</value></data>
+  <data name="Field.MealTaxFreeLimit" xml:space="preserve"><value>Meal Tax-Free Limit</value></data>
+  <data name="Field.TransportTaxFreeLimit" xml:space="preserve"><value>Transport Tax-Free Limit</value></data>
+  <data name="Field.InsuranceGrade" xml:space="preserve"><value>Grade</value></data>
+  <data name="Field.InsuredSalary" xml:space="preserve"><value>Insured Salary</value></data>
+  <data name="Field.InsuredAmount" xml:space="preserve"><value>Insured Amount</value></data>
+  <data name="Payroll.AddMinimumWage" xml:space="preserve"><value>Add Minimum Wage</value></data>
+  <data name="Payroll.EditMinimumWage" xml:space="preserve"><value>Edit Minimum Wage</value></data>
+  <data name="Payroll.AddInsuranceRate" xml:space="preserve"><value>Add Insurance Rate</value></data>
+  <data name="Payroll.EditInsuranceRate" xml:space="preserve"><value>Edit Insurance Rate</value></data>
+  <data name="Payroll.LaborInsuranceRates" xml:space="preserve"><value>Labor Insurance Rates</value></data>
+  <data name="Payroll.HealthInsuranceRates" xml:space="preserve"><value>Health Insurance Rates</value></data>
+  <data name="Payroll.RetirementAndTaxFree" xml:space="preserve"><value>Retirement Rate &amp; Tax-Free Limits</value></data>
+  <data name="Payroll.AddGrade" xml:space="preserve"><value>Add Grade</value></data>
+  <data name="Payroll.EditGrade" xml:space="preserve"><value>Edit Grade</value></data>
+  <data name="Payroll.AddTaxRow" xml:space="preserve"><value>Add Tax Entry</value></data>
+  <data name="Payroll.EditTaxRow" xml:space="preserve"><value>Edit Tax Entry</value></data>
+  <data name="Payroll.CopyYear" xml:space="preserve"><value>Copy Year</value></data>
+  <data name="Payroll.CopySource" xml:space="preserve"><value>Source Year</value></data>
+  <data name="Payroll.CopyTarget" xml:space="preserve"><value>Target Year</value></data>
+  <data name="Payroll.TotalGrades" xml:space="preserve"><value>Total Grades</value></data>
+  <data name="Payroll.TotalRows" xml:space="preserve"><value>Total Rows</value></data>
+  <data name="Payroll.DependentSuffix" xml:space="preserve"><value>person(s)</value></data>
+  <data name="Label.NoUpperLimit" xml:space="preserve"><value>No upper limit</value></data>
+  <data name="Message.NoData" xml:space="preserve"><value>No data</value></data>
+  <!-- ===== Phase 3: Attendance Summary ===== -->
+  <data name="Nav.AttendanceSummary" xml:space="preserve"><value>Attendance Summary</value></data>
+  <data name="Page.AttendanceSummaryTitle" xml:space="preserve"><value>Attendance Summary</value></data>
+  <data name="Page.AttendanceSummarySubtitle" xml:space="preserve"><value>Manage monthly attendance days and overtime hours for payroll calculation</value></data>
+  <data name="Attendance.AddRecord" xml:space="preserve"><value>Add Attendance Record</value></data>
+  <data name="Attendance.EditRecord" xml:space="preserve"><value>Edit Attendance Record</value></data>
+  <data name="Attendance.BatchInit" xml:space="preserve"><value>Batch Initialize</value></data>
+  <data name="Attendance.LockedMessage" xml:space="preserve"><value>This attendance record is locked (payroll calculated), read-only</value></data>
+  <data name="Attendance.SickLeaveNote" xml:space="preserve"><value>Sick leave deducted at half-day rate</value></data>
+  <data name="Attendance.OvertimeHours" xml:space="preserve"><value>Overtime Hours</value></data>
+  <data name="Attendance.OT1Note" xml:space="preserve"><value>Weekday overtime first 2 hrs (×4/3)</value></data>
+  <data name="Attendance.OT2Note" xml:space="preserve"><value>Weekday overtime next 2 hrs (×5/3)</value></data>
+  <data name="Attendance.OvertimeTotal" xml:space="preserve"><value>Total OT Hours</value></data>
+  <data name="Attendance.TotalRecords" xml:space="preserve"><value>Total Records</value></data>
+  <data name="Field.ScheduledWorkDays" xml:space="preserve"><value>Scheduled Work Days</value></data>
+  <data name="Field.ActualWorkDays" xml:space="preserve"><value>Actual Work Days</value></data>
+  <data name="Field.AbsentDays" xml:space="preserve"><value>Absent Days</value></data>
+  <data name="Field.SickLeaveDays" xml:space="preserve"><value>Sick Leave Days</value></data>
+  <data name="Field.OvertimeHours1" xml:space="preserve"><value>OT Hours 1 (First 2hr)</value></data>
+  <data name="Field.OvertimeHours2" xml:space="preserve"><value>OT Hours 2 (Next 2hr)</value></data>
+  <data name="Field.HolidayOvertimeHours" xml:space="preserve"><value>Holiday OT Hours</value></data>
+  <data name="Field.NationalHolidayHours" xml:space="preserve"><value>National Holiday OT Hours</value></data>
+  <data name="Field.Year" xml:space="preserve"><value>ROC Year</value></data>
+  <data name="Field.Month" xml:space="preserve"><value>Month</value></data>
+  <data name="Label.Month" xml:space="preserve"><value>Month</value></data>
+  <data name="Label.Locked" xml:space="preserve"><value>Locked</value></data>
+  <data name="Label.Editable" xml:space="preserve"><value>Editable</value></data>
   <!-- ===== Vehicle Field keys ===== -->
   <data name="Field.AssociatedCompany" xml:space="preserve"><value>Associated Company</value></data>
   <data name="Field.AssociatedCustomer" xml:space="preserve"><value>Associated Customer</value></data>
@@ -1719,6 +1942,9 @@
   <data name="Search.NoResults" xml:space="preserve"><value>No matching items found. Please try different keywords.</value></data>
   <data name="Search.DefaultTitle" xml:space="preserve"><value>Search</value></data>
   <data name="Search.DefaultPlaceholder" xml:space="preserve"><value>Enter keywords to search...</value></data>
+  <data name="Search.ResultCount" xml:space="preserve"><value>Found {0} results</value></data>
+  <data name="Search.KeyHintNavigate" xml:space="preserve"><value>Navigate</value></data>
+  <data name="Search.KeyHintSelect" xml:space="preserve"><value>Select</value></data>
 
   <!-- ===== QuickAction ===== -->
   <data name="QuickAction.MenuTooltip" xml:space="preserve"><value>Quick Actions (Alt + Q)</value></data>
@@ -1820,6 +2046,8 @@
 
   <!-- ===== Customer Module ===== -->
   <data name="Customer.ChartTitle" xml:space="preserve"><value>Customer Analysis Charts</value></data>
+  <!-- ===== Supplier Module ===== -->
+  <data name="Supplier.ChartTitle" xml:space="preserve"><value>Supplier Analysis Charts</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>No related transaction records</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>No visit records yet</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>No related transaction records</value></data>
@@ -2960,5 +3188,17 @@
   <data name="Message.EntityDeleteFailed" xml:space="preserve"><value>Delete failed: {0}</value></data>
   <data name="Message.EntityDeleteError" xml:space="preserve"><value>Error occurred during deletion: {0}</value></data>
   <data name="Message.EntityDeleteConfirm" xml:space="preserve"><value>Are you sure you want to delete {0} "{1}"?</value></data>
+  <data name="Column.BatchDate" xml:space="preserve"><value>Batch Date</value></data>
+  <data name="Column.ReservedStock" xml:space="preserve"><value>Reserved Stock</value></data>
+  <data name="Column.InTransitStock" xml:space="preserve"><value>In-Transit Stock</value></data>
+  <data name="Label.TotalCurrentStock" xml:space="preserve"><value>Total Current Stock</value></data>
+  <data name="Label.TotalReservedStock" xml:space="preserve"><value>Total Reserved</value></data>
+  <data name="Label.TotalInTransitStock" xml:space="preserve"><value>Total In-Transit</value></data>
+  <data name="Inventory.AtLeastOneDetail" xml:space="preserve"><value>At least one inventory detail is required</value></data>
+  <data name="Inventory.DuplicateWarehouseLocation" xml:space="preserve"><value>Duplicate warehouse and location combination exists, please review</value></data>
+  <data name="Inventory.ReservedExceedsCurrent" xml:space="preserve"><value>Reserved stock cannot exceed current stock</value></data>
+  <data name="Inventory.AllDetailsCleared" xml:space="preserve"><value>All inventory details cleared</value></data>
+  <data name="Inventory.CurrentStockReadonlyHint" xml:space="preserve"><value>Current stock must be modified through stock adjustment, receiving, or shipping processes</value></data>
+  <data name="Message.ConfirmDeleteExistingDetail" xml:space="preserve"><value>This detail is saved in the database. Are you sure you want to delete it?</value></data>
 
 </root>

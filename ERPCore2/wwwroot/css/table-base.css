@@ -39,10 +39,12 @@
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .table-container-hover:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+    border-color: var(--border-color, #D1D5DB);
 }
 
 .table-container-hover .table {
@@ -460,6 +462,18 @@
     color: #78350f !important;
 }
 
+/* --- 鎖定行（唯讀/已確認/不可編輯）--- */
+.interactive-table tbody tr.row-locked > td {
+    background-color: var(--bg-secondary) !important;
+}
+
+.interactive-table tbody tr.row-locked .form-control,
+.interactive-table tbody tr.row-locked .form-select {
+    color: var(--text-secondary) !important;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* --- Interactive 儲存格（較緊湊的垂直 padding）--- */
 .interactive-table tbody td {
     padding: 0.15rem 0.75rem !important;
@@ -558,8 +572,9 @@
 
 /* 驗證錯誤 */
 .interactive-table-container .is-invalid {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    border-color: var(--danger-color) !important;
+    background-image: none !important;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
 }
 
 /* Checkbox 置中 */
@@ -600,6 +615,34 @@ input[type="number"] {
     appearance: textfield;
 }
 
+/* --- SearchableSelect 下拉動畫 --- */
+.searchable-dropdown {
+    animation: searchableDropdownFadeIn 0.12s ease-out;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+@keyframes searchableDropdownFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 數字欄位顏色（Display 類型，搭配 num-positive / num-negative / num-zero class）--- */
+.interactive-table .num-positive {
+    color: var(--primary-blue-hover);
+    font-variant-numeric: tabular-nums;
+}
+
+.interactive-table .num-negative {
+    color: var(--danger-color);
+    font-variant-numeric: tabular-nums;
+}
+
+.interactive-table .num-zero {
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
 /* 唯讀 / 停用控件 */
 .interactive-table-container .form-control[readonly],
 .interactive-table-container .form-select[disabled] {
@@ -623,7 +666,6 @@ input[type="number"] {
 /* --- 合計行（tfoot）--- */
 .interactive-table-total-row {
     background-color: #f0f4f8 !important;
-    border-top: 2px solid #cbd5e1 !important;
 }
 
 .interactive-table-total-row th {
@@ -632,6 +674,8 @@ input[type="number"] {
     color: #1e293b !important;
     padding: 0.2rem 0.75rem !important;
     background-color: #f0f4f8 !important;
+    border-top: 2px solid var(--primary-blue) !important;
+    letter-spacing: 0.02em;
 }
 
 /* --- 空資料提示美化 --- */
@@ -1056,7 +1100,6 @@ tr.dragging .drag-handle {
 [data-bs-theme=dark] .interactive-table-total-row,
 [data-bs-theme=dark] .interactive-table-total-row th {
     background-color: var(--bg-tertiary) !important;
-    border-color: var(--border-color) !important;
     color: var(--text-primary) !important;
 }
 

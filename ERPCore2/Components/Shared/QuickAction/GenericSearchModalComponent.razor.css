@@ -1,0 +1,131 @@
+/* ===== 結果統計列 + 鍵盤提示 ===== */
+
+.search-results-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-keyboard-hint {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.search-keyboard-hint kbd {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.2rem;
+}
+
+/* ===== 搜尋結果清單 ===== */
+
+.search-results-list {
+    max-height: 420px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-light);
+    transition: background-color 0.1s ease;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.search-result-item.selected {
+    background-color: rgba(var(--primary-blue-rgb), 0.08);
+}
+
+.search-result-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== 項目內容 ===== */
+
+.search-result-icon {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    width: 1.5rem;
+    text-align: center;
+}
+
+.search-result-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.search-result-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 0.1rem;
+}
+
+.search-result-category {
+    font-size: 0.72rem;
+    padding: 0.15rem 0.5rem;
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-radius: var(--radius);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.search-result-arrow {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    font-size: 0.85rem;
+}
+
+/* ===== 深色模式 ===== */
+
+[data-bs-theme=dark] .search-results-list {
+    border-color: var(--border-color);
+}
+
+[data-bs-theme=dark] .search-result-item {
+    border-bottom-color: var(--border-light);
+}
+
+[data-bs-theme=dark] .search-result-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+[data-bs-theme=dark] .search-result-item.selected {
+    background-color: rgba(88, 166, 255, 0.12);
+}
+
+[data-bs-theme=dark] .search-result-name {
+    color: var(--text-primary);
+}
+
+[data-bs-theme=dark] .search-result-category {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+}

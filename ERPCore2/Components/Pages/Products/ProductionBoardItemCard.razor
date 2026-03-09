@@ -66,20 +66,20 @@
 
     private string StatusCssClass => Item.ProductionItemStatus switch
     {
-        ProductionItemStatus.Pending     => "status-pending",
-        ProductionItemStatus.InProgress  => "status-inprogress",
-        ProductionItemStatus.Completed   => "status-completed",
-        ProductionItemStatus.Discontinued => "status-discontinued",
-        _ => "status-pending"
+        ProductionItemStatus.WaitingMaterial => "status-waitingmaterial",
+        ProductionItemStatus.Pending         => "status-waitingmaterial",
+        ProductionItemStatus.InProgress      => "status-inprogress",
+        ProductionItemStatus.Completed       => "status-completed",
+        _                                    => "status-waitingmaterial"
     };
 
     private string StatusText => Item.ProductionItemStatus switch
     {
-        ProductionItemStatus.Pending     => "待生產",
-        ProductionItemStatus.InProgress  => "生產中",
-        ProductionItemStatus.Completed   => "已完成",
-        ProductionItemStatus.Discontinued => "已停產",
-        _ => "待生產"
+        ProductionItemStatus.WaitingMaterial => "等待領料",
+        ProductionItemStatus.Pending         => "等待領料",
+        ProductionItemStatus.InProgress      => "生產中",
+        ProductionItemStatus.Completed       => "已完成",
+        _                                    => "等待領料"
     };
 
     private string DeliveryUrgencyCss

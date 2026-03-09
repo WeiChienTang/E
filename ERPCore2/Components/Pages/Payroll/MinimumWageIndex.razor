@@ -1,0 +1,119 @@
+@page "/payroll/minimum-wages"
+@inject IMinimumWageService WageService
+@inject INotificationService NotificationService
+@inject INavigationPermissionService NavigationPermissionService
+@inject IStringLocalizer<SharedResource> L
+@rendermode InteractiveServer
+
+<PageTitle>@L["Page.MinimumWageTitle"]</PageTitle>
+
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h4 class="mb-0">@L["Page.MinimumWageTitle"]</h4>
+            <small class="text-muted">@L["Page.MinimumWageSubtitle"]</small>
+        </div>
+        <button class="btn btn-primary" @onclick="ShowAdd">
+            <i class="bi bi-plus-lg me-1"></i>@L["Button.Add"]
+        </button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]</div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>@L["Field.EffectiveDate"]</th>
+                            <th class="text-end">@L["Field.MonthlyMinWage"]</th>
+                            <th class="text-end">@L["Field.HourlyMinWage"]</th>
+                            <th>@L["Label.Remarks"]</th>
+                            <th class="text-center" style="width:100px">@L["Label.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var w in wages)
+                        {
+                            <tr>
+                                <td>@w.EffectiveDate.ToString("yyyy-MM-dd")</td>
+                                <td class="text-end">@w.MonthlyAmount.ToString("N0")</td>
+                                <td class="text-end">@w.HourlyAmount.ToString("N2")</td>
+                                <td>@w.Remarks</td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowEdit(w)" title="@L["Button.Edit"]">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDeleteAsync(w)" title="@L["Button.Delete"]">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        @if (!wages.Any())
+                        {
+                            <tr><td colspan="5" class="text-center text-muted py-3">@L["Message.NoData"]</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<MinimumWageEditModalComponent IsVisible="@showModal"
+                               IsVisibleChanged="@((bool v) => showModal = v)"
+                               EditingItem="@editingItem"
+                               OnSaved="@ReloadAsync" />
+
+@code {
+    private List<MinimumWage> wages = new();
+    private bool isLoading = true;
+    private bool showModal = false;
+    private MinimumWage? editingItem;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hasAccess = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.RateTable);
+        if (!hasAccess) { return; }
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        wages = await WageService.GetAllAsync();
+        isLoading = false;
+    }
+
+    private void ShowAdd()
+    {
+        editingItem = null;
+        showModal = true;
+    }
+
+    private void ShowEdit(MinimumWage item)
+    {
+        editingItem = item;
+        showModal = true;
+    }
+
+    private async Task ConfirmDeleteAsync(MinimumWage item)
+    {
+        var result = await WageService.DeleteAsync(item.Id);
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync(L["Message.DeleteSuccess"].ToString());
+            await ReloadAsync();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.DeleteFailed"].ToString());
+        }
+    }
+}

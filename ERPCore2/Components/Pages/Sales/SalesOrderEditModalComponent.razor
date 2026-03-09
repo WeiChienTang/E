@@ -20,6 +20,7 @@
 @inject IDbContextFactory<AppDbContext> DbContextFactory
 @inject IStringLocalizer<SharedResource> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject INavigationPermissionService NavigationPermissionService
 
 <GenericEditModalComponent TEntity="SalesOrder" 
                           TService="ISalesOrderService"
@@ -50,6 +51,7 @@
                           ApprovalPermission="@PermissionRegistry.SalesOrder.Approve"
                           OnApprove="@HandleSalesOrderApprove"
                           OnRejectWithReason="@HandleSalesOrderRejectWithReason"
+                          HasDownstreamActions="@hasUndeletableDetails"
                           CanPrintCheck="@GetCanPrintCheck()"
                           OnEntitySaved="@OnSalesOrderSaved"
                           OnCancel="@OnCancel"
@@ -135,6 +137,13 @@
                              OnClose="@(() => showInventoryCheckModal = false)" />
 }
 
+@* 生產排程看板 Modal *@
+@if (showProductionBoardModal)
+{
+    <ProductionBoardModalComponent IsVisible="@showProductionBoardModal"
+                                   IsVisibleChanged="@((bool visible) => showProductionBoardModal = visible)" />
+}
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -206,7 +215,13 @@
     
     // 訂單庫存檢視 Modal
     private bool showInventoryCheckModal = false;
-    
+
+    // 轉排程 Modal
+    private bool showProductionBoardModal = false;
+
+    // 排程權限
+    private bool canViewSchedule = false;
+
     // 庫存不足狀態
     private bool hasInventoryShortage = false;
     private bool isInventoryCheckLoading = false;
@@ -435,6 +450,9 @@
             // 重新載入審核開關設定（確保每次開啟 Modal 時使用最新值）
             isManualApproval = await SystemParameterService.IsSalesOrderManualApprovalAsync();
             showApprovalSection = !await SystemParameterService.IsApprovalInfoHiddenAsync();
+
+            // 檢查排程權限
+            canViewSchedule = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.ProductionSchedule.Read);
 
             taxCalculationMethodOptions = TaxCalculationHelper.GetTaxMethodOptions();
 
@@ -755,7 +773,7 @@
                              FilterProductId="@filterProductId"
                              FilterProductName="@GetFilterProductName()"
                              TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                             IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)"
+                             IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, false)"
                              SourceQuotationId="@PrefilledQuotationId"
                              OnDetailsChanged="@HandleDetailsChanged"
                              OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
@@ -1162,6 +1180,7 @@
 
         <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
                                   Message="@EditModalMessages.UndeletableDetailsWarning"
+                                  SubMessage="@EditModalMessages.UndeletableDetailsHint"
                                   Compact="true" />
     };
 
@@ -1186,9 +1205,18 @@
         {
             
             <GenericButtonComponent Text="@L["Button.ConvertToDelivery"]"
-                                  Variant="ButtonVariant.Green" 
+                                  Variant="ButtonVariant.Green"
                                   OnClick="HandleCreateDeliveryFromOrder" />
-            
+
+            @* 檢視排程按鈕 - 需有 ProductionSchedule.Read 權限 *@
+            @if (canViewSchedule)
+            {
+                <GenericButtonComponent Text="@L["Button.ViewSchedule"]"
+                                      Variant="ButtonVariant.Orange"
+                                      Icon="bi bi-kanban"
+                                      OnClick="HandleViewSchedule" />
+            }
+
             @* 庫存檢視按鈕 - 有不足時顯示警告樣式 *@
             @if (isInventoryCheckLoading)
             {
@@ -1454,6 +1482,15 @@
         }
     }
     
+    /// <summary>
+    /// 開啟生產排程看板 Modal
+    /// </summary>
+    private void HandleViewSchedule()
+    {
+        showProductionBoardModal = true;
+        StateHasChanged();
+    }
+
     /// <summary>
     /// 儲存邏輯 - 同時儲存主檔和明細
     /// </summary>

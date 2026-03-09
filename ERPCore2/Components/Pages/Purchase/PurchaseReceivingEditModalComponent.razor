@@ -57,6 +57,7 @@
                           ApprovalPermission="@PermissionRegistry.PurchaseReceiving.Approve"
                           OnApprove="@HandlePurchaseReceivingApprove"
                           OnRejectWithReason="@HandlePurchaseReceivingRejectWithReason"
+                          HasDownstreamActions="@hasUndeletableDetails"
                           CanPrintCheck="@GetCanPrintCheck()"
                           OnEntitySaved="@OnPurchaseReceivingSaved"
                           OnCancel="@OnCancel"
@@ -463,6 +464,7 @@
 
         <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
                                   Message="@EditModalMessages.UndeletableDetailsWarning"
+                                  SubMessage="@EditModalMessages.UndeletableDetailsHint"
                                   Compact="true" />
     };
 
@@ -1655,7 +1657,7 @@
                                     ShowWarehouseLocation="true"
                                     Warehouses="@warehouses"
                                     WarehouseLocations="@warehouseLocations"
-                                    IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)" />
+                                    IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, false)" />
         </DetailSectionWrapper>
     };
     

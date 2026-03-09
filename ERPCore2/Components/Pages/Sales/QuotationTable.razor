@@ -38,7 +38,7 @@ else
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
                                       ActionsColumnWidth = "120px"
                                       EnableAutoEmptyRow="true"
-                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
+                                      AllowAddNewRow="@(!IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@CreateEmptyItem" />
         </div>

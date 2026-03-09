@@ -54,9 +54,9 @@ namespace ERPCore2.FieldConfiguration
                         "Manager",
                         new FieldDefinition<Department>
                         {
-                            PropertyName = "Manager.FirstName",
+                            PropertyName = "Manager.Name",
                             DisplayName = Dn("Field.DepartmentManager", "部門主管"),
-                            ShowInFilter = false, // 不顯示在篩選器中
+                            ShowInFilter = false,
                             TableOrder = 3,
                             NullDisplayText = Nd("Label.Unassigned", "未指派"),
                             CustomTemplate = item => builder =>
@@ -66,19 +66,63 @@ namespace ERPCore2.FieldConfiguration
                                 {
                                     var managerName = department.Manager.Name?.Trim() ?? "";
                                     if (string.IsNullOrWhiteSpace(managerName))
-                                    {
-                                        managerName = department.Manager.Code;
-                                    }
+                                        managerName = department.Manager.Code ?? "";
                                     builder.AddContent(0, managerName);
                                 }
                                 else
                                 {
                                     builder.OpenElement(0, "span");
                                     builder.AddAttribute(1, "class", "text-muted");
-                                    builder.AddContent(2, "未指派");
+                                    builder.AddContent(2, L?["Label.Unassigned"].ToString() ?? "未指派");
                                     builder.CloseElement();
                                 }
                             }
+                        }
+                    },
+                    {
+                        "ParentDepartment",
+                        new FieldDefinition<Department>
+                        {
+                            PropertyName = "ParentDepartment.Name",
+                            DisplayName = Dn("Field.ParentDepartment", "上級部門"),
+                            ShowInFilter = false,
+                            TableOrder = 4,
+                            NullDisplayText = Nd("Label.NotSet", "未設定"),
+                            CustomTemplate = item => builder =>
+                            {
+                                var department = (Department)item;
+                                if (department.ParentDepartment != null)
+                                {
+                                    builder.AddContent(0, department.ParentDepartment.Name);
+                                }
+                                else
+                                {
+                                    builder.OpenElement(0, "span");
+                                    builder.AddAttribute(1, "class", "text-muted");
+                                    builder.AddContent(2, L?["Label.NotSet"].ToString() ?? "未設定");
+                                    builder.CloseElement();
+                                }
+                            }
+                        }
+                    },
+                    {
+                        nameof(Department.Phone),
+                        new FieldDefinition<Department>
+                        {
+                            PropertyName = nameof(Department.Phone),
+                            DisplayName = Dn("Field.DepartmentPhone", "部門電話"),
+                            ShowInFilter = false,
+                            TableOrder = 5
+                        }
+                    },
+                    {
+                        nameof(Department.Location),
+                        new FieldDefinition<Department>
+                        {
+                            PropertyName = nameof(Department.Location),
+                            DisplayName = Dn("Field.DepartmentLocation", "辦公地點"),
+                            ShowInFilter = false,
+                            TableOrder = 6
                         }
                     }
                 };

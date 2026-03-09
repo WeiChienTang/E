@@ -28,5 +28,12 @@ namespace ERPCore2.Services
         /// </summary>
         /// <returns>員工列表</returns>
         Task<List<Employee>> GetAvailableManagersAsync();
+
+        /// <summary>
+        /// 取得可作為上級部門的部門列表（排除自身及其子部門以防止循環參照）
+        /// </summary>
+        /// <param name="excludeId">排除的部門ID（編輯時傳入自身ID）</param>
+        /// <returns>部門列表</returns>
+        Task<List<Department>> GetAvailableParentDepartmentsAsync(int? excludeId = null);
     }
 }

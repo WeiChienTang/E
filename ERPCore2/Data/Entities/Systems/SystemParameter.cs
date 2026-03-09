@@ -172,5 +172,84 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Display(Name = "子科目代碼格式")]
         public SubAccountCodeFormat SubAccountCodeFormat { get; set; } = SubAccountCodeFormat.EntityCode;
+
+        // ===== 薪資系統設定 =====
+
+        /// <summary>每月發薪日（1-31），例：5 = 每月5日發薪</summary>
+        [Display(Name = "發薪日")]
+        [Range(1, 31, ErrorMessage = "發薪日必須在 1 到 31 之間")]
+        public int PayrollPayDay { get; set; } = 5;
+
+        /// <summary>每月薪資結算截止日（1-31），例：25 = 每月25日結算當月出勤</summary>
+        [Display(Name = "薪資結算截止日")]
+        [Range(1, 31, ErrorMessage = "結算截止日必須在 1 到 31 之間")]
+        public int PayrollCutoffDay { get; set; } = 25;
+
+        /// <summary>月薪計算除數（預設30）。0 = 依當月實際天數</summary>
+        [Display(Name = "月薪計算除數")]
+        [Range(0, 31)]
+        public int SalaryMonthDivisor { get; set; } = 30;
+
+        /// <summary>加班計時單位（分鐘），例：30 = 每30分鐘計一次加班</summary>
+        [Display(Name = "加班計時單位（分鐘）")]
+        [Range(1, 60)]
+        public int OvertimeRoundingUnit { get; set; } = 30;
+
+        /// <summary>遲到寬限分鐘數，例：5 = 遲到5分鐘以內不罰</summary>
+        [Display(Name = "遲到寬限分鐘")]
+        [Range(0, 60)]
+        public int LateTolerance { get; set; } = 0;
+
+        // ── 薪資會計科目代碼（Phase 4 使用，空白時不過帳）──────────────
+
+        /// <summary>薪資費用科目代碼（如 6111）</summary>
+        [MaxLength(20)]
+        [Display(Name = "薪資費用科目")]
+        public string? PayrollExpenseAccountCode { get; set; }
+
+        /// <summary>加班費科目代碼（如 6112）</summary>
+        [MaxLength(20)]
+        [Display(Name = "加班費科目")]
+        public string? OvertimeExpenseAccountCode { get; set; }
+
+        /// <summary>勞保費用科目代碼—雇主負擔（如 6121）</summary>
+        [MaxLength(20)]
+        [Display(Name = "勞保費用科目（雇主）")]
+        public string? LaborInsuranceExpenseAccountCode { get; set; }
+
+        /// <summary>健保費用科目代碼—雇主負擔（如 6122）</summary>
+        [MaxLength(20)]
+        [Display(Name = "健保費用科目（雇主）")]
+        public string? HealthInsuranceExpenseAccountCode { get; set; }
+
+        /// <summary>勞退提繳費用科目代碼（如 6131）</summary>
+        [MaxLength(20)]
+        [Display(Name = "勞退提繳費用科目")]
+        public string? RetirementExpenseAccountCode { get; set; }
+
+        /// <summary>應付薪資科目代碼—負債（如 2191）</summary>
+        [MaxLength(20)]
+        [Display(Name = "應付薪資科目")]
+        public string? AccruedPayrollAccountCode { get; set; }
+
+        /// <summary>代扣勞保費科目代碼—負債（如 2192）</summary>
+        [MaxLength(20)]
+        [Display(Name = "代扣勞保費科目")]
+        public string? WithholdingLaborInsuranceAccountCode { get; set; }
+
+        /// <summary>代扣健保費科目代碼—負債（如 2193）</summary>
+        [MaxLength(20)]
+        [Display(Name = "代扣健保費科目")]
+        public string? WithholdingHealthInsuranceAccountCode { get; set; }
+
+        /// <summary>代扣所得稅科目代碼—負債（如 2194）</summary>
+        [MaxLength(20)]
+        [Display(Name = "代扣所得稅科目")]
+        public string? WithholdingTaxAccountCode { get; set; }
+
+        /// <summary>代扣勞退自提科目代碼—負債（如 2195）</summary>
+        [MaxLength(20)]
+        [Display(Name = "代扣勞退自提科目")]
+        public string? VoluntaryRetirementAccountCode { get; set; }
     }
 }

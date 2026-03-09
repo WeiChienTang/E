@@ -40,7 +40,7 @@ else
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
                                       OnItemDelete="@HandleItemDelete"
                                       EnableAutoEmptyRow="true"
-                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
+                                      AllowAddNewRow="@(!IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@(() => new ReceivingItem())" />
         </div>
@@ -399,7 +399,7 @@ else
                 }
                 return @<input type="number" class="form-control form-control-sm text-end"
                                min="0"
-                               value="@receivingItem.ReceivedQuantity.ToString()"
+                               value="@(receivingItem.ReceivedQuantity > 0 ? receivingItem.ReceivedQuantity.ToString() : string.Empty)"
                                @onchange="@(async e => await OnQuantityChange(receivingItem, e.Value?.ToString()))" />;
             }
         });

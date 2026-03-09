@@ -63,7 +63,7 @@ else
                                       ActionsColumnWidth = "60px"
                                       OnItemDelete="HandleItemDelete"
                                       EnableAutoEmptyRow="true"
-                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
+                                      AllowAddNewRow="@(!IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@(() => new SalesItem())"/>
         </div>

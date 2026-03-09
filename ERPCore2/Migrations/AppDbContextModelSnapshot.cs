@@ -885,6 +885,13 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("DeputyManagerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int?>("ManagerId")
                         .HasColumnType("int");
 
@@ -892,6 +899,13 @@ namespace ERPCore2.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("ParentDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -909,7 +923,11 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DeputyManagerId");
+
                     b.HasIndex("ManagerId");
+
+                    b.HasIndex("ParentDepartmentId");
 
                     b.ToTable("Departments");
                 });
@@ -1569,6 +1587,9 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("ShowNoteBadge")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("ShowUnsavedChangesWarning")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -2058,9 +2079,9 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseLocationId");
 
-                    b.HasIndex("InventoryStockId", "WarehouseId", "WarehouseLocationId")
+                    b.HasIndex("InventoryStockId", "WarehouseId", "WarehouseLocationId", "BatchNumber")
                         .IsUnique()
-                        .HasFilter("[WarehouseLocationId] IS NOT NULL");
+                        .HasFilter("[WarehouseLocationId] IS NOT NULL AND [BatchNumber] IS NOT NULL");
 
                     b.ToTable("InventoryStockDetails");
                 });
@@ -2779,6 +2800,659 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PaymentMethods");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.EmployeeBankAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("BankCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("BranchCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("BranchName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("EmployeeBankAccounts");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.EmployeeSalary", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("BaseSalary")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("DependentCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("ExpiryDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("HealthInsuredAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("LaborInsuredSalary")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("MealAllowance")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("PositionAllowance")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("SalaryType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaxType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TransportAllowance")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("VoluntaryRetirementRate")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EffectiveDate");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("EmployeeSalaries");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.HealthInsuranceGrade", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Grade")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("InsuredAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("SalaryFrom")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal?>("SalaryTo")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HealthInsuranceGrades");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.InsuranceRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("HealthInsuranceEmployeeRate")
+                        .HasColumnType("decimal(6,4)");
+
+                    b.Property<decimal>("HealthInsuranceEmployerRate")
+                        .HasColumnType("decimal(6,4)");
+
+                    b.Property<decimal>("LaborInsuranceEmployeeRate")
+                        .HasColumnType("decimal(6,4)");
+
+                    b.Property<decimal>("LaborInsuranceEmployerRate")
+                        .HasColumnType("decimal(6,4)");
+
+                    b.Property<decimal>("MealTaxFreeLimit")
+                        .HasColumnType("decimal(10,0)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("RetirementEmployerRate")
+                        .HasColumnType("decimal(6,4)");
+
+                    b.Property<decimal>("TransportTaxFreeLimit")
+                        .HasColumnType("decimal(10,0)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InsuranceRates");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.LaborInsuranceGrade", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Grade")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("InsuredSalary")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("SalaryFrom")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal?>("SalaryTo")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LaborInsuranceGrades");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.MinimumWage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("HourlyAmount")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("MonthlyAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MinimumWages");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.MonthlyAttendanceSummary", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AbsentDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("ActualWorkDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("HolidayOvertimeHours")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<bool>("IsLocked")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("NationalHolidayHours")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("OvertimeHours1")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("OvertimeHours2")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("ScheduledWorkDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("SickLeaveDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year", "Month");
+
+                    b.HasIndex("EmployeeId", "Year", "Month")
+                        .IsUnique()
+                        .HasDatabaseName("UX_MonthlyAttendance_Employee_Period");
+
+                    b.ToTable("MonthlyAttendanceSummaries");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsInsuranceBasis")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRetirementBasis")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystemItem")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTaxable")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ItemType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
+                    b.ToTable("PayrollItems");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollPeriod", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ClosedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PeriodStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year", "Month")
+                        .IsUnique();
+
+                    b.ToTable("PayrollPeriods");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AbsentDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("ActualWorkDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<DateTime?>("CalculatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CalculatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("EmployerHealthInsurance")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("EmployerLaborInsurance")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("EmployerRetirement")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("GrossIncome")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("HealthInsuranceAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("HolidayOvertimeHours")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("LaborInsuranceSalary")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("NationalHolidayHours")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("NetPay")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("OvertimeHours1")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("OvertimeHours2")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<int>("PayrollPeriodId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("ScheduledWorkDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("SickLeaveDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TaxableIncome")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("TotalDeduction")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("WithholdingTax")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PayrollPeriodId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("PayrollRecords");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollRecordDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<int>("PayrollItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PayrollRecordId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Remark")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("UnitAmount")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PayrollItemId");
+
+                    b.HasIndex("PayrollRecordId");
+
+                    b.ToTable("PayrollRecordDetails");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.WithholdingTaxTable", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DependentCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("SalaryFrom")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal?>("SalaryTo")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("WithholdingTaxTables");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Permission", b =>
@@ -6380,6 +7054,10 @@ namespace ERPCore2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AccruedPayrollAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<bool>("AutoCreateCustomerSubAccount")
                         .HasColumnType("bit");
 
@@ -6420,12 +7098,40 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("HealthInsuranceExpenseAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<bool>("HideApprovalInfoSection")
                         .HasColumnType("bit");
 
                     b.Property<bool>("InventoryTransferManualApproval")
                         .HasColumnType("bit")
                         .HasColumnName("EnableInventoryTransferApproval");
+
+                    b.Property<string>("LaborInsuranceExpenseAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("LateTolerance")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OvertimeExpenseAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("OvertimeRoundingUnit")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PayrollCutoffDay")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PayrollExpenseAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("PayrollPayDay")
+                        .HasColumnType("int");
 
                     b.Property<string>("ProductSubAccountParentCode")
                         .IsRequired()
@@ -6451,6 +7157,13 @@ namespace ERPCore2.Migrations
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RetirementExpenseAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("SalaryMonthDivisor")
+                        .HasColumnType("int");
 
                     b.Property<bool>("SalesDeliveryManualApproval")
                         .HasColumnType("bit")
@@ -6500,6 +7213,22 @@ namespace ERPCore2.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("VoluntaryRetirementAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("WithholdingHealthInsuranceAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("WithholdingLaborInsuranceAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("WithholdingTaxAccountCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
 
@@ -7343,11 +8072,23 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Department", b =>
                 {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "DeputyManager")
+                        .WithMany()
+                        .HasForeignKey("DeputyManagerId");
+
                     b.HasOne("ERPCore2.Data.Entities.Employee", "Manager")
                         .WithMany()
                         .HasForeignKey("ManagerId");
 
+                    b.HasOne("ERPCore2.Data.Entities.Department", "ParentDepartment")
+                        .WithMany("SubDepartments")
+                        .HasForeignKey("ParentDepartmentId");
+
+                    b.Navigation("DeputyManager");
+
                     b.Navigation("Manager");
+
+                    b.Navigation("ParentDepartment");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Document", b =>
@@ -7702,6 +8443,77 @@ namespace ERPCore2.Migrations
                     b.Navigation("Warehouse");
 
                     b.Navigation("WarehouseLocation");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.EmployeeBankAccount", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.EmployeeSalary", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.MonthlyAttendanceSummary", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollRecord", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.Payroll.PayrollPeriod", "Period")
+                        .WithMany("Records")
+                        .HasForeignKey("PayrollPeriodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Period");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollRecordDetail", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Payroll.PayrollItem", "Item")
+                        .WithMany("Details")
+                        .HasForeignKey("PayrollItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.Payroll.PayrollRecord", "Record")
+                        .WithMany("Details")
+                        .HasForeignKey("PayrollRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("Record");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PriceHistory", b =>
@@ -8909,6 +9721,8 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.Department", b =>
                 {
                     b.Navigation("Employees");
+
+                    b.Navigation("SubDepartments");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Document", b =>
@@ -8965,6 +9779,21 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.MaterialIssue", b =>
                 {
                     b.Navigation("MaterialIssueDetails");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollItem", b =>
+                {
+                    b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollPeriod", b =>
+                {
+                    b.Navigation("Records");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.PayrollRecord", b =>
+                {
+                    b.Navigation("Details");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Permission", b =>

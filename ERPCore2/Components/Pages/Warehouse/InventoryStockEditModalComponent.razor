@@ -82,9 +82,9 @@
         }
     }
     // ===== 自訂驗證 =====
-    
+
     /// <summary>
-    /// 儲存前驗證 - 檢查重複的倉庫庫位並詢問是否合併
+    /// 儲存前驗證 - 執行基本驗證，並檢查重複的倉庫庫位並詢問是否合併
     /// </summary>
     private async Task<bool> ValidateBeforeSave(InventoryStock entity)
     {
@@ -94,6 +94,13 @@
             if (inventoryStockDetailManager == null)
             {
                 return true; // 沒有明細管理器，允許儲存
+            }
+
+            // 先執行基本驗證（至少一筆明細、預留庫存不超過現有庫存）
+            var isValid = await inventoryStockDetailManager.ValidateAsync();
+            if (!isValid)
+            {
+                return false;
             }
 
             // 檢查是否有重複
@@ -183,31 +190,6 @@
         }
     }
     
-    /// <summary>
-    /// 載入庫存明細（用於上下筆切換）
-    /// </summary>
-    private async Task LoadInventoryStockDetails(int inventoryStockId)
-    {
-        try
-        {
-            var inventoryStock = await InventoryStockService.GetByIdAsync(inventoryStockId);
-            
-            if (inventoryStock?.InventoryStockDetails != null && inventoryStock.InventoryStockDetails.Any())
-            {
-                inventoryStockDetails = inventoryStock.InventoryStockDetails.ToList();
-            }
-            else
-            {
-                inventoryStockDetails = new List<InventoryStockDetail>();
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入庫存明細時發生錯誤：{ex.Message}");
-            inventoryStockDetails = new List<InventoryStockDetail>();
-        }
-    }
-
     private async Task<InventoryStock?> LoadInventoryStockData()
     {
         try
@@ -335,12 +317,6 @@
             {
                 Title = "",
                 Order = 0,
-                Content = CreateUnitInfoContent()
-            },
-            new GenericEditModalComponent<InventoryStock, IInventoryStockService>.CustomModule
-            {
-                Title = "",
-                Order = 1,
                 Content = CreateStockDetailContent()
             }
         };
@@ -439,7 +415,7 @@
                               IsPreconditionMet="@(editModalComponent?.Entity?.ProductId > 0)"
                               PreconditionMessage="請先選擇商品後再進行庫存明細管理">
             <InventoryStockTable @ref="inventoryStockDetailManager"
-                                 @key="@editModalComponent!.Entity.Id"
+                                 @key="@(editModalComponent?.Entity?.Id ?? 0)"
                                  TMainEntity="InventoryStock"
                                  TDetailEntity="InventoryStockDetail"
                                  MainEntity="@editModalComponent!.Entity"

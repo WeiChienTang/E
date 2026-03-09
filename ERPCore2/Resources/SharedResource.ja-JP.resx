@@ -293,6 +293,21 @@
   <data name="Preference.PageSizeUnit" xml:space="preserve">
     <value>行</value>
   </data>
+  <data name="Preference.OperationBehavior" xml:space="preserve">
+    <value>操作設定</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarning" xml:space="preserve">
+    <value>未保存フォームを離れる際に確認する</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningOn" xml:space="preserve">
+    <value>確認する</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningOff" xml:space="preserve">
+    <value>そのまま離れる</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningDesc" xml:space="preserve">
+    <value>この設定を無効にすると、未保存の変更があるフォームを閉じる際に確認メッセージが表示されません。離れる前に手動で保存する習慣を身につけてください。</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>アカウントは管理者が設定するため、変更できません</value>
@@ -397,6 +412,9 @@
   </data>
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>顧客グラフ</value>
+  </data>
+  <data name="Nav.SupplierCharts" xml:space="preserve">
+    <value>仕入先グラフ</value>
   </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>訪問レポート</value>
@@ -732,6 +750,7 @@
   <data name="Button.ConvertToSalesReturn" xml:space="preserve"><value>売上返品へ変換</value></data>
   <data name="Button.ConvertToSetoff" xml:space="preserve"><value>相殺へ変換</value></data>
   <data name="Button.ConvertToDelivery" xml:space="preserve"><value>出荷へ変換</value></data>
+  <data name="Button.ViewSchedule" xml:space="preserve"><value>スケジュール確認</value></data>
   <data name="Button.ConvertToOrder" xml:space="preserve"><value>受注へ変換</value></data>
   <data name="Button.CopyMessage" xml:space="preserve"><value>メッセージをコピー</value></data>
   <data name="Button.CheckInventory" xml:space="preserve"><value>在庫確認</value></data>
@@ -935,6 +954,10 @@
   <data name="Field.DepartmentCode" xml:space="preserve"><value>部門コード</value></data>
   <data name="Field.DepartmentName" xml:space="preserve"><value>部門名</value></data>
   <data name="Field.DepartmentManager" xml:space="preserve"><value>部門責任者</value></data>
+  <data name="Field.DeputyManager" xml:space="preserve"><value>代理責任者</value></data>
+  <data name="Field.ParentDepartment" xml:space="preserve"><value>上位部門</value></data>
+  <data name="Field.DepartmentPhone" xml:space="preserve"><value>部門電話</value></data>
+  <data name="Field.DepartmentLocation" xml:space="preserve"><value>オフィス所在地</value></data>
   <!-- ===== Position Field keys ===== -->
   <data name="Field.PositionCode" xml:space="preserve"><value>職位コード</value></data>
   <data name="Field.PositionName" xml:space="preserve"><value>職位名</value></data>
@@ -1149,6 +1172,206 @@
   <!-- ===== Tab additional keys ===== -->
   <data name="Tab.ModuleManagement" xml:space="preserve"><value>モジュール管理</value></data>
   <data name="Tab.SubAccountSettings" xml:space="preserve"><value>補助科目設定</value></data>
+  <data name="Tab.PayrollSettings" xml:space="preserve"><value>給与管理</value></data>
+  <data name="Tab.Payroll" xml:space="preserve"><value>給与履歴</value></data>
+  <data name="Nav.PayrollGroup" xml:space="preserve"><value>給与管理</value></data>
+  <data name="Nav.PayrollCalculation" xml:space="preserve"><value>給与計算業務</value></data>
+  <data name="Nav.PayrollSalaryConfig" xml:space="preserve"><value>従業員給与設定</value></data>
+  <data name="Nav.PayrollItems" xml:space="preserve"><value>給与項目設定</value></data>
+  <data name="Nav.PayrollPeriods" xml:space="preserve"><value>給与期間管理</value></data>
+  <data name="Section.PayrollBasicSettings" xml:space="preserve"><value>給与計算基本設定</value></data>
+  <data name="Section.PayrollAttendanceRules" xml:space="preserve"><value>勤怠計算ルール</value></data>
+  <data name="Section.PayrollAccountCodes" xml:space="preserve"><value>給与勘定科目設定（Phase 4）</value></data>
+  <data name="Field.PayrollPayDay" xml:space="preserve"><value>支給日</value></data>
+  <data name="Field.PayrollCutoffDay" xml:space="preserve"><value>給与締め日</value></data>
+  <data name="Field.SalaryMonthDivisor" xml:space="preserve"><value>月給計算除数</value></data>
+  <data name="Field.OvertimeRoundingUnit" xml:space="preserve"><value>残業丸め単位（分）</value></data>
+  <data name="Field.LateTolerance" xml:space="preserve"><value>遅刻猶予分数</value></data>
+  <data name="Field.PayrollExpenseAccount" xml:space="preserve"><value>給与費用科目</value></data>
+  <data name="Field.OvertimeExpenseAccount" xml:space="preserve"><value>残業費用科目</value></data>
+  <data name="Field.LaborInsuranceExpenseAccount" xml:space="preserve"><value>労保費用科目（会社）</value></data>
+  <data name="Field.HealthInsuranceExpenseAccount" xml:space="preserve"><value>健保費用科目（会社）</value></data>
+  <data name="Field.RetirementExpenseAccount" xml:space="preserve"><value>退職金拠出科目</value></data>
+  <data name="Field.AccruedPayrollAccount" xml:space="preserve"><value>未払給与科目</value></data>
+  <data name="Field.WithholdingLaborInsuranceAccount" xml:space="preserve"><value>預り労保費科目</value></data>
+  <data name="Field.WithholdingHealthInsuranceAccount" xml:space="preserve"><value>預り健保費科目</value></data>
+  <data name="Field.WithholdingTaxAccount" xml:space="preserve"><value>源泉所得税科目</value></data>
+  <data name="Field.VoluntaryRetirementAccount" xml:space="preserve"><value>預り任意退職金科目</value></data>
+  <!-- ===== Payroll Domain keys ===== -->
+  <data name="Payroll.Income" xml:space="preserve"><value>収入</value></data>
+  <data name="Payroll.Deduction" xml:space="preserve"><value>控除</value></data>
+  <data name="Payroll.Salary" xml:space="preserve"><value>給与</value></data>
+  <data name="Payroll.Allowance" xml:space="preserve"><value>手当・補助</value></data>
+  <data name="Payroll.Overtime" xml:space="preserve"><value>時間外手当</value></data>
+  <data name="Payroll.Bonus" xml:space="preserve"><value>賞与</value></data>
+  <data name="Payroll.Legal" xml:space="preserve"><value>法定控除</value></data>
+  <data name="Payroll.Other" xml:space="preserve"><value>その他</value></data>
+  <data name="Payroll.SystemItemLocked" xml:space="preserve"><value>システム内蔵項目、削除不可</value></data>
+  <data name="Field.PayrollItemCode" xml:space="preserve"><value>コード</value></data>
+  <data name="Field.PayrollItemName" xml:space="preserve"><value>名称</value></data>
+  <data name="Field.PayrollItemType" xml:space="preserve"><value>種別</value></data>
+  <data name="Field.PayrollItemCategory" xml:space="preserve"><value>カテゴリ</value></data>
+  <data name="Field.PayrollItemIsSystem" xml:space="preserve"><value>システム内蔵</value></data>
+  <data name="Field.PayrollItemIsTaxable" xml:space="preserve"><value>課税対象</value></data>
+  <data name="Field.PayrollItemIsInsuranceBasis" xml:space="preserve"><value>保険料算定基礎</value></data>
+  <data name="Field.PayrollItemIsRetirementBasis" xml:space="preserve"><value>退職金算定基礎</value></data>
+  <data name="Entity.PayrollItem" xml:space="preserve"><value>給与項目</value></data>
+  <data name="Page.PayrollItemsTitle" xml:space="preserve"><value>給与項目設定</value></data>
+  <data name="Page.PayrollItemsSubtitle" xml:space="preserve"><value>給与計算の収入・控除項目を管理</value></data>
+  <!-- ===== EmployeeSalary keys ===== -->
+  <data name="Entity.EmployeeSalary" xml:space="preserve"><value>従業員給与設定</value></data>
+  <data name="Page.EmployeeSalaryTitle" xml:space="preserve"><value>従業員給与設定</value></data>
+  <data name="Page.EmployeeSalarySubtitle" xml:space="preserve"><value>基本給・手当・保険料設定を管理</value></data>
+  <data name="Field.SalaryType" xml:space="preserve"><value>給与形態</value></data>
+  <data name="Field.BaseSalary" xml:space="preserve"><value>基本給</value></data>
+  <data name="Field.PositionAllowance" xml:space="preserve"><value>職務手当</value></data>
+  <data name="Field.MealAllowance" xml:space="preserve"><value>食事手当</value></data>
+  <data name="Field.TransportAllowance" xml:space="preserve"><value>交通費</value></data>
+  <data name="Field.LaborInsuredSalary" xml:space="preserve"><value>労働保険標準報酬</value></data>
+  <data name="Field.HealthInsuredAmount" xml:space="preserve"><value>健康保険標準報酬</value></data>
+  <data name="Field.DependentCount" xml:space="preserve"><value>扶養家族数</value></data>
+  <data name="Field.TaxWithholdingType" xml:space="preserve"><value>源泉徴収区分</value></data>
+  <data name="Field.VoluntaryRetirementRate" xml:space="preserve"><value>任意退職積立率(%)</value></data>
+  <data name="Field.EffectiveDate" xml:space="preserve"><value>適用開始日</value></data>
+  <data name="Payroll.Monthly" xml:space="preserve"><value>月給</value></data>
+  <data name="Payroll.Hourly" xml:space="preserve"><value>時給</value></data>
+  <data name="Payroll.CurrentActive" xml:space="preserve"><value>現在有効</value></data>
+  <data name="Payroll.TaxStandard" xml:space="preserve"><value>一般（給与所得税額表）</value></data>
+  <data name="Payroll.TaxResident" xml:space="preserve"><value>居住者（月給×5%）</value></data>
+  <data name="Payroll.TaxNonResident" xml:space="preserve"><value>非居住者（月給×18%）</value></data>
+  <!-- ===== EmployeeBankAccount keys ===== -->
+  <data name="Entity.EmployeeBankAccount" xml:space="preserve"><value>銀行口座</value></data>
+  <data name="Page.EmployeeBankAccountTitle" xml:space="preserve"><value>従業員銀行口座</value></data>
+  <data name="Page.EmployeeBankAccountSubtitle" xml:space="preserve"><value>給与振込用銀行口座を管理</value></data>
+  <data name="Field.BranchCode" xml:space="preserve"><value>支店コード</value></data>
+  <data name="Field.BranchName" xml:space="preserve"><value>支店名</value></data>
+  <data name="Field.AccountNumber" xml:space="preserve"><value>口座番号</value></data>
+  <data name="Field.BankAccountHolder" xml:space="preserve"><value>口座名義</value></data>
+  <data name="Field.IsPrimary" xml:space="preserve"><value>メイン口座</value></data>
+  <data name="Payroll.PrimaryAccount" xml:space="preserve"><value>メイン</value></data>
+  <!-- ===== PayrollPeriod keys ===== -->
+  <data name="Entity.PayrollPeriod" xml:space="preserve"><value>給与期間</value></data>
+  <data name="Page.PayrollPeriodTitle" xml:space="preserve"><value>給与期間管理</value></data>
+  <data name="Page.PayrollPeriodSubtitle" xml:space="preserve"><value>毎月の給与期間の開始と締めを管理します</value></data>
+  <data name="Field.PayrollYear" xml:space="preserve"><value>年度（民国）</value></data>
+  <data name="Field.PayrollMonth" xml:space="preserve"><value>月</value></data>
+  <data name="Field.PeriodStatus" xml:space="preserve"><value>期間状態</value></data>
+  <data name="Field.PayrollRecordCount" xml:space="preserve"><value>給与件数</value></data>
+  <data name="Field.ClosedAt" xml:space="preserve"><value>締め日時</value></data>
+  <data name="Field.ClosedBy" xml:space="preserve"><value>締め担当者</value></data>
+  <data name="Payroll.PeriodDraft" xml:space="preserve"><value>下書き</value></data>
+  <data name="Payroll.PeriodProcessing" xml:space="preserve"><value>計算中</value></data>
+  <data name="Payroll.PeriodClosed" xml:space="preserve"><value>締め済み</value></data>
+  <data name="Payroll.OpenPeriod" xml:space="preserve"><value>給与期間を開始</value></data>
+  <data name="Payroll.ClosePeriod" xml:space="preserve"><value>期間締め</value></data>
+  <data name="Payroll.OpenPeriodHint" xml:space="preserve"><value>開始後に給与計算が可能になります。締め後は変更できません。</value></data>
+  <data name="Page.PayrollTitle" xml:space="preserve"><value>給与計算</value></data>
+  <data name="Page.PayrollSubtitle" xml:space="preserve"><value>給与期間ごとに従業員の給与明細を計算・確認します</value></data>
+  <data name="Payroll.CalculateAll" xml:space="preserve"><value>一括計算</value></data>
+  <data name="Payroll.CalculateEmployee" xml:space="preserve"><value>計算</value></data>
+  <data name="Payroll.ConfirmRecord" xml:space="preserve"><value>確定</value></data>
+  <data name="Payroll.UnconfirmRecord" xml:space="preserve"><value>確定取消</value></data>
+  <data name="Payroll.ViewPayslip" xml:space="preserve"><value>給与明細</value></data>
+  <data name="Payroll.SelectPeriod" xml:space="preserve"><value>給与期間を選択</value></data>
+  <data name="Payroll.NoPeriods" xml:space="preserve"><value>給与期間がありません</value></data>
+  <data name="Payroll.RecordList" xml:space="preserve"><value>給与明細一覧</value></data>
+  <data name="Payroll.NotCalculated" xml:space="preserve"><value>未計算</value></data>
+  <data name="Payroll.RecordDraft" xml:space="preserve"><value>下書き</value></data>
+  <data name="Payroll.RecordConfirmed" xml:space="preserve"><value>確定済み</value></data>
+  <data name="Payroll.StatTotal" xml:space="preserve"><value>明細総数</value></data>
+  <data name="Payroll.StatGross" xml:space="preserve"><value>総支給合計</value></data>
+  <data name="Payroll.StatNet" xml:space="preserve"><value>手取り合計</value></data>
+  <data name="Payroll.StatConfirmed" xml:space="preserve"><value>確定済み</value></data>
+  <data name="Payroll.AttendanceDays" xml:space="preserve"><value>出勤日数</value></data>
+  <data name="Payroll.GrossIncome" xml:space="preserve"><value>総支給額</value></data>
+  <data name="Payroll.TotalDeduction" xml:space="preserve"><value>控除合計</value></data>
+  <data name="Payroll.NetPay" xml:space="preserve"><value>手取り額</value></data>
+  <data name="Payroll.PayslipTitle" xml:space="preserve"><value>給与明細書</value></data>
+  <data name="Payroll.PayslipPeriod" xml:space="preserve"><value>給与期間</value></data>
+  <data name="Payroll.IncomeItems" xml:space="preserve"><value>支給項目</value></data>
+  <data name="Payroll.DeductionItems" xml:space="preserve"><value>控除項目</value></data>
+  <data name="Payroll.InsuranceSnapshot" xml:space="preserve"><value>保険スナップショット（会社負担）</value></data>
+  <data name="Payroll.EmployerLaborInsurance" xml:space="preserve"><value>会社負担労働保険</value></data>
+  <data name="Payroll.EmployerHealthInsurance" xml:space="preserve"><value>会社負担健康保険</value></data>
+  <data name="Payroll.EmployerRetirement" xml:space="preserve"><value>会社負担退職金積立</value></data>
+  <data name="Payroll.TaxableIncome" xml:space="preserve"><value>課税所得</value></data>
+  <data name="Payroll.CalculatedAt" xml:space="preserve"><value>計算日時</value></data>
+  <data name="Payroll.CalculatedBy" xml:space="preserve"><value>計算者</value></data>
+  <data name="Payroll.NoPayrollRecords" xml:space="preserve"><value>給与記録がありません</value></data>
+  <!-- ===== Payroll Phase 2 Rate Table keys ===== -->
+  <data name="Nav.MinimumWage" xml:space="preserve"><value>最低賃金</value></data>
+  <data name="Nav.InsuranceRate" xml:space="preserve"><value>保険料率設定</value></data>
+  <data name="Nav.LaborInsuranceGrade" xml:space="preserve"><value>労働保険等級表</value></data>
+  <data name="Nav.HealthInsuranceGrade" xml:space="preserve"><value>健康保険等級表</value></data>
+  <data name="Nav.WithholdingTaxTable" xml:space="preserve"><value>源泉徴収税額表</value></data>
+  <data name="Page.MinimumWageTitle" xml:space="preserve"><value>最低賃金管理</value></data>
+  <data name="Page.MinimumWageSubtitle" xml:space="preserve"><value>歴年の最低賃金（月給／時給）を管理</value></data>
+  <data name="Page.InsuranceRateTitle" xml:space="preserve"><value>保険料率設定</value></data>
+  <data name="Page.InsuranceRateSubtitle" xml:space="preserve"><value>労働・健康保険・退職金料率を管理</value></data>
+  <data name="Page.LaborInsuranceGradeTitle" xml:space="preserve"><value>労働保険標準報酬等級表</value></data>
+  <data name="Page.LaborInsuranceGradeSubtitle" xml:space="preserve"><value>労働保険の標準報酬等級表を管理</value></data>
+  <data name="Page.HealthInsuranceGradeTitle" xml:space="preserve"><value>健康保険標準報酬等級表</value></data>
+  <data name="Page.HealthInsuranceGradeSubtitle" xml:space="preserve"><value>健康保険の標準報酬等級表を管理</value></data>
+  <data name="Page.WithholdingTaxTableTitle" xml:space="preserve"><value>源泉徴収税額表</value></data>
+  <data name="Page.WithholdingTaxTableSubtitle" xml:space="preserve"><value>財政部の源泉徴収税額表を管理</value></data>
+  <data name="Field.MonthlyMinWage" xml:space="preserve"><value>月額最低賃金</value></data>
+  <data name="Field.HourlyMinWage" xml:space="preserve"><value>時間額最低賃金</value></data>
+  <data name="Field.LaborInsEERate" xml:space="preserve"><value>労保被保険者料率</value></data>
+  <data name="Field.LaborInsERRate" xml:space="preserve"><value>労保事業主料率</value></data>
+  <data name="Field.HealthInsEERate" xml:space="preserve"><value>健保被保険者料率</value></data>
+  <data name="Field.HealthInsERRate" xml:space="preserve"><value>健保事業主料率</value></data>
+  <data name="Field.RetirementERRate" xml:space="preserve"><value>退職金事業主料率</value></data>
+  <data name="Field.MealTaxFreeLimit" xml:space="preserve"><value>食事手当非課税上限</value></data>
+  <data name="Field.TransportTaxFreeLimit" xml:space="preserve"><value>交通費非課税上限</value></data>
+  <data name="Field.InsuranceGrade" xml:space="preserve"><value>等級</value></data>
+  <data name="Field.InsuredSalary" xml:space="preserve"><value>標準報酬月額（労保）</value></data>
+  <data name="Field.InsuredAmount" xml:space="preserve"><value>標準報酬月額（健保）</value></data>
+  <data name="Payroll.AddMinimumWage" xml:space="preserve"><value>最低賃金を追加</value></data>
+  <data name="Payroll.EditMinimumWage" xml:space="preserve"><value>最低賃金を編集</value></data>
+  <data name="Payroll.AddInsuranceRate" xml:space="preserve"><value>保険料率を追加</value></data>
+  <data name="Payroll.EditInsuranceRate" xml:space="preserve"><value>保険料率を編集</value></data>
+  <data name="Payroll.LaborInsuranceRates" xml:space="preserve"><value>労働保険料率</value></data>
+  <data name="Payroll.HealthInsuranceRates" xml:space="preserve"><value>健康保険料率</value></data>
+  <data name="Payroll.RetirementAndTaxFree" xml:space="preserve"><value>退職金料率・非課税上限</value></data>
+  <data name="Payroll.AddGrade" xml:space="preserve"><value>等級を追加</value></data>
+  <data name="Payroll.EditGrade" xml:space="preserve"><value>等級を編集</value></data>
+  <data name="Payroll.AddTaxRow" xml:space="preserve"><value>税額を追加</value></data>
+  <data name="Payroll.EditTaxRow" xml:space="preserve"><value>税額を編集</value></data>
+  <data name="Payroll.CopyYear" xml:space="preserve"><value>年度をコピー</value></data>
+  <data name="Payroll.CopySource" xml:space="preserve"><value>コピー元年度</value></data>
+  <data name="Payroll.CopyTarget" xml:space="preserve"><value>コピー先年度</value></data>
+  <data name="Payroll.TotalGrades" xml:space="preserve"><value>総等級数</value></data>
+  <data name="Payroll.TotalRows" xml:space="preserve"><value>総件数</value></data>
+  <data name="Payroll.DependentSuffix" xml:space="preserve"><value>人</value></data>
+  <data name="Label.NoUpperLimit" xml:space="preserve"><value>上限なし</value></data>
+  <data name="Message.NoData" xml:space="preserve"><value>データなし</value></data>
+  <!-- ===== Phase 3: 勤怠サマリー ===== -->
+  <data name="Nav.AttendanceSummary" xml:space="preserve"><value>勤怠サマリー</value></data>
+  <data name="Page.AttendanceSummaryTitle" xml:space="preserve"><value>勤怠サマリー</value></data>
+  <data name="Page.AttendanceSummarySubtitle" xml:space="preserve"><value>毎月の出勤日数と残業時間を管理（給与計算の基礎データ）</value></data>
+  <data name="Attendance.AddRecord" xml:space="preserve"><value>勤怠記録を追加</value></data>
+  <data name="Attendance.EditRecord" xml:space="preserve"><value>勤怠記録を編集</value></data>
+  <data name="Attendance.BatchInit" xml:space="preserve"><value>一括初期化</value></data>
+  <data name="Attendance.LockedMessage" xml:space="preserve"><value>この勤怠記録はロックされています（給与計算済み）、参照のみ</value></data>
+  <data name="Attendance.SickLeaveNote" xml:space="preserve"><value>病欠は半日賃金で控除</value></data>
+  <data name="Attendance.OvertimeHours" xml:space="preserve"><value>残業時間</value></data>
+  <data name="Attendance.OT1Note" xml:space="preserve"><value>平日時間外（最初の2時間、×4/3）</value></data>
+  <data name="Attendance.OT2Note" xml:space="preserve"><value>平日時間外（次の2時間、×5/3）</value></data>
+  <data name="Attendance.OvertimeTotal" xml:space="preserve"><value>残業合計時間</value></data>
+  <data name="Attendance.TotalRecords" xml:space="preserve"><value>総件数</value></data>
+  <data name="Field.ScheduledWorkDays" xml:space="preserve"><value>所定出勤日数</value></data>
+  <data name="Field.ActualWorkDays" xml:space="preserve"><value>実際出勤日数</value></data>
+  <data name="Field.AbsentDays" xml:space="preserve"><value>無断欠勤日数</value></data>
+  <data name="Field.SickLeaveDays" xml:space="preserve"><value>病欠日数</value></data>
+  <data name="Field.OvertimeHours1" xml:space="preserve"><value>平日残業（前2時間）</value></data>
+  <data name="Field.OvertimeHours2" xml:space="preserve"><value>平日残業（後2時間）</value></data>
+  <data name="Field.HolidayOvertimeHours" xml:space="preserve"><value>休日残業時間</value></data>
+  <data name="Field.NationalHolidayHours" xml:space="preserve"><value>祝日残業時間</value></data>
+  <data name="Field.Year" xml:space="preserve"><value>民国年</value></data>
+  <data name="Field.Month" xml:space="preserve"><value>月</value></data>
+  <data name="Label.Month" xml:space="preserve"><value>月</value></data>
+  <data name="Label.Locked" xml:space="preserve"><value>ロック済み</value></data>
+  <data name="Label.Editable" xml:space="preserve"><value>編集可能</value></data>
   <!-- ===== Vehicle Field keys ===== -->
   <data name="Field.AssociatedCompany" xml:space="preserve"><value>関連会社</value></data>
   <data name="Field.AssociatedCustomer" xml:space="preserve"><value>関連顧客</value></data>
@@ -1719,6 +1942,9 @@
   <data name="Search.NoResults" xml:space="preserve"><value>条件に一致する項目が見つかりません。別のキーワードをお試しください。</value></data>
   <data name="Search.DefaultTitle" xml:space="preserve"><value>検索</value></data>
   <data name="Search.DefaultPlaceholder" xml:space="preserve"><value>キーワードを入力して検索...</value></data>
+  <data name="Search.ResultCount" xml:space="preserve"><value>{0}件の結果が見つかりました</value></data>
+  <data name="Search.KeyHintNavigate" xml:space="preserve"><value>移動</value></data>
+  <data name="Search.KeyHintSelect" xml:space="preserve"><value>選択</value></data>
 
   <!-- ===== QuickAction クイックアクション ===== -->
   <data name="QuickAction.MenuTooltip" xml:space="preserve"><value>クイックアクション (Alt + Q)</value></data>
@@ -1820,6 +2046,8 @@
 
   <!-- ===== Customer 顧客モジュール ===== -->
   <data name="Customer.ChartTitle" xml:space="preserve"><value>顧客分析チャート</value></data>
+  <!-- ===== Supplier 仕入先モジュール ===== -->
+  <data name="Supplier.ChartTitle" xml:space="preserve"><value>仕入先分析チャート</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>訪問記録がありません</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>
@@ -2933,5 +3161,17 @@
   <data name="Message.EntityDeleteFailed" xml:space="preserve"><value>削除失敗：{0}</value></data>
   <data name="Message.EntityDeleteError" xml:space="preserve"><value>削除中にエラーが発生しました：{0}</value></data>
   <data name="Message.EntityDeleteConfirm" xml:space="preserve"><value>{0}「{1}」を削除してもよろしいですか？</value></data>
+  <data name="Column.BatchDate" xml:space="preserve"><value>バッチ日付</value></data>
+  <data name="Column.ReservedStock" xml:space="preserve"><value>予約在庫</value></data>
+  <data name="Column.InTransitStock" xml:space="preserve"><value>輸送中在庫</value></data>
+  <data name="Label.TotalCurrentStock" xml:space="preserve"><value>合計現在庫</value></data>
+  <data name="Label.TotalReservedStock" xml:space="preserve"><value>合計予約</value></data>
+  <data name="Label.TotalInTransitStock" xml:space="preserve"><value>合計輸送中</value></data>
+  <data name="Inventory.AtLeastOneDetail" xml:space="preserve"><value>少なくとも1件の在庫明細が必要です</value></data>
+  <data name="Inventory.DuplicateWarehouseLocation" xml:space="preserve"><value>重複した倉庫と場所の組み合わせが存在します、確認してから再試行してください</value></data>
+  <data name="Inventory.ReservedExceedsCurrent" xml:space="preserve"><value>予約在庫は現在庫を超えることはできません</value></data>
+  <data name="Inventory.AllDetailsCleared" xml:space="preserve"><value>すべての在庫明細をクリアしました</value></data>
+  <data name="Inventory.CurrentStockReadonlyHint" xml:space="preserve"><value>現在庫数量は棚卸調整、入庫または出庫プロセスを通じて変更する必要があります</value></data>
+  <data name="Message.ConfirmDeleteExistingDetail" xml:space="preserve"><value>この明細はデータベースに保存されています。削除してもよろしいですか？</value></data>
 
 </root>

@@ -1,0 +1,174 @@
+@* 薪資週期編輯組件 — 僅限查看/備註修改，關帳由特定按鈕觸發 *@
+@inject IPayrollPeriodService PeriodService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="PayrollPeriod"
+                          TService="IPayrollPeriodService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@PayrollPeriodId"
+                          Service="@PeriodService"
+                          EntityName="@L["Entity.PayrollPeriod"]"
+                          EntityNamePlural="@L["Entity.PayrollPeriod"]"
+                          ModalTitle="@modalTitle"
+                          Size="GenericEditModalComponent<PayrollPeriod, IPayrollPeriodService>.ModalSize.Large"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@L["Message.UpdateSuccess", L["Entity.PayrollPeriod"]]"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.PayrollPeriod"]]"
+                          RequiredPermission="@PermissionRegistry.Payroll.Close"
+                          OnEntitySaved="@OnPayrollPeriodSaved"
+                          OnCancel="@OnCancel"
+                          CustomActionButtons="@customActionButtons"
+                          ComponentName="PayrollPeriodEditModalComponent" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? PayrollPeriodId { get; set; }
+    [Parameter] public EventCallback<PayrollPeriod> OnPayrollPeriodSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback<int> OnClosePeriod { get; set; }
+
+    private GenericEditModalComponent<PayrollPeriod, IPayrollPeriodService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private RenderFragment? customActionButtons;
+
+    private string modalTitle = string.Empty;
+    private PayrollPeriod? currentPeriod;
+
+    private Task<PayrollPeriod?> LoadData() =>
+        EditDataLoaderHelper.LoadOrCreateAsync<PayrollPeriod, IPayrollPeriodService>(
+            PayrollPeriodId, PeriodService, NotificationService, "薪資週期", null, null,
+            p =>
+            {
+                p.Year = DateTime.Today.Year - 1911;
+                p.Month = DateTime.Today.Month;
+                p.PeriodStatus = PayrollPeriodStatus.Draft;
+            });
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && PayrollPeriodId.HasValue)
+        {
+            currentPeriod = await PeriodService.GetByIdAsync(PayrollPeriodId.Value);
+            modalTitle = currentPeriod != null
+                ? $"{currentPeriod.Year} 年 {currentPeriod.Month} 月 薪資週期"
+                : L["Entity.PayrollPeriod"].ToString();
+
+            BuildCustomButtons();
+            InitializeFormFields();
+        }
+        else if (IsVisible)
+        {
+            currentPeriod = null;
+            modalTitle = L["Message.CreateTitle", L["Entity.PayrollPeriod"]].ToString();
+            customActionButtons = null;
+            InitializeFormFields();
+        }
+    }
+
+    private void BuildCustomButtons()
+    {
+        if (currentPeriod != null && currentPeriod.PeriodStatus != PayrollPeriodStatus.Closed)
+        {
+            var closeText = L["Payroll.ClosePeriod"].ToString() ?? "關帳";
+            customActionButtons = builder =>
+            {
+                builder.OpenElement(0, "button");
+                builder.AddAttribute(1, "type", "button");
+                builder.AddAttribute(2, "class", "btn btn-danger");
+                builder.AddAttribute(3, "onclick", EventCallback.Factory.Create(this, HandleCloseAsync));
+                builder.OpenElement(4, "i");
+                builder.AddAttribute(5, "class", "bi bi-lock-fill me-1");
+                builder.CloseElement();
+                builder.AddContent(6, closeText);
+                builder.CloseElement();
+            };
+        }
+        else
+        {
+            customActionButtons = null;
+        }
+    }
+
+    private async Task HandleCloseAsync()
+    {
+        if (PayrollPeriodId.HasValue && OnClosePeriod.HasDelegate)
+            await OnClosePeriod.InvokeAsync(PayrollPeriodId.Value);
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            bool isReadOnly = currentPeriod?.PeriodStatus == PayrollPeriodStatus.Closed;
+
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(PayrollPeriod.Year),
+                    Label = L["Field.PayrollYear"],
+                    FieldType = FormFieldType.Number,
+                    IsRequired = true,
+                    IsReadOnly = PayrollPeriodId.HasValue, // 建立後不可修改年月
+                    Min = 100,
+                    Max = 200,
+                    HelpText = "民國年，如 114"
+                },
+                new()
+                {
+                    PropertyName = nameof(PayrollPeriod.Month),
+                    Label = L["Field.PayrollMonth"],
+                    FieldType = FormFieldType.Number,
+                    IsRequired = true,
+                    IsReadOnly = PayrollPeriodId.HasValue,
+                    Min = 1,
+                    Max = 12
+                },
+                new()
+                {
+                    PropertyName = nameof(PayrollPeriod.ClosedAt),
+                    Label = L["Field.ClosedAt"],
+                    FieldType = FormFieldType.DateTime,
+                    IsReadOnly = true,
+                    IsVisible = PayrollPeriodId.HasValue && currentPeriod?.PeriodStatus == PayrollPeriodStatus.Closed
+                },
+                new()
+                {
+                    PropertyName = nameof(PayrollPeriod.ClosedBy),
+                    Label = L["Field.ClosedBy"],
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
+                    IsVisible = PayrollPeriodId.HasValue && currentPeriod?.PeriodStatus == PayrollPeriodStatus.Closed
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<PayrollPeriod>(readOnly: isReadOnly)
+            };
+
+            formSections = FormSectionHelper<PayrollPeriod>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    p => p.Year,
+                    p => p.Month,
+                    p => p.ClosedAt,
+                    p => p.ClosedBy)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    p => p.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化薪資週期表單欄位時發生錯誤");
+        }
+    }
+
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
+}

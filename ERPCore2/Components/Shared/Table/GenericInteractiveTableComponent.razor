@@ -83,14 +83,40 @@
                class="@GetTableBodyClass()">
             @if (Items != null && Items.Any())
             {
-                var itemIndex = 0;
                 // 預先計算空行數量，避免在每行模板中重複計算（O(n) 而非 O(n²)）
                 var cachedEmptyRowCount = (EnableAutoEmptyRow && ShowBuiltInActions && ShowBuiltInDeleteButton && AllowAddNewRow)
                     ? Items.Count(IsRowEmpty)
                     : 0;
-                @foreach (var item in Items)
+                @foreach (var _row in GetDisplayRows())
                 {
-                    var currentIndex = itemIndex;
+                    @if (_row.IsGroupHeader)
+                    {
+                        var _gk = _row.GroupKey!;
+                        var _ge = _expandedGroups.Contains(_gk);
+                        <tr class="group-header-row"
+                            style="cursor: pointer; background-color: var(--bg-secondary); user-select: none;"
+                            @onclick="() => ToggleGroup(_gk)"
+                            @onclick:stopPropagation="true">
+                            <td colspan="@GetColspan()" class="px-3 py-2">
+                                @if (GroupHeaderTemplate != null)
+                                {
+                                    @GroupHeaderTemplate((_gk, _row.GroupItems!))
+                                }
+                                else
+                                {
+                                    <span class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-chevron-@(_ge ? "down" : "right") text-primary"></i>
+                                        <span class="fw-semibold">@_gk</span>
+                                        <span class="badge bg-secondary rounded-pill">@_row.GroupItems!.Count</span>
+                                    </span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                    var item = _row.Item!;
+                    var currentIndex = _row.ItemIndex;
                     var canDrag = EnableDrag && (IsDraggable?.Invoke(item) ?? true);
                     <tr class="@GetCombinedRowClass(item, currentIndex)"
                         @onclick="() => HandleRowClick(item)"
@@ -140,7 +166,8 @@
                                     @* 純顯示文字 *@
                                     var value = GetPropertyValue(item, column.PropertyName);
                                     string displayText;
-                                    
+                                    string numColorClass = "";
+
                                     if (column.DisplayFormatter != null)
                                     {
                                         // DisplayFormatter 接收整個 item 物件，而不是屬性值
@@ -153,21 +180,23 @@
                                     // 智能數字格式化：整數不顯示小數點，有小數才顯示
                                     else if (column.SmartDecimalDisplay && decimal.TryParse(value.ToString(), out var decimalValue))
                                     {
-                                        displayText = decimalValue % 1 == 0 
-                                            ? decimalValue.ToString("N0") 
+                                        displayText = decimalValue % 1 == 0
+                                            ? decimalValue.ToString("N0")
                                             : decimalValue.ToString(column.NumberFormat ?? "N2");
+                                        numColorClass = decimalValue > 0 ? "num-positive" : decimalValue < 0 ? "num-negative" : "num-zero";
                                     }
                                     // 一般數字格式化
                                     else if (!string.IsNullOrEmpty(column.NumberFormat) && decimal.TryParse(value.ToString(), out var numValue))
                                     {
                                         displayText = numValue.ToString(column.NumberFormat);
+                                        numColorClass = numValue > 0 ? "num-positive" : numValue < 0 ? "num-negative" : "num-zero";
                                     }
                                     else
                                     {
                                         displayText = HttpUtility.HtmlEncode(value.ToString() ?? "");
                                     }
 
-                                    <span>@((MarkupString)displayText)</span>
+                                    <span class="@numColorClass">@((MarkupString)displayText)</span>
                                 }
                                 else if (column.ColumnType == InteractiveColumnType.Input)
                                 {
@@ -435,7 +464,7 @@
                             </td>
                         }
                     </tr>
-                    itemIndex++;
+                    } // else (item row)
                 }
             }
             else
@@ -584,6 +613,12 @@
 
     // Debug 輔助（方式五）：SuperAdmin 快捷鍵模式下顯示表格名稱，供開發者快速識別組件來源
     [Parameter] public string? DebugTableName { get; set; }
+
+    // 群組摺疊功能（預設關閉，不影響現有使用）
+    [Parameter] public bool EnableGrouping { get; set; } = false;
+    [Parameter] public Func<TItem, string>? GroupKeyFunc { get; set; }
+    [Parameter] public RenderFragment<(string Key, List<TItem> Items)>? GroupHeaderTemplate { get; set; }
+    [Parameter] public bool DefaultGroupsExpanded { get; set; } = true;
     #endregion
 
     #region 私有欄位
@@ -626,6 +661,10 @@
     private int _prevItemsCountForDragDrop = -1;   // reinitDragDrop 觸發條件追蹤
     private bool _prevIsPartiallySelected = false; // setCheckboxIndeterminate 觸發條件追蹤
 
+    // 群組摺疊狀態
+    private HashSet<string> _expandedGroups = new();
+    private HashSet<string> _initializedGroupKeys = new();
+
     #endregion
 
     #region 生命週期方法
@@ -667,6 +706,9 @@
         _cachedTableClass = ComputeTableClass();
         _cachedActionsColumnStyle = ComputeActionsColumnStyle();
         _cachedColspan = ComputeColspan();
+
+        // 群組展開狀態同步
+        if (EnableGrouping) UpdateExpandedGroups();
     }
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -1961,6 +2003,111 @@
 
         StateHasChanged();
     }
+
+    #endregion
+
+    #region 群組摺疊方法
+
+    private sealed class DisplayRow
+    {
+        public TItem? Item { get; init; }
+        public string? GroupKey { get; init; }
+        public bool IsGroupHeader { get; init; }
+        public List<TItem>? GroupItems { get; init; }
+        public int ItemIndex { get; init; }
+    }
+
+    private IEnumerable<DisplayRow> GetDisplayRows()
+    {
+        if (!EnableGrouping || GroupKeyFunc == null || Items == null)
+        {
+            return Items?.Select((item, idx) => new DisplayRow { Item = item, ItemIndex = idx })
+                   ?? Enumerable.Empty<DisplayRow>();
+        }
+
+        var result = new List<DisplayRow>();
+        var globalIndex = 0;
+
+        // Items with non-empty key → grouped with header; empty key → rendered directly (no header)
+        var grouped = Items.Where(i => !string.IsNullOrEmpty(GroupKeyFunc(i)))
+                           .GroupBy(GroupKeyFunc)
+                           .ToList();
+        var ungrouped = Items.Where(i => string.IsNullOrEmpty(GroupKeyFunc(i))).ToList();
+
+        foreach (var group in grouped)
+        {
+            var groupItems = group.ToList();
+            result.Add(new DisplayRow { GroupKey = group.Key, IsGroupHeader = true, GroupItems = groupItems, ItemIndex = globalIndex });
+
+            if (_expandedGroups.Contains(group.Key))
+            {
+                foreach (var item in groupItems)
+                {
+                    result.Add(new DisplayRow { Item = item, GroupKey = group.Key, ItemIndex = globalIndex });
+                    globalIndex++;
+                }
+            }
+            else
+            {
+                globalIndex += groupItems.Count;
+            }
+        }
+
+        // Ungrouped items (e.g. new empty row) rendered after all groups, without a header
+        foreach (var item in ungrouped)
+        {
+            result.Add(new DisplayRow { Item = item, ItemIndex = globalIndex });
+            globalIndex++;
+        }
+
+        return result;
+    }
+
+    private void ToggleGroup(string key)
+    {
+        if (_expandedGroups.Contains(key))
+            _expandedGroups.Remove(key);
+        else
+            _expandedGroups.Add(key);
+        StateHasChanged();
+    }
+
+    private void UpdateExpandedGroups()
+    {
+        if (!EnableGrouping || GroupKeyFunc == null || Items == null) return;
+
+        var allKeys = Items.Select(GroupKeyFunc).Where(k => !string.IsNullOrEmpty(k)).Distinct().ToHashSet();
+
+        // 初始化新出現的群組 key（依 DefaultGroupsExpanded 決定預設展開狀態）
+        foreach (var key in allKeys.Where(k => !_initializedGroupKeys.Contains(k)))
+        {
+            _initializedGroupKeys.Add(key);
+            if (DefaultGroupsExpanded)
+                _expandedGroups.Add(key);
+        }
+
+        // 清除已不存在的 key
+        _expandedGroups.RemoveWhere(k => !allKeys.Contains(k));
+        _initializedGroupKeys.RemoveWhere(k => !allKeys.Contains(k));
+    }
+
+    /// <summary>展開指定群組</summary>
+    public void ExpandGroup(string key) { _expandedGroups.Add(key); StateHasChanged(); }
+
+    /// <summary>收合指定群組</summary>
+    public void CollapseGroup(string key) { _expandedGroups.Remove(key); StateHasChanged(); }
+
+    /// <summary>展開所有群組</summary>
+    public void ExpandAllGroups()
+    {
+        if (GroupKeyFunc == null || Items == null) return;
+        foreach (var key in Items.Select(GroupKeyFunc).Distinct())
+            _expandedGroups.Add(key);
+        StateHasChanged();
+    }
+
+    /// <summary>收合所有群組</summary>
+    public void CollapseAllGroups() { _expandedGroups.Clear(); StateHasChanged(); }
 
     #endregion
 }

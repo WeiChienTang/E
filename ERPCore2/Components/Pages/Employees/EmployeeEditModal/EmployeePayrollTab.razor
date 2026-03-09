@@ -1,0 +1,118 @@
+@* 員工薪資歷史 Tab — 唯讀，顯示該員工歷年薪資單摘要 *@
+@inject IPayrollCalculationService PayrollCalculationService
+@inject INavigationPermissionService NavigationPermissionService
+@inject IStringLocalizer<SharedResource> L
+
+<div class="payroll-history-section">
+    @if (isLoading)
+    {
+        <div class="text-center py-4">
+            <span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]
+        </div>
+    }
+    else if (!records.Any())
+    {
+        <div class="alert alert-light text-center text-muted py-3">
+            <i class="bi bi-receipt me-2"></i>@L["Payroll.NoPayrollRecords"]
+        </div>
+    }
+    else
+    {
+        <table class="table table-sm table-hover table-bordered mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>@L["Payroll.PayslipPeriod"]</th>
+                    @if (canReadAmount)
+                    {
+                        <th class="text-end">@L["Payroll.GrossIncome"]</th>
+                        <th class="text-end">@L["Payroll.TotalDeduction"]</th>
+                        <th class="text-end">@L["Payroll.NetPay"]</th>
+                    }
+                    <th class="text-center">@L["Label.Status"]</th>
+                    <th class="text-center" style="width:80px">@L["Label.Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in records)
+                {
+                    <tr>
+                        <td>@r.Period?.Year 年 @r.Period?.Month 月</td>
+                        @if (canReadAmount)
+                        {
+                            <td class="text-end">@r.GrossIncome.ToString("N0")</td>
+                            <td class="text-end text-danger">@r.TotalDeduction.ToString("N0")</td>
+                            <td class="text-end fw-semibold">@r.NetPay.ToString("N0")</td>
+                        }
+                        <td class="text-center">
+                            <span class="badge @(r.RecordStatus == PayrollRecordStatus.Confirmed ? "bg-success" : "bg-warning text-dark")">
+                                @(r.RecordStatus == PayrollRecordStatus.Confirmed
+                                    ? L["Payroll.RecordConfirmed"].ToString()
+                                    : L["Payroll.RecordDraft"].ToString())
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-primary"
+                                    title="@L["Payroll.ViewPayslip"]"
+                                    @onclick="@(() => ViewPayslip(r.Id))">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@* 薪資單 Modal *@
+<PayslipModalComponent RecordId="@viewingRecordId"
+                       IsVisible="@isPayslipVisible"
+                       IsVisibleChanged="@((bool v) => { isPayslipVisible = v; if (!v) viewingRecordId = 0; })" />
+
+@code {
+    [Parameter] public int? EmployeeId { get; set; }
+
+    private List<PayrollRecord> records = new();
+    private bool isLoading = false;
+    private bool canReadAmount = false;
+
+    private bool isPayslipVisible = false;
+    private int viewingRecordId = 0;
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    public async Task LoadAsync(int employeeId)
+    {
+        isLoading = true;
+        StateHasChanged();
+        try
+        {
+            canReadAmount = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.ReadAmount);
+            records = await PayrollCalculationService.GetByEmployeeAsync(employeeId);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAsync), GetType());
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Clear()
+    {
+        records = new();
+        isPayslipVisible = false;
+        viewingRecordId = 0;
+        StateHasChanged();
+    }
+
+    private void ViewPayslip(int recordId)
+    {
+        viewingRecordId = recordId;
+        isPayslipVisible = true;
+        StateHasChanged();
+    }
+}

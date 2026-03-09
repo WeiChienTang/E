@@ -142,6 +142,8 @@ namespace ERPCore2.Data
                     new VehicleTypeSeeder(),               // 車輛類型（車型基礎資料）
                     new AccountItemSeeder(),               // 會計科目表（商業會計項目表 112 年度）
                     new DocumentCategorySeeder(),          // 檔案分類（政府公文、廠商合約等）
+                    new PayrollItemSeeder(),               // 薪資項目（16個預設項目）
+                    new InsuranceRateSeeder(),             // 保費費率（114年費率）
                 };
             }
 

@@ -1,7 +1,7 @@
 @*
     通用搜尋 Modal 組件
     用於快速搜尋並選擇項目（支援頁面導航、報表等）
-    使用 GenericInteractiveTableComponent 統一 UI 風格
+    支援鍵盤 ↑↓ 導覽、Enter 選取
 *@
 @using ERPCore2.Models
 @using ERPCore2.Helpers
@@ -23,20 +23,21 @@
                    CloseOnEscape="true"
                    CloseOnBackdropClick="true"
                    DebugComponentName="GenericSearchModalComponent">
-    
+
     <BodyContent>
         <div class="p-3">
             @* 搜尋輸入框 *@
-            <div class="mb-3">
+            <div class="mb-2">
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
                     <input @ref="searchInput"
-                           type="text" 
-                           class="form-control" 
+                           type="text"
+                           class="form-control search-modal-input"
                            placeholder="@Placeholder"
                            @bind="searchTerm"
                            @bind:event="oninput"
-                           @bind:after="OnSearchTermChanged" />
+                           @bind:after="OnSearchTermChanged"
+                           @onkeydown="HandleKeyDown" />
                     @if (!string.IsNullOrWhiteSpace(searchTerm))
                     {
                         <button class="btn btn-outline-secondary" type="button" @onclick="ClearSearch">
@@ -49,32 +50,50 @@
             @* 搜尋結果區域 *@
             @if (hasSearched && searchResults.Any())
             {
-                <GenericInteractiveTableComponent TItem="ISearchableItem"
-                                          Items="@searchResults"
-                                          ColumnDefinitions="@columnDefinitions"
-                                          ShowRowNumbers="true"
-                                          IsReadOnly="true"
-                                          ShowBuiltInActions="true"
-                                          ShowBuiltInDeleteButton="false"
-                                          IsStriped="true"
-                                          IsHoverable="true"
-                                          IsBordered="true"
-                                          EnableRowClick="true"
-                                          OnRowClick="@HandleItemClick"
-                                          EmptyMessage="@EmptyResultMessage">
-                    <CustomActionsTemplate>
-                        @{
-                            var item = context;
-                            var isEnabled = IsItemEnabled(item);
-                        }
-                        <GenericButtonComponent Variant="@(isEnabled ? ButtonVariant.DarkBlue : ButtonVariant.Gray)"
-                                              Size="ButtonSize.Small"
-                                              Text="@L["Search.GoTo"]"
-                                              IsDisabled="@(!isEnabled)"
-                                              Title="@(isEnabled ? string.Format(L["Search.GoToItem"], item.Name) : L["Search.ItemNotAvailable"].ToString())"
-                                              OnClick="@(() => HandleItemClick(item))" />
-                    </CustomActionsTemplate>
-                </GenericInteractiveTableComponent>
+                @* 結果數量 + 鍵盤操作提示 *@
+                <div class="search-results-meta mb-2">
+                    <span class="text-muted small">@string.Format(L["Search.ResultCount"], searchResults.Count)</span>
+                    <span class="search-keyboard-hint">
+                        <span><kbd>↑</kbd><kbd>↓</kbd> @L["Search.KeyHintNavigate"]</span>
+                        <span><kbd>Enter</kbd> @L["Search.KeyHintSelect"]</span>
+                    </span>
+                </div>
+
+                <div class="search-results-list" role="listbox">
+                    @for (int i = 0; i < searchResults.Count; i++)
+                    {
+                        var item = searchResults[i];
+                        var idx = i;
+                        var isSelected = selectedIndex == idx;
+                        var isEnabled = IsItemEnabled(item);
+
+                        <div class="search-result-item @(isSelected ? "selected" : "") @(!isEnabled ? "disabled" : "")"
+                             role="option"
+                             aria-selected="@isSelected.ToString().ToLower()"
+                             title="@(isEnabled ? string.Format(L["Search.GoToItem"], item.Name) : L["Search.ItemNotAvailable"].ToString())"
+                             @onclick="@(() => HandleItemClick(item))"
+                             @onmouseenter="@(() => selectedIndex = idx)">
+                            @if (ShowIcon && !string.IsNullOrEmpty(item.IconClass))
+                            {
+                                <span class="search-result-icon"><i class="@item.IconClass"></i></span>
+                            }
+                            <div class="search-result-content">
+                                <div class="search-result-name">@item.Name</div>
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <div class="search-result-description">@item.Description</div>
+                                }
+                            </div>
+                            @if (!string.IsNullOrEmpty(item.Category))
+                            {
+                                <span class="search-result-category">@GetCategoryDisplayName(item.Category)</span>
+                            }
+                            <span class="search-result-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </span>
+                        </div>
+                    }
+                </div>
             }
             else if (hasSearched)
             {
@@ -93,87 +112,48 @@
             }
         </div>
     </BodyContent>
-    
+
 </BaseModalComponent>
 
 @code {
     // ===== 基本參數 =====
-    
+
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    
-    /// <summary>
-    /// Modal 標題
-    /// </summary>
+
     [Parameter] public string Title { get; set; } = "搜尋";
-    
-    /// <summary>
-    /// Modal 圖示 CSS 類別
-    /// </summary>
     [Parameter] public string Icon { get; set; } = "bi-search";
-    
-    /// <summary>
-    /// 搜尋框佔位符文字
-    /// </summary>
     [Parameter] public string Placeholder { get; set; } = "輸入關鍵字搜尋...";
-    
-    /// <summary>
-    /// 搜尋結果單位名稱（如「功能」、「報表」）
-    /// </summary>
     [Parameter] public string ResultUnitName { get; set; } = "項目";
-    
-    /// <summary>
-    /// 是否顯示圖示欄位
-    /// </summary>
     [Parameter] public bool ShowIcon { get; set; } = false;
-    
+
     // ===== 空狀態訊息 =====
-    
+
     [Parameter] public string EmptyStateIcon { get; set; } = "bi bi-lightning-charge";
     [Parameter] public string EmptyStateMessage { get; set; } = "開始輸入以搜尋";
     [Parameter] public string EmptyStateHint { get; set; } = "支援名稱、關鍵字搜尋";
     [Parameter] public string EmptyResultMessage { get; set; } = "沒有找到符合條件的項目，請嘗試使用其他關鍵字";
-    
+
     // ===== 搜尋與事件處理 =====
-    
-    /// <summary>
-    /// 搜尋函數 - 接收搜尋字串，返回搜尋結果
-    /// </summary>
+
     [Parameter] public Func<string, List<ISearchableItem>>? SearchFunction { get; set; }
-    
-    /// <summary>
-    /// 分類顯示名稱轉換函數（可選）
-    /// </summary>
     [Parameter] public Func<string, string>? CategoryDisplayNameFunc { get; set; }
-    
-    /// <summary>
-    /// Action 處理器註冊表
-    /// </summary>
     [Parameter] public NavigationActionHelper.ActionHandlerRegistry? ActionRegistry { get; set; }
-    
-    /// <summary>
-    /// 當選擇項目時觸發（傳遞 ActionId）
-    /// </summary>
     [Parameter] public EventCallback<string> OnItemSelected { get; set; }
 
     // ===== 私有欄位 =====
-    
+
     private ElementReference searchInput;
     private List<ISearchableItem> searchResults = new();
-    private List<InteractiveColumnDefinition> columnDefinitions = new();
     private string searchTerm = "";
     private bool hasSearched = false;
     private bool _isDisposed = false;
-    
+    private int selectedIndex = -1;
+
     // 防抖計時器
     private System.Threading.Timer? _searchDebounceTimer;
 
     // ===== 生命週期方法 =====
-    
-    protected override void OnInitialized()
-    {
-        InitializeColumnDefinitions();
-    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -182,7 +162,7 @@
             try
             {
                 await Task.Delay(100);
-                await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.input-group input')?.focus()");
+                await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.search-modal-input')?.focus()");
             }
             catch
             {
@@ -190,60 +170,34 @@
             }
         }
     }
-    
-    // ===== 初始化方法 =====
-    
-    private void InitializeColumnDefinitions()
-    {
-        columnDefinitions = new List<InteractiveColumnDefinition>
-        {
-            new InteractiveColumnDefinition
-            {
-                PropertyName = "Name",
-                Title = L["Search.NameColumn"].ToString(),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "200px"
-            },
-            new InteractiveColumnDefinition
-            {
-                PropertyName = "Description",
-                Title = L["Search.DescriptionColumn"].ToString(),
-                ColumnType = InteractiveColumnType.Display
-            },
-        };
-    }
 
     // ===== 公開方法 =====
 
-    /// <summary>
-    /// 開啟 Modal
-    /// </summary>
     public async Task Open()
     {
         IsVisible = true;
         searchTerm = "";
         searchResults.Clear();
         hasSearched = false;
+        selectedIndex = -1;
         await IsVisibleChanged.InvokeAsync(true);
         StateHasChanged();
     }
 
-    /// <summary>
-    /// 關閉 Modal
-    /// </summary>
     public async Task Close()
     {
         await HandleClose();
     }
 
     // ===== 事件處理方法 =====
-    
+
     private async Task HandleClose()
     {
         searchTerm = "";
         searchResults.Clear();
         hasSearched = false;
-        
+        selectedIndex = -1;
+
         if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(false);
@@ -253,7 +207,7 @@
     private void OnSearchTermChanged()
     {
         _searchDebounceTimer?.Dispose();
-        
+
         _searchDebounceTimer = new System.Threading.Timer(_ =>
         {
             InvokeAsync(async () =>
@@ -276,7 +230,8 @@
             searchResults = SearchFunction(searchTerm);
             hasSearched = true;
         }
-        
+
+        selectedIndex = -1;
         await Task.CompletedTask;
     }
 
@@ -285,44 +240,60 @@
         searchTerm = "";
         searchResults.Clear();
         hasSearched = false;
+        selectedIndex = -1;
         StateHasChanged();
     }
-    
-    /// <summary>
-    /// 判斷項目是否可用
-    /// </summary>
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (!searchResults.Any()) return;
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                selectedIndex = selectedIndex < searchResults.Count - 1 ? selectedIndex + 1 : 0;
+                await ScrollSelectedIntoView();
+                break;
+            case "ArrowUp":
+                selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : searchResults.Count - 1;
+                await ScrollSelectedIntoView();
+                break;
+            case "Enter":
+                if (selectedIndex >= 0 && selectedIndex < searchResults.Count)
+                {
+                    await HandleItemClick(searchResults[selectedIndex]);
+                }
+                break;
+        }
+    }
+
+    private async Task ScrollSelectedIntoView()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval",
+                "document.querySelector('.search-result-item.selected')?.scrollIntoView({block:'nearest'})");
+        }
+        catch { }
+    }
+
     private bool IsItemEnabled(ISearchableItem item)
     {
-        // 有 ActionId 或有效的 Route 都視為可用
-        return !string.IsNullOrWhiteSpace(item.ActionId) || 
+        return !string.IsNullOrWhiteSpace(item.ActionId) ||
                (!string.IsNullOrEmpty(item.Route) && item.Route != "#");
     }
 
     private async Task HandleItemClick(ISearchableItem item)
     {
-        if (!IsItemEnabled(item))
-        {
-            return;
-        }
-        
-        // 優先處理 ActionId
+        if (!IsItemEnabled(item)) return;
+
         if (!string.IsNullOrWhiteSpace(item.ActionId))
         {
             await HandleClose();
-            
-            // 透過 ActionRegistry 執行
-            if (ActionRegistry != null)
-            {
-                ActionRegistry.Execute(item.ActionId);
-            }
-            
-            // 透過事件回調通知父組件
+            ActionRegistry?.Execute(item.ActionId);
             if (OnItemSelected.HasDelegate)
-            {
                 await OnItemSelected.InvokeAsync(item.ActionId);
-            }
         }
-        // 其次處理路由導航
         else if (!string.IsNullOrEmpty(item.Route) && item.Route != "#")
         {
             await HandleClose();
@@ -332,20 +303,12 @@
 
     private string GetCategoryDisplayName(string category)
     {
-        if (string.IsNullOrEmpty(category))
-        {
-            return "";
-        }
-        
-        if (CategoryDisplayNameFunc != null)
-        {
-            return CategoryDisplayNameFunc(category);
-        }
-        return category;
+        if (string.IsNullOrEmpty(category)) return "";
+        return CategoryDisplayNameFunc?.Invoke(category) ?? category;
     }
 
     // ===== 資源清理 =====
-    
+
     public void Dispose()
     {
         try

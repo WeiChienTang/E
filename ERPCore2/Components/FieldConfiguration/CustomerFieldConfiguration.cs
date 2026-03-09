@@ -146,6 +146,21 @@ namespace ERPCore2.FieldConfiguration
                                     query = query.Where(c => c.CustomerType == type);
                                 }
                                 return query;
+                            },
+                            CustomTemplate = item => builder =>
+                            {
+                                var customer = (Customer)item;
+                                var (cssClass, text) = customer.CustomerType switch
+                                {
+                                    CustomerTypeEnum.Enterprise => ("bg-primary",   L?["CustomerType.Enterprise"].ToString() ?? "企業"),
+                                    CustomerTypeEnum.Individual => ("bg-info",      L?["CustomerType.Individual"].ToString() ?? "個人"),
+                                    CustomerTypeEnum.Government => ("bg-warning",   L?["CustomerType.Government"].ToString() ?? "政府機關"),
+                                    _                           => ("bg-secondary", L?["Label.Unknown"].ToString()            ?? "未知")
+                                };
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", $"badge text-white {cssClass}");
+                                builder.AddContent(2, text);
+                                builder.CloseElement();
                             }
                         }
                     },

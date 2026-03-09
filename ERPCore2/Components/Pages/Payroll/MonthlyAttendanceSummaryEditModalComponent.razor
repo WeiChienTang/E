@@ -1,0 +1,178 @@
+@inject IMonthlyAttendanceSummaryService AttendanceService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        @(isNew ? L["Attendance.AddRecord"] : L["Attendance.EditRecord"])
+                        @if (!isNew && model.IsLocked)
+                        {
+                            <span class="badge bg-warning text-dark ms-2">@L["Label.Locked"]</span>
+                        }
+                    </h5>
+                    <button class="btn-close" @onclick="Cancel"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!isNew && model.IsLocked)
+                    {
+                        <div class="alert alert-warning py-2 mb-3">
+                            <i class="bi bi-lock-fill me-1"></i>@L["Attendance.LockedMessage"]
+                        </div>
+                    }
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">@L["Field.ScheduledWorkDays"]</label>
+                            <input type="number" class="form-control" @bind="model.ScheduledWorkDays"
+                                   min="0" max="31" step="0.5" disabled="@model.IsLocked" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">@L["Field.ActualWorkDays"]</label>
+                            <input type="number" class="form-control" @bind="model.ActualWorkDays"
+                                   min="0" max="31" step="0.5" disabled="@model.IsLocked" />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">@L["Field.AbsentDays"]</label>
+                            <input type="number" class="form-control" @bind="model.AbsentDays"
+                                   min="0" max="31" step="0.5" disabled="@model.IsLocked" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">@L["Field.SickLeaveDays"]</label>
+                            <input type="number" class="form-control" @bind="model.SickLeaveDays"
+                                   min="0" max="31" step="0.5" disabled="@model.IsLocked" />
+                            <div class="form-text">@L["Attendance.SickLeaveNote"]</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-2" />
+                    <h6 class="text-muted mb-3">@L["Attendance.OvertimeHours"]</h6>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">@L["Field.OvertimeHours1"]</label>
+                            <input type="number" class="form-control" @bind="model.OvertimeHours1"
+                                   min="0" step="0.5" disabled="@model.IsLocked" />
+                            <div class="form-text">@L["Attendance.OT1Note"]</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">@L["Field.OvertimeHours2"]</label>
+                            <input type="number" class="form-control" @bind="model.OvertimeHours2"
+                                   min="0" step="0.5" disabled="@model.IsLocked" />
+                            <div class="form-text">@L["Attendance.OT2Note"]</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">@L["Field.HolidayOvertimeHours"]</label>
+                            <input type="number" class="form-control" @bind="model.HolidayOvertimeHours"
+                                   min="0" step="0.5" disabled="@model.IsLocked" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">@L["Field.NationalHolidayHours"]</label>
+                            <input type="number" class="form-control" @bind="model.NationalHolidayHours"
+                                   min="0" step="0.5" disabled="@model.IsLocked" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">@L["Field.Remarks"]</label>
+                        <input type="text" class="form-control" @bind="model.Remarks"
+                               maxlength="500" disabled="@model.IsLocked" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="Cancel">@L["Button.Cancel"]</button>
+                    @if (!model.IsLocked)
+                    {
+                        <button class="btn btn-primary" @onclick="SaveAsync" disabled="@isSaving">
+                            @if (isSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            @L["Button.Save"]
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public MonthlyAttendanceSummary? EditingItem { get; set; }
+    [Parameter] public int DefaultYear { get; set; }
+    [Parameter] public int DefaultMonth { get; set; }
+    [Parameter] public int DefaultEmployeeId { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private MonthlyAttendanceSummary model = new();
+    private bool isNew = true;
+    private bool isSaving = false;
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            isNew = EditingItem == null;
+            if (isNew)
+            {
+                model = new MonthlyAttendanceSummary
+                {
+                    EmployeeId = DefaultEmployeeId,
+                    Year = DefaultYear,
+                    Month = DefaultMonth
+                };
+            }
+            else
+            {
+                model = new MonthlyAttendanceSummary
+                {
+                    Id = EditingItem!.Id,
+                    EmployeeId = EditingItem.EmployeeId,
+                    Year = EditingItem.Year,
+                    Month = EditingItem.Month,
+                    ScheduledWorkDays = EditingItem.ScheduledWorkDays,
+                    ActualWorkDays = EditingItem.ActualWorkDays,
+                    AbsentDays = EditingItem.AbsentDays,
+                    SickLeaveDays = EditingItem.SickLeaveDays,
+                    OvertimeHours1 = EditingItem.OvertimeHours1,
+                    OvertimeHours2 = EditingItem.OvertimeHours2,
+                    HolidayOvertimeHours = EditingItem.HolidayOvertimeHours,
+                    NationalHolidayHours = EditingItem.NationalHolidayHours,
+                    Remarks = EditingItem.Remarks,
+                    IsLocked = EditingItem.IsLocked
+                };
+            }
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        isSaving = true;
+        ServiceResult<MonthlyAttendanceSummary> result = isNew
+            ? await AttendanceService.CreateAsync(model)
+            : await AttendanceService.UpdateAsync(model);
+
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync(L["Message.SaveSuccess"].ToString());
+            await IsVisibleChanged.InvokeAsync(false);
+            await OnSaved.InvokeAsync();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailed"].ToString());
+        }
+        isSaving = false;
+    }
+
+    private async Task Cancel() => await IsVisibleChanged.InvokeAsync(false);
+}

@@ -10,11 +10,20 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
     /// 公司模組種子資料
     /// 從 NavigationConfig 父級選單自動建立 CompanyModule 記錄
     /// 當 NavigationConfig 新增帶有 ModuleKey 的父級選單時，Seeder 會自動建立對應模組
+    /// 跨模組功能（如圖表）則在 StaticModules 中靜態定義
     /// </summary>
     public class CompanyModuleSeeder : IDataSeeder
     {
         public int Order => 5; // 在權限等基礎資料之前執行，確保模組資料先就位
         public string Name => "公司模組";
+
+        /// <summary>
+        /// 跨模組功能模組（不對應單一導覽父層，手動維護）
+        /// </summary>
+        private static readonly List<(string ModuleKey, string DisplayName, string Description)> StaticModules =
+        [
+            ("Charts", "圖表分析", "客戶、廠商等各模組統計分析圖表功能"),
+        ];
 
         public async Task SeedAsync(AppDbContext context)
         {
@@ -22,11 +31,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var parentModules = NavigationConfig.GetAllNavigationItems()
                 .Where(item => item.IsParent && !string.IsNullOrEmpty(item.ModuleKey))
                 .ToList();
-
-            if (!parentModules.Any())
-            {
-                return;
-            }
 
             // 取得資料庫中已存在的 ModuleKey
             var existingModuleKeys = await context.CompanyModules
@@ -59,6 +63,25 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 };
 
                 newModules.Add(module);
+                sortOrder += 10;
+            }
+
+            // 靜態模組（跨模組功能）
+            foreach (var (moduleKey, displayName, description) in StaticModules)
+            {
+                if (existingModuleKeys.Contains(moduleKey))
+                    continue;
+
+                newModules.Add(new CompanyModule
+                {
+                    ModuleKey = moduleKey,
+                    DisplayName = displayName,
+                    Description = description,
+                    IsEnabled = true,
+                    SortOrder = sortOrder,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                });
                 sortOrder += 10;
             }
 

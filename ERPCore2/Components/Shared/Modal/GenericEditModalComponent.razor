@@ -4,6 +4,7 @@
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IEmployeePreferenceService EmployeePreferenceService
 @using System.Reflection
 @using ERPCore2.Helpers
 @using ERPCore2.Helpers.EditModal
@@ -69,11 +70,11 @@
             @* 中央：審核操作按鈕 *@
             @if (ShowApprovalSection && !IsLoading && isEditMode)
             {
-                @* 有權限者才能看到審核通過/駁回按鈕 *@
-                @if (!IsEntityApproved())
-                {
-                    <PermissionCheck Permission="@ApprovalPermission">
-                        <div class="d-flex gap-2 me-3">
+                <PermissionCheck Permission="@ApprovalPermission">
+                    <div class="d-flex gap-2 me-3">
+                        @if (!IsEntityApproved())
+                        {
+                            @* 未審核：顯示核准與駁回按鈕 *@
                             <GenericButtonComponent Text="@L["Button.Approve"]"
                                                   Variant="ButtonVariant.Green"
                                                   OnClick="OpenApproveConfirmModal"
@@ -84,9 +85,19 @@
                                                   OnClick="OpenRejectConfirmModal"
                                                   IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
                                                   IsLoading="@IsRejecting" />
-                        </div>
-                    </PermissionCheck>
-                }
+                        }
+                        else
+                        {
+                            @* 已審核：顯示駁回按鈕，有下游單據時停用 *@
+                            <GenericButtonComponent Text="@L["Button.Reject"]"
+                                                  Variant="ButtonVariant.Red"
+                                                  OnClick="OpenRejectConfirmModal"
+                                                  IsDisabled="@(IsSubmitting || IsApproving || IsRejecting || HasDownstreamActions)"
+                                                  Title="@(HasDownstreamActions ? "已有關聯單據，無法駁回" : "")"
+                                                  IsLoading="@IsRejecting" />
+                        }
+                    </div>
+                </PermissionCheck>
             }
             
             @* 右側：原有的主要操作按鈕 *@
@@ -494,13 +505,18 @@
     [Parameter] public Func<Task<(string Message, BadgeVariant Variant, string IconClass)?>>? GetStatusMessage { get; set; }
     
     // ===== 審核功能參數（向下相容，整合到狀態訊息系統） =====
-    
+
     [Parameter] public bool ShowApprovalSection { get; set; } = false;
     [Parameter] public string ApprovalPermission { get; set; } = string.Empty;
     [Parameter] public Func<Task<bool>>? OnApprove { get; set; }
 
     // 駁回確認 Modal 相關參數
     [Parameter] public Func<string, Task<bool>>? OnRejectWithReason { get; set; }
+
+    /// <summary>
+    /// 是否有下游關聯單據（已審核狀態下，有下游則停用駁回按鈕）
+    /// </summary>
+    [Parameter] public bool HasDownstreamActions { get; set; } = false;
 
     /// <summary>
     /// 列印前審核狀態檢查。回傳 false 則阻止列印並顯示警告。
@@ -537,6 +553,7 @@
 
     private string ErrorMessage { get; set; } = string.Empty;
     private bool _isDirty = false;
+    private bool _prefUnsavedWarning = true;  // 來自使用者個人化設定（預設 true = 詢問）
     private int? _lastId = null;
     private bool _lastVisible = false;
     private bool _renderedVisible = false;  // 追蹤上一次渲染時的 IsVisible 狀態（ShouldRender 用）

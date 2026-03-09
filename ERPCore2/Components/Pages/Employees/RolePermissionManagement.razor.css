@@ -16,3 +16,18 @@
 [data-bs-theme=dark] .table-hover tbody tr:hover .badge {
     color: var(--bs-badge-color) !important;
 }
+
+/* Dark mode: selected (checked) rows — override table-success to dark-themed green */
+[data-bs-theme=dark] .table-success {
+    --bs-table-bg: rgba(25, 135, 84, 0.25);
+    --bs-table-color: var(--text-primary);
+    --bs-table-hover-bg: rgba(25, 135, 84, 0.35);
+}
+
+[data-bs-theme=dark] .table-success td {
+    color: var(--text-primary) !important;
+}
+
+[data-bs-theme=dark] .table-success .badge {
+    color: var(--bs-badge-color) !important;
+}

@@ -1,4 +1,5 @@
 using ERPCore2.Data;
+using ERPCore2.Helpers;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
 
@@ -26,10 +27,24 @@ public partial class GenericEditModalComponent<TEntity, TService>
     /// </summary>
     protected override bool ShouldRender() => IsVisible || _renderedVisible;
 
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         editContext = new EditContext(Entity);
-        return Task.CompletedTask;
+
+        // 載入使用者的「離開未儲存表單時詢問」偏好設定
+        try
+        {
+            var employeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (employeeId.HasValue)
+            {
+                var pref = await EmployeePreferenceService.GetByEmployeeIdAsync(employeeId.Value);
+                _prefUnsavedWarning = pref.ShowUnsavedChangesWarning;
+            }
+        }
+        catch
+        {
+            // 無法取得偏好設定時，維持預設值（詢問）
+        }
     }
 
     protected override async Task OnParametersSetAsync()

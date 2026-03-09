@@ -1,0 +1,82 @@
+@page "/payroll/items"
+@inject IPayrollItemService PayrollItemService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="PayrollItem"
+                        TService="IPayrollItemService"
+                        Service="@PayrollItemService"
+                        EntityBasePath="/payroll/items"
+                        PageTitle="@L["Page.PayrollItemsTitle"]"
+                        PageSubtitle="@L["Page.PayrollItemsSubtitle"]"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="@L["Entity.PayrollItem"]"
+                        GetEntityDisplayName="@(item => item.Name)"
+                        RequiredPermission="@PermissionRegistry.Payroll.RateTable"
+                        RequiredModule="Payroll"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
+                        DebugPageName="PayrollItemIndex"
+                        @ref="indexComponent"/>
+
+<PayrollItemEditModalComponent IsVisible="@showEditModal"
+                               IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                               PayrollItemId="@editingItemId"
+                               OnPayrollItemSaved="@modalHandler.OnEntitySavedAsync"
+                               OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<PayrollItem, IPayrollItemService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingItemId = null;
+
+    private ModalHandler<PayrollItem, GenericIndexPageComponent<PayrollItem, IPayrollItemService>> modalHandler = default!;
+
+    private PayrollItemFieldConfiguration fieldConfiguration = default!;
+
+    private List<BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<PayrollItem, GenericIndexPageComponent<PayrollItem, IPayrollItemService>>(
+                id => editingItemId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new PayrollItemFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化薪資項目頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化薪資項目頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("薪資管理", "薪資項目設定", "#", NotificationService, GetType());
+
+    private Task<List<PayrollItem>> LoadDataAsync() =>
+        DataLoaderHelper.LoadAsync(() => PayrollItemService.GetAllAsync(), "薪資項目", NotificationService, GetType());
+
+    private IQueryable<PayrollItem> ApplyFilters(SearchFilterModel searchModel, IQueryable<PayrollItem> query) =>
+        fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyFilters), GetType());
+}

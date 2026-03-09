@@ -12,7 +12,7 @@
 
 <div class="board-week-view">
 
-    @* 工具列：週導航 + 新增按鈕 *@
+    @* 工具列：週導航 + 篩選 + 批次完工 + 預警 *@
     <div class="board-toolbar">
         <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
             IconClass="bi bi-chevron-left" OnClick="PreviousWeek" Title="上一週" />
@@ -27,7 +27,41 @@
         <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue" Size="ButtonSize.Small"
             Text="今天" OnClick="GoToToday" CssClass="ms-2" />
 
+        @* 9.3 狀態篩選 *@
+        <div class="btn-group btn-group-sm ms-3" role="group" aria-label="狀態篩選">
+            <button type="button" class="btn @(statusFilter == null ? "btn-primary" : "btn-outline-secondary")"
+                    @onclick="() => statusFilter = null">全部</button>
+            <button type="button" class="btn @(statusFilter == ProductionItemStatus.WaitingMaterial ? "btn-warning" : "btn-outline-secondary")"
+                    @onclick="() => statusFilter = ProductionItemStatus.WaitingMaterial">等待領料</button>
+            <button type="button" class="btn @(statusFilter == ProductionItemStatus.InProgress ? "btn-primary" : "btn-outline-secondary")"
+                    @onclick="() => statusFilter = ProductionItemStatus.InProgress">生產中</button>
+            <button type="button" class="btn @(statusFilter == ProductionItemStatus.Completed ? "btn-success" : "btn-outline-secondary")"
+                    @onclick="() => statusFilter = ProductionItemStatus.Completed">已完成</button>
+        </div>
+
+        @* 9.2 批次完工 *@
+        <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
+            IconClass="bi bi-check2-all" Text="批次完工" CssClass="ms-2"
+            OnClick="@(() => showBatchCompleteModal = true)"
+            IsDisabled="@(!boardItems.Any(i => i.ProductionItemStatus == ProductionItemStatus.InProgress))"
+            Title="批次確認本週生產中項目完工" />
+
         <div class="ms-auto d-flex align-items-center gap-2">
+            @* 9.5 交期預警 *@
+            @if (OverdueCount > 0)
+            {
+                <span class="badge bg-danger board-alert-badge"
+                      title="有 @OverdueCount 件排程已逾期，請優先處理">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>逾期 @OverdueCount 件
+                </span>
+            }
+            @if (UrgentCount > 0)
+            {
+                <span class="badge bg-warning text-dark board-alert-badge"
+                      title="有 @UrgentCount 件排程將在 3 天內到期">
+                    <i class="bi bi-clock-fill me-1"></i>緊急 @UrgentCount 件
+                </span>
+            }
             @if (IsLoading)
             {
                 <span class="text-secondary" style="font-size:0.8rem;">
@@ -35,6 +69,23 @@
                 </span>
             }
         </div>
+    </div>
+
+    @* 9.1 摘要列 *@
+    <div class="board-summary-bar">
+        <span class="summary-item summary-total">本週 @TotalBoardItems 件</span>
+        @if (WaitingCount > 0)
+        {
+            <span class="summary-item summary-waiting">等待領料 @WaitingCount</span>
+        }
+        @if (InProgressCount > 0)
+        {
+            <span class="summary-item summary-inprogress">生產中 @InProgressCount</span>
+        }
+        @if (CompletedCount > 0)
+        {
+            <span class="summary-item summary-completed">已完成 @CompletedCount</span>
+        }
     </div>
 
     @* 主體：sidebar + 週視圖 *@
@@ -93,6 +144,13 @@
     OnMaterialIssueSaved="@HandleMaterialIssueSaved"
     OnCancel="@(() => showMaterialIssueModal = false)" />
 
+@* 9.2 批次完工 Modal *@
+<ProductionBoardBatchCompleteModal
+    IsVisible="@showBatchCompleteModal"
+    IsVisibleChanged="@((bool v) => showBatchCompleteModal = v)"
+    Items="@boardItems.Where(i => i.ProductionItemStatus == ProductionItemStatus.InProgress).ToList()"
+    OnCompleted="@LoadDataAsync" />
+
 @code {
     // ── 週導航 ──
     private DateTime WeekStart { get; set; } = GetMonday(DateTime.Today);
@@ -119,6 +177,26 @@
     private bool showMaterialIssueConfirm;
     private bool showMaterialIssueModal;
     private int? pendingMaterialIssueBatchId;
+
+    // ── 9.2 批次完工 ──
+    private bool showBatchCompleteModal;
+
+    // ── 9.3 狀態篩選 ──
+    private ProductionItemStatus? statusFilter;
+
+    // ── 9.1 摘要列 / 9.5 交期預警（直接從 boardItems 計算，無額外 DB 查詢）──
+    private int TotalBoardItems  => boardItems.Count;
+    private int WaitingCount     => boardItems.Count(i => i.ProductionItemStatus is ProductionItemStatus.WaitingMaterial or ProductionItemStatus.Pending);
+    private int InProgressCount  => boardItems.Count(i => i.ProductionItemStatus == ProductionItemStatus.InProgress);
+    private int CompletedCount   => boardItems.Count(i => i.ProductionItemStatus == ProductionItemStatus.Completed);
+    private int OverdueCount     => boardItems.Count(i =>
+        i.ProductionItemStatus != ProductionItemStatus.Completed &&
+        i.ExpectedDeliveryDate.HasValue &&
+        i.ExpectedDeliveryDate.Value.Date < DateTime.Today);
+    private int UrgentCount      => boardItems.Count(i =>
+        i.ProductionItemStatus != ProductionItemStatus.Completed &&
+        i.ExpectedDeliveryDate.HasValue &&
+        (i.ExpectedDeliveryDate.Value.Date - DateTime.Today).TotalDays is >= 0 and <= 3);
 
     protected override async Task OnInitializedAsync()
     {
@@ -306,7 +384,7 @@
             return (null, null);
         }
 
-        // 建立新排程項目，直接指定日期（不再經由側欄 ProductionScheduleItem）
+        // 建立新排程項目，先以 WaitingMaterial 建立（BOM 展開後再判斷是否升格）
         var item = new ProductionScheduleItem
         {
             ProductionScheduleId  = batchResult.Data!.Id,
@@ -314,7 +392,7 @@
             SalesOrderDetailId    = pending.SalesOrderDetailId > 0 ? pending.SalesOrderDetailId : null,
             ScheduledQuantity     = pending.PendingQuantity,
             CompletedQuantity     = 0,
-            ProductionItemStatus  = ProductionItemStatus.Pending,
+            ProductionItemStatus  = ProductionItemStatus.WaitingMaterial,
             PlannedStartDate      = targetDate.Date,
             Status                = EntityStatus.Active,
             CreatedAt             = DateTime.Now
@@ -340,6 +418,14 @@
 
         // 展開 BOM，建立 ProductionScheduleDetail
         await ExpandBomAsync(item.Id, pending.ProductId, pending.PendingQuantity);
+
+        // 若無 BOM 需求（無需領料），直接升格為 InProgress
+        var bomDetails = await ScheduleDetailService.GetByScheduleItemIdAsync(item.Id);
+        if (!bomDetails.Any(d => d.RequiredQuantity > 0))
+        {
+            item.ProductionItemStatus = ProductionItemStatus.InProgress;
+            await ScheduleItemService.UpdateAsync(item);
+        }
 
         return (batchResult.Data!.Id, item.Id);
     }
@@ -407,12 +493,60 @@
         showMaterialIssueModal = false;
         pendingMaterialIssueBatchId = null;
         await LoadDataAsync();
+        // 領料完成後，嘗試將已全部領料的 WaitingMaterial 項目升格為 InProgress
+        await UpgradeWaitingItemsAsync();
+    }
+
+    /// <summary>
+    /// 檢查看板上所有「等待領料」項目，若 BOM 明細已全部領完則升格為「生產中」
+    /// </summary>
+    private async Task UpgradeWaitingItemsAsync()
+    {
+        var waitingIds = boardItems
+            .Where(i => i.ProductionItemStatus == ProductionItemStatus.WaitingMaterial
+                     || i.ProductionItemStatus == ProductionItemStatus.Pending)
+            .Select(i => i.Id)
+            .ToList();
+
+        if (!waitingIds.Any()) return;
+
+        var upgraded = false;
+        foreach (var id in waitingIds)
+        {
+            try
+            {
+                var bomDetails = await ScheduleDetailService.GetByScheduleItemIdAsync(id);
+                if (bomDetails.Any() && bomDetails.All(d => d.IssuedQuantity >= d.RequiredQuantity))
+                {
+                    var schedItem = await ScheduleItemService.GetByIdAsync(id);
+                    if (schedItem != null)
+                    {
+                        schedItem.ProductionItemStatus = ProductionItemStatus.InProgress;
+                        await ScheduleItemService.UpdateAsync(schedItem);
+                        upgraded = true;
+                    }
+                }
+            }
+            catch { /* 不中斷主流程 */ }
+        }
+
+        if (upgraded)
+            await LoadDataAsync();
     }
 
     // ── 輔助 ──
 
     private List<BoardScheduleItemDto> GetItemsForDay(DateTime day)
-        => boardItems.Where(i => i.PlannedStartDate?.Date == day.Date).ToList();
+    {
+        var items = boardItems.Where(i => i.PlannedStartDate?.Date == day.Date);
+        if (statusFilter.HasValue)
+        {
+            items = statusFilter.Value == ProductionItemStatus.WaitingMaterial
+                ? items.Where(i => i.ProductionItemStatus is ProductionItemStatus.WaitingMaterial or ProductionItemStatus.Pending)
+                : items.Where(i => i.ProductionItemStatus == statusFilter.Value);
+        }
+        return items.ToList();
+    }
 
     private static DateTime GetMonday(DateTime date)
     {

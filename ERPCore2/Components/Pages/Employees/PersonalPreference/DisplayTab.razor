@@ -84,6 +84,36 @@
             </div>
         </div>
 
+        @* 操作偏好 *@
+        <div class="display-section-column">
+            <div class="section-header mb-3">
+                <span class="section-title">@L["Preference.OperationBehavior"]</span>
+            </div>
+            <div class="mb-2">
+                <div class="small text-muted mb-2">@L["Preference.UnsavedChangesWarning"]</div>
+                <div class="d-flex gap-2 flex-wrap">
+                    @foreach (var option in _unsavedWarningOptions)
+                    {
+                        var isSelected = (Model ?? _fallback).ShowUnsavedChangesWarning == option.Value;
+                        <button type="button"
+                                class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") theme-option-btn"
+                                title="@option.Label"
+                                @onclick="() => SelectUnsavedChangesWarning(option.Value)">
+                            <i class="bi @option.Icon theme-icon"></i>
+                            <span class="theme-label">@option.Label</span>
+                        </button>
+                    }
+                </div>
+            </div>
+            @if (!(Model ?? _fallback).ShowUnsavedChangesWarning)
+            {
+                <div class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mt-2 mb-0" style="font-size: 0.82rem;">
+                    <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+                    <span>@L["Preference.UnsavedChangesWarningDesc"]</span>
+                </div>
+            }
+        </div>
+
     </div>
 </div>
 
@@ -96,9 +126,11 @@
     private record ThemeOption(AppTheme Value, string Label, string Icon);
     private record ZoomOption(ContentZoom Value, string Label, string PreviewSize);
     private record NavDisplayOption(bool Value, string Label, string Icon);
+    private record BoolOption(bool Value, string Label, string Icon);
 
     private List<ThemeOption> _themeOptions = new();
     private List<NavDisplayOption> _navDisplayOptions = new();
+    private List<BoolOption> _unsavedWarningOptions = new();
 
     private static readonly List<int> _pageSizeOptions = new() { 10, 20, 50, 100 };
 
@@ -125,6 +157,12 @@
             new(false, L["Preference.HideDisabledModules"], "bi-eye-slash"),
             new(true,  L["Preference.ShowDisabledModules"], "bi-lock"),
         };
+
+        _unsavedWarningOptions = new List<BoolOption>
+        {
+            new(true,  L["Preference.UnsavedChangesWarningOn"],  "bi-question-circle"),
+            new(false, L["Preference.UnsavedChangesWarningOff"], "bi-box-arrow-right"),
+        };
     }
 
     private void SelectTheme(AppTheme value)
@@ -148,6 +186,12 @@
     private void SelectPageSize(int value)
     {
         (Model ?? _fallback).DefaultPageSize = value;
+        StateHasChanged();
+    }
+
+    private void SelectUnsavedChangesWarning(bool value)
+    {
+        (Model ?? _fallback).ShowUnsavedChangesWarning = value;
         StateHasChanged();
     }
 }

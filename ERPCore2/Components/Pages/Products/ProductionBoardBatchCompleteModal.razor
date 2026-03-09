@@ -1,0 +1,191 @@
+@* 批次完工確認 Modal - 選取本週生產中項目，批次輸入入庫數量一次確認 *@
+@using ERPCore2.Models.Schedule
+@using ERPCore2.Models.Enums
+@inject IProductionScheduleItemService ScheduleItemService
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="批次完工確認"
+                    Icon="bi bi-check2-all"
+                    Size="BaseModalComponent.ModalSize.Large"
+                    HeaderColor="BaseModalComponent.HeaderVariant.Success"
+                    UseWhiteCloseButton="true"
+                    OnClose="@HandleCancel"
+                    DebugComponentName="ProductionBoardBatchCompleteModal">
+
+    <HeaderButtons>
+        <div class="d-flex align-items-center gap-2">
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+                Text="取消" OnClick="HandleCancel" IsDisabled="@isProcessing" />
+            <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
+                IconClass="bi bi-check2-all" Text="確認入庫"
+                OnClick="HandleSubmit"
+                IsDisabled="@(isProcessing || !HasValidRows)"
+                IsLoading="@isProcessing" />
+        </div>
+    </HeaderButtons>
+
+    <BodyContent>
+        @if (rows.Any())
+        {
+            <div class="mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <span class="text-muted" style="font-size:0.88rem;">
+                    勾選項目並調整入庫數量，確認後一次完工。數量為 0 的項目將略過。
+                </span>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="SelectAll">全選</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="DeselectAll">取消全選</button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:36px;"></th>
+                            <th>商品</th>
+                            <th>客戶／訂單</th>
+                            <th class="text-end">排程量</th>
+                            <th class="text-end">已完成</th>
+                            <th class="text-end">剩餘</th>
+                            <th style="width:130px;" class="text-end">本次入庫</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in rows)
+                        {
+                            var remaining = row.Item.ScheduledQuantity - row.Item.CompletedQuantity;
+                            <tr class="@(!row.IsSelected ? "text-muted opacity-50" : "")">
+                                <td>
+                                    <input type="checkbox" class="form-check-input"
+                                           checked="@row.IsSelected"
+                                           @onchange="e => row.IsSelected = (bool)(e.Value ?? false)" />
+                                </td>
+                                <td>
+                                    <div class="fw-semibold" style="font-size:0.9rem;">@row.Item.ProductName</div>
+                                    <div class="text-muted" style="font-size:0.8rem;">@row.Item.ProductCode</div>
+                                </td>
+                                <td>
+                                    <div style="font-size:0.85rem;">@row.Item.CustomerName</div>
+                                    @if (!string.IsNullOrEmpty(row.Item.SalesOrderCode))
+                                    {
+                                        <div class="text-muted" style="font-size:0.8rem;">@row.Item.SalesOrderCode</div>
+                                    }
+                                </td>
+                                <td class="text-end">@NumberFormatHelper.FormatSmart(row.Item.ScheduledQuantity)</td>
+                                <td class="text-end text-success">@NumberFormatHelper.FormatSmart(row.Item.CompletedQuantity)</td>
+                                <td class="text-end fw-semibold">@NumberFormatHelper.FormatSmart(remaining)</td>
+                                <td class="text-end">
+                                    <input type="number" class="form-control form-control-sm text-end"
+                                           @bind="row.InputQty"
+                                           min="0" max="@remaining" step="0.001"
+                                           disabled="@(!row.IsSelected)"
+                                           style="max-width:110px;margin-left:auto;" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-4 text-muted">目前無「生產中」的排程項目</div>
+        }
+    </BodyContent>
+
+</BaseModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public List<BoardScheduleItemDto> Items { get; set; } = new();
+    [Parameter] public EventCallback OnCompleted { get; set; }
+
+    private List<BatchCompleteRow> rows = new();
+    private bool isProcessing;
+
+    private bool HasValidRows => rows.Any(r => r.IsSelected && r.InputQty > 0);
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+            BuildRows();
+    }
+
+    private void BuildRows()
+    {
+        rows = Items
+            .Where(i => i.ProductionItemStatus == ProductionItemStatus.InProgress
+                     && i.ScheduledQuantity - i.CompletedQuantity > 0)
+            .Select(i => new BatchCompleteRow
+            {
+                Item     = i,
+                InputQty = i.ScheduledQuantity - i.CompletedQuantity,
+                IsSelected = true
+            })
+            .ToList();
+    }
+
+    private void SelectAll()   => rows.ForEach(r => r.IsSelected = true);
+    private void DeselectAll() => rows.ForEach(r => r.IsSelected = false);
+
+    private async Task HandleSubmit()
+    {
+        var activeRows = rows.Where(r => r.IsSelected && r.InputQty > 0).ToList();
+        if (!activeRows.Any()) return;
+
+        isProcessing = true;
+        try
+        {
+            int successCount = 0;
+            foreach (var row in activeRows)
+            {
+                var result = await ScheduleItemService.CompleteProductionAsync(row.Item.Id, row.InputQty);
+                if (!result.IsSuccess)
+                {
+                    await NotificationService.ShowWarningAsync($"{row.Item.ProductName} 入庫失敗：{result.ErrorMessage}");
+                    continue;
+                }
+
+                // 若已全部完成，升格為 Completed（與單張卡片邏輯一致）
+                var totalCompleted = row.Item.CompletedQuantity + row.InputQty;
+                if (totalCompleted >= row.Item.ScheduledQuantity)
+                {
+                    var schedItem = await ScheduleItemService.GetByIdAsync(row.Item.Id);
+                    if (schedItem != null)
+                    {
+                        schedItem.ProductionItemStatus = ProductionItemStatus.Completed;
+                        await ScheduleItemService.UpdateAsync(schedItem);
+                    }
+                }
+                successCount++;
+            }
+
+            await NotificationService.ShowSuccessAsync($"批次完工：已完成 {successCount} 件入庫");
+            await IsVisibleChanged.InvokeAsync(false);
+            await OnCompleted.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"批次完工失敗：{ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private class BatchCompleteRow
+    {
+        public BoardScheduleItemDto Item { get; set; } = default!;
+        public decimal InputQty { get; set; }
+        public bool IsSelected { get; set; }
+    }
+}

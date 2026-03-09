@@ -103,6 +103,7 @@ public static class PermissionRegistry
     public static class Customer
     {
         public const string Read = "Customer.Read";
+        public const string ChartRead = "CustomerChart.Read";
     }
 
     public static class CustomerType
@@ -113,6 +114,7 @@ public static class PermissionRegistry
     public static class Supplier
     {
         public const string Read = "Supplier.Read";
+        public const string ChartRead = "SupplierChart.Read";
     }
 
     public static class Product
@@ -334,6 +336,21 @@ public static class PermissionRegistry
         public const string Read = "JournalEntry.Read";
     }
 
+    public static class Payroll
+    {
+        public const string Read         = "Payroll.Read";
+        public const string ReadAmount   = "Payroll.ReadAmount";
+        public const string Calculate    = "Payroll.Calculate";
+        public const string Confirm      = "Payroll.Confirm";
+        public const string Close        = "Payroll.Close";
+        public const string SalaryConfig = "Payroll.SalaryConfig";
+        public const string RateTable    = "Payroll.RateTable";
+        public const string Declaration  = "Payroll.Declaration";
+        public const string Attendance   = "Payroll.Attendance";
+        public const string Payslip      = "Payroll.Payslip";
+        public const string SelfView     = "Payroll.SelfView";
+    }
+
     // ===== Seeder 使用 =====
 
     /// <summary>
@@ -382,10 +399,12 @@ public static class PermissionRegistry
 
         // ===== 一般權限：客戶 =====
         new(Customer.Read,      "檢視客戶",     PermissionLevel.Normal, "檢視客戶基本資料與相關資訊",   "Nav.CustomerGroup"),
+        new(Customer.ChartRead, "檢視客戶圖表", PermissionLevel.Normal, "檢視客戶統計分析圖表（主管層級）", "Nav.CustomerGroup"),
         new(CustomerType.Read,  "檢視客戶類型", PermissionLevel.Normal, "檢視客戶分類與類型設定",       "Nav.CustomerGroup"),
 
         // ===== 一般權限：廠商 =====
-        new(Supplier.Read, "檢視供應商", PermissionLevel.Normal, "檢視供應商基本資料與相關資訊", "Nav.SupplierGroup"),
+        new(Supplier.Read,      "檢視供應商",   PermissionLevel.Normal, "檢視供應商基本資料與相關資訊", "Nav.SupplierGroup"),
+        new(Supplier.ChartRead, "檢視廠商圖表", PermissionLevel.Normal, "檢視廠商統計分析圖表（主管層級）", "Nav.SupplierGroup"),
 
         // ===== 一般權限：商品 =====
         new(Product.Read,               "檢視商品",         PermissionLevel.Normal, "檢視商品基本資料與規格",         "Nav.ProductGroup"),
@@ -448,5 +467,17 @@ public static class PermissionRegistry
 
         // ===== 一般權限：文件 =====
         new(Document.Read, "瀏覽文件", PermissionLevel.Normal, "瀏覽與下載一般存取層級的文件", "Nav.DocumentGroup"),
+
+        // ===== 一般權限：薪資 =====
+        new(Payroll.Read,         "檢視薪資作業",   PermissionLevel.Normal,    "進入薪資計算作業頁面",                      "Nav.PayrollGroup"),
+        new(Payroll.ReadAmount,   "查看薪資金額",   PermissionLevel.Sensitive, "查看本薪、實發薪資等金額（無此權限顯示***）", "Nav.PayrollGroup"),
+        new(Payroll.Calculate,    "執行薪資計算",   PermissionLevel.Sensitive, "執行薪資試算與批次計算",                    "Nav.PayrollGroup"),
+        new(Payroll.Confirm,      "確認薪資單",     PermissionLevel.Sensitive, "確認個人薪資單（試算→確認）",               "Nav.PayrollGroup"),
+        new(Payroll.Close,        "薪資週期關帳",   PermissionLevel.Sensitive, "執行薪資週期關帳（關帳後不可修改）",         "Nav.PayrollGroup"),
+        new(Payroll.SalaryConfig, "維護員工薪資設定", PermissionLevel.Sensitive, "設定員工本薪、津貼、勞健保等薪資參數",     "Nav.PayrollGroup"),
+        new(Payroll.RateTable,    "維護薪資費率表", PermissionLevel.Sensitive, "維護薪資項目、基本工資、分級表等費率資料",   "Nav.PayrollGroup"),
+        new(Payroll.Attendance,   "維護出勤彙總",   PermissionLevel.Sensitive, "輸入及維護員工每月出勤天數與加班時數",        "Nav.PayrollGroup"),
+        new(Payroll.Payslip,      "列印薪資單",     PermissionLevel.Normal,    "列印或下載員工薪資單 PDF",                  "Nav.PayrollGroup"),
+        new(Payroll.SelfView,     "查看本人薪資",   PermissionLevel.Normal,    "員工自助查看本人歷史薪資單（Phase 5）",      "Nav.PayrollGroup"),
     ];
 }

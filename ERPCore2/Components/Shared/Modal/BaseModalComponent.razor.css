@@ -317,3 +317,21 @@
     opacity: 0.2;
     background-color: rgba(0, 0, 0, 0.2);
 }
+
+/* ===== 全景模式（modal-fullscreen）佈局修正 ===== */
+
+/* 確保 modal-content 為 flex column 且填滿全高 */
+::deep .modal-dialog.modal-fullscreen .modal-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border-radius: 0;
+}
+
+/* modal-body：移除 max-height 限制，flex-basis 設為 0 讓子元素的 height: 100% 可正確解析 */
+::deep .modal-dialog.modal-fullscreen .modal-body {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none !important;
+    overflow: hidden;
+}

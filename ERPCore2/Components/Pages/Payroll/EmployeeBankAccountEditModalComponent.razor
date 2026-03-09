@@ -1,0 +1,198 @@
+@* 員工銀行帳戶編輯組件 *@
+@inject IEmployeeBankAccountService BankAccountService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="EmployeeBankAccount"
+                          TService="IEmployeeBankAccountService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@BankAccountId"
+                          Service="@BankAccountService"
+                          EntityName="@L["Entity.EmployeeBankAccount"]"
+                          EntityNamePlural="@L["Entity.EmployeeBankAccount"]"
+                          ModalTitle="@(BankAccountId.HasValue ? L["Message.EditTitle", L["Entity.EmployeeBankAccount"]].ToString() : L["Message.CreateTitle", L["Entity.EmployeeBankAccount"]].ToString())"
+                          Size="GenericEditModalComponent<EmployeeBankAccount, IEmployeeBankAccountService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          DataLoader="@LoadData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(BankAccountId.HasValue ? L["Message.UpdateSuccess", L["Entity.EmployeeBankAccount"]].ToString() : L["Message.CreateSuccess", L["Entity.EmployeeBankAccount"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeeBankAccount"]]"
+                          RequiredPermission="@PermissionRegistry.Payroll.SalaryConfig"
+                          OnEntitySaved="@OnBankAccountSaved"
+                          OnCancel="@OnCancel"
+                          ComponentName="EmployeeBankAccountEditModalComponent" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? BankAccountId { get; set; }
+    [Parameter] public EventCallback<EmployeeBankAccount> OnBankAccountSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public int? PrefilledEmployeeId { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<EmployeeBankAccount, IEmployeeBankAccountService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    private List<Employee> availableEmployees = new();
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    private Task<EmployeeBankAccount?> LoadData()
+    {
+        var prefilled = PrefilledValues != null
+            ? new Dictionary<string, object?>(PrefilledValues)
+            : new Dictionary<string, object?>();
+
+        if (PrefilledEmployeeId.HasValue && !prefilled.ContainsKey(nameof(EmployeeBankAccount.EmployeeId)))
+            prefilled[nameof(EmployeeBankAccount.EmployeeId)] = PrefilledEmployeeId.Value;
+
+        return EditDataLoaderHelper.LoadOrCreateAsync<EmployeeBankAccount, IEmployeeBankAccountService>(
+            BankAccountId, BankAccountService, NotificationService, "銀行帳戶", null,
+            prefilled.Count > 0 ? prefilled : null,
+            b => b.IsPrimary = true);
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            var result = await EmployeeService.GetActiveEmployeesAsync();
+            availableEmployees = result.IsSuccess ? (result.Data ?? new()) : new();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<EmployeeBankAccount>()
+                .AddFieldWithMultipleSearchProperties<Employee>(
+                    nameof(EmployeeBankAccount.EmployeeId),
+                    nameof(Employee.Name),
+                    availableEmployees,
+                    new[] { nameof(Employee.Name), nameof(Employee.Code) })
+                .Build();
+
+            InitializeFormFields();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入員工清單時發生錯誤");
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+            InitializeFormFields();
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(EmployeeBankAccount.EmployeeId),
+                    Label = L["Field.Employee"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.Employee"]],
+                    IsRequired = true,
+                    MinSearchLength = 0
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeBankAccount.BankCode),
+                    Label = L["Field.BankCode"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankCode"]],
+                    IsRequired = true,
+                    MaxLength = 10,
+                    HelpText = "3～10碼，如 004=台灣銀行、007=第一銀行"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeBankAccount.BankName),
+                    Label = L["Field.BankName"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankName"]],
+                    MaxLength = 50
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeBankAccount.BranchCode),
+                    Label = L["Field.BranchCode"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BranchCode"]],
+                    MaxLength = 10
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeBankAccount.BranchName),
+                    Label = L["Field.BranchName"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BranchName"]],
+                    MaxLength = 50
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeBankAccount.AccountNumber),
+                    Label = L["Field.AccountNumber"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.AccountNumber"]],
+                    IsRequired = true,
+                    MaxLength = 20,
+                    AutoCompleteAttribute = "off"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeBankAccount.AccountName),
+                    Label = L["Field.BankAccountHolder"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankAccountHolder"]],
+                    IsRequired = true,
+                    MaxLength = 50,
+                    HelpText = "請填入與帳戶一致的戶名"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeBankAccount.IsPrimary),
+                    Label = L["Field.IsPrimary"],
+                    FieldType = FormFieldType.Checkbox,
+                    HelpText = "同一員工僅能有一個主要轉帳帳戶"
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<EmployeeBankAccount>()
+            };
+
+            formSections = FormSectionHelper<EmployeeBankAccount>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    b => b.EmployeeId,
+                    b => b.BankCode,
+                    b => b.BankName,
+                    b => b.BranchCode,
+                    b => b.BranchName,
+                    b => b.AccountNumber,
+                    b => b.AccountName,
+                    b => b.IsPrimary)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    b => b.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化銀行帳戶表單欄位時發生錯誤");
+        }
+    }
+
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
+}

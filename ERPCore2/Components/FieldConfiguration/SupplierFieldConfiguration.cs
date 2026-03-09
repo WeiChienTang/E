@@ -65,6 +65,22 @@ namespace ERPCore2.FieldConfiguration
                                     query = query.Where(s => s.SupplierType == type);
                                 }
                                 return query;
+                            },
+                            CustomTemplate = item => builder =>
+                            {
+                                var supplier = (Supplier)item;
+                                var (cssClass, text) = supplier.SupplierType switch
+                                {
+                                    SupplierType.Manufacturer   => ("bg-primary",   L?["SupplierType.Manufacturer"].ToString()   ?? "製造商"),
+                                    SupplierType.Trader         => ("bg-info",      L?["SupplierType.Trader"].ToString()         ?? "貿易商"),
+                                    SupplierType.Agent          => ("bg-warning",   L?["SupplierType.Agent"].ToString()          ?? "代理商"),
+                                    SupplierType.ServiceProvider => ("bg-success",  L?["SupplierType.ServiceProvider"].ToString() ?? "服務商"),
+                                    _                           => ("bg-secondary", L?["Label.Unknown"].ToString()                ?? "未知")
+                                };
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", $"badge text-white {cssClass}");
+                                builder.AddContent(2, text);
+                                builder.CloseElement();
                             }
                         }
                     },

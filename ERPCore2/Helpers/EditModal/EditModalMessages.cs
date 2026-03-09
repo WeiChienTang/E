@@ -20,14 +20,20 @@ public static class EditModalMessages
         "部分明細有關聯操作 — 主檔欄位已鎖定";
 
     /// <summary>
+    /// 明細鎖定時的操作提示（紅字補充說明）
+    /// </summary>
+    public const string UndeletableDetailsHint =
+        "仍可在下方明細新增補充項目";
+
+    /// <summary>
     /// 採購單審核通過的欄位鎖定警告
     /// </summary>
     public const string PurchaseOrderApprovedWarning =
-        "採購單已審核 — 欄位已鎖定（仍可修改明細完成進貨狀態）";
+        "採購單已審核 — 欄位已鎖定，若需修改請主管先執行「駁回」";
 
     /// <summary>
     /// 銷貨單審核通過的欄位鎖定警告
     /// </summary>
     public const string SalesOrderApprovedWarning =
-        "銷貨訂單已審核 — 欄位已鎖定（仍可修改明細完成出貨狀態）";
+        "銷貨訂單已審核 — 欄位已鎖定，若需修改請主管先執行「駁回」";
 }

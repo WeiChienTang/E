@@ -136,7 +136,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
     {
         try
         {
-            if (_isDirty && ShowUnsavedChangesWarning)
+            if (_isDirty && ShowUnsavedChangesWarning && _prefUnsavedWarning)
             {
                 _unsavedChangesConfirmTcs = new TaskCompletionSource<int>();
                 _showUnsavedChangesModal = true;

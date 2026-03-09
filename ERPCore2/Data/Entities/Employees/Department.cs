@@ -18,17 +18,60 @@ namespace ERPCore2.Data.Entities
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
+        /// 上級部門ID
+        /// </summary>
+        [Display(Name = "上級部門")]
+        [ForeignKey(nameof(ParentDepartment))]
+        public int? ParentDepartmentId { get; set; }
+
+        /// <summary>
         /// 部門主管ID
         /// </summary>
         [Display(Name = "部門主管")]
         [ForeignKey(nameof(Manager))]
         public int? ManagerId { get; set; }
 
+        /// <summary>
+        /// 代理主管ID
+        /// </summary>
+        [Display(Name = "代理主管")]
+        [ForeignKey(nameof(DeputyManager))]
+        public int? DeputyManagerId { get; set; }
+
+        /// <summary>
+        /// 部門電話
+        /// </summary>
+        [Display(Name = "部門電話")]
+        [MaxLength(20)]
+        public string? Phone { get; set; }
+
+        /// <summary>
+        /// 辦公地點
+        /// </summary>
+        [Display(Name = "辦公地點")]
+        [MaxLength(100)]
+        public string? Location { get; set; }
+
         // 導航屬性
+        /// <summary>
+        /// 上級部門
+        /// </summary>
+        public Department? ParentDepartment { get; set; }
+
+        /// <summary>
+        /// 子部門
+        /// </summary>
+        public ICollection<Department> SubDepartments { get; set; } = new List<Department>();
+
         /// <summary>
         /// 部門主管
         /// </summary>
         public Employee? Manager { get; set; }
+
+        /// <summary>
+        /// 代理主管
+        /// </summary>
+        public Employee? DeputyManager { get; set; }
 
         /// <summary>
         /// 部門員工

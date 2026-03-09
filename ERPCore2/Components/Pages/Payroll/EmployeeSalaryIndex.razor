@@ -1,0 +1,82 @@
+@page "/payroll/salary-config"
+@inject IEmployeeSalaryService EmployeeSalaryService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="EmployeeSalary"
+                        TService="IEmployeeSalaryService"
+                        Service="@EmployeeSalaryService"
+                        EntityBasePath="/payroll/salary-config"
+                        PageTitle="@L["Page.EmployeeSalaryTitle"]"
+                        PageSubtitle="@L["Page.EmployeeSalarySubtitle"]"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="@L["Entity.EmployeeSalary"]"
+                        GetEntityDisplayName="@(s => s.Employee?.Name ?? s.Id.ToString())"
+                        RequiredPermission="@PermissionRegistry.Payroll.SalaryConfig"
+                        RequiredModule="Payroll"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
+                        DebugPageName="EmployeeSalaryIndex"
+                        @ref="indexComponent"/>
+
+<EmployeeSalaryEditModalComponent IsVisible="@showEditModal"
+                                   IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                   EmployeeSalaryId="@editingId"
+                                   OnEmployeeSalarySaved="@modalHandler.OnEntitySavedAsync"
+                                   OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<EmployeeSalary, IEmployeeSalaryService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingId = null;
+
+    private ModalHandler<EmployeeSalary, GenericIndexPageComponent<EmployeeSalary, IEmployeeSalaryService>> modalHandler = default!;
+
+    private EmployeeSalaryFieldConfiguration fieldConfiguration = default!;
+
+    private List<BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<EmployeeSalary, GenericIndexPageComponent<EmployeeSalary, IEmployeeSalaryService>>(
+                id => editingId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new EmployeeSalaryFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化員工薪資頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化員工薪資頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("薪資管理", "員工薪資設定", "#", NotificationService, GetType());
+
+    private Task<List<EmployeeSalary>> LoadDataAsync() =>
+        DataLoaderHelper.LoadAsync(() => EmployeeSalaryService.GetAllAsync(), "員工薪資", NotificationService, GetType());
+
+    private IQueryable<EmployeeSalary> ApplyFilters(SearchFilterModel searchModel, IQueryable<EmployeeSalary> query) =>
+        fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyFilters), GetType());
+}

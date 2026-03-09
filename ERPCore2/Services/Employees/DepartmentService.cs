@@ -29,6 +29,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Departments
                     .Include(d => d.Manager)
+                    .Include(d => d.DeputyManager)
+                    .Include(d => d.ParentDepartment)
                     .AsQueryable()
                     .OrderBy(d => d.Name)
                     .ToListAsync();
@@ -50,6 +52,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Departments
                     .Include(d => d.Manager)
+                    .Include(d => d.DeputyManager)
+                    .Include(d => d.ParentDepartment)
                     .FirstOrDefaultAsync(d => d.Id == id);
             }
             catch (Exception ex)
@@ -177,8 +181,12 @@ namespace ERPCore2.Services
                 // 檢查是否有員工
                 var hasEmployees = await context.Employees
                     .AnyAsync(e => e.DepartmentId == departmentId);
-                
-                return !hasEmployees;
+
+                // 檢查是否有子部門
+                var hasSubDepartments = await context.Departments
+                    .AnyAsync(d => d.ParentDepartmentId == departmentId);
+
+                return !hasEmployees && !hasSubDepartments;
             }
             catch (Exception ex)
             {
@@ -214,6 +222,30 @@ namespace ERPCore2.Services
                     DepartmentId = entity.Id 
                 });
                 return ServiceResult.Failure("檢查部門刪除條件時發生錯誤");
+            }
+        }
+
+        public async Task<List<Department>> GetAvailableParentDepartmentsAsync(int? excludeId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.Departments
+                    .Where(d => d.Status == EntityStatus.Active);
+
+                if (excludeId.HasValue)
+                    query = query.Where(d => d.Id != excludeId.Value);
+
+                return await query.OrderBy(d => d.Name).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableParentDepartmentsAsync), GetType(), _logger, new {
+                    Method = nameof(GetAvailableParentDepartmentsAsync),
+                    ServiceType = GetType().Name,
+                    ExcludeId = excludeId
+                });
+                return new List<Department>();
             }
         }
 

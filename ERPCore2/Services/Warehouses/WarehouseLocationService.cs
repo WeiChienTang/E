@@ -106,14 +106,25 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查在同一倉庫中庫位編號是否重複
-                var exists = await context.WarehouseLocations
-                    .AnyAsync(wl => wl.WarehouseId == entity.WarehouseId && 
-                                   wl.Code == entity.Code && 
+                var codeExists = await context.WarehouseLocations
+                    .AnyAsync(wl => wl.WarehouseId == entity.WarehouseId &&
+                                   wl.Code == entity.Code &&
                                    wl.Id != entity.Id);
 
-                if (exists)
+                if (codeExists)
                 {
                     return ServiceResult.Failure($"在倉庫中已存在庫位編號 '{entity.Code}'");
+                }
+
+                // 檢查在同一倉庫中庫位名稱是否重複
+                var nameExists = await context.WarehouseLocations
+                    .AnyAsync(wl => wl.WarehouseId == entity.WarehouseId &&
+                                   wl.Name == entity.Name &&
+                                   wl.Id != entity.Id);
+
+                if (nameExists)
+                {
+                    return ServiceResult.Failure($"在倉庫中已存在庫位名稱 '{entity.Name}'");
                 }
 
                 return ServiceResult.Success();

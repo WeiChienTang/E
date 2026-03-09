@@ -897,10 +897,12 @@ namespace ERPCore2.Services
                         await context.SaveChangesAsync(); // 儲存以取得 Id
                     }
 
-                    // 2. 取得或建立庫存明細（依倉庫+庫位）
+                    // 2. 取得或建立庫存明細（依倉庫+庫位+批號）
+                    // 同一倉庫+庫位但不同批號 → 建立獨立明細行（支援批次追蹤）
                     var stockDetail = stock.InventoryStockDetails?
-                        .FirstOrDefault(d => d.WarehouseId == warehouseId && 
-                                            d.WarehouseLocationId == locationId);
+                        .FirstOrDefault(d => d.WarehouseId == warehouseId &&
+                                            d.WarehouseLocationId == locationId &&
+                                            (d.BatchNumber ?? "") == (batchNumber ?? ""));
                     
                     if (stockDetail == null)
                     {
@@ -927,11 +929,7 @@ namespace ERPCore2.Services
                     stockDetail.CurrentStock += quantity;
                     stockDetail.LastTransactionDate = DateTime.Now;
 
-                    // 更新批次資訊（如果提供）
-                    if (!string.IsNullOrEmpty(batchNumber))
-                        stockDetail.BatchNumber = batchNumber;
-                    if (batchDate.HasValue)
-                        stockDetail.BatchDate = batchDate.Value;
+                    // 批次資訊在建立時已設定（依批號查找或新建），此處僅更新到期日（允許修正）
                     if (expiryDate.HasValue)
                         stockDetail.ExpiryDate = expiryDate.Value;
 

@@ -195,3 +195,141 @@ MainLayout.razor
 - **`boardKey++` 強制重建**：每次開啟 Modal 都會完整重新載入所有資料，無快取機制。資料量大時可能稍慢，未來可考慮只在關閉期間有資料變動時才重建。
 - **批次模式（每日批次）**：每天的排程項目共享同一個 `ProductionSchedule`（`PS-YYYYMMDD`）。若未來需要「一張生產工單」對應多天的跨日排程，目前架構需調整。
 - **側欄效能**：`BuildPendingItemsAsync` 對每筆訂單各發一次 DB 查詢（N+1）。訂單數量大時應改為批次查詢全部 `SalesOrderDetail`。
+
+---
+
+## 九、新增功能規劃
+
+以下五項功能已完成架構評估，依實作難度由低至高排列。
+
+---
+
+### 9.1 工作量摘要列（Summary Bar）
+
+**目標**：在工具列下方新增一列統計摘要，一眼掌握本週生產進度，不需逐欄數卡片。
+
+**顯示內容**（均來自已載入的 `boardItems`，無額外 DB 查詢）：
+- 本週總件數
+- 等待領料件數（`WaitingMaterial` + `Pending`，UI 呈現相同）
+- 生產中件數（`InProgress`）
+- 已完成件數（`Completed`）
+
+**實作方式**：
+- 修改：`ProductionBoardWeekView.razor` — 新增 4 個 computed property
+- 修改：`ProductionBoardWeekView.razor.css` — 新增 `.board-summary-bar` 樣式
+- 在工具列與 `.board-body` 之間插入 `<div class="board-summary-bar">`，包含對應 badge
+- Badge 顏色沿用現有狀態色（`status-waitingmaterial`、`status-inprogress`、`status-completed`）
+
+**不需新建任何檔案。**
+
+---
+
+### 9.2 批次完工確認（Batch Complete）
+
+**目標**：選定本週「生產中」的項目，批次輸入入庫數量，一次確認，避免逐一點開卡片。
+
+**UX 流程**：
+1. 工具列新增「批次完工」按鈕（只在本週有 `InProgress` 項目時才啟用）
+2. 開啟新 Modal（`ProductionBoardBatchCompleteModal.razor`）
+3. Modal 列出當週所有 `InProgress` 項目（商品名、排程量、已完成量、剩餘量）
+4. 每列右側有數量輸入欄，預設值 = 剩餘量（`ScheduledQuantity - CompletedQuantity`）；可勾選/取消
+5. 點擊「確認入庫」→ 逐一呼叫 `ScheduleItemService.CompleteProductionAsync(id, qty)`（qty ≤ 0 跳過）
+6. 若某項完成量 ≥ 排程量，自動升格為 `Completed`（與單張卡片邏輯一致）
+7. 全部處理完畢後關閉 Modal → 呼叫父層 `LoadDataAsync()` 刷新看板
+
+**實作方式**：
+- 新建：`ProductionBoardBatchCompleteModal.razor`
+  - 參數：`IsVisible`、`IsVisibleChanged`、`Items`（`List<BoardScheduleItemDto>`，父層傳入 InProgress 清單）、`OnCompleted`（`EventCallback`）
+  - 注入：`IProductionScheduleItemService`、`INotificationService`
+  - 內部類別：`BatchCompleteRow`（持有 item 參考、`InputQty`、`IsSelected`）
+- 修改：`ProductionBoardWeekView.razor`
+  - 新增 `showBatchCompleteModal` 狀態
+  - 工具列加「批次完工」按鈕，傳入 `InProgressItems`（computed from `boardItems`）
+  - `OnCompleted` 回調 → `LoadDataAsync()`
+
+---
+
+### 9.3 狀態篩選（Status Filter）
+
+**目標**：在工具列新增篩選器，只顯示特定狀態的卡片，減少視覺雜訊，尤其在排程量多時有用。
+
+**篩選選項**：全部 / 等待領料 / 生產中 / 已完成
+
+**實作方式**：
+- 修改：`ProductionBoardWeekView.razor`
+  - 新增 `private ProductionItemStatus? statusFilter = null;`
+  - 修改 `GetItemsForDay(day)` 加入篩選邏輯：
+    - `WaitingMaterial` 篩選同時包含 `Pending`（兩者 UI 呈現相同）
+    - `null` = 全部顯示
+- 修改：`ProductionBoardWeekView.razor.css` — 篩選按鈕群組樣式
+- UI：工具列 `ms-auto` 區域新增 `btn-group btn-group-sm`（全部 / 等待領料 / 生產中 / 已完成）
+  - 選中狀態 `btn-primary`；未選 `btn-outline-secondary`
+- **純前端操作，不觸發任何 DB 查詢。**
+
+**不需新建任何檔案。**
+
+---
+
+### 9.4 手動新增排程（Manual Add）
+
+**目標**：允許使用者不透過側欄拖曳，直接在某天建立非訂單排程項目（例如：備品生產、補庫存）。
+
+**觸發位置**：每個 `ProductionBoardDayColumn` 標題列右側加「+」圖示按鈕。
+
+**UX 流程**：
+1. 點擊某天的「+」按鈕
+2. 開啟新 Modal（`ProductionBoardManualAddModal.razor`），標題顯示目標日期
+3. 使用者輸入：商品（可搜尋）、排程數量
+4. 確認後：
+   - `GetOrCreateDailyBatchAsync(targetDate)` 取得每日批次
+   - 建立 `ProductionScheduleItem`（`SalesOrderDetailId = null`，不回寫訂單數量）
+   - `ExpandBomAsync` 展開 BOM
+   - 觸發 `CheckMaterialIssueAfterDropAsync` 詢問是否建立領料單
+5. 完成後刷新看板
+
+**實作方式**：
+- 新建：`ProductionBoardManualAddModal.razor`
+  - 參數：`IsVisible`、`IsVisibleChanged`、`TargetDate`（`DateTime`）、`OnAdded`（`EventCallback`）
+  - 注入：`IProductService`、`INotificationService`
+  - 商品選擇使用搜尋輸入 + 清單（確認 `SearchableDropdownComponent` 是否可直接套用）
+- 修改：`ProductionBoardDayColumn.razor`
+  - 新增 `OnAddClick`（`EventCallback<DateTime>`）
+  - day-header 右側加「+」按鈕，點擊觸發 `OnAddClick.InvokeAsync(Date)`
+- 修改：`ProductionBoardWeekView.razor`
+  - 新增 `showManualAddModal`、`manualAddTargetDate` 狀態
+  - 處理 `DayColumn` 的 `OnAddClick` → 設定 targetDate → 開啟 Modal
+  - `OnAdded` 回調 → `LoadDataAsync()`
+
+**重要架構調整**：
+現有 `AssignPendingItemAsync` 同時包含「建立排程項目」與「回寫 SalesOrderDetail」兩段邏輯。
+建議提取共用方法 `CreateScheduleItemCoreAsync(productId, qty, targetDate, salesOrderDetailId?)` 供拖曳流程與手動新增共用，手動新增時 `salesOrderDetailId = null` 即可跳過回寫步驟。
+
+---
+
+### 9.5 交期預警（Delivery Alert）
+
+**目標**：在工具列顯示本週逾期或即將到期的排程件數，提醒使用者優先處理。
+
+**判斷規則**（以 `boardItems` 計算，排除已完成項目）：
+- 逾期（紅色）：`ExpectedDeliveryDate < 今天` 且狀態非 `Completed`
+- 緊急（橙色）：`ExpectedDeliveryDate` 在 1–3 天內 且狀態非 `Completed`
+
+**實作方式**：
+- 修改：`ProductionBoardWeekView.razor`
+  - 新增 `private int OverdueCount` 與 `private int UrgentCount`（computed，沿用 `ProductionBoardItemCard` 的 `DeliveryUrgencyCss` 相同閾值邏輯）
+  - 在工具列 `ms-auto` div 內加入 badge（僅在數量 > 0 時顯示）
+  - 選填：點擊 badge 自動套用 9.3 的狀態篩選，縮小到相關項目
+
+**不需新建任何檔案。**
+
+---
+
+### 實作優先序
+
+| 優先 | 功能 | 新建檔案 | 修改檔案 | 難度 |
+|------|------|----------|----------|------|
+| 1 | 9.1 工作量摘要列 | — | WeekView + .css | 低 |
+| 2 | 9.5 交期預警 | — | WeekView + .css | 低 |
+| 3 | 9.3 狀態篩選 | — | WeekView + .css | 低 |
+| 4 | 9.2 批次完工確認 | BatchCompleteModal | WeekView | 中 |
+| 5 | 9.4 手動新增排程 | ManualAddModal | WeekView + DayColumn | 中 |

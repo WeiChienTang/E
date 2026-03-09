@@ -26,9 +26,15 @@ namespace ERPCore2.Models.Enums
         Completed = 2,
         
         /// <summary>
-        /// 已停產 - 項目已結案，但未完成全部數量
+        /// 已停產（舊值，保留 DB 相容）
         /// </summary>
         [Description("已停產")]
-        Discontinued = 3
+        Discontinued = 3,
+
+        /// <summary>
+        /// 等待領料 - 排入看板但 BOM 物料尚未完成領料
+        /// </summary>
+        [Description("等待領料")]
+        WaitingMaterial = 4
     }
 }

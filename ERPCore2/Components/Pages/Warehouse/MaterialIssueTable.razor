@@ -87,6 +87,7 @@
         public decimal IssueQuantity { get; set; }
         public decimal UnitCost { get; set; }
         public decimal? AvailableStock { get; set; }
+        public int? ProductionScheduleDetailId { get; set; } // 保留關聯排程明細 ID
         
         // SearchableSelect 支援屬性
         public string ProductSearchValue { get; set; } = string.Empty;
@@ -178,7 +179,8 @@
                     WarehouseLocationId = detail.WarehouseLocationId,
                     IssueQuantity = detail.IssueQuantity,
                     UnitCost = detail.UnitCost ?? 0m,
-                    ProductSearchValue = product != null ? $"[{product.Code}] {product.Name}" : ""
+                    ProductSearchValue = product != null ? $"[{product.Code}] {product.Name}" : "",
+                    ProductionScheduleDetailId = detail.ProductionScheduleDetailId
                 };
 
                 // 載入該商品的可用倉庫位置清單
@@ -208,7 +210,10 @@
 
                 DetailItems.Add(item);
             }
-            
+
+            // 將自動選取的倉庫同步回父層
+            await SyncToDetails();
+
             // 🔑 資料載入完成
             _dataLoadCompleted = true;
             StateHasChanged();
@@ -324,10 +329,8 @@
             DisplayFormatter = (item) =>
             {
                 var issueItem = item as DetailItem;
-                if (issueItem?.AvailableStock == null) return "<span class='badge bg-secondary'>-</span>";
-                var qty = issueItem.AvailableStock.Value;
-                var badgeClass = qty == 0 ? "bg-danger" : qty < 10 ? "bg-warning" : "bg-success";
-                return $"<span class='badge {badgeClass}'>{qty}</span>";
+                if (issueItem?.AvailableStock == null) return "-";
+                return NumberFormatHelper.FormatSmart(issueItem.AvailableStock.Value);
             }
         });
 
@@ -615,7 +618,8 @@
                     WarehouseId = item.WarehouseId.Value,
                     WarehouseLocationId = item.WarehouseLocationId,
                     IssueQuantity = item.IssueQuantity,
-                    UnitCost = item.UnitCost
+                    UnitCost = item.UnitCost,
+                    ProductionScheduleDetailId = item.ProductionScheduleDetailId
                 });
             }
         }

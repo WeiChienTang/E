@@ -293,6 +293,21 @@
   <data name="Preference.PageSizeUnit" xml:space="preserve">
     <value>条</value>
   </data>
+  <data name="Preference.OperationBehavior" xml:space="preserve">
+    <value>操作偏好</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarning" xml:space="preserve">
+    <value>离开未保存表单时询问</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningOn" xml:space="preserve">
+    <value>询问确认</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningOff" xml:space="preserve">
+    <value>直接离开</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningDesc" xml:space="preserve">
+    <value>关闭此设置后，离开未保存的表单时不会再询问确认，请确认你已习惯在离开前手动保存。</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>账号由管理员设置，无法自行修改</value>
@@ -397,6 +412,9 @@
   </data>
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>客户图表</value>
+  </data>
+  <data name="Nav.SupplierCharts" xml:space="preserve">
+    <value>供应商图表</value>
   </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>拜访报告</value>
@@ -732,6 +750,7 @@
   <data name="Button.ConvertToSalesReturn" xml:space="preserve"><value>转销售退货</value></data>
   <data name="Button.ConvertToSetoff" xml:space="preserve"><value>转冲款</value></data>
   <data name="Button.ConvertToDelivery" xml:space="preserve"><value>转销货</value></data>
+  <data name="Button.ViewSchedule" xml:space="preserve"><value>查看排程</value></data>
   <data name="Button.ConvertToOrder" xml:space="preserve"><value>转订单</value></data>
   <data name="Button.CopyMessage" xml:space="preserve"><value>复制消息</value></data>
   <data name="Button.CheckInventory" xml:space="preserve"><value>查库存</value></data>
@@ -935,6 +954,10 @@
   <data name="Field.DepartmentCode" xml:space="preserve"><value>部门编号</value></data>
   <data name="Field.DepartmentName" xml:space="preserve"><value>部门名称</value></data>
   <data name="Field.DepartmentManager" xml:space="preserve"><value>部门负责人</value></data>
+  <data name="Field.DeputyManager" xml:space="preserve"><value>代理负责人</value></data>
+  <data name="Field.ParentDepartment" xml:space="preserve"><value>上级部门</value></data>
+  <data name="Field.DepartmentPhone" xml:space="preserve"><value>部门电话</value></data>
+  <data name="Field.DepartmentLocation" xml:space="preserve"><value>办公地点</value></data>
   <!-- ===== Position Field keys ===== -->
   <data name="Field.PositionCode" xml:space="preserve"><value>职位编号</value></data>
   <data name="Field.PositionName" xml:space="preserve"><value>职位名称</value></data>
@@ -1149,6 +1172,206 @@
   <!-- ===== Tab additional keys ===== -->
   <data name="Tab.ModuleManagement" xml:space="preserve"><value>模块管理</value></data>
   <data name="Tab.SubAccountSettings" xml:space="preserve"><value>辅助科目设置</value></data>
+  <data name="Tab.PayrollSettings" xml:space="preserve"><value>薪资管理</value></data>
+  <data name="Tab.Payroll" xml:space="preserve"><value>薪资记录</value></data>
+  <data name="Nav.PayrollGroup" xml:space="preserve"><value>薪资管理</value></data>
+  <data name="Nav.PayrollCalculation" xml:space="preserve"><value>薪资计算作业</value></data>
+  <data name="Nav.PayrollSalaryConfig" xml:space="preserve"><value>员工薪资设置</value></data>
+  <data name="Nav.PayrollItems" xml:space="preserve"><value>薪资项目设置</value></data>
+  <data name="Nav.PayrollPeriods" xml:space="preserve"><value>薪资周期管理</value></data>
+  <data name="Section.PayrollBasicSettings" xml:space="preserve"><value>薪资计算基本设置</value></data>
+  <data name="Section.PayrollAttendanceRules" xml:space="preserve"><value>考勤计算规则</value></data>
+  <data name="Section.PayrollAccountCodes" xml:space="preserve"><value>薪资会计科目设置（Phase 4）</value></data>
+  <data name="Field.PayrollPayDay" xml:space="preserve"><value>每月发薪日</value></data>
+  <data name="Field.PayrollCutoffDay" xml:space="preserve"><value>薪资结算截止日</value></data>
+  <data name="Field.SalaryMonthDivisor" xml:space="preserve"><value>月薪计算除数</value></data>
+  <data name="Field.OvertimeRoundingUnit" xml:space="preserve"><value>加班计时单位（分钟）</value></data>
+  <data name="Field.LateTolerance" xml:space="preserve"><value>迟到宽限分钟</value></data>
+  <data name="Field.PayrollExpenseAccount" xml:space="preserve"><value>薪资费用科目</value></data>
+  <data name="Field.OvertimeExpenseAccount" xml:space="preserve"><value>加班费科目</value></data>
+  <data name="Field.LaborInsuranceExpenseAccount" xml:space="preserve"><value>劳保费用科目（雇主）</value></data>
+  <data name="Field.HealthInsuranceExpenseAccount" xml:space="preserve"><value>健保费用科目（雇主）</value></data>
+  <data name="Field.RetirementExpenseAccount" xml:space="preserve"><value>劳退提缴费用科目</value></data>
+  <data name="Field.AccruedPayrollAccount" xml:space="preserve"><value>应付薪资科目</value></data>
+  <data name="Field.WithholdingLaborInsuranceAccount" xml:space="preserve"><value>代扣劳保费科目</value></data>
+  <data name="Field.WithholdingHealthInsuranceAccount" xml:space="preserve"><value>代扣健保费科目</value></data>
+  <data name="Field.WithholdingTaxAccount" xml:space="preserve"><value>代扣所得税科目</value></data>
+  <data name="Field.VoluntaryRetirementAccount" xml:space="preserve"><value>代扣劳退自提科目</value></data>
+  <!-- ===== Payroll Domain keys ===== -->
+  <data name="Payroll.Income" xml:space="preserve"><value>收入</value></data>
+  <data name="Payroll.Deduction" xml:space="preserve"><value>扣除</value></data>
+  <data name="Payroll.Salary" xml:space="preserve"><value>薪资</value></data>
+  <data name="Payroll.Allowance" xml:space="preserve"><value>津贴补助</value></data>
+  <data name="Payroll.Overtime" xml:space="preserve"><value>加班费</value></data>
+  <data name="Payroll.Bonus" xml:space="preserve"><value>奖金</value></data>
+  <data name="Payroll.Legal" xml:space="preserve"><value>法定扣缴</value></data>
+  <data name="Payroll.Other" xml:space="preserve"><value>其他</value></data>
+  <data name="Payroll.SystemItemLocked" xml:space="preserve"><value>系统内置，不可删除</value></data>
+  <data name="Field.PayrollItemCode" xml:space="preserve"><value>代码</value></data>
+  <data name="Field.PayrollItemName" xml:space="preserve"><value>名称</value></data>
+  <data name="Field.PayrollItemType" xml:space="preserve"><value>类型</value></data>
+  <data name="Field.PayrollItemCategory" xml:space="preserve"><value>类别</value></data>
+  <data name="Field.PayrollItemIsSystem" xml:space="preserve"><value>系统内置</value></data>
+  <data name="Field.PayrollItemIsTaxable" xml:space="preserve"><value>计入所得税</value></data>
+  <data name="Field.PayrollItemIsInsuranceBasis" xml:space="preserve"><value>计入保险投保薪资</value></data>
+  <data name="Field.PayrollItemIsRetirementBasis" xml:space="preserve"><value>计入退休金基础</value></data>
+  <data name="Entity.PayrollItem" xml:space="preserve"><value>薪资项目</value></data>
+  <data name="Page.PayrollItemsTitle" xml:space="preserve"><value>薪资项目设置</value></data>
+  <data name="Page.PayrollItemsSubtitle" xml:space="preserve"><value>管理薪资计算中的收入与扣除项目</value></data>
+  <!-- ===== EmployeeSalary keys ===== -->
+  <data name="Entity.EmployeeSalary" xml:space="preserve"><value>员工薪资设置</value></data>
+  <data name="Page.EmployeeSalaryTitle" xml:space="preserve"><value>员工薪资设置</value></data>
+  <data name="Page.EmployeeSalarySubtitle" xml:space="preserve"><value>管理员工基本薪资、津贴与保险设置</value></data>
+  <data name="Field.SalaryType" xml:space="preserve"><value>薪资制度</value></data>
+  <data name="Field.BaseSalary" xml:space="preserve"><value>基本薪资</value></data>
+  <data name="Field.PositionAllowance" xml:space="preserve"><value>职务加给</value></data>
+  <data name="Field.MealAllowance" xml:space="preserve"><value>餐饮补助</value></data>
+  <data name="Field.TransportAllowance" xml:space="preserve"><value>交通津贴</value></data>
+  <data name="Field.LaborInsuredSalary" xml:space="preserve"><value>劳保投保薪资</value></data>
+  <data name="Field.HealthInsuredAmount" xml:space="preserve"><value>健保投保金额</value></data>
+  <data name="Field.DependentCount" xml:space="preserve"><value>眷属人数</value></data>
+  <data name="Field.TaxWithholdingType" xml:space="preserve"><value>扣缴类型</value></data>
+  <data name="Field.VoluntaryRetirementRate" xml:space="preserve"><value>自愿提缴率(%)</value></data>
+  <data name="Field.EffectiveDate" xml:space="preserve"><value>生效日期</value></data>
+  <data name="Payroll.Monthly" xml:space="preserve"><value>月薪</value></data>
+  <data name="Payroll.Hourly" xml:space="preserve"><value>时薪</value></data>
+  <data name="Payroll.CurrentActive" xml:space="preserve"><value>目前有效</value></data>
+  <data name="Payroll.TaxStandard" xml:space="preserve"><value>一般扣缴（薪资所得税额表）</value></data>
+  <data name="Payroll.TaxResident" xml:space="preserve"><value>居住者（按月薪5%）</value></data>
+  <data name="Payroll.TaxNonResident" xml:space="preserve"><value>非居住者（按月薪18%）</value></data>
+  <!-- ===== EmployeeBankAccount keys ===== -->
+  <data name="Entity.EmployeeBankAccount" xml:space="preserve"><value>银行账户</value></data>
+  <data name="Page.EmployeeBankAccountTitle" xml:space="preserve"><value>员工银行账户</value></data>
+  <data name="Page.EmployeeBankAccountSubtitle" xml:space="preserve"><value>管理员工薪资转账银行账户</value></data>
+  <data name="Field.BranchCode" xml:space="preserve"><value>分行代号</value></data>
+  <data name="Field.BranchName" xml:space="preserve"><value>分行名称</value></data>
+  <data name="Field.AccountNumber" xml:space="preserve"><value>账号</value></data>
+  <data name="Field.BankAccountHolder" xml:space="preserve"><value>户名</value></data>
+  <data name="Field.IsPrimary" xml:space="preserve"><value>主要账号</value></data>
+  <data name="Payroll.PrimaryAccount" xml:space="preserve"><value>主要</value></data>
+  <!-- ===== PayrollPeriod keys ===== -->
+  <data name="Entity.PayrollPeriod" xml:space="preserve"><value>薪资周期</value></data>
+  <data name="Page.PayrollPeriodTitle" xml:space="preserve"><value>薪资周期管理</value></data>
+  <data name="Page.PayrollPeriodSubtitle" xml:space="preserve"><value>管理每月薪资周期的开账与关账</value></data>
+  <data name="Field.PayrollYear" xml:space="preserve"><value>年份（民国）</value></data>
+  <data name="Field.PayrollMonth" xml:space="preserve"><value>月份</value></data>
+  <data name="Field.PeriodStatus" xml:space="preserve"><value>周期状态</value></data>
+  <data name="Field.PayrollRecordCount" xml:space="preserve"><value>薪资笔数</value></data>
+  <data name="Field.ClosedAt" xml:space="preserve"><value>关账时间</value></data>
+  <data name="Field.ClosedBy" xml:space="preserve"><value>关账人员</value></data>
+  <data name="Payroll.PeriodDraft" xml:space="preserve"><value>草稿</value></data>
+  <data name="Payroll.PeriodProcessing" xml:space="preserve"><value>计算中</value></data>
+  <data name="Payroll.PeriodClosed" xml:space="preserve"><value>已关账</value></data>
+  <data name="Payroll.OpenPeriod" xml:space="preserve"><value>开立薪资周期</value></data>
+  <data name="Payroll.ClosePeriod" xml:space="preserve"><value>关账</value></data>
+  <data name="Payroll.OpenPeriodHint" xml:space="preserve"><value>开立后可开始计算薪资，关账后不可修改</value></data>
+  <data name="Page.PayrollTitle" xml:space="preserve"><value>薪资计算</value></data>
+  <data name="Page.PayrollSubtitle" xml:space="preserve"><value>按薪资周期计算并确认员工薪资单</value></data>
+  <data name="Payroll.CalculateAll" xml:space="preserve"><value>批量计算</value></data>
+  <data name="Payroll.CalculateEmployee" xml:space="preserve"><value>计算</value></data>
+  <data name="Payroll.ConfirmRecord" xml:space="preserve"><value>确认</value></data>
+  <data name="Payroll.UnconfirmRecord" xml:space="preserve"><value>取消确认</value></data>
+  <data name="Payroll.ViewPayslip" xml:space="preserve"><value>薪资单</value></data>
+  <data name="Payroll.SelectPeriod" xml:space="preserve"><value>选择薪资周期</value></data>
+  <data name="Payroll.NoPeriods" xml:space="preserve"><value>暂无薪资周期</value></data>
+  <data name="Payroll.RecordList" xml:space="preserve"><value>薪资单列表</value></data>
+  <data name="Payroll.NotCalculated" xml:space="preserve"><value>未计算</value></data>
+  <data name="Payroll.RecordDraft" xml:space="preserve"><value>草稿</value></data>
+  <data name="Payroll.RecordConfirmed" xml:space="preserve"><value>已确认</value></data>
+  <data name="Payroll.StatTotal" xml:space="preserve"><value>薪资单总数</value></data>
+  <data name="Payroll.StatGross" xml:space="preserve"><value>应发合计</value></data>
+  <data name="Payroll.StatNet" xml:space="preserve"><value>实发合计</value></data>
+  <data name="Payroll.StatConfirmed" xml:space="preserve"><value>已确认</value></data>
+  <data name="Payroll.AttendanceDays" xml:space="preserve"><value>出勤天数</value></data>
+  <data name="Payroll.GrossIncome" xml:space="preserve"><value>应发小计</value></data>
+  <data name="Payroll.TotalDeduction" xml:space="preserve"><value>扣除小计</value></data>
+  <data name="Payroll.NetPay" xml:space="preserve"><value>实发薪资</value></data>
+  <data name="Payroll.PayslipTitle" xml:space="preserve"><value>薪资单</value></data>
+  <data name="Payroll.PayslipPeriod" xml:space="preserve"><value>薪资周期</value></data>
+  <data name="Payroll.IncomeItems" xml:space="preserve"><value>收入明细</value></data>
+  <data name="Payroll.DeductionItems" xml:space="preserve"><value>扣除明细</value></data>
+  <data name="Payroll.InsuranceSnapshot" xml:space="preserve"><value>投保快照（雇主负担）</value></data>
+  <data name="Payroll.EmployerLaborInsurance" xml:space="preserve"><value>雇主劳保</value></data>
+  <data name="Payroll.EmployerHealthInsurance" xml:space="preserve"><value>雇主健保</value></data>
+  <data name="Payroll.EmployerRetirement" xml:space="preserve"><value>雇主退休金提拨</value></data>
+  <data name="Payroll.TaxableIncome" xml:space="preserve"><value>课税所得</value></data>
+  <data name="Payroll.CalculatedAt" xml:space="preserve"><value>计算时间</value></data>
+  <data name="Payroll.CalculatedBy" xml:space="preserve"><value>计算者</value></data>
+  <data name="Payroll.NoPayrollRecords" xml:space="preserve"><value>暂无薪资记录</value></data>
+  <!-- ===== Payroll Phase 2 Rate Table keys ===== -->
+  <data name="Nav.MinimumWage" xml:space="preserve"><value>最低工资</value></data>
+  <data name="Nav.InsuranceRate" xml:space="preserve"><value>保费费率设置</value></data>
+  <data name="Nav.LaborInsuranceGrade" xml:space="preserve"><value>劳保投保分级表</value></data>
+  <data name="Nav.HealthInsuranceGrade" xml:space="preserve"><value>健保投保分级表</value></data>
+  <data name="Nav.WithholdingTaxTable" xml:space="preserve"><value>薪资所得扣缴税额表</value></data>
+  <data name="Page.MinimumWageTitle" xml:space="preserve"><value>最低工资维护</value></data>
+  <data name="Page.MinimumWageSubtitle" xml:space="preserve"><value>维护历年最低工资（月薪／时薪）</value></data>
+  <data name="Page.InsuranceRateTitle" xml:space="preserve"><value>保费费率设置</value></data>
+  <data name="Page.InsuranceRateSubtitle" xml:space="preserve"><value>维护劳保、健保、劳退费率及免税上限</value></data>
+  <data name="Page.LaborInsuranceGradeTitle" xml:space="preserve"><value>劳保投保薪资分级表</value></data>
+  <data name="Page.LaborInsuranceGradeSubtitle" xml:space="preserve"><value>维护劳工保险投保薪资分级表</value></data>
+  <data name="Page.HealthInsuranceGradeTitle" xml:space="preserve"><value>健保投保金额分级表</value></data>
+  <data name="Page.HealthInsuranceGradeSubtitle" xml:space="preserve"><value>维护全民健康保险投保金额分级表</value></data>
+  <data name="Page.WithholdingTaxTableTitle" xml:space="preserve"><value>薪资所得扣缴税额表</value></data>
+  <data name="Page.WithholdingTaxTableSubtitle" xml:space="preserve"><value>维护财政部薪资所得扣缴税额表</value></data>
+  <data name="Field.MonthlyMinWage" xml:space="preserve"><value>月基本工资</value></data>
+  <data name="Field.HourlyMinWage" xml:space="preserve"><value>时基本工资</value></data>
+  <data name="Field.LaborInsEERate" xml:space="preserve"><value>劳保员工费率</value></data>
+  <data name="Field.LaborInsERRate" xml:space="preserve"><value>劳保雇主费率</value></data>
+  <data name="Field.HealthInsEERate" xml:space="preserve"><value>健保员工费率</value></data>
+  <data name="Field.HealthInsERRate" xml:space="preserve"><value>健保雇主费率</value></data>
+  <data name="Field.RetirementERRate" xml:space="preserve"><value>劳退雇主费率</value></data>
+  <data name="Field.MealTaxFreeLimit" xml:space="preserve"><value>餐费免税上限</value></data>
+  <data name="Field.TransportTaxFreeLimit" xml:space="preserve"><value>交通费免税上限</value></data>
+  <data name="Field.InsuranceGrade" xml:space="preserve"><value>等级</value></data>
+  <data name="Field.InsuredSalary" xml:space="preserve"><value>投保薪资</value></data>
+  <data name="Field.InsuredAmount" xml:space="preserve"><value>投保金额</value></data>
+  <data name="Payroll.AddMinimumWage" xml:space="preserve"><value>新增最低工资</value></data>
+  <data name="Payroll.EditMinimumWage" xml:space="preserve"><value>编辑最低工资</value></data>
+  <data name="Payroll.AddInsuranceRate" xml:space="preserve"><value>新增保费费率</value></data>
+  <data name="Payroll.EditInsuranceRate" xml:space="preserve"><value>编辑保费费率</value></data>
+  <data name="Payroll.LaborInsuranceRates" xml:space="preserve"><value>劳保费率</value></data>
+  <data name="Payroll.HealthInsuranceRates" xml:space="preserve"><value>健保费率</value></data>
+  <data name="Payroll.RetirementAndTaxFree" xml:space="preserve"><value>劳退费率及免税上限</value></data>
+  <data name="Payroll.AddGrade" xml:space="preserve"><value>新增分级</value></data>
+  <data name="Payroll.EditGrade" xml:space="preserve"><value>编辑分级</value></data>
+  <data name="Payroll.AddTaxRow" xml:space="preserve"><value>新增扣缴记录</value></data>
+  <data name="Payroll.EditTaxRow" xml:space="preserve"><value>编辑扣缴记录</value></data>
+  <data name="Payroll.CopyYear" xml:space="preserve"><value>复制年度</value></data>
+  <data name="Payroll.CopySource" xml:space="preserve"><value>来源年度</value></data>
+  <data name="Payroll.CopyTarget" xml:space="preserve"><value>目标年度</value></data>
+  <data name="Payroll.TotalGrades" xml:space="preserve"><value>总等级数</value></data>
+  <data name="Payroll.TotalRows" xml:space="preserve"><value>总笔数</value></data>
+  <data name="Payroll.DependentSuffix" xml:space="preserve"><value>人</value></data>
+  <data name="Label.NoUpperLimit" xml:space="preserve"><value>无上限</value></data>
+  <data name="Message.NoData" xml:space="preserve"><value>无数据</value></data>
+  <!-- ===== Phase 3: 考勤汇总 ===== -->
+  <data name="Nav.AttendanceSummary" xml:space="preserve"><value>考勤汇总</value></data>
+  <data name="Page.AttendanceSummaryTitle" xml:space="preserve"><value>考勤汇总</value></data>
+  <data name="Page.AttendanceSummarySubtitle" xml:space="preserve"><value>维护员工每月出勤天数与加班时数，作为薪资计算依据</value></data>
+  <data name="Attendance.AddRecord" xml:space="preserve"><value>新增考勤记录</value></data>
+  <data name="Attendance.EditRecord" xml:space="preserve"><value>编辑考勤记录</value></data>
+  <data name="Attendance.BatchInit" xml:space="preserve"><value>批量初始化</value></data>
+  <data name="Attendance.LockedMessage" xml:space="preserve"><value>此考勤记录已锁定（薪资已计算），仅供查阅</value></data>
+  <data name="Attendance.SickLeaveNote" xml:space="preserve"><value>病假按半日薪扣除</value></data>
+  <data name="Attendance.OvertimeHours" xml:space="preserve"><value>加班时数</value></data>
+  <data name="Attendance.OT1Note" xml:space="preserve"><value>平日延长工时前2小时（×4/3）</value></data>
+  <data name="Attendance.OT2Note" xml:space="preserve"><value>平日延长工时后2小时（×5/3）</value></data>
+  <data name="Attendance.OvertimeTotal" xml:space="preserve"><value>加班总时数</value></data>
+  <data name="Attendance.TotalRecords" xml:space="preserve"><value>总笔数</value></data>
+  <data name="Field.ScheduledWorkDays" xml:space="preserve"><value>应出勤天数</value></data>
+  <data name="Field.ActualWorkDays" xml:space="preserve"><value>实际出勤天数</value></data>
+  <data name="Field.AbsentDays" xml:space="preserve"><value>旷工天数</value></data>
+  <data name="Field.SickLeaveDays" xml:space="preserve"><value>病假天数</value></data>
+  <data name="Field.OvertimeHours1" xml:space="preserve"><value>平日加班（前2hr）</value></data>
+  <data name="Field.OvertimeHours2" xml:space="preserve"><value>平日加班（后2hr）</value></data>
+  <data name="Field.HolidayOvertimeHours" xml:space="preserve"><value>休息日加班时数</value></data>
+  <data name="Field.NationalHolidayHours" xml:space="preserve"><value>法定假日加班时数</value></data>
+  <data name="Field.Year" xml:space="preserve"><value>民国年</value></data>
+  <data name="Field.Month" xml:space="preserve"><value>月份</value></data>
+  <data name="Label.Month" xml:space="preserve"><value>月</value></data>
+  <data name="Label.Locked" xml:space="preserve"><value>已锁定</value></data>
+  <data name="Label.Editable" xml:space="preserve"><value>可编辑</value></data>
   <!-- ===== Vehicle Field keys ===== -->
   <data name="Field.AssociatedCompany" xml:space="preserve"><value>关联公司</value></data>
   <data name="Field.AssociatedCustomer" xml:space="preserve"><value>关联客户</value></data>
@@ -1723,6 +1946,9 @@
   <data name="Search.NoResults" xml:space="preserve"><value>没有找到符合条件的项目，请尝试使用其他关键字</value></data>
   <data name="Search.DefaultTitle" xml:space="preserve"><value>搜索</value></data>
   <data name="Search.DefaultPlaceholder" xml:space="preserve"><value>输入关键字搜索...</value></data>
+  <data name="Search.ResultCount" xml:space="preserve"><value>找到 {0} 个结果</value></data>
+  <data name="Search.KeyHintNavigate" xml:space="preserve"><value>导航</value></data>
+  <data name="Search.KeyHintSelect" xml:space="preserve"><value>选取</value></data>
 
   <!-- ===== QuickAction 快速功能 ===== -->
   <data name="QuickAction.MenuTooltip" xml:space="preserve"><value>快速功能 (Alt + Q)</value></data>
@@ -1824,6 +2050,8 @@
 
   <!-- ===== Customer 客户模块 ===== -->
   <data name="Customer.ChartTitle" xml:space="preserve"><value>客户分析图表</value></data>
+  <!-- ===== Supplier 供应商模块 ===== -->
+  <data name="Supplier.ChartTitle" xml:space="preserve"><value>供应商分析图表</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>没有相关交易记录</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>暂无拜访记录</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>没有相关交易记录</value></data>
@@ -2946,5 +3174,17 @@
   <data name="Message.EntityDeleteFailed" xml:space="preserve"><value>删除失败：{0}</value></data>
   <data name="Message.EntityDeleteError" xml:space="preserve"><value>删除时发生错误：{0}</value></data>
   <data name="Message.EntityDeleteConfirm" xml:space="preserve"><value>确定要删除{0}「{1}」吗？</value></data>
+  <data name="Column.BatchDate" xml:space="preserve"><value>批次日期</value></data>
+  <data name="Column.ReservedStock" xml:space="preserve"><value>预留库存</value></data>
+  <data name="Column.InTransitStock" xml:space="preserve"><value>在途库存</value></data>
+  <data name="Label.TotalCurrentStock" xml:space="preserve"><value>合计现有库存</value></data>
+  <data name="Label.TotalReservedStock" xml:space="preserve"><value>合计预留</value></data>
+  <data name="Label.TotalInTransitStock" xml:space="preserve"><value>合计在途</value></data>
+  <data name="Inventory.AtLeastOneDetail" xml:space="preserve"><value>至少需要一条库存明细</value></data>
+  <data name="Inventory.DuplicateWarehouseLocation" xml:space="preserve"><value>存在重复的仓库与库位组合，请确认后重试</value></data>
+  <data name="Inventory.ReservedExceedsCurrent" xml:space="preserve"><value>预留库存不可超过现有库存</value></data>
+  <data name="Inventory.AllDetailsCleared" xml:space="preserve"><value>已清空所有库存明细</value></data>
+  <data name="Inventory.CurrentStockReadonlyHint" xml:space="preserve"><value>现有库存量须通过盘点调整、进货或出货等流程修改</value></data>
+  <data name="Message.ConfirmDeleteExistingDetail" xml:space="preserve"><value>此明细已保存至数据库，确定要删除吗？</value></data>
 
 </root>

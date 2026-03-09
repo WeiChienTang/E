@@ -1,0 +1,118 @@
+@page "/payroll/insurance-rates"
+@inject IInsuranceRateService RateService
+@inject INotificationService NotificationService
+@inject INavigationPermissionService NavigationPermissionService
+@inject IStringLocalizer<SharedResource> L
+@rendermode InteractiveServer
+
+<PageTitle>@L["Page.InsuranceRateTitle"]</PageTitle>
+
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h4 class="mb-0">@L["Page.InsuranceRateTitle"]</h4>
+            <small class="text-muted">@L["Page.InsuranceRateSubtitle"]</small>
+        </div>
+        <button class="btn btn-primary" @onclick="ShowAdd">
+            <i class="bi bi-plus-lg me-1"></i>@L["Button.Add"]
+        </button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]</div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>@L["Field.EffectiveDate"]</th>
+                            <th class="text-end">@L["Field.LaborInsEERate"]</th>
+                            <th class="text-end">@L["Field.LaborInsERRate"]</th>
+                            <th class="text-end">@L["Field.HealthInsEERate"]</th>
+                            <th class="text-end">@L["Field.HealthInsERRate"]</th>
+                            <th class="text-end">@L["Field.RetirementERRate"]</th>
+                            <th class="text-end">@L["Field.MealTaxFreeLimit"]</th>
+                            <th class="text-end">@L["Field.TransportTaxFreeLimit"]</th>
+                            <th class="text-center" style="width:100px">@L["Label.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in rates)
+                        {
+                            <tr>
+                                <td>@r.EffectiveDate.ToString("yyyy-MM-dd")</td>
+                                <td class="text-end">@r.LaborInsuranceEmployeeRate.ToString("P2")</td>
+                                <td class="text-end">@r.LaborInsuranceEmployerRate.ToString("P2")</td>
+                                <td class="text-end">@r.HealthInsuranceEmployeeRate.ToString("P2")</td>
+                                <td class="text-end">@r.HealthInsuranceEmployerRate.ToString("P2")</td>
+                                <td class="text-end">@r.RetirementEmployerRate.ToString("P2")</td>
+                                <td class="text-end">@r.MealTaxFreeLimit.ToString("N0")</td>
+                                <td class="text-end">@r.TransportTaxFreeLimit.ToString("N0")</td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowEdit(r)" title="@L["Button.Edit"]">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDeleteAsync(r)" title="@L["Button.Delete"]">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        @if (!rates.Any())
+                        {
+                            <tr><td colspan="9" class="text-center text-muted py-3">@L["Message.NoData"]</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<InsuranceRateEditModalComponent IsVisible="@showModal"
+                                 IsVisibleChanged="@((bool v) => showModal = v)"
+                                 EditingItem="@editingItem"
+                                 OnSaved="@ReloadAsync" />
+
+@code {
+    private List<InsuranceRate> rates = new();
+    private bool isLoading = true;
+    private bool showModal = false;
+    private InsuranceRate? editingItem;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hasAccess = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.RateTable);
+        if (!hasAccess) return;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        rates = await RateService.GetAllAsync();
+        isLoading = false;
+    }
+
+    private void ShowAdd() { editingItem = null; showModal = true; }
+    private void ShowEdit(InsuranceRate item) { editingItem = item; showModal = true; }
+
+    private async Task ConfirmDeleteAsync(InsuranceRate item)
+    {
+        var result = await RateService.DeleteAsync(item.Id);
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync(L["Message.DeleteSuccess"].ToString());
+            await ReloadAsync();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.DeleteFailed"].ToString());
+        }
+    }
+}

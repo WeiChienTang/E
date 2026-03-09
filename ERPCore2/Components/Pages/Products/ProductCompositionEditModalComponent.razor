@@ -181,9 +181,10 @@ ShowPrintButton="true"
                 .AddField(nameof(ProductComposition.CreatedByEmployeeId), "Name", availableEmployees)
                 .Build();
             
-            // 明細資料改由 LoadCompositionData (DataLoader) 負責載入，以正確支援上下筆導覽
-            compositionDetails = new List<ProductCompositionDetail>();
-
+            // 注意：不在此處清空 compositionDetails！
+            // DataLoader (LoadCompositionData) 可能已先執行並載入資料，
+            // 若在此清空會造成 race condition（DataLoader 的資料被覆蓋為空）。
+            // compositionDetails 的重置由 OnParametersSetAsync 開頭同步執行（在任何 await 前）。
             isDetailDataReady = true;
         }
         catch (Exception ex)
@@ -212,12 +213,9 @@ ShowPrintButton="true"
                 compositionDetails = new List<ProductCompositionDetail>();
                 return;
             }
-            
-            // 從資料庫載入明細
-            var allDetails = await ProductCompositionDetailService.GetAllAsync();
-            compositionDetails = allDetails
-                .Where(d => d.ProductCompositionId == CompositionId.Value)
-                .ToList();
+
+            // 從資料庫載入明細（只查詢此合成的明細，包含 ComponentProduct 導航屬性）
+            compositionDetails = await ProductCompositionDetailService.GetDetailsByCompositionIdAsync(CompositionId.Value);
         }
         catch (Exception ex)
         {
@@ -230,7 +228,7 @@ ShowPrintButton="true"
     {
         try
         {
-            if (!CompositionId.HasValue) 
+            if (!CompositionId.HasValue)
             {
                 // 新增模式：建立新的商品物料清單實體並生成編號
                 var newComposition = new ProductComposition
@@ -405,11 +403,6 @@ ShowPrintButton="true"
     // ===== 自訂模組 =====
     private List<GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule> GetCustomModules()
     {
-        if (editModalComponent == null)
-        {
-            return new List<GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule>();
-        }
-
         return new List<GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule>
         {
             new GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule

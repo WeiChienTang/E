@@ -60,6 +60,7 @@
                           ApprovalPermission="@PermissionRegistry.PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnRejectWithReason="@HandlePurchaseOrderRejectWithReason"
+                          HasDownstreamActions="@hasUndeletableDetails"
                           CanPrintCheck="@GetCanPrintCheck()"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomActionButtons="@GetCustomActionButtons()"
@@ -599,7 +600,7 @@
                                                    DataVersion="@_detailsDataVersion"
                                                    IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
                                                    OnDetailsChanged="@HandleDetailsChanged"
-                                                   IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)"
+                                                   IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, false)"
                                                    IsApproved="@(editModalComponent?.Entity?.IsApproved ?? false)"
                                                    TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
                                                    OnHasUndeletableDetailsChanged="@(async (hasUndeletable) => await HandleHasUndeletableDetailsChanged(hasUndeletable))"
@@ -1197,6 +1198,7 @@
 
         <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
                                   Message="@EditModalMessages.UndeletableDetailsWarning"
+                                  SubMessage="@EditModalMessages.UndeletableDetailsHint"
                                   Compact="true" />
     };
     

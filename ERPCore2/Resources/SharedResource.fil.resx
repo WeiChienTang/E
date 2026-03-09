@@ -293,6 +293,21 @@
   <data name="Preference.PageSizeUnit" xml:space="preserve">
     <value>hilera</value>
   </data>
+  <data name="Preference.OperationBehavior" xml:space="preserve">
+    <value>Mga Kagustuhan sa Operasyon</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarning" xml:space="preserve">
+    <value>Kumpirmahin bago umalis sa hindi naka-save na form</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningOn" xml:space="preserve">
+    <value>Tanungin</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningOff" xml:space="preserve">
+    <value>Umalis agad</value>
+  </data>
+  <data name="Preference.UnsavedChangesWarningDesc" xml:space="preserve">
+    <value>Kapag na-disable, hindi na magtatanong ng kumpirmasyon kapag isinara ang form na may hindi naka-save na pagbabago. Siguraduhing sanay kang mag-save bago umalis.</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>Itinakda ng administrator ang account at hindi maaaring baguhin</value>
@@ -397,6 +412,9 @@
   </data>
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>Tsart ng Customer</value>
+  </data>
+  <data name="Nav.SupplierCharts" xml:space="preserve">
+    <value>Tsart ng Supplier</value>
   </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>Ulat ng Pagbisita</value>
@@ -732,6 +750,7 @@
   <data name="Button.ConvertToSalesReturn" xml:space="preserve"><value>I-convert sa Sales Return</value></data>
   <data name="Button.ConvertToSetoff" xml:space="preserve"><value>I-convert sa Setoff</value></data>
   <data name="Button.ConvertToDelivery" xml:space="preserve"><value>I-convert sa Delivery</value></data>
+  <data name="Button.ViewSchedule" xml:space="preserve"><value>Tingnan ang Schedule</value></data>
   <data name="Button.ConvertToOrder" xml:space="preserve"><value>I-convert sa Order</value></data>
   <data name="Button.CopyMessage" xml:space="preserve"><value>Kopyahin ang Mensahe</value></data>
   <data name="Button.CheckInventory" xml:space="preserve"><value>Suriin ang Imbentaryo</value></data>
@@ -935,6 +954,10 @@
   <data name="Field.DepartmentCode" xml:space="preserve"><value>Kodigo ng Departamento</value></data>
   <data name="Field.DepartmentName" xml:space="preserve"><value>Pangalan ng Departamento</value></data>
   <data name="Field.DepartmentManager" xml:space="preserve"><value>Tagapamahala ng Departamento</value></data>
+  <data name="Field.DeputyManager" xml:space="preserve"><value>Kinatawan ng Tagapamahala</value></data>
+  <data name="Field.ParentDepartment" xml:space="preserve"><value>Nangungunang Departamento</value></data>
+  <data name="Field.DepartmentPhone" xml:space="preserve"><value>Telepono ng Departamento</value></data>
+  <data name="Field.DepartmentLocation" xml:space="preserve"><value>Lokasyon ng Opisina</value></data>
   <!-- ===== Position Field keys ===== -->
   <data name="Field.PositionCode" xml:space="preserve"><value>Kodigo ng Posisyon</value></data>
   <data name="Field.PositionName" xml:space="preserve"><value>Pangalan ng Posisyon</value></data>
@@ -1149,6 +1172,206 @@
   <!-- ===== Tab additional keys ===== -->
   <data name="Tab.ModuleManagement" xml:space="preserve"><value>Pamamahala ng Module</value></data>
   <data name="Tab.SubAccountSettings" xml:space="preserve"><value>Mga Setting ng Sub Account</value></data>
+  <data name="Tab.PayrollSettings" xml:space="preserve"><value>Payroll</value></data>
+  <data name="Tab.Payroll" xml:space="preserve"><value>Kasaysayan ng Payroll</value></data>
+  <data name="Nav.PayrollGroup" xml:space="preserve"><value>Payroll</value></data>
+  <data name="Nav.PayrollCalculation" xml:space="preserve"><value>Pagproseso ng Payroll</value></data>
+  <data name="Nav.PayrollSalaryConfig" xml:space="preserve"><value>Mga Setting ng Sweldo</value></data>
+  <data name="Nav.PayrollItems" xml:space="preserve"><value>Mga Aytem ng Payroll</value></data>
+  <data name="Nav.PayrollPeriods" xml:space="preserve"><value>Mga Panahon ng Payroll</value></data>
+  <data name="Section.PayrollBasicSettings" xml:space="preserve"><value>Mga Pangunahing Setting ng Payroll</value></data>
+  <data name="Section.PayrollAttendanceRules" xml:space="preserve"><value>Mga Panuntunan ng Pagdalo</value></data>
+  <data name="Section.PayrollAccountCodes" xml:space="preserve"><value>Mga Code ng Account ng Payroll (Phase 4)</value></data>
+  <data name="Field.PayrollPayDay" xml:space="preserve"><value>Araw ng Sahod</value></data>
+  <data name="Field.PayrollCutoffDay" xml:space="preserve"><value>Cutoff ng Payroll</value></data>
+  <data name="Field.SalaryMonthDivisor" xml:space="preserve"><value>Dibisyor ng Buwanang Sahod</value></data>
+  <data name="Field.OvertimeRoundingUnit" xml:space="preserve"><value>Yunit ng Overtime (min)</value></data>
+  <data name="Field.LateTolerance" xml:space="preserve"><value>Toleransya sa Pagiging Huli (min)</value></data>
+  <data name="Field.PayrollExpenseAccount" xml:space="preserve"><value>Account ng Gastos sa Sahod</value></data>
+  <data name="Field.OvertimeExpenseAccount" xml:space="preserve"><value>Account ng Gastos sa Overtime</value></data>
+  <data name="Field.LaborInsuranceExpenseAccount" xml:space="preserve"><value>Insurance sa Paggawa (Employer)</value></data>
+  <data name="Field.HealthInsuranceExpenseAccount" xml:space="preserve"><value>Health Insurance (Employer)</value></data>
+  <data name="Field.RetirementExpenseAccount" xml:space="preserve"><value>Account ng Kontribusyon sa Pagreretiro</value></data>
+  <data name="Field.AccruedPayrollAccount" xml:space="preserve"><value>Account ng Naipon na Sahod</value></data>
+  <data name="Field.WithholdingLaborInsuranceAccount" xml:space="preserve"><value>Withholding Labor Insurance</value></data>
+  <data name="Field.WithholdingHealthInsuranceAccount" xml:space="preserve"><value>Withholding Health Insurance</value></data>
+  <data name="Field.WithholdingTaxAccount" xml:space="preserve"><value>Withholding Income Tax</value></data>
+  <data name="Field.VoluntaryRetirementAccount" xml:space="preserve"><value>Voluntary Retirement Withholding</value></data>
+  <!-- ===== Payroll Domain keys ===== -->
+  <data name="Payroll.Income" xml:space="preserve"><value>Kita</value></data>
+  <data name="Payroll.Deduction" xml:space="preserve"><value>Bawas</value></data>
+  <data name="Payroll.Salary" xml:space="preserve"><value>Sahod</value></data>
+  <data name="Payroll.Allowance" xml:space="preserve"><value>Allowance</value></data>
+  <data name="Payroll.Overtime" xml:space="preserve"><value>Overtime</value></data>
+  <data name="Payroll.Bonus" xml:space="preserve"><value>Bonus</value></data>
+  <data name="Payroll.Legal" xml:space="preserve"><value>Legal na Bawas</value></data>
+  <data name="Payroll.Other" xml:space="preserve"><value>Iba Pa</value></data>
+  <data name="Payroll.SystemItemLocked" xml:space="preserve"><value>Built-in ng sistema, hindi mabubura</value></data>
+  <data name="Field.PayrollItemCode" xml:space="preserve"><value>Code</value></data>
+  <data name="Field.PayrollItemName" xml:space="preserve"><value>Pangalan</value></data>
+  <data name="Field.PayrollItemType" xml:space="preserve"><value>Uri</value></data>
+  <data name="Field.PayrollItemCategory" xml:space="preserve"><value>Kategorya</value></data>
+  <data name="Field.PayrollItemIsSystem" xml:space="preserve"><value>Built-in ng Sistema</value></data>
+  <data name="Field.PayrollItemIsTaxable" xml:space="preserve"><value>Napapabuwis</value></data>
+  <data name="Field.PayrollItemIsInsuranceBasis" xml:space="preserve"><value>Batayan ng Insurance</value></data>
+  <data name="Field.PayrollItemIsRetirementBasis" xml:space="preserve"><value>Batayan ng Retirement</value></data>
+  <data name="Entity.PayrollItem" xml:space="preserve"><value>Aytem ng Payroll</value></data>
+  <data name="Page.PayrollItemsTitle" xml:space="preserve"><value>Mga Aytem ng Payroll</value></data>
+  <data name="Page.PayrollItemsSubtitle" xml:space="preserve"><value>Pamahalaan ang mga aytem ng kita at bawas sa payroll</value></data>
+  <!-- ===== EmployeeSalary keys ===== -->
+  <data name="Entity.EmployeeSalary" xml:space="preserve"><value>Sahod ng Empleyado</value></data>
+  <data name="Page.EmployeeSalaryTitle" xml:space="preserve"><value>Mga Setting ng Sahod ng Empleyado</value></data>
+  <data name="Page.EmployeeSalarySubtitle" xml:space="preserve"><value>Pamahalaan ang base salary, allowances at insurance</value></data>
+  <data name="Field.SalaryType" xml:space="preserve"><value>Uri ng Sahod</value></data>
+  <data name="Field.BaseSalary" xml:space="preserve"><value>Base Salary</value></data>
+  <data name="Field.PositionAllowance" xml:space="preserve"><value>Position Allowance</value></data>
+  <data name="Field.MealAllowance" xml:space="preserve"><value>Meal Allowance</value></data>
+  <data name="Field.TransportAllowance" xml:space="preserve"><value>Transport Allowance</value></data>
+  <data name="Field.LaborInsuredSalary" xml:space="preserve"><value>Labor Insurance Salary</value></data>
+  <data name="Field.HealthInsuredAmount" xml:space="preserve"><value>Health Insurance Amount</value></data>
+  <data name="Field.DependentCount" xml:space="preserve"><value>Bilang ng Dependents</value></data>
+  <data name="Field.TaxWithholdingType" xml:space="preserve"><value>Uri ng Withholding Tax</value></data>
+  <data name="Field.VoluntaryRetirementRate" xml:space="preserve"><value>Voluntary Retirement Rate (%)</value></data>
+  <data name="Field.EffectiveDate" xml:space="preserve"><value>Petsa ng Bisa</value></data>
+  <data name="Payroll.Monthly" xml:space="preserve"><value>Buwanang Sahod</value></data>
+  <data name="Payroll.Hourly" xml:space="preserve"><value>Oras-oras na Sahod</value></data>
+  <data name="Payroll.CurrentActive" xml:space="preserve"><value>Kasalukuyang Aktibo</value></data>
+  <data name="Payroll.TaxStandard" xml:space="preserve"><value>Standard (Salary Tax Table)</value></data>
+  <data name="Payroll.TaxResident" xml:space="preserve"><value>Residente (5% ng Buwanang Sahod)</value></data>
+  <data name="Payroll.TaxNonResident" xml:space="preserve"><value>Hindi Residente (18% ng Buwanang Sahod)</value></data>
+  <!-- ===== EmployeeBankAccount keys ===== -->
+  <data name="Entity.EmployeeBankAccount" xml:space="preserve"><value>Bank Account</value></data>
+  <data name="Page.EmployeeBankAccountTitle" xml:space="preserve"><value>Mga Bank Account ng Empleyado</value></data>
+  <data name="Page.EmployeeBankAccountSubtitle" xml:space="preserve"><value>Pamahalaan ang mga bank account para sa payroll</value></data>
+  <data name="Field.BranchCode" xml:space="preserve"><value>Kodigo ng Sangay</value></data>
+  <data name="Field.BranchName" xml:space="preserve"><value>Pangalan ng Sangay</value></data>
+  <data name="Field.AccountNumber" xml:space="preserve"><value>Numero ng Account</value></data>
+  <data name="Field.BankAccountHolder" xml:space="preserve"><value>Pangalan ng May-ari ng Account</value></data>
+  <data name="Field.IsPrimary" xml:space="preserve"><value>Pangunahing Account</value></data>
+  <data name="Payroll.PrimaryAccount" xml:space="preserve"><value>Pangunahin</value></data>
+  <!-- ===== PayrollPeriod keys ===== -->
+  <data name="Entity.PayrollPeriod" xml:space="preserve"><value>Payroll Period</value></data>
+  <data name="Page.PayrollPeriodTitle" xml:space="preserve"><value>Pamamahala ng Payroll Period</value></data>
+  <data name="Page.PayrollPeriodSubtitle" xml:space="preserve"><value>Pamahalaan ang pagbubukas at pagsasara ng buwanang payroll period</value></data>
+  <data name="Field.PayrollYear" xml:space="preserve"><value>Taon (ROC)</value></data>
+  <data name="Field.PayrollMonth" xml:space="preserve"><value>Buwan</value></data>
+  <data name="Field.PeriodStatus" xml:space="preserve"><value>Katayuan ng Period</value></data>
+  <data name="Field.PayrollRecordCount" xml:space="preserve"><value>Bilang ng Rekord</value></data>
+  <data name="Field.ClosedAt" xml:space="preserve"><value>Saradong Petsa</value></data>
+  <data name="Field.ClosedBy" xml:space="preserve"><value>Sinara ni</value></data>
+  <data name="Payroll.PeriodDraft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Payroll.PeriodProcessing" xml:space="preserve"><value>Pinoproseso</value></data>
+  <data name="Payroll.PeriodClosed" xml:space="preserve"><value>Sarado</value></data>
+  <data name="Payroll.OpenPeriod" xml:space="preserve"><value>Buksan ang Payroll Period</value></data>
+  <data name="Payroll.ClosePeriod" xml:space="preserve"><value>Isara ang Period</value></data>
+  <data name="Payroll.OpenPeriodHint" xml:space="preserve"><value>Pagkatapos buksan, maaaring kalkulahin ang payroll. Kapag nasara na, hindi na mababago.</value></data>
+  <data name="Page.PayrollTitle" xml:space="preserve"><value>Kalkulasyon ng Payroll</value></data>
+  <data name="Page.PayrollSubtitle" xml:space="preserve"><value>Kalkulahin at kumpirmahin ang mga payslip ng empleyado bawat pay period</value></data>
+  <data name="Payroll.CalculateAll" xml:space="preserve"><value>Kalkulahin Lahat</value></data>
+  <data name="Payroll.CalculateEmployee" xml:space="preserve"><value>Kalkulahin</value></data>
+  <data name="Payroll.ConfirmRecord" xml:space="preserve"><value>Kumpirmahin</value></data>
+  <data name="Payroll.UnconfirmRecord" xml:space="preserve"><value>I-undo ang Kumpirmasyon</value></data>
+  <data name="Payroll.ViewPayslip" xml:space="preserve"><value>Payslip</value></data>
+  <data name="Payroll.SelectPeriod" xml:space="preserve"><value>Pumili ng Pay Period</value></data>
+  <data name="Payroll.NoPeriods" xml:space="preserve"><value>Walang pay period na available</value></data>
+  <data name="Payroll.RecordList" xml:space="preserve"><value>Listahan ng Payslip</value></data>
+  <data name="Payroll.NotCalculated" xml:space="preserve"><value>Hindi Pa Naka-kalkulasyon</value></data>
+  <data name="Payroll.RecordDraft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Payroll.RecordConfirmed" xml:space="preserve"><value>Nakumpirma</value></data>
+  <data name="Payroll.StatTotal" xml:space="preserve"><value>Kabuuang Payslip</value></data>
+  <data name="Payroll.StatGross" xml:space="preserve"><value>Kabuuang Gross</value></data>
+  <data name="Payroll.StatNet" xml:space="preserve"><value>Kabuuang Net</value></data>
+  <data name="Payroll.StatConfirmed" xml:space="preserve"><value>Nakumpirma</value></data>
+  <data name="Payroll.AttendanceDays" xml:space="preserve"><value>Presensya</value></data>
+  <data name="Payroll.GrossIncome" xml:space="preserve"><value>Gross na Kita</value></data>
+  <data name="Payroll.TotalDeduction" xml:space="preserve"><value>Kabuuang Bawas</value></data>
+  <data name="Payroll.NetPay" xml:space="preserve"><value>Net na Sahod</value></data>
+  <data name="Payroll.PayslipTitle" xml:space="preserve"><value>Payslip</value></data>
+  <data name="Payroll.PayslipPeriod" xml:space="preserve"><value>Pay Period</value></data>
+  <data name="Payroll.IncomeItems" xml:space="preserve"><value>Mga Item ng Kita</value></data>
+  <data name="Payroll.DeductionItems" xml:space="preserve"><value>Mga Item ng Bawas</value></data>
+  <data name="Payroll.InsuranceSnapshot" xml:space="preserve"><value>Snapshot ng Insurance (Employer)</value></data>
+  <data name="Payroll.EmployerLaborInsurance" xml:space="preserve"><value>Labor Insurance ng Employer</value></data>
+  <data name="Payroll.EmployerHealthInsurance" xml:space="preserve"><value>Health Insurance ng Employer</value></data>
+  <data name="Payroll.EmployerRetirement" xml:space="preserve"><value>Kontribusyon sa Retirement ng Employer</value></data>
+  <data name="Payroll.TaxableIncome" xml:space="preserve"><value>Taxable na Kita</value></data>
+  <data name="Payroll.CalculatedAt" xml:space="preserve"><value>Oras ng Kalkulasyon</value></data>
+  <data name="Payroll.CalculatedBy" xml:space="preserve"><value>Kinalkula ni</value></data>
+  <data name="Payroll.NoPayrollRecords" xml:space="preserve"><value>Walang rekord ng payroll</value></data>
+  <!-- ===== Payroll Phase 2 Rate Table keys ===== -->
+  <data name="Nav.MinimumWage" xml:space="preserve"><value>Minimum na Sahod</value></data>
+  <data name="Nav.InsuranceRate" xml:space="preserve"><value>Mga Rate ng Insurance</value></data>
+  <data name="Nav.LaborInsuranceGrade" xml:space="preserve"><value>Talahanayan ng Labor Insurance Grade</value></data>
+  <data name="Nav.HealthInsuranceGrade" xml:space="preserve"><value>Talahanayan ng Health Insurance Grade</value></data>
+  <data name="Nav.WithholdingTaxTable" xml:space="preserve"><value>Talahanayan ng Withholding Tax</value></data>
+  <data name="Page.MinimumWageTitle" xml:space="preserve"><value>Minimum na Sahod</value></data>
+  <data name="Page.MinimumWageSubtitle" xml:space="preserve"><value>Pamahalaan ang kasaysayan ng minimum na sahod</value></data>
+  <data name="Page.InsuranceRateTitle" xml:space="preserve"><value>Mga Rate ng Insurance</value></data>
+  <data name="Page.InsuranceRateSubtitle" xml:space="preserve"><value>Pamahalaan ang mga rate ng labor, health insurance at retirement</value></data>
+  <data name="Page.LaborInsuranceGradeTitle" xml:space="preserve"><value>Talahanayan ng Labor Insurance Grade</value></data>
+  <data name="Page.LaborInsuranceGradeSubtitle" xml:space="preserve"><value>Pamahalaan ang talahanayan ng labor insurance grade</value></data>
+  <data name="Page.HealthInsuranceGradeTitle" xml:space="preserve"><value>Talahanayan ng Health Insurance Grade</value></data>
+  <data name="Page.HealthInsuranceGradeSubtitle" xml:space="preserve"><value>Pamahalaan ang talahanayan ng health insurance grade</value></data>
+  <data name="Page.WithholdingTaxTableTitle" xml:space="preserve"><value>Talahanayan ng Withholding Tax</value></data>
+  <data name="Page.WithholdingTaxTableSubtitle" xml:space="preserve"><value>Pamahalaan ang talahanayan ng buwis sa kita</value></data>
+  <data name="Field.MonthlyMinWage" xml:space="preserve"><value>Buwanang Minimum na Sahod</value></data>
+  <data name="Field.HourlyMinWage" xml:space="preserve"><value>Oras-orasang Minimum na Sahod</value></data>
+  <data name="Field.LaborInsEERate" xml:space="preserve"><value>Rate ng Empleyado sa Labor Ins.</value></data>
+  <data name="Field.LaborInsERRate" xml:space="preserve"><value>Rate ng Employer sa Labor Ins.</value></data>
+  <data name="Field.HealthInsEERate" xml:space="preserve"><value>Rate ng Empleyado sa Health Ins.</value></data>
+  <data name="Field.HealthInsERRate" xml:space="preserve"><value>Rate ng Employer sa Health Ins.</value></data>
+  <data name="Field.RetirementERRate" xml:space="preserve"><value>Rate ng Employer sa Retirement</value></data>
+  <data name="Field.MealTaxFreeLimit" xml:space="preserve"><value>Limitasyon ng Tax-Free sa Pagkain</value></data>
+  <data name="Field.TransportTaxFreeLimit" xml:space="preserve"><value>Limitasyon ng Tax-Free sa Transportasyon</value></data>
+  <data name="Field.InsuranceGrade" xml:space="preserve"><value>Antas</value></data>
+  <data name="Field.InsuredSalary" xml:space="preserve"><value>Insured na Sahod</value></data>
+  <data name="Field.InsuredAmount" xml:space="preserve"><value>Insured na Halaga</value></data>
+  <data name="Payroll.AddMinimumWage" xml:space="preserve"><value>Magdagdag ng Minimum na Sahod</value></data>
+  <data name="Payroll.EditMinimumWage" xml:space="preserve"><value>I-edit ang Minimum na Sahod</value></data>
+  <data name="Payroll.AddInsuranceRate" xml:space="preserve"><value>Magdagdag ng Insurance Rate</value></data>
+  <data name="Payroll.EditInsuranceRate" xml:space="preserve"><value>I-edit ang Insurance Rate</value></data>
+  <data name="Payroll.LaborInsuranceRates" xml:space="preserve"><value>Mga Rate ng Labor Insurance</value></data>
+  <data name="Payroll.HealthInsuranceRates" xml:space="preserve"><value>Mga Rate ng Health Insurance</value></data>
+  <data name="Payroll.RetirementAndTaxFree" xml:space="preserve"><value>Rate ng Retirement at Tax-Free Limits</value></data>
+  <data name="Payroll.AddGrade" xml:space="preserve"><value>Magdagdag ng Antas</value></data>
+  <data name="Payroll.EditGrade" xml:space="preserve"><value>I-edit ang Antas</value></data>
+  <data name="Payroll.AddTaxRow" xml:space="preserve"><value>Magdagdag ng Tax Entry</value></data>
+  <data name="Payroll.EditTaxRow" xml:space="preserve"><value>I-edit ang Tax Entry</value></data>
+  <data name="Payroll.CopyYear" xml:space="preserve"><value>Kopyahin ang Taon</value></data>
+  <data name="Payroll.CopySource" xml:space="preserve"><value>Pinagmulan ng Taon</value></data>
+  <data name="Payroll.CopyTarget" xml:space="preserve"><value>Target na Taon</value></data>
+  <data name="Payroll.TotalGrades" xml:space="preserve"><value>Kabuuang Antas</value></data>
+  <data name="Payroll.TotalRows" xml:space="preserve"><value>Kabuuang Tala</value></data>
+  <data name="Payroll.DependentSuffix" xml:space="preserve"><value>tao</value></data>
+  <data name="Label.NoUpperLimit" xml:space="preserve"><value>Walang limitasyon</value></data>
+  <data name="Message.NoData" xml:space="preserve"><value>Walang datos</value></data>
+  <!-- ===== Phase 3: Buod ng Pagdalo ===== -->
+  <data name="Nav.AttendanceSummary" xml:space="preserve"><value>Buod ng Pagdalo</value></data>
+  <data name="Page.AttendanceSummaryTitle" xml:space="preserve"><value>Buod ng Pagdalo</value></data>
+  <data name="Page.AttendanceSummarySubtitle" xml:space="preserve"><value>Pamahalaan ang buwanang araw ng pagdalo at oras ng overtime para sa pagkalkula ng sahod</value></data>
+  <data name="Attendance.AddRecord" xml:space="preserve"><value>Magdagdag ng Rekord ng Pagdalo</value></data>
+  <data name="Attendance.EditRecord" xml:space="preserve"><value>I-edit ang Rekord ng Pagdalo</value></data>
+  <data name="Attendance.BatchInit" xml:space="preserve"><value>Batch Initialize</value></data>
+  <data name="Attendance.LockedMessage" xml:space="preserve"><value>Ang rekord na ito ay naka-lock na (nai-compute na ang sahod), read-only</value></data>
+  <data name="Attendance.SickLeaveNote" xml:space="preserve"><value>Ang sick leave ay ibabawas sa kalahating araw na sahod</value></data>
+  <data name="Attendance.OvertimeHours" xml:space="preserve"><value>Oras ng Overtime</value></data>
+  <data name="Attendance.OT1Note" xml:space="preserve"><value>OT sa araw ng trabaho unang 2 oras (×4/3)</value></data>
+  <data name="Attendance.OT2Note" xml:space="preserve"><value>OT sa araw ng trabaho susunod na 2 oras (×5/3)</value></data>
+  <data name="Attendance.OvertimeTotal" xml:space="preserve"><value>Kabuuang Oras ng OT</value></data>
+  <data name="Attendance.TotalRecords" xml:space="preserve"><value>Kabuuang Tala</value></data>
+  <data name="Field.ScheduledWorkDays" xml:space="preserve"><value>Naka-iskedyul na Araw ng Trabaho</value></data>
+  <data name="Field.ActualWorkDays" xml:space="preserve"><value>Aktwal na Araw ng Trabaho</value></data>
+  <data name="Field.AbsentDays" xml:space="preserve"><value>Araw ng Kawalan</value></data>
+  <data name="Field.SickLeaveDays" xml:space="preserve"><value>Araw ng Sick Leave</value></data>
+  <data name="Field.OvertimeHours1" xml:space="preserve"><value>OT Oras 1 (Unang 2hr)</value></data>
+  <data name="Field.OvertimeHours2" xml:space="preserve"><value>OT Oras 2 (Susunod na 2hr)</value></data>
+  <data name="Field.HolidayOvertimeHours" xml:space="preserve"><value>OT sa Holiday</value></data>
+  <data name="Field.NationalHolidayHours" xml:space="preserve"><value>OT sa Pambansang Pista</value></data>
+  <data name="Field.Year" xml:space="preserve"><value>ROC Taon</value></data>
+  <data name="Field.Month" xml:space="preserve"><value>Buwan</value></data>
+  <data name="Label.Month" xml:space="preserve"><value>Buwan</value></data>
+  <data name="Label.Locked" xml:space="preserve"><value>Naka-lock</value></data>
+  <data name="Label.Editable" xml:space="preserve"><value>Maaaring I-edit</value></data>
   <!-- ===== Vehicle Field keys ===== -->
   <data name="Field.AssociatedCompany" xml:space="preserve"><value>Kaugnay na Kumpanya</value></data>
   <data name="Field.AssociatedCustomer" xml:space="preserve"><value>Kaugnay na Customer</value></data>
@@ -1719,6 +1942,9 @@
   <data name="Search.NoResults" xml:space="preserve"><value>Walang nahanap na mga item. Pakisubukan ang ibang mga keyword.</value></data>
   <data name="Search.DefaultTitle" xml:space="preserve"><value>Maghanap</value></data>
   <data name="Search.DefaultPlaceholder" xml:space="preserve"><value>Ilagay ang mga keyword para maghanap...</value></data>
+  <data name="Search.ResultCount" xml:space="preserve"><value>Nahanap ang {0} na resulta</value></data>
+  <data name="Search.KeyHintNavigate" xml:space="preserve"><value>Mag-navigate</value></data>
+  <data name="Search.KeyHintSelect" xml:space="preserve"><value>Pumili</value></data>
 
   <!-- ===== QuickAction ===== -->
   <data name="QuickAction.MenuTooltip" xml:space="preserve"><value>Mabilis na Aksyon (Alt + Q)</value></data>
@@ -1820,6 +2046,8 @@
 
   <!-- ===== Customer Module ===== -->
   <data name="Customer.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Customer</value></data>
+  <!-- ===== Supplier Module ===== -->
+  <data name="Supplier.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Supplier</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>Walang kaugnay na mga transaksyon</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>Wala pang mga rekord ng pagbisita</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>Walang kaugnay na mga transaksyon</value></data>
@@ -2933,5 +3161,17 @@
   <data name="Message.EntityDeleteFailed" xml:space="preserve"><value>Nabigo ang pagbura: {0}</value></data>
   <data name="Message.EntityDeleteError" xml:space="preserve"><value>Nagkaroon ng error sa pagbura: {0}</value></data>
   <data name="Message.EntityDeleteConfirm" xml:space="preserve"><value>Sigurado ka bang gusto mong burahin ang {0} "{1}"?</value></data>
+  <data name="Column.BatchDate" xml:space="preserve"><value>Petsa ng Batch</value></data>
+  <data name="Column.ReservedStock" xml:space="preserve"><value>Nakalaan na Stock</value></data>
+  <data name="Column.InTransitStock" xml:space="preserve"><value>Stock sa Transit</value></data>
+  <data name="Label.TotalCurrentStock" xml:space="preserve"><value>Kabuuang Kasalukuyang Stock</value></data>
+  <data name="Label.TotalReservedStock" xml:space="preserve"><value>Kabuuang Nakalaan</value></data>
+  <data name="Label.TotalInTransitStock" xml:space="preserve"><value>Kabuuang Transit</value></data>
+  <data name="Inventory.AtLeastOneDetail" xml:space="preserve"><value>Kailangan ng kahit isang detalye ng imbentaryo</value></data>
+  <data name="Inventory.DuplicateWarehouseLocation" xml:space="preserve"><value>Mayroong duplicate na kombinasyon ng bodega at lokasyon, mangyaring suriin</value></data>
+  <data name="Inventory.ReservedExceedsCurrent" xml:space="preserve"><value>Hindi maaaring lumampas ang nakalaan sa kasalukuyang stock</value></data>
+  <data name="Inventory.AllDetailsCleared" xml:space="preserve"><value>Nalinis na ang lahat ng detalye ng imbentaryo</value></data>
+  <data name="Inventory.CurrentStockReadonlyHint" xml:space="preserve"><value>Ang kasalukuyang stock ay dapat baguhin sa pamamagitan ng proseso ng pagsasaayos ng imbentaryo</value></data>
+  <data name="Message.ConfirmDeleteExistingDetail" xml:space="preserve"><value>Ang detalyeng ito ay naka-save sa database. Sigurado ka bang gusto mo itong burahin?</value></data>
 
 </root>

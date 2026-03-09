@@ -123,6 +123,7 @@
     private EmployeeToolTab? toolTab;
     private EmployeeTrainingTab? trainingTab;
     private EmployeePermissionTab? permissionTab;
+    private EmployeePayrollTab? payrollTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -144,6 +145,11 @@
     private RenderFragment CreatePermissionTabContent() => __builder =>
     {
         <EmployeePermissionTab @ref="permissionTab" EmployeeId="@EmployeeId" />
+    };
+
+    private RenderFragment CreatePayrollTabContent() => __builder =>
+    {
+        <EmployeePayrollTab @ref="payrollTab" EmployeeId="@EmployeeId" />
     };
 
     // ===== 生命週期 =====
@@ -225,6 +231,7 @@
                 toolTab?.Clear();
                 trainingTab?.Clear();
                 permissionTab?.Clear();
+                payrollTab?.Clear();
 
                 return new Employee
                 {
@@ -263,6 +270,7 @@
                 if (toolTab != null) await toolTab.LoadAsync(loadedEntityId);
                 if (trainingTab != null) await trainingTab.LoadAsync(loadedEntityId);
                 if (permissionTab != null) await permissionTab.LoadAsync(loadedEntityId);
+                if (payrollTab != null) await payrollTab.LoadAsync(loadedEntityId);
             }
             else
             {
@@ -270,6 +278,7 @@
                 toolTab?.Clear();
                 trainingTab?.Clear();
                 permissionTab?.Clear();
+                payrollTab?.Clear();
             }
             StateHasChanged();
         }
@@ -332,6 +341,7 @@
                 if (toolTab != null) await toolTab.LoadAsync(editModalComponent.Entity.Id);
                 if (trainingTab != null) await trainingTab.LoadAsync(editModalComponent.Entity.Id);
                 if (permissionTab != null) await permissionTab.LoadAsync(editModalComponent.Entity.Id);
+                if (payrollTab != null) await payrollTab.LoadAsync(editModalComponent.Entity.Id);
                 await OnEmployeeSaved.InvokeAsync(editModalComponent.Entity);
             }
         }
@@ -430,11 +440,19 @@
             if (isVehiclesEnabled)
                 builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent(), "EmployeeVehicleTab");
 
-            var layout = builder
+            var isPayrollEnabled = await CompanyModuleService.IsModuleEnabledAsync("Payroll");
+            if (!isPayrollEnabled)
+                isPayrollEnabled = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+
+            builder = builder
                 .GroupIntoCustomTab(L["Tab.PersonalTools"].ToString(), "bi-tools", CreateToolTabContent(), "EmployeeToolTab")
                 .GroupIntoCustomTab(L["Tab.Training"].ToString(), "bi-mortarboard", CreateTrainingTabContent(), "EmployeeTrainingTab")
-                .GroupIntoCustomTab(L["Tab.Permissions"].ToString(), "bi-shield-lock", CreatePermissionTabContent(), "EmployeePermissionTab")
-                .BuildAll();
+                .GroupIntoCustomTab(L["Tab.Permissions"].ToString(), "bi-shield-lock", CreatePermissionTabContent(), "EmployeePermissionTab");
+
+            if (isPayrollEnabled && EmployeeId.HasValue)
+                builder = builder.GroupIntoCustomTab(L["Tab.Payroll"].ToString(), "bi-cash-coin", CreatePayrollTabContent(), "EmployeePayrollTab");
+
+            var layout = builder.BuildAll();
 
             formSections = layout.FieldSections;
             tabDefinitions = layout.TabDefinitions;

@@ -56,9 +56,9 @@
   --bg-tertiary: #F3F4F6;
   
   /* 表格 hover 色彩 */
-  --table-hover-bg: #fef3c7;
-  --table-hover-bg-striped: #fde68a;
-  --table-hover-text: #92400e;
+  --table-hover-bg: #eff6ff;
+  --table-hover-bg-striped: #dbeafe;
+  --table-hover-text: #1e40af;
   
   /* 陰影 */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -121,9 +121,9 @@
   --bg-tertiary: #21262d;
 
   /* 表格 hover 色彩 */
-  --table-hover-bg: #2d2a00;
-  --table-hover-bg-striped: #3a3500;
-  --table-hover-text: #e3b341;
+  --table-hover-bg: #1c2a3e;
+  --table-hover-bg-striped: #1e3255;
+  --table-hover-text: #93c5fd;
 
   /* 警告框背景色 */
   --alert-success-bg: rgba(46, 160, 67, 0.15);

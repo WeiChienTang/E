@@ -44,7 +44,8 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<Employee> availableManagers = new();
-    
+    private List<Department> availableDepartments = new();
+
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
 
@@ -55,13 +56,26 @@
         {
             // 載入可選擇的主管員工列表
             availableManagers = await DepartmentService.GetAvailableManagersAsync();
-            
+
+            // 載入可選擇的上級部門列表（排除自身）
+            availableDepartments = await DepartmentService.GetAvailableParentDepartmentsAsync(DepartmentId);
+
             // 使用 AutoCompleteConfigHelper 建立配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<Department>()
                 .AddFieldWithMultipleSearchProperties<Employee>(
                     nameof(Department.ManagerId),
                     "Name",
                     availableManagers,
+                    new[] { "Name", "Code" })
+                .AddFieldWithMultipleSearchProperties<Employee>(
+                    nameof(Department.DeputyManagerId),
+                    "Name",
+                    availableManagers,
+                    new[] { "Name", "Code" })
+                .AddFieldWithMultipleSearchProperties<Department>(
+                    nameof(Department.ParentDepartmentId),
+                    "Name",
+                    availableDepartments,
                     new[] { "Name", "Code" })
                 .Build();
             
@@ -123,8 +137,40 @@
                     Label = L["Field.DepartmentManager"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.DepartmentManager"]],
-                    MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
+                    MinSearchLength = 0,
                     HelpText = "選擇負責管理此部門的員工"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.DeputyManagerId),
+                    Label = L["Field.DeputyManager"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.DeputyManager"]],
+                    MinSearchLength = 0,
+                    HelpText = "選擇主管不在時代理管理此部門的員工"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.ParentDepartmentId),
+                    Label = L["Field.ParentDepartment"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.ParentDepartment"]],
+                    MinSearchLength = 0,
+                    HelpText = "選擇此部門所屬的上級部門（留空代表頂層部門）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.Phone),
+                    Label = L["Field.DepartmentPhone"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.DepartmentPhone"]]
+                },
+                new()
+                {
+                    PropertyName = nameof(Department.Location),
+                    Label = L["Field.DepartmentLocation"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.DepartmentLocation"]]
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<Department>()
@@ -134,7 +180,11 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     d => d.Code,
                     d => d.Name,
-                    d => d.ManagerId)
+                    d => d.ParentDepartmentId,
+                    d => d.ManagerId,
+                    d => d.DeputyManagerId,
+                    d => d.Phone,
+                    d => d.Location)
                 .AddToSection(FormSectionNames.AdditionalData,
                     d => d.Remarks)
                 .Build();

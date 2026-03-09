@@ -1,0 +1,295 @@
+@* 員工薪資設定編輯組件 *@
+@inject IEmployeeSalaryService EmployeeSalaryService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="EmployeeSalary"
+                          TService="IEmployeeSalaryService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@EmployeeSalaryId"
+                          Service="@EmployeeSalaryService"
+                          EntityName="@L["Entity.EmployeeSalary"]"
+                          EntityNamePlural="@L["Entity.EmployeeSalary"]"
+                          ModalTitle="@(EmployeeSalaryId.HasValue ? L["Message.EditTitle", L["Entity.EmployeeSalary"]].ToString() : L["Message.CreateTitle", L["Entity.EmployeeSalary"]].ToString())"
+                          Size="GenericEditModalComponent<EmployeeSalary, IEmployeeSalaryService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          DataLoader="@LoadData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          SaveHandler="@HandleSaveAsync"
+                          SaveSuccessMessage="@(EmployeeSalaryId.HasValue ? L["Message.UpdateSuccess", L["Entity.EmployeeSalary"]].ToString() : L["Message.CreateSuccess", L["Entity.EmployeeSalary"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EmployeeSalary"]]"
+                          RequiredPermission="@PermissionRegistry.Payroll.SalaryConfig"
+                          OnEntitySaved="@OnEmployeeSalarySaved"
+                          OnCancel="@OnCancel"
+                          ComponentName="EmployeeSalaryEditModalComponent" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? EmployeeSalaryId { get; set; }
+    [Parameter] public EventCallback<EmployeeSalary> OnEmployeeSalarySaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public int? PrefilledEmployeeId { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<EmployeeSalary, IEmployeeSalaryService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    private List<Employee> availableEmployees = new();
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    private Task<EmployeeSalary?> LoadData()
+    {
+        // 若指定了員工 ID，預帶填入
+        var prefilled = PrefilledValues != null
+            ? new Dictionary<string, object?>(PrefilledValues)
+            : new Dictionary<string, object?>();
+
+        if (PrefilledEmployeeId.HasValue && !prefilled.ContainsKey(nameof(EmployeeSalary.EmployeeId)))
+            prefilled[nameof(EmployeeSalary.EmployeeId)] = PrefilledEmployeeId.Value;
+
+        return EditDataLoaderHelper.LoadOrCreateAsync<EmployeeSalary, IEmployeeSalaryService>(
+            EmployeeSalaryId, EmployeeSalaryService, NotificationService, "員工薪資設定", null,
+            prefilled.Count > 0 ? prefilled : null,
+            s =>
+            {
+                s.EffectiveDate = DateOnly.FromDateTime(DateTime.Today);
+                s.SalaryType = SalaryType.Monthly;
+                s.TaxType = TaxWithholdingType.Standard;
+            });
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            var result = await EmployeeService.GetActiveEmployeesAsync();
+            availableEmployees = result.IsSuccess ? (result.Data ?? new()) : new();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<EmployeeSalary>()
+                .AddFieldWithMultipleSearchProperties<Employee>(
+                    nameof(EmployeeSalary.EmployeeId),
+                    nameof(Employee.Name),
+                    availableEmployees,
+                    new[] { nameof(Employee.Name), nameof(Employee.Code) })
+                .Build();
+
+            InitializeFormFields();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入員工清單時發生錯誤");
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+            InitializeFormFields();
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                // ── 員工 & 薪資制度 ──
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.EmployeeId),
+                    Label = L["Field.Employee"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.Employee"]],
+                    IsRequired = true,
+                    MinSearchLength = 0
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.SalaryType),
+                    Label = L["Field.SalaryType"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = ((int)SalaryType.Monthly).ToString(), Text = L["Payroll.Monthly"] ?? "月薪" },
+                        new() { Value = ((int)SalaryType.Hourly).ToString(),  Text = L["Payroll.Hourly"]  ?? "時薪" }
+                    }
+                },
+
+                // ── 薪資金額 ──
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.BaseSalary),
+                    Label = L["Field.BaseSalary"],
+                    FieldType = FormFieldType.Number,
+                    IsRequired = true,
+                    Min = 0,
+                    HelpText = "月薪制：元/月；時薪制：元/時"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.PositionAllowance),
+                    Label = L["Field.PositionAllowance"],
+                    FieldType = FormFieldType.Number,
+                    Min = 0
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.MealAllowance),
+                    Label = L["Field.MealAllowance"],
+                    FieldType = FormFieldType.Number,
+                    Min = 0,
+                    HelpText = "每月餐飲補助（2,400 以內免稅）"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.TransportAllowance),
+                    Label = L["Field.TransportAllowance"],
+                    FieldType = FormFieldType.Number,
+                    Min = 0
+                },
+
+                // ── 勞健保設定 ──
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.LaborInsuredSalary),
+                    Label = L["Field.LaborInsuredSalary"],
+                    FieldType = FormFieldType.Number,
+                    Min = 0,
+                    HelpText = "依勞保分級表選填投保薪資等級金額"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.HealthInsuredAmount),
+                    Label = L["Field.HealthInsuredAmount"],
+                    FieldType = FormFieldType.Number,
+                    Min = 0,
+                    HelpText = "依健保分級表選填投保金額等級金額"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.DependentCount),
+                    Label = L["Field.DependentCount"],
+                    FieldType = FormFieldType.Number,
+                    Min = 0,
+                    Max = 10,
+                    HelpText = "健保眷屬人數（不含本人）"
+                },
+
+                // ── 稅務 & 勞退 ──
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.TaxType),
+                    Label = L["Field.TaxWithholdingType"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = ((int)TaxWithholdingType.Standard).ToString(),    Text = L["Payroll.TaxStandard"]    ?? "一般扣繳（薪資所得稅額表）" },
+                        new() { Value = ((int)TaxWithholdingType.Resident).ToString(),    Text = L["Payroll.TaxResident"]    ?? "居住者（按月薪 5%）" },
+                        new() { Value = ((int)TaxWithholdingType.NonResident).ToString(), Text = L["Payroll.TaxNonResident"] ?? "非居住者（按月薪 18%）" }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.VoluntaryRetirementRate),
+                    Label = L["Field.VoluntaryRetirementRate"],
+                    FieldType = FormFieldType.Number,
+                    Min = 0,
+                    Max = 6,
+                    Step = 1,
+                    DecimalPlaces = 0,
+                    HelpText = "員工自願提繳率 0%～6%（整數）"
+                },
+
+                // ── 生效日期 ──
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.EffectiveDate),
+                    Label = L["Field.EffectiveDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "新增時將自動關閉同員工前一筆有效薪資設定"
+                },
+                new()
+                {
+                    PropertyName = nameof(EmployeeSalary.ExpiryDate),
+                    Label = L["Field.ExpiryDate"],
+                    FieldType = FormFieldType.Date,
+                    HelpText = "留空代表目前有效；由系統調薪時自動填入"
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<EmployeeSalary>()
+            };
+
+            formSections = FormSectionHelper<EmployeeSalary>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    s => s.EmployeeId,
+                    s => s.SalaryType)
+                .AddToSection(FormSectionNames.AmountInfo,
+                    s => s.BaseSalary,
+                    s => s.PositionAllowance,
+                    s => s.MealAllowance,
+                    s => s.TransportAllowance)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    s => s.LaborInsuredSalary,
+                    s => s.HealthInsuredAmount,
+                    s => s.DependentCount,
+                    s => s.TaxType,
+                    s => s.VoluntaryRetirementRate,
+                    s => s.EffectiveDate,
+                    s => s.ExpiryDate)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    s => s.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化員工薪資表單欄位時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 自訂儲存邏輯：新增時使用 AddWithExpiryAsync 自動關閉前一筆
+    /// </summary>
+    private async Task<bool> HandleSaveAsync(EmployeeSalary entity)
+    {
+        try
+        {
+            ServiceResult result;
+
+            if (!EmployeeSalaryId.HasValue)
+                result = await EmployeeSalaryService.AddWithExpiryAsync(entity);
+            else
+                result = await EmployeeSalaryService.UpdateAsync(entity);
+
+            if (!result.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存失敗");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveAsync), GetType());
+            return false;
+        }
+    }
+
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
+}

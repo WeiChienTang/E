@@ -23,3 +23,13 @@ public class CustomerChartSummary
     public int CustomersThisMonth { get; set; }
     public decimal? AverageCreditLimit { get; set; }
 }
+
+public class SupplierChartSummary
+{
+    public int TotalSuppliers { get; set; }
+    public int ActiveSuppliers { get; set; }
+    public int InactiveSuppliers { get; set; }
+    public int SuspendedSuppliers { get; set; }
+    public int SuppliersThisMonth { get; set; }
+    public decimal TotalPayable { get; set; }
+}

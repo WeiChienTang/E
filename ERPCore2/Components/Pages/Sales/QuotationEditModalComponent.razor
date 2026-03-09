@@ -60,6 +60,7 @@
                           ApprovalPermission="@PermissionRegistry.Quotation.Approve"
                           OnApprove="@HandleQuotationApprove"
                           OnRejectWithReason="@HandleQuotationRejectWithReason"
+                          HasDownstreamActions="@hasUndeletableDetails"
                           CanPrintCheck="@GetCanPrintCheck()"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ComponentName="QuotationEditModalComponent">
@@ -966,7 +967,7 @@
                                     SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId > 0 ? editModalComponent.Entity.CustomerId : (int?)null)"
                                     SelectedSupplierId="@(editModalComponent?.Entity?.CustomerId > 0 ? editModalComponent.Entity.CustomerId : (int?)null)"
                                     TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
-                                    IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, hasUndeletableDetails)"
+                                    IsReadOnly="@ApprovalConfigHelper.ShouldLockFieldByApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false, false)"
                                     OnOpenRelatedDocument="@HandleOpenRelatedDocument"
                                     Title="報價明細"
                                     EmptyMessage="尚未新增報價商品" />
@@ -1149,6 +1150,7 @@
 
         <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
                                   Message="@EditModalMessages.UndeletableDetailsWarning"
+                                  SubMessage="@EditModalMessages.UndeletableDetailsHint"
                                   Compact="true" />
     };
     

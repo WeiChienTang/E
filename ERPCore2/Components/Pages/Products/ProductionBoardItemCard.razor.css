@@ -28,10 +28,9 @@
     width: 4px;
 }
 
-.status-pending .card-status-bar    { background: #6c757d; }
-.status-inprogress .card-status-bar { background: #0d6efd; }
-.status-completed .card-status-bar  { background: #198754; }
-.status-discontinued .card-status-bar { background: #dc3545; }
+.status-waitingmaterial .card-status-bar { background: #fd7e14; }
+.status-inprogress .card-status-bar      { background: #0d6efd; }
+.status-completed .card-status-bar       { background: #198754; }
 
 .card-body-inner {
     padding: 6px 8px 6px 12px;
@@ -44,13 +43,13 @@
 }
 
 .product-code {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     font-weight: 500;
 }
 
 .product-name {
-    font-size: 0.8rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
@@ -68,7 +67,7 @@
 
 .customer-name,
 .order-code {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
@@ -77,7 +76,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 110px;
+    max-width: 120px;
 }
 
 .card-footer-row {
@@ -87,7 +86,7 @@
 }
 
 .card-qty {
-    font-size: 0.75rem;
+    font-size: 0.9rem;
     color: var(--text-primary);
 }
 
@@ -106,7 +105,7 @@
 }
 
 .card-due {
-    font-size: 0.68rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     padding: 1px 5px;
     border-radius: 3px;
@@ -118,21 +117,20 @@
 
 .card-status-badge {
     display: inline-block;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     padding: 1px 6px;
     border-radius: 10px;
     margin-top: 4px;
     font-weight: 500;
 }
 
-.status-pending .card-status-badge    { background: #6c757d22; color: #6c757d; }
-.status-inprogress .card-status-badge { background: #0d6efd22; color: #0d6efd; }
-.status-completed .card-status-badge  { background: #19875422; color: #198754; }
-.status-discontinued .card-status-badge { background: #dc354522; color: #dc3545; }
+.status-waitingmaterial .card-status-badge { background: #fd7e1422; color: #fd7e14; }
+.status-inprogress .card-status-badge      { background: #0d6efd22; color: #0d6efd; }
+.status-completed .card-status-badge       { background: #19875422; color: #198754; }
 
 /* 看板上的卡片比 sidebar 稍大 */
-.on-board.board-item-card { font-size: 0.85rem; }
-.in-sidebar.board-item-card { font-size: 0.8rem; }
+.on-board.board-item-card  { font-size: 1rem; }
+.in-sidebar.board-item-card { font-size: 0.95rem; }
 
 /* Dark mode */
 [data-bs-theme=dark] .board-item-card {

@@ -13,7 +13,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="MaterialIssue" 
+<GenericEditModalComponent TEntity="MaterialIssue"
                           TService="IMaterialIssueService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
@@ -27,6 +27,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
@@ -39,7 +40,6 @@
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomValidator="@ValidateMaterialIssueDetailsAsync"
-                          CustomModules="@GetCustomModules()"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ComponentName="MaterialIssueEditModalComponent">
 </GenericEditModalComponent>
@@ -57,30 +57,46 @@
     /// </summary>
     [Parameter] public int? SourceProductionScheduleId { get; set; }
 
+    /// <summary>
+    /// 從排程看板卡片開啟時傳入的排程項目 ID，只載入該項目的 BOM 物料需求
+    /// </summary>
+    [Parameter] public int? SourceProductionScheduleItemId { get; set; }
+
     // ===== 內部狀態 =====
     private GenericEditModalComponent<MaterialIssue, IMaterialIssueService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    
+    private List<FormTabDefinition>? tabDefinitions;
+
     // 原始資料集合（用於 AutoComplete）
     private List<Employee> availableEmployees = new();
     private List<Department> availableDepartments = new();
-    
+
     // 領料明細
     private List<MaterialIssueDetail> materialIssueDetails = new();
     private MaterialIssueTable? detailManagerComponent;
-    
+
     // 下拉選單選項
     private List<Employee> employees = new();
     private List<Department> departments = new();
     private List<SelectOption> employeeOptions = new();
     private List<SelectOption> departmentOptions = new();
-    
+
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
-    
+
+    // 訂單來源 Tab 資料
+    private List<OrderSourceItem> orderSourceItems = new();
+    private List<ProductionScheduleItem> _sourceScheduleItems = new();
+
     // 資料載入狀態標記
     private bool isDataLoaded = false;
+
+    private record OrderSourceItem(
+        string SalesOrderCode,
+        string ProductCode,
+        string ProductName,
+        decimal ScheduledQuantity);
 
     // ===== 必要方法 =====
     protected override async Task OnParametersSetAsync()
@@ -89,7 +105,9 @@
         {
             // 每次開啟 Modal 時都重置明細資料
             materialIssueDetails = new List<MaterialIssueDetail>();
-            
+            _sourceScheduleItems = new List<ProductionScheduleItem>();
+            orderSourceItems = new List<OrderSourceItem>();
+
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
             isDataLoaded = true;
@@ -123,14 +141,18 @@
             // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 Details 參數
             // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
             StateHasChanged();
-            
+
             // 2. 觸發 Table 元件刷新（此時 Details 已經是新的資料）
             if (detailManagerComponent != null)
             {
                 await detailManagerComponent.RefreshDetailsAsync();
             }
-            
-            // 3. 最後再次更新 UI（確保所有變更都反映在畫面上）
+
+            // 3. 載入訂單來源資料（使用已更新的 materialIssueDetails）
+            _sourceScheduleItems = new List<ProductionScheduleItem>();
+            await LoadOrderSourceAsync();
+
+            // 4. 最後再次更新 UI（確保所有變更都反映在畫面上）
             StateHasChanged();
         }
         catch (Exception ex)
@@ -161,23 +183,30 @@
                     MaterialIssueDetails = new List<MaterialIssueDetail>()
                 };
 
-                // 若有來源排程，自動載入待領物料明細
-                if (SourceProductionScheduleId.HasValue)
+                // 從排程項目（看板卡片）載入單一項目的物料需求（優先）
+                if (SourceProductionScheduleItemId.HasValue)
+                {
+                    await LoadMaterialsFromScheduleItemAsync(SourceProductionScheduleItemId.Value);
+                }
+                // 否則若有來源排程批次，載入整批待領物料明細
+                else if (SourceProductionScheduleId.HasValue)
                 {
                     await LoadMaterialsFromScheduleAsync(SourceProductionScheduleId.Value);
                 }
 
+                await LoadOrderSourceAsync();
                 return newMaterialIssue;
             }
 
             var materialIssue = await MaterialIssueService.GetWithDetailsAsync(MaterialIssueId.Value);
-            
+
             if (materialIssue != null)
             {
                 // 載入明細
                 materialIssueDetails = materialIssue.MaterialIssueDetails?.ToList() ?? new List<MaterialIssueDetail>();
+                await LoadOrderSourceAsync();
             }
-            
+
             return materialIssue;
         }
         catch (Exception ex)
@@ -197,7 +226,7 @@
     {
         try
         {
-            // 取得此排程的所有項目
+            // 取得此排程的所有項目（包含 SalesOrderDetail.SalesOrder）
             var targetItems = await ProductionScheduleItemService.GetByScheduleIdAsync(scheduleId);
             targetItems = targetItems.Where(i => !i.IsClosed).ToList();
 
@@ -224,11 +253,109 @@
                 materialIssueDetails = details;
                 await NotificationService.ShowInfoAsync($"已從生產排程載入 {details.Count} 筆物料需求");
             }
+
+            // 儲存排程項目供訂單來源 Tab 使用
+            _sourceScheduleItems = targetItems;
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadMaterialsFromScheduleAsync), GetType(),
                 additionalData: $"從排程載入物料失敗 - ScheduleId: {scheduleId}");
+        }
+    }
+
+    /// <summary>
+    /// 從單一排程項目（看板卡片）載入待領物料到 materialIssueDetails
+    /// </summary>
+    private async Task LoadMaterialsFromScheduleItemAsync(int scheduleItemId)
+    {
+        try
+        {
+            var scheduleDetails = await ProductionScheduleDetailService.GetByScheduleItemIdAsync(scheduleItemId);
+            var pending = scheduleDetails.Where(d => d.PendingIssueQuantity > 0).ToList();
+
+            if (!pending.Any()) return;
+
+            materialIssueDetails = pending.Select(sd => new MaterialIssueDetail
+            {
+                ProductId = sd.ComponentProductId,
+                IssueQuantity = sd.PendingIssueQuantity,
+                ProductionScheduleDetailId = sd.Id,
+                Status = EntityStatus.Active
+            }).ToList();
+
+            await NotificationService.ShowInfoAsync($"已從排程項目載入 {materialIssueDetails.Count} 筆物料需求");
+
+            // 載入排程項目（含 SalesOrderDetail.SalesOrder）供訂單來源 Tab 使用
+            var item = await ProductionScheduleItemService.GetByIdAsync(scheduleItemId);
+            if (item != null)
+                _sourceScheduleItems = new List<ProductionScheduleItem> { item };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadMaterialsFromScheduleItemAsync), GetType(),
+                additionalData: $"從排程項目載入物料失敗 - ScheduleItemId: {scheduleItemId}");
+        }
+    }
+
+    /// <summary>
+    /// 載入訂單來源資料（供「訂單來源」Tab 顯示）
+    /// 優先使用 _sourceScheduleItems（新增模式）；否則從 materialIssueDetails 反向追溯（編輯模式）
+    /// </summary>
+    private async Task LoadOrderSourceAsync()
+    {
+        try
+        {
+            if (_sourceScheduleItems.Any())
+            {
+                // 新增模式：直接使用已載入的排程項目
+                orderSourceItems = _sourceScheduleItems
+                    .Where(i => i.SalesOrderDetail?.SalesOrder != null)
+                    .Select(i => new OrderSourceItem(
+                        i.SalesOrderDetail!.SalesOrder!.Code ?? "-",
+                        i.Product?.Code ?? "",
+                        i.Product?.Name ?? "-",
+                        i.ScheduledQuantity))
+                    .ToList();
+                return;
+            }
+
+            // 編輯模式：從 materialIssueDetails → ProductionScheduleDetail → ProductionScheduleItem
+            var sdIds = materialIssueDetails
+                .Where(d => d.ProductionScheduleDetailId.HasValue)
+                .Select(d => d.ProductionScheduleDetailId!.Value)
+                .Distinct().ToList();
+
+            if (!sdIds.Any())
+            {
+                orderSourceItems = new List<OrderSourceItem>();
+                return;
+            }
+
+            var itemIds = new HashSet<int>();
+            foreach (var sdId in sdIds)
+            {
+                var sd = await ProductionScheduleDetailService.GetByIdAsync(sdId);
+                if (sd != null) itemIds.Add(sd.ProductionScheduleItemId);
+            }
+
+            var rows = new List<OrderSourceItem>();
+            foreach (var itemId in itemIds)
+            {
+                var item = await ProductionScheduleItemService.GetByIdAsync(itemId);
+                if (item == null) continue;
+                rows.Add(new OrderSourceItem(
+                    item.SalesOrderDetail?.SalesOrder?.Code ?? "-",
+                    item.Product?.Code ?? "",
+                    item.Product?.Name ?? "-",
+                    item.ScheduledQuantity));
+            }
+            orderSourceItems = rows;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadOrderSourceAsync), GetType(),
+                additionalData: "載入訂單來源資料失敗");
         }
     }
 
@@ -283,6 +410,60 @@
         }
     }
 
+    // ===== Tab 內容 RenderFragment =====
+
+    private RenderFragment CreateDetailExtraContent() => __builder =>
+    {
+        if (editModalComponent?.Entity != null)
+        {
+            <MaterialIssueTable @ref="detailManagerComponent"
+                                Details="@materialIssueDetails"
+                                DetailsChanged="@HandleDetailsChanged"
+                                IsReadOnly="false" />
+        }
+    };
+
+    private RenderFragment CreateOrderSourceTabContent() => __builder =>
+    {
+        <div class="p-3">
+            @if (orderSourceItems.Any())
+            {
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>訂單編號</th>
+                            <th>商品</th>
+                            <th class="text-end">排程數量</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in orderSourceItems)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@row.SalesOrderCode</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(row.ProductCode))
+                                    {
+                                        <span class="text-primary me-1">[@row.ProductCode]</span>
+                                    }
+                                    @row.ProductName
+                                </td>
+                                <td class="text-end">@row.ScheduledQuantity.ToString("G")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                    <span>無訂單來源資料</span>
+                </div>
+            }
+        </div>
+    };
+
     private async Task InitializeFormFieldsAsync()
     {
         try
@@ -331,7 +512,7 @@
                 FormFieldConfigurationHelper.CreateRemarksField<MaterialIssue>()
             };
 
-            formSections = FormSectionHelper<MaterialIssue>.Create()
+            var layout = FormSectionHelper<MaterialIssue>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     mi => mi.Code,
                     mi => mi.IssueDate,
@@ -339,7 +520,18 @@
                     mi => mi.DepartmentId)
                 .AddToSection(FormSectionNames.AdditionalData,
                     mi => mi.Remarks)
-                .Build();
+                .GroupIntoTab("基本資料", "bi-info-circle",
+                    FormSectionNames.BasicInfo, FormSectionNames.AdditionalData)
+                .GroupIntoCustomTab("訂單來源", "bi-receipt", CreateOrderSourceTabContent(), "OrderSourceTab")
+                .BuildAll();
+
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+
+            // 將領料明細表格附加在「基本資料」Tab 的表單欄位下方
+            var basicTab = tabDefinitions?.FirstOrDefault(t => t.Label == "基本資料");
+            if (basicTab != null)
+                basicTab.ExtraContent = CreateDetailExtraContent();
         }
         catch (Exception ex)
         {
@@ -349,37 +541,6 @@
             formSections = new Dictionary<string, string>();
         }
     }
-
-    // ===== 自訂模組配置 =====
-
-    private List<GenericEditModalComponent<MaterialIssue, IMaterialIssueService>.CustomModule> GetCustomModules()
-    {
-        if (editModalComponent == null)
-        {
-            return new List<GenericEditModalComponent<MaterialIssue, IMaterialIssueService>.CustomModule>();
-        }
-
-        return new List<GenericEditModalComponent<MaterialIssue, IMaterialIssueService>.CustomModule>
-        {
-            new GenericEditModalComponent<MaterialIssue, IMaterialIssueService>.CustomModule
-            {
-                Order = 1,
-                IsVisible = true,
-                Content = CreateDetailManagerContent()
-            }
-        };
-    }
-
-    private RenderFragment CreateDetailManagerContent() => __builder =>
-    {
-        if (editModalComponent?.Entity != null)
-        {
-            <MaterialIssueTable @ref="detailManagerComponent"
-                                                Details="@materialIssueDetails"
-                                                DetailsChanged="@HandleDetailsChanged"
-                                                IsReadOnly="false" />
-        }
-    };
 
     private void HandleDetailsChanged(List<MaterialIssueDetail> details)
     {

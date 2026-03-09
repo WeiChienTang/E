@@ -1,5 +1,6 @@
 using ERPCore2.Models.Charts;
 using ERPCore2.Services.Customers;
+using ERPCore2.Services.Suppliers;
 
 namespace ERPCore2.Data.Charts;
 
@@ -24,7 +25,7 @@ public static class ChartRegistry
     private static void Initialize()
     {
         CustomerChartDefinitions.Register(_definitions);
-        // VendorChartDefinitions.Register(_definitions);    // 未來廠商圖表
+        SupplierChartDefinitions.Register(_definitions);
         // InventoryChartDefinitions.Register(_definitions); // 未來庫存圖表
     }
 

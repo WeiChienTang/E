@@ -1,0 +1,467 @@
+@page "/payroll"
+@inject IPayrollPeriodService PeriodService
+@inject IPayrollCalculationService CalculationService
+@inject IEmployeeService EmployeeService
+@inject INavigationPermissionService NavigationPermissionService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@rendermode InteractiveServer
+
+<PagePermissionCheck RequiredPermission="@PermissionRegistry.Payroll.Read"
+                     RequiredModule="Payroll">
+
+    <div class="container-fluid px-3 py-2">
+
+        <!-- ===== 頁首 ===== -->
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div>
+                <h4 class="mb-0 fw-bold">@L["Page.PayrollTitle"]</h4>
+                <small class="text-muted">@L["Page.PayrollSubtitle"]</small>
+            </div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                @if (canCalculate)
+                {
+                    <button class="btn btn-primary btn-sm" @onclick="CalculateAllAsync" disabled="@(isCalculating || selectedPeriod?.PeriodStatus == PayrollPeriodStatus.Closed)">
+                        @if (isCalculating)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-calculator-fill me-1"></i>
+                        }
+                        @L["Payroll.CalculateAll"]
+                    </button>
+                }
+                <a href="/payroll/periods" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-calendar3 me-1"></i>@L["Nav.PayrollPeriods"]
+                </a>
+            </div>
+        </div>
+
+        <!-- ===== 週期選擇器 ===== -->
+        <div class="card mb-3">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <label class="fw-semibold mb-0 me-1">@L["Payroll.SelectPeriod"]：</label>
+                    @if (periods.Any())
+                    {
+                        <select class="form-select form-select-sm w-auto" @onchange="OnPeriodChanged">
+                            @foreach (var p in periods)
+                            {
+                                <option value="@p.Id" selected="@(p.Id == selectedPeriodId)">
+                                    @($"{p.Year} 年 {p.Month} 月") — @GetPeriodStatusLabel(p.PeriodStatus)
+                                </option>
+                            }
+                        </select>
+                        @if (selectedPeriod != null)
+                        {
+                            <span class="badge @GetPeriodStatusBadgeCss(selectedPeriod.PeriodStatus) ms-1">
+                                @GetPeriodStatusLabel(selectedPeriod.PeriodStatus)
+                            </span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted">@L["Payroll.NoPeriods"]</span>
+                        <a href="/payroll/periods" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus-circle me-1"></i>@L["Payroll.OpenPeriod"]
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 統計卡片 ===== -->
+        @if (selectedPeriod != null && records.Any())
+        {
+            <div class="row mb-3 g-2">
+                <div class="col-6 col-md-3">
+                    <div class="card text-center border-0 shadow-sm">
+                        <div class="card-body py-2">
+                            <div class="small text-muted">@L["Payroll.StatTotal"]</div>
+                            <div class="fs-5 fw-bold">@records.Count</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card text-center border-0 shadow-sm">
+                        <div class="card-body py-2">
+                            <div class="small text-muted">@L["Payroll.StatGross"]</div>
+                            <div class="fs-5 fw-bold">@(canReadAmount ? records.Sum(r => r.GrossIncome).ToString("N0") : "***")</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card text-center border-0 shadow-sm">
+                        <div class="card-body py-2">
+                            <div class="small text-muted">@L["Payroll.StatNet"]</div>
+                            <div class="fs-5 fw-bold text-success">@(canReadAmount ? records.Sum(r => r.NetPay).ToString("N0") : "***")</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card text-center border-0 shadow-sm">
+                        <div class="card-body py-2">
+                            <div class="small text-muted">@L["Payroll.StatConfirmed"]</div>
+                            <div class="fs-5 fw-bold text-primary">@records.Count(r => r.RecordStatus == PayrollRecordStatus.Confirmed)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- ===== 薪資單列表 ===== -->
+        @if (selectedPeriod != null)
+        {
+            <div class="card">
+                <div class="card-header section-header-primary">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-people-fill me-2"></i>
+                        @($"{selectedPeriod.Year} 年 {selectedPeriod.Month} 月") @L["Payroll.RecordList"]
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (isLoading)
+                    {
+                        <div class="text-center p-4">
+                            <span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]
+                        </div>
+                    }
+                    else if (!employees.Any())
+                    {
+                        <div class="text-center p-4 text-muted">@L["Message.NoEmployees"]</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>@L["Field.Employee"]</th>
+                                        <th>@L["Field.Department"]</th>
+                                        <th class="text-end">@L["Payroll.AttendanceDays"]</th>
+                                        @if (canReadAmount)
+                                        {
+                                            <th class="text-end">@L["Payroll.GrossIncome"]</th>
+                                            <th class="text-end">@L["Payroll.TotalDeduction"]</th>
+                                            <th class="text-end">@L["Payroll.NetPay"]</th>
+                                        }
+                                        <th class="text-center">@L["Field.PeriodStatus"]</th>
+                                        <th class="text-center" style="width:200px">@L["Label.Actions"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var emp in employees)
+                                    {
+                                        var record = records.FirstOrDefault(r => r.EmployeeId == emp.Id);
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold">@emp.Name</div>
+                                                <small class="text-muted">@emp.Code</small>
+                                            </td>
+                                            <td><small>@(emp.Department?.Name ?? "—")</small></td>
+                                            <td class="text-end">
+                                                @if (record != null)
+                                                {
+                                                    <span>@record.ActualWorkDays / @record.ScheduledWorkDays</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">—</span>
+                                                }
+                                            </td>
+                                            @if (canReadAmount)
+                                            {
+                                                <td class="text-end">@(record != null ? record.GrossIncome.ToString("N0") : "—")</td>
+                                                <td class="text-end text-danger">@(record != null ? record.TotalDeduction.ToString("N0") : "—")</td>
+                                                <td class="text-end fw-bold text-success">@(record != null ? record.NetPay.ToString("N0") : "—")</td>
+                                            }
+                                            <td class="text-center">
+                                                @if (record == null)
+                                                {
+                                                    <span class="badge bg-secondary">@L["Payroll.NotCalculated"]</span>
+                                                }
+                                                else if (record.RecordStatus == PayrollRecordStatus.Draft)
+                                                {
+                                                    <span class="badge bg-warning text-dark">@L["Payroll.RecordDraft"]</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">@L["Payroll.RecordConfirmed"]</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                                                    @if (canCalculate && selectedPeriod.PeriodStatus != PayrollPeriodStatus.Closed)
+                                                    {
+                                                        <button class="btn btn-outline-primary btn-sm"
+                                                                @onclick="() => CalculateOneAsync(emp.Id)"
+                                                                disabled="@(calculatingEmployeeId == emp.Id || record?.RecordStatus == PayrollRecordStatus.Confirmed)">
+                                                            @if (calculatingEmployeeId == emp.Id)
+                                                            {
+                                                                <span class="spinner-border spinner-border-sm"></span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="bi bi-arrow-repeat"></i>
+                                                            }
+                                                            <span class="d-none d-lg-inline ms-1">@L["Payroll.CalculateEmployee"]</span>
+                                                        </button>
+                                                    }
+                                                    @if (canConfirm && record != null && selectedPeriod.PeriodStatus != PayrollPeriodStatus.Closed)
+                                                    {
+                                                        @if (record.RecordStatus == PayrollRecordStatus.Draft)
+                                                        {
+                                                            <button class="btn btn-outline-success btn-sm"
+                                                                    @onclick="() => ConfirmRecordAsync(record.Id)">
+                                                                <i class="bi bi-check-circle"></i>
+                                                                <span class="d-none d-lg-inline ms-1">@L["Payroll.ConfirmRecord"]</span>
+                                                            </button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button class="btn btn-outline-secondary btn-sm"
+                                                                    @onclick="() => UnconfirmRecordAsync(record.Id)">
+                                                                <i class="bi bi-x-circle"></i>
+                                                                <span class="d-none d-lg-inline ms-1">@L["Payroll.UnconfirmRecord"]</span>
+                                                            </button>
+                                                        }
+                                                    }
+                                                    @if (record != null && canViewPayslip)
+                                                    {
+                                                        <button class="btn btn-outline-info btn-sm"
+                                                                @onclick="() => ShowPayslip(record.Id)">
+                                                            <i class="bi bi-file-earmark-person"></i>
+                                                            <span class="d-none d-lg-inline ms-1">@L["Payroll.ViewPayslip"]</span>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+</PagePermissionCheck>
+
+<!-- ===== 薪資單 Modal ===== -->
+@if (showPayslip && payslipRecordId.HasValue)
+{
+    <PayslipModalComponent RecordId="@payslipRecordId.Value"
+                           IsVisible="@showPayslip"
+                           IsVisibleChanged="@((v) => showPayslip = v)" />
+}
+
+@code {
+    // ── 資料 ───────────────────────────────────────────────────
+    private List<PayrollPeriod> periods = new();
+    private PayrollPeriod? selectedPeriod;
+    private int? selectedPeriodId;
+    private List<PayrollRecord> records = new();
+    private List<Employee> employees = new();
+
+    // ── 狀態 ───────────────────────────────────────────────────
+    private bool isLoading = false;
+    private bool isCalculating = false;
+    private int? calculatingEmployeeId;
+
+    // ── 權限 ───────────────────────────────────────────────────
+    private bool canCalculate = false;
+    private bool canConfirm = false;
+    private bool canReadAmount = false;
+    private bool canViewPayslip = false;
+
+    // ── 薪資單 Modal ────────────────────────────────────────────
+    private bool showPayslip = false;
+    private int? payslipRecordId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 載入權限
+            canCalculate = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Calculate);
+            canConfirm = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Confirm);
+            canReadAmount = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.ReadAmount);
+            canViewPayslip = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Payslip);
+
+            // 載入週期清單
+            periods = await PeriodService.GetAllAsync();
+
+            // 預設選擇最近的 Draft 或 Processing 週期
+            selectedPeriod = periods.FirstOrDefault(p => p.PeriodStatus != PayrollPeriodStatus.Closed)
+                          ?? periods.FirstOrDefault();
+            selectedPeriodId = selectedPeriod?.Id;
+
+            if (selectedPeriod != null)
+                await LoadPeriodDataAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入薪資計算頁面失敗");
+        }
+    }
+
+    private async Task OnPeriodChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int id))
+        {
+            selectedPeriodId = id;
+            selectedPeriod = periods.FirstOrDefault(p => p.Id == id);
+            await LoadPeriodDataAsync();
+        }
+    }
+
+    private async Task LoadPeriodDataAsync()
+    {
+        if (selectedPeriod == null) return;
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 載入在職員工（含部門）
+            var empResult = await EmployeeService.GetActiveEmployeesAsync();
+            employees = empResult.IsSuccess ? (empResult.Data ?? new()) : new();
+
+            // 載入本期薪資單
+            records = await CalculationService.GetByPeriodAsync(selectedPeriod.Id);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPeriodDataAsync), GetType());
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CalculateAllAsync()
+    {
+        if (selectedPeriod == null) return;
+        try
+        {
+            isCalculating = true;
+            var result = await CalculationService.CalculateAllAsync(selectedPeriod.Id);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("全員試算完成");
+                await LoadPeriodDataAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "試算失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CalculateAllAsync), GetType());
+        }
+        finally
+        {
+            isCalculating = false;
+        }
+    }
+
+    private async Task CalculateOneAsync(int employeeId)
+    {
+        if (selectedPeriod == null) return;
+        try
+        {
+            calculatingEmployeeId = employeeId;
+            var result = await CalculationService.CalculateEmployeeAsync(employeeId, selectedPeriod.Id);
+            if (result.IsSuccess)
+            {
+                // 更新清單中的記錄
+                var updated = result.Data!;
+                var idx = records.FindIndex(r => r.EmployeeId == employeeId);
+                if (idx >= 0) records[idx] = updated;
+                else records.Add(updated);
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "試算失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CalculateOneAsync), GetType());
+        }
+        finally
+        {
+            calculatingEmployeeId = null;
+        }
+    }
+
+    private async Task ConfirmRecordAsync(int recordId)
+    {
+        try
+        {
+            var result = await CalculationService.ConfirmRecordAsync(recordId);
+            if (result.IsSuccess)
+            {
+                var record = records.FirstOrDefault(r => r.Id == recordId);
+                if (record != null) record.RecordStatus = PayrollRecordStatus.Confirmed;
+            }
+            else
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "確認失敗");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmRecordAsync), GetType());
+        }
+    }
+
+    private async Task UnconfirmRecordAsync(int recordId)
+    {
+        try
+        {
+            var result = await CalculationService.UnconfirmRecordAsync(recordId);
+            if (result.IsSuccess)
+            {
+                var record = records.FirstOrDefault(r => r.Id == recordId);
+                if (record != null) record.RecordStatus = PayrollRecordStatus.Draft;
+            }
+            else
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "取消確認失敗");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(UnconfirmRecordAsync), GetType());
+        }
+    }
+
+    private void ShowPayslip(int recordId)
+    {
+        payslipRecordId = recordId;
+        showPayslip = true;
+    }
+
+    // ── 輔助方法 ─────────────────────────────────────────────────
+    private string GetPeriodStatusLabel(PayrollPeriodStatus status) => status switch
+    {
+        PayrollPeriodStatus.Draft => L["Payroll.PeriodDraft"],
+        PayrollPeriodStatus.Processing => L["Payroll.PeriodProcessing"],
+        PayrollPeriodStatus.Closed => L["Payroll.PeriodClosed"],
+        _ => status.ToString()
+    };
+
+    private string GetPeriodStatusBadgeCss(PayrollPeriodStatus status) => status switch
+    {
+        PayrollPeriodStatus.Draft => "bg-secondary",
+        PayrollPeriodStatus.Processing => "bg-warning text-dark",
+        PayrollPeriodStatus.Closed => "bg-success",
+        _ => "bg-secondary"
+    };
+}

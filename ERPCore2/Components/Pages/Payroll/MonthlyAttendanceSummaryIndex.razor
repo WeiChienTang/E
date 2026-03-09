@@ -1,0 +1,196 @@
+@page "/payroll/attendance"
+@inject IMonthlyAttendanceSummaryService AttendanceService
+@inject INotificationService NotificationService
+@inject INavigationPermissionService NavigationPermissionService
+@inject IStringLocalizer<SharedResource> L
+@rendermode InteractiveServer
+
+<PageTitle>@L["Page.AttendanceSummaryTitle"]</PageTitle>
+
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h4 class="mb-0">@L["Page.AttendanceSummaryTitle"]</h4>
+            <small class="text-muted">@L["Page.AttendanceSummarySubtitle"]</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary" @onclick="BatchInitializeAsync" disabled="@isInitializing">
+                @if (isInitializing) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                <i class="bi bi-people me-1"></i>@L["Attendance.BatchInit"]
+            </button>
+            <button class="btn btn-primary" @onclick="ShowAddForEmployee">
+                <i class="bi bi-plus-lg me-1"></i>@L["Button.Add"]
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-3 d-flex align-items-center gap-3 flex-wrap">
+        <div class="d-flex align-items-center gap-2">
+            <label class="form-label mb-0 fw-semibold">@L["Field.Year"]：</label>
+            <input type="number" class="form-control form-control-sm" style="width:90px"
+                   @bind="inputYear" @bind:event="oninput" />
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label class="form-label mb-0 fw-semibold">@L["Field.Month"]：</label>
+            <select class="form-select form-select-sm w-auto" @bind="selectedMonth" @bind:after="ReloadAsync">
+                @for (int m = 1; m <= 12; m++)
+                {
+                    var month = m;
+                    <option value="@month">@month @L["Label.Month"]</option>
+                }
+            </select>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" @onclick="ReloadAsync">
+            <i class="bi bi-search me-1"></i>@L["Button.Search"]
+        </button>
+        <span class="text-muted small">@L["Attendance.TotalRecords"]：@records.Count</span>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]</div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>@L["Field.Employee"]</th>
+                            <th class="text-center">@L["Field.ScheduledWorkDays"]</th>
+                            <th class="text-center">@L["Field.ActualWorkDays"]</th>
+                            <th class="text-center">@L["Field.AbsentDays"]</th>
+                            <th class="text-center">@L["Field.SickLeaveDays"]</th>
+                            <th class="text-center">@L["Attendance.OvertimeTotal"]</th>
+                            <th class="text-center">@L["Field.Status"]</th>
+                            <th class="text-center" style="width:100px">@L["Label.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in records)
+                        {
+                            decimal totalOt = r.OvertimeHours1 + r.OvertimeHours2 + r.HolidayOvertimeHours + r.NationalHolidayHours;
+                            <tr>
+                                <td>@r.Employee?.Name</td>
+                                <td class="text-center">@r.ScheduledWorkDays</td>
+                                <td class="text-center">@r.ActualWorkDays</td>
+                                <td class="text-center @(r.AbsentDays > 0 ? "text-danger" : "")">@r.AbsentDays</td>
+                                <td class="text-center @(r.SickLeaveDays > 0 ? "text-warning" : "")">@r.SickLeaveDays</td>
+                                <td class="text-center">@(totalOt > 0 ? totalOt.ToString("N1") : "—")</td>
+                                <td class="text-center">
+                                    @if (r.IsLocked)
+                                    {
+                                        <span class="badge bg-warning text-dark">@L["Label.Locked"]</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">@L["Label.Editable"]</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowEdit(r)" title="@L["Button.Edit"]">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    @if (!r.IsLocked)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDeleteAsync(r)" title="@L["Button.Delete"]">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        @if (!records.Any())
+                        {
+                            <tr><td colspan="8" class="text-center text-muted py-3">@L["Message.NoData"]</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<MonthlyAttendanceSummaryEditModalComponent IsVisible="@showModal"
+                                            IsVisibleChanged="@((bool v) => showModal = v)"
+                                            EditingItem="@editingItem"
+                                            DefaultYear="@selectedYear"
+                                            DefaultMonth="@selectedMonth"
+                                            DefaultEmployeeId="0"
+                                            OnSaved="@ReloadAsync" />
+
+@code {
+    private List<MonthlyAttendanceSummary> records = new();
+    private bool isLoading = true;
+    private bool isInitializing = false;
+    private bool showModal = false;
+    private MonthlyAttendanceSummary? editingItem;
+
+    private int selectedYear;
+    private int selectedMonth;
+    private int inputYear;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hasAccess = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Attendance);
+        if (!hasAccess) return;
+
+        // 預設為本月（民國年）
+        var today = DateTime.Today;
+        selectedYear = today.Year - 1911;
+        selectedMonth = today.Month;
+        inputYear = selectedYear;
+
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        // 套用手動輸入的年份
+        if (inputYear > 100 && inputYear < 200)
+            selectedYear = inputYear;
+
+        isLoading = true;
+        StateHasChanged();
+        records = await AttendanceService.GetByPeriodAsync(selectedYear, selectedMonth);
+        isLoading = false;
+    }
+
+    private void ShowAddForEmployee() { editingItem = null; showModal = true; }
+    private void ShowEdit(MonthlyAttendanceSummary item) { editingItem = item; showModal = true; }
+
+    private async Task ConfirmDeleteAsync(MonthlyAttendanceSummary item)
+    {
+        var result = await AttendanceService.DeleteAsync(item.Id);
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync(L["Message.DeleteSuccess"].ToString());
+            await ReloadAsync();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.DeleteFailed"].ToString());
+        }
+    }
+
+    private async Task BatchInitializeAsync()
+    {
+        if (inputYear > 100 && inputYear < 200)
+            selectedYear = inputYear;
+
+        isInitializing = true;
+        var result = await AttendanceService.BatchInitializeAsync(selectedYear, selectedMonth);
+        isInitializing = false;
+
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync(result.ErrorMessage ?? L["Message.SaveSuccess"].ToString());
+            await ReloadAsync();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailed"].ToString());
+        }
+    }
+}

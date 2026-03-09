@@ -70,6 +70,7 @@ namespace ERPCore2.Data
             services.AddScoped<IEmployeeLicenseService, EmployeeLicenseService>();
             services.AddScoped<IEmployeeTrainingRecordService, EmployeeTrainingRecordService>();
             services.AddScoped<ERPCore2.Services.Customers.ICustomerChartService, ERPCore2.Services.Customers.CustomerChartService>();
+            services.AddScoped<ERPCore2.Services.Suppliers.ISupplierChartService, ERPCore2.Services.Suppliers.SupplierChartService>();
 
             services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 
@@ -320,6 +321,20 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.PersonalTools.IStickyNoteService, ERPCore2.Services.PersonalTools.StickyNoteService>();
             services.AddScoped<ERPCore2.Services.PersonalTools.ICalendarEventService, ERPCore2.Services.PersonalTools.CalendarEventService>();
             services.AddScoped<ERPCore2.Services.PersonalTools.IPersonalNotificationService, ERPCore2.Services.PersonalTools.PersonalNotificationService>();
+
+            // 薪資模組服務
+            services.AddScoped<ERPCore2.Services.Payroll.IPayrollItemService, ERPCore2.Services.Payroll.PayrollItemService>();
+            services.AddScoped<ERPCore2.Services.Payroll.IEmployeeSalaryService, ERPCore2.Services.Payroll.EmployeeSalaryService>();
+            services.AddScoped<ERPCore2.Services.Payroll.IEmployeeBankAccountService, ERPCore2.Services.Payroll.EmployeeBankAccountService>();
+            services.AddScoped<ERPCore2.Services.Payroll.IPayrollPeriodService, ERPCore2.Services.Payroll.PayrollPeriodService>();
+            services.AddScoped<ERPCore2.Services.Payroll.IPayrollCalculationService, ERPCore2.Services.Payroll.PayrollCalculationService>();
+            // 薪資費率表服務（Phase 2）
+            services.AddScoped<ERPCore2.Services.Payroll.IMinimumWageService, ERPCore2.Services.Payroll.MinimumWageService>();
+            services.AddScoped<ERPCore2.Services.Payroll.IInsuranceRateService, ERPCore2.Services.Payroll.InsuranceRateService>();
+            services.AddScoped<ERPCore2.Services.Payroll.ILaborInsuranceGradeService, ERPCore2.Services.Payroll.LaborInsuranceGradeService>();
+            services.AddScoped<ERPCore2.Services.Payroll.IHealthInsuranceGradeService, ERPCore2.Services.Payroll.HealthInsuranceGradeService>();
+            services.AddScoped<ERPCore2.Services.Payroll.IWithholdingTaxTableService, ERPCore2.Services.Payroll.WithholdingTaxTableService>();
+            services.AddScoped<ERPCore2.Services.Payroll.IMonthlyAttendanceSummaryService, ERPCore2.Services.Payroll.MonthlyAttendanceSummaryService>();
         }
 
         /// <summary>

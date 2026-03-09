@@ -110,6 +110,15 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "每頁顯示筆數")]
         public int DefaultPageSize { get; set; } = 20;
 
+        // ===== 操作偏好 =====
+
+        /// <summary>
+        /// 離開未儲存表單時是否顯示確認詢問。
+        /// true（預設）= 詢問；false = 直接離開，不顯示確認對話框。
+        /// </summary>
+        [Display(Name = "離開未儲存表單時詢問")]
+        public bool ShowUnsavedChangesWarning { get; set; } = true;
+
         // 導航屬性
         public Employee? Employee { get; set; }
     }
