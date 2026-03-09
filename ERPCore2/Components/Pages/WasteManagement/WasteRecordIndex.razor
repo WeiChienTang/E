@@ -16,7 +16,7 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadWasteRecordsAsync"
                           FilterApplier="@ApplyWasteRecordFilters"
-                          GetEntityDisplayName="@(wr => wr.Code ?? $"廢料記錄#{wr.Id}")"
+                          GetEntityDisplayName="@(wr => wr.Code ?? $"磅秤紀錄#{wr.Id}")"
                           RequiredPermission="@PermissionRegistry.WasteRecord.Read"
                           RequiredModule="WasteManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
@@ -65,16 +65,16 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化廢料記錄頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化廢料記錄頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化磅秤紀錄頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化磅秤紀錄頁面失敗");
         }
     }
 
     private async Task InitializeBreadcrumbsAsync() =>
-        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("廢料管理", "廢料記錄", "#", NotificationService, GetType());
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("磅秤管理", "磅秤紀錄", "#", NotificationService, GetType());
 
     private Task<List<WasteRecord>> LoadWasteRecordsAsync() =>
-        DataLoaderHelper.LoadAsync(() => WasteRecordService.GetAllAsync(), "廢料記錄", NotificationService, GetType());
+        DataLoaderHelper.LoadAsync(() => WasteRecordService.GetAllAsync(), "磅秤紀錄", NotificationService, GetType());
 
     private IQueryable<WasteRecord> ApplyWasteRecordFilters(SearchFilterModel searchModel, IQueryable<WasteRecord> query) =>
         fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWasteRecordFilters), GetType());

@@ -1,4 +1,4 @@
-﻿@* 可重用的廢料類型編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的磅秤類型編輯組件 - 可在任何頁面中嵌入 *@
 @inject IWasteTypeService WasteTypeService
 @inject IProductService ProductService
 @inject INotificationService NotificationService
@@ -75,14 +75,14 @@
         }
         catch (Exception)
         {
-            await NotificationService.ShowErrorAsync("載入廢料類型編輯相關資料時發生錯誤");
+            await NotificationService.ShowErrorAsync("載入磅秤類型編輯相關資料時發生錯誤");
             availableProducts = new List<Product>();
         }
     }
 
     private Task<WasteType?> LoadWasteTypeData()
         => EditDataLoaderHelper.LoadOrCreateAsync<WasteType, IWasteTypeService>(
-            WasteTypeId, WasteTypeService, NotificationService, "廢料類型", "WT", PrefilledValues,
+            WasteTypeId, WasteTypeService, NotificationService, "磅秤類型", "WT", PrefilledValues,
             wt => wt.Name = string.Empty);
 
     private void InitializeFormFields()
@@ -97,7 +97,7 @@
                 Placeholder = L["Placeholder.PleaseInput", L["Field.WasteTypeCode"]],
                 IsRequired = true,
                 MaxLength = 50,
-                HelpText = "唯一識別此廢料類型的編號，最多50個字元"
+                HelpText = "唯一識別此磅秤類型的編號，最多50個字元"
             },
             new()
             {
@@ -107,7 +107,7 @@
                 Placeholder = L["Placeholder.PleaseInput", L["Field.WasteTypeName"]],
                 IsRequired = true,
                 MaxLength = 100,
-                HelpText = "廢料類型的顯示名稱，最多100個字元"
+                HelpText = "磅秤類型的顯示名稱，最多100個字元"
             },
             // 單位有Unit主表，這裡不需要使用單位欄位
             /* new()
@@ -118,7 +118,7 @@
                 Placeholder = "例如：公斤、公噸、桶",
                 IsRequired = false,
                 MaxLength = 20,
-                HelpText = "此廢料類型的計量單位"
+                HelpText = "此磅秤類型的計量單位"
             },*/
             new()
             {
@@ -128,7 +128,7 @@
                 Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.RelatedProduct"]],
                 IsRequired = false,
                 MinSearchLength = 0,
-                HelpText = "選填。選擇後，儲存廢料記錄時會自動將廢料數量入庫至此商品"
+                HelpText = "選填。選擇後，儲存磅秤紀錄時會自動將磅秤數量入庫至此商品"
             },
             new()
             {
@@ -138,7 +138,7 @@
                 Placeholder = L["Placeholder.PleaseInput", L["Field.Description"]],
                 IsRequired = false,
                 MaxLength = 200,
-                HelpText = "廢料類型的詳細說明，最多200個字元"
+                HelpText = "磅秤類型的詳細說明，最多200個字元"
             },
 
             FormFieldConfigurationHelper.CreateRemarksField<WasteType>()

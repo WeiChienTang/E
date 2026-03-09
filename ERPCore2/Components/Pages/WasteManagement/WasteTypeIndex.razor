@@ -65,16 +65,16 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化廢料類型頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化廢料類型頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化磅秤類型頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化磅秤類型頁面失敗");
         }
     }
 
     private async Task InitializeBreadcrumbsAsync() =>
-        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("廢料管理", "廢料類型維護", "#", NotificationService, GetType());
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("磅秤管理", "磅秤類型維護", "#", NotificationService, GetType());
 
     private Task<List<WasteType>> LoadWasteTypesAsync() =>
-        DataLoaderHelper.LoadAsync(() => WasteTypeService.GetAllAsync(), "廢料類型", NotificationService, GetType());
+        DataLoaderHelper.LoadAsync(() => WasteTypeService.GetAllAsync(), "磅秤類型", NotificationService, GetType());
 
     private IQueryable<WasteType> ApplyWasteTypeFilters(SearchFilterModel searchModel, IQueryable<WasteType> query) =>
         fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWasteTypeFilters), GetType());

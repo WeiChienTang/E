@@ -43,7 +43,7 @@ namespace ERPCore2.Services
                     .Include(sod => sod.SalesOrder)
                     .Include(sod => sod.Product)
                     .Include(sod => sod.Unit)
-                    .Where(sod => (sod.Product!.Name.Contains(searchTerm) ||
+                    .Where(sod => (sod.Product!.Name!.Contains(searchTerm) ||
                                   (sod.SalesOrder.Code != null && sod.SalesOrder.Code.Contains(searchTerm)) ||
                                   (!string.IsNullOrEmpty(sod.Remarks) && sod.Remarks.Contains(searchTerm))))
                     .OrderBy(sod => sod.SalesOrder.OrderDate)

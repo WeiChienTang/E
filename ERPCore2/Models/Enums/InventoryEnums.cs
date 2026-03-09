@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace ERPCore2.Models.Enums
 {
@@ -46,7 +46,7 @@ namespace ERPCore2.Models.Enums
         [Description("領料退回")]
         MaterialReturn = 13,
 
-        [Description("廢料收料")]
+        [Description("磅秤紀錄收料")]
         WasteReceiving = 14
     }
 

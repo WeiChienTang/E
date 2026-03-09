@@ -525,16 +525,16 @@
     <value>車両レポート</value>
   </data>
   <data name="Nav.WasteGroup" xml:space="preserve">
-    <value>廃材</value>
+    <value>計量管理</value>
   </data>
   <data name="Nav.WasteRecords" xml:space="preserve">
-    <value>廃材記録</value>
+    <value>計量記録</value>
   </data>
   <data name="Nav.WasteTypes" xml:space="preserve">
-    <value>廃材種別</value>
+    <value>計量タイプ</value>
   </data>
   <data name="Nav.WasteReportIndex" xml:space="preserve">
-    <value>廃材レポート</value>
+    <value>計量レポート</value>
   </data>
   <data name="Nav.FinanceGroup" xml:space="preserve">
     <value>財務</value>
@@ -626,7 +626,7 @@
   <data name="ReportCategory.Financial" xml:space="preserve"><value>財務レポート</value></data>
   <data name="ReportCategory.HR" xml:space="preserve"><value>人事レポート</value></data>
   <data name="ReportCategory.Vehicle" xml:space="preserve"><value>車両レポート</value></data>
-  <data name="ReportCategory.Waste" xml:space="preserve"><value>廃棄物レポート</value></data>
+  <data name="ReportCategory.Waste" xml:space="preserve"><value>計量レポート</value></data>
   <data name="ReportCategory.Accounting" xml:space="preserve"><value>会計レポート</value></data>
   <data name="Report.NoReports" xml:space="preserve"><value>利用可能なレポートはありません</value></data>
   <data name="Report.SearchPlaceholder" xml:space="preserve"><value>レポート名を検索...</value></data>
@@ -665,7 +665,7 @@
   <data name="Report.VehicleMaintenance" xml:space="preserve"><value>車両メンテナンス表</value></data>
   <data name="Report.EmployeeRoster" xml:space="preserve"><value>従業員一覧表</value></data>
   <data name="Report.EmployeeDetail" xml:space="preserve"><value>従業員詳細</value></data>
-  <data name="Report.WasteRecord" xml:space="preserve"><value>廃棄物記録表</value></data>
+  <data name="Report.WasteRecord" xml:space="preserve"><value>計量記録表</value></data>
   <data name="Report.AccountsReceivableSetoff" xml:space="preserve"><value>売掛決済伝票</value></data>
   <data name="Report.AccountsPayableSetoff" xml:space="preserve"><value>買掛決済伝票</value></data>
   <data name="Report.AccountItemList" xml:space="preserve"><value>勘定科目一覧</value></data>
@@ -736,8 +736,8 @@
   <data name="Entity.Vehicle" xml:space="preserve"><value>車両</value></data>
   <data name="Entity.VehicleType" xml:space="preserve"><value>車種</value></data>
   <data name="Entity.VehicleMaintenance" xml:space="preserve"><value>メンテナンス記録</value></data>
-  <data name="Entity.WasteRecord" xml:space="preserve"><value>廃材記録</value></data>
-  <data name="Entity.WasteType" xml:space="preserve"><value>廃材種別</value></data>
+  <data name="Entity.WasteRecord" xml:space="preserve"><value>計量記録</value></data>
+  <data name="Entity.WasteType" xml:space="preserve"><value>計量タイプ</value></data>
   <data name="Entity.Company" xml:space="preserve"><value>会社</value></data>
   <data name="Entity.PaperSetting" xml:space="preserve"><value>用紙設定</value></data>
   <data name="Entity.PrinterConfiguration" xml:space="preserve"><value>プリンター設定</value></data>
@@ -1682,7 +1682,7 @@
   <data name="Field.Supplier" xml:space="preserve"><value>仕入先</value></data>
   <data name="Field.Vehicle" xml:space="preserve"><value>車両</value></data>
   <data name="Field.VehicleType" xml:space="preserve"><value>車種</value></data>
-  <data name="Field.WasteType" xml:space="preserve"><value>廃棄物種類</value></data>
+  <data name="Field.WasteType" xml:space="preserve"><value>計量タイプ</value></data>
   <data name="Field.ReturnReason" xml:space="preserve"><value>返品理由</value></data>
 
   <!-- ===== TextMessageTemplate keys ===== -->
@@ -1760,7 +1760,7 @@
   <data name="Report.VehicleMaintenanceDesc" xml:space="preserve"><value>メンテナンス種別、日付、走行距離、費用、整備工場等の明細を含む車両整備記録を印刷</value></data>
   <data name="Report.EmployeeRosterDesc" xml:space="preserve"><value>社員番号、氏名、部署、役職、入社日、在籍状況等を含む社員基本情報リストを印刷</value></data>
   <data name="Report.EmployeeDetailDesc" xml:space="preserve"><value>連絡先情報、緊急連絡先、在籍情報等を含む社員の完全な詳細情報を1ブロック毎に印刷</value></data>
-  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>廃材種別別に車番、顧客、入庫倉庫、重量、費用明細を含む廃材記録リストを印刷</value></data>
+  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>計量タイプ別に車番、顧客、入庫倉庫、重量、費用明細を含む計量記録リストを印刷</value></data>
   <data name="Report.AccountsReceivableSetoffDesc" xml:space="preserve"><value>顧客情報、相殺明細、入金記録を含む売掛金相殺伝票を印刷</value></data>
   <data name="Report.AccountsPayableSetoffDesc" xml:space="preserve"><value>仕入先情報、相殺明細、支払記録を含む買掛金相殺伝票を印刷</value></data>
   <data name="Report.AccountItemListDesc" xml:space="preserve"><value>勘定科目大類別にグループ化し、勘定コード、名称、階層、借方/貸方方向等を表示する勘定科目表を印刷</value></data>
@@ -3067,10 +3067,10 @@
   <data name="Page.WarehouseSubtitle" xml:space="preserve"><value>すべての倉庫データと基本情報を管理する</value></data>
   <data name="Page.WarehouseLocationTitle" xml:space="preserve"><value>倉庫内位置管理</value></data>
   <data name="Page.WarehouseLocationSubtitle" xml:space="preserve"><value>すべての倉庫内位置データと基本情報を管理する</value></data>
-  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>廃棄物記録</value></data>
-  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>廃棄物受入記録を管理する</value></data>
-  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>廃棄物タイプ管理</value></data>
-  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>廃棄物タイプ分類データを管理する</value></data>
+  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>計量記録</value></data>
+  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>計量受入記録を管理する</value></data>
+  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>計量タイプ管理</value></data>
+  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>計量タイプ分類データを管理する</value></data>
   <data name="AccountType.Asset" xml:space="preserve"><value>資産</value></data>
   <data name="AccountType.Liability" xml:space="preserve"><value>負債</value></data>
   <data name="AccountType.Equity" xml:space="preserve"><value>資本</value></data>

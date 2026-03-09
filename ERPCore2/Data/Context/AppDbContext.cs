@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Data.Entities.Payroll;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -1274,7 +1274,7 @@ namespace ERPCore2.Data.Context
                               .OnDelete(DeleteBehavior.Cascade);
                   });
 
-                  // 廢料管理相關
+                  // 磅秤管理相關
                   modelBuilder.Entity<WasteType>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
@@ -1333,7 +1333,7 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(wr => wr.VehicleId)
                               .OnDelete(DeleteBehavior.Restrict);
 
-                        // 廢料類型關聯
+                        // 磅秤類型關聯
                         entity.HasOne(wr => wr.WasteType)
                               .WithMany(wt => wt.WasteRecords)
                               .HasForeignKey(wr => wr.WasteTypeId)

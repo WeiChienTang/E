@@ -525,16 +525,16 @@
     <value>Mga Ulat ng Sasakyan</value>
   </data>
   <data name="Nav.WasteGroup" xml:space="preserve">
-    <value>Basura</value>
+    <value>Pamamahala ng Timbangan</value>
   </data>
   <data name="Nav.WasteRecords" xml:space="preserve">
-    <value>Mga Talaan ng Basura</value>
+    <value>Mga Rekord ng Timbangan</value>
   </data>
   <data name="Nav.WasteTypes" xml:space="preserve">
-    <value>Mga Uri ng Basura</value>
+    <value>Mga Uri ng Timbangan</value>
   </data>
   <data name="Nav.WasteReportIndex" xml:space="preserve">
-    <value>Mga Ulat ng Basura</value>
+    <value>Mga Ulat ng Timbangan</value>
   </data>
   <data name="Nav.FinanceGroup" xml:space="preserve">
     <value>Pananalapi</value>
@@ -626,7 +626,7 @@
   <data name="ReportCategory.Financial" xml:space="preserve"><value>Mga Ulat sa Pananalapi</value></data>
   <data name="ReportCategory.HR" xml:space="preserve"><value>Mga Ulat ng HR</value></data>
   <data name="ReportCategory.Vehicle" xml:space="preserve"><value>Mga Ulat ng Sasakyan</value></data>
-  <data name="ReportCategory.Waste" xml:space="preserve"><value>Mga Ulat ng Basura</value></data>
+  <data name="ReportCategory.Waste" xml:space="preserve"><value>Mga Ulat ng Timbangan</value></data>
   <data name="ReportCategory.Accounting" xml:space="preserve"><value>Mga Ulat sa Accounting</value></data>
   <data name="Report.NoReports" xml:space="preserve"><value>Walang available na ulat</value></data>
   <data name="Report.SearchPlaceholder" xml:space="preserve"><value>Hanapin ang pangalan ng ulat...</value></data>
@@ -665,7 +665,7 @@
   <data name="Report.VehicleMaintenance" xml:space="preserve"><value>Pagpapanatili ng Sasakyan</value></data>
   <data name="Report.EmployeeRoster" xml:space="preserve"><value>Listahan ng Empleyado</value></data>
   <data name="Report.EmployeeDetail" xml:space="preserve"><value>Detalye ng Empleyado</value></data>
-  <data name="Report.WasteRecord" xml:space="preserve"><value>Talaan ng Basura</value></data>
+  <data name="Report.WasteRecord" xml:space="preserve"><value>Talaan ng Timbangan</value></data>
   <data name="Report.AccountsReceivableSetoff" xml:space="preserve"><value>A/R Setoff</value></data>
   <data name="Report.AccountsPayableSetoff" xml:space="preserve"><value>A/P Setoff</value></data>
   <data name="Report.AccountItemList" xml:space="preserve"><value>Chart of Accounts</value></data>
@@ -736,8 +736,8 @@
   <data name="Entity.Vehicle" xml:space="preserve"><value>Sasakyan</value></data>
   <data name="Entity.VehicleType" xml:space="preserve"><value>Uri ng Sasakyan</value></data>
   <data name="Entity.VehicleMaintenance" xml:space="preserve"><value>Talaan ng Maintenance</value></data>
-  <data name="Entity.WasteRecord" xml:space="preserve"><value>Talaan ng Basura</value></data>
-  <data name="Entity.WasteType" xml:space="preserve"><value>Uri ng Basura</value></data>
+  <data name="Entity.WasteRecord" xml:space="preserve"><value>Rekord ng Timbangan</value></data>
+  <data name="Entity.WasteType" xml:space="preserve"><value>Uri ng Timbangan</value></data>
   <data name="Entity.Company" xml:space="preserve"><value>Kumpanya</value></data>
   <data name="Entity.PaperSetting" xml:space="preserve"><value>Paper Setting</value></data>
   <data name="Entity.PrinterConfiguration" xml:space="preserve"><value>Printer Configuration</value></data>
@@ -1682,7 +1682,7 @@
   <data name="Field.Supplier" xml:space="preserve"><value>Supplier</value></data>
   <data name="Field.Vehicle" xml:space="preserve"><value>Sasakyan</value></data>
   <data name="Field.VehicleType" xml:space="preserve"><value>Uri ng Sasakyan</value></data>
-  <data name="Field.WasteType" xml:space="preserve"><value>Uri ng Basura</value></data>
+  <data name="Field.WasteType" xml:space="preserve"><value>Uri ng Timbangan</value></data>
   <data name="Field.ReturnReason" xml:space="preserve"><value>Dahilan ng Pagbabalik</value></data>
 
   <!-- ===== TextMessageTemplate keys ===== -->
@@ -1760,7 +1760,7 @@
   <data name="Report.VehicleMaintenanceDesc" xml:space="preserve"><value>I-print ang mga rekord ng pagpapanatili ng sasakyan kasama ang uri ng pagpapanatili, petsa, kilometrahe, gastos, at detalye ng serbisyo</value></data>
   <data name="Report.EmployeeRosterDesc" xml:space="preserve"><value>I-print ang listahan ng pangunahing data ng empleyado kasama ang code, pangalan, departamento, posisyon, petsa ng pagkuha, at katayuan ng trabaho</value></data>
   <data name="Report.EmployeeDetailDesc" xml:space="preserve"><value>I-print ang kumpletong detalye ng empleyado kasama ang impormasyon sa pakikipag-ugnayan, emergency contacts, at impormasyon sa trabaho</value></data>
-  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>I-print ang listahan ng rekord ng basura na nakagrupo ayon sa uri ng basura, kasama ang plate number, customer, bodega, timbang, at mga detalye ng gastos</value></data>
+  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>I-print ang listahan ng rekord ng timbangan na nakagrupo ayon sa uri ng timbangan, kasama ang plate number, customer, bodega, timbang, at mga detalye ng gastos</value></data>
   <data name="Report.AccountsReceivableSetoffDesc" xml:space="preserve"><value>I-print ang dokumento ng setoff ng accounts receivable kasama ang impormasyon ng customer, mga detalye ng offset, at mga rekord ng bayad</value></data>
   <data name="Report.AccountsPayableSetoffDesc" xml:space="preserve"><value>I-print ang dokumento ng setoff ng accounts payable kasama ang impormasyon ng supplier, mga detalye ng offset, at mga rekord ng bayad</value></data>
   <data name="Report.AccountItemListDesc" xml:space="preserve"><value>I-print ang standard chart of accounts na nakagrupo ayon sa uri ng account, nagpapakita ng code, pangalan, antas, at direksyon ng debit/credit</value></data>
@@ -3067,10 +3067,10 @@
   <data name="Page.WarehouseSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng bodega at pangunahing impormasyon</value></data>
   <data name="Page.WarehouseLocationTitle" xml:space="preserve"><value>Pamamahala ng Lokasyon sa Loob ng Bodega</value></data>
   <data name="Page.WarehouseLocationSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng lokasyon sa loob ng bodega at pangunahing impormasyon</value></data>
-  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>Rekord ng Basura</value></data>
-  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>Pamahalaan ang mga rekord ng pagtanggap ng basura</value></data>
-  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>Pagpapanatili ng Uri ng Basura</value></data>
-  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>Pamahalaan ang data ng kategorya ng uri ng basura</value></data>
+  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>Rekord ng Timbangan</value></data>
+  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>Pamahalaan ang mga rekord ng pagtanggap ng timbangan</value></data>
+  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>Pagpapanatili ng Uri ng Timbangan</value></data>
+  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>Pamahalaan ang data ng kategorya ng uri ng timbangan</value></data>
   <data name="AccountType.Asset" xml:space="preserve"><value>Asset</value></data>
   <data name="AccountType.Liability" xml:space="preserve"><value>Liability</value></data>
   <data name="AccountType.Equity" xml:space="preserve"><value>Equity</value></data>

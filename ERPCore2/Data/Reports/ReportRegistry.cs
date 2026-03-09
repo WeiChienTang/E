@@ -1,4 +1,4 @@
-using ERPCore2.Models;
+﻿using ERPCore2.Models;
 using ERPCore2.Models.Reports;
 
 namespace ERPCore2.Data;
@@ -468,13 +468,13 @@ public static class ReportRegistry
                 IsEnabled = true
             },
 
-            // ==================== 廢料報表 ====================
+            // ==================== 磅秤紀錄報表 ====================
             new ReportDefinition
             {
                 Id = ReportIds.WasteRecord,
-                Name = "廢料記錄表",
+                Name = "磅秤紀錄表",
                 NameKey = "Report.WasteRecord",
-                Description = "列印廢料記錄清單，依廢料類型分組，含車牌號碼、客戶、入庫倉庫、重量及費用明細",
+                Description = "列印磅秤紀錄清單，依磅秤類型分組，含車牌號碼、客戶、入庫倉庫、重量及費用明細",
                 DescriptionKey = "Report.WasteRecordDesc",
                 IconClass = "bi bi-recycle",
                 Category = ReportCategory.Waste,
@@ -717,7 +717,7 @@ public static class ReportRegistry
     }
 
     /// <summary>
-    /// 取得廢料相關報表
+    /// 取得磅秤紀錄相關報表
     /// </summary>
     public static List<ReportDefinition> GetWasteReports()
     {

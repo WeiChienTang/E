@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 廢料類型服務實作
+    /// 磅秤類型服務實作
     /// </summary>
     public class WasteTypeService : GenericManagementService<WasteType>, IWasteTypeService
     {
@@ -88,22 +88,22 @@ namespace ERPCore2.Services
 
                 if (string.IsNullOrWhiteSpace(entity.Code))
                 {
-                    errors.Add("廢料類型編號為必填欄位");
+                    errors.Add("磅秤類型編號為必填欄位");
                 }
                 else
                 {
                     if (await IsWasteTypeCodeExistsAsync(entity.Code, entity.Id))
-                        errors.Add("廢料類型編號已存在");
+                        errors.Add("磅秤類型編號已存在");
                 }
 
                 if (string.IsNullOrWhiteSpace(entity.Name))
                 {
-                    errors.Add("廢料類型名稱為必填欄位");
+                    errors.Add("磅秤類型名稱為必填欄位");
                 }
                 else
                 {
                     if (await IsNameExistsAsync(entity.Name, entity.Id))
-                        errors.Add("廢料類型名稱已存在");
+                        errors.Add("磅秤類型名稱已存在");
                 }
 
                 return errors.Any()
@@ -124,14 +124,14 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var hasRecords = await context.WasteRecords.AnyAsync(wr => wr.WasteTypeId == entity.Id);
                 if (hasRecords)
-                    return ServiceResult.Failure("此廢料類型已有廢料記錄使用，無法刪除");
+                    return ServiceResult.Failure("此磅秤類型已有磅秤紀錄使用，無法刪除");
 
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { WasteTypeId = entity.Id });
-                return ServiceResult.Failure("檢查廢料類型刪除條件時發生錯誤");
+                return ServiceResult.Failure("檢查磅秤類型刪除條件時發生錯誤");
             }
         }
 

@@ -1,4 +1,4 @@
-using ERPCore2.Models.Enums;
+﻿using ERPCore2.Models.Enums;
 
 namespace ERPCore2.Models;
 
@@ -436,9 +436,9 @@ public static class PermissionRegistry
         new(InventoryReservation.Read,  "檢視庫存預留",     PermissionLevel.Normal, "檢視庫存預留與保留狀況",         "Nav.InventoryGroup"),
         new(StockTaking.Read,           "檢視盤點",         PermissionLevel.Normal, "檢視庫存盤點作業與結果",         "Nav.InventoryGroup"),
 
-        // ===== 一般權限：廢料 =====
-        new(WasteRecord.Read,   "檢視廢料記錄", PermissionLevel.Normal, "檢視廢料記錄基本資料與相關資訊", "Nav.WasteGroup"),
-        new(WasteType.Read,     "檢視廢料類型", PermissionLevel.Normal, "檢視廢料類型基本資料與相關資訊", "Nav.WasteGroup"),
+        // ===== 一般權限：磅秤紀錄 =====
+        new(WasteRecord.Read,   "檢視磅秤紀錄", PermissionLevel.Normal, "檢視磅秤紀錄基本資料與相關資訊", "Nav.WasteGroup"),
+        new(WasteType.Read,     "檢視磅秤類型", PermissionLevel.Normal, "檢視磅秤類型基本資料與相關資訊", "Nav.WasteGroup"),
 
         // ===== 一般權限：財務 =====
         new(SetoffDocument.Read,"檢視沖款單",   PermissionLevel.Normal, "檢視客戶應收帳款與交易紀錄",     "Nav.FinanceGroup"),

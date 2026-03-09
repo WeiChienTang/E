@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Reports;
+﻿namespace ERPCore2.Models.Reports;
 
 /// <summary>
 /// 報表分類設定 - 定義每個分類的顯示資訊
@@ -84,7 +84,7 @@ public class ReportCategoryConfig
             [ReportCategory.Waste] = new ReportCategoryConfig
             {
                 Category = ReportCategory.Waste,
-                Title = "廢料報表集",
+                Title = "磅秤紀錄報表集",
                 Icon = "bi-trash"
             },
             [ReportCategory.Accounting] = new ReportCategoryConfig

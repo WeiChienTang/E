@@ -808,46 +808,46 @@ public static class NavigationConfig
                 }
             },
 
-            // ==================== 廢料管理 ====================
+            // ==================== 磅秤管理 ====================
             new NavigationItem
             {
-                Name = "廢料",
+                Name = "磅秤紀錄",
                 NameKey = "Nav.WasteGroup",
-                Description = "廢料收料記錄與類型管理",
+                Description = "磅秤收料紀錄與類型管理",
                 Route = "#",
                 IconClass = "bi bi-recycle",
-                Category = "廢料管理",
+                Category = "磅秤管理",
                 IsParent = true,
                 MenuKey = "waste_management",
                 ModuleKey = "WasteManagement",
-                SearchKeywords = new List<string> { "廢料", "廢棄物", "廢料管理", "waste", "scrap", "废料", "废弃物", "廃材", "スクラップ", "廢料回收" },
+                SearchKeywords = new List<string> { "磅秤紀錄", "磅秤管理", "廢料", "廢棄物", "廢料管理", "waste", "scrap", "废料", "废弃物", "廃材", "スクラップ", "廢料回收" },
                 Children = new List<NavigationItem>
                 {
                     new NavigationItem
                     {
-                        Name = "廢料記錄",
+                        Name = "磅秤紀錄",
                         NameKey = "Nav.WasteRecords",
-                        Description = "管理廢料收料記錄",
+                        Description = "管理磅秤收料紀錄",
                         Route = "/waste-records",
                         IconClass = "bi bi-caret-right-fill",
-                        Category = "廢料管理",
+                        Category = "磅秤管理",
                         RequiredPermission = PermissionRegistry.WasteRecord.Read,
-                        SearchKeywords = new List<string> { "廢料記錄", "收料記錄", "廢料單", "waste record", "废料记录", "廃材記録", "收廢", "廢料收購" },
+                        SearchKeywords = new List<string> { "磅秤紀錄", "廢料記錄", "收料記錄", "waste record", "废料记录", "廃材記録", "收廢" },
                         QuickActionId = "NewWasteRecord",
-                        QuickActionName = "新增廢料記錄"
+                        QuickActionName = "新增磅秤紀錄"
                     },
                     new NavigationItem
                     {
-                        Name = "廢料類型",
+                        Name = "磅秤類型",
                         NameKey = "Nav.WasteTypes",
-                        Description = "管理廢料類型分類設定",
+                        Description = "管理磅秤類型分類設定",
                         Route = "/waste-types",
                         IconClass = "",
-                        Category = "廢料管理",
+                        Category = "磅秤管理",
                         RequiredPermission = PermissionRegistry.WasteType.Read,
-                        SearchKeywords = new List<string> { "廢料類型", "廢料分類", "waste type", "废料类型", "廃材分類", "廢棄物分類" },
+                        SearchKeywords = new List<string> { "磅秤類型", "廢料類型", "廢料分類", "waste type", "废料类型", "廃材分類" },
                         QuickActionId = "NewWasteType",
-                        QuickActionName = "新增廢料類型"
+                        QuickActionName = "新增磅秤類型"
                     },
 
                     // 分隔線 - 區分資料維護與報表
@@ -857,13 +857,13 @@ public static class NavigationConfig
                     },
 
                     NavigationActionHelper.CreateActionItem(
-                        name: "廢料報表集",
-                        description: "查看和列印所有廢料相關報表",
+                        name: "磅秤報表集",
+                        description: "查看和列印所有磅秤相關報表",
                         iconClass: "bi bi-printer-fill",
                         actionId: "OpenWasteReportIndex",
-                        category: "廢料管理",
+                        category: "磅秤管理",
                         requiredPermission: "WasteRecord.Read",
-                        searchKeywords: new List<string> { "廢料報表", "廢料報表集", "waste report", "廢料記錄表", "废料报表", "廃材レポート" },
+                        searchKeywords: new List<string> { "磅秤報表", "磅秤報表集", "廢料報表", "waste report", "废料报表", "廃材レポート" },
                         nameKey: "Nav.WasteReportIndex"
                     ),
                 }
@@ -1413,7 +1413,7 @@ public static class NavigationConfig
             "財務管理" => "bi bi-journal-text",
             "會計管理" => "bi bi-calculator",
             "車輛管理" => "bi bi-truck-front-fill",
-            "廢料管理" => "bi bi-recycle",
+            "磅秤管理" => "bi bi-recycle",
             "系統管理" => "bi bi-gear-fill",
             "基礎功能" => "bi bi-house-door-fill",
             _ => "bi bi-link-45deg" // 預設圖示

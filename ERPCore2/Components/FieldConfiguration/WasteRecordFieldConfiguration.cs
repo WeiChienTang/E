@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -10,7 +10,7 @@ using ERPCore2.Components.Shared.Statistics;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 廢料記錄欄位配置
+    /// 磅秤紀錄欄位配置
     /// </summary>
     public class WasteRecordFieldConfiguration : BaseFieldConfiguration<WasteRecord>
     {
@@ -32,7 +32,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteRecord>
                         {
                             PropertyName = nameof(WasteRecord.Code),
-                            DisplayName = Dn("Field.WasteRecordCode", "廢料單號"),
+                            DisplayName = Dn("Field.WasteRecordCode", "磅秤紀錄單號"),
                             FilterPlaceholder = Fp("Field.WasteRecordCode", "輸入單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -72,8 +72,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "WasteType.Name",
                             FilterPropertyName = nameof(WasteRecord.WasteTypeId),
-                            DisplayName = Dn("Field.WasteType", "廢料類型"),
-                            FilterPlaceholder = Fp("Field.WasteType", "選擇廢料類型"),
+                            DisplayName = Dn("Field.WasteType", "磅秤類型"),
+                            FilterPlaceholder = Fp("Field.WasteType", "選擇磅秤類型"),
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(WasteRecord.WasteTypeId), wr => wr.WasteTypeId)
@@ -183,14 +183,14 @@ namespace ERPCore2.FieldConfiguration
             {
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "廢料記錄欄位配置初始化失敗");
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "磅秤紀錄欄位配置初始化失敗");
                 });
 
                 if (_notificationService != null)
                 {
                     _ = Task.Run(async () =>
                     {
-                        await _notificationService.ShowErrorAsync("廢料記錄欄位配置初始化失敗，已使用預設配置");
+                        await _notificationService.ShowErrorAsync("磅秤紀錄欄位配置初始化失敗，已使用預設配置");
                     });
                 }
 

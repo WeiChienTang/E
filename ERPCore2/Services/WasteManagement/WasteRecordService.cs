@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models.Enums;
@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 廢料記錄服務實作
+    /// 磅秤紀錄服務實作
     /// </summary>
     public class WasteRecordService : GenericManagementService<WasteRecord>, IWasteRecordService
     {
@@ -120,7 +120,7 @@ namespace ERPCore2.Services
                     errors.Add("車輛為必填欄位");
 
                 if (entity.WasteTypeId <= 0)
-                    errors.Add("廢料類型為必填欄位");
+                    errors.Add("磅秤類型為必填欄位");
 
                 if (entity.WarehouseId <= 0)
                     errors.Add("入庫倉庫為必填欄位");
@@ -265,8 +265,8 @@ namespace ERPCore2.Services
         #region 庫存操作方法
 
         /// <summary>
-        /// 新增廢料記錄後確認入庫
-        /// 若廢料類型沒有關聯商品，則跳過入庫（不視為錯誤）
+        /// 新增磅秤紀錄後確認入庫
+        /// 若磅秤類型沒有關聯商品，則跳過入庫（不視為錯誤）
         /// </summary>
         public async Task<ServiceResult> ConfirmWasteReceiptAsync(int id)
         {
@@ -282,9 +282,9 @@ namespace ERPCore2.Services
                     .FirstOrDefaultAsync(wr => wr.Id == id);
 
                 if (wasteRecord == null)
-                    return ServiceResult.Failure("找不到指定的廢料記錄");
+                    return ServiceResult.Failure("找不到指定的磅秤紀錄");
 
-                // 若廢料類型無關聯商品，跳過入庫
+                // 若磅秤類型無關聯商品，跳過入庫
                 if (!wasteRecord.WasteType.ProductId.HasValue)
                     return ServiceResult.Success();
 
@@ -300,7 +300,7 @@ namespace ERPCore2.Services
                     wasteRecord.Code ?? string.Empty,
                     null,
                     wasteRecord.WarehouseLocationId,
-                    $"廢料收料 - {wasteRecord.Code ?? string.Empty}",
+                    $"磅秤紀錄收料 - {wasteRecord.Code ?? string.Empty}",
                     null,
                     wasteRecord.RecordDate,
                     null,
@@ -311,12 +311,12 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ConfirmWasteReceiptAsync), GetType(), _logger, new { Id = id });
-                return ServiceResult.Failure("廢料收料確認過程發生錯誤");
+                return ServiceResult.Failure("磅秤紀錄收料確認過程發生錯誤");
             }
         }
 
         /// <summary>
-        /// 編輯廢料記錄後先逆轉舊庫存，再以當前數值重新入庫（Void and Repost）
+        /// 編輯磅秤紀錄後先逆轉舊庫存，再以當前數值重新入庫（Void and Repost）
         /// 此方式確保倉庫或庫位變更時，舊倉庫庫存正確移除，新倉庫庫存正確新增
         /// </summary>
         public async Task<ServiceResult> ReverseAndRepostWasteInventoryAsync(int id)
@@ -332,12 +332,12 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReverseAndRepostWasteInventoryAsync), GetType(), _logger, new { Id = id });
-                return ServiceResult.Failure("廢料庫存更新過程發生錯誤");
+                return ServiceResult.Failure("磅秤紀錄庫存更新過程發生錯誤");
             }
         }
 
         /// <summary>
-        /// 逆轉此廢料記錄的所有庫存影響
+        /// 逆轉此磅秤紀錄的所有庫存影響
         /// 查詢歷史異動明細的 signed 淨值，對有淨正值的倉庫/庫位執行 ReduceStock
         /// </summary>
         private async Task<ServiceResult> ReverseWasteInventoryAsync(int id)
@@ -352,12 +352,12 @@ namespace ERPCore2.Services
                 .FirstOrDefaultAsync(wr => wr.Id == id);
 
             if (wasteRecord == null)
-                return ServiceResult.Failure("找不到指定的廢料記錄");
+                return ServiceResult.Failure("找不到指定的磅秤紀錄");
 
             if (!wasteRecord.WasteType.ProductId.HasValue)
                 return ServiceResult.Success();
 
-            // 查詢此廢料記錄的所有庫存異動明細（含 Delete 操作，用於計算正確淨值）
+            // 查詢此磅秤紀錄的所有庫存異動明細（含 Delete 操作，用於計算正確淨值）
             var allDetails = await context.InventoryTransactionDetails
                 .Include(d => d.InventoryTransaction)
                 .Include(d => d.InventoryStockDetail)
@@ -399,7 +399,7 @@ namespace ERPCore2.Services
                     InventoryTransactionTypeEnum.WasteReceiving,
                     wasteRecord.Code ?? string.Empty,
                     group.LocationId,
-                    $"廢料記錄逆轉 - {wasteRecord.Code ?? string.Empty}",
+                    $"磅秤紀錄逆轉 - {wasteRecord.Code ?? string.Empty}",
                     sourceDocumentType: InventorySourceDocumentTypes.WasteRecord,
                     sourceDocumentId: id,
                     operationType: InventoryOperationTypeEnum.Delete
@@ -417,7 +417,7 @@ namespace ERPCore2.Services
         #region 覆寫刪除方法
 
         /// <summary>
-        /// 永久刪除廢料記錄前先逆轉庫存，確保庫存資料一致性
+        /// 永久刪除磅秤紀錄前先逆轉庫存，確保庫存資料一致性
         /// </summary>
         public override async Task<ServiceResult> PermanentDeleteAsync(int id)
         {
@@ -435,7 +435,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger, new { Id = id });
-                return ServiceResult.Failure("刪除廢料記錄時發生錯誤");
+                return ServiceResult.Failure("刪除磅秤紀錄時發生錯誤");
             }
         }
 

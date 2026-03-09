@@ -1,18 +1,18 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 廢料類型主檔
+    /// 磅秤類型主檔
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     public class WasteType : BaseEntity
     {
-        [Required(ErrorMessage = "廢料類型名稱為必填")]
-        [MaxLength(100, ErrorMessage = "廢料類型名稱不可超過100個字元")]
-        [Display(Name = "廢料類型名稱")]
+        [Required(ErrorMessage = "磅秤類型名稱為必填")]
+        [MaxLength(100, ErrorMessage = "磅秤類型名稱不可超過100個字元")]
+        [Display(Name = "磅秤類型名稱")]
         public string Name { get; set; } = string.Empty;
 
         [MaxLength(200, ErrorMessage = "描述不可超過200個字元")]

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Services;
 using ERPCore2.Services.Import;
 using ERPCore2.Services.Export;
@@ -168,7 +168,7 @@ namespace ERPCore2.Data
             services.AddScoped<IVehicleService, VehicleService>();
             services.AddScoped<IVehicleMaintenanceService, VehicleMaintenanceService>();
 
-            // 廢料管理服務
+            // 磅秤管理服務
             services.AddScoped<IWasteTypeService, WasteTypeService>();
             services.AddScoped<IWasteRecordService, WasteRecordService>();
 
@@ -298,7 +298,7 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierRosterReportService, SupplierRosterReportService>();
             // 廠商詳細資料報表服務（AP005）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierDetailReportService, SupplierDetailReportService>();
-            // 廢料記錄報表服務（WL001）
+            // 磅秤紀錄報表服務（WL001）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IWasteRecordReportService, WasteRecordReportService>();
             // 會計科目表報表服務（FN005）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IAccountItemListReportService, AccountItemListReportService>();

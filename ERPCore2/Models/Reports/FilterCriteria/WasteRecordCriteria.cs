@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
 using ERPCore2.Services;
@@ -6,15 +6,15 @@ using ERPCore2.Services;
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
 /// <summary>
-/// 廢料記錄報表篩選條件（WL001）
+/// 磅秤紀錄報表篩選條件（WL001）
 /// </summary>
 public class WasteRecordCriteria : IReportFilterCriteria
 {
-    /// <summary>廢料類型 ID 清單（空表示全部）</summary>
+    /// <summary>磅秤類型 ID 清單（空表示全部）</summary>
     [FilterFK(typeof(IWasteTypeService),
         Group = FilterGroup.Basic,
-        Label = "廢料類型",
-        Placeholder = "搜尋廢料類型...",
+        Label = "磅秤類型",
+        Placeholder = "搜尋磅秤類型...",
         EmptyMessage = "未選擇（查詢全部）",
         Order = 1)]
     public List<int> WasteTypeIds { get; set; } = new();
@@ -53,9 +53,9 @@ public class WasteRecordCriteria : IReportFilterCriteria
     /// <summary>記錄日期結束（自動與 StartDate 配對）</summary>
     public DateTime? EndDate { get; set; }
 
-    /// <summary>關鍵字搜尋（廢料單號、車牌號碼）</summary>
+    /// <summary>關鍵字搜尋（磅秤紀錄單號、車牌號碼）</summary>
     [FilterKeyword(Group = FilterGroup.Quick, Label = "關鍵字",
-        Placeholder = "搜尋廢料單號、車牌號碼...", Order = 1)]
+        Placeholder = "搜尋磅秤紀錄單號、車牌號碼...", Order = 1)]
     public string? Keyword { get; set; }
 
     /// <summary>僅顯示啟用記錄</summary>
@@ -104,7 +104,7 @@ public class WasteRecordCriteria : IReportFilterCriteria
             summary.Add($"結束：{EndDate:yyyy/MM/dd}");
 
         if (WasteTypeIds.Any())
-            summary.Add($"廢料類型：{WasteTypeIds.Count} 個");
+            summary.Add($"磅秤類型：{WasteTypeIds.Count} 個");
 
         if (VehicleIds.Any())
             summary.Add($"車輛：{VehicleIds.Count} 台");

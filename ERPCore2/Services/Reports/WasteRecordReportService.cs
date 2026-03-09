@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -12,7 +12,7 @@ using System.Runtime.Versioning;
 namespace ERPCore2.Services.Reports
 {
     /// <summary>
-    /// 廢料記錄報表服務實作（WL001）
+    /// 磅秤紀錄報表服務實作（WL001）
     /// 支援單筆列印（EditModal）和清單式批次列印（篩選條件）
     /// </summary>
     public class WasteRecordReportService : IWasteRecordReportService
@@ -37,13 +37,13 @@ namespace ERPCore2.Services.Reports
         #region IEntityReportService 實作
 
         /// <summary>
-        /// 生成單一廢料記錄報表
+        /// 生成單一磅秤紀錄報表
         /// </summary>
         public async Task<FormattedDocument> GenerateReportAsync(int wasteRecordId)
         {
             var record = await _wasteRecordService.GetByIdAsync(wasteRecordId);
             if (record == null)
-                throw new ArgumentException($"找不到廢料記錄 ID: {wasteRecordId}");
+                throw new ArgumentException($"找不到磅秤紀錄 ID: {wasteRecordId}");
 
             var company = await _companyService.GetPrimaryCompanyAsync();
             return BuildWasteRecordDocument(new List<WasteRecord> { record }, company, null);
@@ -70,7 +70,7 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
-        /// 直接列印單筆廢料記錄
+        /// 直接列印單筆磅秤紀錄
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
         public async Task<ServiceResult> DirectPrintAsync(int wasteRecordId, string reportId, int copies = 1)
@@ -82,7 +82,7 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "列印廢料記錄 {Id} 時發生錯誤", wasteRecordId);
+                _logger?.LogError(ex, "列印磅秤紀錄 {Id} 時發生錯誤", wasteRecordId);
                 return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
             }
         }
@@ -98,7 +98,7 @@ namespace ERPCore2.Services.Reports
                 var records = await GetRecordsByCriteriaAsync(criteria);
 
                 if (!records.Any())
-                    return ServiceResult.Failure($"無符合條件的廢料記錄\n篩選條件：{criteria.GetSummary()}");
+                    return ServiceResult.Failure($"無符合條件的磅秤紀錄\n篩選條件：{criteria.GetSummary()}");
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
                 var document = BuildWasteRecordDocument(records, company, null);
@@ -106,7 +106,7 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "批次列印廢料記錄時發生錯誤");
+                _logger?.LogError(ex, "批次列印磅秤紀錄時發生錯誤");
                 return ServiceResult.Failure($"批次列印時發生錯誤: {ex.Message}");
             }
         }
@@ -122,7 +122,7 @@ namespace ERPCore2.Services.Reports
                 var records = await GetRecordsByCriteriaAsync(criteria);
 
                 if (!records.Any())
-                    return BatchPreviewResult.Failure($"無符合條件的廢料記錄\n篩選條件：{criteria.GetSummary()}");
+                    return BatchPreviewResult.Failure($"無符合條件的磅秤紀錄\n篩選條件：{criteria.GetSummary()}");
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
                 var document = BuildWasteRecordDocument(records, company, criteria.PaperSetting);
@@ -134,7 +134,7 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "批次渲染廢料記錄報表時發生錯誤");
+                _logger?.LogError(ex, "批次渲染磅秤紀錄報表時發生錯誤");
                 return BatchPreviewResult.Failure($"產生預覽時發生錯誤: {ex.Message}");
             }
         }
@@ -144,7 +144,7 @@ namespace ERPCore2.Services.Reports
         #region WasteRecordCriteria 批次報表
 
         /// <summary>
-        /// 以廢料記錄篩選條件批次渲染報表為圖片
+        /// 以磅秤紀錄篩選條件批次渲染報表為圖片
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
         public async Task<BatchPreviewResult> RenderBatchToImagesAsync(WasteRecordCriteria criteria)
@@ -154,7 +154,7 @@ namespace ERPCore2.Services.Reports
                 var records = await GetRecordsByTypedCriteriaAsync(criteria);
 
                 if (!records.Any())
-                    return BatchPreviewResult.Failure($"無符合條件的廢料記錄\n篩選條件：{criteria.GetSummary()}");
+                    return BatchPreviewResult.Failure($"無符合條件的磅秤紀錄\n篩選條件：{criteria.GetSummary()}");
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
                 var document = BuildWasteRecordDocument(records, company, criteria.PaperSetting);
@@ -166,7 +166,7 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "批次渲染廢料記錄報表（WasteRecordCriteria）時發生錯誤");
+                _logger?.LogError(ex, "批次渲染磅秤紀錄報表（WasteRecordCriteria）時發生錯誤");
                 return BatchPreviewResult.Failure($"產生預覽時發生錯誤: {ex.Message}");
             }
         }
@@ -175,7 +175,7 @@ namespace ERPCore2.Services.Reports
 
         #region 私有方法 - 查詢資料
 
-        /// <summary>根據 BatchPrintCriteria 查詢廢料記錄</summary>
+        /// <summary>根據 BatchPrintCriteria 查詢磅秤紀錄</summary>
         private async Task<List<WasteRecord>> GetRecordsByCriteriaAsync(BatchPrintCriteria criteria)
         {
             var results = await _wasteRecordService.GetAllAsync();
@@ -200,7 +200,7 @@ namespace ERPCore2.Services.Reports
             return results.OrderBy(r => r.WasteType?.Name).ThenBy(r => r.RecordDate).ToList();
         }
 
-        /// <summary>根據 WasteRecordCriteria 查詢廢料記錄</summary>
+        /// <summary>根據 WasteRecordCriteria 查詢磅秤紀錄</summary>
         private async Task<List<WasteRecord>> GetRecordsByTypedCriteriaAsync(WasteRecordCriteria criteria)
         {
             var results = await _wasteRecordService.GetAllAsync();
@@ -243,7 +243,7 @@ namespace ERPCore2.Services.Reports
         #region 私有方法 - 建構報表文件
 
         /// <summary>
-        /// 建構廢料記錄報表（清單式：依廢料類型分組）
+        /// 建構磅秤紀錄報表（清單式：依磅秤類型分組）
         /// </summary>
         private FormattedDocument BuildWasteRecordDocument(
             List<WasteRecord> records,
@@ -251,7 +251,7 @@ namespace ERPCore2.Services.Reports
             PaperSetting? paperSetting)
         {
             var doc = new FormattedDocument()
-                .SetDocumentName($"廢料記錄表-{DateTime.Now:yyyyMMdd}")
+                .SetDocumentName($"磅秤紀錄表-{DateTime.Now:yyyyMMdd}")
                 .SetMargins(0.8f, 0.3f, 0.8f, 0.3f);
 
             // === 頁首區 ===
@@ -274,24 +274,24 @@ namespace ERPCore2.Services.Reports
                 header.AddSpacing(5);
             });
 
-            // === 依廢料類型分組顯示 ===
+            // === 依磅秤類型分組顯示 ===
             var typeGroups = records
                 .GroupBy(r => r.WasteType?.Name ?? "未分類")
                 .OrderBy(g => g.Key);
 
             foreach (var group in typeGroups)
             {
-                // 廢料類型標題
+                // 磅秤類型標題
                 doc.AddKeyValueRow(
-                    ("廢料類型", $"{group.Key}（{group.Count()} 筆）"));
+                    ("磅秤類型", $"{group.Key}（{group.Count()} 筆）"));
 
                 doc.AddSpacing(3);
 
-                // 廢料記錄資料表格
+                // 磅秤紀錄資料表格
                 doc.AddTable(table =>
                 {
                     table.AddColumn("項次", 0.30f, TextAlignment.Center)
-                         .AddColumn("廢料單號", 0.90f, TextAlignment.Left)
+                         .AddColumn("磅秤紀錄單號", 0.90f, TextAlignment.Left)
                          .AddColumn("記錄日期", 0.70f, TextAlignment.Center)
                          .AddColumn("車牌號碼", 0.70f, TextAlignment.Left)
                          .AddColumn("客戶", 0.90f, TextAlignment.Left)

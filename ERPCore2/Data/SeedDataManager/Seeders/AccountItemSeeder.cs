@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.SeedDataManager.Interfaces;
@@ -576,7 +576,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             ("7231", "捐贈收入", "Donation revenue", null, "to the above categories.", 4, "723-724", AccountType.NonOperatingIncomeAndExpense, AccountDirection.Debit, true, 507),
             ("7232", "佣金收入", "Commissions revenue", null, null, 4, "723-724", AccountType.NonOperatingIncomeAndExpense, AccountDirection.Debit, true, 508),
             ("7233", "處分無形資產利益", "Gains on disposals of intangible assets", null, null, 4, "723-724", AccountType.NonOperatingIncomeAndExpense, AccountDirection.Debit, true, 509),
-            ("7234", "出售下腳及廢料收入", "Income from sale of scraps", null, null, 4, "723-724", AccountType.NonOperatingIncomeAndExpense, AccountDirection.Debit, true, 510),
+            ("7234", "出售下腳及磅秤紀錄收入", "Income from sale of scraps", null, null, 4, "723-724", AccountType.NonOperatingIncomeAndExpense, AccountDirection.Debit, true, 510),
             ("7235", "呆帳轉回利益", "Gains on doubtful debt recoveries", null, null, 4, "723-724", AccountType.NonOperatingIncomeAndExpense, AccountDirection.Debit, true, 511),
             ("7236", "手續費收入", "Fee income", null, null, 4, "723-724", AccountType.NonOperatingIncomeAndExpense, AccountDirection.Debit, true, 512),
             ("7237", "廉價購買利益", "Gain recognized in bargain purchase transaction", null, null, 4, "723-724", AccountType.NonOperatingIncomeAndExpense, AccountDirection.Debit, true, 513),

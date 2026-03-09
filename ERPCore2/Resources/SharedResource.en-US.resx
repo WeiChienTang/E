@@ -505,16 +505,16 @@
     <value>Vehicle Reports</value>
   </data>
   <data name="Nav.WasteGroup" xml:space="preserve">
-    <value>Waste</value>
+    <value>Scale Management</value>
   </data>
   <data name="Nav.WasteRecords" xml:space="preserve">
-    <value>Waste Records</value>
+    <value>Scale Records</value>
   </data>
   <data name="Nav.WasteTypes" xml:space="preserve">
-    <value>Waste Types</value>
+    <value>Scale Types</value>
   </data>
   <data name="Nav.WasteReportIndex" xml:space="preserve">
-    <value>Waste Reports</value>
+    <value>Scale Reports</value>
   </data>
   <data name="Nav.FinanceGroup" xml:space="preserve">
     <value>Finance</value>
@@ -626,7 +626,7 @@
   <data name="ReportCategory.Financial" xml:space="preserve"><value>Financial Reports</value></data>
   <data name="ReportCategory.HR" xml:space="preserve"><value>HR Reports</value></data>
   <data name="ReportCategory.Vehicle" xml:space="preserve"><value>Vehicle Reports</value></data>
-  <data name="ReportCategory.Waste" xml:space="preserve"><value>Waste Reports</value></data>
+  <data name="ReportCategory.Waste" xml:space="preserve"><value>Scale Reports</value></data>
   <data name="ReportCategory.Accounting" xml:space="preserve"><value>Accounting Reports</value></data>
   <data name="Report.NoReports" xml:space="preserve"><value>No reports available</value></data>
   <data name="Report.SearchPlaceholder" xml:space="preserve"><value>Search report name...</value></data>
@@ -665,7 +665,7 @@
   <data name="Report.VehicleMaintenance" xml:space="preserve"><value>Vehicle Maintenance</value></data>
   <data name="Report.EmployeeRoster" xml:space="preserve"><value>Employee Roster</value></data>
   <data name="Report.EmployeeDetail" xml:space="preserve"><value>Employee Detail</value></data>
-  <data name="Report.WasteRecord" xml:space="preserve"><value>Waste Record</value></data>
+  <data name="Report.WasteRecord" xml:space="preserve"><value>Scale Record</value></data>
   <data name="Report.AccountsReceivableSetoff" xml:space="preserve"><value>A/R Setoff</value></data>
   <data name="Report.AccountsPayableSetoff" xml:space="preserve"><value>A/P Setoff</value></data>
   <data name="Report.AccountItemList" xml:space="preserve"><value>Chart of Accounts</value></data>
@@ -736,8 +736,8 @@
   <data name="Entity.Vehicle" xml:space="preserve"><value>Vehicle</value></data>
   <data name="Entity.VehicleType" xml:space="preserve"><value>Vehicle Type</value></data>
   <data name="Entity.VehicleMaintenance" xml:space="preserve"><value>Maintenance Record</value></data>
-  <data name="Entity.WasteRecord" xml:space="preserve"><value>Waste Record</value></data>
-  <data name="Entity.WasteType" xml:space="preserve"><value>Waste Type</value></data>
+  <data name="Entity.WasteRecord" xml:space="preserve"><value>Scale Record</value></data>
+  <data name="Entity.WasteType" xml:space="preserve"><value>Scale Type</value></data>
   <data name="Entity.Company" xml:space="preserve"><value>Company</value></data>
   <data name="Entity.PaperSetting" xml:space="preserve"><value>Paper Setting</value></data>
   <data name="Entity.PrinterConfiguration" xml:space="preserve"><value>Printer Configuration</value></data>
@@ -1682,7 +1682,7 @@
   <data name="Field.Supplier" xml:space="preserve"><value>Supplier</value></data>
   <data name="Field.Vehicle" xml:space="preserve"><value>Vehicle</value></data>
   <data name="Field.VehicleType" xml:space="preserve"><value>Vehicle Type</value></data>
-  <data name="Field.WasteType" xml:space="preserve"><value>Waste Type</value></data>
+  <data name="Field.WasteType" xml:space="preserve"><value>Scale Type</value></data>
   <data name="Field.ReturnReason" xml:space="preserve"><value>Return Reason</value></data>
 
   <!-- ===== TextMessageTemplate keys ===== -->
@@ -1760,7 +1760,7 @@
   <data name="Report.VehicleMaintenanceDesc" xml:space="preserve"><value>Print vehicle maintenance records including maintenance type, date, mileage, cost, and service shop details</value></data>
   <data name="Report.EmployeeRosterDesc" xml:space="preserve"><value>Print employee basic data list including employee code, name, department, position, hire date, and employment status</value></data>
   <data name="Report.EmployeeDetailDesc" xml:space="preserve"><value>Print complete employee details including contact info, emergency contacts, and employment information, one block per employee</value></data>
-  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>Print waste record list grouped by waste type, including plate number, customer, warehouse, weight, and cost details</value></data>
+  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>Print scale record list grouped by scale type, including plate number, customer, warehouse, weight, and cost details</value></data>
   <data name="Report.AccountsReceivableSetoffDesc" xml:space="preserve"><value>Print accounts receivable setoff document including customer info, offset details, and payment records</value></data>
   <data name="Report.AccountsPayableSetoffDesc" xml:space="preserve"><value>Print accounts payable setoff document including supplier info, offset details, and payment records</value></data>
   <data name="Report.AccountItemListDesc" xml:space="preserve"><value>Print standard chart of accounts grouped by account type, showing account code, name, level, and debit/credit direction</value></data>
@@ -3082,10 +3082,10 @@
   <data name="Page.WarehouseSubtitle" xml:space="preserve"><value>Manage all warehouse data and basic information</value></data>
   <data name="Page.WarehouseLocationTitle" xml:space="preserve"><value>Warehouse Locations</value></data>
   <data name="Page.WarehouseLocationSubtitle" xml:space="preserve"><value>Manage all warehouse location data and basic information</value></data>
-  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>Waste Records</value></data>
-  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>Manage waste receiving records</value></data>
-  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>Waste Types</value></data>
-  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>Manage waste type classification data</value></data>
+  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>Scale Records</value></data>
+  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>Manage scale receiving records</value></data>
+  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>Scale Types</value></data>
+  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>Manage scale type classification data</value></data>
 
   <!-- ===== AccountItem Options ===== -->
   <data name="AccountType.Asset" xml:space="preserve"><value>Asset</value></data>

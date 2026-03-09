@@ -525,16 +525,16 @@
     <value>车辆报表集</value>
   </data>
   <data name="Nav.WasteGroup" xml:space="preserve">
-    <value>废料</value>
+    <value>磅秤管理</value>
   </data>
   <data name="Nav.WasteRecords" xml:space="preserve">
-    <value>废料记录</value>
+    <value>磅秤记录</value>
   </data>
   <data name="Nav.WasteTypes" xml:space="preserve">
-    <value>废料类型</value>
+    <value>磅秤类型</value>
   </data>
   <data name="Nav.WasteReportIndex" xml:space="preserve">
-    <value>废料报表集</value>
+    <value>磅秤报表集</value>
   </data>
   <data name="Nav.FinanceGroup" xml:space="preserve">
     <value>财务</value>
@@ -626,7 +626,7 @@
   <data name="ReportCategory.Financial" xml:space="preserve"><value>财务报表集</value></data>
   <data name="ReportCategory.HR" xml:space="preserve"><value>人力报表集</value></data>
   <data name="ReportCategory.Vehicle" xml:space="preserve"><value>车辆报表集</value></data>
-  <data name="ReportCategory.Waste" xml:space="preserve"><value>废料报表集</value></data>
+  <data name="ReportCategory.Waste" xml:space="preserve"><value>磅秤报表集</value></data>
   <data name="ReportCategory.Accounting" xml:space="preserve"><value>会计报表集</value></data>
   <data name="Report.NoReports" xml:space="preserve"><value>目前没有可用的报表</value></data>
   <data name="Report.SearchPlaceholder" xml:space="preserve"><value>搜索报表名称...</value></data>
@@ -665,7 +665,7 @@
   <data name="Report.VehicleMaintenance" xml:space="preserve"><value>车辆保养表</value></data>
   <data name="Report.EmployeeRoster" xml:space="preserve"><value>员工名册表</value></data>
   <data name="Report.EmployeeDetail" xml:space="preserve"><value>员工详细资料</value></data>
-  <data name="Report.WasteRecord" xml:space="preserve"><value>废料记录表</value></data>
+  <data name="Report.WasteRecord" xml:space="preserve"><value>磅秤记录表</value></data>
   <data name="Report.AccountsReceivableSetoff" xml:space="preserve"><value>应收冲款单</value></data>
   <data name="Report.AccountsPayableSetoff" xml:space="preserve"><value>应付冲款单</value></data>
   <data name="Report.AccountItemList" xml:space="preserve"><value>会计科目表</value></data>
@@ -736,8 +736,8 @@
   <data name="Entity.Vehicle" xml:space="preserve"><value>车辆</value></data>
   <data name="Entity.VehicleType" xml:space="preserve"><value>车型</value></data>
   <data name="Entity.VehicleMaintenance" xml:space="preserve"><value>保养记录</value></data>
-  <data name="Entity.WasteRecord" xml:space="preserve"><value>废料记录</value></data>
-  <data name="Entity.WasteType" xml:space="preserve"><value>废料类型</value></data>
+  <data name="Entity.WasteRecord" xml:space="preserve"><value>磅秤记录</value></data>
+  <data name="Entity.WasteType" xml:space="preserve"><value>磅秤类型</value></data>
   <data name="Entity.Company" xml:space="preserve"><value>公司</value></data>
   <data name="Entity.PaperSetting" xml:space="preserve"><value>纸张设定</value></data>
   <data name="Entity.PrinterConfiguration" xml:space="preserve"><value>打印机设定</value></data>
@@ -1686,7 +1686,7 @@
   <data name="Field.Supplier" xml:space="preserve"><value>供应商</value></data>
   <data name="Field.Vehicle" xml:space="preserve"><value>车辆</value></data>
   <data name="Field.VehicleType" xml:space="preserve"><value>车型</value></data>
-  <data name="Field.WasteType" xml:space="preserve"><value>废料类型</value></data>
+  <data name="Field.WasteType" xml:space="preserve"><value>磅秤类型</value></data>
   <data name="Field.ReturnReason" xml:space="preserve"><value>退货原因</value></data>
 
   <!-- ===== TextMessageTemplate keys ===== -->
@@ -1764,7 +1764,7 @@
   <data name="Report.VehicleMaintenanceDesc" xml:space="preserve"><value>打印车辆保养记录，含保养类型、保养日期、里程数、费用、维修厂等明细</value></data>
   <data name="Report.EmployeeRosterDesc" xml:space="preserve"><value>打印员工基本资料清单，含员工编号、姓名、部门、职位、到职日期、在职状态等</value></data>
   <data name="Report.EmployeeDetailDesc" xml:space="preserve"><value>打印员工完整详细资料，含联系资讯、紧急联系人、任职资讯等，每位员工各占一区块</value></data>
-  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>打印废料记录清单，依废料类型分组，含车牌号码、客户、入库仓库、重量及费用明细</value></data>
+  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>打印磅秤记录清单，依磅秤类型分组，含车牌号码、客户、入库仓库、重量及费用明细</value></data>
   <data name="Report.AccountsReceivableSetoffDesc" xml:space="preserve"><value>打印应收冲款单（含客户资讯、冲销明细、收款记录）</value></data>
   <data name="Report.AccountsPayableSetoffDesc" xml:space="preserve"><value>打印应付冲款单（含厂商资讯、冲销明细、付款记录）</value></data>
   <data name="Report.AccountItemListDesc" xml:space="preserve"><value>打印标准会计科目表，依科目大类分组显示科目代码、名称、层级、借贷方向等</value></data>
@@ -3080,10 +3080,10 @@
   <data name="Page.WarehouseSubtitle" xml:space="preserve"><value>管理所有仓库资料与基本信息</value></data>
   <data name="Page.WarehouseLocationTitle" xml:space="preserve"><value>仓库内位置管理</value></data>
   <data name="Page.WarehouseLocationSubtitle" xml:space="preserve"><value>管理所有仓库内位置资料与基本信息</value></data>
-  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>废料记录</value></data>
-  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>管理废料收料记录</value></data>
-  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>废料类型维护</value></data>
-  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>管理废料类型分类资料</value></data>
+  <data name="Page.WasteRecordTitle" xml:space="preserve"><value>磅秤记录</value></data>
+  <data name="Page.WasteRecordSubtitle" xml:space="preserve"><value>管理磅秤收料记录</value></data>
+  <data name="Page.WasteTypeTitle" xml:space="preserve"><value>磅秤类型维护</value></data>
+  <data name="Page.WasteTypeSubtitle" xml:space="preserve"><value>管理磅秤类型分类资料</value></data>
   <data name="AccountType.Asset" xml:space="preserve"><value>资产</value></data>
   <data name="AccountType.Liability" xml:space="preserve"><value>负债</value></data>
   <data name="AccountType.Equity" xml:space="preserve"><value>权益</value></data>

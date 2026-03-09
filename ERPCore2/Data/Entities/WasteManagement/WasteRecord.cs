@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Helpers.EditModal;
@@ -6,7 +6,7 @@ using ERPCore2.Helpers.EditModal;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 廢料記錄單據 - 記錄客戶送來廢料的每一筆事件
+    /// 磅秤紀錄單據 - 記錄客戶送來磅秤紀錄的每一筆事件
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(VehicleId), nameof(RecordDate))]
@@ -25,7 +25,7 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "記錄日期")]
         public DateTime RecordDate { get; set; } = DateTime.Today;
 
-        // ===== 廢料數量 =====
+        // ===== 磅秤紀錄數量 =====
 
         [Display(Name = "數量")]
         [Column(TypeName = "decimal(18,2)")]
@@ -37,12 +37,12 @@ namespace ERPCore2.Data.Entities
 
         // ===== 費用欄位 =====
 
-        /// <summary>我們向客戶/廠商收取的廢料處理服務費</summary>
+        /// <summary>我們向客戶/廠商收取的磅秤紀錄處理服務費</summary>
         [Display(Name = "處理費")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal? DisposalFee { get; set; }
 
-        /// <summary>客戶/廠商向我們收取的廢料採購費用</summary>
+        /// <summary>客戶/廠商向我們收取的磅秤紀錄採購費用</summary>
         [Display(Name = "採購費")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal? PurchaseFee { get; set; }
@@ -60,8 +60,8 @@ namespace ERPCore2.Data.Entities
         public int VehicleId { get; set; }
         public Vehicle Vehicle { get; set; } = null!;
 
-        [Required(ErrorMessage = "廢料類型為必填")]
-        [Display(Name = "廢料類型")]
+        [Required(ErrorMessage = "磅秤類型為必填")]
+        [Display(Name = "磅秤類型")]
         [ForeignKey(nameof(WasteType))]
         public int WasteTypeId { get; set; }
         public WasteType WasteType { get; set; } = null!;

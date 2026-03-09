@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Enums
+﻿namespace ERPCore2.Models.Enums
 {
     /// <summary>
     /// 庫存異動來源單據類型（使用常數類別以保持彈性）
@@ -71,7 +71,7 @@ namespace ERPCore2.Models.Enums
         public const string Scrap = "Scrap";
 
         /// <summary>
-        /// 廢料收料
+        /// 磅秤紀錄收料
         /// </summary>
         public const string WasteRecord = "WasteRecord";
         
@@ -95,7 +95,7 @@ namespace ERPCore2.Models.Enums
                 ProductionConsumption => "生產投料",
                 ProductionCompletion => "生產完工",
                 Scrap => "報廢",
-                WasteRecord => "廢料收料",
+                WasteRecord => "磅秤紀錄收料",
                 _ => sourceType ?? "未知"
             };
         }

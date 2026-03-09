@@ -121,7 +121,7 @@ namespace ERPCore2.Services
                     .Include(d => d.WarehouseLocation)
                     .Where(d => (
                         (d.PurchaseReceiving!.Code != null && d.PurchaseReceiving.Code.Contains(searchTerm)) ||
-                        d.Product.Name.Contains(searchTerm) ||
+                        d.Product!.Name!.Contains(searchTerm) ||
                         (d.Product.Code != null && d.Product.Code.Contains(searchTerm)) ||
                         d.Warehouse.Name.Contains(searchTerm) ||
                         (d.BatchNumber != null && d.BatchNumber.Contains(searchTerm))

@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Reports;
+﻿namespace ERPCore2.Models.Reports;
 
 /// <summary>
 /// 報表 ID 常數 - 集中管理所有報表識別碼
@@ -153,10 +153,10 @@ public static class ReportIds
     /// <summary>明細科目餘額表</summary>
     public const string DetailAccountBalance = "FN011";
 
-    // ==================== 廢料報表 (WL) ====================
-    /// <summary>廢料記錄報表</summary>
+    // ==================== 磅秤紀錄報表 (WL) ====================
+    /// <summary>磅秤紀錄報表</summary>
     public const string WasteRecord = "WL001";
 
-    /// <summary>廢料類別報表</summary>
+    /// <summary>磅秤紀錄類別報表</summary>
     public const string WasteCategory = "WL002";
 }

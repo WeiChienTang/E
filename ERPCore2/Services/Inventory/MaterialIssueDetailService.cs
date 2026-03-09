@@ -105,7 +105,7 @@ namespace ERPCore2.Services
                     .Include(d => d.WarehouseLocation)
                     .Where(d => (
                         (d.MaterialIssue!.Code != null && d.MaterialIssue.Code.Contains(searchTerm)) ||
-                        d.Product.Name.Contains(searchTerm) ||
+                        d.Product!.Name!.Contains(searchTerm) ||
                         (d.Product.Code != null && d.Product.Code.Contains(searchTerm)) ||
                         (d.Product.Barcode != null && d.Product.Barcode.Contains(searchTerm)) ||
                         d.Warehouse.Name.Contains(searchTerm) ||

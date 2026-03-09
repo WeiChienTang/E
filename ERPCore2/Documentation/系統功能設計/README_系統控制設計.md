@@ -88,7 +88,7 @@ UI（使用者介面）
 | Purchase | 採購管理 | purchase_management |
 | Sales | 銷售管理 | sales_management |
 | Vehicles | 車輛管理 | vehicle_management |
-| WasteManagement | 廢料管理 | waste_management |
+| WasteManagement | 磅秤管理 | waste_management |
 | FinancialManagement | 財務管理 | financial_management |
 | Accounting | 會計管理 | accounting_management |
 

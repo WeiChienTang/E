@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using ERPCore2.Models.Reports.FilterCriteria;
 
 namespace ERPCore2.Models.Reports.FilterTemplates;
@@ -554,17 +554,17 @@ public static class FilterTemplateRegistry
             }
         });
 
-        // ==================== 廢料報表 ====================
+        // ==================== 磅秤紀錄報表 ====================
 
-        // WL001 - 廢料記錄表（依廢料類型分組，含費用統計）
+        // WL001 - 磅秤紀錄表（依磅秤類型分組，含費用統計）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.WasteRecord,
             FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(WasteRecordCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IWasteRecordReportService),
-            PreviewTitle = "廢料記錄表預覽",
-            FilterTitle = "廢料記錄表篩選條件",
+            PreviewTitle = "磅秤紀錄表預覽",
+            FilterTitle = "磅秤紀錄表篩選條件",
             IconClass = "bi-recycle",
             GetDocumentName = criteria =>
             {
@@ -572,7 +572,7 @@ public static class FilterTemplateRegistry
                 var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
                     ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
-                return $"廢料記錄表-{dateRange}";
+                return $"磅秤紀錄表-{dateRange}";
             }
         });
 

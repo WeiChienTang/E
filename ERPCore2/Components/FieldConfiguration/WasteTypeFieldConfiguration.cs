@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -10,7 +10,7 @@ using ERPCore2.Components.Shared.Statistics;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 廢料類型欄位配置
+    /// 磅秤類型欄位配置
     /// </summary>
     public class WasteTypeFieldConfiguration : BaseFieldConfiguration<WasteType>
     {
@@ -32,7 +32,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteType>
                         {
                             PropertyName = nameof(WasteType.Code),
-                            DisplayName = Dn("Field.WasteTypeCode", "廢料類型編號"),
+                            DisplayName = Dn("Field.WasteTypeCode", "磅秤類型編號"),
                             FilterPlaceholder = Fp("Field.WasteTypeCode", "輸入編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
@@ -45,7 +45,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WasteType>
                         {
                             PropertyName = nameof(WasteType.Name),
-                            DisplayName = Dn("Field.WasteTypeName", "廢料類型名稱"),
+                            DisplayName = Dn("Field.WasteTypeName", "磅秤類型名稱"),
                             FilterPlaceholder = Fp("Field.WasteTypeName", "輸入名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -82,14 +82,14 @@ namespace ERPCore2.FieldConfiguration
             {
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "廢料類型欄位配置初始化失敗");
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "磅秤類型欄位配置初始化失敗");
                 });
 
                 if (_notificationService != null)
                 {
                     _ = Task.Run(async () =>
                     {
-                        await _notificationService.ShowErrorAsync("廢料類型欄位配置初始化失敗，已使用預設配置");
+                        await _notificationService.ShowErrorAsync("磅秤類型欄位配置初始化失敗，已使用預設配置");
                     });
                 }
 
