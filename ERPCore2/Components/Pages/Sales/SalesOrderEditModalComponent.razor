@@ -1208,13 +1208,23 @@
                                   Variant="ButtonVariant.Green"
                                   OnClick="HandleCreateDeliveryFromOrder" />
 
-            @* 檢視排程按鈕 - 需有 ProductionSchedule.Read 權限 *@
+            @* 檢視排程按鈕 - 需有 ProductionSchedule.Read 權限，且需已審核通過 *@
             @if (canViewSchedule)
             {
-                <GenericButtonComponent Text="@L["Button.ViewSchedule"]"
-                                      Variant="ButtonVariant.Orange"
-                                      Icon="bi bi-kanban"
-                                      OnClick="HandleViewSchedule" />
+                @if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isManualApproval, editModalComponent?.Entity?.IsApproved ?? false))
+                {
+                    <GenericButtonComponent Text="@L["Button.ViewSchedule"]"
+                                          Variant="ButtonVariant.Gray"
+                                          Icon="bi bi-kanban"
+                                          IsDisabled="true" />
+                }
+                else
+                {
+                    <GenericButtonComponent Text="@L["Button.ViewSchedule"]"
+                                          Variant="ButtonVariant.Orange"
+                                          Icon="bi bi-kanban"
+                                          OnClick="HandleViewSchedule" />
+                }
             }
 
             @* 庫存檢視按鈕 - 有不足時顯示警告樣式 *@

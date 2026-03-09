@@ -13,6 +13,7 @@
     <Compile Remove="DeploymentPackages\**" />
     <EmbeddedResource Remove="DeploymentPackages\**" />
     <None Remove="DeploymentPackages\**" />
+    <Compile Remove="publish\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,7 +32,7 @@
 
   <!-- 確保 Resources 資料夾在 publish 時被複製 -->
   <ItemGroup>
-    <None Include="Resources\**" Exclude="Resources\*.resx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Resources\**" Exclude="Resources\*.resx;Resources\*.cs" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
