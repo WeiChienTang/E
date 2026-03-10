@@ -485,12 +485,26 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var dbSet = context.Set<T>();
-                
+
                 return await dbSet.CountAsync();
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCountAsync), GetType(), _logger);
+                return 0;
+            }
+        }
+
+        public virtual async Task<int> GetDraftCountAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Set<T>().CountAsync(x => x.IsDraft);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetDraftCountAsync), GetType(), _logger);
                 return 0;
             }
         }

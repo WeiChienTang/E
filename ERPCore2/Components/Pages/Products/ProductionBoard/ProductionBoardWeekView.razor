@@ -1,5 +1,7 @@
 @using ERPCore2.Models.Schedule
 @using ERPCore2.Models.Enums
+@using ERPCore2.Models.Reports
+@using ERPCore2.Models.Reports.FilterCriteria
 @using ERPCore2.Data.Entities
 @inject IProductionScheduleItemService ScheduleItemService
 @inject IProductionScheduleService ScheduleService
@@ -25,7 +27,7 @@
         <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
             IconClass="bi bi-chevron-right" OnClick="NextWeek" Title="下一週" />
 
-        <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue" Size="ButtonSize.Small"
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small"
             Text="今天" OnClick="GoToToday" CssClass="ms-2" />
 
         @* 9.3 狀態篩選 *@
@@ -33,7 +35,7 @@
             <button type="button" class="btn @(statusFilter == null ? "btn-primary" : "btn-outline-secondary")"
                     @onclick="() => statusFilter = null">全部</button>
             <button type="button" class="btn @(statusFilter == ProductionItemStatus.WaitingMaterial ? "btn-warning" : "btn-outline-secondary")"
-                    @onclick="() => statusFilter = ProductionItemStatus.WaitingMaterial">等待領料</button>
+                    @onclick="() => statusFilter = ProductionItemStatus.WaitingMaterial">待領料</button>
             <button type="button" class="btn @(statusFilter == ProductionItemStatus.InProgress ? "btn-primary" : "btn-outline-secondary")"
                     @onclick="() => statusFilter = ProductionItemStatus.InProgress">生產中</button>
             <button type="button" class="btn @(statusFilter == ProductionItemStatus.Completed ? "btn-success" : "btn-outline-secondary")"
@@ -47,7 +49,25 @@
             IsDisabled="@(!boardItems.Any(i => i.ProductionItemStatus == ProductionItemStatus.InProgress))"
             Title="批次確認本週生產中項目完工" />
 
+        @* 列印本週排程 *@
+        <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+            IconClass="bi bi-printer" Text="列印排程" CssClass="ms-2"
+            OnClick="@HandlePrintScheduleAsync"
+            Title="列印本週生產排程表" />
+
+        @* 用料需求報表 *@
+        <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+            IconClass="bi bi-list-check" Text="用料需求" CssClass="ms-1"
+            OnClick="@HandleMaterialRequirementsAsync"
+            Title="列印本週用料需求報表" />
+
         <div class="ms-auto d-flex align-items-center gap-2">
+
+            @* 重新整理 *@
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+                IconClass="bi bi-arrow-clockwise" OnClick="LoadDataAsync"
+                IsDisabled="@IsLoading"
+                Title="重新整理看板資料" />
             @* 9.5 交期預警 *@
             @if (OverdueCount > 0)
             {
@@ -69,6 +89,7 @@
                     <span class="spinner-border spinner-border-sm me-1"></span>載入中...
                 </span>
             }
+            <DebugComponentLabelComponent ComponentName="ProductionBoardWeekView" />
         </div>
     </div>
 
@@ -156,6 +177,20 @@
     Items="@boardItems.Where(i => i.ProductionItemStatus == ProductionItemStatus.InProgress).ToList()"
     OnCompleted="@LoadDataAsync" />
 
+@* 列印排程 Modal *@
+<GenericReportFilterModalComponent
+    IsVisible="@showPrintModal"
+    IsVisibleChanged="@((bool v) => showPrintModal = v)"
+    ReportId="@ReportIds.ProductionSchedule"
+    InitialCriteria="@printInitialCriteria" />
+
+@* 用料需求報表 Modal *@
+<GenericReportFilterModalComponent
+    IsVisible="@showMaterialReqModal"
+    IsVisibleChanged="@((bool v) => showMaterialReqModal = v)"
+    ReportId="@ReportIds.MaterialRequirements"
+    InitialCriteria="@materialReqInitialCriteria" />
+
 @code {
     // ── 週導航 ──
     private DateTime WeekStart { get; set; } = GetMonday(DateTime.Today);
@@ -185,6 +220,14 @@
 
     // ── 9.2 批次完工 ──
     private bool showBatchCompleteModal;
+
+    // ── 列印排程 ──
+    private bool showPrintModal;
+    private ProductionScheduleCriteria? printInitialCriteria;
+
+    // ── 用料需求報表 ──
+    private bool showMaterialReqModal;
+    private MaterialRequirementsCriteria? materialReqInitialCriteria;
 
     // ── 9.3 狀態篩選 ──
     private ProductionItemStatus? statusFilter;
@@ -648,6 +691,28 @@
         {
             await NotificationService.ShowWarningAsync($"排序儲存失敗：{ex.Message}");
         }
+    }
+
+    // ── 列印排程 ──
+
+    private void HandlePrintScheduleAsync()
+    {
+        printInitialCriteria = new ProductionScheduleCriteria
+        {
+            StartDate = WeekStart,
+            EndDate   = WeekEnd
+        };
+        showPrintModal = true;
+    }
+
+    private void HandleMaterialRequirementsAsync()
+    {
+        materialReqInitialCriteria = new MaterialRequirementsCriteria
+        {
+            StartDate = WeekStart,
+            EndDate   = WeekEnd
+        };
+        showMaterialReqModal = true;
     }
 
     // ── 輔助 ──

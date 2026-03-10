@@ -1,0 +1,91 @@
+/* A. 三欄統計列 */
+.stats-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--bg-secondary, #f8f9fa);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.stat-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 8px;
+    gap: 1px;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 32px;
+    background: var(--border-color);
+    flex-shrink: 0;
+}
+
+.stat-label {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.stat-value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-done {
+    color: #198754;
+}
+
+.stat-remaining {
+    color: #0d6efd;
+}
+
+/* B. Modal 內進度條 */
+.modal-progress {
+    height: 5px;
+    background: var(--border-color);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.modal-progress-bar {
+    height: 100%;
+    background: #198754;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* 確認入庫區塊底色 */
+.complete-section {
+    background: var(--bg-secondary, #f8f9fa);
+}
+
+/* 本次入庫數量 input */
+.input-qty {
+    max-width: 120px;
+}
+
+/* 入庫倉庫 select */
+.select-warehouse {
+    max-width: 140px;
+}
+
+/* 庫位 / 退料倉庫 select */
+.select-location {
+    max-width: 130px;
+}
+
+/* 實際用量 / 退料量 / 損耗量 input */
+.settlement-input {
+    max-width: 90px;
+}
+
+/* 損耗備註 input */
+.settlement-reason {
+    max-width: 160px;
+}

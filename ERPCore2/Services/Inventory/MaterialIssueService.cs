@@ -70,6 +70,9 @@ namespace ERPCore2.Services
                 }
 
                 // 3. 逐筆扣除庫存（FIFO），並將加權平均成本寫回明細
+                // 同時收集需回寫 IssuedQuantity 的 ProductionScheduleDetail ID
+                var scheduleDetailUpdates = new Dictionary<int, decimal>(); // DetailId → 累計領料量
+
                 foreach (var detail in details)
                 {
                     var reduceResult = await _inventoryStockService.ReduceStockWithFIFOAsync(
@@ -90,6 +93,25 @@ namespace ERPCore2.Services
                     // 將 FIFO 回傳的加權平均成本寫入明細
                     if (reduceResult.Data > 0)
                         detail.UnitCost = reduceResult.Data;
+
+                    // 收集需回寫的 ProductionScheduleDetail（同一 Detail 可能有多筆領料明細）
+                    if (detail.ProductionScheduleDetailId.HasValue)
+                    {
+                        var sid = detail.ProductionScheduleDetailId.Value;
+                        scheduleDetailUpdates.TryGetValue(sid, out var existing);
+                        scheduleDetailUpdates[sid] = existing + detail.IssueQuantity;
+                    }
+                }
+
+                // 4. 回寫 ProductionScheduleDetail.IssuedQuantity
+                if (scheduleDetailUpdates.Any())
+                {
+                    var scheduleDetails = await context.ProductionScheduleDetails
+                        .Where(d => scheduleDetailUpdates.Keys.Contains(d.Id))
+                        .ToListAsync();
+
+                    foreach (var sd in scheduleDetails)
+                        sd.IssuedQuantity += scheduleDetailUpdates[sd.Id];
                 }
 
                 await context.SaveChangesAsync();

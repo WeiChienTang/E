@@ -131,7 +131,82 @@ Task<(List<T> Items, int TotalCount)> GetPagedWithFiltersAsync(
 
 **回傳**：`(List<T> Items, int TotalCount)` — 本頁資料 + 符合條件總筆數。
 
-**已實作此方法的服務**（詳細遷移紀錄見 [Readme_資料載入_服務改善方式.md](Readme_資料載入_服務改善方式.md)）：
+---
+
+### 新增步驟（以 `SalesReturnReason` 為例）
+
+**步驟 1：Service Interface（`ISalesReturnReasonService.cs`）**
+
+```csharp
+Task<(List<SalesReturnReason> Items, int TotalCount)> GetPagedWithFiltersAsync(
+    Func<IQueryable<SalesReturnReason>, IQueryable<SalesReturnReason>>? filterFunc,
+    int pageNumber,
+    int pageSize);
+```
+
+**步驟 2：Service 實作（`SalesReturnReasonService.cs`）**
+
+```csharp
+public async Task<(List<SalesReturnReason> Items, int TotalCount)> GetPagedWithFiltersAsync(
+    Func<IQueryable<SalesReturnReason>, IQueryable<SalesReturnReason>>? filterFunc,
+    int pageNumber,
+    int pageSize)
+{
+    try
+    {
+        using var context = await _contextFactory.CreateDbContextAsync();
+        // 基礎查詢：不加 IsDraft 過濾（由 filterFunc 統一處理）
+        // 視 Index 欄位是否顯示關聯資料決定是否加 Include
+        IQueryable<SalesReturnReason> query = context.SalesReturnReasons;
+
+        if (filterFunc != null)
+            query = filterFunc(query);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(x => x.CreatedAt)   // 維持與原 GetAll 相同的排序
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+    catch (Exception ex)
+    {
+        await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+        return (new List<SalesReturnReason>(), 0);
+    }
+}
+```
+
+**步驟 3：Index 頁面（`SalesReturnReasonIndex.razor`）**
+
+移除 `DataLoader="@..."` 與 `FilterApplier="@..."`，改為 `ServerDataLoader="@ServerLoadDataAsync"`，並新增對應方法：
+
+```csharp
+private Task<(List<SalesReturnReason> Items, int TotalCount)> ServerLoadDataAsync(
+    SearchFilterModel filter, int page, int pageSize)
+{
+    return SalesReturnReasonService.GetPagedWithFiltersAsync(
+        q =>
+        {
+            // IsDraft 統一在 filterFunc 內處理
+            // 無 ShowDraftTab 時 ShowDrafts 永遠是 null → ?? false → 只顯示正式資料
+            q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+            // ⚠️ null 檢查必要：ServerDataLoader 可能在 OnInitializedAsync 完成前被呼叫
+            if (fieldConfiguration != null)
+                q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadDataAsync), GetType());
+            return q;
+        },
+        page, pageSize);
+}
+```
+
+> **說明**：不論頁面是否設定 `ShowDraftTab`，IsDraft 一律在 filterFunc 內以 `filter.ShowDrafts ?? false` 處理。Service 基礎查詢不加 IsDraft 過濾，方便未來隨時新增 ShowDraftTab 而無需修改 Service。
+
+---
+
+**已實作此方法的服務**：
 
 | 模組 | 服務 |
 |------|------|
@@ -149,6 +224,67 @@ Task<(List<T> Items, int TotalCount)> GetPagedWithFiltersAsync(
 | 廢棄物 | `WasteRecordService`、`WasteTypeService` |
 | 薪資 | `EmployeeSalaryService`、`EmployeeBankAccountService`、`PayrollPeriodService`、`PayrollItemService` |
 | 系統 | `CompanyService`、`PrinterConfigurationService`、`PaperSettingService`、`ReportPrintConfigurationService`、`ErrorLogService` |
+
+---
+
+### 已遷移的 Index 頁面完整清單（截至 2026-03-10）
+
+| 頁面 | 模組 | ShowDraftTab | Include |
+|------|------|:------------:|---------|
+| `AccountItemIndex.razor` | 會計 | | 無 |
+| `JournalEntryIndex.razor` | 財務 | | Include Company |
+| `SetoffDocumentIndex.razor` | 財務 | | Include Company |
+| `PurchaseOrderIndex.razor` | 採購 | ✓ | Include Company、Supplier |
+| `PurchaseReceivingIndex.razor` | 採購 | ✓ | Include Supplier |
+| `PurchaseReturnIndex.razor` | 採購 | ✓ | Include Supplier |
+| `PurchaseReturnReasonIndex.razor` | 採購 | ✓ | 無 |
+| `QuotationIndex.razor` | 銷售 | ✓ | Include Customer |
+| `SalesOrderIndex.razor` | 銷售 | ✓ | Include Customer |
+| `SalesDeliveryIndex.razor` | 銷售 | ✓ | Include Customer |
+| `SalesReturnIndex.razor` | 銷售 | ✓ | Include Customer、ReturnReason |
+| `SalesReturnReasonIndex.razor` | 銷售 | ✓ | 無 |
+| `CustomerIndex.razor` | 客戶 | ✓ | 無 |
+| `CustomerVisitIndex.razor` | 客戶 | | Include Customer |
+| `SupplierIndex.razor` | 廠商 | ✓ | 無 |
+| `EmployeeIndex.razor` | 員工 | ✓ | Include Dept、Position、Role |
+| `DepartmentIndex.razor` | 員工 | ✓ | 無 |
+| `EmployeePositionIndex.razor` | 員工 | ✓ | 無 |
+| `RoleIndex.razor` | 員工 | | 無 |
+| `PermissionIndex.razor` | 員工 | | 無 |
+| `ProductIndex.razor` | 商品 | ✓ | Include ProductCategory、Unit、ProductionUnit、Size |
+| `ProductCategoryIndex.razor` | 商品 | ✓ | 無 |
+| `UnitIndex.razor` | 商品 | ✓ | 無 |
+| `SizeIndex.razor` | 商品 | ✓ | 無 |
+| `MaterialIndex.razor` | 生產 | | 無 |
+| `ProductCompositionIndex.razor` | 生產 | ✓ | Include ParentProduct、CompositionCategory |
+| `CompositionCategoryIndex.razor` | 生產 | ✓ | 無 |
+| `InventoryStockIndex.razor` | 倉庫 | ✓ | Include Product.ProductCategory |
+| `InventoryTransactionIndex.razor` | 倉庫 | | Include Warehouse |
+| `StockTakingIndex.razor` | 倉庫 | ✓ | Include Warehouse |
+| `MaterialIssueIndex.razor` | 倉庫 | ✓ | 無 |
+| `WarehouseIndex.razor` | 倉庫 | ✓ | 無 |
+| `WarehouseLocationIndex.razor` | 倉庫 | ✓ | Include Warehouse |
+| `VehicleIndex.razor` | 車輛 | ✓ | 無 |
+| `VehicleMaintenanceIndex.razor` | 車輛 | ✓ | Include Vehicle |
+| `VehicleTypeIndex.razor` | 車輛 | ✓ | 無 |
+| `DocumentIndex.razor` | 文件 | ✓ | Include DocumentCategory |
+| `DocumentCategoryIndex.razor` | 文件 | ✓ | 無 |
+| `WasteRecordIndex.razor` | 廢棄物 | ✓ | Include WasteType |
+| `WasteTypeIndex.razor` | 廢棄物 | ✓ | 無 |
+| `BankIndex.razor` | 財務 | ✓ | 無 |
+| `CurrencyIndex.razor` | 財務 | ✓ | 無 |
+| `PaymentMethodIndex.razor` | 財務 | ✓ | 無 |
+| `EmployeeSalaryIndex.razor` | 薪資 | | Include Employee |
+| `EmployeeBankAccountIndex.razor` | 薪資 | | Include Employee |
+| `PayrollPeriodIndex.razor` | 薪資 | | 無 |
+| `PayrollItemIndex.razor` | 薪資 | | 無 |
+| `CompanyIndex.razor` | 系統 | | 無 |
+| `PrinterConfigurationIndex.razor` | 系統 | | 無 |
+| `PaperSettingIndex.razor` | 系統 | | 無 |
+| `ReportPrintConfigurationIndex.razor` | 系統 | | 無 |
+| `ErrorLogIndex.razor` | 系統 | | 無 |
+
+> **備註**：`PayrollIndex.razor` 為完全自訂頁面（非 GenericIndexPageComponent），無需遷移。
 
 ---
 
@@ -198,4 +334,3 @@ Task<(List<T> Items, int TotalCount)> GetPagedWithFiltersAsync(
 ## 相關文件
 
 - [README_完整頁面設計總綱.md](README_完整頁面設計總綱.md)
-- [Readme_資料載入_服務改善方式.md](Readme_資料載入_服務改善方式.md) — 伺服器端分頁遷移紀錄

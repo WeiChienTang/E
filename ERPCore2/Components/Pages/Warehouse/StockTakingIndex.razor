@@ -4,6 +4,7 @@
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@inject IStockTakingDifferenceReportService StockTakingDifferenceReportService
 @inject IJSRuntime JSRuntime
 
 @using ERPCore2.Models
@@ -32,6 +33,8 @@
                           OnRowClick="@HandleEditClick"
                           ShowDraftTab="true"
                           DebugPageName="StockTakingIndex"
+                          RowPrintService="@StockTakingDifferenceReportService"
+                          RowPrintReportId="@ReportIds.InventoryCount"
                           @ref="indexComponent" />
 
 @* 盤點單編輯 Modal *@

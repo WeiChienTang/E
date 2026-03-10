@@ -16,6 +16,7 @@
 @inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
 @inject IQuotationCompositionDetailService QuotationCompositionDetailService
 @inject IProductCompositionService ProductCompositionService
+@inject IProductionScheduleItemService ProductionScheduleItemService
 @inject IJSRuntime JSRuntime
 
 @inherits BaseDetailTableComponent<SalesOrder, SalesOrderDetail, SalesOrderTable.SalesItem>
@@ -390,6 +391,8 @@ else
                 SelectedProduct = salesDetail.Product ?? Products.FirstOrDefault(p => p.Id == salesDetail.ProductId),
                 OrderQuantity = salesDetail.OrderQuantity,
                 DeliveredQuantity = salesDetail.DeliveredQuantity,
+                ScheduledQuantity = salesDetail.ScheduledQuantity,
+                ProducedQuantity = salesDetail.ProducedQuantity,
                 UnitPrice = salesDetail.UnitPrice,
                 DiscountPercentage = salesDetail.DiscountPercentage,
                 TaxRate = finalTaxRate,
@@ -432,6 +435,22 @@ else
                 salesItem.ProductSearchValue = FormatProductDisplayText(salesItem.SelectedProduct);
 
             Items.Add(salesItem);
+        }
+
+        // 批次載入生產排程狀態
+        var detailIds = Items
+            .Where(i => i.ScheduledQuantity > 0 && i.ExistingDetailEntity is SalesOrderDetail d && d.Id > 0)
+            .Select(i => ((SalesOrderDetail)i.ExistingDetailEntity!).Id)
+            .ToList();
+
+        if (detailIds.Count > 0)
+        {
+            var statusMap = await ProductionScheduleItemService.GetAggregateStatusMapAsync(detailIds);
+            foreach (var item in Items)
+            {
+                if (item.ExistingDetailEntity is SalesOrderDetail detail && statusMap.TryGetValue(detail.Id, out var status))
+                    item.ProductionStatus = status;
+            }
         }
     }
 
@@ -966,6 +985,66 @@ else
             Tooltip = "已出貨的數量（唯讀）"
         });
 
+        // 完成量欄位 - 顯示 SalesOrderDetail.ProducedQuantity（實際入庫量）
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = L["Column.ProducedQuantity"],
+            PropertyName = nameof(SalesItem.ProducedQuantity),
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "90px",
+            HideOnMobile = true,
+            Tooltip = "實際已完工入庫的數量（含停產後的部分完工量）",
+            CustomTemplate = item =>
+            {
+                var salesItem = (SalesItem)item;
+                if (salesItem.ScheduledQuantity <= 0)
+                    return builder => { };
+
+                var qty = NumberFormatHelper.FormatSmart(salesItem.ProducedQuantity);
+                return builder =>
+                {
+                    builder.OpenElement(0, "span");
+                    builder.AddAttribute(1, "class", "text-end d-block");
+                    builder.AddContent(2, salesItem.ProducedQuantity > 0 ? qty : "-");
+                    builder.CloseElement();
+                };
+            }
+        });
+
+        // 生產狀態欄位 - 僅顯示狀態徽章
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = L["Column.ProductionStatus"],
+            PropertyName = nameof(SalesItem.ProductionStatus),
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "80px",
+            HideOnMobile = true,
+            Tooltip = "生產排程的聚合狀態",
+            CustomTemplate = item =>
+            {
+                var salesItem = (SalesItem)item;
+                if (salesItem.ScheduledQuantity <= 0)
+                    return builder => { };
+
+                var (badgeClass, badgeText) = salesItem.ProductionStatus switch
+                {
+                    ProductionItemStatus.InProgress      => ("badge bg-primary", "生產中"),
+                    ProductionItemStatus.WaitingMaterial => ("badge bg-warning text-dark", "待料"),
+                    ProductionItemStatus.Completed       => ("badge bg-success", "已完成"),
+                    ProductionItemStatus.Pending         => ("badge bg-secondary", "待排"),
+                    _                                    => ("badge bg-secondary", "待排")
+                };
+
+                return builder =>
+                {
+                    builder.OpenElement(0, "span");
+                    builder.AddAttribute(1, "class", badgeClass);
+                    builder.AddContent(2, badgeText);
+                    builder.CloseElement();
+                };
+            }
+        });
+
         // 單價欄位 - 使用 CanDeleteItem 統一檢查（出貨、排程、退貨、收款）
         columns.Add(new InteractiveColumnDefinition
         { 
@@ -1255,6 +1334,9 @@ else
         public Product? SelectedProduct { get; set; }
         public decimal OrderQuantity { get; set; } = 0;
         public decimal DeliveredQuantity { get; set; } = 0;
+        public decimal ScheduledQuantity { get; set; } = 0;
+        public decimal ProducedQuantity { get; set; } = 0;
+        public ProductionItemStatus? ProductionStatus { get; set; }
         public decimal UnitPrice { get; set; } = 0;
         public decimal DiscountPercentage { get; set; } = 0;
         public decimal Subtotal { get; set; } = 0;

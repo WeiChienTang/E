@@ -158,6 +158,9 @@
   <data name="Modal.ConfirmLeave" xml:space="preserve">
     <value>Leave</value>
   </data>
+  <data name="Modal.Leave" xml:space="preserve">
+    <value>Leave</value>
+  </data>
   <data name="Modal.SaveAndClose" xml:space="preserve">
     <value>Save</value>
   </data>
@@ -658,6 +661,10 @@
   <data name="Report.ProductBarcode" xml:space="preserve"><value>Product Barcode</value></data>
   <data name="Report.BOMReport" xml:space="preserve"><value>BOM Report</value></data>
   <data name="Report.ProductionSchedule" xml:space="preserve"><value>Production Schedule</value></data>
+  <data name="Report.MaterialScrapRecord" xml:space="preserve"><value>Material Scrap &amp; Return Record</value></data>
+  <data name="Report.MaterialScrapRecordDesc" xml:space="preserve"><value>Query production components with scrap or return quantities, grouped by production item</value></data>
+  <data name="Report.MaterialRequirements" xml:space="preserve"><value>Material Requirements Report</value></data>
+  <data name="Report.MaterialRequirementsDesc" xml:space="preserve"><value>Aggregate material requirements for scheduled production items by component, showing required, issued and pending quantities</value></data>
   <data name="Report.InventoryStatus" xml:space="preserve"><value>Inventory Status</value></data>
   <data name="Report.InventoryTransaction" xml:space="preserve"><value>Inventory Transaction</value></data>
   <data name="Report.InventoryCount" xml:space="preserve"><value>Inventory Count Variance</value></data>
@@ -2290,6 +2297,7 @@
   <data name="Inventory.SatisfactionRate" xml:space="preserve"><value>Satisfaction Rate</value></data>
   <data name="Inventory.Insufficient" xml:space="preserve"><value>Insufficient</value></data>
   <data name="Inventory.Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="Inventory.CompositionRatio" xml:space="preserve"><value>Ratio</value></data>
   <data name="Schedule.BatchTransfer" xml:space="preserve"><value>Batch Transfer to Schedule</value></data>
   <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>Batch Transfer to Schedule - {0}</value></data>
   <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>Sales Order Info</value></data>
@@ -2695,6 +2703,8 @@
   <data name="Warehouse.NoStockLocations" xml:space="preserve"><value>No stock locations</value></data>
   <data name="Button.Import" xml:space="preserve"><value>Import</value></data>
   <data name="Column.ScheduledQuantity" xml:space="preserve"><value>Scheduled Qty</value></data>
+  <data name="Column.ProducedQuantity" xml:space="preserve"><value>Produced Qty</value></data>
+  <data name="Column.ProductionStatus" xml:space="preserve"><value>Production Status</value></data>
   <data name="Column.ImportQuantity" xml:space="preserve"><value>This Import</value></data>
   <data name="Column.WarehouseLocation" xml:space="preserve"><value>Warehouse/Location</value></data>
 

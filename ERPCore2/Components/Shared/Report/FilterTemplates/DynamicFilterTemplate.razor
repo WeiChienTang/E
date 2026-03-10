@@ -147,6 +147,10 @@ else
     [Parameter]
     public Type CriteriaType { get; set; } = null!;
 
+    /// <summary>初始篩選條件（選用），用於預填日期範圍等欄位</summary>
+    [Parameter]
+    public IReportFilterCriteria? InitialCriteria { get; set; }
+
     // ===== 內部狀態字典（以屬性名稱為 Key）=====
 
     private Dictionary<string, List<FilterDisplayItem>> _availableItems = new();
@@ -325,8 +329,14 @@ else
 
         foreach (var f in _dateRangeFieldDefs)
         {
-            _dateValues[f.PropertyName] = null;
-            _dateValues[f.EndPropertyName] = null;
+            var startVal = InitialCriteria != null
+                ? CriteriaType.GetProperty(f.PropertyName)?.GetValue(InitialCriteria) as DateTime?
+                : null;
+            var endVal = InitialCriteria != null
+                ? CriteriaType.GetProperty(f.EndPropertyName)?.GetValue(InitialCriteria) as DateTime?
+                : null;
+            _dateValues[f.PropertyName] = startVal;
+            _dateValues[f.EndPropertyName] = endVal;
         }
 
         foreach (var f in _keywordFieldDefs)

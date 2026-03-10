@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@inject ICustomerDetailReportService CustomerDetailReportService
 
 <GenericIndexPageComponent TEntity="Customer" 
                       TService="ICustomerService"
@@ -21,6 +22,8 @@
                       RequiredModule="Customers"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
+                      RowPrintService="@CustomerDetailReportService"
+                      RowPrintReportId="@ReportIds.CustomerDetail"
                       DebugPageName="CustomerIndex"
                       @ref="indexComponent" />
 

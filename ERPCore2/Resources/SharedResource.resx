@@ -161,6 +161,9 @@
   <data name="Modal.ConfirmLeave" xml:space="preserve">
     <value>確定離開</value>
   </data>
+  <data name="Modal.Leave" xml:space="preserve">
+    <value>直接離開</value>
+  </data>
   <data name="Modal.SaveAndClose" xml:space="preserve">
     <value>儲存</value>
   </data>
@@ -679,6 +682,10 @@
   <data name="Report.ProductBarcode" xml:space="preserve"><value>商品條碼</value></data>
   <data name="Report.BOMReport" xml:space="preserve"><value>物料清單報表</value></data>
   <data name="Report.ProductionSchedule" xml:space="preserve"><value>生產排程表</value></data>
+  <data name="Report.MaterialScrapRecord" xml:space="preserve"><value>用料損耗退料記錄</value></data>
+  <data name="Report.MaterialScrapRecordDesc" xml:space="preserve"><value>查詢生產過程中有損耗量或退料量的組件明細，依生產項目分組顯示</value></data>
+  <data name="Report.MaterialRequirements" xml:space="preserve"><value>用料需求報表</value></data>
+  <data name="Report.MaterialRequirementsDesc" xml:space="preserve"><value>彙總指定期間內生產排程的物料需求，依組件品號統計需求量、已領量與待領量</value></data>
   <data name="Report.InventoryStatus" xml:space="preserve"><value>庫存現況表</value></data>
   <data name="Report.InventoryTransaction" xml:space="preserve"><value>庫存異動明細</value></data>
   <data name="Report.InventoryCount" xml:space="preserve"><value>盤點差異表</value></data>
@@ -2320,6 +2327,7 @@
   <data name="Inventory.SatisfactionRate" xml:space="preserve"><value>滿足率</value></data>
   <data name="Inventory.Insufficient" xml:space="preserve"><value>不足</value></data>
   <data name="Inventory.Warning" xml:space="preserve"><value>警戒</value></data>
+  <data name="Inventory.CompositionRatio" xml:space="preserve"><value>配比</value></data>
   <data name="Schedule.BatchTransfer" xml:space="preserve"><value>批次轉排程</value></data>
   <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>批次轉排程 - {0}</value></data>
   <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>銷貨訂單資訊</value></data>
@@ -2742,6 +2750,8 @@
   <data name="Warehouse.NoStockLocations" xml:space="preserve"><value>無存放庫存位置</value></data>
   <data name="Button.Import" xml:space="preserve"><value>匯入</value></data>
   <data name="Column.ScheduledQuantity" xml:space="preserve"><value>排程數量</value></data>
+  <data name="Column.ProducedQuantity" xml:space="preserve"><value>完成量</value></data>
+  <data name="Column.ProductionStatus" xml:space="preserve"><value>生產狀態</value></data>
   <data name="Column.ImportQuantity" xml:space="preserve"><value>本次完成</value></data>
   <data name="Column.WarehouseLocation" xml:space="preserve"><value>倉庫/庫位</value></data>
 

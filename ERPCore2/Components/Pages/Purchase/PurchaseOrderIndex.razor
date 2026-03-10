@@ -8,6 +8,7 @@
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IPurchaseOrderReportService PurchaseOrderReportService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="PurchaseOrder" 
@@ -32,6 +33,8 @@
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           DebugPageName="PurchaseOrderIndex"
+                          RowPrintService="@PurchaseOrderReportService"
+                          RowPrintReportId="@ReportIds.PurchaseOrder"
                           @ref="indexComponent">
 </GenericIndexPageComponent>
 

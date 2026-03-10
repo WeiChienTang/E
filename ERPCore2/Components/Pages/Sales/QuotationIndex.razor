@@ -8,6 +8,7 @@
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IQuotationReportService QuotationReportService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Quotation" 
@@ -32,6 +33,8 @@
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
                       DebugPageName="QuotationIndex"
+                      RowPrintService="@QuotationReportService"
+                      RowPrintReportId="@ReportIds.Quotation"
                       @ref="indexComponent">
 </GenericIndexPageComponent>
 

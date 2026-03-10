@@ -288,3 +288,24 @@ html.debug-i18n .table-debug-name {
   pointer-events: auto;
   cursor: pointer;
 }
+
+/* ── Debug 方式一（模式 C）：非 Modal 子組件 header Debug 標籤 ── */
+/* 預設顯示（SuperAdmin server-side 條件渲染控制），Shift+Alt+P 時隱藏 */
+.debug-component-label {
+  display: inline;
+  font-family: monospace;
+  font-size: 0.65rem;
+  background: #1a1a2e;
+  color: #7ec8e3;
+  padding: 1px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.6;
+  cursor: pointer;
+  user-select: none;
+}
+
+html.debug-props .debug-component-label {
+  display: none;
+}

@@ -2,6 +2,7 @@
 @inject IVehicleMaintenanceService VehicleMaintenanceService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@inject IVehicleMaintenanceReportService VehicleMaintenanceReportService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="VehicleMaintenance" 
@@ -22,6 +23,8 @@
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           ShowDraftTab="true"
                           DebugPageName="VehicleMaintenanceIndex"
+                          RowPrintService="@VehicleMaintenanceReportService"
+                          RowPrintReportId="@ReportIds.VehicleMaintenance"
                           @ref="indexComponent" />
 
 <VehicleMaintenanceEditModalComponent IsVisible="@showEditModal"

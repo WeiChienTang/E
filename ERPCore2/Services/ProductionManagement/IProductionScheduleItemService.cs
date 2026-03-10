@@ -89,6 +89,12 @@ namespace ERPCore2.Services
         Task<Dictionary<int, decimal>> GetScheduledQuantityMapAsync();
 
         /// <summary>
+        /// 批次取得指定銷貨訂單明細的排程狀態聚合（key = SalesOrderDetailId）
+        /// InProgress > WaitingMaterial > Pending；全 Completed 回傳 Completed
+        /// </summary>
+        Task<Dictionary<int, ProductionItemStatus>> GetAggregateStatusMapAsync(IEnumerable<int> salesOrderDetailIds);
+
+        /// <summary>
         /// 查詢同商品最近一次完工入庫的倉庫/庫位（用於預填）
         /// </summary>
         Task<(int? WarehouseId, int? LocationId)> GetLastCompletionWarehouseAsync(int productId);
@@ -105,5 +111,14 @@ namespace ERPCore2.Services
         /// 回傳 bool = true 表示退回前有已發出的領料記錄，應提示使用者手動沖銷。
         /// </summary>
         Task<ServiceResult<bool>> ReturnToSidebarAsync(int itemId);
+
+        /// <summary>
+        /// 停產：強制結案，不再繼續生產。
+        /// 不寫入成品庫存（已有部分完工則已分批入庫）。
+        /// 不調整 SalesOrderDetail.ScheduledQuantity（保持原值，使訂單不重出現在待排 Sidebar）。
+        /// 更新 SalesOrderDetail.ProducedQuantity += 已完成數量。
+        /// 若傳入 settlements 則執行退料入庫。
+        /// </summary>
+        Task<ServiceResult> AbortProductionAsync(int itemId, List<MaterialSettlementDto>? settlements = null);
     }
 }

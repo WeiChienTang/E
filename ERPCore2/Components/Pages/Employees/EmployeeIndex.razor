@@ -8,6 +8,7 @@
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@inject IEmployeeDetailReportService EmployeeDetailReportService
 
 <GenericIndexPageComponent TEntity="Employee" 
                         TService="IEmployeeService"
@@ -27,6 +28,8 @@
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         DebugPageName="EmployeeIndex"
+                        RowPrintService="@EmployeeDetailReportService"
+                        RowPrintReportId="@ReportIds.EmployeeDetail"
                         @ref="indexComponent" />
 
 @* 員工編輯 Modal *@

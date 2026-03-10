@@ -9,6 +9,7 @@
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IPurchaseReceivingReportService PurchaseReceivingReportService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="PurchaseReceiving" 
@@ -33,6 +34,8 @@
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           DebugPageName="PurchaseReceivingIndex"
+                          RowPrintService="@PurchaseReceivingReportService"
+                          RowPrintReportId="@ReportIds.PurchaseReceiving"
                           @ref="indexComponent" />
 
 @* 進貨單編輯 Modal *@

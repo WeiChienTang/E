@@ -991,22 +991,16 @@ namespace ERPCore2.Services
         /// </summary>
         private void CalculateStatistics(OrderInventoryCheckResult result)
         {
-            var allItems = new List<OrderInventoryCheckItem>();
-            foreach (var item in result.Items)
-            {
-                allItems.Add(item);
-                allItems.AddRange(item.Children);
-            }
+            // 只統計頂層訂單明細，子組成只是輔助資訊，不參與滿足率計算
+            var topLevelItems = result.Items;
 
-            // 計算不足和警戒項目數量
-            result.InsufficientItemCount = allItems.Count(i => i.Status == InventoryStatus.Insufficient);
-            result.WarningItemCount = allItems.Count(i => i.Status == InventoryStatus.Warning);
+            result.InsufficientItemCount = topLevelItems.Count(i => i.Status == InventoryStatus.Insufficient);
+            result.WarningItemCount = topLevelItems.Count(i => i.Status == InventoryStatus.Warning);
 
-            // 計算滿足率
-            if (allItems.Count > 0)
+            if (topLevelItems.Count > 0)
             {
-                var sufficientCount = allItems.Count(i => i.Status == InventoryStatus.Sufficient);
-                result.OverallSatisfactionRate = Math.Round((decimal)sufficientCount / allItems.Count * 100, 2);
+                var sufficientCount = topLevelItems.Count(i => i.Status == InventoryStatus.Sufficient);
+                result.OverallSatisfactionRate = Math.Round((decimal)sufficientCount / topLevelItems.Count * 100, 2);
             }
             else
             {

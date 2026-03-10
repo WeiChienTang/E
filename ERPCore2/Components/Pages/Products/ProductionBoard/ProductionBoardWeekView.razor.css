@@ -51,7 +51,7 @@
 }
 
 .summary-item {
-    font-size: 0.78rem;
+    font-size: 1rem;
     font-weight: 500;
     padding: 2px 10px;
     border-radius: 10px;
@@ -78,7 +78,7 @@
 
 /* ── 9.5 交期預警 badge ── */
 .board-alert-badge {
-    font-size: 0.78rem;
+    font-size: 1rem;
 }
 
 /* ── 深色模式覆寫 ── */

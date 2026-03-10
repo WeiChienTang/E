@@ -84,6 +84,10 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
                 allItems      = new List<TEntity>();
                 filteredItems = new List<TEntity>();
 
+                // 草稿 Badge：伺服器模式無法從 allItems 計算，改由 Service 直接 COUNT
+                if (ShowDraftTab)
+                    _draftCount = await Service.GetDraftCountAsync();
+
                 if (sw != null) { sw.Stop(); _debugQueryMs = sw.ElapsedMilliseconds; _debugPageCount = pagedItems.Count; _debugTotalCount = totalItems; _debugMode = "server"; }
 
                 StateHasChanged();

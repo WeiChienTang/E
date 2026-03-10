@@ -36,6 +36,7 @@
         @* 數量與交期 *@
         <div class="card-footer-row">
             <div class="card-qty">
+                <span class="qty-label">生產量：</span>
                 @if (Item.CompletedQuantity > 0)
                 {
                     <span class="qty-done">@NumberFormatHelper.FormatSmart(Item.CompletedQuantity)</span>
@@ -43,17 +44,24 @@
                 }
                 <span class="qty-total">@NumberFormatHelper.FormatSmart(Item.ScheduledQuantity)</span>
             </div>
-
             @if (Item.ExpectedDeliveryDate.HasValue)
             {
-                <div class="card-due @DeliveryUrgencyCss">
-                    @Item.ExpectedDeliveryDate.Value.ToString("MM/dd")
+                <span class="card-due @DeliveryUrgencyCss">@DeliveryDateText</span>
+            }
+        </div>
+
+        @* 狀態 Badge + 進度條（同行） *@
+        <div class="card-meta-row">
+            <span class="card-status-badge @StatusCssClass">@StatusText</span>
+            @if (Item.CompletedQuantity > 0 && Item.ScheduledQuantity > 0)
+            {
+                <div class="card-progress">
+                    <div class="card-progress-bar" style="width: @(ProgressPercent)%"></div>
                 </div>
             }
         </div>
 
-        @* 狀態 Badge *@
-        <div class="card-status-badge @StatusCssClass">@StatusText</div>
+        <DebugComponentLabelComponent ComponentName="ProductionBoardItemCard" />
     </div>
 </div>
 
@@ -89,9 +97,27 @@
         {
             if (!Item.ExpectedDeliveryDate.HasValue) return "";
             var daysLeft = (Item.ExpectedDeliveryDate.Value.Date - DateTime.Today).TotalDays;
-            return daysLeft < 0 ? "due-overdue" : daysLeft <= 3 ? "due-urgent" : "";
+            return daysLeft <= 0 ? "due-overdue" : daysLeft <= 3 ? "due-urgent" : "";
         }
     }
+
+    private string DeliveryDateText
+    {
+        get
+        {
+            if (!Item.ExpectedDeliveryDate.HasValue) return "";
+            var days = (int)(Item.ExpectedDeliveryDate.Value.Date - DateTime.Today).TotalDays;
+            if (days < 0)  return $"逾期{-days}天";
+            if (days == 0) return "今天";
+            if (days == 1) return "明天";
+            if (days <= 3) return $"+{days}天";
+            return Item.ExpectedDeliveryDate.Value.ToString("MM/dd");
+        }
+    }
+
+    private string ProgressPercent => Item.ScheduledQuantity > 0
+        ? Math.Min(100, (double)Item.CompletedQuantity / (double)Item.ScheduledQuantity * 100).ToString("F0")
+        : "0";
 
     private async Task HandleClick()
     {

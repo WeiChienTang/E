@@ -1,0 +1,6 @@
+/* 表頭背景使用 CSS 變數，支援深色模式（禁止使用 Bootstrap table-light） */
+.accounting-thead th {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}

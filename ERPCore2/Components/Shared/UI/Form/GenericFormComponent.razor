@@ -209,6 +209,7 @@
                         <button type="button"
                                 class="btn btn-link p-0 ms-1 align-baseline label-help-btn"
                                 style="font-size: 0.85em; line-height: 1;"
+                                tabindex="-1"
                                 data-bs-toggle="popover"
                                 data-bs-trigger="focus"
                                 data-bs-placement="right"
@@ -237,6 +238,7 @@
                             {
                                 <button type="button"
                                         class="btn input-action-button"
+                                        tabindex="-1"
                                         title="@(actionButton.Title ?? actionButton.Text)"
                                         disabled="@actionButton.IsDisabled"
                                         @onclick="@(actionButton.OnClick ?? (() => Task.CompletedTask))">

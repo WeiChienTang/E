@@ -285,6 +285,19 @@ else
                                       OnCancel="@(() => _showInternalBatchDeleteModal = false)" />
 }
 
+@* 右鍵列印預覽 Modal（由 RowPrintService 驅動） *@
+@if (_showRowPrintModal)
+{
+    <ReportPreviewModalComponent IsVisible="@_showRowPrintModal"
+                                 IsVisibleChanged="@((bool v) => _showRowPrintModal = v)"
+                                 Title="@_rowPrintTitle"
+                                 PreviewImages="@_rowPrintImages"
+                                 FormattedDocument="@_rowPrintDocument"
+                                 ReportId="@RowPrintReportId"
+                                 DocumentName="@_rowPrintTitle"
+                                 OnCancel="@(() => _showRowPrintModal = false)" />
+}
+
 } @* end else (module enabled) *@
 
 @code {

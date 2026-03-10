@@ -355,6 +355,36 @@ public static class ReportRegistry
                 SortOrder = 5,
                 IsEnabled = true
             },
+            new ReportDefinition
+            {
+                Id = ReportIds.MaterialScrapRecord,
+                Name = "用料損耗退料記錄",
+                NameKey = "Report.MaterialScrapRecord",
+                Description = "查詢生產過程中有損耗量或退料量的組件明細，依生產項目分組顯示",
+                DescriptionKey = "Report.MaterialScrapRecordDesc",
+                IconClass = "bi bi-exclamation-triangle",
+                Category = ReportCategory.Product,
+                ModuleKey = "Products",
+                RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
+                ActionId = "OpenMaterialScrapReport",
+                SortOrder = 6,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.MaterialRequirements,
+                Name = "用料需求報表",
+                NameKey = "Report.MaterialRequirements",
+                Description = "彙總指定期間內生產排程的物料需求，依組件品號統計需求量、已領量與待領量",
+                DescriptionKey = "Report.MaterialRequirementsDesc",
+                IconClass = "bi bi-list-check",
+                Category = ReportCategory.Product,
+                ModuleKey = "Products",
+                RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
+                ActionId = "OpenMaterialRequirementsReport",
+                SortOrder = 7,
+                IsEnabled = true
+            },
 
 
             // ==================== 庫存報表 ====================

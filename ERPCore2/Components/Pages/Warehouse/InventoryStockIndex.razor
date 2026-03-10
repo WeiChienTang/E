@@ -1,5 +1,6 @@
 ﻿@page "/inventoryStocks"
 @inject IInventoryStockService InventoryStockService
+@inject IInventoryStatusReportService InventoryStatusReportService
 @inject IProductService ProductService
 @inject IProductCategoryService ProductCategoryService
 @inject IWarehouseService WarehouseService
@@ -28,6 +29,8 @@
                         RequiredModule="Warehouse"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
+                        RowPrintService="@InventoryStatusReportService"
+                        RowPrintReportId="@ReportIds.InventoryStatus"
                         ShowStatisticsCards="true"
                         StatisticsCardConfigs="@statisticsCardConfigs"
                         StatisticsDataLoader="@LoadStatisticsDataAsync"

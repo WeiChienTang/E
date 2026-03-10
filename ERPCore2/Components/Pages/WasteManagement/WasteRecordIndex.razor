@@ -2,6 +2,7 @@
 @inject IWasteRecordService WasteRecordService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@inject IWasteRecordReportService WasteRecordReportService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="WasteRecord"
@@ -22,6 +23,8 @@
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           ShowDraftTab="true"
                           DebugPageName="WasteRecordIndex"
+                          RowPrintService="@WasteRecordReportService"
+                          RowPrintReportId="@ReportIds.WasteRecord"
                           @ref="indexComponent" />
 
 <WasteRecordEditModalComponent IsVisible="@showEditModal"

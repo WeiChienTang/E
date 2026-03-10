@@ -43,7 +43,7 @@
 }
 
 .product-code {
-    font-size: 0.8rem;
+    font-size: 1rem;
     color: var(--text-secondary);
     font-weight: 500;
 }
@@ -67,7 +67,7 @@
 
 .customer-name,
 .order-code {
-    font-size: 0.8rem;
+    font-size: 1rem;
     color: var(--text-secondary);
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
@@ -86,8 +86,18 @@
 }
 
 .card-qty {
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: var(--text-primary);
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.qty-label {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+    white-space: nowrap;
 }
 
 .qty-done {
@@ -105,7 +115,7 @@
 }
 
 .card-due {
-    font-size: 0.8rem;
+    font-size: 1rem;
     color: var(--text-secondary);
     padding: 1px 5px;
     border-radius: 3px;
@@ -115,13 +125,36 @@
 .due-urgent  { color: #fd7e14; border-color: #fd7e14; }
 .due-overdue { color: #dc3545; border-color: #dc3545; background: rgba(220,53,69,0.08); }
 
+.card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
 .card-status-badge {
+    flex-shrink: 0;
     display: inline-block;
-    font-size: 0.75rem;
+    font-size: 1rem;
     padding: 1px 6px;
     border-radius: 10px;
-    margin-top: 4px;
     font-weight: 500;
+}
+
+.card-progress {
+    flex: 1;
+    height: 3px;
+    background: var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+    min-width: 16px;
+}
+
+.card-progress-bar {
+    height: 100%;
+    background: #198754;
+    border-radius: 2px;
+    transition: width 0.3s ease;
 }
 
 .status-waitingmaterial .card-status-badge { background: #fd7e1422; color: #fd7e14; }

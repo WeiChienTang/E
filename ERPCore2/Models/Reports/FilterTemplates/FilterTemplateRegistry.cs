@@ -444,6 +444,46 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // 用料損耗退料記錄（依生產項目分組，只查有損耗或退料的明細）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.MaterialScrapRecord,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(MaterialScrapCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IMaterialScrapReportService),
+            PreviewTitle = "用料損耗退料記錄預覽",
+            FilterTitle = "用料損耗退料記錄篩選條件",
+            IconClass = "bi-exclamation-triangle",
+            GetDocumentName = criteria =>
+            {
+                var c = (MaterialScrapCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"用料損耗退料記錄-{dateRange}";
+            }
+        });
+
+        // 用料需求報表（彙總排程物料需求，依組件品號統計）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.MaterialRequirements,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(MaterialRequirementsCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IMaterialRequirementsReportService),
+            PreviewTitle = "用料需求報表預覽",
+            FilterTitle = "用料需求報表篩選條件",
+            IconClass = "bi-list-check",
+            GetDocumentName = criteria =>
+            {
+                var c = (MaterialRequirementsCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"用料需求報表-{dateRange}";
+            }
+        });
+
         // ==================== 庫存報表 ====================
 
         // 庫存現況表（依倉庫分組顯示各商品庫存數量及金額）

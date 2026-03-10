@@ -109,7 +109,7 @@
     // Tab 元件參考（透過 @ref 呼叫公開方法）
     private SupplierVehicleTab? vehicleTab;
     private SupplierProductTab? supplierProductTab;
-    private SupplierAccountingTab? accountingTab;
+    private GenericAccountingTabComponent? accountingTab;
     private SupplierVisitTab? visitTab;
     private SupplierTransactionTab? transactionTab;
 
@@ -127,7 +127,7 @@
 
     private RenderFragment CreateAccountingTabContent() => __builder =>
     {
-        <SupplierAccountingTab @ref="accountingTab" SupplierId="@SupplierId" />
+        <GenericAccountingTabComponent @ref="accountingTab" EntityType="AccountingEntityType.Supplier" EntityId="@SupplierId" />
     };
 
     private RenderFragment CreateVisitTabContent() => __builder =>

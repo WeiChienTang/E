@@ -1,5 +1,6 @@
 @page "/account-items"
 @inject IAccountItemService AccountItemService
+@inject IAccountItemListReportService AccountItemListReportService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -20,6 +21,8 @@
                           RequiredModule="Accounting"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
+                          RowPrintService="@AccountItemListReportService"
+                          RowPrintReportId="@ReportIds.AccountItemList"
                           ShowBatchDeleteButton="true"
                           BatchDeleteTitle="批次刪除會計科目"
                           BatchDeleteColumnDefinitions="@batchDeleteColumns"

@@ -285,6 +285,7 @@ namespace ERPCore2.Services
                 {
                     item.ProductionItemStatus = ProductionItemStatus.Completed;
                     item.ActualEndDate ??= DateTime.Now;
+                    item.IsClosed = true;
                 }
                 else if (item.CompletedQuantity > 0 && item.ProductionItemStatus == ProductionItemStatus.Pending)
                 {
@@ -292,8 +293,8 @@ namespace ERPCore2.Services
                     item.ActualStartDate ??= DateTime.Now;
                 }
 
-                // TODO: 增加成品庫存
-                // 這部分需要與 InventoryStockService 整合
+                // 注意：此方法為舊版路徑（介面保留），不處理庫存寫入。
+                // 主要完工流程請使用 ProductionScheduleItemService.CompleteProductionAsync。
 
                 await context.SaveChangesAsync();
 

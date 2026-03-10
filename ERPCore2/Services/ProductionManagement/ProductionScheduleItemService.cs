@@ -483,10 +483,10 @@ namespace ERPCore2.Services
 
                             // 寫回結算欄位
                             bomDetail.ActualUsedQty = settlement.ActualUsedQty;
-                            bomDetail.ReturnQty = settlement.ReturnQty;
+                            bomDetail.ReturnQty = settlement.ReturnQty ?? 0;
                             bomDetail.ReturnWarehouseId = settlement.ReturnWarehouseId;
                             bomDetail.ReturnLocationId = settlement.ReturnLocationId;
-                            bomDetail.ScrapQty = settlement.ScrapQty;
+                            bomDetail.ScrapQty = settlement.ScrapQty ?? 0;
                             bomDetail.ScrapReason = settlement.ScrapReason;
 
                             // 退料入庫
@@ -495,7 +495,7 @@ namespace ERPCore2.Services
                                 var returnResult = await _inventoryStockService.AddStockAsync(
                                     bomDetail.ComponentProductId,
                                     settlement.ReturnWarehouseId.Value,
-                                    settlement.ReturnQty,
+                                    settlement.ReturnQty ?? 0,
                                     InventoryTransactionTypeEnum.MaterialReturn,
                                     transactionCode,
                                     locationId: settlement.ReturnLocationId,
@@ -602,6 +602,7 @@ namespace ERPCore2.Services
                 {
                     item.ProductionItemStatus = ProductionItemStatus.Completed;
                     item.ActualEndDate ??= DateTime.Now;
+                    item.IsClosed = true;
                 }
                 else if (completedQuantity > 0)
                 {
@@ -716,6 +717,37 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<Dictionary<int, ProductionItemStatus>> GetAggregateStatusMapAsync(IEnumerable<int> salesOrderDetailIds)
+        {
+            var ids = salesOrderDetailIds.ToList();
+            if (ids.Count == 0) return new Dictionary<int, ProductionItemStatus>();
+
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var rows = await context.ProductionScheduleItems
+                    .Where(psi => psi.SalesOrderDetailId.HasValue && ids.Contains(psi.SalesOrderDetailId.Value))
+                    .Select(psi => new { psi.SalesOrderDetailId, psi.ProductionItemStatus })
+                    .ToListAsync();
+
+                return rows
+                    .GroupBy(x => x.SalesOrderDetailId!.Value)
+                    .ToDictionary(g => g.Key, g =>
+                    {
+                        var statuses = g.Select(x => x.ProductionItemStatus).ToList();
+                        if (statuses.Any(s => s == ProductionItemStatus.InProgress)) return ProductionItemStatus.InProgress;
+                        if (statuses.Any(s => s == ProductionItemStatus.WaitingMaterial)) return ProductionItemStatus.WaitingMaterial;
+                        if (statuses.All(s => s == ProductionItemStatus.Completed)) return ProductionItemStatus.Completed;
+                        return ProductionItemStatus.Pending;
+                    });
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAggregateStatusMapAsync), GetType(), _logger, null);
+                return new Dictionary<int, ProductionItemStatus>();
+            }
+        }
+
         public async Task<ServiceResult<bool>> ReturnToSidebarAsync(int itemId)
         {
             try
@@ -807,6 +839,91 @@ namespace ERPCore2.Services
             catch
             {
                 return (null, null);
+            }
+        }
+
+        public async Task<ServiceResult> AbortProductionAsync(int itemId, List<MaterialSettlementDto>? settlements = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var item = await context.ProductionScheduleItems
+                    .FirstOrDefaultAsync(psi => psi.Id == itemId);
+
+                if (item == null)
+                    return ServiceResult.Failure("生產排程項目不存在");
+
+                if (item.ProductionItemStatus == ProductionItemStatus.Completed)
+                    return ServiceResult.Failure("此項目已完成，無法停產");
+
+                if (item.ProductionItemStatus != ProductionItemStatus.InProgress)
+                    return ServiceResult.Failure("僅生產中的項目可執行停產");
+
+                var schedule = await context.ProductionSchedules
+                    .FirstOrDefaultAsync(ps => ps.Id == item.ProductionScheduleId);
+                var transactionCode = schedule?.Code ?? $"PS-{item.ProductionScheduleId}";
+
+                // 用料結算：退料入庫
+                if (settlements != null && settlements.Any())
+                {
+                    var bomDetails = await context.ProductionScheduleDetails
+                        .Where(d => d.ProductionScheduleItemId == itemId && d.Status == EntityStatus.Active)
+                        .ToListAsync();
+
+                    foreach (var settlement in settlements)
+                    {
+                        var bomDetail = bomDetails.FirstOrDefault(d => d.Id == settlement.ProductionScheduleDetailId);
+                        if (bomDetail == null) continue;
+
+                        bomDetail.ActualUsedQty = settlement.ActualUsedQty;
+                        bomDetail.ReturnQty = settlement.ReturnQty ?? 0;
+                        bomDetail.ReturnWarehouseId = settlement.ReturnWarehouseId;
+                        bomDetail.ReturnLocationId = settlement.ReturnLocationId;
+                        bomDetail.ScrapQty = settlement.ScrapQty ?? 0;
+                        bomDetail.ScrapReason = settlement.ScrapReason;
+
+                        if (settlement.ReturnQty > 0 && settlement.ReturnWarehouseId.HasValue)
+                        {
+                            var returnResult = await _inventoryStockService.AddStockAsync(
+                                bomDetail.ComponentProductId,
+                                settlement.ReturnWarehouseId.Value,
+                                settlement.ReturnQty ?? 0,
+                                InventoryTransactionTypeEnum.MaterialReturn,
+                                transactionCode,
+                                locationId: settlement.ReturnLocationId,
+                                remarks: $"停產退料 排程:{transactionCode}",
+                                sourceDocumentType: InventorySourceDocumentTypes.ProductionCompletion,
+                                sourceDocumentId: itemId);
+
+                            if (!returnResult.IsSuccess)
+                                return ServiceResult.Failure($"退料入庫失敗：{returnResult.ErrorMessage}");
+                        }
+                    }
+                }
+
+                // 更新 SalesOrderDetail.ProducedQuantity（累計部分已完工數量）
+                if (item.SalesOrderDetailId.HasValue && item.CompletedQuantity > 0)
+                {
+                    var salesDetail = await context.SalesOrderDetails
+                        .FirstOrDefaultAsync(d => d.Id == item.SalesOrderDetailId.Value);
+                    if (salesDetail != null)
+                        salesDetail.ProducedQuantity += item.CompletedQuantity;
+                }
+
+                // 結案（不改 ScheduledQuantity，確保不重出現在待排 Sidebar）
+                item.ProductionItemStatus = ProductionItemStatus.Completed;
+                item.ActualEndDate = DateTime.Now;
+                item.IsClosed = true;
+                item.UpdatedAt = DateTime.Now;
+
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AbortProductionAsync), GetType(), _logger, new { itemId });
+                return ServiceResult.Failure("停產過程發生錯誤");
             }
         }
 

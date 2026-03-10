@@ -4,6 +4,7 @@
 @inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@inject IBOMReportService BOMReportService
 
 @rendermode InteractiveServer
 
@@ -25,6 +26,8 @@
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         ShowDraftTab="true"
                         DebugPageName="ProductCompositionIndex"
+                        RowPrintService="@BOMReportService"
+                        RowPrintReportId="@ReportIds.BOMReport"
                         @ref="indexComponent"/>
 
 @* 商品物料清單編輯 Modal *@

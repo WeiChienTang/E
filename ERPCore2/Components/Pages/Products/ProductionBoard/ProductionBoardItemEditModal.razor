@@ -14,6 +14,7 @@
                     Size="BaseModalComponent.ModalSize.Large"
                     HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                     UseWhiteCloseButton="true"
+                    CloseOnBackdropClick="false"
                     OnClose="@HandleCancel"
                     DebugComponentName="ProductionBoardItemEditModal">
 
@@ -26,6 +27,26 @@
                     Text="確定退回" OnClick="HandleReturnConfirmed" />
                 <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
                     Text="取消" OnClick="@(() => showReturnConfirm = false)" />
+            </div>
+        }
+        else if (showForceStartConfirm)
+        {
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-warning fw-semibold">材料未齊，確定強制開始生產？</span>
+                <GenericButtonComponent Variant="ButtonVariant.Orange" Size="ButtonSize.Small"
+                    Text="確定開始" OnClick="HandleStartProduction" IsLoading="@isProcessing" />
+                <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+                    Text="取消" OnClick="@(() => showForceStartConfirm = false)" />
+            </div>
+        }
+        else if (showAbortConfirm)
+        {
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-danger fw-semibold">確定停止生產並結案？</span>
+                <GenericButtonComponent Variant="ButtonVariant.Red" Size="ButtonSize.Small"
+                    Text="確定停產" OnClick="HandleAbortProduction" IsLoading="@isProcessing" />
+                <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+                    Text="取消" OnClick="@(() => showAbortConfirm = false)" />
             </div>
         }
         else
@@ -50,10 +71,18 @@
                     else
                     {
                         <GenericButtonComponent Variant="ButtonVariant.Orange" Size="ButtonSize.Small"
-                            Text="強制開始" OnClick="HandleStartProduction"
-                            IsDisabled="@isProcessing" IsLoading="@isProcessing"
-                            Title="材料尚未領齊，確定要強制開始生產？" />
+                            Text="強制開始" OnClick="@(() => showForceStartConfirm = true)"
+                            IsDisabled="@isProcessing"
+                            Title="材料尚未領齊，點擊確認強制開始生產" />
                     }
+                }
+                @if (Item?.ProductionItemStatus == ProductionItemStatus.InProgress && Item.CompletedQuantity > 0)
+                {
+                    <GenericButtonComponent Variant="ButtonVariant.Red" Size="ButtonSize.Small"
+                        Text="停產"
+                        OnClick="HandleAbortRequest"
+                        IsDisabled="@isProcessing"
+                        Title="停止生產並結案，不再繼續製作" />
                 }
                 <GenericButtonComponent Variant="ButtonVariant.Orange" Size="ButtonSize.Small"
                     Text="退回"
@@ -70,7 +99,7 @@
             @* 商品與訂單資訊 *@
             @if (!string.IsNullOrEmpty(Item.ProductCode))
             {
-                <div class="mb-3 text-muted" style="font-size:0.9rem;">
+                <div class="mb-3 text-muted">
                     <span class="fw-semibold text-secondary">@Item.ProductCode</span>
                     @if (!string.IsNullOrEmpty(Item.CustomerName) || !string.IsNullOrEmpty(Item.SalesOrderCode))
                     {
@@ -87,10 +116,10 @@
 
             @* 狀態 Badge（唯讀） *@
             <div class="mb-3 d-flex align-items-center gap-2">
-                <span class="badge @StatusBadgeCss" style="font-size:0.85rem;">@StatusText</span>
+                <span class="badge @StatusBadgeCss">@StatusText</span>
                 @if (hasBom)
                 {
-                    <span class="badge @MaterialBadgeCss" style="font-size:0.85rem;">領料：@MaterialStatusText</span>
+                    <span class="badge @MaterialBadgeCss">領料：@MaterialStatusText</span>
                 }
             </div>
 
@@ -98,45 +127,58 @@
             @if (Item.ProductionItemStatus is ProductionItemStatus.WaitingMaterial or ProductionItemStatus.Pending
                 && hasBom && !materialComplete)
             {
-                <div class="alert alert-warning py-2 px-3 mb-3" style="font-size:0.85rem;">
+                <div class="alert alert-warning py-2 px-3 mb-3">
                     <i class="bi bi-exclamation-triangle me-1"></i>尚有組件未領齊，建議先完成領料再開始生產
                 </div>
             }
 
-            @* 排程數量（唯讀） *@
-            <div class="mb-3 d-flex align-items-center gap-2">
-                <label class="form-label mb-0 text-nowrap">排程數量</label>
-                <span class="form-control form-control-sm d-inline-block" style="max-width:120px;background:var(--bg-secondary,#f8f9fa);">
-                    @NumberFormatHelper.FormatSmart(Item.ScheduledQuantity)
-                </span>
-                @if (Item.CompletedQuantity > 0)
-                {
-                    <span class="text-muted" style="font-size:0.85rem;white-space:nowrap;">已完成：@NumberFormatHelper.FormatSmart(Item.CompletedQuantity)</span>
-                }
+            @* A. 三欄統計列：排程 / 已完成 / 剩餘 *@
+            <div class="mb-3 stats-row">
+                <div class="stat-item">
+                    <span class="stat-label">排程</span>
+                    <span class="stat-value">@NumberFormatHelper.FormatSmart(Item.ScheduledQuantity)</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-label">已完成</span>
+                    <span class="stat-value stat-done">@NumberFormatHelper.FormatSmart(Item.CompletedQuantity)</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-label">剩餘</span>
+                    <span class="stat-value stat-remaining">@NumberFormatHelper.FormatSmart(Item.ScheduledQuantity - Item.CompletedQuantity)</span>
+                </div>
             </div>
+
+            @* B. 進度條 *@
+            @if (Item.ScheduledQuantity > 0 && Item.CompletedQuantity > 0)
+            {
+                <div class="modal-progress mb-3">
+                    <div class="modal-progress-bar" style="width: @(ProgressPercent)%"></div>
+                </div>
+            }
 
             @* 確認入庫：只在生產中且尚有剩餘時顯示 *@
             @if (Item.ProductionItemStatus == ProductionItemStatus.InProgress
               && Item.CompletedQuantity < Item.ScheduledQuantity)
             {
-                <div class="border rounded p-2 mb-3" style="background:var(--bg-secondary, #f8f9fa);">
+                <div class="border rounded p-2 mb-3 complete-section">
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="fw-semibold text-success" style="font-size:0.9rem;">
+                        <span class="fw-semibold text-success">
                             <i class="bi bi-box-arrow-in-down-right me-1"></i>確認入庫
                         </span>
-                        <span class="text-muted" style="font-size:0.85rem;">剩餘：@NumberFormatHelper.FormatSmart(Item.ScheduledQuantity - Item.CompletedQuantity)</span>
                     </div>
                     <div class="d-flex gap-2 align-items-end flex-wrap mb-2">
                         <div>
-                            <label class="form-label mb-1" style="font-size:0.85rem;">本次入庫數量</label>
-                            <input type="number" class="form-control form-control-sm"
+                            <label class="form-label mb-1">本次入庫數量</label>
+                            <input type="number" class="form-control form-control-sm input-qty"
                                    @bind="completeQty" @bind:after="OnCompleteQtyChanged"
                                    min="0.001" step="0.001"
-                                   placeholder="輸入數量" style="max-width:120px;" />
+                                   placeholder="輸入數量" />
                         </div>
                         <div>
-                            <label class="form-label mb-1" style="font-size:0.85rem;">入庫倉庫</label>
-                            <select class="form-select form-select-sm" style="max-width:140px;"
+                            <label class="form-label mb-1">入庫倉庫</label>
+                            <select class="form-select form-select-sm select-warehouse"
                                     @bind="selectedWarehouseId" @bind:after="LoadLocationsAsync">
                                 <option value="">請選擇</option>
                                 @foreach (var wh in warehouses)
@@ -145,51 +187,52 @@
                                 }
                             </select>
                         </div>
-                        @if (locations.Any())
-                        {
-                            <div>
-                                <label class="form-label mb-1" style="font-size:0.85rem;">庫位</label>
-                                <select class="form-select form-select-sm" style="max-width:130px;"
-                                        @bind="selectedLocationId">
-                                    <option value="">不指定</option>
-                                    @foreach (var loc in locations)
-                                    {
-                                        <option value="@loc.Id">@loc.Name</option>
-                                    }
-                                </select>
-                            </div>
-                        }
+                        <div class="@(locations.Any() ? "" : "d-none")">
+                            <label class="form-label mb-1">庫位</label>
+                            <select class="form-select form-select-sm select-location"
+                                    @bind="selectedLocationId">
+                                <option value="">不指定</option>
+                                @foreach (var loc in locations)
+                                {
+                                    <option value="@loc.Id">@loc.Name</option>
+                                }
+                            </select>
+                        </div>
                     </div>
 
-                    @* 用料結算（最後一次完工才顯示） *@
+                    @* C. 用料結算（可收合） *@
                     @if (isLastCompletion && settlementRows.Any())
                     {
                         <div class="border-top pt-2 mt-2">
-                            <div class="fw-semibold mb-2" style="font-size:0.88rem;">
+                            <button class="btn btn-sm btn-link p-0 text-decoration-none fw-semibold mb-2"
+                                    type="button"
+                                    @onclick="@(() => showSettlement = !showSettlement)">
                                 <i class="bi bi-clipboard-check me-1"></i>用料結算
-                                <span class="text-muted fw-normal ms-1" style="font-size:0.8rem;">（驗證：實際用量 + 退料量 + 損耗量 = 已領量）</span>
-                            </div>
-                            @foreach (var row in settlementRows)
+                                <i class="bi @(showSettlement ? "bi-chevron-up" : "bi-chevron-down") ms-1"></i>
+                                <span class="text-muted fw-normal ms-1">（實際用量 + 退料量 + 損耗量 = 已領量）</span>
+                            </button>
+                            @if (showSettlement)
                             {
-                                <div class="border rounded p-2 mb-2" style="font-size:0.85rem;">
-                                    <div class="fw-semibold mb-1">@row.ComponentName</div>
-                                    <div class="text-muted mb-1">已領量：@NumberFormatHelper.FormatSmart(row.IssuedQty)</div>
-                                    <div class="d-flex gap-2 flex-wrap">
-                                        <div>
-                                            <label class="form-label mb-0" style="font-size:0.8rem;">實際用量</label>
-                                            <input type="number" class="form-control form-control-sm" style="max-width:90px;"
-                                                   @bind="row.Settlement.ActualUsedQty" min="0" step="0.001" />
-                                        </div>
-                                        <div>
-                                            <label class="form-label mb-0" style="font-size:0.8rem;">退料量</label>
-                                            <input type="number" class="form-control form-control-sm" style="max-width:90px;"
-                                                   @bind="row.Settlement.ReturnQty" min="0" step="0.001" />
-                                        </div>
-                                        @if (row.Settlement.ReturnQty > 0)
-                                        {
+                                @foreach (var row in settlementRows)
+                                {
+                                    <div class="border rounded p-2 mb-2">
+                                        <div class="fw-semibold mb-1">@row.ComponentName</div>
+                                        <div class="text-muted mb-1">已領量：@NumberFormatHelper.FormatSmart(row.IssuedQty)</div>
+                                        <div class="d-flex gap-2 flex-wrap">
                                             <div>
-                                                <label class="form-label mb-0" style="font-size:0.8rem;">退料倉庫</label>
-                                                <select class="form-select form-select-sm" style="max-width:130px;"
+                                                <label class="form-label mb-0">實際用量</label>
+                                                <input type="number" class="form-control form-control-sm settlement-input"
+                                                       @bind="row.Settlement.ActualUsedQty" min="0" step="0.001" />
+                                            </div>
+                                            <div>
+                                                <label class="form-label mb-0">退料量</label>
+                                                <input type="number" class="form-control form-control-sm settlement-input"
+                                                       @bind="row.Settlement.ReturnQty" min="0" step="0.001" />
+                                            </div>
+                                            @* E. 退料倉庫：CSS visibility，不做 Razor 條件渲染 *@
+                                            <div style="visibility: @(row.Settlement.ReturnQty > 0 ? "visible" : "hidden")">
+                                                <label class="form-label mb-0">退料倉庫</label>
+                                                <select class="form-select form-select-sm select-location"
                                                         @bind="row.Settlement.ReturnWarehouseId">
                                                     <option value="">請選擇</option>
                                                     @foreach (var wh in warehouses)
@@ -198,38 +241,111 @@
                                                     }
                                                 </select>
                                             </div>
-                                        }
-                                        <div>
-                                            <label class="form-label mb-0" style="font-size:0.8rem;">損耗量</label>
-                                            <input type="number" class="form-control form-control-sm" style="max-width:90px;"
-                                                   @bind="row.Settlement.ScrapQty" min="0" step="0.001" />
-                                        </div>
-                                        @if (row.Settlement.ScrapQty > 0)
-                                        {
                                             <div>
-                                                <label class="form-label mb-0" style="font-size:0.8rem;">損耗備註</label>
-                                                <input type="text" class="form-control form-control-sm" style="max-width:160px;"
+                                                <label class="form-label mb-0">損耗量</label>
+                                                <input type="number" class="form-control form-control-sm settlement-input"
+                                                       @bind="row.Settlement.ScrapQty" min="0" step="0.001" />
+                                            </div>
+                                            <div style="visibility: @(row.Settlement.ScrapQty > 0 ? "visible" : "hidden")">
+                                                <label class="form-label mb-0">損耗備註</label>
+                                                <input type="text" class="form-control form-control-sm settlement-reason"
                                                        @bind="row.Settlement.ScrapReason" placeholder="原因說明" />
+                                            </div>
+                                        </div>
+                                        @if (SettlementRowHasError(row))
+                                        {
+                                            <div class="text-danger mt-1">
+                                                <i class="bi bi-exclamation-circle me-1"></i>實際用量 + 退料量 + 損耗量 ≠ 已領量（@NumberFormatHelper.FormatSmart(row.IssuedQty)）
                                             </div>
                                         }
                                     </div>
-                                    @if (SettlementRowHasError(row))
-                                    {
-                                        <div class="text-danger mt-1" style="font-size:0.8rem;">
-                                            <i class="bi bi-exclamation-circle me-1"></i>實際用量 + 退料量 + 損耗量 ≠ 已領量（@NumberFormatHelper.FormatSmart(row.IssuedQty)）
-                                        </div>
-                                    }
-                                </div>
+                                }
                             }
                         </div>
                     }
 
-                    <div class="mt-2 text-end">
+                    @if (isLastCompletion && settlementRows.Any(r => SettlementRowHasError(r)))
+                    {
+                        <div class="alert alert-danger py-1 px-2 mb-2 mt-2">
+                            <i class="bi bi-exclamation-circle me-1"></i>
+                            有 @settlementRows.Count(r => SettlementRowHasError(r)) 筆用料結算數量不符，請確認後再入庫
+                        </div>
+                    }
+
+                    @* D. 確認入庫按鈕 *@
+                    <div class="mt-2 text-end confirm-btn-row">
                         <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
                             Text="確認入庫" OnClick="HandleCompleteProduction"
-                            IsDisabled="@(isProcessing || completeQty <= 0 || !selectedWarehouseId.HasValue)"
+                            IsDisabled="@(isProcessing || completeQty is null or <= 0 || !selectedWarehouseId.HasValue)"
                             IsLoading="@isProcessing" />
                     </div>
+                </div>
+            }
+
+            @* 停產時的結算區塊（InProgress && CompletedQuantity > 0，且已點「停產」） *@
+            @if (Item.ProductionItemStatus == ProductionItemStatus.InProgress
+              && Item.CompletedQuantity > 0
+              && showAbortSettlement
+              && settlementRows.Any())
+            {
+                <div class="border border-danger rounded p-2 mb-3">
+                    <div class="fw-semibold text-danger mb-2">
+                        <i class="bi bi-clipboard-check me-1"></i>停產用料結算
+                        <span class="text-muted fw-normal ms-1">（實際用量 + 退料量 + 損耗量 = 已領量）</span>
+                    </div>
+                    @foreach (var row in settlementRows)
+                    {
+                        <div class="border rounded p-2 mb-2">
+                            <div class="fw-semibold mb-1">@row.ComponentName</div>
+                            <div class="text-muted mb-1">已領量：@NumberFormatHelper.FormatSmart(row.IssuedQty)</div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <div>
+                                    <label class="form-label mb-0">實際用量</label>
+                                    <input type="number" class="form-control form-control-sm settlement-input"
+                                           @bind="row.Settlement.ActualUsedQty" min="0" step="0.001" />
+                                </div>
+                                <div>
+                                    <label class="form-label mb-0">退料量</label>
+                                    <input type="number" class="form-control form-control-sm settlement-input"
+                                           @bind="row.Settlement.ReturnQty" min="0" step="0.001" />
+                                </div>
+                                <div style="visibility: @(row.Settlement.ReturnQty > 0 ? "visible" : "hidden")">
+                                    <label class="form-label mb-0">退料倉庫</label>
+                                    <select class="form-select form-select-sm select-location"
+                                            @bind="row.Settlement.ReturnWarehouseId">
+                                        <option value="">請選擇</option>
+                                        @foreach (var wh in warehouses)
+                                        {
+                                            <option value="@wh.Id">@wh.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label mb-0">損耗量</label>
+                                    <input type="number" class="form-control form-control-sm settlement-input"
+                                           @bind="row.Settlement.ScrapQty" min="0" step="0.001" />
+                                </div>
+                                <div style="visibility: @(row.Settlement.ScrapQty > 0 ? "visible" : "hidden")">
+                                    <label class="form-label mb-0">損耗備註</label>
+                                    <input type="text" class="form-control form-control-sm settlement-reason"
+                                           @bind="row.Settlement.ScrapReason" placeholder="原因說明" />
+                                </div>
+                            </div>
+                            @if (SettlementRowHasError(row))
+                            {
+                                <div class="text-danger mt-1">
+                                    <i class="bi bi-exclamation-circle me-1"></i>實際用量 + 退料量 + 損耗量 ≠ 已領量（@NumberFormatHelper.FormatSmart(row.IssuedQty)）
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (settlementRows.Any(r => SettlementRowHasError(r)))
+                    {
+                        <div class="alert alert-danger py-1 px-2 mb-2">
+                            <i class="bi bi-exclamation-circle me-1"></i>
+                            有 @settlementRows.Count(r => SettlementRowHasError(r)) 筆用料結算數量不符，請確認後再停產
+                        </div>
+                    }
                 </div>
             }
         }
@@ -254,7 +370,11 @@
 
     private bool isProcessing;
     private bool showReturnConfirm;
-    private decimal completeQty;
+    private bool showForceStartConfirm;
+    private bool showAbortConfirm;
+    private bool showAbortSettlement;
+    private bool showSettlement = true;
+    private decimal? completeQty;
     private bool hasBom;
     private bool materialComplete;
     private bool showMaterialIssueModal;
@@ -274,7 +394,11 @@
         if (Item != null && IsVisible)
         {
             showReturnConfirm = false;
-            completeQty = 0;
+            showForceStartConfirm = false;
+            showAbortConfirm = false;
+            showAbortSettlement = false;
+            showSettlement = true;
+            completeQty = null;
             selectedWarehouseId = null;
             selectedLocationId = null;
             locations = new();
@@ -283,6 +407,14 @@
 
             await LoadMaterialStatusAsync();
             await LoadWarehousesAsync();
+
+            // 預填剩餘數量
+            if (Item.ProductionItemStatus == ProductionItemStatus.InProgress
+                && Item.CompletedQuantity < Item.ScheduledQuantity)
+            {
+                completeQty = Math.Round(Item.ScheduledQuantity - Item.CompletedQuantity, 3);
+                OnCompleteQtyChanged();
+            }
         }
     }
 
@@ -335,8 +467,8 @@
                 {
                     ProductionScheduleDetailId = d.Id,
                     ActualUsedQty = d.IssuedQuantity,
-                    ReturnQty = 0,
-                    ScrapQty = 0
+                    ReturnQty = null,
+                    ScrapQty = null
                 }
             })
             .ToList();
@@ -345,13 +477,13 @@
     private void OnCompleteQtyChanged()
     {
         if (Item == null) return;
-        isLastCompletion = (Item.CompletedQuantity + completeQty) >= Item.ScheduledQuantity;
+        isLastCompletion = (Item.CompletedQuantity + (completeQty ?? 0)) >= Item.ScheduledQuantity;
     }
 
     private bool SettlementRowHasError(SettlementEditRow row)
     {
         if (row.IssuedQty == 0) return false;
-        var sum = row.Settlement.ActualUsedQty + row.Settlement.ReturnQty + row.Settlement.ScrapQty;
+        var sum = row.Settlement.ActualUsedQty + (row.Settlement.ReturnQty ?? 0) + (row.Settlement.ScrapQty ?? 0);
         return Math.Abs(sum - row.IssuedQty) > 0.0001m;
     }
 
@@ -375,6 +507,10 @@
 
     private string MaterialBadgeCss => materialComplete ? "bg-success" : "bg-warning text-dark";
     private string MaterialStatusText => materialComplete ? "完成" : "尚未";
+
+    private string ProgressPercent => Item != null && Item.ScheduledQuantity > 0
+        ? Math.Min(100, (double)Item.CompletedQuantity / (double)Item.ScheduledQuantity * 100).ToString("F0")
+        : "0";
 
     private void HandleIssueMaterial()
     {
@@ -421,9 +557,59 @@
         }
     }
 
+    private void HandleAbortRequest()
+    {
+        // 若有已領料，展開結算區塊讓使用者填寫後再按標題確認
+        if (settlementRows.Any())
+            showAbortSettlement = true;
+        showAbortConfirm = true;
+    }
+
+    private async Task HandleAbortProduction()
+    {
+        if (Item == null) return;
+
+        // 若有結算資料，驗證
+        if (showAbortSettlement && settlementRows.Any(r => SettlementRowHasError(r)))
+        {
+            await NotificationService.ShowWarningAsync("用料結算數量不符，請確認實際用量 + 退料量 + 損耗量 = 已領量");
+            showAbortConfirm = false;
+            return;
+        }
+
+        isProcessing = true;
+        try
+        {
+            List<MaterialSettlementDto>? settlements = null;
+            if (showAbortSettlement && settlementRows.Any())
+                settlements = settlementRows.Select(r => r.Settlement).ToList();
+
+            var result = await ScheduleItemService.AbortProductionAsync(Item.Id, settlements);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("已停產結案");
+                await IsVisibleChanged.InvokeAsync(false);
+                await OnSaved.InvokeAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"停產失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"停產失敗：{ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            showAbortConfirm = false;
+        }
+    }
+
     private async Task HandleCompleteProduction()
     {
-        if (Item == null || completeQty <= 0) return;
+        if (Item == null || completeQty is null or <= 0) return;
         if (!selectedWarehouseId.HasValue)
         {
             await NotificationService.ShowWarningAsync("請選擇入庫倉庫");
@@ -445,13 +631,13 @@
                 settlements = settlementRows.Select(r => r.Settlement).ToList();
 
             var result = await ScheduleItemService.CompleteProductionAsync(
-                Item.Id, completeQty,
+                Item.Id, completeQty.Value,
                 selectedWarehouseId, selectedLocationId,
                 settlements);
 
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync($"已確認入庫 {NumberFormatHelper.FormatSmart(completeQty)}");
+                await NotificationService.ShowSuccessAsync($"已確認入庫 {NumberFormatHelper.FormatSmart(completeQty.Value)}");
                 await IsVisibleChanged.InvokeAsync(false);
                 await OnSaved.InvokeAsync();
             }
@@ -498,6 +684,7 @@
     private async Task HandleCancel()
     {
         showReturnConfirm = false;
+        showAbortConfirm = false;
         await IsVisibleChanged.InvokeAsync(false);
     }
 

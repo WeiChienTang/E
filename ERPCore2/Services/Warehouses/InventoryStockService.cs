@@ -2349,7 +2349,10 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 IQueryable<InventoryStock> query = context.InventoryStocks
-                    .Include(s => s.Product).ThenInclude(p => p!.ProductCategory);
+                    .Include(s => s.InventoryStockDetails)
+                    .Include(s => s.Product).ThenInclude(p => p!.ProductCategory)
+                    .Include(s => s.Product).ThenInclude(p => p!.Unit)
+                    .Include(s => s.Product).ThenInclude(p => p!.ProductionUnit);
                 if (filterFunc != null) query = filterFunc(query);
                 var totalCount = await query.CountAsync();
                 var items = await query

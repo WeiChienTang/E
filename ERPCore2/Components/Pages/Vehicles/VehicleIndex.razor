@@ -1,5 +1,6 @@
 ﻿@page "/vehicles"
 @inject IVehicleService VehicleService
+@inject IVehicleListReportService VehicleListReportService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
@@ -20,6 +21,8 @@
                           RequiredModule="Vehicles"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
+                          RowPrintService="@VehicleListReportService"
+                          RowPrintReportId="@ReportIds.VehicleList"
                           ShowDraftTab="true"
                           DebugPageName="VehicleIndex"
                           @ref="indexComponent" />

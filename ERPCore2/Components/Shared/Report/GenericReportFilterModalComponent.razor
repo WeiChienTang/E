@@ -132,6 +132,12 @@
     /// </summary>
     [Parameter]
     public EventCallback OnCancel { get; set; }
+
+    /// <summary>
+    /// 初始篩選條件（選用），開啟 Modal 時預填欄位（例如預帶日期範圍）
+    /// </summary>
+    [Parameter]
+    public IReportFilterCriteria? InitialCriteria { get; set; }
     
     // ===== 私有欄位 =====
     
@@ -242,6 +248,9 @@
             filterConfig.GetFilterTemplateType() == typeof(DynamicFilterTemplate))
         {
             parameters["CriteriaType"] = filterConfig.CriteriaType;
+
+            if (InitialCriteria != null)
+                parameters["InitialCriteria"] = InitialCriteria;
         }
 
         return parameters;

@@ -158,6 +158,9 @@
   <data name="Modal.ConfirmLeave" xml:space="preserve">
     <value>離開する</value>
   </data>
+  <data name="Modal.Leave" xml:space="preserve">
+    <value>離脱する</value>
+  </data>
   <data name="Modal.SaveAndClose" xml:space="preserve">
     <value>保存</value>
   </data>
@@ -658,6 +661,10 @@
   <data name="Report.ProductBarcode" xml:space="preserve"><value>商品バーコード</value></data>
   <data name="Report.BOMReport" xml:space="preserve"><value>BOMレポート</value></data>
   <data name="Report.ProductionSchedule" xml:space="preserve"><value>生産スケジュール</value></data>
+  <data name="Report.MaterialScrapRecord" xml:space="preserve"><value>材料廃棄・返却記録</value></data>
+  <data name="Report.MaterialScrapRecordDesc" xml:space="preserve"><value>廃棄量または返却量がある生産部品明細を生産項目別に表示します</value></data>
+  <data name="Report.MaterialRequirements" xml:space="preserve"><value>材料所要量レポート</value></data>
+  <data name="Report.MaterialRequirementsDesc" xml:space="preserve"><value>指定期間の生産スケジュールにおける材料所要量を部品別に集計し、所要量・出庫量・未出庫量を表示します</value></data>
   <data name="Report.InventoryStatus" xml:space="preserve"><value>在庫現況表</value></data>
   <data name="Report.InventoryTransaction" xml:space="preserve"><value>在庫履歴明細</value></data>
   <data name="Report.InventoryCount" xml:space="preserve"><value>棚卸差異表</value></data>
@@ -2290,6 +2297,7 @@
   <data name="Inventory.SatisfactionRate" xml:space="preserve"><value>充足率</value></data>
   <data name="Inventory.Insufficient" xml:space="preserve"><value>不足</value></data>
   <data name="Inventory.Warning" xml:space="preserve"><value>警戒</value></data>
+  <data name="Inventory.CompositionRatio" xml:space="preserve"><value>配合比率</value></data>
   <data name="Schedule.BatchTransfer" xml:space="preserve"><value>一括スケジュール転送</value></data>
   <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>一括スケジュール転送 - {0}</value></data>
   <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>受注情報</value></data>
@@ -2687,6 +2695,8 @@
   <data name="Warehouse.NoStockLocations" xml:space="preserve"><value>在庫場所なし</value></data>
   <data name="Button.Import" xml:space="preserve"><value>インポート</value></data>
   <data name="Column.ScheduledQuantity" xml:space="preserve"><value>予定数量</value></data>
+  <data name="Column.ProducedQuantity" xml:space="preserve"><value>完成数量</value></data>
+  <data name="Column.ProductionStatus" xml:space="preserve"><value>生産状況</value></data>
   <data name="Column.ImportQuantity" xml:space="preserve"><value>今回完了</value></data>
   <data name="Column.WarehouseLocation" xml:space="preserve"><value>倉庫/場所</value></data>
   <!-- ===== Inventory Transaction Table ===== -->

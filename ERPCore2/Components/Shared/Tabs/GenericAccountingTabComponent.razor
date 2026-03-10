@@ -1,4 +1,4 @@
-@* 客戶會計資訊 Tab — 顯示應收帳款等四種子科目，並可立即建立 *@
+@* 通用會計資訊 Tab — 支援客戶、廠商、商品；顯示對應子科目，並可立即建立 *@
 @using ERPCore2.Models.Enums
 @using Microsoft.Extensions.Localization
 @inject ISubAccountService SubAccountService
@@ -6,7 +6,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IStringLocalizer<SharedResource> L
 
-@if (_customerId <= 0)
+@if (_entityId <= 0)
 {
     <div class="text-muted py-3 px-2">
         <i class="bi bi-info-circle me-2"></i>@L["Accounting.SaveFirst"]
@@ -22,7 +22,7 @@ else
 {
     <div class="table-responsive">
         <table class="table table-sm table-hover mb-3">
-            <thead class="table-light">
+            <thead class="accounting-thead">
                 <tr>
                     <th style="width:160px">@L["Accounting.SubAccountType"]</th>
                     <th style="width:140px">@L["Accounting.AccountCode"]</th>
@@ -65,10 +65,10 @@ else
 }
 
 @code {
-    /// <summary>客戶 ID（由父元件傳入，用於自動載入資料）</summary>
-    [Parameter] public int? CustomerId { get; set; }
+    [Parameter] public AccountingEntityType EntityType { get; set; }
+    [Parameter] public int? EntityId { get; set; }
 
-    private int _customerId;
+    private int _entityId;
     private int _lastLoadedId;
     private bool _isLoading;
     private bool _isCreating;
@@ -76,7 +76,7 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        var newId = CustomerId ?? 0;
+        var newId = EntityId ?? 0;
         if (newId > 0 && newId != _lastLoadedId)
         {
             await LoadAsync(newId);
@@ -87,17 +87,17 @@ else
         }
     }
 
-    public async Task LoadAsync(int customerId)
+    public async Task LoadAsync(int entityId)
     {
-        _customerId = customerId;
-        _lastLoadedId = customerId;
+        _entityId = entityId;
+        _lastLoadedId = entityId;
         await RefreshAsync();
         StateHasChanged();
     }
 
     public void Clear()
     {
-        _customerId = 0;
+        _entityId = 0;
         _lastLoadedId = 0;
         _rows = new();
         StateHasChanged();
@@ -105,27 +105,65 @@ else
 
     private async Task RefreshAsync()
     {
-        if (_customerId <= 0) return;
+        if (_entityId <= 0) return;
 
         _isLoading = true;
         StateHasChanged();
 
-        var all = await SubAccountService.GetAllSubAccountsForCustomerAsync(_customerId);
+        _rows = EntityType switch
+        {
+            AccountingEntityType.Customer => await BuildCustomerRowsAsync(),
+            AccountingEntityType.Supplier => await BuildSupplierRowsAsync(),
+            AccountingEntityType.Product  => await BuildProductRowsAsync(),
+            _ => new()
+        };
+
+        _isLoading = false;
+    }
+
+    private async Task<List<(string, AccountItem?)>> BuildCustomerRowsAsync()
+    {
+        var all = await SubAccountService.GetAllSubAccountsForCustomerAsync(_entityId);
 
         AccountItem? Find(SubAccountLinkType type) =>
             all.FirstOrDefault(a =>
                 a.SubAccountLinkType == type ||
                 (type == SubAccountLinkType.ReceivablePayable && a.SubAccountLinkType == null));
 
-        _rows = new()
+        return new()
         {
             (L["Accounting.AccountsReceivable"].ToString(), Find(SubAccountLinkType.ReceivablePayable)),
-            (L["Accounting.NoteReceivable"].ToString(), Find(SubAccountLinkType.NoteReceivablePayable)),
-            (L["Accounting.SalesReturn"].ToString(), Find(SubAccountLinkType.SalesPurchaseReturn)),
-            (L["Accounting.AdvanceReceipt"].ToString(), Find(SubAccountLinkType.AdvanceReceiptPayment)),
+            (L["Accounting.NoteReceivable"].ToString(),     Find(SubAccountLinkType.NoteReceivablePayable)),
+            (L["Accounting.SalesReturn"].ToString(),        Find(SubAccountLinkType.SalesPurchaseReturn)),
+            (L["Accounting.AdvanceReceipt"].ToString(),     Find(SubAccountLinkType.AdvanceReceiptPayment)),
         };
+    }
 
-        _isLoading = false;
+    private async Task<List<(string, AccountItem?)>> BuildSupplierRowsAsync()
+    {
+        var all = await SubAccountService.GetAllSubAccountsForSupplierAsync(_entityId);
+
+        AccountItem? Find(SubAccountLinkType type) =>
+            all.FirstOrDefault(a =>
+                a.SubAccountLinkType == type ||
+                (type == SubAccountLinkType.ReceivablePayable && a.SubAccountLinkType == null));
+
+        return new()
+        {
+            (L["Accounting.AccountsPayable"].ToString(), Find(SubAccountLinkType.ReceivablePayable)),
+            (L["Accounting.NotePayable"].ToString(),     Find(SubAccountLinkType.NoteReceivablePayable)),
+            (L["Accounting.PurchaseReturn"].ToString(),  Find(SubAccountLinkType.SalesPurchaseReturn)),
+            (L["Accounting.AdvancePayment"].ToString(),  Find(SubAccountLinkType.AdvanceReceiptPayment)),
+        };
+    }
+
+    private async Task<List<(string, AccountItem?)>> BuildProductRowsAsync()
+    {
+        var item = await SubAccountService.GetSubAccountForProductAsync(_entityId);
+        return new()
+        {
+            (L["Accounting.Inventory"].ToString(), item),
+        };
     }
 
     private async Task HandleCreateAsync()
@@ -138,7 +176,14 @@ else
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var createdBy = authState.User.Identity?.Name ?? "system";
 
-            await SubAccountService.GetOrCreateCustomerSubAccountAsync(_customerId, createdBy);
+            _ = EntityType switch
+            {
+                AccountingEntityType.Customer => await SubAccountService.GetOrCreateCustomerSubAccountAsync(_entityId, createdBy),
+                AccountingEntityType.Supplier => await SubAccountService.GetOrCreateSupplierSubAccountAsync(_entityId, createdBy),
+                AccountingEntityType.Product  => await SubAccountService.GetOrCreateProductSubAccountAsync(_entityId, createdBy),
+                _ => null
+            };
+
             await RefreshAsync();
         }
         catch (Exception)

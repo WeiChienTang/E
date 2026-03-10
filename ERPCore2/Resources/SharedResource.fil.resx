@@ -158,6 +158,9 @@
   <data name="Modal.ConfirmLeave" xml:space="preserve">
     <value>Umalis</value>
   </data>
+  <data name="Modal.Leave" xml:space="preserve">
+    <value>Umalis</value>
+  </data>
   <data name="Modal.SaveAndClose" xml:space="preserve">
     <value>I-save</value>
   </data>
@@ -658,6 +661,10 @@
   <data name="Report.ProductBarcode" xml:space="preserve"><value>Barcode ng Produkto</value></data>
   <data name="Report.BOMReport" xml:space="preserve"><value>BOM Report</value></data>
   <data name="Report.ProductionSchedule" xml:space="preserve"><value>Iskedyul ng Produksyon</value></data>
+  <data name="Report.MaterialScrapRecord" xml:space="preserve"><value>Talaan ng Basura at Pagbabalik ng Materyales</value></data>
+  <data name="Report.MaterialScrapRecordDesc" xml:space="preserve"><value>I-query ang mga bahagi ng produksyon na may dami ng basura o pagbabalik, na nakagrupo ayon sa item ng produksyon</value></data>
+  <data name="Report.MaterialRequirements" xml:space="preserve"><value>Ulat ng Pangangailangan sa Materyales</value></data>
+  <data name="Report.MaterialRequirementsDesc" xml:space="preserve"><value>Pinagsama-samang mga pangangailangan sa materyales para sa mga nakaplanong item ng produksyon ayon sa bahagi, na nagpapakita ng kinakailangan, inilabas at nakabinbing dami</value></data>
   <data name="Report.InventoryStatus" xml:space="preserve"><value>Katayuan ng Imbentaryo</value></data>
   <data name="Report.InventoryTransaction" xml:space="preserve"><value>Transaksyon ng Imbentaryo</value></data>
   <data name="Report.InventoryCount" xml:space="preserve"><value>Pagkakaiba sa Pagbibilang</value></data>
@@ -2290,6 +2297,7 @@
   <data name="Inventory.SatisfactionRate" xml:space="preserve"><value>Antas ng Kasapatan</value></data>
   <data name="Inventory.Insufficient" xml:space="preserve"><value>Hindi Sapat</value></data>
   <data name="Inventory.Warning" xml:space="preserve"><value>Babala</value></data>
+  <data name="Inventory.CompositionRatio" xml:space="preserve"><value>Ratio</value></data>
   <data name="Schedule.BatchTransfer" xml:space="preserve"><value>Batch Transfer sa Schedule</value></data>
   <data name="Schedule.BatchTransferWithCode" xml:space="preserve"><value>Batch Transfer sa Schedule - {0}</value></data>
   <data name="Schedule.SalesOrderInfo" xml:space="preserve"><value>Impormasyon ng Sales Order</value></data>
@@ -2687,6 +2695,8 @@
   <data name="Warehouse.NoStockLocations" xml:space="preserve"><value>Walang lokasyon ng stock</value></data>
   <data name="Button.Import" xml:space="preserve"><value>I-import</value></data>
   <data name="Column.ScheduledQuantity" xml:space="preserve"><value>Nakatalagang Dami</value></data>
+  <data name="Column.ProducedQuantity" xml:space="preserve"><value>Nagawang Dami</value></data>
+  <data name="Column.ProductionStatus" xml:space="preserve"><value>Katayuan ng Produksyon</value></data>
   <data name="Column.ImportQuantity" xml:space="preserve"><value>Dami ngayon</value></data>
   <data name="Column.WarehouseLocation" xml:space="preserve"><value>Bodega/Lokasyon</value></data>
   <!-- ===== Inventory Transaction Table ===== -->

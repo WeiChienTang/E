@@ -2,6 +2,7 @@
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@inject ISupplierDetailReportService SupplierDetailReportService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="Supplier" 
@@ -22,6 +23,8 @@
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           DebugPageName="SupplierIndex"
+                          RowPrintService="@SupplierDetailReportService"
+                          RowPrintReportId="@ReportIds.SupplierDetail"
                           @ref="indexComponent" />
 
 @* 廠商編輯 Modal *@

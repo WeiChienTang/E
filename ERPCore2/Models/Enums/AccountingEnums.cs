@@ -94,6 +94,16 @@ namespace ERPCore2.Models.Enums
     }
 
     /// <summary>
+    /// 會計子科目 Tab 的實體類型（決定服務呼叫與欄位標籤）
+    /// </summary>
+    public enum AccountingEntityType
+    {
+        Customer = 1,
+        Supplier = 2,
+        Product = 3
+    }
+
+    /// <summary>
     /// 會計科目層級（用於報表篩選）
     /// </summary>
     public enum AccountLevelFilter

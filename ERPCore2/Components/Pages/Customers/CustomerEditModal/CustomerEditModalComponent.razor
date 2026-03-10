@@ -129,7 +129,7 @@
     private CustomerVehicleTab? vehicleTab;
     private CustomerVisitTab? visitTab;
     private CustomerTransactionTab? transactionTab;
-    private CustomerAccountingTab? accountingTab;
+    private GenericAccountingTabComponent? accountingTab;
     private CustomerProductTab? productTab;
 
     // ===== Tab 內容 RenderFragment =====
@@ -141,7 +141,7 @@
 
     private RenderFragment CreateAccountingTabContent() => __builder =>
     {
-        <CustomerAccountingTab @ref="accountingTab" CustomerId="@CustomerId" />
+        <GenericAccountingTabComponent @ref="accountingTab" EntityType="AccountingEntityType.Customer" EntityId="@CustomerId" />
     };
 
     private RenderFragment CreateVisitTabContent() => __builder =>

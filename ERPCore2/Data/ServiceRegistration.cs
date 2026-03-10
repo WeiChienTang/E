@@ -278,6 +278,9 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierStatementReportService, SupplierStatementReportService>();
             // 生產排程表報表服務（PD004）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductionScheduleReportService, ProductionScheduleReportService>();
+            // 用料損耗退料記錄報表服務（PD006）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IMaterialScrapReportService, MaterialScrapReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IMaterialRequirementsReportService, MaterialRequirementsReportService>();
             // 庫存現況表報表服務（IV003）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IInventoryStatusReportService, InventoryStatusReportService>();
             // 庫存盤點差異表報表服務（IV002）

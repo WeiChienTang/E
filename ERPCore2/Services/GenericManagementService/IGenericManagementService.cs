@@ -93,7 +93,12 @@ namespace ERPCore2.Services
         /// 取得資料總數
         /// </summary>
         Task<int> GetCountAsync();
-        
+
+        /// <summary>
+        /// 取得草稿資料總數（IsDraft = true）
+        /// </summary>
+        Task<int> GetDraftCountAsync();
+
         #endregion
 
         #region 狀態管理

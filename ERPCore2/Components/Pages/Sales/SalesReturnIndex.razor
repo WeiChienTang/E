@@ -11,6 +11,7 @@
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ISalesReturnReportService SalesReturnReportService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="SalesReturn" 
@@ -35,6 +36,8 @@
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           DebugPageName="SalesReturnIndex"
+                          RowPrintService="@SalesReturnReportService"
+                          RowPrintReportId="@ReportIds.SalesReturn"
                           @ref="indexComponent" />
 
 @* 退貨單編輯 Modal *@

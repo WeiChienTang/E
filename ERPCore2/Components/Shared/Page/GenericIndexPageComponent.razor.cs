@@ -1,8 +1,10 @@
 using ERPCore2.Data;
 using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Components.Shared.Table;
+using ERPCore2.Models.Documents;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
+using ERPCore2.Services.Reports.Interfaces;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -174,6 +176,17 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     [Parameter] public Func<TEntity, Task<bool>>? CustomDeleteHandler { get; set; }
     [Parameter] public EventCallback OnAddClick { get; set; }
     [Parameter] public EventCallback<TEntity> OnRowClick { get; set; }
+    [Parameter] public EventCallback<TEntity> OnRowPrint { get; set; }
+
+    /// <summary>
+    /// 設定後自動在右鍵選單加入「列印」項目，由元件內部管理預覽 Modal。
+    /// 需搭配 RowPrintReportId 使用。
+    /// </summary>
+    [Parameter] public IEntityReportService<TEntity>? RowPrintService { get; set; }
+
+    /// <summary>報表 ID，用於讀取列印配置（如 ReportIds.CustomerDetail）。</summary>
+    [Parameter] public string RowPrintReportId { get; set; } = "";
+
     [Parameter] public RenderFragment<TEntity>? ActionsTemplate { get; set; }
 
     // ===== 私有欄位 =====
@@ -193,6 +206,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private List<TableColumnDefinition>? _prevColumnDefs;
     private List<SearchFilterDefinition>? _prevFilterDefs;
     private List<ContextMenuItem<TEntity>>? _prevContextMenuItems;
+    private IEntityReportService<TEntity>? _prevRowPrintService;
     private bool   _prevAutoRemarksColumn;
     private bool   _prevAutoRemarksFilter;
     private bool   _prevAutoCreatedAt;
@@ -227,6 +241,12 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     // 多選狀態
     private HashSet<TEntity> _selectedItems = new();
     private bool _showMultiDeleteModal = false;
+
+    // 右鍵列印預覽 Modal 狀態（由 RowPrintService 驅動）
+    private bool _showRowPrintModal = false;
+    private List<byte[]>? _rowPrintImages;
+    private FormattedDocument? _rowPrintDocument;
+    private string _rowPrintTitle = "";
 
     // 篩選 / 分頁 / 狀態
     private SearchFilterModel searchModel = new();
@@ -266,6 +286,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
             !ReferenceEquals(ColumnDefinitions,     _prevColumnDefs)           ||
             !ReferenceEquals(FilterDefinitions,     _prevFilterDefs)           ||
             !ReferenceEquals(ContextMenuItems,      _prevContextMenuItems)     ||
+            !ReferenceEquals(RowPrintService,       _prevRowPrintService)      ||
             !ReferenceEquals(ActionsTemplate,       _prevActionsTemplate)      ||
             !ReferenceEquals(CustomActionsTemplate, _prevCustomActionsTemplate)||
             AutoAddRemarksColumn   != _prevAutoRemarksColumn                   ||
@@ -294,6 +315,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
         _prevActionsTemplate           = ActionsTemplate;
         _prevCustomActionsTemplate     = CustomActionsTemplate;
         _prevContextMenuItems          = ContextMenuItems;
+        _prevRowPrintService           = RowPrintService;
         RebuildDefinitionsCache();
     }
 
@@ -352,6 +374,16 @@ public partial class GenericIndexPageComponent<TEntity, TService>
             });
         }
 
+        if (RowPrintService != null || OnRowPrint.HasDelegate)
+        {
+            items.Add(new()
+            {
+                Label     = L["Button.Print"].ToString(),
+                IconClass = "fas fa-print",
+                OnClick   = async entity => await HandleContextMenuPrintAsync(entity)
+            });
+        }
+
         if (ShowDeleteButton)
         {
             if (items.Any())
@@ -374,6 +406,30 @@ public partial class GenericIndexPageComponent<TEntity, TService>
         }
 
         return items.Any() ? items : null;
+    }
+
+    private async Task HandleContextMenuPrintAsync(TEntity entity)
+    {
+        // 優先使用內建服務；若未設定則委派給 OnRowPrint callback
+        if (RowPrintService != null)
+        {
+            try
+            {
+                _rowPrintTitle   = GetEntityDisplayName(entity);
+                _rowPrintImages  = await RowPrintService.RenderToImagesAsync(entity.Id);
+                _rowPrintDocument = await RowPrintService.GenerateReportAsync(entity.Id);
+                _showRowPrintModal = true;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                await NotificationService.ShowErrorAsync($"列印預覽失敗：{ex.Message}");
+            }
+        }
+        else if (OnRowPrint.HasDelegate)
+        {
+            await OnRowPrint.InvokeAsync(entity);
+        }
     }
 
     private Task HandleSelectionChanged(HashSet<TEntity> selected)

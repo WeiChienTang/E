@@ -11,8 +11,8 @@ namespace ERPCore2.Models.Schedule
         /// <summary>實際消耗量</summary>
         public decimal ActualUsedQty { get; set; }
 
-        /// <summary>退料量（0 = 不退）</summary>
-        public decimal ReturnQty { get; set; }
+        /// <summary>退料量（null/0 = 不退）</summary>
+        public decimal? ReturnQty { get; set; }
 
         /// <summary>退料目標倉庫（ReturnQty > 0 時必填）</summary>
         public int? ReturnWarehouseId { get; set; }
@@ -20,8 +20,8 @@ namespace ERPCore2.Models.Schedule
         /// <summary>退料目標庫位（可選）</summary>
         public int? ReturnLocationId { get; set; }
 
-        /// <summary>損耗量（0 = 無損耗）</summary>
-        public decimal ScrapQty { get; set; }
+        /// <summary>損耗量（null/0 = 無損耗）</summary>
+        public decimal? ScrapQty { get; set; }
 
         /// <summary>損耗備註（純文字）</summary>
         public string? ScrapReason { get; set; }

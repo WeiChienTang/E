@@ -131,24 +131,26 @@
 
                             @* 數量資訊 *@
                             <div class="qty-info text-end text-nowrap">
-                                <div class="small">
+                                <div>
                                     <span class="text-muted">@L["Inventory.Required"]</span>
                                     <span class="fw-bold ms-1">@NumberFormatHelper.FormatSmart(item.RequiredQuantity)</span>
                                     <span class="text-muted ms-1">@item.UnitName</span>
                                 </div>
-                                <div class="small">
+                                <div>
                                     <span class="text-muted">@L["Inventory.Stock"]</span>
                                     <span class="fw-bold ms-1 @GetStatusIconClass(item.Status)">
                                         @NumberFormatHelper.FormatSmart(item.AvailableStock)
                                     </span>
+                                    <span class="text-muted ms-1">@item.UnitName</span>
                                 </div>
                                 @if (item.ShortageQuantity > 0)
                                 {
-                                    <div class="small">
+                                    <div>
                                         <span class="text-muted">@L["Inventory.Shortage"]</span>
                                         <span class="fw-bold ms-1 text-danger">
                                             @NumberFormatHelper.FormatSmart(item.ShortageQuantity)
                                         </span>
+                                        <span class="text-muted ms-1">@item.UnitName</span>
                                     </div>
                                 }
                             </div>
@@ -161,24 +163,26 @@
                                 @foreach (var child in item.Children)
                                 {
                                     <div class="bom-child-row d-flex align-items-center gap-2 py-1 px-2 rounded @GetChildRowClass(child.Status)">
-                                        <i class="bi bi-arrow-return-right text-muted small"></i>
+                                        <i class="bi bi-arrow-return-right text-muted"></i>
                                         <i class="bi @GetStatusIcon(child.Status) @GetStatusIconClass(child.Status)"></i>
-                                        <span class="fw-bold text-primary small">@child.ProductCode</span>
-                                        <span class="small text-truncate flex-grow-1">@child.ProductName</span>
+                                        <span class="fw-bold text-primary">@child.ProductCode</span>
+                                        <span class="text-truncate flex-grow-1">@child.ProductName</span>
                                         @if (child.CompositionMultiplier.HasValue)
                                         {
-                                            <span class="badge bg-light text-secondary border small">
-                                                ×@child.CompositionMultiplier.Value.ToString("G")
+                                            <span class="badge bg-light text-secondary border">
+                                                @L["Inventory.CompositionRatio"] ×@child.CompositionMultiplier.Value.ToString("G")
                                             </span>
                                         }
-                                        <div class="text-end text-nowrap small">
+                                        <div class="text-end text-nowrap">
                                             <span class="text-muted">@L["Inventory.Required"]</span>
                                             <span class="fw-bold ms-1">@NumberFormatHelper.FormatSmart(child.RequiredQuantity)</span>
+                                            <span class="text-muted ms-1">@child.UnitName</span>
                                             <span class="text-muted mx-1">|</span>
                                             <span class="text-muted">@L["Inventory.Stock"]</span>
                                             <span class="fw-bold ms-1 @GetStatusIconClass(child.Status)">
                                                 @NumberFormatHelper.FormatSmart(child.AvailableStock)
                                             </span>
+                                            <span class="text-muted ms-1">@child.UnitName</span>
                                             @if (child.ShortageQuantity > 0)
                                             {
                                                 <span class="text-muted mx-1">|</span>
@@ -186,8 +190,8 @@
                                                 <span class="fw-bold ms-1 text-danger">
                                                     @NumberFormatHelper.FormatSmart(child.ShortageQuantity)
                                                 </span>
+                                                <span class="text-muted ms-1">@child.UnitName</span>
                                             }
-                                            <span class="text-muted ms-1">@child.UnitName</span>
                                         </div>
                                     </div>
                                 }

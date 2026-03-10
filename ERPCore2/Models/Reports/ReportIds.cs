@@ -91,6 +91,12 @@ public static class ReportIds
     /// <summary>商品詳細資料報表</summary>
     public const string ProductDetail = "PD005";
 
+    /// <summary>用料損耗退料記錄</summary>
+    public const string MaterialScrapRecord = "PD006";
+
+    /// <summary>用料需求報表</summary>
+    public const string MaterialRequirements = "PD007";
+
     // ==================== 庫存報表 (IV) ====================
     
     /// <summary>庫存異動明細</summary>
