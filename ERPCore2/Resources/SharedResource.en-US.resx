@@ -1026,6 +1026,7 @@
   <data name="Field.StartDate" xml:space="preserve"><value>Start Date</value></data>
   <!-- ===== Field - Company keys ===== -->
   <data name="Field.CapitalAmount" xml:space="preserve"><value>Capital Amount</value></data>
+  <data name="Field.Company" xml:space="preserve"><value>Company</value></data>
   <data name="Field.CompanyAddress" xml:space="preserve"><value>Company Address</value></data>
   <data name="Field.CompanyDescription" xml:space="preserve"><value>Company Description</value></data>
   <data name="Field.CompanyName" xml:space="preserve"><value>Company Name</value></data>
@@ -1073,6 +1074,7 @@
   <data name="Field.ScheduleCode" xml:space="preserve"><value>Schedule Code</value></data>
   <data name="Field.ScheduleCreator" xml:space="preserve"><value>Schedule Creator</value></data>
   <data name="Field.ScheduleDate" xml:space="preserve"><value>Schedule Date</value></data>
+  <data name="Field.Size" xml:space="preserve"><value>Size</value></data>
   <data name="Field.SizeCode" xml:space="preserve"><value>Size Code</value></data>
   <data name="Field.SizeName" xml:space="preserve"><value>Size Name</value></data>
   <data name="Field.Spec" xml:space="preserve"><value>Spec</value></data>

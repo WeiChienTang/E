@@ -213,6 +213,10 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private bool _showContextMenuDeleteModal = false;
     private TEntity? _contextMenuDeleteTarget = null;
 
+    // 操作欄刪除確認 Modal 狀態
+    private bool _showActionDeleteModal = false;
+    private TEntity? _actionDeleteTarget = null;
+
     // 多選狀態
     private HashSet<TEntity> _selectedItems = new();
     private bool _showMultiDeleteModal = false;

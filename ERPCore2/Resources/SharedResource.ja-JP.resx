@@ -1026,6 +1026,7 @@
   <data name="Field.StartDate" xml:space="preserve"><value>開始日</value></data>
   <!-- ===== Field - Company keys ===== -->
   <data name="Field.CapitalAmount" xml:space="preserve"><value>資本金</value></data>
+  <data name="Field.Company" xml:space="preserve"><value>会社</value></data>
   <data name="Field.CompanyAddress" xml:space="preserve"><value>会社住所</value></data>
   <data name="Field.CompanyDescription" xml:space="preserve"><value>会社概要</value></data>
   <data name="Field.CompanyName" xml:space="preserve"><value>会社名</value></data>
@@ -1073,6 +1074,7 @@
   <data name="Field.ScheduleCode" xml:space="preserve"><value>スケジュールコード</value></data>
   <data name="Field.ScheduleCreator" xml:space="preserve"><value>スケジュール作成者</value></data>
   <data name="Field.ScheduleDate" xml:space="preserve"><value>スケジュール日付</value></data>
+  <data name="Field.Size" xml:space="preserve"><value>サイズ</value></data>
   <data name="Field.SizeCode" xml:space="preserve"><value>サイズコード</value></data>
   <data name="Field.SizeName" xml:space="preserve"><value>サイズ名</value></data>
   <data name="Field.Spec" xml:space="preserve"><value>仕様</value></data>

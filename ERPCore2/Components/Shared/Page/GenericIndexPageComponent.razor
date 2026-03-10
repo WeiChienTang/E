@@ -246,6 +246,22 @@ else
         OnConfirm="ExecuteContextMenuDeleteAsync" />
 }
 
+@* 操作欄刪除確認 Modal *@
+@if (_showActionDeleteModal && _actionDeleteTarget != null)
+{
+    <GenericConfirmModalComponent
+        IsVisible="@_showActionDeleteModal"
+        IsVisibleChanged="@((bool v) => { _showActionDeleteModal = v; if (!v) _actionDeleteTarget = null; })"
+        Title="@L["Button.ConfirmDelete"]"
+        Icon="bi-trash"
+        HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+        Message="@GetDeleteConfirmMessage(GetEntityDisplayName(_actionDeleteTarget))"
+        ConfirmButtonText="@L["Button.Delete"]"
+        ConfirmButtonVariant="ButtonVariant.Red"
+        CancelButtonText="@L["Button.Cancel"]"
+        OnConfirm="ExecuteActionDeleteAsync" />
+}
+
 @* 內建批次刪除 Modal *@
 @if (BatchDeleteColumnDefinitions != null)
 {
@@ -278,7 +294,7 @@ else
                         Variant="ButtonVariant.Red"
                         IconClass="bi bi-trash text-white"
                         Title="@L["Button.Delete"]"
-                        OnClick="async () => await DeleteEntityAsync(entity)"
+                        OnClick="@(() => { _actionDeleteTarget = entity; _showActionDeleteModal = true; StateHasChanged(); })"
                         StopPropagation="true"
                         CssClass="btn-square" />
                 }

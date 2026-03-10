@@ -111,6 +111,16 @@ public partial class GenericIndexPageComponent<TEntity, TService>
         await Refresh();
     }
 
+    /// <summary>操作欄刪除確認後執行（Modal 確認後呼叫）</summary>
+    private async Task ExecuteActionDeleteAsync()
+    {
+        if (_actionDeleteTarget == null) return;
+        var target = _actionDeleteTarget;
+        _actionDeleteTarget = null;
+        _showActionDeleteModal = false;
+        await DeleteEntityAsync(target, skipConfirm: true);
+    }
+
     /// <summary>右鍵選單刪除確認後執行（Modal 確認後呼叫）</summary>
     private async Task ExecuteContextMenuDeleteAsync()
     {

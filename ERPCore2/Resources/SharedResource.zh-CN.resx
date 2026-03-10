@@ -1026,6 +1026,7 @@
   <data name="Field.StartDate" xml:space="preserve"><value>开始日期</value></data>
   <!-- ===== Field - Company keys ===== -->
   <data name="Field.CapitalAmount" xml:space="preserve"><value>资本额</value></data>
+  <data name="Field.Company" xml:space="preserve"><value>公司</value></data>
   <data name="Field.CompanyAddress" xml:space="preserve"><value>公司地址</value></data>
   <data name="Field.CompanyDescription" xml:space="preserve"><value>公司简介</value></data>
   <data name="Field.CompanyName" xml:space="preserve"><value>公司名称</value></data>
@@ -1073,6 +1074,7 @@
   <data name="Field.ScheduleCode" xml:space="preserve"><value>排程单号</value></data>
   <data name="Field.ScheduleCreator" xml:space="preserve"><value>排程创建人</value></data>
   <data name="Field.ScheduleDate" xml:space="preserve"><value>排程日期</value></data>
+  <data name="Field.Size" xml:space="preserve"><value>尺寸</value></data>
   <data name="Field.SizeCode" xml:space="preserve"><value>尺寸代码</value></data>
   <data name="Field.SizeName" xml:space="preserve"><value>尺寸名称</value></data>
   <data name="Field.Spec" xml:space="preserve"><value>规格</value></data>

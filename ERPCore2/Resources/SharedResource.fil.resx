@@ -1026,6 +1026,7 @@
   <data name="Field.StartDate" xml:space="preserve"><value>Petsa ng Pagsisimula</value></data>
   <!-- ===== Field - Company keys ===== -->
   <data name="Field.CapitalAmount" xml:space="preserve"><value>Halaga ng Kapital</value></data>
+  <data name="Field.Company" xml:space="preserve"><value>Kumpanya</value></data>
   <data name="Field.CompanyAddress" xml:space="preserve"><value>Address ng Kumpanya</value></data>
   <data name="Field.CompanyDescription" xml:space="preserve"><value>Paglalarawan ng Kumpanya</value></data>
   <data name="Field.CompanyName" xml:space="preserve"><value>Pangalan ng Kumpanya</value></data>
@@ -1073,6 +1074,7 @@
   <data name="Field.ScheduleCode" xml:space="preserve"><value>Kodigo ng Iskedyul</value></data>
   <data name="Field.ScheduleCreator" xml:space="preserve"><value>Lumikha ng Iskedyul</value></data>
   <data name="Field.ScheduleDate" xml:space="preserve"><value>Petsa ng Iskedyul</value></data>
+  <data name="Field.Size" xml:space="preserve"><value>Sukat</value></data>
   <data name="Field.SizeCode" xml:space="preserve"><value>Kodigo ng Sukat</value></data>
   <data name="Field.SizeName" xml:space="preserve"><value>Pangalan ng Sukat</value></data>
   <data name="Field.Spec" xml:space="preserve"><value>Espesipikasyon</value></data>

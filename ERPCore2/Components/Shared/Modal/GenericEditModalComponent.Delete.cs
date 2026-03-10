@@ -1,7 +1,6 @@
 using ERPCore2.Data;
 using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Services;
-using Microsoft.JSInterop;
 
 namespace ERPCore2.Components.Shared.Modal;
 
@@ -14,7 +13,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
     // ===== 通用刪除操作 =====
 
     /// <summary>
-    /// 通用刪除方法（永久刪除）
+    /// 通用刪除方法：進行前置檢查後開啟確認 Modal
     /// </summary>
     public async Task DeleteEntityAsync()
     {
@@ -38,7 +37,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
 
             if (CustomDeleteHandler != null)
             {
-                // 如果有自訂刪除處理器，直接使用
+                // 如果有自訂刪除處理器，直接允許
                 canDelete = true;
             }
             else
@@ -66,14 +65,28 @@ public partial class GenericEditModalComponent<TEntity, TService>
                 return;
             }
 
-            // 步驟3：確認刪除
-            var confirmMessage = GetDeleteConfirmMessage(displayName);
-            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
+            // 步驟3：開啟確認 Modal
+            _showDeleteConfirmModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除時發生錯誤：{ex.Message}");
+            LogError("DeleteEntityAsync", ex);
+        }
+    }
 
-            if (!confirmed)
-                return;
+    /// <summary>
+    /// 刪除確認後執行實際刪除（Modal 確認後呼叫）
+    /// </summary>
+    private async Task ExecuteDeleteConfirmedAsync()
+    {
+        _showDeleteConfirmModal = false;
 
-            // 步驟4：執行刪除
+        if (Entity == null || Entity.Id <= 0) return;
+
+        try
+        {
             bool deleteSuccess = false;
 
             if (CustomDeleteHandler != null)
@@ -121,7 +134,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"刪除時發生錯誤：{ex.Message}");
-            LogError("DeleteEntityAsync", ex);
+            LogError("ExecuteDeleteConfirmedAsync", ex);
         }
     }
 

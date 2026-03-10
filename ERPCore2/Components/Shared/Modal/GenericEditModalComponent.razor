@@ -318,6 +318,22 @@
     </BaseModalComponent>
 }
 
+@* 刪除確認 Modal *@
+@if (_showDeleteConfirmModal && Entity != null && Entity.Id > 0)
+{
+    <GenericConfirmModalComponent
+        IsVisible="@_showDeleteConfirmModal"
+        IsVisibleChanged="@((bool v) => _showDeleteConfirmModal = v)"
+        Title="@L["Button.ConfirmDelete"]"
+        Icon="bi-trash"
+        HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+        Message="@GetDeleteConfirmMessage(GetEntityDisplayName(Entity))"
+        ConfirmButtonText="@L["Button.Delete"]"
+        ConfirmButtonVariant="ButtonVariant.Red"
+        CancelButtonText="@L["Button.Cancel"]"
+        OnConfirm="ExecuteDeleteConfirmedAsync" />
+}
+
 @* 內建報表預覽 Modal（當有設定 ReportService 時自動啟用） *@
 @if (ReportService != null)
 {
@@ -651,6 +667,9 @@
     
     // GetProcessedFormFields 結果快取（每次 LoadAllData 或 ActionButton 更新後失效）
     private List<FormFieldDefinition>? _processedFormFieldsCache;
+
+    // 刪除確認 Modal 狀態
+    private bool _showDeleteConfirmModal = false;
 
     // 載入取消機制：新一次載入開始時取消上一次尚未完成的載入
     private CancellationTokenSource _loadCts = new();
