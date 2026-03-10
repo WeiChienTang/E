@@ -203,28 +203,15 @@ namespace ERPCore2.Services
 
         #endregion
 
-        // 覆寫 GetAllAsync 以載入相關資料
-        public override async Task<List<Employee>> GetAllAsync()
+        // 覆寫 BuildGetAllQuery 以載入相關資料
+        protected override IQueryable<Employee> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Employees
-                    .Include(e => e.Role)
-                    .Include(e => e.Department)
-                    .Include(e => e.EmployeePosition)
-                    .AsQueryable()
-                    .OrderBy(e => e.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                throw;
-            }
+            return context.Employees
+                .Include(e => e.Role)
+                .Include(e => e.Department)
+                .Include(e => e.EmployeePosition)
+                .AsQueryable()
+                .OrderBy(e => e.Code);
         }
 
         // 覆寫 GetByIdAsync 以載入相關資料

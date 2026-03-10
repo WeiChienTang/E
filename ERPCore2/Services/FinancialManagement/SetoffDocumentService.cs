@@ -22,34 +22,21 @@ namespace ERPCore2.Services
         {
         }
 
-        /// <summary>
-        /// 覆寫 GetAllAsync 以包含關聯資料
-        /// </summary>
-        public override async Task<List<SetoffDocument>> GetAllAsync()
+        protected override IQueryable<SetoffDocument> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var setoffDocuments = await context.SetoffDocuments
-                    .Include(s => s.Company)
-                    .OrderByDescending(s => s.SetoffDate)
-                    .ThenByDescending(s => s.Code)
-                    .ToListAsync();
+            return context.SetoffDocuments
+                .Include(s => s.Company)
+                .OrderByDescending(s => s.SetoffDate)
+                .ThenByDescending(s => s.Code);
+        }
 
-                // 載入關聯方名稱
-                await LoadRelatedPartyNamesAsync(context, setoffDocuments);
-
-                return setoffDocuments;
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<SetoffDocument>();
-            }
+        /// <summary>
+        /// 覆寫後處理鉤子：在 GetAllAsync / GetAllIncludingDraftsAsync 查詢結果後，
+        /// 載入無法透過 Include 取得的關聯方名稱（跨 Customer/Supplier 的動態關聯）。
+        /// </summary>
+        protected override async Task PostProcessGetAllResultsAsync(AppDbContext context, List<SetoffDocument> entities)
+        {
+            await LoadRelatedPartyNamesAsync(context, entities);
         }
 
         /// <summary>

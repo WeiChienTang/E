@@ -17,22 +17,12 @@ namespace ERPCore2.Services
         {
         }
 
-        public override async Task<List<JournalEntry>> GetAllAsync()
+        protected override IQueryable<JournalEntry> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.JournalEntries
-                    .Include(je => je.Company)
-                    .OrderByDescending(je => je.EntryDate)
-                    .ThenByDescending(je => je.Id)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                return new List<JournalEntry>();
-            }
+            return context.JournalEntries
+                .Include(je => je.Company)
+                .OrderByDescending(je => je.EntryDate)
+                .ThenByDescending(je => je.Id);
         }
 
         public override async Task<List<JournalEntry>> SearchAsync(string searchTerm)

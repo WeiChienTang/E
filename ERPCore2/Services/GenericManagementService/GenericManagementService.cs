@@ -35,19 +35,36 @@ namespace ERPCore2.Services
         #region 基本 CRUD 操作
 
         /// <summary>
-        /// 取得所有資料
+        /// 建立 GetAllAsync / GetAllIncludingDraftsAsync 的基底查詢（包含 Include、排序等）。
+        /// 子類別覆寫此方法以加入導覽屬性與自訂排序；
+        /// IsDraft 過濾由 GetAllAsync() 統一套用，不需在此重複加入。
         /// </summary>
-        public virtual async Task<List<T>> GetAllAsync()
+        protected virtual IQueryable<T> BuildGetAllQuery(AppDbContext context)
+            => context.Set<T>().OrderByDescending(x => x.CreatedAt);
+
+        /// <summary>
+        /// 查詢結果的後處理鉤子（可選）。
+        /// 子類別可覆寫此方法以在列表載入後進行額外的非同步資料填充
+        /// （例如：從其他資料表載入關聯名稱）。
+        /// </summary>
+        protected virtual Task PostProcessGetAllResultsAsync(AppDbContext context, List<T> entities)
+            => Task.CompletedTask;
+
+        /// <summary>
+        /// 取得所有正式資料（自動排除草稿）。
+        /// ⚠️ 此方法不可被子類別覆寫；請覆寫 BuildGetAllQuery() 自訂查詢，或覆寫 PostProcessGetAllResultsAsync() 進行後處理。
+        /// 適用於下拉選單、AutoComplete、FK 選擇等場景。
+        /// </summary>
+        public async Task<List<T>> GetAllAsync()
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var dbSet = context.Set<T>();
-
-                return await dbSet
+                var results = await BuildGetAllQuery(context)
                     .Where(x => !x.IsDraft)
-                    .OrderByDescending(x => x.CreatedAt)
                     .ToListAsync();
+                await PostProcessGetAllResultsAsync(context, results);
+                return results;
             }
             catch (Exception ex)
             {
@@ -57,18 +74,18 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得所有資料（含草稿）— 用於草稿 Tab 的 Index 頁面 DataLoader
+        /// 取得所有資料（含草稿）— 用於草稿 Tab 的 Index 頁面 DataLoader。
+        /// ⚠️ 此方法不可被子類別覆寫；請覆寫 BuildGetAllQuery() 自訂查詢，或覆寫 PostProcessGetAllResultsAsync() 進行後處理。
         /// </summary>
-        public virtual async Task<List<T>> GetAllIncludingDraftsAsync()
+        public async Task<List<T>> GetAllIncludingDraftsAsync()
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var dbSet = context.Set<T>();
-
-                return await dbSet
-                    .OrderByDescending(x => x.CreatedAt)
+                var results = await BuildGetAllQuery(context)
                     .ToListAsync();
+                await PostProcessGetAllResultsAsync(context, results);
+                return results;
             }
             catch (Exception ex)
             {

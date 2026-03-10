@@ -16,23 +16,13 @@ namespace ERPCore2.Services
         {
         }
 
-        public override async Task<List<AccountItem>> GetAllAsync()
+        protected override IQueryable<AccountItem> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.AccountItems
-                    .Include(a => a.Parent)
-                    .OrderBy(a => a.AccountLevel)
-                    .ThenBy(a => a.SortOrder)
-                    .ThenBy(a => a.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                return new List<AccountItem>();
-            }
+            return context.AccountItems
+                .Include(a => a.Parent)
+                .OrderBy(a => a.AccountLevel)
+                .ThenBy(a => a.SortOrder)
+                .ThenBy(a => a.Code);
         }
 
         public override async Task<List<AccountItem>> SearchAsync(string searchTerm)

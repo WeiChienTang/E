@@ -149,27 +149,13 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得所有價格歷史記錄（包含關聯資料）
         /// </summary>
-        public override async Task<List<PriceHistory>> GetAllAsync()
+        protected override IQueryable<PriceHistory> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PriceHistories
-                    .Include(ph => ph.Product)
-                    .Include(ph => ph.RelatedCustomer)
-                    .Include(ph => ph.RelatedSupplier)
-                    .AsQueryable()
-                    .OrderByDescending(ph => ph.ChangeDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PriceHistory>();
-            }
+            return context.PriceHistories
+                .Include(ph => ph.Product)
+                .Include(ph => ph.RelatedCustomer)
+                .Include(ph => ph.RelatedSupplier)
+                .OrderByDescending(ph => ph.ChangeDate);
         }
 
         /// <summary>

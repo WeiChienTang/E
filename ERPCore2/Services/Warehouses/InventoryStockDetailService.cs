@@ -24,29 +24,16 @@ namespace ERPCore2.Services
 
         #region 覆寫基本方法
 
-        public override async Task<List<InventoryStockDetail>> GetAllAsync()
+        protected override IQueryable<InventoryStockDetail> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.InventoryStockDetails
-                    .Include(d => d.InventoryStock)
-                        .ThenInclude(s => s.Product)
-                    .Include(d => d.Warehouse)
-                    .Include(d => d.WarehouseLocation)
-                    .OrderBy(d => d.InventoryStock.Product!.Code)
-                    .ThenBy(d => d.Warehouse.Code)
-                    .ThenBy(d => d.WarehouseLocation!.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<InventoryStockDetail>();
-            }
+            return context.InventoryStockDetails
+                .Include(d => d.InventoryStock)
+                    .ThenInclude(s => s.Product)
+                .Include(d => d.Warehouse)
+                .Include(d => d.WarehouseLocation)
+                .OrderBy(d => d.InventoryStock.Product!.Code)
+                .ThenBy(d => d.Warehouse.Code)
+                .ThenBy(d => d.WarehouseLocation!.Code);
         }
 
         public override async Task<InventoryStockDetail?> GetByIdAsync(int id)

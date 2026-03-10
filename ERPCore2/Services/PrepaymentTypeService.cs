@@ -22,23 +22,10 @@ namespace ERPCore2.Services
         {
         }
 
-        public override async Task<List<PrepaymentType>> GetAllAsync()
+        protected override IQueryable<PrepaymentType> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PrepaymentTypes
-                    .OrderBy(pt => pt.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PrepaymentType>();
-            }
+            return context.PrepaymentTypes
+                .OrderBy(pt => pt.Name);
         }
 
         public override async Task<List<PrepaymentType>> SearchAsync(string searchTerm)

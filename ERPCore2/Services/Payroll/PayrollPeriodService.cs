@@ -15,21 +15,11 @@ namespace ERPCore2.Services.Payroll
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PayrollPeriod>> logger) : base(contextFactory, logger) { }
 
-        public override async Task<List<PayrollPeriod>> GetAllAsync()
+        protected override IQueryable<PayrollPeriod> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PayrollPeriods
-                    .OrderByDescending(x => x.Year)
-                    .ThenByDescending(x => x.Month)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                return new List<PayrollPeriod>();
-            }
+            return context.PayrollPeriods
+                .OrderByDescending(x => x.Year)
+                .ThenByDescending(x => x.Month);
         }
 
         public override async Task<List<PayrollPeriod>> SearchAsync(string searchTerm)

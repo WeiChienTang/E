@@ -27,24 +27,10 @@ namespace ERPCore2.Services
         {
         }
 
-        public override async Task<List<EntitySalesReturnReason>> GetAllAsync()
+        protected override IQueryable<EntitySalesReturnReason> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SalesReturnReasons
-                    .AsQueryable()
-                    .OrderBy(r => r.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<EntitySalesReturnReason>();
-            }
+            return context.SalesReturnReasons
+                .OrderBy(r => r.Name);
         }
 
         public override async Task<List<EntitySalesReturnReason>> SearchAsync(string searchTerm)

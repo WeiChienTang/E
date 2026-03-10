@@ -30,22 +30,12 @@ namespace ERPCore2.Services
         {
         }
 
-        // 覆寫 GetAllAsync 以提供排序
-        public override async Task<List<Permission>> GetAllAsync()
+        // 覆寫 BuildGetAllQuery 以提供排序
+        protected override IQueryable<Permission> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Permissions
-                    .AsQueryable()
-                    .OrderBy(p => p.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                throw;
-            }
+            return context.Permissions
+                .AsQueryable()
+                .OrderBy(p => p.Code);
         }
 
         /// <summary>

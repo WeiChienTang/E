@@ -117,28 +117,14 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 覆寫 GetAllAsync 以包含關聯資料
+        /// 覆寫 BuildGetAllQuery 以包含關聯資料
         /// </summary>
-        public override async Task<List<SetoffProductDetail>> GetAllAsync()
+        protected override IQueryable<SetoffProductDetail> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SetoffProductDetails
-                    .Include(d => d.SetoffDocument)
-                    .Include(d => d.Product)
-                    .OrderByDescending(d => d.CreatedAt)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<SetoffProductDetail>();
-            }
+            return context.SetoffProductDetails
+                .Include(d => d.SetoffDocument)
+                .Include(d => d.Product)
+                .OrderByDescending(d => d.CreatedAt);
         }
 
         /// <summary>

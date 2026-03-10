@@ -31,21 +31,11 @@ namespace ERPCore2.Services
         /// <summary>
         /// 覆寫取得所有資料，包含相關資料
         /// </summary>
-        public override async Task<List<Warehouse>> GetAllAsync()
+        protected override IQueryable<Warehouse> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Warehouses
-                    .Include(w => w.WarehouseLocations)
-                    .OrderBy(w => w.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                return new List<Warehouse>();
-            }
+            return context.Warehouses
+                .Include(w => w.WarehouseLocations)
+                .OrderBy(w => w.Code);
         }
 
         /// <summary>

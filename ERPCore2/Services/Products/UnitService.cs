@@ -30,23 +30,12 @@ namespace ERPCore2.Services
         /// <summary>
         /// 覆寫取得所有資料，包含轉換關係
         /// </summary>
-        public override async Task<List<Unit>> GetAllAsync()
+        protected override IQueryable<Unit> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Units
-                    .Include(u => u.FromUnitConversions)
-                    .Include(u => u.ToUnitConversions)
-                    .AsQueryable()
-                    .OrderBy(u => u.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                return new List<Unit>();
-            }
+            return context.Units
+                .Include(u => u.FromUnitConversions)
+                .Include(u => u.ToUnitConversions)
+                .OrderBy(u => u.Code);
         }
 
         /// <summary>

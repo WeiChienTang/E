@@ -21,22 +21,12 @@ namespace ERPCore2.Services
         {
         }
 
-        public override async Task<List<CustomerVisit>> GetAllAsync()
+        protected override IQueryable<CustomerVisit> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.CustomerVisits
-                    .Include(v => v.Customer)
-                    .Include(v => v.Employee)
-                    .OrderByDescending(v => v.VisitDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                throw;
-            }
+            return context.CustomerVisits
+                .Include(v => v.Customer)
+                .Include(v => v.Employee)
+                .OrderByDescending(v => v.VisitDate);
         }
 
         public override async Task<CustomerVisit?> GetByIdAsync(int id)

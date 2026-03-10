@@ -22,33 +22,18 @@ namespace ERPCore2.Services
         {
         }
 
-        public override async Task<List<SalesReturnDetail>> GetAllAsync()
+        protected override IQueryable<SalesReturnDetail> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SalesReturnDetails
-                    .Include(srd => srd.SalesReturn)
-                        .ThenInclude(sr => sr.Customer)
-                    .Include(srd => srd.Product)
-                    .Include(srd => srd.SalesDeliveryDetail)
-                        .ThenInclude(sdd => sdd!.Product)
-                    .Include(srd => srd.SalesDeliveryDetail)
-                        .ThenInclude(sdd => sdd!.SalesDelivery)
-                    .AsQueryable()
-                    .OrderBy(srd => srd.SalesReturnId)
-                    .ThenBy(srd => srd.Product.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<SalesReturnDetail>();
-            }
+            return context.SalesReturnDetails
+                .Include(srd => srd.SalesReturn)
+                    .ThenInclude(sr => sr.Customer)
+                .Include(srd => srd.Product)
+                .Include(srd => srd.SalesDeliveryDetail)
+                    .ThenInclude(sdd => sdd!.Product)
+                .Include(srd => srd.SalesDeliveryDetail)
+                    .ThenInclude(sdd => sdd!.SalesDelivery)
+                .OrderBy(srd => srd.SalesReturnId)
+                .ThenBy(srd => srd.Product.Code);
         }
 
         public override async Task<SalesReturnDetail?> GetByIdAsync(int id)

@@ -280,28 +280,14 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<MaterialIssue>> GetAllAsync()
+        protected override IQueryable<MaterialIssue> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.MaterialIssues
-                    .Include(mi => mi.Employee)
-                    .Include(mi => mi.Department)
-                    .Include(mi => mi.MaterialIssueDetails)
-                    .OrderByDescending(mi => mi.IssueDate)
-                    .ThenByDescending(mi => mi.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<MaterialIssue>();
-            }
+            return context.MaterialIssues
+                .Include(mi => mi.Employee)
+                .Include(mi => mi.Department)
+                .Include(mi => mi.MaterialIssueDetails)
+                .OrderByDescending(mi => mi.IssueDate)
+                .ThenByDescending(mi => mi.Code);
         }
 
         public override async Task<MaterialIssue?> GetByIdAsync(int id)

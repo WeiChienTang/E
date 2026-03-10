@@ -92,31 +92,17 @@ namespace ERPCore2.Services
         /// 排序：依進貨日期降序，再依進貨單號升序
         /// </summary>
         /// <returns>採購進貨單列表</returns>
-        public override async Task<List<PurchaseReceiving>> GetAllAsync()
+        protected override IQueryable<PurchaseReceiving> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseReceivings
-                    .Include(pr => pr.Supplier)
-                    .Include(pr => pr.ApprovedByUser)
-                    .Include(pr => pr.PurchaseReceivingDetails)
-                        .ThenInclude(prd => prd.Product)
-                    .Include(pr => pr.PurchaseReceivingDetails)
-                        .ThenInclude(prd => prd.Warehouse)
-                    .AsQueryable()
-                    .OrderByDescending(pr => pr.ReceiptDate)
-                    .ThenBy(pr => pr.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PurchaseReceiving>();
-            }
+            return context.PurchaseReceivings
+                .Include(pr => pr.Supplier)
+                .Include(pr => pr.ApprovedByUser)
+                .Include(pr => pr.PurchaseReceivingDetails)
+                    .ThenInclude(prd => prd.Product)
+                .Include(pr => pr.PurchaseReceivingDetails)
+                    .ThenInclude(prd => prd.Warehouse)
+                .OrderByDescending(pr => pr.ReceiptDate)
+                .ThenBy(pr => pr.Code);
         }
 
         /// <summary>

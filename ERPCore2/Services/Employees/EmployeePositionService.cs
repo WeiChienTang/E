@@ -18,24 +18,11 @@ namespace ERPCore2.Services
         {
         }
 
-        public override async Task<List<EmployeePosition>> GetAllAsync()
+        protected override IQueryable<EmployeePosition> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.EmployeePositions
-                    .AsQueryable()
-                    .OrderBy(ep => ep.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<EmployeePosition>();
-            }
+            return context.EmployeePositions
+                .AsQueryable()
+                .OrderBy(ep => ep.Name);
         }
 
         public override async Task<List<EmployeePosition>> SearchAsync(string searchTerm)

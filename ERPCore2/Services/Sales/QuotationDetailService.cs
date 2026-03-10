@@ -38,28 +38,14 @@ namespace ERPCore2.Services
 
         #region 覆寫基底方法
 
-        public override async Task<List<QuotationDetail>> GetAllAsync()
+        protected override IQueryable<QuotationDetail> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.QuotationDetails
-                    .Include(qd => qd.Quotation)
-                    .Include(qd => qd.Product)
-                    .Include(qd => qd.Unit)
-                    .AsQueryable()
-                    .OrderBy(qd => qd.QuotationId)
-                    .ThenBy(qd => qd.Id)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<QuotationDetail>();
-            }
+            return context.QuotationDetails
+                .Include(qd => qd.Quotation)
+                .Include(qd => qd.Product)
+                .Include(qd => qd.Unit)
+                .OrderBy(qd => qd.QuotationId)
+                .ThenBy(qd => qd.Id);
         }
 
         public override async Task<QuotationDetail?> GetByIdAsync(int id)

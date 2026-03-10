@@ -29,29 +29,15 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 覆寫取得所有資料，包含相關資料
+        /// 覆寫 BuildGetAllQuery 以包含相關資料
         /// </summary>
-        public override async Task<List<SetoffPrepayment>> GetAllAsync()
+        protected override IQueryable<SetoffPrepayment> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SetoffPrepayments
-                    .Include(sp => sp.Customer)
-                    .Include(sp => sp.Supplier)
-                    .Include(sp => sp.SetoffDocument)
-                    .OrderByDescending(sp => sp.CreatedAt)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<SetoffPrepayment>();
-            }
+            return context.SetoffPrepayments
+                .Include(sp => sp.Customer)
+                .Include(sp => sp.Supplier)
+                .Include(sp => sp.SetoffDocument)
+                .OrderByDescending(sp => sp.CreatedAt);
         }
 
         /// <summary>

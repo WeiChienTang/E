@@ -20,26 +20,12 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 覆寫取得所有資料方法，加入排序
+        /// 覆寫 BuildGetAllQuery 以加入排序
         /// </summary>
-        public override async Task<List<Color>> GetAllAsync()
+        protected override IQueryable<Color> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Colors
-                    .AsQueryable()
-                    .OrderBy(c => c.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<Color>();
-            }
+            return context.Colors
+                .OrderBy(c => c.Name);
         }
 
         /// <summary>

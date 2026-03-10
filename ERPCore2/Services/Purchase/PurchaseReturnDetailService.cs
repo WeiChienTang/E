@@ -34,29 +34,15 @@ namespace ERPCore2.Services
             _inventoryStockService = inventoryStockService;
         }
 
-        public override async Task<List<PurchaseReturnDetail>> GetAllAsync()
+        protected override IQueryable<PurchaseReturnDetail> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseReturnDetails
-                    .Include(prd => prd.PurchaseReturn)
-                    .Include(prd => prd.Product)
-                    .Include(prd => prd.Unit)
-                    .Include(prd => prd.WarehouseLocation)
-                    .AsQueryable()
-                    .OrderBy(prd => prd.PurchaseReturnId)
-                    .ThenBy(prd => prd.Product.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PurchaseReturnDetail>();
-            }
+            return context.PurchaseReturnDetails
+                .Include(prd => prd.PurchaseReturn)
+                .Include(prd => prd.Product)
+                .Include(prd => prd.Unit)
+                .Include(prd => prd.WarehouseLocation)
+                .OrderBy(prd => prd.PurchaseReturnId)
+                .ThenBy(prd => prd.Product.Name);
         }
 
         public override async Task<PurchaseReturnDetail?> GetByIdAsync(int id)

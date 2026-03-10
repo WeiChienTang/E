@@ -30,24 +30,13 @@ namespace ERPCore2.Services
 
         #region 覆寫基底方法
 
-        public override async Task<List<ProductSupplier>> GetAllAsync()
+        protected override IQueryable<ProductSupplier> BuildGetAllQuery(AppDbContext context)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.ProductSuppliers
-                    .Include(ps => ps.Product)
-                    .Include(ps => ps.Supplier)
-                    .OrderBy(ps => ps.ProductId)
-                    .ThenBy(ps => ps.Priority)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                throw;
-            }
+            return context.ProductSuppliers
+                .Include(ps => ps.Product)
+                .Include(ps => ps.Supplier)
+                .OrderBy(ps => ps.ProductId)
+                .ThenBy(ps => ps.Priority);
         }
 
         public override async Task<ProductSupplier?> GetByIdAsync(int id)

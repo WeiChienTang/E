@@ -34,32 +34,17 @@ namespace ERPCore2.Services
             _inventoryStockService = inventoryStockService;
         }
 
-        public override async Task<List<SalesReturn>> GetAllAsync()
+        protected override IQueryable<SalesReturn> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SalesReturns
-                    .Include(sr => sr.Customer)
-                    .Include(sr => sr.Employee)
-                    .Include(sr => sr.ReturnReason)
-                    .Include(sr => sr.ApprovedByUser)
-                    .Include(sr => sr.SalesReturnDetails)
-                        .ThenInclude(srd => srd.Product)
-                    .AsQueryable()
-                    .OrderByDescending(sr => sr.ReturnDate)
-                    .ThenBy(sr => sr.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<SalesReturn>();
-            }
+            return context.SalesReturns
+                .Include(sr => sr.Customer)
+                .Include(sr => sr.Employee)
+                .Include(sr => sr.ReturnReason)
+                .Include(sr => sr.ApprovedByUser)
+                .Include(sr => sr.SalesReturnDetails)
+                    .ThenInclude(srd => srd.Product)
+                .OrderByDescending(sr => sr.ReturnDate)
+                .ThenBy(sr => sr.Code);
         }
 
         public override async Task<SalesReturn?> GetByIdAsync(int id)

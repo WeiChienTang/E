@@ -22,29 +22,15 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 覆寫 GetAllAsync 以包含關聯資料
+        /// 覆寫 BuildGetAllQuery 以包含關聯資料
         /// </summary>
-        public override async Task<List<SetoffPayment>> GetAllAsync()
+        protected override IQueryable<SetoffPayment> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SetoffPayments
-                    .Include(sp => sp.SetoffDocument)
-                    .Include(sp => sp.Bank)
-                    .Include(sp => sp.PaymentMethod)
-                    .OrderByDescending(sp => sp.CreatedAt)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<SetoffPayment>();
-            }
+            return context.SetoffPayments
+                .Include(sp => sp.SetoffDocument)
+                .Include(sp => sp.Bank)
+                .Include(sp => sp.PaymentMethod)
+                .OrderByDescending(sp => sp.CreatedAt);
         }
 
         /// <summary>

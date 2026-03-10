@@ -31,24 +31,14 @@ namespace ERPCore2.Services
             _permissionService = permissionService;
         }
 
-        // 覆寫 GetAllAsync 以載入相關資料
-        public override async Task<List<Role>> GetAllAsync()
+        // 覆寫 BuildGetAllQuery 以載入相關資料
+        protected override IQueryable<Role> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Roles
-                    .Include(r => r.RolePermissions)
-                    .ThenInclude(rp => rp.Permission)
-                    .AsQueryable()
-                    .OrderBy(r => r.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                return new List<Role>();
-            }
+            return context.Roles
+                .Include(r => r.RolePermissions)
+                .ThenInclude(rp => rp.Permission)
+                .AsQueryable()
+                .OrderBy(r => r.Name);
         }
 
         // 覆寫 GetByIdAsync 以載入相關資料

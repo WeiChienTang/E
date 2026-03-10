@@ -137,28 +137,14 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<ProductCompositionDetail>> GetAllAsync()
+        protected override IQueryable<ProductCompositionDetail> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCompositionDetails
-                    .Include(pcd => pcd.ProductComposition)
-                        .ThenInclude(pc => pc.ParentProduct)
-                    .Include(pcd => pcd.ComponentProduct)
-                    .Include(pcd => pcd.Unit)
-                    .OrderBy(pcd => pcd.ProductCompositionId)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<ProductCompositionDetail>();
-            }
+            return context.ProductCompositionDetails
+                .Include(pcd => pcd.ProductComposition)
+                    .ThenInclude(pc => pc.ParentProduct)
+                .Include(pcd => pcd.ComponentProduct)
+                .Include(pcd => pcd.Unit)
+                .OrderBy(pcd => pcd.ProductCompositionId);
         }
 
         public override async Task<ProductCompositionDetail?> GetByIdAsync(int id)

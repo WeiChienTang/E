@@ -35,65 +35,20 @@ namespace ERPCore2.Services
 
         #region 覆寫基本方法
 
-        public override async Task<List<InventoryStock>> GetAllAsync()
+        protected override IQueryable<InventoryStock> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.InventoryStocks
-                    .Where(i => !i.IsDraft)
-                    .Include(i => i.Product)
-                        .ThenInclude(p => p!.ProductCategory)
-                    .Include(i => i.Product)
-                        .ThenInclude(p => p!.Unit)
-                    .Include(i => i.Product)
-                        .ThenInclude(p => p!.ProductionUnit)
-                    .Include(i => i.InventoryStockDetails)
-                        .ThenInclude(d => d.Warehouse)
-                    .Include(i => i.InventoryStockDetails)
-                        .ThenInclude(d => d.WarehouseLocation)
-                    .AsQueryable()
-                    .OrderBy(i => i.Product == null ? "" : i.Product.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<InventoryStock>();
-            }
-        }
-
-        public override async Task<List<InventoryStock>> GetAllIncludingDraftsAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.InventoryStocks
-                    .Include(i => i.Product)
-                        .ThenInclude(p => p!.ProductCategory)
-                    .Include(i => i.Product)
-                        .ThenInclude(p => p!.Unit)
-                    .Include(i => i.Product)
-                        .ThenInclude(p => p!.ProductionUnit)
-                    .Include(i => i.InventoryStockDetails)
-                        .ThenInclude(d => d.Warehouse)
-                    .Include(i => i.InventoryStockDetails)
-                        .ThenInclude(d => d.WarehouseLocation)
-                    .AsQueryable()
-                    .OrderBy(i => i.Product == null ? "" : i.Product.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllIncludingDraftsAsync), GetType(), _logger, new {
-                    Method = nameof(GetAllIncludingDraftsAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<InventoryStock>();
-            }
+            return context.InventoryStocks
+                .Include(i => i.Product)
+                    .ThenInclude(p => p!.ProductCategory)
+                .Include(i => i.Product)
+                    .ThenInclude(p => p!.Unit)
+                .Include(i => i.Product)
+                    .ThenInclude(p => p!.ProductionUnit)
+                .Include(i => i.InventoryStockDetails)
+                    .ThenInclude(d => d.Warehouse)
+                .Include(i => i.InventoryStockDetails)
+                    .ThenInclude(d => d.WarehouseLocation)
+                .OrderBy(i => i.Product == null ? "" : i.Product.Code);
         }
 
         public override async Task<InventoryStock?> GetByIdAsync(int id)

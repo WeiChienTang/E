@@ -591,25 +591,14 @@ namespace ERPCore2.Services
 
         #region Override Methods
 
-        public override async Task<List<InventoryTransaction>> GetAllAsync()
+        protected override IQueryable<InventoryTransaction> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.InventoryTransactions
-                    .Include(t => t.Warehouse)
-                    .Include(t => t.Employee)
-                    .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
-                    .AsQueryable()
-                    .OrderByDescending(t => t.TransactionDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), typeof(InventoryTransactionService), _logger);
-                return new List<InventoryTransaction>();
-            }
+            return context.InventoryTransactions
+                .Include(t => t.Warehouse)
+                .Include(t => t.Employee)
+                .Include(t => t.Details)
+                    .ThenInclude(d => d.Product)
+                .OrderByDescending(t => t.TransactionDate);
         }
 
         public override async Task<InventoryTransaction?> GetByIdAsync(int id)

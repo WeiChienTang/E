@@ -40,33 +40,19 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得所有採購入庫明細（包含關聯資料）
         /// </summary>
-        public override async Task<List<PurchaseReceivingDetail>> GetAllAsync()
+        protected override IQueryable<PurchaseReceivingDetail> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseReceivingDetails
-                    .Include(d => d.PurchaseReceiving)
-                    .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod!.PurchaseOrder)
-                    .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod!.Product)
-                    .Include(d => d.Product)
-                    .Include(d => d.Warehouse)
-                    .Include(d => d.WarehouseLocation)
-                    .AsQueryable()
-                    .OrderByDescending(d => d.CreatedAt)
-                    .ThenBy(d => d.Id)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PurchaseReceivingDetail>();
-            }
+            return context.PurchaseReceivingDetails
+                .Include(d => d.PurchaseReceiving)
+                .Include(d => d.PurchaseOrderDetail)
+                    .ThenInclude(pod => pod!.PurchaseOrder)
+                .Include(d => d.PurchaseOrderDetail)
+                    .ThenInclude(pod => pod!.Product)
+                .Include(d => d.Product)
+                .Include(d => d.Warehouse)
+                .Include(d => d.WarehouseLocation)
+                .OrderByDescending(d => d.CreatedAt)
+                .ThenBy(d => d.Id);
         }
 
         /// <summary>

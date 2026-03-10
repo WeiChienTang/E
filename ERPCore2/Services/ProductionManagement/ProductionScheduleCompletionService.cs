@@ -24,31 +24,17 @@ namespace ERPCore2.Services
         }
 
         // 覆寫 GetAllAsync 以包含相關資料
-        public override async Task<List<ProductionScheduleCompletion>> GetAllAsync()
+        protected override IQueryable<ProductionScheduleCompletion> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductionScheduleCompletions
-                    .Include(psc => psc.ProductionScheduleItem)
-                        .ThenInclude(psi => psi.Product)
-                    .Include(psc => psc.ProductionScheduleItem)
-                        .ThenInclude(psi => psi.ProductionSchedule)
-                    .Include(psc => psc.Warehouse)
-                    .Include(psc => psc.WarehouseLocation)
-                    .Include(psc => psc.CompletedByEmployee)
-                    .OrderByDescending(psc => psc.CompletionDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<ProductionScheduleCompletion>();
-            }
+            return context.ProductionScheduleCompletions
+                .Include(psc => psc.ProductionScheduleItem)
+                    .ThenInclude(psi => psi.Product)
+                .Include(psc => psc.ProductionScheduleItem)
+                    .ThenInclude(psi => psi.ProductionSchedule)
+                .Include(psc => psc.Warehouse)
+                .Include(psc => psc.WarehouseLocation)
+                .Include(psc => psc.CompletedByEmployee)
+                .OrderByDescending(psc => psc.CompletionDate);
         }
 
         // 覆寫 GetByIdAsync 以包含相關資料

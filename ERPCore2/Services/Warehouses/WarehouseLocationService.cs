@@ -27,55 +27,12 @@ namespace ERPCore2.Services
             _errorLogService = errorLogService;
         }
 
-        public override async Task<List<WarehouseLocation>> GetAllAsync()
+        protected override IQueryable<WarehouseLocation> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WarehouseLocations
-                    .Where(wl => !wl.IsDraft)
-                    .Include(wl => wl.Warehouse)
-                    .AsQueryable()
-                    .OrderBy(wl => wl.Warehouse == null ? "" : wl.Warehouse.Name)
-                    .ThenBy(wl => wl.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(
-                    ex,
-                    nameof(GetAllAsync),
-                    GetType(),
-                    _logger,
-                    new { ServiceType = GetType().Name }
-                );
-                throw;
-            }
-        }
-
-        public override async Task<List<WarehouseLocation>> GetAllIncludingDraftsAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WarehouseLocations
-                    .Include(wl => wl.Warehouse)
-                    .AsQueryable()
-                    .OrderBy(wl => wl.Warehouse == null ? "" : wl.Warehouse.Name)
-                    .ThenBy(wl => wl.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(
-                    ex,
-                    nameof(GetAllIncludingDraftsAsync),
-                    GetType(),
-                    _logger,
-                    new { ServiceType = GetType().Name }
-                );
-                return new List<WarehouseLocation>();
-            }
+            return context.WarehouseLocations
+                .Include(wl => wl.Warehouse)
+                .OrderBy(wl => wl.Warehouse == null ? "" : wl.Warehouse.Name)
+                .ThenBy(wl => wl.Code);
         }
 
         public override async Task<WarehouseLocation?> GetByIdAsync(int id)

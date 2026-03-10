@@ -32,30 +32,16 @@ namespace ERPCore2.Services
         }
 
         // 覆寫 GetAllAsync 以包含相關資料
-        public override async Task<List<ProductionScheduleItem>> GetAllAsync()
+        protected override IQueryable<ProductionScheduleItem> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductionScheduleItems
-                    .Include(psi => psi.ProductionSchedule)
-                    .Include(psi => psi.Product)
-                    .Include(psi => psi.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.SalesOrder)
-                    .Include(psi => psi.Warehouse)
-                    .OrderByDescending(psi => psi.ProductionSchedule.ScheduleDate)
-                    .ThenBy(psi => psi.Priority)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<ProductionScheduleItem>();
-            }
+            return context.ProductionScheduleItems
+                .Include(psi => psi.ProductionSchedule)
+                .Include(psi => psi.Product)
+                .Include(psi => psi.SalesOrderDetail)
+                    .ThenInclude(sod => sod!.SalesOrder)
+                .Include(psi => psi.Warehouse)
+                .OrderByDescending(psi => psi.ProductionSchedule.ScheduleDate)
+                .ThenBy(psi => psi.Priority);
         }
 
         // 覆寫 GetByIdAsync 以包含相關資料

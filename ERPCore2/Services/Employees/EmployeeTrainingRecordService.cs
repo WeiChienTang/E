@@ -21,21 +21,11 @@ namespace ERPCore2.Services
         {
         }
 
-        public override async Task<List<EmployeeTrainingRecord>> GetAllAsync()
+        protected override IQueryable<EmployeeTrainingRecord> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.EmployeeTrainingRecords
-                    .Include(r => r.Employee)
-                    .OrderByDescending(r => r.TrainingDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                throw;
-            }
+            return context.EmployeeTrainingRecords
+                .Include(r => r.Employee)
+                .OrderByDescending(r => r.TrainingDate);
         }
 
         public override async Task<EmployeeTrainingRecord?> GetByIdAsync(int id)

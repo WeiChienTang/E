@@ -948,45 +948,13 @@ namespace ERPCore2.Services
 
         #region 覆寫基底方法
 
-        public override async Task<List<StockTaking>> GetAllAsync()
+        protected override IQueryable<StockTaking> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.StockTakings
-                    .Where(st => !st.IsDraft)
-                    .Include(st => st.Warehouse)
-                    .Include(st => st.WarehouseLocation)
-                    .Include(st => st.ApprovedByUser)
-                    .AsQueryable()
-                    .OrderByDescending(st => st.TakingDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                return new List<StockTaking>();
-            }
-        }
-
-        public override async Task<List<StockTaking>> GetAllIncludingDraftsAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.StockTakings
-                    .Include(st => st.Warehouse)
-                    .Include(st => st.WarehouseLocation)
-                    .Include(st => st.ApprovedByUser)
-                    .AsQueryable()
-                    .OrderByDescending(st => st.TakingDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllIncludingDraftsAsync), GetType(), _logger);
-                return new List<StockTaking>();
-            }
+            return context.StockTakings
+                .Include(st => st.Warehouse)
+                .Include(st => st.WarehouseLocation)
+                .Include(st => st.ApprovedByUser)
+                .OrderByDescending(st => st.TakingDate);
         }
 
         public override async Task<List<StockTaking>> SearchAsync(string searchTerm)

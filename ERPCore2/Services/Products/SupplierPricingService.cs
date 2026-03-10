@@ -153,26 +153,12 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得所有供應商定價（包含關聯資料）
         /// </summary>
-        public override async Task<List<SupplierPricing>> GetAllAsync()
+        protected override IQueryable<SupplierPricing> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SupplierPricings
-                    .Include(sp => sp.Product)
-                    .Include(sp => sp.Supplier)
-                    .AsQueryable()
-                    .OrderByDescending(sp => sp.EffectiveDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<SupplierPricing>();
-            }
+            return context.SupplierPricings
+                .Include(sp => sp.Product)
+                .Include(sp => sp.Supplier)
+                .OrderByDescending(sp => sp.EffectiveDate);
         }
 
         /// <summary>

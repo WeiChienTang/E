@@ -32,25 +32,11 @@ namespace ERPCore2.Services
             _printerTestService = new PrinterTestService();
         }
 
-        public override async Task<List<PrinterConfiguration>> GetAllAsync()
+        protected override IQueryable<PrinterConfiguration> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PrinterConfigurations
-                    .AsQueryable()
-                    .OrderByDescending(p => p.IsDefault)
-                    .ThenBy(p => p.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PrinterConfiguration>();
-            }
+            return context.PrinterConfigurations
+                .OrderByDescending(p => p.IsDefault)
+                .ThenBy(p => p.Name);
         }
 
         public override async Task<List<PrinterConfiguration>> SearchAsync(string searchTerm)

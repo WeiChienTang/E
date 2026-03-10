@@ -79,24 +79,10 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<DeletedRecord>> GetAllAsync()
+        protected override IQueryable<DeletedRecord> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.DeletedRecords
-                    .AsQueryable()
-                    .OrderByDescending(dr => dr.DeletedAt)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<DeletedRecord>();
-            }
+            return context.DeletedRecords
+                .OrderByDescending(dr => dr.DeletedAt);
         }
 
         public async Task<ServiceResult> RecordDeletionAsync(string tableName, int recordId, string? recordDisplayName = null, string? deleteReason = null, string? deletedBy = null)

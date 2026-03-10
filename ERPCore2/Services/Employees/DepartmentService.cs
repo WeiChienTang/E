@@ -22,27 +22,14 @@ namespace ERPCore2.Services
         {
         }
 
-        public override async Task<List<Department>> GetAllAsync()
+        protected override IQueryable<Department> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Departments
-                    .Include(d => d.Manager)
-                    .Include(d => d.DeputyManager)
-                    .Include(d => d.ParentDepartment)
-                    .AsQueryable()
-                    .OrderBy(d => d.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<Department>();
-            }
+            return context.Departments
+                .Include(d => d.Manager)
+                .Include(d => d.DeputyManager)
+                .Include(d => d.ParentDepartment)
+                .AsQueryable()
+                .OrderBy(d => d.Name);
         }
 
         public override async Task<Department?> GetByIdAsync(int id)

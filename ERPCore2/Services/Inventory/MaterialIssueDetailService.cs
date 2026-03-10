@@ -25,34 +25,20 @@ namespace ERPCore2.Services
         #region 覆寫基底類別方法
 
         /// <summary>
-        /// 取得所有領貨明細（包含關聯資料）
+        /// 覆寫 BuildGetAllQuery 以包含關聯資料
         /// </summary>
-        public override async Task<List<MaterialIssueDetail>> GetAllAsync()
+        protected override IQueryable<MaterialIssueDetail> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.MaterialIssueDetails
-                    .Include(d => d.MaterialIssue)
-                        .ThenInclude(mi => mi.Employee)
-                    .Include(d => d.MaterialIssue)
-                        .ThenInclude(mi => mi.Department)
-                    .Include(d => d.Product)
-                    .Include(d => d.Warehouse)
-                    .Include(d => d.WarehouseLocation)
-                    .AsQueryable()
-                    .OrderByDescending(d => d.CreatedAt)
-                    .ThenBy(d => d.Id)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<MaterialIssueDetail>();
-            }
+            return context.MaterialIssueDetails
+                .Include(d => d.MaterialIssue)
+                    .ThenInclude(mi => mi.Employee)
+                .Include(d => d.MaterialIssue)
+                    .ThenInclude(mi => mi.Department)
+                .Include(d => d.Product)
+                .Include(d => d.Warehouse)
+                .Include(d => d.WarehouseLocation)
+                .OrderByDescending(d => d.CreatedAt)
+                .ThenBy(d => d.Id);
         }
 
         /// <summary>

@@ -21,23 +21,10 @@ namespace ERPCore2.Services
         {
         }
 
-        public override async Task<List<CompositionCategory>> GetAllAsync()
+        protected override IQueryable<CompositionCategory> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.CompositionCategories
-                    .OrderBy(cc => cc.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<CompositionCategory>();
-            }
+            return context.CompositionCategories
+                .OrderBy(cc => cc.Name);
         }
 
         public override async Task<List<CompositionCategory>> SearchAsync(string searchTerm)

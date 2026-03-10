@@ -34,26 +34,16 @@ namespace ERPCore2.Services
 
         #region 覆寫基底方法
 
-        public override async Task<List<WasteRecord>> GetAllAsync()
+        protected override IQueryable<WasteRecord> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WasteRecords
-                    .Include(wr => wr.Vehicle)
-                    .Include(wr => wr.WasteType)
-                    .Include(wr => wr.Customer)
-                    .Include(wr => wr.Warehouse)
-                    .Include(wr => wr.WarehouseLocation)
-                    .OrderByDescending(wr => wr.RecordDate)
-                    .ThenByDescending(wr => wr.Id)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                throw;
-            }
+            return context.WasteRecords
+                .Include(wr => wr.Vehicle)
+                .Include(wr => wr.WasteType)
+                .Include(wr => wr.Customer)
+                .Include(wr => wr.Warehouse)
+                .Include(wr => wr.WarehouseLocation)
+                .OrderByDescending(wr => wr.RecordDate)
+                .ThenByDescending(wr => wr.Id);
         }
 
         public override async Task<WasteRecord?> GetByIdAsync(int id)

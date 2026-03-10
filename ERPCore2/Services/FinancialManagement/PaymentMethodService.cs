@@ -23,25 +23,12 @@ namespace ERPCore2.Services
         {
         }
 
-        // 覆寫 GetAllAsync 以提供自訂排序
-        public override async Task<List<PaymentMethod>> GetAllAsync()
+        // 覆寫 BuildGetAllQuery 以提供自訂排序
+        protected override IQueryable<PaymentMethod> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PaymentMethods
-                    .OrderByDescending(pm => pm.IsDefault)
-                    .ThenBy(pm => pm.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PaymentMethod>();
-            }
+            return context.PaymentMethods
+                .OrderByDescending(pm => pm.IsDefault)
+                .ThenBy(pm => pm.Name);
         }
 
         // 覆寫 GetActiveAsync 以提供自訂排序

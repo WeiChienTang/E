@@ -30,30 +30,16 @@ namespace ERPCore2.Services
 
         #region 覆寫基底方法
 
-        public override async Task<List<ProductComposition>> GetAllAsync()
+        protected override IQueryable<ProductComposition> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCompositions
-                    .Include(pc => pc.ParentProduct)
-                    .Include(pc => pc.Customer)
-                    .Include(pc => pc.CreatedByEmployee)
-                    .Include(pc => pc.CompositionDetails)
-                        .ThenInclude(pcd => pcd.ComponentProduct)
-                    .OrderBy(pc => pc.ParentProductId)
-                    .ThenBy(pc => pc.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<ProductComposition>();
-            }
+            return context.ProductCompositions
+                .Include(pc => pc.ParentProduct)
+                .Include(pc => pc.Customer)
+                .Include(pc => pc.CreatedByEmployee)
+                .Include(pc => pc.CompositionDetails)
+                    .ThenInclude(pcd => pcd.ComponentProduct)
+                .OrderBy(pc => pc.ParentProductId)
+                .ThenBy(pc => pc.Code);
         }
 
         public override async Task<ProductComposition?> GetByIdAsync(int id)

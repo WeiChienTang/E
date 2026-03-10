@@ -23,24 +23,10 @@ namespace ERPCore2.Services
         /// <summary>
         /// 覆寫取得所有資料方法，包含供應商關聯資料並加入排序
         /// </summary>
-        public override async Task<List<Material>> GetAllAsync()
+        protected override IQueryable<Material> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Materials
-                    .AsQueryable()
-                    .OrderBy(m => m.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<Material>();
-            }
+            return context.Materials
+                .OrderBy(m => m.Name);
         }
 
         /// <summary>

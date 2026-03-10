@@ -98,27 +98,12 @@ namespace ERPCore2.Services.Reports.Configuration
             }
         }
 
-        public override async Task<List<ReportPrintConfiguration>> GetAllAsync()
+        protected override IQueryable<ReportPrintConfiguration> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ReportPrintConfigurations
-                    .Include(r => r.PrinterConfiguration)
-                    .Include(r => r.PaperSetting)
-                    .AsQueryable()
-                    .OrderBy(r => r.ReportName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name
-                });
-                return new List<ReportPrintConfiguration>();
-            }
+            return context.ReportPrintConfigurations
+                .Include(r => r.PrinterConfiguration)
+                .Include(r => r.PaperSetting)
+                .OrderBy(r => r.ReportName);
         }
 
         public override async Task<ReportPrintConfiguration?> GetByIdAsync(int id)

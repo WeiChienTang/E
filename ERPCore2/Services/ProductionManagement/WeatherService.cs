@@ -21,24 +21,10 @@ namespace ERPCore2.Services
         /// <summary>
         /// 覆寫取得所有資料方法，加入排序
         /// </summary>
-        public override async Task<List<Weather>> GetAllAsync()
+        protected override IQueryable<Weather> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Weathers
-                    .AsQueryable()
-                    .OrderBy(w => w.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<Weather>();
-            }
+            return context.Weathers
+                .OrderBy(w => w.Name);
         }
 
         /// <summary>

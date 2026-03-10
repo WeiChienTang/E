@@ -51,26 +51,14 @@ namespace ERPCore2.Services
             return result;
         }
 
-        public override async Task<List<Product>> GetAllAsync()
+        protected override IQueryable<Product> BuildGetAllQuery(AppDbContext context)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.Products
-                    .Include(p => p.ProductCategory)
-                    .Include(p => p.Unit)
-                    .Include(p => p.ProductionUnit)
-                    .Include(p => p.Size)
-                    .AsQueryable()
-                    .OrderBy(p => p.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger);
-                throw;
-            }
+            return context.Products
+                .Include(p => p.ProductCategory)
+                .Include(p => p.Unit)
+                .Include(p => p.ProductionUnit)
+                .Include(p => p.Size)
+                .OrderBy(p => p.Name);
         }
 
         public override async Task<Product?> GetByIdAsync(int id)

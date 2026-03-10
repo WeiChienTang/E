@@ -34,30 +34,16 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得所有採購訂單明細（包含關聯資料）
         /// </summary>
-        public override async Task<List<PurchaseOrderDetail>> GetAllAsync()
+        protected override IQueryable<PurchaseOrderDetail> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseOrderDetails
-                    .Include(d => d.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
-                    .Include(d => d.Product)
-                    .Include(d => d.PurchaseReceivingDetails)
-                        .ThenInclude(prd => prd.PurchaseReceiving)
-                    .AsQueryable()
-                    .OrderByDescending(d => d.CreatedAt)
-                    .ThenBy(d => d.Id)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PurchaseOrderDetail>();
-            }
+            return context.PurchaseOrderDetails
+                .Include(d => d.PurchaseOrder)
+                    .ThenInclude(po => po.Supplier)
+                .Include(d => d.Product)
+                .Include(d => d.PurchaseReceivingDetails)
+                    .ThenInclude(prd => prd.PurchaseReceiving)
+                .OrderByDescending(d => d.CreatedAt)
+                .ThenBy(d => d.Id);
         }
 
         /// <summary>

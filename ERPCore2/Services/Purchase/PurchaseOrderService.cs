@@ -42,29 +42,16 @@ namespace ERPCore2.Services
 
         #region 覆寫基本方法
 
-        public override async Task<List<PurchaseOrder>> GetAllAsync()
+        protected override IQueryable<PurchaseOrder> BuildGetAllQuery(AppDbContext context)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseOrders
-                    .Include(po => po.Company)
-                    .Include(po => po.Supplier)
-                    .Include(po => po.Warehouse)
-                    .Include(po => po.ApprovedByUser)
-                    .Include(po => po.PurchaseOrderDetails)
-                        .ThenInclude(pod => pod.Product)
-                    // 不在此處排序 - 排序由 FieldConfiguration 層統一處理
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new { 
-                    Method = nameof(GetAllAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PurchaseOrder>();
-            }
+            return context.PurchaseOrders
+                .Include(po => po.Company)
+                .Include(po => po.Supplier)
+                .Include(po => po.Warehouse)
+                .Include(po => po.ApprovedByUser)
+                .Include(po => po.PurchaseOrderDetails)
+                    .ThenInclude(pod => pod.Product);
+            // 不在此處排序 - 排序由 FieldConfiguration 層統一處理
         }
 
         public override async Task<PurchaseOrder?> GetByIdAsync(int id)
