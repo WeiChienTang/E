@@ -8,6 +8,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface IPrinterConfigurationService : IGenericManagementService<PrinterConfiguration>
     {
+        Task<(List<PrinterConfiguration> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<PrinterConfiguration>, IQueryable<PrinterConfiguration>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 取得預設印表機設定
         /// </summary>

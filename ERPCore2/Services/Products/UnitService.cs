@@ -66,6 +66,39 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        public async Task<(List<Unit> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Unit>, IQueryable<Unit>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<Unit> query = context.Units;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(u => u.Code)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<Unit>(), 0);
+            }
+        }
+
         /// 檢查單位編號是否存在
         /// </summary>
         public async Task<bool> IsUnitCodeExistsAsync(string unitCode, int? excludeId = null)

@@ -1,4 +1,5 @@
-﻿using ERPCore2.Data.Entities;
+﻿using ERPCore2.Components.Shared.UI.Form;
+using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
 {
@@ -17,5 +18,13 @@ namespace ERPCore2.Services
 
         /// <summary>編輯磅秤紀錄後先逆轉舊庫存，再以當前數值重新入庫（Void and Repost）</summary>
         Task<ServiceResult> ReverseAndRepostWasteInventoryAsync(int id);
+
+        /// <summary>
+        /// 伺服器端分頁查詢（僅取列表所需欄位）。
+        /// </summary>
+        Task<(List<WasteRecord> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<WasteRecord>, IQueryable<WasteRecord>>? filterFunc,
+            int pageNumber,
+            int pageSize);
     }
 }

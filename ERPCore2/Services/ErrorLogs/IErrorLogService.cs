@@ -1,3 +1,4 @@
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 
@@ -75,6 +76,14 @@ namespace ERPCore2.Services
         /// <param name="daysToKeep">保留天數</param>
         /// <returns>刪除的記錄數量</returns>
         Task<int> CleanupOldErrorsAsync(int daysToKeep = 30);
+
+        /// <summary>
+        /// 伺服器端分頁查詢（僅取列表所需欄位）。
+        /// </summary>
+        Task<(List<ErrorLog> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ErrorLog>, IQueryable<ErrorLog>>? filterFunc,
+            int pageNumber,
+            int pageSize);
     }
 }
 

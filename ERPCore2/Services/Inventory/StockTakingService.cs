@@ -1212,6 +1212,33 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 伺服器端分頁
+
+        public async Task<(List<StockTaking> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<StockTaking>, IQueryable<StockTaking>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<StockTaking> query = context.StockTakings.Include(st => st.Warehouse);
+                if (filterFunc != null) query = filterFunc(query);
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(st => st.TakingDate)
+                    .Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<StockTaking>(), 0);
+            }
+        }
+
+        #endregion
     }
 }
 

@@ -508,6 +508,41 @@ namespace ERPCore2.Services
 
         #endregion
 
+        #region 伺服器端分頁
+
+        public async Task<(List<Quotation> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Quotation>, IQueryable<Quotation>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<Quotation> query = context.Quotations
+                    .Include(q => q.Customer);
+
+                if (filterFunc != null)
+                    query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(q => q.QuotationDate)
+                    .ThenBy(q => q.Code)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<Quotation>(), 0);
+            }
+        }
+
+        #endregion
+
         #region 批次列印查詢
 
         /// <summary>

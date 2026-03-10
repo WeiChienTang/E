@@ -16,8 +16,7 @@
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
-                      DataLoader="@LoadReportPrintConfigurationsAsync"
-                      FilterApplier="@ApplyReportPrintConfigurationFilters"
+                      ServerDataLoader="@ServerLoadReportPrintConfigurationsAsync"
                       GetEntityDisplayName="@(config => config.ReportName)"
                       RequiredPermission="@PermissionRegistry.ReportPrintConfiguration.Read"
                       RequiredModule="Systems"
@@ -98,19 +97,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("系統管理", "報表列印配置", "/systems", NotificationService, GetType());
 
-    // 載入報表列印配置資料
-    private async Task<List<ReportPrintConfiguration>> LoadReportPrintConfigurationsAsync() => await DataLoaderHelper.LoadAsync(ReportPrintConfigurationService.GetAllAsync, "報表列印配置", NotificationService, GetType());
-
-    private IQueryable<ReportPrintConfiguration> ApplyReportPrintConfigurationFilters(SearchFilterModel searchModel, IQueryable<ReportPrintConfiguration> query)
+    private Task<(List<ReportPrintConfiguration> Items, int TotalCount)> ServerLoadReportPrintConfigurationsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(r => r.ReportName);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyReportPrintConfigurationFilters), GetType());
+        return ReportPrintConfigurationService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadReportPrintConfigurationsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     // ===== 統計相關方法 =====

@@ -24,9 +24,7 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ShowDraftTab="true"
-                          DataLoader="@LoadSalesReturnsAsync"
-                          InitializeBasicData="@LoadBasicDataAsync"
-                          FilterApplier="@ApplySalesReturnFilters"
+                          ServerDataLoader="@ServerLoadSalesReturnsAsync"
                           GetEntityDisplayName="@(salesReturn => salesReturn.Code)"
                           RequiredPermission="@PermissionRegistry.SalesReturn.Read"
                           RequiredModule="Sales"
@@ -151,29 +149,6 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("銷售管理", "退貨管理", "#", NotificationService, GetType());
 
     /// <summary>
-    /// 載入退貨單資料
-    /// </summary>
-    private Task<List<SalesReturn>> LoadSalesReturnsAsync() => DataLoaderHelper.LoadAsync(() => SalesReturnService.GetAllIncludingDraftsAsync(), "退貨單", NotificationService, GetType());
-
-    /// <summary>
-    /// 載入基礎資料
-    /// </summary>
-    private async Task LoadBasicDataAsync()
-    {
-        try
-        {
-            await LoadSalesDeliveriesAsync();
-            await LoadWarehousesAsync();
-            await LoadReturnReasonsAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadBasicDataAsync), GetType(), additionalData: "載入基礎資料失敗");
-            await NotificationService.ShowErrorAsync("載入基礎資料失敗");
-        }
-    }
-
-    /// <summary>
     /// 載入銷售訂單資料
     /// </summary>
     private async Task LoadSalesDeliveriesAsync() => salesDeliveries = await DataLoaderHelper.LoadAsync(() => SalesDeliveryService.GetAllAsync(), "銷售出貨單", NotificationService, GetType());
@@ -193,20 +168,19 @@
     /// </summary>
     private async Task LoadCustomersAsync() => customers = await DataLoaderHelper.LoadAsync(() => CustomerService.GetAllAsync(), "客戶", NotificationService, GetType());
 
-    /// <summary>
-    /// 應用退貨單篩選器
-    /// </summary>
-    private IQueryable<SalesReturn> ApplySalesReturnFilters(SearchFilterModel searchModel, IQueryable<SalesReturn> query)
+    // 伺服器端分頁載入
+    private Task<(List<SalesReturn> Items, int TotalCount)> ServerLoadSalesReturnsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderByDescending(sr => sr.ReturnDate)
-                       .ThenByDescending(sr => sr.Code);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySalesReturnFilters), GetType());
+        return SalesReturnService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(sr => sr.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadSalesReturnsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     // 批次列印處理方法

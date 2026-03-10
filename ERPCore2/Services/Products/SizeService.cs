@@ -142,6 +142,39 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<(List<Size> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Size>, IQueryable<Size>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<Size> query = context.Sizes;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(s => s.Name)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<Size>(), 0);
+            }
+        }
+
         public async Task<bool> IsSizeCodeExistsAsync(string sizeCode, int? excludeId = null)
         {
             try

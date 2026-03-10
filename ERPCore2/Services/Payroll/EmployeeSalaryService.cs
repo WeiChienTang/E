@@ -186,5 +186,35 @@ namespace ERPCore2.Services.Payroll
                 return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
         }
+
+        #region 伺服器端分頁
+
+        public async Task<(List<EmployeeSalary> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<EmployeeSalary>, IQueryable<EmployeeSalary>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<EmployeeSalary> query = context.EmployeeSalaries
+                    .Include(s => s.Employee);
+                if (filterFunc != null) query = filterFunc(query);
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(s => s.EffectiveDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<EmployeeSalary>(), 0);
+            }
+        }
+
+        #endregion
     }
 }

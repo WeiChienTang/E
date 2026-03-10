@@ -7,6 +7,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface IPaperSettingService : IGenericManagementService<PaperSetting>
     {
+        Task<(List<PaperSetting> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<PaperSetting>, IQueryable<PaperSetting>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 取得系統預設紙張設定
         /// </summary>

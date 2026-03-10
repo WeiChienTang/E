@@ -53,6 +53,39 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<(List<CompositionCategory> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<CompositionCategory>, IQueryable<CompositionCategory>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<CompositionCategory> query = context.CompositionCategories;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(cc => cc.Name)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<CompositionCategory>(), 0);
+            }
+        }
+
         public async Task<List<CompositionCategory>> SearchByNameAsync(string keyword)
         {
             return await SearchAsync(keyword);

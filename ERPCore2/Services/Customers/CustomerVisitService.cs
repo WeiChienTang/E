@@ -111,5 +111,28 @@ namespace ERPCore2.Services
                 throw;
             }
         }
+
+        public async Task<(List<CustomerVisit> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<CustomerVisit>, IQueryable<CustomerVisit>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<CustomerVisit> query = context.CustomerVisits.Include(v => v.Customer);
+                if (filterFunc != null) query = filterFunc(query);
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(v => v.VisitDate)
+                    .Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<CustomerVisit>(), 0);
+            }
+        }
     }
 }

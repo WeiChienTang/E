@@ -25,9 +25,7 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ShowDraftTab="true"
-                          DataLoader="@LoadPurchaseReturnsAsync"
-                          InitializeBasicData="@LoadBasicDataAsync"
-                          FilterApplier="@ApplyPurchaseReturnFilters"
+                          ServerDataLoader="@ServerLoadPurchaseReturnsAsync"
                           GetEntityDisplayName="@(returnItem => returnItem.Code)"
                           RequiredPermission="@PermissionRegistry.PurchaseReturn.Read"
                           RequiredModule="Purchase"
@@ -145,29 +143,19 @@
     /// </summary>
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("採購管理", "進貨退出管理", "#", NotificationService, GetType());
 
-    /// <summary>
-    /// 載入進貨退出資料
-    /// </summary>
-    private Task<List<PurchaseReturn>> LoadPurchaseReturnsAsync() => DataLoaderHelper.LoadAsync(() => PurchaseReturnService.GetAllIncludingDraftsAsync(), "進貨退出", NotificationService, GetType());
-
-    /// <summary>
-    /// 載入基礎資料
-    /// </summary>
-    private async Task LoadBasicDataAsync()
+    // 伺服器端分頁載入
+    private Task<(List<PurchaseReturn> Items, int TotalCount)> ServerLoadPurchaseReturnsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        try
-        {
-            await LoadSuppliersAsync();
-            await LoadPurchaseOrdersAsync();
-            await LoadPurchaseReceivingsAsync();
-            await LoadWarehousesAsync();
-            await LoadEmployeesAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadBasicDataAsync), GetType(), additionalData: "載入基礎資料失敗");
-            await NotificationService.ShowErrorAsync("載入基礎資料失敗");
-        }
+        return PurchaseReturnService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(pr => pr.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadPurchaseReturnsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     /// <summary>
@@ -208,22 +196,6 @@
     /// 載入員工資料
     /// </summary>
     private async Task LoadEmployeesAsync() => employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
-
-    /// <summary>
-    /// 應用進貨退出篩選器
-    /// </summary>
-    private IQueryable<PurchaseReturn> ApplyPurchaseReturnFilters(SearchFilterModel searchModel, IQueryable<PurchaseReturn> query)
-    {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderByDescending(pr => pr.ReturnDate)
-                       .ThenByDescending(pr => pr.Code);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPurchaseReturnFilters), GetType());
-    }
 
     // 多筆列印處理方法
     private async Task HandleBatchPrintAsync()

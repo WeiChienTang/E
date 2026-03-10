@@ -14,8 +14,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadVisitsAsync"
-                          FilterApplier="@ApplyVisitFilters"
+                          ServerDataLoader="@ServerLoadVisitsAsync"
                           GetEntityDisplayName="@(v => $"{v.Customer?.CompanyName} - {v.VisitDate:yyyy/MM/dd}")"
                           RequiredPermission="@PermissionRegistry.Customer.Read"
                           RequiredModule="Customers"
@@ -72,10 +71,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("客戶管理", "拜訪紀錄維護", "#", NotificationService, GetType());
 
-    private Task<List<CustomerVisit>> LoadVisitsAsync() => DataLoaderHelper.LoadAsync(() => CustomerVisitService.GetAllAsync(), "拜訪紀錄", NotificationService, GetType());
-
-    private IQueryable<CustomerVisit> ApplyVisitFilters(SearchFilterModel searchModel, IQueryable<CustomerVisit> query)
+    // 伺服器端分頁載入
+    private Task<(List<CustomerVisit> Items, int TotalCount)> ServerLoadVisitsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyVisitFilters), GetType());
+        return CustomerVisitService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadVisitsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

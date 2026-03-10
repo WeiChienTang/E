@@ -1,3 +1,4 @@
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
@@ -47,5 +48,13 @@ namespace ERPCore2.Services
         /// 儲存傳票及其分錄（含新增/更新/刪除分錄行）
         /// </summary>
         Task<(bool Success, string ErrorMessage)> SaveWithLinesAsync(JournalEntry journalEntry, string savedBy);
+
+        /// <summary>
+        /// 伺服器端分頁查詢（不載入 Lines，僅取列表所需欄位）。
+        /// </summary>
+        Task<(List<JournalEntry> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<JournalEntry>, IQueryable<JournalEntry>>? filterFunc,
+            int pageNumber,
+            int pageSize);
     }
 }

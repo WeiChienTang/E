@@ -14,9 +14,8 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadSuppliersAsync"
                           ShowDraftTab="true"
-                          FilterApplier="@ApplySupplierFilters"
+                          ServerDataLoader="@ServerLoadSuppliersAsync"
                           GetEntityDisplayName="@(supplier => supplier.CompanyName)"
                           RequiredPermission="@PermissionRegistry.Supplier.Read"
                           RequiredModule="Suppliers"
@@ -81,19 +80,18 @@
     }
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("廠商管理", NotificationService, GetType());
-    
-    // 載入廠商資料
-    private Task<List<Supplier>> LoadSuppliersAsync() => DataLoaderHelper.LoadAsync(() => SupplierService.GetAllIncludingDraftsAsync(), "廠商", NotificationService, GetType());
 
-    private IQueryable<Supplier> ApplySupplierFilters(SearchFilterModel searchModel, IQueryable<Supplier> query)
+    private Task<(List<Supplier> Items, int TotalCount)> ServerLoadSuppliersAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(s => s.CompanyName);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySupplierFilters), GetType());
+        return SupplierService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(s => s.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadSuppliersAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

@@ -430,5 +430,32 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 伺服器端分頁
+
+        public async Task<(List<WasteRecord> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<WasteRecord>, IQueryable<WasteRecord>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<WasteRecord> query = context.WasteRecords.Include(wr => wr.WasteType);
+                if (filterFunc != null) query = filterFunc(query);
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(wr => wr.RecordDate).ThenByDescending(wr => wr.Id)
+                    .Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<WasteRecord>(), 0);
+            }
+        }
+
+        #endregion
     }
 }

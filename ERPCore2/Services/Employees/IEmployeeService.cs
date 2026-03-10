@@ -164,5 +164,17 @@ namespace ERPCore2.Services
         /// <param name="newPassword">新密碼（空白表示不變更）</param>
         /// <returns>操作結果</returns>
         Task<ServiceResult> UpdateSelfProfileAsync(int employeeId, string name, string? mobile, string? email, string? newPassword);
+
+        #region 伺服器端分頁
+
+        /// <summary>
+        /// 取得分頁資料（支援動態篩選）
+        /// </summary>
+        Task<(List<Employee> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Employee>, IQueryable<Employee>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
+        #endregion
     }
 }

@@ -213,5 +213,35 @@ namespace ERPCore2.Services.Payroll
                 return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
         }
+
+        public async Task<(List<PayrollPeriod> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<PayrollPeriod>, IQueryable<PayrollPeriod>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<PayrollPeriod> query = context.PayrollPeriods;
+
+                if (filterFunc != null)
+                    query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(x => x.Year)
+                    .ThenByDescending(x => x.Month)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<PayrollPeriod>(), 0);
+            }
+        }
     }
 }

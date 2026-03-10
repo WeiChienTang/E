@@ -11,8 +11,7 @@
                         EntityBasePath="/paymentMethods"                          
                         PageTitle="@L["Page.PaymentMethodTitle"]"
                         PageSubtitle="@L["Page.PaymentMethodSubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyPaymentMethodFilters"
+                        ServerDataLoader="@ServerLoadPaymentMethodsAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -83,18 +82,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("財務管理", "付款方式管理", null, NotificationService, GetType());
 
-    // 載入付款方式資料
-    private async Task<List<PaymentMethod>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(PaymentMethodService.GetAllIncludingDraftsAsync, "付款方式", NotificationService, GetType());
-
-    private IQueryable<PaymentMethod> ApplyPaymentMethodFilters(SearchFilterModel searchModel, IQueryable<PaymentMethod> query)
+    private Task<(List<PaymentMethod> Items, int TotalCount)> ServerLoadPaymentMethodsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderByDescending(pm => pm.IsDefault).ThenBy(pm => pm.Name);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPaymentMethodFilters), GetType());
+        return PaymentMethodService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadPaymentMethodsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

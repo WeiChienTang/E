@@ -11,6 +11,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface ISalesReturnReasonService : IGenericManagementService<EntitySalesReturnReason>
     {
+        Task<(List<EntitySalesReturnReason> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<EntitySalesReturnReason>, IQueryable<EntitySalesReturnReason>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 取得所有啟用的退貨原因（按排序順序）
         /// </summary>

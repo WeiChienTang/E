@@ -8,6 +8,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface IPermissionManagementService : IGenericManagementService<Permission>
     {
+        Task<(List<Permission> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Permission>, IQueryable<Permission>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 根據權限編號取得權限
         /// </summary>

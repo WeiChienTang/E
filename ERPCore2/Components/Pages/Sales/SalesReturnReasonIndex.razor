@@ -17,8 +17,7 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ShowDraftTab="true"
-                          DataLoader="@LoadSalesReturnReasonsAsync"
-                          FilterApplier="@ApplySalesReturnReasonFilters"
+                          ServerDataLoader="@ServerLoadSalesReturnReasonsAsync"
                           GetEntityDisplayName="@(reason => reason.Name)"
                           RequiredPermission="@PermissionRegistry.SalesReturnReason.Read"
                           RequiredModule="Sales"
@@ -85,23 +84,17 @@
     /// </summary>
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("銷售管理", "退貨原因管理", "#", NotificationService, GetType());
 
-    /// <summary>
-    /// 載入銷貨退貨原因資料
-    /// </summary>
-    private Task<List<SalesReturnReason>> LoadSalesReturnReasonsAsync() => DataLoaderHelper.LoadAsync(() => SalesReturnReasonService.GetAllIncludingDraftsAsync(), "銷貨退貨原因", NotificationService, GetType());
-
-    /// <summary>
-    /// 應用銷貨退貨原因篩選器
-    /// </summary>
-    private IQueryable<SalesReturnReason> ApplySalesReturnReasonFilters(SearchFilterModel searchModel, IQueryable<SalesReturnReason> query)
+    private Task<(List<SalesReturnReason> Items, int TotalCount)> ServerLoadSalesReturnReasonsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(r => r.Name);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySalesReturnReasonFilters), GetType());
+        return SalesReturnReasonService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadSalesReturnReasonsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

@@ -128,6 +128,39 @@ namespace ERPCore2.Services.Reports.Configuration
             }
         }
 
+        public async Task<(List<ReportPrintConfiguration> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ReportPrintConfiguration>, IQueryable<ReportPrintConfiguration>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<ReportPrintConfiguration> query = context.ReportPrintConfigurations;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(r => r.ReportName)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<ReportPrintConfiguration>(), 0);
+            }
+        }
+
         public async Task<ReportPrintConfiguration?> GetByReportNameAsync(string reportName)
         {
             try

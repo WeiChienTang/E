@@ -193,6 +193,35 @@ namespace ERPCore2.Services
                 return null;
             }
         }
+
+        #region 伺服器端分頁
+
+        public async Task<(List<Material> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Material>, IQueryable<Material>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<Material> query = context.Materials;
+                if (filterFunc != null) query = filterFunc(query);
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(m => m.Code)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<Material>(), 0);
+            }
+        }
+
+        #endregion
     }
 }
 

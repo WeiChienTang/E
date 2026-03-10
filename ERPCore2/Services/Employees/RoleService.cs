@@ -60,6 +60,39 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        public async Task<(List<Role> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Role>, IQueryable<Role>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<Role> query = context.Roles;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(r => r.Name)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<Role>(), 0);
+            }
+        }
+
         /// 根據角色名稱取得角色
         /// </summary>
         public async Task<ServiceResult<Role>> GetByNameAsync(string roleName)

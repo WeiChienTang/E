@@ -71,5 +71,13 @@ namespace ERPCore2.Services
         /// <param name="productId">商品ID</param>
         /// <returns>(WarehouseId, WarehouseLocationId) 或 null（無歷史記錄）</returns>
         Task<(int WarehouseId, int? WarehouseLocationId)?> GetLastIssuedLocationForProductAsync(int productId);
+
+        /// <summary>
+        /// 伺服器端分頁查詢（僅取列表所需欄位）。
+        /// </summary>
+        Task<(List<MaterialIssue> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<MaterialIssue>, IQueryable<MaterialIssue>>? filterFunc,
+            int pageNumber,
+            int pageSize);
     }
 }

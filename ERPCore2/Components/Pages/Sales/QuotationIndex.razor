@@ -21,8 +21,7 @@
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
                       ShowDraftTab="true"
-                      DataLoader="@LoadQuotationsAsync"
-                      FilterApplier="@ApplyQuotationFilters"
+                      ServerDataLoader="@ServerLoadQuotationsAsync"
                       GetEntityDisplayName="@(quotation => quotation.Code)"
                       RequiredPermission="@PermissionRegistry.Quotation.Read"
                       RequiredModule="Sales"
@@ -146,25 +145,25 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("報價管理", NotificationService, GetType());
 
-    // 載入報價單資料
-    private Task<List<Quotation>> LoadQuotationsAsync() => DataLoaderHelper.LoadAsync(() => QuotationService.GetAllIncludingDraftsAsync(), "報價單", NotificationService, GetType());
-
     // 載入客戶資料
     private async Task LoadCustomersAsync() => customers = await DataLoaderHelper.LoadAsync(() => CustomerService.GetAllAsync(), "客戶", NotificationService, GetType());
 
     // 載入業務人員資料
     private async Task LoadEmployeesAsync() => employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "業務人員", NotificationService, GetType());
 
-    private IQueryable<Quotation> ApplyQuotationFilters(SearchFilterModel searchModel, IQueryable<Quotation> query)
+    // 伺服器端分頁載入
+    private Task<(List<Quotation> Items, int TotalCount)> ServerLoadQuotationsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderByDescending(q => q.QuotationDate).ThenBy(q => q.Code);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyQuotationFilters), GetType());
+        return QuotationService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(o => o.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadQuotationsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     // ===== 批次審核相關方法 =====

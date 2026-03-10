@@ -11,9 +11,8 @@
                         EntityBasePath="/employee-positions"                          
                         PageTitle="@L["Page.EmployeePositionTitle"]"
                         PageSubtitle="@L["Page.EmployeePositionSubtitle"]"
-                        DataLoader="@LoadDataAsync"
+                        ServerDataLoader="@ServerLoadEmployeePositionsAsync"
                         ShowDraftTab="true"
-                        FilterApplier="@ApplyEmployeePositionFilters"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -84,11 +83,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "職位設定管理", "#", NotificationService, GetType());
 
-    // 載入職位設定資料
-    private Task<List<EmployeePosition>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => EmployeePositionService.GetAllIncludingDraftsAsync(), "職位設定", NotificationService, GetType());
-
-    private IQueryable<EmployeePosition> ApplyEmployeePositionFilters(SearchFilterModel searchModel, IQueryable<EmployeePosition> query)
+    private Task<(List<EmployeePosition> Items, int TotalCount)> ServerLoadEmployeePositionsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyEmployeePositionFilters), GetType());
+        return EmployeePositionService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadEmployeePositionsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

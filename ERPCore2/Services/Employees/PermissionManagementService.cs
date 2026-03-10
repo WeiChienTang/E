@@ -39,6 +39,39 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        public async Task<(List<Permission> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Permission>, IQueryable<Permission>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<Permission> query = context.Permissions;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(p => p.Code)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<Permission>(), 0);
+            }
+        }
+
         /// 根據權限編號取得權限
         /// </summary>
         public async Task<ServiceResult<Permission>> GetByCodeAsync(string permissionCode)

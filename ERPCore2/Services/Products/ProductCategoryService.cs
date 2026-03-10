@@ -155,6 +155,39 @@ namespace ERPCore2.Services
 
         #endregion
 
+        public async Task<(List<ProductCategory> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ProductCategory>, IQueryable<ProductCategory>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<ProductCategory> query = context.ProductCategories;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(pc => pc.Name)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<ProductCategory>(), 0);
+            }
+        }
+
         #region 業務特定方法
 
         public async Task<bool> IsCategoryNameExistsAsync(string categoryName, int? excludeId = null)

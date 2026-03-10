@@ -87,6 +87,18 @@ namespace ERPCore2.Services
         Task<ServiceResult<Customer>> CopyToCustomerAsync(int supplierId);
 
         #endregion
+
+        #region 伺服器端分頁
+
+        /// <summary>
+        /// 取得分頁資料（支援動態篩選）
+        /// </summary>
+        Task<(List<Supplier> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Supplier>, IQueryable<Supplier>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
+        #endregion
     }
 }
 

@@ -80,5 +80,13 @@ namespace ERPCore2.Services
         /// 依銷貨退回單 ID 取得相關沖款單（透過退回明細反查）
         /// </summary>
         Task<List<SetoffDocument>> GetBySalesReturnIdAsync(int salesReturnId);
+
+        /// <summary>
+        /// 伺服器端分頁查詢（僅取列表所需欄位）。
+        /// </summary>
+        Task<(List<SetoffDocument> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<SetoffDocument>, IQueryable<SetoffDocument>>? filterFunc,
+            int pageNumber,
+            int pageSize);
     }
 }

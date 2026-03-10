@@ -12,5 +12,17 @@ namespace ERPCore2.Services.Payroll
 
         /// <summary>新增薪資設定時，自動將前一筆有效記錄的 ExpiryDate 設為前一天</summary>
         Task<ServiceResult> AddWithExpiryAsync(EmployeeSalary newSalary);
+
+        #region 伺服器端分頁
+
+        /// <summary>
+        /// 取得分頁資料（支援動態篩選）
+        /// </summary>
+        Task<(List<EmployeeSalary> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<EmployeeSalary>, IQueryable<EmployeeSalary>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
+        #endregion
     }
 }

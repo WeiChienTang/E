@@ -1,3 +1,4 @@
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Models;
@@ -10,6 +11,14 @@ namespace ERPCore2.Services
     /// </summary>
     public interface IPurchaseReturnService : IGenericManagementService<PurchaseReturn>
     {
+        /// <summary>
+        /// 伺服器端分頁查詢（含 Supplier，不載入明細）
+        /// </summary>
+        Task<(List<PurchaseReturn> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<PurchaseReturn>, IQueryable<PurchaseReturn>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         // 查詢方法
         Task<List<PurchaseReturn>> GetBySupplierIdAsync(int supplierId);
         Task<List<PurchaseReturn>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);

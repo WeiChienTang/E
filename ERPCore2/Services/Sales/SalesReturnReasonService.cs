@@ -97,6 +97,39 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<(List<EntitySalesReturnReason> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<EntitySalesReturnReason>, IQueryable<EntitySalesReturnReason>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<EntitySalesReturnReason> query = context.SalesReturnReasons;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(r => r.Name)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<EntitySalesReturnReason>(), 0);
+            }
+        }
+
         public async Task<List<EntitySalesReturnReason>> GetActiveReasonsAsync()
         {
             try

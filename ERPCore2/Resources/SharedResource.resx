@@ -162,10 +162,10 @@
     <value>確定離開</value>
   </data>
   <data name="Modal.SaveAndClose" xml:space="preserve">
-    <value>儲存關閉</value>
+    <value>儲存</value>
   </data>
   <data name="Modal.ContinueEditing" xml:space="preserve">
-    <value>繼續編輯</value>
+    <value>返回</value>
   </data>
   <data name="Modal.UnsavedChanges" xml:space="preserve">
     <value>此單有修改，請選擇操作</value>
@@ -3266,7 +3266,7 @@
   <data name="Inventory.AllDetailsCleared" xml:space="preserve"><value>已清空所有庫存明細</value></data>
   <data name="Inventory.CurrentStockReadonlyHint" xml:space="preserve"><value>現有庫存量須透過盤點調整、進貨或出貨等流程修改</value></data>
   <data name="Message.ConfirmDeleteExistingDetail" xml:space="preserve"><value>此明細已儲存至資料庫，確定要刪除嗎？</value></data>
-  <data name="Button.SaveDraft" xml:space="preserve"><value>儲存草稿</value></data>
+  <data name="Button.SaveDraft" xml:space="preserve"><value>草稿</value></data>
   <data name="Label.Draft" xml:space="preserve"><value>草稿</value></data>
   <data name="Label.Official" xml:space="preserve"><value>正式</value></data>
   <data name="Message.DraftSuccess" xml:space="preserve"><value>{0}草稿已儲存，請記得補齊必填資料</value></data>

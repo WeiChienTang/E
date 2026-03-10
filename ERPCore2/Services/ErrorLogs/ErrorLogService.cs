@@ -430,6 +430,33 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 伺服器端分頁
+
+        public async Task<(List<ErrorLog> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ErrorLog>, IQueryable<ErrorLog>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<ErrorLog> query = context.ErrorLogs;
+                if (filterFunc != null) query = filterFunc(query);
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(e => e.OccurredAt)
+                    .Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "ErrorLogService.GetPagedWithFiltersAsync failed");
+                return (new List<ErrorLog>(), 0);
+            }
+        }
+
+        #endregion
     }
 }
 

@@ -15,8 +15,7 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ShowDraftTab="true"
-                          DataLoader="@LoadSizesAsync"
-                          FilterApplier="@ApplySizeFilters"
+                          ServerDataLoader="@ServerLoadSizesAsync"
                           GetEntityDisplayName="@(size => size.Name)"
                           RequiredPermission="@PermissionRegistry.Size.Read"
                           RequiredModule="Products"
@@ -82,11 +81,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "尺寸維護", "#", NotificationService, GetType());
 
-    // 載入尺寸資料
-    private Task<List<Size>> LoadSizesAsync() => DataLoaderHelper.LoadAsync(() => SizeService.GetAllIncludingDraftsAsync(), "尺寸", NotificationService, GetType());
-
-    private IQueryable<Size> ApplySizeFilters(SearchFilterModel searchModel, IQueryable<Size> query)
+    private Task<(List<Size> Items, int TotalCount)> ServerLoadSizesAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySizeFilters), GetType());
+        return SizeService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadSizesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

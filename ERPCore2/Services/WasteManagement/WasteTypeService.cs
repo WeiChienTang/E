@@ -126,6 +126,39 @@ namespace ERPCore2.Services
 
         #endregion
 
+        public async Task<(List<WasteType> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<WasteType>, IQueryable<WasteType>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<WasteType> query = context.WasteTypes;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(wt => wt.Name)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<WasteType>(), 0);
+            }
+        }
+
         #region 業務特定查詢方法
 
         public async Task<WasteType?> GetByCodeAsync(string code)

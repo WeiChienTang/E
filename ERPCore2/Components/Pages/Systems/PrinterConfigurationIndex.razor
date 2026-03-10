@@ -14,8 +14,7 @@
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
-                      DataLoader="@LoadPrinterConfigurationsAsync"
-                      FilterApplier="@ApplyPrinterConfigurationFilters"
+                      ServerDataLoader="@ServerLoadPrinterConfigurationsAsync"
                       GetEntityDisplayName="@(printer => printer.Name)"
                       RequiredPermission="@PermissionRegistry.PrinterConfiguration.Read"
                       RequiredModule="Systems"
@@ -80,18 +79,16 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("系統管理", "印表機設定", "/systems", NotificationService, GetType());
 
-    // 載入印表機設定資料
-    private async Task<List<PrinterConfiguration>> LoadPrinterConfigurationsAsync() => await DataLoaderHelper.LoadAsync(PrinterConfigurationService.GetAllAsync, "印表機設定", NotificationService, GetType());
-
-    private IQueryable<PrinterConfiguration> ApplyPrinterConfigurationFilters(SearchFilterModel searchModel, IQueryable<PrinterConfiguration> query)
+    private Task<(List<PrinterConfiguration> Items, int TotalCount)> ServerLoadPrinterConfigurationsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderByDescending(p => p.IsDefault).ThenBy(p => p.Name);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPrinterConfigurationFilters), GetType());
+        return PrinterConfigurationService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadPrinterConfigurationsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

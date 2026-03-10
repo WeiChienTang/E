@@ -11,9 +11,8 @@
                         EntityBasePath="/departments"                          
                         PageTitle="@L["Page.DepartmentTitle"]"
                         PageSubtitle="@L["Page.DepartmentSubtitle"]"
-                        DataLoader="@LoadDataAsync"
+                        ServerDataLoader="@ServerLoadDepartmentsAsync"
                         ShowDraftTab="true"
-                        FilterApplier="@ApplyDepartmentFilters"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -85,11 +84,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "部門設定", "#", NotificationService, GetType());
 
-    // 載入部門資料
-    private Task<List<Department>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => DepartmentService.GetAllIncludingDraftsAsync(), "部門", NotificationService, GetType());
-
-    private IQueryable<Department> ApplyDepartmentFilters(SearchFilterModel searchModel, IQueryable<Department> query)
+    private Task<(List<Department> Items, int TotalCount)> ServerLoadDepartmentsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyDepartmentFilters), GetType());
+        return DepartmentService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadDepartmentsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

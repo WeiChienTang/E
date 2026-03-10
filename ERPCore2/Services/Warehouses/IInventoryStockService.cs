@@ -94,6 +94,18 @@ namespace ERPCore2.Services
         
         // 取得商品的可用倉庫位置清單
         Task<List<InventoryStockDetail>> GetAvailableWarehouseLocationsByProductAsync(int productId);
+
+        #region 伺服器端分頁
+
+        /// <summary>
+        /// 取得分頁資料（支援動態篩選）
+        /// </summary>
+        Task<(List<InventoryStock> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<InventoryStock>, IQueryable<InventoryStock>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
+        #endregion
     }
 }
 

@@ -1,3 +1,4 @@
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using ERPCore2.Services;
@@ -69,6 +70,14 @@ namespace ERPCore2.Services
         /// </summary>
         Task<List<PurchaseOrder>> GetByPurchaseReceivingIdAsync(int purchaseReceivingId);
         
+        /// <summary>
+        /// 伺服器端分頁查詢（含 Company + Supplier，不載入明細）
+        /// </summary>
+        Task<(List<PurchaseOrder> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<PurchaseOrder>, IQueryable<PurchaseOrder>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         // 稅額計算
         /// <summary>
         /// 計算並更新採購單的稅額

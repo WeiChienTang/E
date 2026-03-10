@@ -11,8 +11,7 @@
                         EntityBasePath="/payroll/periods"
                         PageTitle="@L["Page.PayrollPeriodTitle"]"
                         PageSubtitle="@L["Page.PayrollPeriodSubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyFilters"
+                        ServerDataLoader="@ServerLoadPeriodsAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -120,11 +119,19 @@
     private async Task InitializeBreadcrumbsAsync() =>
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("薪資管理", "薪資週期管理", "#", NotificationService, GetType());
 
-    private Task<List<PayrollPeriod>> LoadDataAsync() =>
-        DataLoaderHelper.LoadAsync(() => PeriodService.GetAllAsync(), "薪資週期", NotificationService, GetType());
-
-    private IQueryable<PayrollPeriod> ApplyFilters(SearchFilterModel searchModel, IQueryable<PayrollPeriod> query) =>
-        fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyFilters), GetType());
+    // 伺服器端分頁載入
+    private Task<(List<PayrollPeriod> Items, int TotalCount)> ServerLoadPeriodsAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return PeriodService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadPeriodsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
 
     // ===== 開帳 =====
     private Task ShowOpenPeriodDialogAsync()

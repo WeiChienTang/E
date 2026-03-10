@@ -7,6 +7,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface ISizeService : IGenericManagementService<Size>
     {
+        Task<(List<Size> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Size>, IQueryable<Size>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         #region 業務特定查詢方法
         
         /// <summary>

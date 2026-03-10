@@ -14,8 +14,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadRolesAsync"
-                          FilterApplier="@ApplyRoleFilters"
+                          ServerDataLoader="@ServerLoadRolesAsync"
                           GetEntityDisplayName="@(role => role.Name)"
                           RequiredPermission="@PermissionRegistry.Role.Read"
                           RequiredModule="Employees"
@@ -81,11 +80,16 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "權限組設定", "#", NotificationService, GetType());
 
-    // 載入權限組資料
-    private Task<List<Role>> LoadRolesAsync() => DataLoaderHelper.LoadAsync(() => RoleService.GetAllAsync(), "權限組", NotificationService, GetType());
-
-    private IQueryable<Role> ApplyRoleFilters(SearchFilterModel searchModel, IQueryable<Role> query)
+    private Task<(List<Role> Items, int TotalCount)> ServerLoadRolesAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyRoleFilters), GetType());
+        return RoleService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadRolesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

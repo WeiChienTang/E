@@ -186,6 +186,41 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<(List<AccountItem> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<AccountItem>, IQueryable<AccountItem>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 基礎查詢：不含任何 Include，IsDraft 由 filterFunc 統一處理
+                IQueryable<AccountItem> query = context.AccountItems;
+
+                // 套用外部傳入的篩選條件（在 DB 層執行，非記憶體過濾）
+                if (filterFunc != null)
+                    query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .OrderBy(a => a.AccountLevel)
+                    .ThenBy(a => a.SortOrder)
+                    .ThenBy(a => a.Code)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<AccountItem>(), 0);
+            }
+        }
+
         protected override async Task<ServiceResult> CanDeleteAsync(AccountItem entity)
         {
             try

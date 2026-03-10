@@ -14,8 +14,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadVehiclesAsync"
-                          FilterApplier="@ApplyVehicleFilters"
+                          ServerDataLoader="@ServerLoadVehiclesAsync"
                           GetEntityDisplayName="@(v => $"{v.LicensePlate} - {v.VehicleName}")"
                           RequiredPermission="@PermissionRegistry.Vehicle.Read"
                           RequiredModule="Vehicles"
@@ -73,10 +72,18 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("車輛管理", "車輛維護", "#", NotificationService, GetType());
 
-    private Task<List<Vehicle>> LoadVehiclesAsync() => DataLoaderHelper.LoadAsync(() => VehicleService.GetAllIncludingDraftsAsync(), "車輛", NotificationService, GetType());
-
-    private IQueryable<Vehicle> ApplyVehicleFilters(SearchFilterModel searchModel, IQueryable<Vehicle> query)
+    // 伺服器端分頁載入
+    private Task<(List<Vehicle> Items, int TotalCount)> ServerLoadVehiclesAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyVehicleFilters), GetType());
+        return VehicleService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(v => v.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadVehiclesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

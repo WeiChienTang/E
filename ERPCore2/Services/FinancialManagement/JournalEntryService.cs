@@ -388,6 +388,37 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<(List<JournalEntry> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<JournalEntry>, IQueryable<JournalEntry>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<JournalEntry> query = context.JournalEntries
+                    .Include(je => je.Company);
+
+                if (filterFunc != null)
+                    query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(je => je.EntryDate)
+                    .ThenByDescending(je => je.Id)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<JournalEntry>(), 0);
+            }
+        }
+
         public override async Task<ServiceResult> ValidateAsync(JournalEntry entity)
         {
             try

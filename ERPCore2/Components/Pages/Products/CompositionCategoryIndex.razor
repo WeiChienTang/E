@@ -11,8 +11,7 @@
                         EntityBasePath="/composition-categories"                          
                         PageTitle="@L["Page.CompositionCategoryTitle"]"
                         PageSubtitle="@L["Page.CompositionCategorySubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyCompositionCategoryFilters"
+                        ServerDataLoader="@ServerLoadCompositionCategoriesAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -85,11 +84,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("生產管理", "物料清單類型", "#", NotificationService, GetType());
 
-    // 載入物料清單類型資料
-    private Task<List<CompositionCategory>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => CompositionCategoryService.GetAllIncludingDraftsAsync(), "物料清單類型", NotificationService, GetType());
-
-    private IQueryable<CompositionCategory> ApplyCompositionCategoryFilters(SearchFilterModel searchModel, IQueryable<CompositionCategory> query)
+    private Task<(List<CompositionCategory> Items, int TotalCount)> ServerLoadCompositionCategoriesAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCompositionCategoryFilters), GetType());
+        return CompositionCategoryService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadCompositionCategoriesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

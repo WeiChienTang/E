@@ -17,8 +17,7 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ShowDraftTab="true"
-                          DataLoader="@LoadProductsAsync"
-                          FilterApplier="@ApplyProductFilters"
+                          ServerDataLoader="@ServerLoadProductsAsync"
                           GetEntityDisplayName="@(product => product.Name)"
                           RequiredPermission="@PermissionRegistry.Product.Read"
                           RequiredModule="Products"
@@ -124,8 +123,20 @@
     }    
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("商品管理", NotificationService, GetType());
 
-    // 載入商品資料
-    private Task<List<Product>> LoadProductsAsync() => DataLoaderHelper.LoadAsync(() => ProductService.GetAllIncludingDraftsAsync(), "商品", NotificationService, GetType());
+    // 伺服器端分頁載入
+    private Task<(List<Product> Items, int TotalCount)> ServerLoadProductsAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return ProductService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(p => p.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadProductsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
 
     // 載入商品分類資料
     private async Task LoadProductCategoriesAsync() => productCategories = await DataLoaderHelper.LoadAsync(() => ProductService.GetProductCategoriesAsync(), "商品分類", NotificationService, GetType());
@@ -139,16 +150,5 @@
     // 載入尺寸資料
     private async Task LoadSizesAsync() => sizes = await DataLoaderHelper.LoadAsync(() => SizeService.GetActiveSizesAsync(), "尺寸", NotificationService, GetType());
     
-    private IQueryable<Product> ApplyProductFilters(SearchFilterModel searchModel, IQueryable<Product> query)
-    {
-        // 確保 fieldConfiguration 已初始化
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(p => p.Name);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyProductFilters), GetType());
-    }
 }
 

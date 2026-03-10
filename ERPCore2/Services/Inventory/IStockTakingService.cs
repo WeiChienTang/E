@@ -1,3 +1,4 @@
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
@@ -50,6 +51,14 @@ namespace ERPCore2.Services
         // 驗證
         Task<ServiceResult> ValidateStockTakingAsync(StockTaking stockTaking);
         Task<bool> IsStockTakingNumberUniqueAsync(string takingNumber, int? excludeId = null);
+
+        /// <summary>
+        /// 伺服器端分頁查詢（僅取列表所需欄位）。
+        /// </summary>
+        Task<(List<StockTaking> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<StockTaking>, IQueryable<StockTaking>>? filterFunc,
+            int pageNumber,
+            int pageSize);
     }
 
     /// <summary>

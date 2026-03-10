@@ -15,8 +15,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadMaterialsAsync"
-                          FilterApplier="@ApplyMaterialFilters"
+                          ServerDataLoader="@ServerLoadMaterialsAsync"
                           EntityName="@L["Entity.Material"]"
                           GetEntityDisplayName="@(material => material.Name)"
                           RequiredPermission="@PermissionRegistry.Material.Read"
@@ -61,18 +60,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "材質管理", null, NotificationService, GetType());
 
-    // 載入材質資料
-    private async Task<List<Material>> LoadMaterialsAsync() => await DataLoaderHelper.LoadAsync(MaterialService.GetAllAsync, "材質", NotificationService, GetType());
-
-    // 自定義篩選邏輯
-    private IQueryable<Material> ApplyMaterialFilters(SearchFilterModel searchModel, IQueryable<Material> query)
+    // 伺服器端分頁載入
+    private Task<(List<Material> Items, int TotalCount)> ServerLoadMaterialsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            return query.OrderBy(m => m.Code);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyMaterialFilters), GetType());
+        return MaterialService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadMaterialsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

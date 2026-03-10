@@ -120,6 +120,12 @@ public class SearchFilterDefinition
 public class SearchFilterModel
 {
     /// <summary>
+    /// 草稿/正式資料切換（ServerDataLoader 模式專用）
+    /// null = 未設定（由服務預設處理）；false = 正式資料；true = 草稿
+    /// </summary>
+    public bool? ShowDrafts { get; set; }
+
+    /// <summary>
     /// 文字篩選值
     /// </summary>
     public Dictionary<string, string?> TextFilters { get; set; } = new();

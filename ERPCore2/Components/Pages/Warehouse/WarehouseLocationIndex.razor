@@ -15,8 +15,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        DataLoader="@LoadWarehouseLocationsAsync"
-                        FilterApplier="@ApplyWarehouseLocationFilters"
+                        ServerDataLoader="@ServerLoadWarehouseLocationsAsync"
                         GetEntityDisplayName="@(warehouseLocation => $"{warehouseLocation.Warehouse?.Name} - {warehouseLocation.Code}")"
                         RequiredPermission="@PermissionRegistry.WarehouseLocation.Read"
                         RequiredModule="Warehouse"
@@ -88,16 +87,19 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("庫存管理", "倉庫內位置管理", null, NotificationService, GetType());
 
-    // 載入倉庫內位置資料
-    private Task<List<WarehouseLocation>> LoadWarehouseLocationsAsync() => DataLoaderHelper.LoadAsync(() => WarehouseLocationService.GetAllIncludingDraftsAsync(), "倉庫內位置", NotificationService, GetType());
-
     private async Task LoadWarehousesAsync() => warehouses = await DataLoaderHelper.LoadAsync(() => WarehouseService.GetAllAsync(), "倉庫", NotificationService, GetType());
 
-    // 自定義篩選邏輯
-    private IQueryable<WarehouseLocation> ApplyWarehouseLocationFilters(SearchFilterModel searchModel, IQueryable<WarehouseLocation> query)
+    private Task<(List<WarehouseLocation> Items, int TotalCount)> ServerLoadWarehouseLocationsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWarehouseLocationFilters), GetType());
+        return WarehouseLocationService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadWarehouseLocationsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
-
-
 }

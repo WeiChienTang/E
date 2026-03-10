@@ -1,3 +1,4 @@
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Models;
@@ -120,6 +121,14 @@ namespace ERPCore2.Services
         /// 駁回銷貨退回單
         /// </summary>
         Task<ServiceResult> RejectAsync(int id, int rejectedBy, string reason);
+
+        /// <summary>
+        /// 伺服器端分頁查詢（不載入 Details，僅取列表所需欄位）。
+        /// </summary>
+        Task<(List<SalesReturn> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<SalesReturn>, IQueryable<SalesReturn>>? filterFunc,
+            int pageNumber,
+            int pageSize);
     }
 
     /// <summary>

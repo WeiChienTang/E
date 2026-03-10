@@ -7,6 +7,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface IWarehouseService : IGenericManagementService<Warehouse>
     {
+        Task<(List<Warehouse> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Warehouse>, IQueryable<Warehouse>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 檢查倉庫編號是否存在
         /// </summary>

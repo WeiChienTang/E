@@ -153,5 +153,35 @@ namespace ERPCore2.Services
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
+
+        #region 伺服器端分頁
+
+        public async Task<(List<Document> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Document>, IQueryable<Document>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<Document> query = context.Documents
+                    .Include(d => d.DocumentCategory);
+                if (filterFunc != null) query = filterFunc(query);
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(d => d.CreatedAt)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<Document>(), 0);
+            }
+        }
+
+        #endregion
     }
 }

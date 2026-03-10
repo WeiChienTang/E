@@ -11,8 +11,7 @@
                         EntityBasePath="/payroll/bank-accounts"
                         PageTitle="@L["Page.EmployeeBankAccountTitle"]"
                         PageSubtitle="@L["Page.EmployeeBankAccountSubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyFilters"
+                        ServerDataLoader="@ServerLoadBankAccountsAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -74,9 +73,17 @@
     private async Task InitializeBreadcrumbsAsync() =>
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("薪資管理", "員工銀行帳戶", "#", NotificationService, GetType());
 
-    private Task<List<EmployeeBankAccount>> LoadDataAsync() =>
-        DataLoaderHelper.LoadAsync(() => BankAccountService.GetAllAsync(), "銀行帳戶", NotificationService, GetType());
-
-    private IQueryable<EmployeeBankAccount> ApplyFilters(SearchFilterModel searchModel, IQueryable<EmployeeBankAccount> query) =>
-        fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyFilters), GetType());
+    // 伺服器端分頁載入
+    private Task<(List<EmployeeBankAccount> Items, int TotalCount)> ServerLoadBankAccountsAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return BankAccountService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadBankAccountsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
 }

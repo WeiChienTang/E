@@ -66,22 +66,34 @@ namespace ERPCore2.Services
         #endregion
 
         #region 輔助方法
-        
+
         /// <summary>
         /// 初始化新商品
         /// </summary>
         void InitializeNewProduct(Product product);
-        
+
         /// <summary>
         /// 取得基本必填欄位數量
         /// </summary>
         int GetBasicRequiredFieldsCount();
-        
+
         /// <summary>
         /// 取得基本完成欄位數量
         /// </summary>
         int GetBasicCompletedFieldsCount(Product product);
-        
+
+        #endregion
+
+        #region 伺服器端分頁
+
+        /// <summary>
+        /// 取得分頁資料（支援動態篩選）
+        /// </summary>
+        Task<(List<Product> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Product>, IQueryable<Product>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         #endregion
     }
 }

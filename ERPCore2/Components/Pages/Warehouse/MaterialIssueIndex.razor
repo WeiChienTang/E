@@ -18,8 +18,7 @@
                         EntityBasePath="/materialIssues"                          
                         PageTitle="@L["Page.MaterialIssueTitle"]"
                         PageSubtitle="@L["Page.MaterialIssueSubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyMaterialIssueFilters"
+                        ServerDataLoader="@ServerLoadDataAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -117,21 +116,19 @@
         }
     }
 
-    private Task<List<MaterialIssue>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => MaterialIssueService.GetAllIncludingDraftsAsync(), "領料", NotificationService, GetType());
-
-    // ===== 篩選方法 =====
-
-    private IQueryable<MaterialIssue> ApplyMaterialIssueFilters(SearchFilterModel searchModel, IQueryable<MaterialIssue> query)
+    // 伺服器端分頁載入
+    private Task<(List<MaterialIssue> Items, int TotalCount)> ServerLoadDataAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderByDescending(mi => mi.IssueDate)
-                       .ThenByDescending(mi => mi.Code);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyMaterialIssueFilters), GetType());
+        return MaterialIssueService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(mi => mi.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadDataAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     // ===== 事件處理方法 =====

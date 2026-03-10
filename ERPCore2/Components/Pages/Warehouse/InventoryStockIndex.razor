@@ -18,8 +18,7 @@
                         EntityBasePath="/inventoryStocks"                          
                         PageTitle="@L["Page.InventoryStockTitle"]"
                         PageSubtitle="@L["Page.InventoryStockSubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyInventoryStockFilters"
+                        ServerDataLoader="@ServerLoadInventoryStocksAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -153,7 +152,20 @@
         }
     }
 
-    private Task<List<InventoryStock>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => InventoryStockService.GetAllIncludingDraftsAsync(), "庫存", NotificationService, GetType());
+    // 伺服器端分頁載入
+    private Task<(List<InventoryStock> Items, int TotalCount)> ServerLoadInventoryStocksAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return InventoryStockService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(s => s.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadInventoryStocksAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
 
     // ===== 事件處理方法 =====
 
@@ -181,20 +193,6 @@
             Console.Error.WriteLine($"[InventoryStockIndex] OnInventoryStockSavedHandler 發生錯誤: {ex.Message}");
             await NotificationService.ShowErrorAsync($"處理庫存儲存事件時發生錯誤：{ex.Message}");
         }
-    }
-
-    // ===== 篩選方法 =====
-
-    private IQueryable<InventoryStock> ApplyInventoryStockFilters(SearchFilterModel searchModel, IQueryable<InventoryStock> query)
-    {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(s => s.ProductId);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyInventoryStockFilters), GetType());
     }
 
     // ===== 統計相關方法 =====

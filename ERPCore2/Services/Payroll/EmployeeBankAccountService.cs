@@ -174,5 +174,37 @@ namespace ERPCore2.Services.Payroll
                 return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
         }
+
+        public async Task<(List<EmployeeBankAccount> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<EmployeeBankAccount>, IQueryable<EmployeeBankAccount>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<EmployeeBankAccount> query = context.EmployeeBankAccounts
+                    .Include(x => x.Employee);
+
+                if (filterFunc != null)
+                    query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(x => x.Employee!.Name)
+                    .ThenByDescending(x => x.IsPrimary)
+                    .ThenBy(x => x.BankCode)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<EmployeeBankAccount>(), 0);
+            }
+        }
     }
 }

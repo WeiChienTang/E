@@ -22,9 +22,7 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ShowDraftTab="true"
-                          DataLoader="@LoadPurchaseReceivingsAsync"
-                          InitializeBasicData="@LoadBasicDataAsync"
-                          FilterApplier="@ApplyPurchaseReceivingFilters"
+                          ServerDataLoader="@ServerLoadPurchaseReceivingsAsync"
                           GetEntityDisplayName="@(receipt => receipt.Code)"
                           RequiredPermission="@PermissionRegistry.PurchaseReceiving.Read"
                           RequiredModule="Purchase"
@@ -131,26 +129,19 @@
     /// </summary>
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("採購管理", "進貨管理", "#", NotificationService, GetType());
 
-    /// <summary>
-    /// 載入進貨單資料
-    /// </summary>
-    private Task<List<PurchaseReceiving>> LoadPurchaseReceivingsAsync() => DataLoaderHelper.LoadAsync(() => PurchaseReceivingService.GetAllIncludingDraftsAsync(), "進貨單", NotificationService, GetType());
-
-    /// <summary>
-    /// 載入基礎資料
-    /// </summary>
-    private async Task LoadBasicDataAsync()
+    // 伺服器端分頁載入
+    private Task<(List<PurchaseReceiving> Items, int TotalCount)> ServerLoadPurchaseReceivingsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        try
-        {
-            await LoadPurchaseOrdersAsync();
-            await LoadWarehousesAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadBasicDataAsync), GetType(), additionalData: "載入基礎資料失敗");
-            await NotificationService.ShowErrorAsync("載入基礎資料失敗");
-        }
+        return PurchaseReceivingService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(pr => pr.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadPurchaseReceivingsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     /// <summary>
@@ -181,22 +172,6 @@
     /// 載入廠商資料
     /// </summary>
     private async Task LoadSuppliersAsync() => suppliers = await DataLoaderHelper.LoadAsync(() => SupplierService.GetAllAsync(), "廠商", NotificationService, GetType());
-
-    /// <summary>
-    /// 應用進貨單篩選器
-    /// </summary>
-    private IQueryable<PurchaseReceiving> ApplyPurchaseReceivingFilters(SearchFilterModel searchModel, IQueryable<PurchaseReceiving> query)
-    {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderByDescending(pr => pr.ReceiptDate)
-                       .ThenByDescending(pr => pr.Code);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPurchaseReceivingFilters), GetType());
-    }
 
     // 多筆列印處理方法
     private async Task HandleBatchPrintAsync()

@@ -7,6 +7,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface ICompanyService : IGenericManagementService<Company>
     {
+        Task<(List<Company> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Company>, IQueryable<Company>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 取得主要公司（系統預設顯示用）
         /// </summary>

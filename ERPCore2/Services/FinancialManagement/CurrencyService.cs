@@ -39,6 +39,39 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<(List<Currency> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Currency>, IQueryable<Currency>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<Currency> query = context.Currencies;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(c => c.Code)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<Currency>(), 0);
+            }
+        }
+
         public async Task<Currency?> GetByCodeAsync(string code)
         {
             try

@@ -14,8 +14,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadDataAsync"
-                          FilterApplier="@ApplyFilters"
+                          ServerDataLoader="@ServerLoadDataAsync"
                           GetEntityDisplayName="@(je => $"{je.Code} {je.Description}")"
                           RequiredPermission="@PermissionRegistry.JournalEntry.Read"
                           RequiredModule="Accounting"
@@ -98,23 +97,18 @@
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
             "財務管理", "傳票管理", null, NotificationService, GetType());
 
-    // 資料載入
-    private Task<List<JournalEntry>> LoadDataAsync() =>
-        DataLoaderHelper.LoadAsync(
-            () => JournalEntryService.GetAllAsync(),
-            "傳票",
-            NotificationService,
-            GetType());
-
-    // 篩選邏輯
-    private IQueryable<JournalEntry> ApplyFilters(
-        SearchFilterModel searchModel, IQueryable<JournalEntry> query)
+    // 伺服器端分頁載入
+    private Task<(List<JournalEntry> Items, int TotalCount)> ServerLoadDataAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        if (fieldConfiguration == null)
-            return query.OrderByDescending(je => je.EntryDate);
-
-        return fieldConfiguration.ApplyFilters(
-            searchModel, query, nameof(ApplyFilters), GetType());
+        return JournalEntryService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadDataAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     // 批次轉傳票 Modal 關閉時重新整理列表

@@ -17,8 +17,7 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ShowDraftTab="true"
-                          DataLoader="@LoadPurchaseReturnReasonsAsync"
-                          FilterApplier="@ApplyPurchaseReturnReasonFilters"
+                          ServerDataLoader="@ServerLoadPurchaseReturnReasonsAsync"
                           GetEntityDisplayName="@(reason => reason.Name)"
                           RequiredPermission="@PermissionRegistry.PurchaseReturnReason.Read"
                           RequiredModule="Purchase"
@@ -86,22 +85,18 @@
     private async Task InitializeBreadcrumbsAsync() =>
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("採購管理", "退出原因管理", "#", NotificationService, GetType());
 
-    /// <summary>
-    /// 載入進貨退出原因資料
-    /// </summary>
-    private Task<List<PurchaseReturnReason>> LoadPurchaseReturnReasonsAsync() =>
-        DataLoaderHelper.LoadAsync(() => PurchaseReturnReasonService.GetAllIncludingDraftsAsync(), "進貨退出原因", NotificationService, GetType());
-
-    /// <summary>
-    /// 應用進貨退出原因篩選器
-    /// </summary>
-    private IQueryable<PurchaseReturnReason> ApplyPurchaseReturnReasonFilters(SearchFilterModel searchModel, IQueryable<PurchaseReturnReason> query)
+    // 伺服器端分頁載入
+    private Task<(List<PurchaseReturnReason> Items, int TotalCount)> ServerLoadPurchaseReturnReasonsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        if (fieldConfiguration == null)
-        {
-            return query.OrderBy(r => r.Name);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPurchaseReturnReasonFilters), GetType());
+        return PurchaseReturnReasonService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(r => r.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadPurchaseReturnReasonsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

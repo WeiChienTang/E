@@ -15,8 +15,7 @@
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
-                      DataLoader="@LoadErrorLogsAsync"
-                      FilterApplier="@ApplyErrorLogFilters"
+                      ServerDataLoader="@ServerLoadErrorLogsAsync"
                       GetEntityDisplayName="@(errorLog => $"[{errorLog.ErrorId}] {errorLog.Message}")"
                       RequiredPermission="@PermissionRegistry.ErrorLog.Read"
                       OnAddClick="@(() => Task.CompletedTask)"
@@ -219,39 +218,23 @@
         }
     }
 
-    // 載入錯誤記錄資料
-    private async Task<List<ErrorLog>> LoadErrorLogsAsync()
+    // 伺服器端分頁載入（currentFilter 透過閉包捕獲）
+    private Task<(List<ErrorLog> Items, int TotalCount)> ServerLoadErrorLogsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        try
-        {
-            var errorLogs = currentFilter switch
+        var capturedFilter = currentFilter;
+        return ErrorLogService.GetPagedWithFiltersAsync(
+            q =>
             {
-                "unresolved" => await ErrorLogService.GetUnresolvedAsync(),
-                "resolved" => (await ErrorLogService.GetAllAsync()).Where(e => e.IsResolved).OrderByDescending(e => e.OccurredAt).ToList(),
-                _ => await ErrorLogService.GetAllAsync()
-            };
-
-            return errorLogs;
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadErrorLogsAsync), GetType(), additionalData: "載入錯誤記錄資料失敗");
-            await NotificationService.ShowErrorAsync("載入錯誤記錄資料失敗");
-            // 設定安全的預設值
-            return new List<ErrorLog>();
-        }
-    }
-
-    private IQueryable<ErrorLog> ApplyErrorLogFilters(SearchFilterModel searchModel, IQueryable<ErrorLog> query)
-    {
-        // 確保 fieldConfiguration 已初始化
-        if (fieldConfiguration == null)
-        {
-            return query.OrderByDescending(e => e.OccurredAt);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyErrorLogFilters), GetType());
+                if (capturedFilter == "unresolved")
+                    q = q.Where(e => !e.IsResolved);
+                else if (capturedFilter == "resolved")
+                    q = q.Where(e => e.IsResolved);
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadErrorLogsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     // 顯示錯誤詳細資訊

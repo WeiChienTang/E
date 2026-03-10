@@ -159,10 +159,10 @@
     <value>Umalis</value>
   </data>
   <data name="Modal.SaveAndClose" xml:space="preserve">
-    <value>I-save at Isara</value>
+    <value>I-save</value>
   </data>
   <data name="Modal.ContinueEditing" xml:space="preserve">
-    <value>Ipagpatuloy ang Pag-edit</value>
+    <value>Bumalik</value>
   </data>
   <data name="Modal.UnsavedChanges" xml:space="preserve">
     <value>May mga pagbabago sa rekord na ito, mangyaring pumili ng aksyon</value>
@@ -3175,7 +3175,7 @@
   <data name="Inventory.AllDetailsCleared" xml:space="preserve"><value>Nalinis na ang lahat ng detalye ng imbentaryo</value></data>
   <data name="Inventory.CurrentStockReadonlyHint" xml:space="preserve"><value>Ang kasalukuyang stock ay dapat baguhin sa pamamagitan ng proseso ng pagsasaayos ng imbentaryo</value></data>
   <data name="Message.ConfirmDeleteExistingDetail" xml:space="preserve"><value>Ang detalyeng ito ay naka-save sa database. Sigurado ka bang gusto mo itong burahin?</value></data>
-  <data name="Button.SaveDraft" xml:space="preserve"><value>I-save ang Draft</value></data>
+  <data name="Button.SaveDraft" xml:space="preserve"><value>Draft</value></data>
   <data name="Label.Draft" xml:space="preserve"><value>Draft</value></data>
   <data name="Label.Official" xml:space="preserve"><value>Opisyal</value></data>
   <data name="Message.DraftSuccess" xml:space="preserve"><value>Nai-save ang draft ng {0}. Mangyaring kumpletuhin ang lahat ng kinakailangang field.</value></data>

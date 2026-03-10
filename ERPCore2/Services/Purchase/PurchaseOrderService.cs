@@ -1103,6 +1103,46 @@ namespace ERPCore2.Services
 
         #endregion
 
+        #region 伺服器端分頁
+
+        public async Task<(List<PurchaseOrder> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<PurchaseOrder>, IQueryable<PurchaseOrder>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<PurchaseOrder> query = context.PurchaseOrders
+                    .Include(po => po.Company)
+                    .Include(po => po.Supplier);
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(po => po.OrderDate)
+                    .ThenByDescending(po => po.Id)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<PurchaseOrder>(), 0);
+            }
+        }
+
+        #endregion
+
     }
 }
 

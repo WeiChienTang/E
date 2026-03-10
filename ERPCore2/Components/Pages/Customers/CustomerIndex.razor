@@ -14,9 +14,8 @@
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
-                      DataLoader="@LoadCustomersAsync"
                       ShowDraftTab="true"
-                      FilterApplier="@ApplyCustomerFilters"
+                      ServerDataLoader="@ServerLoadCustomersAsync"
                       GetEntityDisplayName="@(customer => customer.CompanyName)"
                       RequiredPermission="@PermissionRegistry.Customer.Read"
                       RequiredModule="Customers"
@@ -80,11 +79,18 @@
     }
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("客戶管理", NotificationService, GetType());
-    // 載入客戶資料
-    private Task<List<Customer>> LoadCustomersAsync() => DataLoaderHelper.LoadAsync(() => CustomerService.GetAllIncludingDraftsAsync(),"客戶",NotificationService,GetType());
 
-    private IQueryable<Customer> ApplyCustomerFilters(SearchFilterModel searchModel, IQueryable<Customer> query)
+    private Task<(List<Customer> Items, int TotalCount)> ServerLoadCustomersAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCustomerFilters), GetType());
+        return CustomerService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(c => c.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadCustomersAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

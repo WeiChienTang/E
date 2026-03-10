@@ -19,5 +19,11 @@ namespace ERPCore2.Services.Payroll
 
         /// <summary>取得週期的薪資記錄數量（用於判斷能否刪除）</summary>
         Task<int> GetRecordCountAsync(int periodId);
+
+        /// <summary>伺服器端分頁查詢</summary>
+        Task<(List<PayrollPeriod> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<PayrollPeriod>, IQueryable<PayrollPeriod>>? filterFunc,
+            int pageNumber,
+            int pageSize);
     }
 }

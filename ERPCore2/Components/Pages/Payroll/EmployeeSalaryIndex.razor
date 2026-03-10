@@ -11,8 +11,7 @@
                         EntityBasePath="/payroll/salary-config"
                         PageTitle="@L["Page.EmployeeSalaryTitle"]"
                         PageSubtitle="@L["Page.EmployeeSalarySubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyFilters"
+                        ServerDataLoader="@ServerLoadSalariesAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -74,9 +73,17 @@
     private async Task InitializeBreadcrumbsAsync() =>
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("薪資管理", "員工薪資設定", "#", NotificationService, GetType());
 
-    private Task<List<EmployeeSalary>> LoadDataAsync() =>
-        DataLoaderHelper.LoadAsync(() => EmployeeSalaryService.GetAllAsync(), "員工薪資", NotificationService, GetType());
-
-    private IQueryable<EmployeeSalary> ApplyFilters(SearchFilterModel searchModel, IQueryable<EmployeeSalary> query) =>
-        fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyFilters), GetType());
+    // 伺服器端分頁載入
+    private Task<(List<EmployeeSalary> Items, int TotalCount)> ServerLoadSalariesAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return EmployeeSalaryService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadSalariesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
 }

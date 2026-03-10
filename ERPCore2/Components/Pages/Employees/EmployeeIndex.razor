@@ -18,8 +18,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        DataLoader="@LoadEmployeesAsync"
-                        FilterApplier="@ApplyEmployeeFilters"
+                        ServerDataLoader="@ServerLoadEmployeesAsync"
                         EntityName="@L["Entity.Employee"]"
                         GetEntityDisplayName="@(employee => employee.Name?.Trim() ?? "")"
                         RequiredPermission="@PermissionRegistry.Employee.Read"
@@ -162,20 +161,21 @@
         }
     }
 
-    /// <summary>
-    /// 載入員工資料（根據權限過濾 SuperAdmin）
-    /// </summary>
-    private async Task<List<Employee>> LoadEmployeesAsync()
+    // 伺服器端分頁載入
+    private Task<(List<Employee> Items, int TotalCount)> ServerLoadEmployeesAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        var employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllIncludingDraftsAsync(), "員工", NotificationService, GetType());
-        
-        // 如果當前使用者不是 SuperAdmin，過濾掉 SuperAdmin 帳號
-        if (!isCurrentUserSuperAdmin)
-        {
-            employees = employees.Where(e => !e.IsSuperAdmin).ToList();
-        }
-        
-        return employees;
+        return EmployeeService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(e => e.IsDraft == (filter.ShowDrafts ?? false));
+                if (!isCurrentUserSuperAdmin)
+                    q = q.Where(e => !e.IsSuperAdmin);
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadEmployeesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     // 載入部門資料
@@ -194,16 +194,4 @@
             await indexComponent.Refresh();
     }
 
-    // 篩選方法 - 現在已由 FilterHelper 處理所有錯誤情況
-    private IQueryable<Employee> ApplyEmployeeFilters(SearchFilterModel searchModel, IQueryable<Employee> query)
-    {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(e => e.Name);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyEmployeeFilters), GetType());
-    }
 }

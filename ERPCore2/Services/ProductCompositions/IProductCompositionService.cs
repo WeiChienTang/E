@@ -41,5 +41,17 @@ namespace ERPCore2.Services
         /// <param name="maxLevel">最大展開層級（預設 10）</param>
         /// <returns>BOM 樹狀結構資料</returns>
         Task<object> GetBomTreeAsync(int compositionId, int maxLevel = 10);
+
+        #region 伺服器端分頁
+
+        /// <summary>
+        /// 取得分頁資料（支援動態篩選）
+        /// </summary>
+        Task<(List<ProductComposition> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ProductComposition>, IQueryable<ProductComposition>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
+        #endregion
     }
 }

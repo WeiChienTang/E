@@ -16,8 +16,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadInventoryTransactionsAsync"
-                          FilterApplier="@ApplyInventoryTransactionFilters"
+                          ServerDataLoader="@ServerLoadInventoryTransactionsAsync"
                           GetEntityDisplayName="@(transaction => transaction.TransactionNumber)"
                           RequiredPermission="@PermissionRegistry.InventoryTransaction.Read"
                           RequiredModule="Warehouse"
@@ -108,22 +107,17 @@
     /// </summary>
     private async Task LoadEmployeesAsync() => employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
 
-    /// <summary>
-    /// 載入庫存異動記錄資料
-    /// </summary>
-    private Task<List<InventoryTransaction>> LoadInventoryTransactionsAsync() => DataLoaderHelper.LoadAsync(() => InventoryTransactionService.GetAllAsync(), "庫存異動記錄", NotificationService, GetType());
-
-    /// <summary>
-    /// 應用庫存異動記錄篩選器
-    /// </summary>
-    private IQueryable<InventoryTransaction> ApplyInventoryTransactionFilters(SearchFilterModel searchModel, IQueryable<InventoryTransaction> query)
+    // 伺服器端分頁載入
+    private Task<(List<InventoryTransaction> Items, int TotalCount)> ServerLoadInventoryTransactionsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            return query.OrderByDescending(t => t.TransactionDate).ThenByDescending(t => t.Id);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyInventoryTransactionFilters), GetType());
+        return InventoryTransactionService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadInventoryTransactionsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

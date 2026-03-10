@@ -241,5 +241,35 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 伺服器端分頁
+
+        public async Task<(List<VehicleMaintenance> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<VehicleMaintenance>, IQueryable<VehicleMaintenance>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<VehicleMaintenance> query = context.VehicleMaintenances
+                    .Include(vm => vm.Vehicle);
+                if (filterFunc != null) query = filterFunc(query);
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(vm => vm.MaintenanceDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<VehicleMaintenance>(), 0);
+            }
+        }
+
+        #endregion
     }
 }

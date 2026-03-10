@@ -1,4 +1,4 @@
-﻿@page "/account-items"
+@page "/account-items"
 @inject IAccountItemService AccountItemService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -14,8 +14,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadDataAsync"
-                          FilterApplier="@ApplyFilters"
+                          ServerDataLoader="@ServerLoadDataAsync"
                           GetEntityDisplayName="@(a => $"{a.Code} {a.Name}")"
                           RequiredPermission="@PermissionRegistry.AccountItem.Read"
                           RequiredModule="Accounting"
@@ -102,13 +101,28 @@
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
             "財務管理", "會計科目管理", null, NotificationService, GetType());
 
-    // 資料載入
-    private Task<List<AccountItem>> LoadDataAsync() =>
-        DataLoaderHelper.LoadAsync(
-            () => AccountItemService.GetAllWithParentAsync(),
-            "會計科目",
-            NotificationService,
-            GetType());
+    // 伺服器端分頁載入（DB 層篩選，無 Include）
+    private Task<(List<AccountItem> Items, int TotalCount)> ServerLoadDataAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return AccountItemService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                // 統一 IsDraft 處理：無 ShowDraftTab 時 ShowDrafts 為 null，?? false 永遠只看正式資料
+                q = q.Where(a => a.IsDraft == (filter.ShowDrafts ?? false));
+
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadDataAsync), GetType());
+
+                var remarks = filter.GetFilterValue("Remarks")?.ToString();
+                if (!string.IsNullOrWhiteSpace(remarks))
+                    q = q.Where(a => a.Remarks != null && a.Remarks.Contains(remarks));
+
+                return q;
+            },
+            page,
+            pageSize);
+    }
 
     // 批次刪除方法
     private async Task ExecuteBatchDeleteAsync(List<AccountItem> selectedItems)
@@ -119,16 +133,5 @@
             await NotificationService.ShowSuccessAsync($"成功刪除 {selectedItems.Count} 筆會計科目");
         else
             await NotificationService.ShowErrorAsync($"批次刪除失敗：{result.ErrorMessage}");
-    }
-
-    // 篩選邏輯
-    private IQueryable<AccountItem> ApplyFilters(
-        SearchFilterModel searchModel, IQueryable<AccountItem> query)
-    {
-        if (fieldConfiguration == null)
-            return query.OrderBy(a => a.AccountLevel).ThenBy(a => a.SortOrder).ThenBy(a => a.Code);
-
-        return fieldConfiguration.ApplyFilters(
-            searchModel, query, nameof(ApplyFilters), GetType());
     }
 }

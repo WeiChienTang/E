@@ -14,8 +14,7 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        DataLoader="@LoadWarehousesAsync"
-                        FilterApplier="@ApplyWarehouseFilters"
+                        ServerDataLoader="@ServerLoadWarehousesAsync"
                         GetEntityDisplayName="@(warehouse => warehouse.Name)"
                         RequiredPermission="@PermissionRegistry.Warehouse.Read"
                         RequiredModule="Warehouse"
@@ -80,12 +79,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("庫存管理", "倉庫維護", null, NotificationService, GetType());
 
-    // 載入倉庫資料
-    private Task<List<Warehouse>> LoadWarehousesAsync() => DataLoaderHelper.LoadAsync(() => WarehouseService.GetAllIncludingDraftsAsync(), "倉庫", NotificationService, GetType());
-
-    // 自定義篩選邏輯
-    private IQueryable<Warehouse> ApplyWarehouseFilters(SearchFilterModel searchModel, IQueryable<Warehouse> query)
+    private Task<(List<Warehouse> Items, int TotalCount)> ServerLoadWarehousesAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWarehouseFilters), GetType());
+        return WarehouseService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadWarehousesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

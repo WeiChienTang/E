@@ -137,6 +137,39 @@ namespace ERPCore2.Services
 
         #endregion
 
+        public async Task<(List<VehicleType> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<VehicleType>, IQueryable<VehicleType>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<VehicleType> query = context.VehicleTypes;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(vt => vt.Name)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<VehicleType>(), 0);
+            }
+        }
+
         #region 業務特定查詢方法
 
         public async Task<VehicleType?> GetByVehicleTypeCodeAsync(string vehicleTypeCode)

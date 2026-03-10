@@ -7,6 +7,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface ICompositionCategoryService : IGenericManagementService<CompositionCategory>
     {
+        Task<(List<CompositionCategory> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<CompositionCategory>, IQueryable<CompositionCategory>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 根據名稱模糊搜尋物料清單類型
         /// </summary>

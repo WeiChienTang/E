@@ -57,6 +57,41 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<(List<WarehouseLocation> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<WarehouseLocation>, IQueryable<WarehouseLocation>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<WarehouseLocation> query = context.WarehouseLocations
+                    .Include(wl => wl.Warehouse);
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(wl => wl.Warehouse == null ? "" : wl.Warehouse.Name)
+                    .ThenBy(wl => wl.Code)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<WarehouseLocation>(), 0);
+            }
+        }
+
         public async Task<ServiceResult<IEnumerable<WarehouseLocation>>> GetByWarehouseIdAsync(int warehouseId)
         {
             try

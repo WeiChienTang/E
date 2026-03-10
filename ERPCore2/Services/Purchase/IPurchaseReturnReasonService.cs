@@ -1,3 +1,4 @@
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 
@@ -11,6 +12,14 @@ namespace ERPCore2.Services
     /// </summary>
     public interface IPurchaseReturnReasonService : IGenericManagementService<EntityPurchaseReturnReason>
     {
+        /// <summary>
+        /// 伺服器端分頁查詢
+        /// </summary>
+        Task<(List<EntityPurchaseReturnReason> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<EntityPurchaseReturnReason>, IQueryable<EntityPurchaseReturnReason>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 取得所有啟用的退出原因（按排序順序）
         /// </summary>

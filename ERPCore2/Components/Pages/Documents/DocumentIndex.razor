@@ -12,8 +12,7 @@
                         EntityBasePath="/documents"
                         PageTitle="@L["Page.DocumentTitle"]"
                         PageSubtitle="@L["Page.DocumentSubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyFilters"
+                        ServerDataLoader="@ServerLoadDocumentsAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -70,13 +69,18 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("檔案管理", "檔案列表", null, NotificationService, GetType());
 
-    private async Task<List<Document>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(DocumentService.GetAllIncludingDraftsAsync, "檔案", NotificationService, GetType());
-
-    private IQueryable<Document> ApplyFilters(SearchFilterModel searchModel, IQueryable<Document> query)
+    // 伺服器端分頁載入
+    private Task<(List<Document> Items, int TotalCount)> ServerLoadDocumentsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        if (fieldConfiguration == null)
-            return query.OrderByDescending(d => d.CreatedAt);
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyFilters), GetType());
+        return DocumentService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(d => d.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadDocumentsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

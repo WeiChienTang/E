@@ -21,5 +21,17 @@ namespace ERPCore2.Services
         /// <param name="code">材質編號</param>
         /// <returns>材質資料</returns>
         Task<Material?> GetByCodeAsync(string code);
+
+        #region 伺服器端分頁
+
+        /// <summary>
+        /// 取得分頁資料（支援動態篩選）
+        /// </summary>
+        Task<(List<Material> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Material>, IQueryable<Material>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
+        #endregion
     }
 }

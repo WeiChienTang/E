@@ -159,10 +159,10 @@
     <value>Leave</value>
   </data>
   <data name="Modal.SaveAndClose" xml:space="preserve">
-    <value>Save &amp; Close</value>
+    <value>Save</value>
   </data>
   <data name="Modal.ContinueEditing" xml:space="preserve">
-    <value>Continue Editing</value>
+    <value>Back</value>
   </data>
   <data name="Modal.UnsavedChanges" xml:space="preserve">
     <value>This record has unsaved changes, please choose an action</value>
@@ -3202,7 +3202,7 @@
   <data name="Inventory.AllDetailsCleared" xml:space="preserve"><value>All inventory details cleared</value></data>
   <data name="Inventory.CurrentStockReadonlyHint" xml:space="preserve"><value>Current stock must be modified through stock adjustment, receiving, or shipping processes</value></data>
   <data name="Message.ConfirmDeleteExistingDetail" xml:space="preserve"><value>This detail is saved in the database. Are you sure you want to delete it?</value></data>
-  <data name="Button.SaveDraft" xml:space="preserve"><value>Save Draft</value></data>
+  <data name="Button.SaveDraft" xml:space="preserve"><value>Draft</value></data>
   <data name="Label.Draft" xml:space="preserve"><value>Draft</value></data>
   <data name="Label.Official" xml:space="preserve"><value>Official</value></data>
   <data name="Message.DraftSuccess" xml:space="preserve"><value>{0} draft saved. Please remember to complete all required fields.</value></data>

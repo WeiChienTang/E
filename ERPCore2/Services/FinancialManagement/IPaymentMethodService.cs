@@ -7,6 +7,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface IPaymentMethodService : IGenericManagementService<PaymentMethod>
     {
+        Task<(List<PaymentMethod> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<PaymentMethod>, IQueryable<PaymentMethod>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 檢查付款方式編號是否已存在
         /// </summary>

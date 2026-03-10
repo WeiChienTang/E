@@ -11,8 +11,7 @@
                         EntityBasePath="/document-categories"
                         PageTitle="@L["Page.DocumentCategoryTitle"]"
                         PageSubtitle="@L["Page.DocumentCategorySubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyFilters"
+                        ServerDataLoader="@ServerLoadDocumentCategoriesAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -69,13 +68,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("檔案管理", "檔案分類", null, NotificationService, GetType());
 
-    private async Task<List<DocumentCategory>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(DocumentCategoryService.GetAllIncludingDraftsAsync, "檔案分類", NotificationService, GetType());
-
-    private IQueryable<DocumentCategory> ApplyFilters(SearchFilterModel searchModel, IQueryable<DocumentCategory> query)
+    private Task<(List<DocumentCategory> Items, int TotalCount)> ServerLoadDocumentCategoriesAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        if (fieldConfiguration == null)
-            return query.OrderBy(c => c.Name);
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyFilters), GetType());
+        return DocumentCategoryService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadDocumentCategoriesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

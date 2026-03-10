@@ -7,6 +7,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface IProductCategoryService : IGenericManagementService<ProductCategory>
     {
+        Task<(List<ProductCategory> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ProductCategory>, IQueryable<ProductCategory>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         #region 業務特定方法
         
         /// <summary>

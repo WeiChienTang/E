@@ -8,6 +8,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface IRoleService : IGenericManagementService<Role>
     {
+        Task<(List<Role> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Role>, IQueryable<Role>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 根據角色名稱取得角色
         /// </summary>

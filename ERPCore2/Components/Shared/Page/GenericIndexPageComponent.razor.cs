@@ -102,6 +102,13 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     [Parameter] public Func<Task<List<TEntity>>> DataLoader { get; set; } = default!;
     [Parameter] public Func<Task> InitializeBasicData { get; set; } = default!;
 
+    /// <summary>
+    /// 伺服器端分頁載入器（opt-in）。
+    /// 設定後優先使用，DataLoader 將被忽略。
+    /// 參數：(篩選條件, 頁碼, 每頁筆數) → (本頁資料, 總筆數)
+    /// </summary>
+    [Parameter] public Func<SearchFilterModel, int, int, Task<(List<TEntity> Items, int TotalCount)>>? ServerDataLoader { get; set; }
+
     // 篩選與表格定義
     [Parameter] public List<SearchFilterDefinition> FilterDefinitions { get; set; } = new();
     [Parameter] public List<TableColumnDefinition> ColumnDefinitions { get; set; } = new();
@@ -229,6 +236,12 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private bool isLoading = true;
     private bool _isModuleEnabled = true;
     private bool _isSuperAdmin = false;
+
+    // Debug 量測（僅 SuperAdmin 可見）
+    private long   _debugQueryMs    = -1;   // 最後一次查詢耗時（ms）
+    private int    _debugPageCount  = 0;    // 本頁載入筆數
+    private int    _debugTotalCount = 0;    // 符合條件總筆數
+    private string _debugMode       = "";   // "server" / "client"
 
     // 草稿 Tab 內部狀態
     private bool _showingDrafts = false;

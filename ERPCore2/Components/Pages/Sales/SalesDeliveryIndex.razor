@@ -23,8 +23,7 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ShowDraftTab="true"
-                          DataLoader="@LoadSalesDeliveriesAsync"
-                          FilterApplier="@ApplySalesDeliveryFilters"
+                          ServerDataLoader="@ServerLoadSalesDeliveriesAsync"
                           GetEntityDisplayName="@(delivery => delivery.Code)"
                           RequiredPermission="@PermissionRegistry.SalesDelivery.Read"
                           RequiredModule="Sales"
@@ -161,15 +160,6 @@
             GetType());
     }
 
-    private Task<List<SalesDelivery>> LoadSalesDeliveriesAsync()
-    {
-        return DataLoaderHelper.LoadAsync<SalesDelivery>(
-            () => SalesDeliveryService.GetAllIncludingDraftsAsync(),
-            "銷貨單",
-            NotificationService,
-            GetType());
-    }
-
     private async Task LoadCustomersAsync()
     {
         customers = await DataLoaderHelper.LoadAsync(
@@ -210,18 +200,21 @@
             nameof(LoadWarehousesAsync));
     }
 
-    private IQueryable<SalesDelivery> ApplySalesDeliveryFilters(SearchFilterModel searchModel, IQueryable<SalesDelivery> query)
+    // 伺服器端分頁載入
+    private Task<(List<SalesDelivery> Items, int TotalCount)> ServerLoadSalesDeliveriesAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化
-        if (fieldConfiguration == null)
-        {
-            return query.OrderByDescending(sd => sd.DeliveryDate)
-                       .ThenByDescending(sd => sd.Code);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySalesDeliveryFilters), GetType());
+        return SalesDeliveryService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(sd => sd.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadSalesDeliveriesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
-    
+
     // 多筆列印處理方法
     private async Task HandleBatchPrintAsync()
     {

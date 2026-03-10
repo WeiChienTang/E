@@ -17,5 +17,17 @@ namespace ERPCore2.Services
         Task<List<Vehicle>> GetByCustomerAsync(int customerId);
         Task<List<Vehicle>> GetBySupplierAsync(int supplierId);
         Task<List<Vehicle>> GetByEmployeeAsync(int employeeId);
+
+        #region 伺服器端分頁
+
+        /// <summary>
+        /// 取得分頁資料（支援動態篩選）
+        /// </summary>
+        Task<(List<Vehicle> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Vehicle>, IQueryable<Vehicle>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
+        #endregion
     }
 }

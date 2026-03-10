@@ -14,8 +14,7 @@
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
-                      DataLoader="@LoadCompaniesAsync"
-                      FilterApplier="@ApplyCompanyFilters"
+                      ServerDataLoader="@ServerLoadCompaniesAsync"
                       GetEntityDisplayName="@(company => company.CompanyName)"
                       RequiredPermission="@PermissionRegistry.Company.Read"
                       RequiredModule="Systems"
@@ -80,23 +79,16 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("系統管理", "公司設定", "/systems", NotificationService, GetType());
 
-    // 載入公司資料
-    private async Task<List<Company>> LoadCompaniesAsync() => await DataLoaderHelper.LoadAsync(CompanyService.GetAllAsync, "公司", NotificationService, GetType());
-
-    private IQueryable<Company> ApplyCompanyFilters(SearchFilterModel searchModel, IQueryable<Company> query)
+    private Task<(List<Company> Items, int TotalCount)> ServerLoadCompaniesAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        try
-        {
-            return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCompanyFilters), GetType());
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤並回傳安全的預設查詢
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyCompanyFilters), GetType(), additionalData: "公司篩選器應用失敗");
-            _ = NotificationService.ShowErrorAsync("篩選條件應用失敗，已顯示全部資料");
-            
-            // 回傳基本排序的查詢，確保頁面仍能正常運作
-            return query.OrderBy(c => c.Code);
-        }
+        return CompanyService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadCompaniesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

@@ -21,8 +21,7 @@
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
                       ShowDraftTab="true"
-                      DataLoader="@LoadSalesOrdersAsync"
-                      FilterApplier="@ApplySalesOrderFilters"
+                      ServerDataLoader="@ServerLoadSalesOrdersAsync"
                       GetEntityDisplayName="@(salesOrder => salesOrder.Code)"
                       RequiredPermission="@PermissionRegistry.SalesOrder.Read"
                       RequiredModule="Sales"
@@ -141,24 +140,25 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("銷售管理", "銷貨管理", "#", NotificationService, GetType());
 
-    // 載入訂單資料
-    private Task<List<SalesOrder>> LoadSalesOrdersAsync() => DataLoaderHelper.LoadAsync(() => SalesOrderService.GetAllIncludingDraftsAsync(), "訂單", NotificationService, GetType());
-
     // 載入客戶資料
     private async Task LoadCustomersAsync() => customers = await DataLoaderHelper.LoadAsync(() => CustomerService.GetAllAsync(), "客戶", NotificationService, GetType());
 
     // 載入員工資料
     private async Task LoadEmployeesAsync() => employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
 
-    private IQueryable<SalesOrder> ApplySalesOrderFilters(SearchFilterModel searchModel, IQueryable<SalesOrder> query)
+    // 伺服器端分頁載入
+    private Task<(List<SalesOrder> Items, int TotalCount)> ServerLoadSalesOrdersAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            return query.OrderByDescending(so => so.OrderDate);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySalesOrderFilters), GetType());
+        return SalesOrderService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(so => so.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadSalesOrdersAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     // 多筆列印處理方法

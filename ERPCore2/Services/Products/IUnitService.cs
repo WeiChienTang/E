@@ -7,6 +7,11 @@ namespace ERPCore2.Services
     /// </summary>
     public interface IUnitService : IGenericManagementService<Unit>
     {
+        Task<(List<Unit> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Unit>, IQueryable<Unit>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 檢查單位編號是否存在
         /// </summary>

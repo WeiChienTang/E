@@ -11,8 +11,7 @@
                         EntityBasePath="/currencies"                          
                         PageTitle="@L["Page.CurrencyTitle"]"
                         PageSubtitle="@L["Page.CurrencySubtitle"]"
-                        DataLoader="@LoadDataAsync"
-                        FilterApplier="@ApplyCurrencyFilters"
+                        ServerDataLoader="@ServerLoadCurrenciesAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
@@ -85,18 +84,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("財務管理", "貨幣設定", null, NotificationService, GetType());
 
-    // 載入貨幣資料
-    private async Task<List<Currency>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(CurrencyService.GetAllIncludingDraftsAsync, "貨幣", NotificationService, GetType());
-
-    private IQueryable<Currency> ApplyCurrencyFilters(SearchFilterModel searchModel, IQueryable<Currency> query)
+    private Task<(List<Currency> Items, int TotalCount)> ServerLoadCurrenciesAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(c => c.Code);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCurrencyFilters), GetType());
+        return CurrencyService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadCurrenciesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

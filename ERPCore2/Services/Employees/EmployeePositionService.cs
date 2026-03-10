@@ -89,6 +89,39 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<(List<EmployeePosition> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<EmployeePosition>, IQueryable<EmployeePosition>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<EmployeePosition> query = context.EmployeePositions;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(ep => ep.Name)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<EmployeePosition>(), 0);
+            }
+        }
+
         public async Task<bool> IsEmployeePositionCodeExistsAsync(string code, int? excludeId = null)
         {
             try

@@ -211,6 +211,15 @@ else
          title="點擊複製頁面名稱"
          @onclick="CopyDebugPageNameAsync">
         🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong> | @DebugPageName
+        @if (_debugQueryMs >= 0)
+        {
+            <span style="color:#8b949e;"> | </span>
+            <span style="color:@(_debugMode == "server" ? "#3fb950" : "#d29922");">@_debugMode</span>
+            <span style="color:#8b949e;"> </span>
+            <span style="color:#e6edf3;">@_debugPageCount/@_debugTotalCount 筆</span>
+            <span style="color:#8b949e;"> | </span>
+            <span style="color:@(_debugQueryMs < 500 ? "#3fb950" : _debugQueryMs < 2000 ? "#d29922" : "#f85149");">@_debugQueryMs ms</span>
+        }
     </div>
 }
 
@@ -269,7 +278,7 @@ else
                                       IsVisible="@_showInternalBatchDeleteModal"
                                       IsVisibleChanged="@((bool v) => _showInternalBatchDeleteModal = v)"
                                       Title="@GetBatchDeleteTitle()"
-                                      Items="@filteredItems"
+                                      Items="@(ServerDataLoader != null ? pagedItems : filteredItems)"
                                       ColumnDefinitions="@BatchDeleteColumnDefinitions"
                                       IsDeleting="@_isInternalBatchDeleting"
                                       OnConfirmDelete="@HandleInternalBatchDeleteAsync"

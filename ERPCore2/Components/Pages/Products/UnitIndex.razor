@@ -15,8 +15,7 @@
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ShowDraftTab="true"
-                          DataLoader="@LoadUnitsAsync"
-                          FilterApplier="@ApplyUnitFilters"
+                          ServerDataLoader="@ServerLoadUnitsAsync"
                           GetEntityDisplayName="@(unit => unit.Name)"
                           RequiredPermission="@PermissionRegistry.Unit.Read"
                           RequiredModule="Products"
@@ -82,11 +81,17 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "單位維護", "#", NotificationService, GetType());
 
-    // 載入單位資料
-    private Task<List<Unit>> LoadUnitsAsync() => DataLoaderHelper.LoadAsync(() => UnitService.GetAllIncludingDraftsAsync(), "單位", NotificationService, GetType());
-
-    private IQueryable<Unit> ApplyUnitFilters(SearchFilterModel searchModel, IQueryable<Unit> query)
+    private Task<(List<Unit> Items, int TotalCount)> ServerLoadUnitsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyUnitFilters), GetType());
+        return UnitService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadUnitsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

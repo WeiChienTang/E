@@ -20,8 +20,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadPurchaseOrdersAsync"
-                          FilterApplier="@ApplyPurchaseOrderFilters"
+                          ServerDataLoader="@ServerLoadPurchaseOrdersAsync"
                           GetEntityDisplayName="@(order => order.Code)"
                           RequiredPermission="@PermissionRegistry.PurchaseOrder.Read"
                           RequiredModule="Purchase"
@@ -133,20 +132,19 @@
 
     private async Task LoadCompaniesAsync() => companies = await DataLoaderHelper.LoadAsync(() => CompanyService.GetAllAsync(), "公司", NotificationService, GetType());
 
-    // 載入採購單資料（含草稿）
-    private Task<List<PurchaseOrder>> LoadPurchaseOrdersAsync() => DataLoaderHelper.LoadAsync(() => PurchaseOrderService.GetAllIncludingDraftsAsync(), "採購單", NotificationService, GetType());
-
-    // 篩選方法 - 現在已由 FilterHelper 處理所有錯誤情況
-    private IQueryable<PurchaseOrder> ApplyPurchaseOrderFilters(SearchFilterModel searchModel, IQueryable<PurchaseOrder> query)
+    // 伺服器端分頁載入
+    private Task<(List<PurchaseOrder> Items, int TotalCount)> ServerLoadPurchaseOrdersAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢（ID 降序，最新的在上面）
-            return query.OrderByDescending(e => e.Id);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPurchaseOrderFilters), GetType());
+        return PurchaseOrderService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(o => o.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadPurchaseOrdersAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     // ===== 批次審核相關方法 =====

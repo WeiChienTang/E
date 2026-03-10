@@ -20,8 +20,7 @@
                           EntityBasePath="/stocktakings"
                           PageTitle="@L["Page.StockTakingTitle"]"
                           PageSubtitle="@L["Page.StockTakingSubtitle"]"
-                          DataLoader="@LoadDataAsync"
-                          FilterApplier="@ApplyStockTakingFilters"
+                          ServerDataLoader="@ServerLoadDataAsync"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -126,21 +125,19 @@
         }
     }
 
-    private Task<List<StockTaking>> LoadDataAsync() =>
-        DataLoaderHelper.LoadAsync(() => StockTakingService.GetAllIncludingDraftsAsync(), "盤點單", NotificationService, GetType());
-
-    // ===== 篩選方法 =====
-
-    private IQueryable<StockTaking> ApplyStockTakingFilters(SearchFilterModel searchModel, IQueryable<StockTaking> query)
+    // 伺服器端分頁載入
+    private Task<(List<StockTaking> Items, int TotalCount)> ServerLoadDataAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化
-        if (fieldConfiguration == null)
-        {
-            return query.OrderByDescending(st => st.TakingDate)
-                       .ThenByDescending(st => st.TakingNumber);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyStockTakingFilters), GetType());
+        return StockTakingService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(st => st.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadDataAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 
     // ===== 事件處理方法 =====

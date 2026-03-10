@@ -14,8 +14,7 @@
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          DataLoader="@LoadWasteRecordsAsync"
-                          FilterApplier="@ApplyWasteRecordFilters"
+                          ServerDataLoader="@ServerLoadWasteRecordsAsync"
                           GetEntityDisplayName="@(wr => wr.Code ?? $"磅秤紀錄#{wr.Id}")"
                           RequiredPermission="@PermissionRegistry.WasteRecord.Read"
                           RequiredModule="WasteManagement"
@@ -74,9 +73,18 @@
     private async Task InitializeBreadcrumbsAsync() =>
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("磅秤管理", "磅秤紀錄", "#", NotificationService, GetType());
 
-    private Task<List<WasteRecord>> LoadWasteRecordsAsync() =>
-        DataLoaderHelper.LoadAsync(() => WasteRecordService.GetAllIncludingDraftsAsync(), "磅秤紀錄", NotificationService, GetType());
-
-    private IQueryable<WasteRecord> ApplyWasteRecordFilters(SearchFilterModel searchModel, IQueryable<WasteRecord> query) =>
-        fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyWasteRecordFilters), GetType());
+    // 伺服器端分頁載入
+    private Task<(List<WasteRecord> Items, int TotalCount)> ServerLoadWasteRecordsAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return WasteRecordService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(wr => wr.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadWasteRecordsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
 }

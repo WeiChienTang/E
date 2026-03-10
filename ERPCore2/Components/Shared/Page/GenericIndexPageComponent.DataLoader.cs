@@ -1,6 +1,7 @@
 using ERPCore2.Data;
 using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Services;
+using System.Diagnostics;
 
 namespace ERPCore2.Components.Shared.Page;
 
@@ -61,10 +62,35 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
         _loadCts = new CancellationTokenSource();
         var token = _loadCts.Token;
 
+        var sw = _isSuperAdmin ? Stopwatch.StartNew() : null;
+
         try
         {
-            if (DataLoader != null)
+            if (ServerDataLoader != null)
             {
+                // ===== 伺服器端分頁路徑 =====
+                var result = await ServerDataLoader(searchModel, currentPage, pageSize);
+
+                if (token.IsCancellationRequested) return;
+
+                pagedItems  = result.Items;
+                totalItems  = result.TotalCount;
+
+                // 頁碼越界修正（例如刪除後最後一頁消失）
+                var maxPage = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
+                if (currentPage > maxPage) currentPage = Math.Max(1, maxPage);
+
+                // 伺服器模式不使用 allItems / filteredItems
+                allItems      = new List<TEntity>();
+                filteredItems = new List<TEntity>();
+
+                if (sw != null) { sw.Stop(); _debugQueryMs = sw.ElapsedMilliseconds; _debugPageCount = pagedItems.Count; _debugTotalCount = totalItems; _debugMode = "server"; }
+
+                StateHasChanged();
+            }
+            else if (DataLoader != null)
+            {
+                // ===== 客戶端全量載入路徑（原有邏輯） =====
                 var data = await DataLoader();
 
                 // 若此次載入已被後續請求取消，直接捨棄結果
@@ -72,6 +98,9 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
 
                 allItems = data;
                 ApplyFilters(resetPage: false);
+
+                if (sw != null) { sw.Stop(); _debugQueryMs = sw.ElapsedMilliseconds; _debugPageCount = pagedItems.Count; _debugTotalCount = allItems.Count; _debugMode = "client"; }
+
                 StateHasChanged();
             }
         }
@@ -79,8 +108,9 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
         {
             if (token.IsCancellationRequested) return;
             Console.Error.WriteLine($"載入資料失敗: {ex.Message}");
-            allItems = new List<TEntity>();
+            allItems      = new List<TEntity>();
             filteredItems = new List<TEntity>();
+            pagedItems    = new List<TEntity>();
             StateHasChanged();
         }
     }
@@ -161,6 +191,11 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
     private Task HandleSearch(SearchFilterModel filterModel)
     {
         searchModel = filterModel;
+        if (ServerDataLoader != null)
+        {
+            currentPage = 1;
+            return ExecuteWithLoadingAsync(LoadDataAsync, "搜尋時發生錯誤");
+        }
         ApplyFilters();
         StateHasChanged();
         return Task.CompletedTask;
@@ -175,6 +210,12 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
     private Task HandlePageChanged(int newPage)
     {
         currentPage = newPage;
+        if (ServerDataLoader != null)
+        {
+            // 換頁時清除多選狀態（避免選到不在本頁的過期項目）
+            if (_selectedItems.Count > 0) _selectedItems.Clear();
+            return ExecuteWithLoadingAsync(LoadDataAsync, "載入頁面時發生錯誤");
+        }
         UpdatePagedItems();
         StateHasChanged();
         return Task.CompletedTask;
@@ -184,6 +225,11 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
     {
         pageSize    = newPageSize;
         currentPage = 1;
+        if (ServerDataLoader != null)
+        {
+            if (_selectedItems.Count > 0) _selectedItems.Clear();
+            return ExecuteWithLoadingAsync(LoadDataAsync, "載入頁面時發生錯誤");
+        }
         UpdatePagedItems();
         StateHasChanged();
         return Task.CompletedTask;
@@ -233,9 +279,17 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
     private async Task SwitchDraftTab(bool showDrafts)
     {
         _showingDrafts = showDrafts;
-        ApplyFilters(resetPage: true);
-        StateHasChanged();
-        await Task.CompletedTask;
+        if (ServerDataLoader != null)
+        {
+            searchModel.ShowDrafts = showDrafts;
+            currentPage = 1;
+            await ExecuteWithLoadingAsync(LoadDataAsync, "切換Tab時發生錯誤");
+        }
+        else
+        {
+            ApplyFilters(resetPage: true);
+            StateHasChanged();
+        }
     }
 
     public void ResetFilters()

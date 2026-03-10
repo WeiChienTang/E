@@ -112,6 +112,40 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<(List<PaymentMethod> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<PaymentMethod>, IQueryable<PaymentMethod>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<PaymentMethod> query = context.PaymentMethods;
+
+                if (filterFunc != null) query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(pm => pm.IsDefault)
+                    .ThenBy(pm => pm.Name)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger, new {
+                    Method = nameof(GetPagedWithFiltersAsync),
+                    ServiceType = GetType().Name,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+                return (new List<PaymentMethod>(), 0);
+            }
+        }
+
         // 檢查付款方式編號是否已存在
         public async Task<bool> IsPaymentMethodCodeExistsAsync(string code, int? excludeId = null)
         {

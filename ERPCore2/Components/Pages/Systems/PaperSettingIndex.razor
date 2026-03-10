@@ -14,8 +14,7 @@
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
-                      DataLoader="@LoadPaperSettingsAsync"
-                      FilterApplier="@ApplyPaperSettingFilters"
+                      ServerDataLoader="@ServerLoadPaperSettingsAsync"
                       GetEntityDisplayName="@(paper => paper.Name)"
                       RequiredPermission="@PermissionRegistry.PaperSetting.Read"
                       RequiredModule="Systems"
@@ -80,18 +79,16 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("系統管理", "紙張設定", "/systems", NotificationService, GetType());
 
-    // 載入紙張設定資料
-    private async Task<List<PaperSetting>> LoadPaperSettingsAsync() => await DataLoaderHelper.LoadAsync(PaperSettingService.GetAllAsync, "紙張設定", NotificationService, GetType());
-
-    private IQueryable<PaperSetting> ApplyPaperSettingFilters(SearchFilterModel searchModel, IQueryable<PaperSetting> query)
+    private Task<(List<PaperSetting> Items, int TotalCount)> ServerLoadPaperSettingsAsync(
+        SearchFilterModel filter, int page, int pageSize)
     {
-        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
-        if (fieldConfiguration == null)
-        {
-            // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(p => p.Name);
-        }
-
-        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPaperSettingFilters), GetType());
+        return PaperSettingService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadPaperSettingsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
     }
 }

@@ -7,6 +7,11 @@ namespace ERPCore2.Services.Reports.Configuration
     /// </summary>
     public interface IReportPrintConfigurationService : IGenericManagementService<ReportPrintConfiguration>
     {
+        Task<(List<ReportPrintConfiguration> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ReportPrintConfiguration>, IQueryable<ReportPrintConfiguration>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
         /// <summary>
         /// 根據報表名稱取得列印配置
         /// </summary>
