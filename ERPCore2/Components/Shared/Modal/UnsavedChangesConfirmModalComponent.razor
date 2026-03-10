@@ -1,0 +1,91 @@
+@* 未儲存修改確認 Modal 組件 *@
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> L
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@L["Modal.ConfirmClose"]"
+                   Icon="bi-exclamation-triangle"
+                   Size="BaseModalComponent.ModalSize.Default"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="true"
+                   ShowCloseButton="true"
+                   OnClose="HandleClose"
+                   DebugComponentName="UnsavedChangesConfirmModalComponent">
+    <HeaderButtons>
+        <GenericButtonComponent Text="@L["Modal.SaveAndClose"]"    Variant="ButtonVariant.DarkBlue" OnClick="HandleSaveAndClose"    Title="@L["Modal.SaveAndClose"]" />
+        @if (ShowDraftButton)
+        {
+            <GenericButtonComponent Text="@L["Button.SaveDraft"]"  Variant="ButtonVariant.Gray"    OnClick="HandleSaveDraft"       Title="@L["Button.SaveDraft"]" />
+        }
+        <GenericButtonComponent Text="@L["Modal.ContinueEditing"]" Variant="ButtonVariant.Green"   OnClick="HandleContinueEditing" Title="@L["Modal.ContinueEditing"]" />
+    </HeaderButtons>
+    <BodyContent>
+        <div class="text-center py-4">
+            <p class="fs-6 mb-0 text-muted">@L["Modal.UnsavedChanges"]</p>
+        </div>
+    </BodyContent>
+</BaseModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    /// <summary>是否顯示「儲存草稿」按鈕</summary>
+    [Parameter] public bool ShowDraftButton { get; set; } = false;
+
+    /// <summary>使用者選擇確定離開（不儲存）</summary>
+    [Parameter] public EventCallback OnLeave { get; set; }
+
+    /// <summary>使用者選擇儲存後關閉</summary>
+    [Parameter] public EventCallback OnSaveAndClose { get; set; }
+
+    /// <summary>使用者選擇儲存草稿後離開</summary>
+    [Parameter] public EventCallback OnSaveDraft { get; set; }
+
+    /// <summary>使用者選擇繼續編輯（取消關閉）</summary>
+    [Parameter] public EventCallback OnContinueEditing { get; set; }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+            await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task HandleLeave()
+    {
+        await CloseModal();
+        if (OnLeave.HasDelegate)
+            await OnLeave.InvokeAsync();
+    }
+
+    private async Task HandleSaveAndClose()
+    {
+        await CloseModal();
+        if (OnSaveAndClose.HasDelegate)
+            await OnSaveAndClose.InvokeAsync();
+    }
+
+    private async Task HandleSaveDraft()
+    {
+        await CloseModal();
+        if (OnSaveDraft.HasDelegate)
+            await OnSaveDraft.InvokeAsync();
+    }
+
+    private async Task HandleContinueEditing()
+    {
+        await CloseModal();
+        if (OnContinueEditing.HasDelegate)
+            await OnContinueEditing.InvokeAsync();
+    }
+
+    /// <summary>ESC / 點擊背景 → 等同繼續編輯</summary>
+    private async Task HandleClose()
+    {
+        await CloseModal();
+        if (OnContinueEditing.HasDelegate)
+            await OnContinueEditing.InvokeAsync();
+    }
+}

@@ -276,31 +276,13 @@
                             OnCancel="@HandleRejectCancel" />
 
 @* 未儲存修改確認 Modal *@
-<BaseModalComponent IsVisible="@_showUnsavedChangesModal"
-                   IsVisibleChanged="@((bool v) => _showUnsavedChangesModal = v)"
-                   Title="@L["Modal.ConfirmClose"]"
-                   Icon="bi-exclamation-triangle"
-                   Size="BaseModalComponent.ModalSize.Default"
-                   HeaderColor="BaseModalComponent.HeaderVariant.Warning"
-                   CloseOnEscape="true"
-                   CloseOnBackdropClick="true"
-                   ShowCloseButton="false"
-                   OnClose="HandleUnsavedChangesCancel">
-    <HeaderButtons>
-        <GenericButtonComponent Text="@L["Modal.SaveAndClose"]"    Variant="ButtonVariant.DarkBlue" OnClick="HandleUnsavedChangesSaveAndClose" Title="@L["Modal.SaveAndClose"]" />
-        @if (ShowDraftButton)
-        {
-            <GenericButtonComponent Text="@L["Button.SaveDraft"]"  Variant="ButtonVariant.Gray" OnClick="HandleUnsavedChangesSaveDraft"   Title="@L["Button.SaveDraft"]" />
-        }
-        <GenericButtonComponent Text="@L["Modal.ContinueEditing"]" Variant="ButtonVariant.Green"    OnClick="HandleUnsavedChangesCancel"      Title="@L["Modal.ContinueEditing"]" />
-        <GenericButtonComponent Text="@L["Modal.ConfirmLeave"]"    Variant="ButtonVariant.Red"      OnClick="HandleUnsavedChangesLeave"       Title="@L["Modal.ConfirmLeave"]" />
-    </HeaderButtons>
-    <BodyContent>
-        <div class="text-center py-4">
-            <p class="fs-6 mb-0 text-muted">@L["Modal.UnsavedChanges"]</p>
-        </div>
-    </BodyContent>
-</BaseModalComponent>
+<UnsavedChangesConfirmModalComponent IsVisible="@_showUnsavedChangesModal"
+                                     IsVisibleChanged="@((bool v) => _showUnsavedChangesModal = v)"
+                                     ShowDraftButton="@(ShowDraftButton && (!Id.HasValue || Entity?.IsDraft == true))"
+                                     OnSaveAndClose="HandleUnsavedChangesSaveAndClose"
+                                     OnSaveDraft="HandleUnsavedChangesSaveDraft"
+                                     OnContinueEditing="HandleUnsavedChangesCancel"
+                                     OnLeave="HandleUnsavedChangesLeave" />
 
 @* 儲存為草稿確認 Modal（儲存時驗證失敗 → 詢問是否改存草稿） *@
 @if (_showSaveAsDraftModal)

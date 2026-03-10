@@ -8,7 +8,7 @@
 @inject IStringLocalizer<SharedResource> L
 @typeparam TItem
 
-<div class="generic-table-wrapper">
+<div class="generic-table-wrapper" data-ctx-menu="@_ctxMenuAttr">
 <div class="table-responsive table-container-hover interactive-table-container">
     @if (!string.IsNullOrEmpty(DebugTableName))
     {
@@ -129,9 +129,8 @@
                         @ondragover="() => HandleRowDragOver(currentIndex)"
                         @ondragenter="() => HandleRowDragEnter(currentIndex)"
                         @ondragleave="HandleRowDragLeave"
-                        @oncontextmenu="(e) => HandleContextMenu(e, item)"
-                        @oncontextmenu:preventDefault="@_hasContextMenu">
-                        
+                        @oncontextmenu="(e) => HandleContextMenu(e, item)">
+
                         @if (ShowRowNumbers)
                         {
                             <td class="text-center text-muted row-number-column">
@@ -717,6 +716,7 @@
     private TItem? _contextMenuTarget = default;
     private string _contextMenuId = "";
     private bool _hasContextMenu = false;
+    private string _ctxMenuAttr = "0";
 
     #endregion
 
@@ -760,6 +760,7 @@
 
         // 更新依賴 Parameter 的快取值（避免 render 時重複計算）
         _hasContextMenu = ContextMenuItems != null && ContextMenuItems.Any();
+        _ctxMenuAttr = _hasContextMenu ? "1" : "0";
         _cachedTableClass = ComputeTableClass();
         _cachedActionsColumnStyle = ComputeActionsColumnStyle();
         _cachedColspan = ComputeColspan();
@@ -2206,7 +2207,16 @@
 }
 
 <script>
-// 右鍵選單：顯示後修正超出視窗邊界的位置（與 GenericTableComponent 共用邏輯，加 guard 防止重複定義）
+// 與 GenericTableComponent 共用同一個全域 listener（guard 防止重複註冊）
+if (!window._tableContextMenuListenerRegistered) {
+    window._tableContextMenuListenerRegistered = true;
+    document.addEventListener('contextmenu', function(e) {
+        if (e.target.closest('[data-ctx-menu="1"]')) {
+            e.preventDefault();
+        }
+    }, true);
+}
+
 if (!window.tableContextMenu) {
     window.tableContextMenu = {
         adjustPosition: function(menuId) {

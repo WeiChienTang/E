@@ -3194,4 +3194,7 @@
   <data name="Modal.SaveAsDraftTitle" xml:space="preserve"><value>资料不完整</value></data>
   <data name="Modal.SaveAsDraftMessage" xml:space="preserve"><value>以下必填字段或条件尚未符合，是否改为保存草稿？草稿不会出现在正式报表中，请记得日后补充完整。</value></data>
 
+  <data name="Label.SelectedCount" xml:space="preserve"><value>已选取 {0} 条</value></data>
+  <data name="Button.ClearSelection" xml:space="preserve"><value>清除选取</value></data>
+  <data name="Message.ConfirmBatchDelete" xml:space="preserve"><value>确定要删除选取的 {0} 条{1}吗？</value></data>
 </root>

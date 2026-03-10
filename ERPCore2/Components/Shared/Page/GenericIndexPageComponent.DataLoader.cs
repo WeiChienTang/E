@@ -195,6 +195,13 @@ public partial class GenericIndexPageComponent<TEntity, TService> : IDisposable
 
     private async Task RefreshData(RefreshMode? overrideMode = null)
     {
+        // 刷新資料時清除多選狀態（避免過期參考殘留在 action bar 中）
+        if (_selectedItems.Count > 0)
+        {
+            _selectedItems.Clear();
+            StateHasChanged();
+        }
+
         var mode = overrideMode ?? PageRefreshMode;
         if (mode == RefreshMode.ForceReload)
         {

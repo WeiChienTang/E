@@ -7,7 +7,7 @@
 @inject IStringLocalizer<SharedResource> L
 @typeparam TItem
 
-<div class="generic-table-wrapper">
+<div class="generic-table-wrapper" data-ctx-menu="@_ctxMenuAttr">
 <div class="table-responsive table-container-hover">
     <table class="table @GetTableClass() @(EnableColumnResize ? "resizable-table" : "")"
            id="@TableId">
@@ -16,9 +16,23 @@
         {
             <thead class="@GetHeaderClass()">
                 <tr>
+                    @if (ShowSelectColumn)
+                    {
+                        <th scope="col" class="text-center" style="width: @SelectColumnWidth;">
+                            @if (AllowMultipleSelection)
+                            {
+                                <input type="checkbox"
+                                       id="@_selectAllCheckboxId"
+                                       class="form-check-input"
+                                       checked="@IsAllSelected"
+                                       @onchange="HandleSelectAllChanged"
+                                       title="@L["Label.SelectAll"]" />
+                            }
+                        </th>
+                    }
                     @foreach (var column in ColumnDefinitions)
                     {
-                        <th scope="col" 
+                        <th scope="col"
                             class="@column.HeaderCssClass @(EnableColumnResize ? "resizable-column" : "")" 
                             style="@GetColumnStyle(column)" 
                             data-column="@column.PropertyName">
@@ -51,9 +65,22 @@
                     <tr class="@GetRowClass(item)"
                         @onclick="() => HandleRowClick(item)"
                         style="@(EnableRowClick ? $"cursor: {RowClickCursor};" : "")"
-                        @oncontextmenu="(e) => HandleContextMenu(e, item)"
-                        @oncontextmenu:preventDefault="@_hasContextMenu">
-                        
+                        @oncontextmenu="(e) => HandleContextMenu(e, item)">
+
+                        @if (ShowSelectColumn)
+                        {
+                            var isSelectable = IsItemSelectable?.Invoke(item) ?? true;
+                            <td class="text-center" style="width: @SelectColumnWidth;" @onclick:stopPropagation="true">
+                                @if (isSelectable)
+                                {
+                                    <input type="checkbox"
+                                           class="form-check-input"
+                                           checked="@IsItemSelectedLocal(item)"
+                                           @onchange="e => HandleItemSelectionChanged(item, (bool?)e.Value ?? false)"
+                                           title="@L["Label.SelectItem"]" />
+                                }
+                            </td>
+                        }
                         @foreach (var column in ColumnDefinitions ?? new List<TableColumnDefinition>())
                         {                            <td class="@column.CellCssClass" style="@column.CellStyle">
                                 @if (column.CustomTemplate != null && item != null)
@@ -152,6 +179,14 @@
     // 右鍵選單
     [Parameter] public List<ContextMenuItem<TItem>>? ContextMenuItems { get; set; }
 
+    // 多選
+    [Parameter] public bool ShowSelectColumn { get; set; } = false;
+    [Parameter] public bool AllowMultipleSelection { get; set; } = true;
+    [Parameter] public HashSet<TItem>? SelectedItems { get; set; }
+    [Parameter] public EventCallback<HashSet<TItem>> OnSelectionChanged { get; set; }
+    [Parameter] public Func<TItem, bool>? IsItemSelectable { get; set; }
+    [Parameter] public string SelectColumnWidth { get; set; } = "40px";
+
     // 右鍵選單私有狀態
     private bool _contextMenuVisible = false;
     private double _contextMenuX = 0;
@@ -159,10 +194,16 @@
     private TItem? _contextMenuTarget = default;
     private string _contextMenuId = "";
     private bool _hasContextMenu = false;
+    private string _ctxMenuAttr = "0";
+
+    // 多選私有狀態
+    private string _selectAllCheckboxId = "";
+    private bool _prevIsPartiallySelected = false;
 
     protected override void OnParametersSet()
     {
         _hasContextMenu = ContextMenuItems != null && ContextMenuItems.Any();
+        _ctxMenuAttr = _hasContextMenu ? "1" : "0";
     }
 
     private void HandleContextMenu(MouseEventArgs e, TItem item)
@@ -189,6 +230,66 @@
         if (menuItem.OnClick != null && target != null)
             await menuItem.OnClick(target);
     }
+
+    #region 多選方法
+
+    private IEnumerable<TItem> GetSelectableItems()
+    {
+        if (Items == null) return Enumerable.Empty<TItem>();
+        return IsItemSelectable != null ? Items.Where(i => IsItemSelectable(i)) : Items.Cast<TItem>();
+    }
+
+    private bool IsAllSelected
+    {
+        get
+        {
+            if (SelectedItems == null || !SelectedItems.Any()) return false;
+            var selectable = GetSelectableItems().ToList();
+            return selectable.Any() && selectable.All(i => SelectedItems.Contains(i));
+        }
+    }
+
+    private bool IsPartiallySelected
+    {
+        get
+        {
+            if (SelectedItems == null || !SelectedItems.Any()) return false;
+            var selectable = GetSelectableItems().ToList();
+            var count = selectable.Count(i => SelectedItems.Contains(i));
+            return count > 0 && count < selectable.Count;
+        }
+    }
+
+    private bool IsItemSelectedLocal(TItem item) => SelectedItems?.Contains(item) ?? false;
+
+    private async Task HandleSelectAllChanged(ChangeEventArgs e)
+    {
+        var isChecked = (bool?)e.Value ?? false;
+        SelectedItems ??= new HashSet<TItem>();
+        var selectable = GetSelectableItems().ToList();
+        if (isChecked) SelectedItems.UnionWith(selectable);
+        else SelectedItems.ExceptWith(selectable);
+        if (OnSelectionChanged.HasDelegate)
+            await OnSelectionChanged.InvokeAsync(SelectedItems);
+    }
+
+    private async Task HandleItemSelectionChanged(TItem item, bool isSelected)
+    {
+        SelectedItems ??= new HashSet<TItem>();
+        if (isSelected)
+        {
+            if (AllowMultipleSelection) SelectedItems.Add(item);
+            else { SelectedItems.Clear(); SelectedItems.Add(item); }
+        }
+        else
+        {
+            SelectedItems.Remove(item);
+        }
+        if (OnSelectionChanged.HasDelegate)
+            await OnSelectionChanged.InvokeAsync(SelectedItems);
+    }
+
+    #endregion
 
     private string GetTableClass()
     {
@@ -219,14 +320,17 @@
 
     private string GetRowClass(TItem item)
     {
-        if (GetRowCssClass != null)
-            return GetRowCssClass(item) ?? "";
-        return "";
+        var custom = GetRowCssClass?.Invoke(item) ?? "";
+        var selected = ShowSelectColumn && SelectedItems != null && SelectedItems.Contains(item);
+        if (!selected) return custom;
+        return string.IsNullOrEmpty(custom) ? "row-selected" : $"{custom} row-selected";
     }
 
     private int GetColspan()
     {
-        return ColumnDefinitions?.Count ?? 0;
+        var count = ColumnDefinitions?.Count ?? 0;
+        if (ShowSelectColumn) count++;
+        return count;
     }
 
     private async Task HandleRowClick(TItem item)
@@ -418,6 +522,7 @@
     protected override void OnInitialized()
     {
         _contextMenuId = $"ctx-menu-{Guid.NewGuid():N}";
+        _selectAllCheckboxId = $"select-all-{Guid.NewGuid():N}";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -432,6 +537,18 @@
         {
             try { await JSRuntime.InvokeVoidAsync("tableContextMenu.adjustPosition", _contextMenuId); }
             catch { /* 忽略 JS 錯誤 */ }
+        }
+
+        // 更新全選 checkbox 的 indeterminate 狀態（只在狀態改變時呼叫）
+        if (ShowSelectColumn && AllowMultipleSelection)
+        {
+            var partial = IsPartiallySelected;
+            if (firstRender || partial != _prevIsPartiallySelected)
+            {
+                _prevIsPartiallySelected = partial;
+                try { await JSRuntime.InvokeVoidAsync("setCheckboxIndeterminate", _selectAllCheckboxId, partial); }
+                catch { /* 忽略 JS 錯誤 */ }
+            }
         }
 
         await base.OnAfterRenderAsync(firstRender);
@@ -521,7 +638,18 @@ window.tableColumnResizer = {
     }
 };
 
-// 右鍵選單：顯示後修正超出視窗邊界的位置（加 guard 防止與 GenericInteractiveTableComponent 重複定義）
+// 右鍵選單：全域事件委派，在捕獲階段同步攔截，確保 preventDefault 在瀏覽器預設動作前執行
+// guard 防止重複註冊（兩個 Table 元件共用同一個 listener）
+if (!window._tableContextMenuListenerRegistered) {
+    window._tableContextMenuListenerRegistered = true;
+    document.addEventListener('contextmenu', function(e) {
+        if (e.target.closest('[data-ctx-menu="1"]')) {
+            e.preventDefault();
+        }
+    }, true); // true = 捕獲階段，比冒泡更早執行，確保瀏覽器預設選單被攔截
+}
+
+// 右鍵選單：顯示後修正超出視窗邊界的位置
 if (!window.tableContextMenu) {
     window.tableContextMenu = {
         adjustPosition: function(menuId) {

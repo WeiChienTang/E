@@ -3272,4 +3272,7 @@
   <data name="Modal.SaveAsDraftTitle" xml:space="preserve"><value>資料不完整</value></data>
   <data name="Modal.SaveAsDraftMessage" xml:space="preserve"><value>以下必填欄位或條件尚未符合，是否改為儲存草稿？草稿不會出現在正式報表中，請記得日後補齊。</value></data>
 
+  <data name="Label.SelectedCount" xml:space="preserve"><value>已選取 {0} 筆</value></data>
+  <data name="Button.ClearSelection" xml:space="preserve"><value>清除選取</value></data>
+  <data name="Message.ConfirmBatchDelete" xml:space="preserve"><value>確定要刪除選取的 {0} 筆{1}嗎？</value></data>
 </root>

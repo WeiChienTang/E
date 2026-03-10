@@ -178,6 +178,20 @@ h1:focus {
     box-shadow: var(--shadow-lg);
 }
 
+/* 預設隱藏三種狀態 div */
+#components-reconnect-show,
+#components-reconnect-failed,
+#components-reconnect-rejected {
+    display: none;
+}
+
+/* 根據父層 class 顯示對應狀態 */
+#components-reconnect-modal.components-reconnect-show #components-reconnect-show,
+#components-reconnect-modal.components-reconnect-failed #components-reconnect-failed,
+#components-reconnect-modal.components-reconnect-rejected #components-reconnect-rejected {
+    display: block;
+}
+
 /* ===== searchable-dropdown 深色模式（全域，繞開 Blazor CSS isolation）=====
    放在此處的原因：.razor.css 的 [data-bs-theme=dark] ::deep 會被 Blazor 編譯為
    [data-bs-theme=dark][b-scope]，導致 scope 錯誤附加於主題選擇器，規則永遠不生效。

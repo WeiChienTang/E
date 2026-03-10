@@ -78,6 +78,11 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     [Parameter] public bool IsBatchDeleteDisabled { get; set; } = false;
     [Parameter] public EventCallback OnBatchDeleteClick { get; set; }
 
+    // 內建批次刪除 Modal（設定後自動接管 OnBatchDeleteClick，無需在頁面自行管理 modal 狀態）
+    [Parameter] public List<InteractiveColumnDefinition>? BatchDeleteColumnDefinitions { get; set; }
+    [Parameter] public string BatchDeleteTitle { get; set; } = "";
+    [Parameter] public EventCallback<List<TEntity>> OnBatchDelete { get; set; }
+
     // 麵包屑
     [Parameter] public List<BreadcrumbItem> BreadcrumbItems { get; set; } = new();
 
@@ -123,6 +128,9 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     [Parameter] public bool IsHoverable { get; set; } = true;
     [Parameter] public bool IsBordered { get; set; } = false;
     [Parameter] public TableSize TableSize { get; set; } = TableSize.Normal;
+    [Parameter] public List<ContextMenuItem<TEntity>>? ContextMenuItems { get; set; }
+    [Parameter] public bool EnableMultiSelect { get; set; } = false;
+    [Parameter] public Func<TEntity, bool>? IsMultiSelectItemSelectable { get; set; }
     [Parameter] public bool EnablePagination { get; set; } = true;
     [Parameter] public bool ShowPageSizeSelector { get; set; } = true;
     /// <summary>
@@ -172,10 +180,12 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     // 快取定義
     private List<TableColumnDefinition> _cachedColumnDefinitions = new();
     private List<SearchFilterDefinition> _cachedFilterDefinitions = new();
+    private List<ContextMenuItem<TEntity>>? _cachedEffectiveContextMenuItems;
 
     // 快取失效追蹤（條件式重建，避免每次 OnParametersSet 都重建）
     private List<TableColumnDefinition>? _prevColumnDefs;
     private List<SearchFilterDefinition>? _prevFilterDefs;
+    private List<ContextMenuItem<TEntity>>? _prevContextMenuItems;
     private bool   _prevAutoRemarksColumn;
     private bool   _prevAutoRemarksFilter;
     private bool   _prevAutoCreatedAt;
@@ -194,6 +204,18 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     // 草稿 Tab 參數
     /// <summary>是否顯示正式/草稿切換按鈕（預設 false）</summary>
     [Parameter] public bool ShowDraftTab { get; set; } = false;
+
+    // 內建批次刪除 Modal 狀態
+    private bool _showInternalBatchDeleteModal = false;
+    private bool _isInternalBatchDeleting = false;
+
+    // 右鍵選單刪除確認 Modal 狀態
+    private bool _showContextMenuDeleteModal = false;
+    private TEntity? _contextMenuDeleteTarget = null;
+
+    // 多選狀態
+    private HashSet<TEntity> _selectedItems = new();
+    private bool _showMultiDeleteModal = false;
 
     // 篩選 / 分頁 / 狀態
     private SearchFilterModel searchModel = new();
@@ -226,6 +248,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
         bool needsRebuild =
             !ReferenceEquals(ColumnDefinitions,     _prevColumnDefs)           ||
             !ReferenceEquals(FilterDefinitions,     _prevFilterDefs)           ||
+            !ReferenceEquals(ContextMenuItems,      _prevContextMenuItems)     ||
             !ReferenceEquals(ActionsTemplate,       _prevActionsTemplate)      ||
             !ReferenceEquals(CustomActionsTemplate, _prevCustomActionsTemplate)||
             AutoAddRemarksColumn   != _prevAutoRemarksColumn                   ||
@@ -253,6 +276,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
         _prevRemarksFilterTitle        = RemarksFilterTitle;
         _prevActionsTemplate           = ActionsTemplate;
         _prevCustomActionsTemplate     = CustomActionsTemplate;
+        _prevContextMenuItems          = ContextMenuItems;
         RebuildDefinitionsCache();
     }
 
@@ -284,6 +308,62 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     {
         _cachedColumnDefinitions = BuildFinalColumnDefinitions();
         _cachedFilterDefinitions = BuildFinalFilterDefinitions();
+        _cachedEffectiveContextMenuItems = BuildEffectiveContextMenuItems();
+    }
+
+    /// <summary>
+    /// 建立有效的右鍵選單項目。
+    /// - 若外部明確傳入 ContextMenuItems（含空列表），直接使用（空列表 = 停用選單）。
+    /// - 否則自動從 OnRowClick / ShowDeleteButton 生成預設選單，所有 Index 頁面無需修改。
+    /// </summary>
+    private List<ContextMenuItem<TEntity>>? BuildEffectiveContextMenuItems()
+    {
+        // 外部明確設定 → 尊重呼叫端意圖（空列表代表不要選單）
+        if (ContextMenuItems != null)
+            return ContextMenuItems.Count > 0 ? ContextMenuItems : null;
+
+        // 自動生成
+        var items = new List<ContextMenuItem<TEntity>>();
+
+        if (EnableRowClick && OnRowClick.HasDelegate)
+        {
+            items.Add(new()
+            {
+                Label     = L["Button.Edit"].ToString(),
+                IconClass = "fas fa-edit",
+                OnClick   = async entity => await HandleRowClick(entity)
+            });
+        }
+
+        if (ShowDeleteButton)
+        {
+            if (items.Any())
+                items.Add(new() { IsDivider = true });
+
+            items.Add(new()
+            {
+                Label      = L["Button.Delete"].ToString(),
+                IconClass  = "fas fa-trash",
+                CssClass   = "text-danger",
+                IsDisabled = entity => !IsEntityDeletable(entity),
+                OnClick    = entity =>
+                {
+                    _contextMenuDeleteTarget = entity;
+                    _showContextMenuDeleteModal = true;
+                    StateHasChanged();
+                    return Task.CompletedTask;
+                }
+            });
+        }
+
+        return items.Any() ? items : null;
+    }
+
+    private Task HandleSelectionChanged(HashSet<TEntity> selected)
+    {
+        _selectedItems = selected;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private List<TableColumnDefinition> BuildFinalColumnDefinitions()

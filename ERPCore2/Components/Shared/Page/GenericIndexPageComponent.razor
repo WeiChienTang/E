@@ -143,6 +143,26 @@ else
 
                 @* 列表表格 *@
                 <div class="pt-3">
+                    @* 多選操作列（選取任一項目後顯示） *@
+                    @if (EnableMultiSelect && _selectedItems.Count > 0)
+                    {
+                        <div class="d-flex align-items-center gap-2 mb-2 px-3 py-2 rounded border"
+                             style="background: var(--bs-primary-bg-subtle); border-color: var(--bs-primary) !important;">
+                            <span class="fw-semibold" style="color: var(--bs-primary);">
+                                <i class="bi bi-check2-square me-1"></i>
+                                @string.Format(L["Label.SelectedCount"], _selectedItems.Count)
+                            </span>
+                            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                                   IconClass="bi bi-trash"
+                                                   Text="@L["Button.Delete"]"
+                                                   OnClick="@(() => _showMultiDeleteModal = true)"
+                                                   Title="@L["Button.Delete"]" />
+                            <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                                   Text="@L["Button.ClearSelection"]"
+                                                   OnClick="@(() => { _selectedItems.Clear(); StateHasChanged(); })"
+                                                   Title="@L["Button.ClearSelection"]" />
+                        </div>
+                    }
                     <GenericTableComponent TItem="TEntity"
                                           Items="@PagedItems"
                                           ColumnDefinitions="@_cachedColumnDefinitions"
@@ -153,7 +173,13 @@ else
                                           IsHoverable="@IsHoverable"
                                           IsBordered="@IsBordered"
                                           Size="@TableSize"
-                                          EmptyMessage="@GetEmptyMessage()">
+                                          EmptyMessage="@GetEmptyMessage()"
+                                          ContextMenuItems="@_cachedEffectiveContextMenuItems"
+                                          ShowSelectColumn="@EnableMultiSelect"
+                                          AllowMultipleSelection="true"
+                                          SelectedItems="@_selectedItems"
+                                          OnSelectionChanged="HandleSelectionChanged"
+                                          IsItemSelectable="@(EnableMultiSelect ? (IsMultiSelectItemSelectable ?? (Func<TEntity, bool>?)IsEntityDeletable) : null)">
                     </GenericTableComponent>
 
                     @* 分頁組件 - 獨立於表格之外 *@
@@ -186,6 +212,52 @@ else
          @onclick="CopyDebugPageNameAsync">
         🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong> | @DebugPageName
     </div>
+}
+
+@* 多選批次刪除確認 Modal *@
+@if (_showMultiDeleteModal && _selectedItems.Count > 0)
+{
+    <GenericConfirmModalComponent
+        IsVisible="@_showMultiDeleteModal"
+        IsVisibleChanged="@((bool v) => _showMultiDeleteModal = v)"
+        Title="@L["Button.ConfirmDelete"]"
+        Icon="bi-trash"
+        HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+        Message="@string.Format(L["Message.ConfirmBatchDelete"], _selectedItems.Count, EntityName)"
+        ConfirmButtonText="@L["Button.Delete"]"
+        ConfirmButtonVariant="ButtonVariant.Red"
+        CancelButtonText="@L["Button.Cancel"]"
+        OnConfirm="ExecuteMultiDeleteAsync" />
+}
+
+@* 右鍵選單刪除確認 Modal *@
+@if (_showContextMenuDeleteModal && _contextMenuDeleteTarget != null)
+{
+    <GenericConfirmModalComponent
+        IsVisible="@_showContextMenuDeleteModal"
+        IsVisibleChanged="@((bool v) => { _showContextMenuDeleteModal = v; if (!v) _contextMenuDeleteTarget = null; })"
+        Title="@L["Button.ConfirmDelete"]"
+        Icon="bi-trash"
+        HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+        Message="@GetDeleteConfirmMessage(GetEntityDisplayName(_contextMenuDeleteTarget))"
+        ConfirmButtonText="@L["Button.Delete"]"
+        ConfirmButtonVariant="ButtonVariant.Red"
+        CancelButtonText="@L["Button.Cancel"]"
+        OnConfirm="ExecuteContextMenuDeleteAsync" />
+}
+
+@* 內建批次刪除 Modal *@
+@if (BatchDeleteColumnDefinitions != null)
+{
+    <BatchDeleteConfirmModalComponent TItem="TEntity"
+                                      IsVisible="@_showInternalBatchDeleteModal"
+                                      IsVisibleChanged="@((bool v) => _showInternalBatchDeleteModal = v)"
+                                      Title="@GetBatchDeleteTitle()"
+                                      Items="@filteredItems"
+                                      ColumnDefinitions="@BatchDeleteColumnDefinitions"
+                                      IsDeleting="@_isInternalBatchDeleting"
+                                      OnConfirmDelete="@HandleInternalBatchDeleteAsync"
+                                      OnCancel="@(() => _showInternalBatchDeleteModal = false)" />
 }
 
 } @* end else (module enabled) *@

@@ -3181,4 +3181,7 @@
   <data name="Modal.SaveAsDraftTitle" xml:space="preserve"><value>データが不完全です</value></data>
   <data name="Modal.SaveAsDraftMessage" xml:space="preserve"><value>以下の必須項目または条件が満たされていません。下書きとして保存しますか？下書きは正式なレポートには表示されません。</value></data>
 
+  <data name="Label.SelectedCount" xml:space="preserve"><value>{0} 件選択中</value></data>
+  <data name="Button.ClearSelection" xml:space="preserve"><value>選択解除</value></data>
+  <data name="Message.ConfirmBatchDelete" xml:space="preserve"><value>選択した {0} 件の{1}を削除してもよろしいですか？</value></data>
 </root>

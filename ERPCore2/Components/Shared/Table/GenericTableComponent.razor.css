@@ -64,3 +64,12 @@
 [data-bs-theme=dark] .table-context-menu {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
+
+/* 多選選取列高亮 */
+.row-selected {
+    background-color: var(--bs-primary-bg-subtle) !important;
+}
+
+[data-bs-theme=dark] .row-selected {
+    background-color: rgba(88, 166, 255, 0.15) !important;
+}

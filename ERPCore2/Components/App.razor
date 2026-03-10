@@ -31,7 +31,37 @@
     <HeadOutlet />
 </head>
 
-<body>    
+<body>
+    <div id="components-reconnect-modal">
+        <div>
+            <div id="components-reconnect-show">
+                <div class="mb-3">
+                    <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                </div>
+                <p class="mb-1 fw-semibold">正在重新連線至伺服器...</p>
+                <p class="mb-0 small" style="color: var(--text-secondary);">請稍候</p>
+            </div>
+            <div id="components-reconnect-failed">
+                <div class="mb-3 fs-2 text-danger">
+                    <i class="bi bi-wifi-off"></i>
+                </div>
+                <p class="mb-1 fw-semibold">無法連線至伺服器</p>
+                <p class="mb-3 small" style="color: var(--text-secondary);">請確認網路連線後重試</p>
+                <button class="btn btn-primary btn-sm" onclick="window.Blazor.reconnect()">重新連線</button>
+            </div>
+            <div id="components-reconnect-rejected">
+                <div class="mb-3 fs-2 text-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <p class="mb-1 fw-semibold">連線已中斷</p>
+                <p class="mb-3 small" style="color: var(--text-secondary);">請重新整理頁面</p>
+                <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">重新整理</button>
+            </div>
+        </div>
+    </div>
+
     <Routes @rendermode="InteractiveServer" />
     
     <script src="@Assets["lib/bootstrap/dist/js/bootstrap.bundle.min.js"]"></script>

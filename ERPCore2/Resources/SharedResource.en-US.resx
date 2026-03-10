@@ -3208,4 +3208,7 @@
   <data name="Modal.SaveAsDraftTitle" xml:space="preserve"><value>Incomplete Data</value></data>
   <data name="Modal.SaveAsDraftMessage" xml:space="preserve"><value>The following required fields or conditions are not met. Would you like to save as a draft instead? Drafts will not appear in official reports.</value></data>
 
+  <data name="Label.SelectedCount" xml:space="preserve"><value>Selected {0} item(s)</value></data>
+  <data name="Button.ClearSelection" xml:space="preserve"><value>Clear Selection</value></data>
+  <data name="Message.ConfirmBatchDelete" xml:space="preserve"><value>Are you sure you want to delete the selected {0} {1}(s)?</value></data>
 </root>

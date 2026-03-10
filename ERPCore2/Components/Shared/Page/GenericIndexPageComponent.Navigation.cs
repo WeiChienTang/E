@@ -70,7 +70,17 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private Task HandleBarcodePrintClick()   => InvokeIfBound(OnBarcodePrintClick);
     private Task HandleBatchApprovalClick()  => InvokeIfBound(OnBatchApprovalClick);
     private Task HandleImportScheduleClick() => InvokeIfBound(OnImportScheduleClick);
-    private Task HandleBatchDeleteClick()    => InvokeIfBound(OnBatchDeleteClick);
+    private Task HandleBatchDeleteClick()
+    {
+        // 若設定了內建 BatchDeleteColumnDefinitions，開啟內建 modal
+        if (BatchDeleteColumnDefinitions != null)
+        {
+            _showInternalBatchDeleteModal = true;
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        return InvokeIfBound(OnBatchDeleteClick);
+    }
 
     #endregion
 }

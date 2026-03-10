@@ -3181,4 +3181,7 @@
   <data name="Modal.SaveAsDraftTitle" xml:space="preserve"><value>Hindi Kumpleto ang Data</value></data>
   <data name="Modal.SaveAsDraftMessage" xml:space="preserve"><value>Ang mga sumusunod na kinakailangang field o kondisyon ay hindi natutugunan. Gusto mo bang i-save bilang draft? Ang mga draft ay hindi lilitaw sa mga opisyal na ulat.</value></data>
 
+  <data name="Label.SelectedCount" xml:space="preserve"><value>Napili ang {0} item</value></data>
+  <data name="Button.ClearSelection" xml:space="preserve"><value>I-clear ang Pagpili</value></data>
+  <data name="Message.ConfirmBatchDelete" xml:space="preserve"><value>Sigurado ka bang gusto mong tanggalin ang {0} napiling {1}?</value></data>
 </root>
