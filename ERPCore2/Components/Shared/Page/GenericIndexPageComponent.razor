@@ -101,22 +101,56 @@ else
 <div class="row">
     <div class="col-12">
         <div class="card section-card">
-            <div class="card-header section-header-primary">                
+            @* 桌機顯示篩選標題列，手機隱藏（篩選改為書籤模式） *@
+            <div class="card-header section-header-primary d-none d-md-block">
                 <h5 class="card-title mb-0">
                     <i class="bi bi-search me-2"></i>
                     @GetSearchSectionTitle()
                 </h5>
             </div>
-            <div class="card-body">                
-                @* 搜尋篩選區域 *@
-                <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                             FilterDefinitions="@_cachedFilterDefinitions"
-                                             FilterModel="@SearchModel"
-                                             OnSearch="@HandleSearch"
-                                             OnFilterChanged="@HandleFilterChanged"
-                                             AutoSearch="@AutoSearch"
-                                             ShowSearchButton="@ShowSearchButton"
-                                             SearchDelayMs="@SearchDelayMs" />
+            <div class="card-body">
+                @* 手機版：篩選書籤把手（桌機由 CSS 隱藏） *@
+                @if (_cachedFilterDefinitions.Any())
+                {
+                    @if (!_mobileFilterOpen)
+                    {
+                        <button class="filter-tab-handle" @onclick="() => _mobileFilterOpen = true" title="展開篩選條件">
+                            <i class="bi bi-funnel"></i>
+                            <span class="filter-tab-label">篩選</span>
+                            @if (_activeFilterCount > 0)
+                            {
+                                <span class="filter-tab-count">@_activeFilterCount</span>
+                            }
+                        </button>
+                    }
+
+                    @* 手機版：篩選遮罩 *@
+                    @if (_mobileFilterOpen)
+                    {
+                        <div class="filter-backdrop" @onclick="() => _mobileFilterOpen = false"></div>
+                    }
+                }
+
+                @* 篩選面板（桌機正常流；手機版 slide-in overlay） *@
+                <div class="filter-mobile-panel @(_mobileFilterOpen ? "mobile-open" : "")">
+                    @* 手機版面板標題列（含關閉按鈕），桌機由 CSS 隱藏 *@
+                    <div class="filter-panel-header">
+                        <span><i class="bi bi-funnel me-2"></i>@GetSearchSectionTitle()</span>
+                        <button type="button" class="btn-close ms-auto"
+                                @onclick="() => _mobileFilterOpen = false"
+                                aria-label="關閉"></button>
+                    </div>
+
+                    @* 搜尋篩選區域 *@
+                    <GenericSearchFilterComponent TModel="SearchFilterModel"
+                                                 FilterDefinitions="@_cachedFilterDefinitions"
+                                                 FilterModel="@SearchModel"
+                                                 OnSearch="@HandleSearch"
+                                                 OnFilterChanged="@HandleFilterChanged"
+                                                 AutoSearch="@AutoSearch"
+                                                 ShowSearchButton="@ShowSearchButton"
+                                                 SearchDelayMs="@SearchDelayMs" />
+                </div>
 
                 @* 草稿/正式資料切換按鈕（僅在 ShowDraftTab 時顯示） *@
                 @if (ShowDraftTab)

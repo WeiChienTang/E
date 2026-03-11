@@ -35,6 +35,18 @@ namespace ERPCore2.Models.Enums
         /// 等待領料 - 排入看板但 BOM 物料尚未完成領料
         /// </summary>
         [Description("等待領料")]
-        WaitingMaterial = 4
+        WaitingMaterial = 4,
+
+        /// <summary>
+        /// 已暫停 - 生產中途暫停，可繼續或終止
+        /// </summary>
+        [Description("已暫停")]
+        Paused = 5,
+
+        /// <summary>
+        /// 已終止 - 強制結案，不再繼續生產（可能有部分完工）
+        /// </summary>
+        [Description("已終止")]
+        Aborted = 6
     }
 }

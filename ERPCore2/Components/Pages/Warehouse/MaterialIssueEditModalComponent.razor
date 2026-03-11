@@ -87,18 +87,12 @@
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
 
-    // 訂單來源 Tab 資料
-    private List<OrderSourceItem> orderSourceItems = new();
+    // 訂單來源 Tab
+    private MaterialIssueOrderSourceTab? orderSourceTab;
     private List<ProductionScheduleItem> _sourceScheduleItems = new();
 
     // 資料載入狀態標記
     private bool isDataLoaded = false;
-
-    private record OrderSourceItem(
-        string SalesOrderCode,
-        string ProductCode,
-        string ProductName,
-        decimal ScheduledQuantity);
 
     // ===== 必要方法 =====
     protected override async Task OnParametersSetAsync()
@@ -108,7 +102,6 @@
             // 每次開啟 Modal 時都重置明細資料
             materialIssueDetails = new List<MaterialIssueDetail>();
             _sourceScheduleItems = new List<ProductionScheduleItem>();
-            orderSourceItems = new List<OrderSourceItem>();
 
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
@@ -150,9 +143,8 @@
                 await detailManagerComponent.RefreshDetailsAsync();
             }
 
-            // 3. 載入訂單來源資料（使用已更新的 materialIssueDetails）
+            // 3. 重置排程項目（訂單來源 Tab 會透過參數變更自動重新計算）
             _sourceScheduleItems = new List<ProductionScheduleItem>();
-            await LoadOrderSourceAsync();
 
             // 4. 最後再次更新 UI（確保所有變更都反映在畫面上）
             StateHasChanged();
@@ -196,7 +188,6 @@
                     await LoadMaterialsFromScheduleAsync(SourceProductionScheduleId.Value);
                 }
 
-                await LoadOrderSourceAsync();
                 return newMaterialIssue;
             }
 
@@ -204,9 +195,8 @@
 
             if (materialIssue != null)
             {
-                // 載入明細
+                // 載入明細（訂單來源 Tab 會透過參數變更自動重新計算）
                 materialIssueDetails = materialIssue.MaterialIssueDetails?.ToList() ?? new List<MaterialIssueDetail>();
-                await LoadOrderSourceAsync();
             }
 
             return materialIssue;
@@ -300,67 +290,6 @@
         }
     }
 
-    /// <summary>
-    /// 載入訂單來源資料（供「訂單來源」Tab 顯示）
-    /// 優先使用 _sourceScheduleItems（新增模式）；否則從 materialIssueDetails 反向追溯（編輯模式）
-    /// </summary>
-    private async Task LoadOrderSourceAsync()
-    {
-        try
-        {
-            if (_sourceScheduleItems.Any())
-            {
-                // 新增模式：直接使用已載入的排程項目
-                orderSourceItems = _sourceScheduleItems
-                    .Where(i => i.SalesOrderDetail?.SalesOrder != null)
-                    .Select(i => new OrderSourceItem(
-                        i.SalesOrderDetail!.SalesOrder!.Code ?? "-",
-                        i.Product?.Code ?? "",
-                        i.Product?.Name ?? "-",
-                        i.ScheduledQuantity))
-                    .ToList();
-                return;
-            }
-
-            // 編輯模式：從 materialIssueDetails → ProductionScheduleDetail → ProductionScheduleItem
-            var sdIds = materialIssueDetails
-                .Where(d => d.ProductionScheduleDetailId.HasValue)
-                .Select(d => d.ProductionScheduleDetailId!.Value)
-                .Distinct().ToList();
-
-            if (!sdIds.Any())
-            {
-                orderSourceItems = new List<OrderSourceItem>();
-                return;
-            }
-
-            var itemIds = new HashSet<int>();
-            foreach (var sdId in sdIds)
-            {
-                var sd = await ProductionScheduleDetailService.GetByIdAsync(sdId);
-                if (sd != null) itemIds.Add(sd.ProductionScheduleItemId);
-            }
-
-            var rows = new List<OrderSourceItem>();
-            foreach (var itemId in itemIds)
-            {
-                var item = await ProductionScheduleItemService.GetByIdAsync(itemId);
-                if (item == null) continue;
-                rows.Add(new OrderSourceItem(
-                    item.SalesOrderDetail?.SalesOrder?.Code ?? "-",
-                    item.Product?.Code ?? "",
-                    item.Product?.Name ?? "-",
-                    item.ScheduledQuantity));
-            }
-            orderSourceItems = rows;
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadOrderSourceAsync), GetType(),
-                additionalData: "載入訂單來源資料失敗");
-        }
-    }
-
     private async Task LoadAdditionalDataAsync()
     {
         try
@@ -427,43 +356,9 @@
 
     private RenderFragment CreateOrderSourceTabContent() => __builder =>
     {
-        <div class="p-3">
-            @if (orderSourceItems.Any())
-            {
-                <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>訂單編號</th>
-                            <th>商品</th>
-                            <th class="text-end">排程數量</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in orderSourceItems)
-                        {
-                            <tr>
-                                <td class="fw-semibold">@row.SalesOrderCode</td>
-                                <td>
-                                    @if (!string.IsNullOrEmpty(row.ProductCode))
-                                    {
-                                        <span class="text-primary me-1">[@row.ProductCode]</span>
-                                    }
-                                    @row.ProductName
-                                </td>
-                                <td class="text-end">@row.ScheduledQuantity.ToString("G")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
-            else
-            {
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                    <span>無訂單來源資料</span>
-                </div>
-            }
-        </div>
+        <MaterialIssueOrderSourceTab @ref="orderSourceTab"
+                                     IssueDetails="@materialIssueDetails"
+                                     SourceScheduleItems="@_sourceScheduleItems" />
     };
 
     private async Task InitializeFormFieldsAsync()
@@ -522,9 +417,9 @@
                     mi => mi.DepartmentId)
                 .AddToSection(FormSectionNames.AdditionalData,
                     mi => mi.Remarks)
-                .GroupIntoTab("基本資料", "bi-info-circle",
+                .GroupIntoTab(L["Tab.BasicData"].ToString(), "bi-info-circle",
                     FormSectionNames.BasicInfo, FormSectionNames.AdditionalData)
-                .GroupIntoCustomTab("訂單來源", "bi-receipt", CreateOrderSourceTabContent(), "OrderSourceTab")
+                .GroupIntoCustomTab(L["Tab.OrderSource"].ToString(), "bi-receipt", CreateOrderSourceTabContent(), nameof(MaterialIssueOrderSourceTab))
                 .BuildAll();
 
             formSections = layout.FieldSections;
@@ -636,7 +531,12 @@
             }
 
             // 回寫 ProductionScheduleDetail.IssuedQuantity
-            await UpdateScheduleDetailIssuedQuantityAsync(materialIssueDetails, oldDetails, isNewRecord);
+            // 新增時由 CreateAsync 在服務層負責（含交易保護），不可重複累加
+            // 編輯時由此計算差異並更新
+            if (!isNewRecord)
+            {
+                await UpdateScheduleDetailIssuedQuantityAsync(materialIssueDetails, oldDetails, isNewRecord);
+            }
 
             return true;
         }

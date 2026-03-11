@@ -4,3 +4,65 @@
     color: var(--text-primary);
     border-color: var(--border-color);
 }
+
+/* ===== 手機版卡片佈局 ===== */
+
+@media (max-width: 576px) {
+
+    /* 解除水平捲動 */
+    .table-responsive:has(.accounting-card-table) {
+        overflow-x: visible;
+    }
+
+    .accounting-card-table {
+        border: none !important;
+        background: transparent !important;
+    }
+
+    /* 隱藏表頭 */
+    .accounting-card-table .accounting-thead {
+        display: none;
+    }
+
+    /* 每列為一張卡片 */
+    .accounting-card-table tbody tr {
+        display: block;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 0.6rem;
+        background-color: var(--bg-primary);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+    }
+
+    /* 每個 td 變為 label + value 橫排 */
+    .accounting-card-table tbody td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: none;
+        border-bottom: 1px solid var(--border-light);
+        padding: 0.4rem 0.75rem;
+        min-height: 36px;
+    }
+
+    .accounting-card-table tbody td:last-child {
+        border-bottom: none;
+    }
+
+    /* 欄位標題 */
+    .accounting-card-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        flex: 0 0 40%;
+        margin-right: 0.5rem;
+    }
+
+    /* 值側靠右 */
+    .accounting-card-table tbody td > * {
+        text-align: right;
+        flex: 1;
+    }
+}

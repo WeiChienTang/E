@@ -84,39 +84,42 @@ namespace ERPCore2.Services.Reports
                 var startDate = criteria.StartDate ?? DateTime.Today.AddMonths(-1);
                 var endDate = criteria.EndDate?.Date.AddDays(1) ?? DateTime.Today.AddDays(1);
 
-                // 查詢排程明細：依排程項目的 PlannedStartDate 篩選
-                var detailsQuery = context.ProductionScheduleDetails
-                    .Include(d => d.ProductionScheduleItem)
-                        .ThenInclude(i => i.Product)
-                    .Include(d => d.ComponentProduct)
-                    .Where(d => d.ProductionScheduleItem.PlannedStartDate.HasValue
+                // 使用投影查詢，避免 EF Core Include 導覽修正（relationship fixup）可能產生的重複問題
+                // 每一筆 ProductionScheduleDetail 在 SQL 中恰好對應一列，不經過 Include 展開
+                var baseQuery = context.ProductionScheduleDetails
+                    .Where(d => d.Status == EntityStatus.Active
+                             && d.ProductionScheduleItem.Status == EntityStatus.Active
+                             && d.ProductionScheduleItem.PlannedStartDate.HasValue
                              && d.ProductionScheduleItem.PlannedStartDate >= startDate
-                             && d.ProductionScheduleItem.PlannedStartDate < endDate)
-                    .AsQueryable();
+                             && d.ProductionScheduleItem.PlannedStartDate < endDate);
 
-                // 成品篩選
                 if (criteria.ProductIds.Any())
-                {
-                    detailsQuery = detailsQuery.Where(d =>
+                    baseQuery = baseQuery.Where(d =>
                         criteria.ProductIds.Contains(d.ProductionScheduleItem.ProductId));
-                }
 
-                // 排除已完成
                 if (criteria.ExcludeCompleted)
-                {
-                    detailsQuery = detailsQuery.Where(d =>
+                    baseQuery = baseQuery.Where(d =>
                         d.ProductionScheduleItem.ProductionItemStatus != ProductionItemStatus.Completed);
-                }
 
-                var details = await detailsQuery
-                    .OrderBy(d => d.ComponentProductId)
+                // 直接投影需要的欄位，讓 EF Core 生成單一 SELECT（或最多 2 次 JOIN），完全避免 Include 拆分
+                var rawDetails = await baseQuery
+                    .Select(d => new
+                    {
+                        d.Id,
+                        d.ProductionScheduleItemId,
+                        d.ComponentProductId,
+                        d.RequiredQuantity,
+                        d.IssuedQuantity,
+                        ComponentCode = d.ComponentProduct != null ? d.ComponentProduct.Code : null,
+                        ComponentName = d.ComponentProduct != null ? d.ComponentProduct.Name : null
+                    })
                     .ToListAsync();
 
-                if (!details.Any())
+                if (!rawDetails.Any())
                     return new List<MaterialRequirementRow>();
 
                 // 取得所有相關組件的庫存資料
-                var componentIds = details.Select(d => d.ComponentProductId).Distinct().ToList();
+                var componentIds = rawDetails.Select(d => d.ComponentProductId).Distinct().ToList();
                 var stocks = await context.InventoryStocks
                     .Include(s => s.InventoryStockDetails)
                     .Where(s => s.ProductId.HasValue && componentIds.Contains(s.ProductId.Value))
@@ -127,11 +130,11 @@ namespace ERPCore2.Services.Reports
                     .ToDictionary(s => s.ProductId!.Value, s => s.TotalCurrentStock);
 
                 // 依組件品號彙總
-                var rows = details
+                var rows = rawDetails
                     .GroupBy(d => d.ComponentProductId)
                     .Select(g =>
                     {
-                        var component = g.First().ComponentProduct;
+                        var first = g.First();
                         var totalRequired = g.Sum(d => d.RequiredQuantity);
                         var totalIssued = g.Sum(d => d.IssuedQuantity);
                         var pending = Math.Max(0, totalRequired - totalIssued);
@@ -141,8 +144,8 @@ namespace ERPCore2.Services.Reports
                         return new MaterialRequirementRow
                         {
                             ComponentProductId = g.Key,
-                            ComponentCode = component?.Code ?? "",
-                            ComponentName = component?.Name ?? "（未知組件）",
+                            ComponentCode = first.ComponentCode ?? "",
+                            ComponentName = first.ComponentName ?? "（未知組件）",
                             ScheduleItemCount = g.Select(d => d.ProductionScheduleItemId).Distinct().Count(),
                             TotalRequiredQty = totalRequired,
                             TotalIssuedQty = totalIssued,

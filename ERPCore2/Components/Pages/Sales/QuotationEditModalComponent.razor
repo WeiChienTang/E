@@ -616,7 +616,7 @@
                     FormSectionNames.BasicInfo, FormSectionNames.AmountInfo,
                     FormSectionNames.TradingTerms, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)
                 .GroupIntoCustomTab(L["Tab.CustomerInfo"].ToString(), "bi-people",
-                    CreateCustomerInfoTabContent(), "CustomerInfoTab");
+                    CreateCustomerInfoTabContent(), nameof(CustomerInfoTab));
 
             var layout = formBuilder.BuildAll();
             formSections = layout.FieldSections;

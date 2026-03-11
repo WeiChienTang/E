@@ -8,7 +8,7 @@
 @inject IStringLocalizer<SharedResource> L
 @typeparam TItem
 
-<div class="generic-table-wrapper" data-ctx-menu="@_ctxMenuAttr">
+<div class="generic-table-wrapper @(MobileCardMode ? "interactive-table-card-mode" : "")" data-ctx-menu="@_ctxMenuAttr">
 <div class="table-responsive table-container-hover interactive-table-container">
     @if (!string.IsNullOrEmpty(DebugTableName))
     {
@@ -160,6 +160,7 @@
                         {
                             <td class="@column.CellCssClass @(column.HideOnMobile ? "d-none d-md-table-cell" : "")"
                                 style="@(GetCellStyle(column))"
+                                data-label="@column.Title"
                                 @onclick:stopPropagation="@ShouldStopPropagation(column)">
                                 
                                 @* 根據欄位類型渲染不同的控件 *@
@@ -598,6 +599,8 @@
     [Parameter] public bool IsStriped { get; set; } = true;
     [Parameter] public bool IsHoverable { get; set; } = true;
     [Parameter] public bool IsBordered { get; set; } = true;
+    /// <summary>手機版（≤576px）自動轉為卡片佈局，每列變成一張卡片</summary>
+    [Parameter] public bool MobileCardMode { get; set; } = false;
     [Parameter] public bool IsReadOnly { get; set; } = false;
     [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public string EmptyMessage { get; set; } = "沒有找到資料";

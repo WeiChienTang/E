@@ -1,0 +1,39 @@
+/* ===== 訂單來源表格 ===== */
+
+.order-source-table thead th {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.order-source-table tbody td {
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    vertical-align: middle;
+}
+
+.product-code {
+    color: var(--color-primary);
+    font-size: 0.85rem;
+}
+
+/* ===== 空白狀態 ===== */
+
+.empty-state {
+    color: var(--text-secondary);
+}
+
+/* ===== 深色模式 ===== */
+
+[data-bs-theme=dark] .order-source-table tbody tr:hover td {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+[data-bs-theme=dark] .order-source-table {
+    --bs-table-bg: var(--bg-primary);
+    --bs-table-border-color: var(--border-color);
+    --bs-table-hover-bg: var(--bg-tertiary);
+}

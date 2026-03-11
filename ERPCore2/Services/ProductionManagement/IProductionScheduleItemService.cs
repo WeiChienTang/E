@@ -113,11 +113,22 @@ namespace ERPCore2.Services
         Task<ServiceResult<bool>> ReturnToSidebarAsync(int itemId);
 
         /// <summary>
-        /// 停產：強制結案，不再繼續生產。
+        /// 暫停生產 - 將 InProgress 狀態改為 Paused，不做任何庫存操作。
+        /// </summary>
+        Task<ServiceResult> PauseProductionAsync(int itemId);
+
+        /// <summary>
+        /// 繼續生產 - 將 Paused 狀態改回 InProgress。
+        /// </summary>
+        Task<ServiceResult> ResumeProductionAsync(int itemId);
+
+        /// <summary>
+        /// 終止：強制結案，不再繼續生產。
+        /// 允許狀態：InProgress、Paused、WaitingMaterial（已領料）、Pending（已領料）。
         /// 不寫入成品庫存（已有部分完工則已分批入庫）。
         /// 不調整 SalesOrderDetail.ScheduledQuantity（保持原值，使訂單不重出現在待排 Sidebar）。
-        /// 更新 SalesOrderDetail.ProducedQuantity += 已完成數量。
-        /// 若傳入 settlements 則執行退料入庫。
+        /// 更新 SalesOrderDetail.ProducedQuantity += 已完成數量（如有）。
+        /// 若傳入 settlements 則執行退料入庫（選填，不強制等式驗證）。
         /// </summary>
         Task<ServiceResult> AbortProductionAsync(int itemId, List<MaterialSettlementDto>? settlements = null);
     }

@@ -984,7 +984,7 @@
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)
                 .GroupIntoCustomTab(L["Tab.SupplierInfo"].ToString(), "bi-building",
-                    CreateSupplierInfoTabContent(), "SupplierInfoTab");
+                    CreateSupplierInfoTabContent(), nameof(SupplierInfoTab));
 
             var layout = formBuilder.BuildAll();
             formSections = layout.FieldSections;

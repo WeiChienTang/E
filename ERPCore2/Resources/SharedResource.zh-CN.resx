@@ -1420,6 +1420,8 @@
   <data name="Field.VehicleTypeCode" xml:space="preserve"><value>车型代码</value></data>
   <data name="Field.VehicleTypeDescription" xml:space="preserve"><value>车型说明</value></data>
   <data name="Field.VehicleTypeName" xml:space="preserve"><value>车型名称</value></data>
+  <data name="Tab.BasicData" xml:space="preserve"><value>基本资料</value></data>
+  <data name="Tab.OrderSource" xml:space="preserve"><value>订单来源</value></data>
   <!-- ===== Approval Settings Tab keys ===== -->
   <data name="Tab.ApprovalSettings" xml:space="preserve"><value>审核管理</value></data>
   <data name="Section.ApprovalSettings" xml:space="preserve"><value>审核流程设置</value></data>

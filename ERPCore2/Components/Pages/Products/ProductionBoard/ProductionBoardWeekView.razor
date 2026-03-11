@@ -17,80 +17,91 @@
 
     @* 工具列：週導航 + 篩選 + 批次完工 + 預警 *@
     <div class="board-toolbar">
-        <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-            IconClass="bi bi-chevron-left" OnClick="PreviousWeek" Title="上一週" />
 
-        <span class="week-label">
-            @WeekStart.ToString("yyyy/MM/dd") – @WeekEnd.ToString("MM/dd")
-        </span>
+        @* Row 1：導航 + 右側工具 *@
+        <div class="toolbar-row-1">
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+                IconClass="bi bi-chevron-left" OnClick="PreviousWeek" Title="上一週" />
 
-        <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-            IconClass="bi bi-chevron-right" OnClick="NextWeek" Title="下一週" />
+            <span class="week-label">
+                @WeekStart.ToString("yyyy/MM/dd") – @WeekEnd.ToString("MM/dd")
+            </span>
 
-        <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small"
-            Text="今天" OnClick="GoToToday" CssClass="ms-2" />
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+                IconClass="bi bi-chevron-right" OnClick="NextWeek" Title="下一週" />
 
-        @* 9.3 狀態篩選 *@
-        <div class="btn-group btn-group-sm ms-3" role="group" aria-label="狀態篩選">
-            <button type="button" class="btn @(statusFilter == null ? "btn-primary" : "btn-outline-secondary")"
-                    @onclick="() => statusFilter = null">全部</button>
-            <button type="button" class="btn @(statusFilter == ProductionItemStatus.WaitingMaterial ? "btn-warning" : "btn-outline-secondary")"
-                    @onclick="() => statusFilter = ProductionItemStatus.WaitingMaterial">待領料</button>
-            <button type="button" class="btn @(statusFilter == ProductionItemStatus.InProgress ? "btn-primary" : "btn-outline-secondary")"
-                    @onclick="() => statusFilter = ProductionItemStatus.InProgress">生產中</button>
-            <button type="button" class="btn @(statusFilter == ProductionItemStatus.Completed ? "btn-success" : "btn-outline-secondary")"
-                    @onclick="() => statusFilter = ProductionItemStatus.Completed">已完成</button>
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small"
+                Text="今天" OnClick="GoToToday" />
+
+            <div class="ms-auto d-flex align-items-center gap-2">
+                @* 9.5 交期預警 *@
+                @if (OverdueCount > 0)
+                {
+                    <span class="badge bg-danger board-alert-badge"
+                          title="有 @OverdueCount 件排程已逾期，請優先處理">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>逾期 @OverdueCount 件
+                    </span>
+                }
+                @if (UrgentCount > 0)
+                {
+                    <span class="badge bg-warning text-dark board-alert-badge"
+                          title="有 @UrgentCount 件排程將在 3 天內到期">
+                        <i class="bi bi-clock-fill me-1"></i>緊急 @UrgentCount 件
+                    </span>
+                }
+                @if (IsLoading)
+                {
+                    <span class="text-secondary" style="font-size:0.8rem;">
+                        <span class="spinner-border spinner-border-sm me-1"></span>載入中...
+                    </span>
+                }
+                <DebugComponentLabelComponent ComponentName="ProductionBoardWeekView" />
+            </div>
         </div>
-    
-        @* 9.2 批次完工 *@
-        <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
-            IconClass="bi bi-check2-all" Text="批次完工" CssClass="ms-2"
-            OnClick="@(() => showBatchCompleteModal = true)"
-            IsDisabled="@(!boardItems.Any(i => i.ProductionItemStatus == ProductionItemStatus.InProgress))"
-            Title="批次確認本週生產中項目完工" />
 
-        @* 列印本週排程 *@
-        <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-            IconClass="bi bi-printer" Text="列印排程" CssClass="ms-2"
-            OnClick="@HandlePrintScheduleAsync"
-            Title="列印本週生產排程表" />
+        @* Row 2：篩選 + 操作按鈕 *@
+        <div class="toolbar-row-2">
+            @* 9.3 狀態篩選 *@
+            <div class="btn-group btn-group-sm" role="group" aria-label="狀態篩選">
+                <button type="button" class="btn @(statusFilter == null ? "btn-primary" : "btn-outline-secondary")"
+                        @onclick="() => statusFilter = null">全部</button>
+                <button type="button" class="btn @(statusFilter == ProductionItemStatus.WaitingMaterial ? "btn-warning" : "btn-outline-secondary")"
+                        @onclick="() => statusFilter = ProductionItemStatus.WaitingMaterial">待領料</button>
+                <button type="button" class="btn @(statusFilter == ProductionItemStatus.InProgress ? "btn-primary" : "btn-outline-secondary")"
+                        @onclick="() => statusFilter = ProductionItemStatus.InProgress">生產中</button>
+                <button type="button" class="btn @(statusFilter == ProductionItemStatus.Completed ? "btn-success" : "btn-outline-secondary")"
+                        @onclick="() => statusFilter = ProductionItemStatus.Completed">已完成</button>
+            </div>
 
-        @* 用料需求報表 *@
-        <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-            IconClass="bi bi-list-check" Text="用料需求" CssClass="ms-1"
-            OnClick="@HandleMaterialRequirementsAsync"
-            Title="列印本週用料需求報表" />
+            @* 手機版換行節點：將功能按鈕推到第三行（桌面無作用） *@
+            <div class="toolbar-action-break"></div>
 
-        <div class="ms-auto d-flex align-items-center gap-2">
+            @* 9.2 批次完工 *@
+            <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
+                IconClass="bi bi-check2-all" Text="批次完工"
+                OnClick="@(() => showBatchCompleteModal = true)"
+                IsDisabled="@(!boardItems.Any(i => i.ProductionItemStatus == ProductionItemStatus.InProgress))"
+                Title="批次確認本週生產中項目完工" />
+
+            @* 列印本週排程 *@
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+                IconClass="bi bi-printer" Text="列印排程"
+                OnClick="@HandlePrintScheduleAsync"
+                Title="列印本週生產排程表" />
+
+            @* 用料需求報表 *@
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+                IconClass="bi bi-printer" Text="列印用料"
+                OnClick="@HandleMaterialRequirementsAsync"
+                Title="列印本週用料需求報表" />
 
             @* 重新整理 *@
-            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                IconClass="bi bi-arrow-clockwise" OnClick="LoadDataAsync"
+            <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
+                IconClass="bi bi-arrow-clockwise" Text="重整" OnClick="LoadDataAsync"
                 IsDisabled="@IsLoading"
                 Title="重新整理看板資料" />
-            @* 9.5 交期預警 *@
-            @if (OverdueCount > 0)
-            {
-                <span class="badge bg-danger board-alert-badge"
-                      title="有 @OverdueCount 件排程已逾期，請優先處理">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i>逾期 @OverdueCount 件
-                </span>
-            }
-            @if (UrgentCount > 0)
-            {
-                <span class="badge bg-warning text-dark board-alert-badge"
-                      title="有 @UrgentCount 件排程將在 3 天內到期">
-                    <i class="bi bi-clock-fill me-1"></i>緊急 @UrgentCount 件
-                </span>
-            }
-            @if (IsLoading)
-            {
-                <span class="text-secondary" style="font-size:0.8rem;">
-                    <span class="spinner-border spinner-border-sm me-1"></span>載入中...
-                </span>
-            }
-            <DebugComponentLabelComponent ComponentName="ProductionBoardWeekView" />
         </div>
+
     </div>
 
     @* 9.1 摘要列 *@
@@ -112,14 +123,34 @@
 
     @* 主體：sidebar + 週視圖 *@
     <div class="board-body">
+        @* 手機版遮罩（點擊關閉 sidebar） *@
+        @if (showMobileSidebar)
+        {
+            <div class="board-sidebar-backdrop" @onclick="() => showMobileSidebar = false"></div>
+        }
+
+        @* 手機版左側頁簽把手（sidebar 關閉時顯示） *@
+        @if (!showMobileSidebar)
+        {
+            <button class="sidebar-tab-handle" @onclick="() => showMobileSidebar = true" title="展開待排清單">
+                <i class="bi bi-chevron-right"></i>
+                <span class="sidebar-tab-label">待排</span>
+                @if (pendingItems.Count > 0)
+                {
+                    <span class="sidebar-tab-count">@pendingItems.Count</span>
+                }
+            </button>
+        }
+
         @* 左側 Sidebar：未排程項目（支援接收看板卡片拖曳退回） *@
         <ProductionBoardPendingSidebar
             Items="@pendingItems"
             IsLoading="@IsLoading"
             OnDragStart="@HandlePendingDragStart"
             OnDragEnd="@HandleDragEnd"
-            IsDropTarget="@(draggingBoardItem != null && draggingBoardItem.CompletedQuantity == 0)"
-            OnBoardItemDropped="@HandleDropOnSidebar" />
+            IsDropTarget="@(draggingBoardItem != null && draggingBoardItem.CompletedQuantity == 0 && !draggingBoardItem.HasIssuedMaterial)"
+            OnBoardItemDropped="@HandleDropOnSidebar"
+            IsMobileOpen="@showMobileSidebar" />
 
         @* 週視圖主體 *@
         <div class="board-week-columns">
@@ -232,6 +263,9 @@
     // ── 9.3 狀態篩選 ──
     private ProductionItemStatus? statusFilter;
 
+    // ── 手機版 sidebar 切換 ──
+    private bool showMobileSidebar;
+
     // ── 9.1 摘要列 / 9.5 交期預警（直接從 boardItems 計算，無額外 DB 查詢）──
     private int TotalBoardItems  => boardItems.Count;
     private int WaitingCount     => boardItems.Count(i => i.ProductionItemStatus is ProductionItemStatus.WaitingMaterial or ProductionItemStatus.Pending);
@@ -338,7 +372,8 @@
             SalesOrderCode         = i.SalesOrderDetail?.SalesOrder?.Code,
             CustomerName           = i.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName,
             ExpectedDeliveryDate   = i.SalesOrderDetail?.SalesOrder?.ExpectedDeliveryDate,
-            IsClosed               = i.IsClosed
+            IsClosed               = i.IsClosed,
+            HasIssuedMaterial      = i.ScheduleDetails?.Any(d => d.IssuedQuantity > 0) ?? false
         }).ToList();
     }
 
@@ -426,6 +461,12 @@
             return;
         }
 
+        if (item.HasIssuedMaterial)
+        {
+            await NotificationService.ShowWarningAsync("已有領料記錄，無法退回待排清單。請先使用停產功能處理物料");
+            return;
+        }
+
         await ReturnBoardItemAsync(item);
         await LoadDataAsync();
     }
@@ -441,10 +482,7 @@
                 return;
             }
 
-            var msg = result.Data
-                ? "已退回待排清單（注意：有領料記錄，請手動確認庫存是否需要沖銷）"
-                : "已退回待排清單";
-            await NotificationService.ShowSuccessAsync(msg);
+            await NotificationService.ShowSuccessAsync("已退回待排清單");
         }
         catch (Exception ex)
         {

@@ -6,19 +6,27 @@
 
 .board-toolbar {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 16px;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-primary);
     flex-shrink: 0;
+}
+
+.toolbar-row-1,
+.toolbar-row-2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .week-label {
     font-weight: 600;
     font-size: 1rem;
     color: var(--text-primary);
-    min-width: 170px;
+    min-width: 140px;
     text-align: center;
 }
 
@@ -26,6 +34,100 @@
     display: flex;
     flex: 1;
     overflow: hidden;
+    position: relative;
+}
+
+/* 手機版換行節點（桌面隱藏） */
+.toolbar-action-break {
+    display: none;
+}
+
+/* 手機版 sidebar 遮罩（桌面隱藏） */
+.board-sidebar-backdrop {
+    display: none;
+}
+
+/* 手機版左側頁簽把手（桌面隱藏） */
+.sidebar-tab-handle {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .board-toolbar {
+        padding: 6px 10px;
+    }
+
+    .week-label {
+        min-width: 100px;
+        font-size: 0.88rem;
+    }
+
+    /* 換行節點：強制功能按鈕從新的一行開始 */
+    .toolbar-action-break {
+        display: block;
+        flex-basis: 100%;
+        height: 0;
+    }
+
+    .board-sidebar-backdrop {
+        display: block;
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 99;
+    }
+
+    /* 左側頁簽把手 */
+    .sidebar-tab-handle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 98;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-left: none;
+        border-radius: 0 8px 8px 0;
+        padding: 10px 6px;
+        cursor: pointer;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.12);
+        line-height: 1;
+    }
+
+    .sidebar-tab-handle i {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .sidebar-tab-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        letter-spacing: 1px;
+    }
+
+    .sidebar-tab-count {
+        font-size: 0.68rem;
+        font-weight: 700;
+        background: #0d6efd;
+        color: #fff;
+        border-radius: 8px;
+        padding: 1px 4px;
+        min-width: 16px;
+        text-align: center;
+    }
+}
+
+[data-bs-theme=dark] .sidebar-tab-handle {
+    background: #1c2128;
+    border-color: #30363d;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.35);
 }
 
 .board-week-columns {

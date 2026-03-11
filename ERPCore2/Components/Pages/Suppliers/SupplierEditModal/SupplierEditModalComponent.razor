@@ -646,15 +646,15 @@
                 .GroupIntoTab(L["Tab.SupplierData"].ToString(), "bi-shop", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.PaymentInfo, FormSectionNames.OtherInfo);
 
             if (isVehiclesEnabled)
-                builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent(), "SupplierVehicleTab");
+                builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent(), nameof(SupplierVehicleTab));
 
             if (isAccountingEnabled)
-                builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent(), "SupplierAccountingTab");
+                builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent(), nameof(GenericAccountingTabComponent));
 
             var layout = builder
-                .GroupIntoCustomTab(L["Tab.SupplierProducts"].ToString(), "bi-box-seam", CreateSupplierProductTabContent(), "SupplierProductTab")
-                .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), "SupplierVisitTab")
-                .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), "SupplierTransactionTab")
+                .GroupIntoCustomTab(L["Tab.SupplierProducts"].ToString(), "bi-box-seam", CreateSupplierProductTabContent(), nameof(SupplierProductTab))
+                .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), nameof(SupplierVisitTab))
+                .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), nameof(SupplierTransactionTab))
                 .BuildAll();
 
             formSections = layout.FieldSections;

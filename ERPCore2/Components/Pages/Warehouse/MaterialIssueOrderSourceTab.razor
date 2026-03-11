@@ -1,0 +1,140 @@
+@* 領料單訂單來源 Tab - 自包含元件，顯示對應的生產排程訂單來源資訊 *@
+@inject IProductionScheduleItemService ProductionScheduleItemService
+@inject IProductionScheduleDetailService ProductionScheduleDetailService
+
+<div class="order-source-tab p-3">
+    @if (_items.Any())
+    {
+        <table class="table table-sm table-hover mb-0 order-source-table">
+            <thead>
+                <tr>
+                    <th>訂單編號</th>
+                    <th>商品</th>
+                    <th class="text-end">排程數量</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _items)
+                {
+                    <tr>
+                        <td class="fw-semibold">@row.SalesOrderCode</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(row.ProductCode))
+                            {
+                                <span class="product-code me-1">[@row.ProductCode]</span>
+                            }
+                            @row.ProductName
+                        </td>
+                        <td class="text-end">@row.ScheduledQuantity.ToString("G")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="text-center py-4 empty-state">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            <span>無訂單來源資料</span>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>領料明細（用於反向追溯訂單來源）</summary>
+    [Parameter] public List<MaterialIssueDetail> IssueDetails { get; set; } = new();
+
+    /// <summary>已預載的排程項目（新增模式從排程建立時使用）</summary>
+    [Parameter] public List<ProductionScheduleItem> SourceScheduleItems { get; set; } = new();
+
+    private record OrderSourceItem(
+        string SalesOrderCode,
+        string ProductCode,
+        string ProductName,
+        decimal ScheduledQuantity);
+
+    private List<OrderSourceItem> _items = new();
+    private List<MaterialIssueDetail> _prevIssueDetails = null!;
+    private List<ProductionScheduleItem> _prevSourceScheduleItems = null!;
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!ReferenceEquals(IssueDetails, _prevIssueDetails) ||
+            !ReferenceEquals(SourceScheduleItems, _prevSourceScheduleItems))
+        {
+            _prevIssueDetails = IssueDetails;
+            _prevSourceScheduleItems = SourceScheduleItems;
+            await ComputeItemsAsync();
+        }
+    }
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    /// <summary>清除資料（切換至新增模式時使用）</summary>
+    public void Clear()
+    {
+        _items = new();
+        StateHasChanged();
+    }
+
+    // ===== 私有方法 =====
+
+    private async Task ComputeItemsAsync()
+    {
+        try
+        {
+            // 優先使用已預載的排程項目（新增模式）
+            if (SourceScheduleItems.Any())
+            {
+                _items = SourceScheduleItems
+                    .Where(i => i.SalesOrderDetail?.SalesOrder != null)
+                    .Select(i => new OrderSourceItem(
+                        i.SalesOrderDetail!.SalesOrder!.Code ?? "-",
+                        i.Product?.Code ?? "",
+                        i.Product?.Name ?? "-",
+                        i.ScheduledQuantity))
+                    .ToList();
+                return;
+            }
+
+            // 編輯模式：從 materialIssueDetails → ProductionScheduleDetail → ProductionScheduleItem 反向追溯
+            var sdIds = IssueDetails
+                .Where(d => d.ProductionScheduleDetailId.HasValue)
+                .Select(d => d.ProductionScheduleDetailId!.Value)
+                .Distinct().ToList();
+
+            if (!sdIds.Any())
+            {
+                _items = new();
+                return;
+            }
+
+            var itemIds = new HashSet<int>();
+            foreach (var sdId in sdIds)
+            {
+                var sd = await ProductionScheduleDetailService.GetByIdAsync(sdId);
+                if (sd != null) itemIds.Add(sd.ProductionScheduleItemId);
+            }
+
+            var rows = new List<OrderSourceItem>();
+            foreach (var itemId in itemIds)
+            {
+                var item = await ProductionScheduleItemService.GetByIdAsync(itemId);
+                if (item == null) continue;
+                rows.Add(new OrderSourceItem(
+                    item.SalesOrderDetail?.SalesOrder?.Code ?? "-",
+                    item.Product?.Code ?? "",
+                    item.Product?.Name ?? "-",
+                    item.ScheduledQuantity));
+            }
+            _items = rows;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ComputeItemsAsync), GetType(),
+                additionalData: "載入訂單來源資料失敗");
+        }
+    }
+}

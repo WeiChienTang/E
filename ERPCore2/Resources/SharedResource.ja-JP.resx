@@ -1420,6 +1420,8 @@
   <data name="Field.VehicleTypeCode" xml:space="preserve"><value>車種コード</value></data>
   <data name="Field.VehicleTypeDescription" xml:space="preserve"><value>車種説明</value></data>
   <data name="Field.VehicleTypeName" xml:space="preserve"><value>車種名</value></data>
+  <data name="Tab.BasicData" xml:space="preserve"><value>基本情報</value></data>
+  <data name="Tab.OrderSource" xml:space="preserve"><value>注文ソース</value></data>
   <!-- ===== Approval Settings Tab keys ===== -->
   <data name="Tab.ApprovalSettings" xml:space="preserve"><value>承認管理</value></data>
   <data name="Section.ApprovalSettings" xml:space="preserve"><value>承認フロー設定</value></data>

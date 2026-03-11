@@ -157,11 +157,11 @@
         _activeTabIndex = 0;
         tabDefinitions = new List<FormTabDefinition>
         {
-            new() { Label = L["Preference.PersonalData"],   Icon = "bi bi-person",    SectionNames = new(), CustomContent = CreatePersonalDataTabContent(),     DebugComponentName = "PersonalDataTab" },
-            new() { Label = L["Preference.LanguageRegion"], Icon = "bi bi-translate",  SectionNames = new(), CustomContent = CreateLanguageRegionTabContent(),   DebugComponentName = "LanguageRegionTab" },
-            new() { Label = L["Preference.Display"],        Icon = "bi bi-type",       SectionNames = new(), CustomContent = CreateDisplayTabContent(),          DebugComponentName = "DisplayTab" },
-            new() { Label = L["Preference.ShortcutKeys"],   Icon = "bi bi-keyboard",   SectionNames = new(), CustomContent = CreateShortcutKeysTabContent(),     DebugComponentName = "ShortcutKeysTab" },
-            new() { Label = L["Preference.Notifications"],  Icon = "bi bi-bell",       SectionNames = new(), CustomContent = CreateNotificationTabContent(),     DebugComponentName = "NotificationSettingsTab" }
+            new() { Label = L["Preference.PersonalData"],   Icon = "bi bi-person",    SectionNames = new(), CustomContent = CreatePersonalDataTabContent(),     DebugComponentName = nameof(PersonalDataTab) },
+            new() { Label = L["Preference.LanguageRegion"], Icon = "bi bi-translate",  SectionNames = new(), CustomContent = CreateLanguageRegionTabContent(),   DebugComponentName = nameof(LanguageRegionTab) },
+            new() { Label = L["Preference.Display"],        Icon = "bi bi-type",       SectionNames = new(), CustomContent = CreateDisplayTabContent(),          DebugComponentName = nameof(DisplayTab) },
+            new() { Label = L["Preference.ShortcutKeys"],   Icon = "bi bi-keyboard",   SectionNames = new(), CustomContent = CreateShortcutKeysTabContent(),     DebugComponentName = nameof(ShortcutKeysTab) },
+            new() { Label = L["Preference.Notifications"],  Icon = "bi bi-bell",       SectionNames = new(), CustomContent = CreateNotificationTabContent(),     DebugComponentName = nameof(NotificationSettingsTab) }
         };
 
         if (isSuperAdmin)
@@ -172,7 +172,7 @@
                 Icon = "bi bi-bug",
                 SectionNames = new(),
                 CustomContent = CreateSuperAdminDebugTabContent(),
-                DebugComponentName = "SuperAdminDebugTab"
+                DebugComponentName = nameof(SuperAdminDebugTab)
             });
         }
     }

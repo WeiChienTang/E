@@ -1,6 +1,6 @@
 @using ERPCore2.Models.Schedule
 
-<div class="pending-sidebar @(IsDropTarget ? "drop-target" : "") @(IsDragOver ? "drag-over" : "")"
+<div class="pending-sidebar @(IsDropTarget ? "drop-target" : "") @(IsDragOver ? "drag-over" : "") @(IsMobileOpen ? "mobile-open" : "")"
      @ondragover:preventDefault="true"
      @ondragover="HandleDragOver"
      @ondragleave="HandleDragLeave"
@@ -101,6 +101,7 @@
     [Parameter] public EventCallback OnDragEnd { get; set; }
     [Parameter] public bool IsDropTarget { get; set; }
     [Parameter] public EventCallback OnBoardItemDropped { get; set; }
+    [Parameter] public bool IsMobileOpen { get; set; }
 
     private int? IsDraggingItemId;
     private string searchText = string.Empty;

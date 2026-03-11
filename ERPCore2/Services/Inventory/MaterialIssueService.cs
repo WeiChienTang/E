@@ -111,7 +111,9 @@ namespace ERPCore2.Services
                         .ToListAsync();
 
                     foreach (var sd in scheduleDetails)
+                    {
                         sd.IssuedQuantity += scheduleDetailUpdates[sd.Id];
+                    }
                 }
 
                 await context.SaveChangesAsync();

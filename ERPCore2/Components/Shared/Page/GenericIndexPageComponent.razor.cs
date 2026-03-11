@@ -267,6 +267,22 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private bool _showingDrafts = false;
     private int _draftCount = 0;
 
+    // 手機版篩選 sidebar 狀態
+    private bool _mobileFilterOpen = false;
+
+    /// <summary>計算目前有幾個作用中的篩選條件（用於書籤把手 badge）</summary>
+    private int _activeFilterCount =>
+        searchModel.TextFilters.Values.Count(v => !string.IsNullOrEmpty(v)) +
+        searchModel.NumberFilters.Values.Count(v => v.HasValue) +
+        searchModel.NumberRangeFilters.Values.Count(v => v != null && (v.Min.HasValue || v.Max.HasValue)) +
+        searchModel.DateFilters.Values.Count(v => v.HasValue) +
+        searchModel.DateRangeFilters.Values.Count(v => v != null && (v.StartDate.HasValue || v.EndDate.HasValue)) +
+        searchModel.DateTimeFilters.Values.Count(v => v.HasValue) +
+        searchModel.DateTimeRangeFilters.Values.Count(v => v != null && (v.StartDateTime.HasValue || v.EndDateTime.HasValue)) +
+        searchModel.SelectFilters.Values.Count(v => !string.IsNullOrEmpty(v)) +
+        searchModel.MultiSelectFilters.Values.Count(v => v?.Any() == true) +
+        searchModel.BooleanFilters.Values.Count(v => v == true);
+
     // ===== 公開屬性 =====
 
     public SearchFilterModel SearchModel => searchModel;

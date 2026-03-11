@@ -60,6 +60,9 @@ namespace ERPCore2.Models.Schedule
 
         /// <summary>是否已結案</summary>
         public bool IsClosed { get; set; }
+
+        /// <summary>是否已有任何組件被領料（IssuedQuantity > 0）；為 true 時禁止退回待排清單</summary>
+        public bool HasIssuedMaterial { get; set; }
     }
 
     /// <summary>

@@ -67,7 +67,7 @@ namespace ERPCore2.Helpers
             var remarksFilter = searchModel.GetFilterValue(remarksFieldName)?.ToString();
             if (!string.IsNullOrWhiteSpace(remarksFilter))
             {
-                query = query.Where(entity => entity.Remarks != null && entity.Remarks.Contains(remarksFilter, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(entity => entity.Remarks != null && entity.Remarks.Contains(remarksFilter));
             }
             return query;
         }
@@ -92,18 +92,8 @@ namespace ERPCore2.Helpers
             var filterValue = searchModel.GetFilterValue(filterName)?.ToString();
             if (!string.IsNullOrWhiteSpace(filterValue))
             {
-                if (allowNull)
-                {
-                    // 允許屬性為 null，使用 null 檢查
-                    query = query.Where(entity => 
-                        propertySelector.Compile()(entity) != null && 
-                        propertySelector.Compile()(entity)!.Contains(filterValue, StringComparison.OrdinalIgnoreCase));
-                }
-                else
-                {
-                    // 不允許屬性為 null，直接使用 Contains
-                    query = query.Where(BuildContainsExpression(propertySelector, filterValue));
-                }
+                // 統一使用 expression tree，確保查詢在資料庫端執行
+                query = query.Where(BuildContainsExpression(propertySelector, filterValue));
             }
             return query;
         }
@@ -417,13 +407,13 @@ namespace ERPCore2.Helpers
             
             // 先檢查屬性是否為 null
             var nullCheck = Expression.NotEqual(property, Expression.Constant(null, typeof(string)));
-            
-            var method = typeof(string).GetMethod("Contains", new[] { typeof(string), typeof(StringComparison) });
+
+            // 使用單參數 Contains(string)，EF Core 可正確轉換為 SQL LIKE
+            var method = typeof(string).GetMethod("Contains", new[] { typeof(string) });
             var containsCall = Expression.Call(
-                property, 
-                method!, 
-                Expression.Constant(value),
-                Expression.Constant(StringComparison.OrdinalIgnoreCase));
+                property,
+                method!,
+                Expression.Constant(value));
             
             // 結合 null 檢查和 Contains 檢查
             var andExpression = Expression.AndAlso(nullCheck, containsCall);

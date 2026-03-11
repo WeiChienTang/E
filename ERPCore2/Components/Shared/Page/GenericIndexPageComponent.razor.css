@@ -162,6 +162,129 @@
     box-shadow: 0 2px 4px rgba(248, 81, 73, 0.2);
 }
 
+/* ===== 手機版篩選書籤模式 ===== */
+
+/* 書籤把手：桌機預設隱藏，手機版由 media query 顯示 */
+.filter-tab-handle {
+    display: none;
+}
+
+/* 篩選面板標題列（含關閉按鈕）：桌機隱藏 */
+.filter-panel-header {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    /* 書籤把手：固定在 viewport 左邊緣，垂直居中 */
+    .filter-tab-handle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        position: fixed;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1038;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-light);
+        border-left: none;
+        border-radius: 0 8px 8px 0;
+        padding: 10px 6px;
+        cursor: pointer;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.12);
+        line-height: 1;
+        /* 無 outline，避免手機點擊藍框 */
+        outline: none;
+    }
+
+    .filter-tab-handle i {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .filter-tab-label {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        letter-spacing: 1px;
+    }
+
+    .filter-tab-count {
+        font-size: 0.68rem;
+        font-weight: 700;
+        background: #0d6efd;
+        color: #fff;
+        border-radius: 8px;
+        padding: 1px 4px;
+        min-width: 16px;
+        text-align: center;
+    }
+
+    /* 遮罩：覆蓋整個 viewport */
+    .filter-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 1040;
+    }
+
+    /* 篩選面板：固定在左側，預設滑出 viewport */
+    .filter-mobile-panel {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 300px;
+        z-index: 1045;
+        background: var(--bg-primary);
+        border-right: 1px solid var(--border-light);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .filter-mobile-panel.mobile-open {
+        transform: translateX(0);
+    }
+
+    /* 面板標題列：手機版顯示 */
+    .filter-panel-header {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid var(--border-light);
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        background: var(--bg-secondary);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .filter-panel-header i {
+        color: var(--primary-blue);
+    }
+}
+
+/* 深色模式：書籤把手 */
+[data-bs-theme=dark] .filter-tab-handle {
+    background: #1c2128;
+    border-color: #30363d;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.35);
+}
+
+/* 深色模式：篩選面板 */
+[data-bs-theme=dark] .filter-mobile-panel {
+    background: #0d1117;
+    border-color: #30363d;
+}
+
 /* ===== 草稿/正式切換按鈕群組（視覺與 form-tab-btn 一致）===== */
 
 .index-draft-tab-btn-group {

@@ -1031,6 +1031,7 @@ else
                     ProductionItemStatus.InProgress      => ("badge bg-primary", "生產中"),
                     ProductionItemStatus.WaitingMaterial => ("badge bg-warning text-dark", "待料"),
                     ProductionItemStatus.Completed       => ("badge bg-success", "已完成"),
+                    ProductionItemStatus.Aborted         => ("badge bg-danger", "已終止"),
                     ProductionItemStatus.Pending         => ("badge bg-secondary", "待排"),
                     _                                    => ("badge bg-secondary", "待排")
                 };

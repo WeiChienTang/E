@@ -1420,6 +1420,8 @@
   <data name="Field.VehicleTypeCode" xml:space="preserve"><value>Vehicle Type Code</value></data>
   <data name="Field.VehicleTypeDescription" xml:space="preserve"><value>Vehicle Type Description</value></data>
   <data name="Field.VehicleTypeName" xml:space="preserve"><value>Vehicle Type Name</value></data>
+  <data name="Tab.BasicData" xml:space="preserve"><value>Basic Info</value></data>
+  <data name="Tab.OrderSource" xml:space="preserve"><value>Order Source</value></data>
   <!-- ===== Approval Settings Tab keys ===== -->
   <data name="Tab.ApprovalSettings" xml:space="preserve"><value>Approval Settings</value></data>
   <data name="Section.ApprovalSettings" xml:space="preserve"><value>Approval Workflow Settings</value></data>

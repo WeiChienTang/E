@@ -64,3 +64,119 @@
 [data-bs-theme=dark] .table-context-menu {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
+
+/* ===== 手機版卡片佈局（MobileCardMode） ===== */
+
+@media (max-width: 576px) {
+
+    /* 解除水平捲動，讓卡片垂直堆疊 */
+    .interactive-table-card-mode .table-responsive {
+        overflow-x: visible;
+    }
+
+    /* 移除表格本身的 border/background */
+    .interactive-table-card-mode table {
+        border: none !important;
+        background: transparent !important;
+    }
+
+    /* 隱藏表頭 */
+    .interactive-table-card-mode thead {
+        display: none !important;
+    }
+
+    /* 每列變為一張卡片 */
+    .interactive-table-card-mode tbody tr {
+        display: block !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        margin-bottom: 0.75rem !important;
+        background-color: var(--bg-primary) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+    }
+
+    /* 每個儲存格變為 label + value 的水平列 */
+    .interactive-table-card-mode tbody td {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        border: none !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        padding: 0.45rem 0.75rem !important;
+        min-height: 38px;
+        width: 100% !important;
+    }
+
+    .interactive-table-card-mode tbody td:last-child {
+        border-bottom: none !important;
+    }
+
+    /* 欄位標題（從 data-label 讀取） */
+    .interactive-table-card-mode tbody td[data-label]::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        flex: 0 0 38%;
+        margin-right: 0.5rem;
+    }
+
+    /* 值側 span 靠右對齊 */
+    .interactive-table-card-mode tbody td[data-label] > span {
+        text-align: right;
+        flex: 1;
+    }
+
+    /* 值側 input / select 靠右 */
+    .interactive-table-card-mode tbody td[data-label] > input,
+    .interactive-table-card-mode tbody td[data-label] > select,
+    .interactive-table-card-mode tbody td[data-label] > div {
+        flex: 1;
+    }
+
+    /* 行號欄：顯示為卡片標題列 */
+    .interactive-table-card-mode .row-number-column {
+        background-color: var(--bg-secondary) !important;
+        justify-content: flex-start !important;
+        font-weight: 700;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-color) !important;
+        letter-spacing: 0.03em;
+    }
+
+    /* 操作按鈕欄：置中，卡片底部 */
+    .interactive-table-card-mode .table-actions-column {
+        justify-content: center !important;
+        background-color: var(--bg-secondary) !important;
+        border-bottom: none !important;
+        padding: 0.4rem 0.75rem !important;
+        gap: 0.5rem;
+    }
+
+    /* 停用 zebra 條紋（卡片不需要） */
+    .interactive-table-card-mode table.table-striped > tbody > tr:nth-of-type(odd) > * {
+        background-color: transparent !important;
+    }
+
+    /* 卡片 hover 效果 */
+    .interactive-table-card-mode tbody tr:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        border-color: rgba(var(--primary-blue-rgb), 0.35) !important;
+    }
+
+    /* tfoot 在卡片模式下隱藏（小計列不適合卡片） */
+    .interactive-table-card-mode tfoot {
+        display: none !important;
+    }
+}
+
+/* Dark mode 卡片陰影加深 */
+[data-bs-theme=dark] .interactive-table-card-mode tbody tr {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-bs-theme=dark] .interactive-table-card-mode tbody tr:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}

@@ -150,11 +150,22 @@
                 @* ===== Debug Info (僅 SuperAdmin 可見) ===== *@
                 @if (_isSuperAdmin && !string.IsNullOrEmpty(DebugComponentName))
                 {
-                    <div class="px-3 py-1 border-top"
-                         style="background:#1a1a2e; color:#7ec8e3; font-size:0.7rem; font-family:monospace; letter-spacing:0.03em; cursor:pointer; user-select:text;"
-                         title="點擊複製組件名稱"
-                         @onclick="CopyDebugComponentNameAsync">
-                        🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong> | @DebugComponentName
+                    var debugParts = DebugComponentName.Split(" > ", StringSplitOptions.RemoveEmptyEntries);
+                    <div class="px-3 py-1 border-top d-flex align-items-center gap-1"
+                         style="background:#1a1a2e; font-size:0.7rem; font-family:monospace; letter-spacing:0.03em; user-select:text;">
+                        🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong>
+                        @for (int i = 0; i < debugParts.Length; i++)
+                        {
+                            var part = debugParts[i];
+                            if (i > 0)
+                            {
+                                <span style="color:#555; margin:0 2px;">›</span>
+                            }
+                            <span style="color:#7ec8e3; cursor:pointer;"
+                                  title="點擊複製：@part"
+                                  @onclick="() => CopyTextAsync(part)"
+                                  @onclick:stopPropagation="true">@part</span>
+                        }
                     </div>
                 }
             </div>
@@ -291,6 +302,12 @@
     /// </summary>
     [Parameter]
     public bool AllowFullscreen { get; set; } = false;
+
+    /// <summary>
+    /// 是否啟用 Body 捲動（Bootstrap modal-dialog-scrollable）
+    /// </summary>
+    [Parameter]
+    public bool ScrollableBody { get; set; } = false;
 
     // ===== RenderFragment 參數 =====
     
@@ -635,7 +652,7 @@
         if (_isModalFullscreen)
             return "modal-fullscreen";
 
-        return Size switch
+        var sizeClass = Size switch
         {
             ModalSize.Small => "modal-sm",
             ModalSize.Default => "",
@@ -644,6 +661,8 @@
             ModalSize.Desktop => "modal-xl modal-desktop",
             _ => "modal-lg"
         };
+
+        return ScrollableBody ? $"{sizeClass} modal-dialog-scrollable" : sizeClass;
     }
 
     /// <summary>
@@ -744,12 +763,12 @@
     }
     
     /// <summary>
-    /// 複製 Debug 組件名稱到剪貼簿（方式一：點擊 Debug Bar）
+    /// 複製指定文字到剪貼簿（方式一：點擊 Debug Bar 各分段）
     /// </summary>
-    private async Task CopyDebugComponentNameAsync()
+    private async Task CopyTextAsync(string text)
     {
-        if (!string.IsNullOrEmpty(DebugComponentName))
-            await JSRuntime.InvokeVoidAsync("DebugHelper.copyText", DebugComponentName);
+        if (!string.IsNullOrEmpty(text))
+            await JSRuntime.InvokeVoidAsync("DebugHelper.copyText", text);
     }
 
     /// <summary>

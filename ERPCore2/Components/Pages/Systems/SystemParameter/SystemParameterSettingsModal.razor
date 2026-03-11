@@ -170,7 +170,7 @@
         _activeTabIndex = 0;
         tabDefinitions = new List<FormTabDefinition>
         {
-            new() { Label = L["Section.TaxSettings"],    Icon = "bi bi-cash-stack", SectionNames = new(), CustomContent = CreateTaxTabContent(),         DebugComponentName = "TaxSettingsTab" },
+            new() { Label = L["Section.TaxSettings"],    Icon = "bi bi-cash-stack", SectionNames = new(), CustomContent = CreateTaxTabContent(),         DebugComponentName = nameof(TaxSettingsTab) },
             // 子科目 Tab 由 OnInitializedAsync 權限檢查後動態加入
             // 安全憑證 Tab 暫時停用（HTTPS 自簽憑證方案未完成，詳見 README_HTTPS憑證設計(失敗).md）
             // new() { Label = "安全憑證", Icon = "bi bi-shield-lock", SectionNames = new(), CustomContent = CreateCertificateTabContent(), DebugComponentName = "CertificateTab" },
@@ -201,7 +201,7 @@
                 Icon = "bi bi-diagram-3",
                 SectionNames = new(),
                 CustomContent = CreateSubAccountTabContent(),
-                DebugComponentName = "SubAccountSettingsTab"
+                DebugComponentName = nameof(SubAccountSettingsTab)
             });
         }
 
@@ -215,7 +215,7 @@
                 Icon = "bi bi-cash-coin",
                 SectionNames = new(),
                 CustomContent = CreatePayrollSettingsTabContent(),
-                DebugComponentName = "PayrollSettingsTab"
+                DebugComponentName = nameof(PayrollSettingsTab)
             });
         }
 
@@ -228,7 +228,7 @@
                 Icon = "bi bi-check2-square",
                 SectionNames = new(),
                 CustomContent = CreateApprovalSettingsTabContent(),
-                DebugComponentName = "ApprovalSettingsTab"
+                DebugComponentName = nameof(ApprovalSettingsTab)
             });
 
             tabDefinitions.Add(new FormTabDefinition
@@ -237,7 +237,7 @@
                 Icon = "bi bi-toggles",
                 SectionNames = new(),
                 CustomContent = CreateModuleManagementTabContent(),
-                DebugComponentName = "ModuleManagementTab"
+                DebugComponentName = nameof(ModuleManagementTab)
             });
         }
     }

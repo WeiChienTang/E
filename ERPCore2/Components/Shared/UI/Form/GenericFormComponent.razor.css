@@ -505,18 +505,65 @@
     width: 100%;
 }
 
-/* 手機版 Tab 響應式 */
+/* 手機版 Tab：水平可滑動列 */
 @media (max-width: 576px) {
+    /* Tab 按鈕群組：不換行，允許水平滑動，隱藏捲軸 */
     .form-tab-btn-group {
-        gap: 0.25rem;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        gap: 0;
+        padding-bottom: 0;
+        border-bottom: 2px solid var(--border-light);
     }
 
+    .form-tab-btn-group::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Tab 按鈕：不縮小、底線式 active 指示 */
     .form-tab-btn {
-        padding: 0.3rem 0.6rem;
+        flex-shrink: 0;
+        flex-direction: row;
+        padding: 0.45rem 0.65rem;
+        font-size: 0.82rem;
+        border-radius: 0;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px; /* 與群組底線對齊 */
+        white-space: nowrap;
+        background-color: transparent;
+    }
+
+    .form-tab-btn i {
         font-size: 0.9rem;
     }
 
+    /* 作用中：底線藍色 + 文字藍色 */
+    .form-tab-btn.active {
+        background-color: transparent;
+        color: #0d6efd;
+        border-bottom-color: #0d6efd;
+        font-weight: 600;
+    }
+
+    .form-tab-btn.active:hover {
+        background-color: rgba(13, 110, 253, 0.06);
+        color: #0d6efd;
+    }
+
+    /* 停用 Tab */
+    .form-tab-btn.tab-disabled,
+    .form-tab-btn.tab-disabled:hover {
+        border-bottom-color: transparent;
+        background-color: transparent;
+    }
+
+    /* Tab 內容區域 */
     .form-tab-content {
-        padding: 0.35rem 0 0 0;
+        padding: 0.4rem 0 0 0;
     }
 }

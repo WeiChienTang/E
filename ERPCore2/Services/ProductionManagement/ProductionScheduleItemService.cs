@@ -639,10 +639,10 @@ namespace ERPCore2.Services
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
                             .ThenInclude(so => so!.Customer)
+                    .Include(psi => psi.ScheduleDetails)
                     .Where(psi => psi.PlannedStartDate.HasValue
                                && psi.PlannedStartDate >= startDate.Date
-                               && psi.PlannedStartDate <= endOfDay
-                               && !psi.IsClosed)
+                               && psi.PlannedStartDate <= endOfDay)
                     .OrderBy(psi => psi.PlannedStartDate)
                     .ThenBy(psi => psi.Priority)
                     .ToListAsync();
@@ -705,7 +705,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleItems
-                    .Where(psi => psi.SalesOrderDetailId.HasValue && !psi.IsClosed)
+                    .Where(psi => psi.SalesOrderDetailId.HasValue)
                     .GroupBy(psi => psi.SalesOrderDetailId!.Value)
                     .Select(g => new { SalesOrderDetailId = g.Key, Total = g.Sum(x => x.ScheduledQuantity) })
                     .ToDictionaryAsync(x => x.SalesOrderDetailId, x => x.Total);
@@ -736,8 +736,13 @@ namespace ERPCore2.Services
                     {
                         var statuses = g.Select(x => x.ProductionItemStatus).ToList();
                         if (statuses.Any(s => s == ProductionItemStatus.InProgress)) return ProductionItemStatus.InProgress;
+                        if (statuses.Any(s => s == ProductionItemStatus.Paused)) return ProductionItemStatus.Paused;
                         if (statuses.Any(s => s == ProductionItemStatus.WaitingMaterial)) return ProductionItemStatus.WaitingMaterial;
-                        if (statuses.All(s => s == ProductionItemStatus.Completed)) return ProductionItemStatus.Completed;
+                        if (statuses.All(s => s == ProductionItemStatus.Completed || s == ProductionItemStatus.Aborted))
+                        {
+                            if (statuses.Any(s => s == ProductionItemStatus.Aborted)) return ProductionItemStatus.Aborted;
+                            return ProductionItemStatus.Completed;
+                        }
                         return ProductionItemStatus.Pending;
                     });
             }
@@ -764,8 +769,9 @@ namespace ERPCore2.Services
                 if (item.CompletedQuantity > 0)
                     return ServiceResult<bool>.Failure("已有完成數量，無法退回待排清單");
 
-                // 檢查是否有已發出的領料記錄
-                var hasIssuedMaterials = item.ScheduleDetails?.Any(d => d.IssuedQuantity > 0) ?? false;
+                // 已有領料記錄時封鎖退回：庫存已扣除，需先透過停產功能處理物料
+                if (item.ScheduleDetails?.Any(d => d.IssuedQuantity > 0) == true)
+                    return ServiceResult<bool>.Failure("已有領料記錄，無法退回待排清單。請先使用停產功能處理物料");
 
                 // 扣回 SalesOrderDetail.ScheduledQuantity
                 if (item.SalesOrderDetailId.HasValue)
@@ -779,12 +785,23 @@ namespace ERPCore2.Services
                 }
 
                 // 刪除明細與主檔
+                // 先解除 MaterialIssueDetail 對 ProductionScheduleDetail 的 FK 參照，避免刪除衝突
                 if (item.ScheduleDetails?.Any() == true)
+                {
+                    var detailIds = item.ScheduleDetails.Select(d => d.Id).ToList();
+                    var linkedIssueDetails = await context.MaterialIssueDetails
+                        .Where(mid => mid.ProductionScheduleDetailId.HasValue
+                                   && detailIds.Contains(mid.ProductionScheduleDetailId.Value))
+                        .ToListAsync();
+                    foreach (var mid in linkedIssueDetails)
+                        mid.ProductionScheduleDetailId = null;
+
                     context.ProductionScheduleDetails.RemoveRange(item.ScheduleDetails);
+                }
                 context.ProductionScheduleItems.Remove(item);
 
                 await context.SaveChangesAsync();
-                return ServiceResult<bool>.Success(hasIssuedMaterials);
+                return ServiceResult<bool>.Success(false);
             }
             catch (Exception ex)
             {
@@ -842,6 +859,62 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<ServiceResult> PauseProductionAsync(int itemId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var item = await context.ProductionScheduleItems
+                    .FirstOrDefaultAsync(psi => psi.Id == itemId);
+
+                if (item == null)
+                    return ServiceResult.Failure("生產排程項目不存在");
+
+                if (item.ProductionItemStatus != ProductionItemStatus.InProgress)
+                    return ServiceResult.Failure("只有生產中的項目可以暫停");
+
+                item.ProductionItemStatus = ProductionItemStatus.Paused;
+                item.UpdatedAt = DateTime.Now;
+
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PauseProductionAsync), GetType(), _logger, new { itemId });
+                return ServiceResult.Failure("暫停生產過程發生錯誤");
+            }
+        }
+
+        public async Task<ServiceResult> ResumeProductionAsync(int itemId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var item = await context.ProductionScheduleItems
+                    .FirstOrDefaultAsync(psi => psi.Id == itemId);
+
+                if (item == null)
+                    return ServiceResult.Failure("生產排程項目不存在");
+
+                if (item.ProductionItemStatus != ProductionItemStatus.Paused)
+                    return ServiceResult.Failure("只有已暫停的項目可以繼續生產");
+
+                item.ProductionItemStatus = ProductionItemStatus.InProgress;
+                item.UpdatedAt = DateTime.Now;
+
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ResumeProductionAsync), GetType(), _logger, new { itemId });
+                return ServiceResult.Failure("繼續生產過程發生錯誤");
+            }
+        }
+
         public async Task<ServiceResult> AbortProductionAsync(int itemId, List<MaterialSettlementDto>? settlements = null)
         {
             try
@@ -855,10 +928,14 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("生產排程項目不存在");
 
                 if (item.ProductionItemStatus == ProductionItemStatus.Completed)
-                    return ServiceResult.Failure("此項目已完成，無法停產");
+                    return ServiceResult.Failure("此項目已完成，無法終止");
 
-                if (item.ProductionItemStatus != ProductionItemStatus.InProgress)
-                    return ServiceResult.Failure("僅生產中的項目可執行停產");
+                // 允許 InProgress、Paused、WaitingMaterial、Pending（含已領料情境）
+                if (item.ProductionItemStatus != ProductionItemStatus.InProgress &&
+                    item.ProductionItemStatus != ProductionItemStatus.Paused &&
+                    item.ProductionItemStatus != ProductionItemStatus.WaitingMaterial &&
+                    item.ProductionItemStatus != ProductionItemStatus.Pending)
+                    return ServiceResult.Failure("此狀態的項目無法終止");
 
                 var schedule = await context.ProductionSchedules
                     .FirstOrDefaultAsync(ps => ps.Id == item.ProductionScheduleId);
@@ -912,7 +989,7 @@ namespace ERPCore2.Services
                 }
 
                 // 結案（不改 ScheduledQuantity，確保不重出現在待排 Sidebar）
-                item.ProductionItemStatus = ProductionItemStatus.Completed;
+                item.ProductionItemStatus = ProductionItemStatus.Aborted;
                 item.ActualEndDate = DateTime.Now;
                 item.IsClosed = true;
                 item.UpdatedAt = DateTime.Now;

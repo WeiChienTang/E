@@ -12,31 +12,37 @@
     <div class="card-status-bar"></div>
 
     <div class="card-body-inner">
-        @* 商品資訊 *@
-        <div class="card-product">
-            <span class="product-code">@Item.ProductCode</span>
-            <span class="product-name">@Item.ProductName</span>
+        @* 商品資訊 + 狀態 *@
+        <div class="card-header-row">
+            <div class="card-product">
+                <span class="product-name">@Item.ProductName</span>
+                <span class="product-code">@Item.ProductCode</span>
+            </div>
+            <span class="card-status-badge @StatusCssClass">@StatusText</span>
         </div>
 
+        <hr class="card-divider" />
+
         @* 客戶與訂單 *@
-        @if (!string.IsNullOrEmpty(Item.CustomerName) || !string.IsNullOrEmpty(Item.SalesOrderCode))
+        @if (!string.IsNullOrEmpty(Item.CustomerName))
         {
-            <div class="card-order">
-                @if (!string.IsNullOrEmpty(Item.CustomerName))
-                {
-                    <span class="customer-name">@Item.CustomerName</span>
-                }
-                @if (!string.IsNullOrEmpty(Item.SalesOrderCode))
-                {
-                    <span class="order-code">@Item.SalesOrderCode</span>
-                }
+            <div class="card-info-row">
+                <span class="info-label">客戶：</span>
+                <span class="info-value">@Item.CustomerName</span>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Item.SalesOrderCode))
+        {
+            <div class="card-info-row">
+                <span class="info-label">訂單：</span>
+                <span class="info-value">@Item.SalesOrderCode</span>
             </div>
         }
 
         @* 數量與交期 *@
         <div class="card-footer-row">
             <div class="card-qty">
-                <span class="qty-label">生產量：</span>
+                <span class="qty-label">訂單量：</span>
                 @if (Item.CompletedQuantity > 0)
                 {
                     <span class="qty-done">@NumberFormatHelper.FormatSmart(Item.CompletedQuantity)</span>
@@ -46,20 +52,17 @@
             </div>
             @if (Item.ExpectedDeliveryDate.HasValue)
             {
-                <span class="card-due @DeliveryUrgencyCss">@DeliveryDateText</span>
+                <span class="card-due @DeliveryUrgencyCss">交期：@DeliveryDateText</span>
             }
         </div>
 
-        @* 狀態 Badge + 進度條（同行） *@
-        <div class="card-meta-row">
-            <span class="card-status-badge @StatusCssClass">@StatusText</span>
-            @if (Item.CompletedQuantity > 0 && Item.ScheduledQuantity > 0)
-            {
-                <div class="card-progress">
-                    <div class="card-progress-bar" style="width: @(ProgressPercent)%"></div>
-                </div>
-            }
-        </div>
+        @* 進度條（全寬） *@
+        @if (Item.CompletedQuantity > 0 && Item.ScheduledQuantity > 0)
+        {
+            <div class="card-progress">
+                <div class="card-progress-bar" style="width: @(ProgressPercent)%"></div>
+            </div>
+        }
 
         <DebugComponentLabelComponent ComponentName="ProductionBoardItemCard" />
     </div>
@@ -79,6 +82,8 @@
         ProductionItemStatus.Pending         => "status-waitingmaterial",
         ProductionItemStatus.InProgress      => "status-inprogress",
         ProductionItemStatus.Completed       => "status-completed",
+        ProductionItemStatus.Paused          => "status-paused",
+        ProductionItemStatus.Aborted         => "status-aborted",
         _                                    => "status-waitingmaterial"
     };
 
@@ -88,6 +93,8 @@
         ProductionItemStatus.Pending         => "等待領料",
         ProductionItemStatus.InProgress      => "生產中",
         ProductionItemStatus.Completed       => "已完成",
+        ProductionItemStatus.Paused          => "已暫停",
+        ProductionItemStatus.Aborted         => "已終止",
         _                                    => "等待領料"
     };
 

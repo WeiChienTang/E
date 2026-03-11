@@ -1420,6 +1420,8 @@
   <data name="Field.VehicleTypeCode" xml:space="preserve"><value>Kodigo ng Uri ng Sasakyan</value></data>
   <data name="Field.VehicleTypeDescription" xml:space="preserve"><value>Paglalarawan ng Uri ng Sasakyan</value></data>
   <data name="Field.VehicleTypeName" xml:space="preserve"><value>Pangalan ng Uri ng Sasakyan</value></data>
+  <data name="Tab.BasicData" xml:space="preserve"><value>Pangunahing Impormasyon</value></data>
+  <data name="Tab.OrderSource" xml:space="preserve"><value>Pinagmulan ng Order</value></data>
   <!-- ===== Approval Settings Tab keys ===== -->
   <data name="Tab.ApprovalSettings" xml:space="preserve"><value>Pamamahala ng Pag-apruba</value></data>
   <data name="Section.ApprovalSettings" xml:space="preserve"><value>Mga Setting ng Proseso ng Pag-apruba</value></data>

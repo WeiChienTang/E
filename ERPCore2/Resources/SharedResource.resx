@@ -1422,6 +1422,8 @@
   <data name="Field.MaintenanceDescription" xml:space="preserve"><value>保養說明</value></data>
   <data name="Field.MaintenanceFee" xml:space="preserve"><value>保養費用</value></data>
   <data name="Field.MaintenanceHandler" xml:space="preserve"><value>保養人員</value></data>
+  <data name="Tab.BasicData" xml:space="preserve"><value>基本資料</value></data>
+  <data name="Tab.OrderSource" xml:space="preserve"><value>訂單來源</value></data>
   <!-- ===== Approval Settings Tab keys ===== -->
   <data name="Tab.ApprovalSettings" xml:space="preserve"><value>審核管理</value></data>
   <data name="Section.ApprovalSettings" xml:space="preserve"><value>審核流程設定</value></data>

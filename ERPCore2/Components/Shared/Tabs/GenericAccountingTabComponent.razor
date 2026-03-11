@@ -21,7 +21,7 @@ else if (_isLoading)
 else
 {
     <div class="table-responsive">
-        <table class="table table-sm table-hover mb-3">
+        <table class="table table-sm table-hover mb-3 accounting-card-table">
             <thead class="accounting-thead">
                 <tr>
                     <th style="width:160px">@L["Accounting.SubAccountType"]</th>
@@ -34,10 +34,10 @@ else
                 @foreach (var row in _rows)
                 {
                     <tr>
-                        <td>@row.Label</td>
-                        <td class="font-monospace small">@(row.Item?.Code ?? "—")</td>
-                        <td class="small">@(row.Item?.Name ?? "—")</td>
-                        <td>
+                        <td data-label="@L["Accounting.SubAccountType"]">@row.Label</td>
+                        <td class="font-monospace small" data-label="@L["Accounting.AccountCode"]">@(row.Item?.Code ?? "—")</td>
+                        <td class="small" data-label="@L["Accounting.AccountName"]">@(row.Item?.Name ?? "—")</td>
+                        <td data-label="@L["Field.Status"]">
                             @if (row.Item != null)
                             {
                                 <span class="text-success small"><i class="bi bi-check-circle me-1"></i>@L["Accounting.Created"]</span>

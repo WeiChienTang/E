@@ -449,19 +449,19 @@
                 .GroupIntoTab(L["Tab.EmployeeData"].ToString(), "bi-person-fill", FormSectionNames.BasicInfo, FormSectionNames.ContactInfo, FormSectionNames.OrganizationStructure, FormSectionNames.EmploymentInfo, FormSectionNames.AdditionalData);
 
             if (isVehiclesEnabled)
-                builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent(), "EmployeeVehicleTab");
+                builder = builder.GroupIntoCustomTab(L["Tab.VehicleInfo"].ToString(), "bi-truck", CreateVehicleTabContent(), nameof(EmployeeVehicleTab));
 
             var isPayrollEnabled = await CompanyModuleService.IsModuleEnabledAsync("Payroll");
             if (!isPayrollEnabled)
                 isPayrollEnabled = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
 
             builder = builder
-                .GroupIntoCustomTab(L["Tab.PersonalTools"].ToString(), "bi-tools", CreateToolTabContent(), "EmployeeToolTab")
-                .GroupIntoCustomTab(L["Tab.Training"].ToString(), "bi-mortarboard", CreateTrainingTabContent(), "EmployeeTrainingTab")
-                .GroupIntoCustomTab(L["Tab.Permissions"].ToString(), "bi-shield-lock", CreatePermissionTabContent(), "EmployeePermissionTab");
+                .GroupIntoCustomTab(L["Tab.PersonalTools"].ToString(), "bi-tools", CreateToolTabContent(), nameof(EmployeeToolTab))
+                .GroupIntoCustomTab(L["Tab.Training"].ToString(), "bi-mortarboard", CreateTrainingTabContent(), nameof(EmployeeTrainingTab))
+                .GroupIntoCustomTab(L["Tab.Permissions"].ToString(), "bi-shield-lock", CreatePermissionTabContent(), nameof(EmployeePermissionTab));
 
             if (isPayrollEnabled && EmployeeId.HasValue)
-                builder = builder.GroupIntoCustomTab(L["Tab.Payroll"].ToString(), "bi-cash-coin", CreatePayrollTabContent(), "EmployeePayrollTab");
+                builder = builder.GroupIntoCustomTab(L["Tab.Payroll"].ToString(), "bi-cash-coin", CreatePayrollTabContent(), nameof(EmployeePayrollTab));
 
             var layout = builder.BuildAll();
 
