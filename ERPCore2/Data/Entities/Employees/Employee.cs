@@ -216,7 +216,13 @@ namespace ERPCore2.Data.Entities
         /// true = 已初始化，即使配置為空也不會自動重置
         /// </summary>
         public bool HasInitializedDashboard { get; set; } = false;
-        
+
+        /// <summary>
+        /// 員工照片路徑（相對路徑）
+        /// </summary>
+        [MaxLength(500)]
+        public string? PhotoPath { get; set; }
+
         // 導航屬性
         public Role? Role { get; set; }
         public Department? Department { get; set; }

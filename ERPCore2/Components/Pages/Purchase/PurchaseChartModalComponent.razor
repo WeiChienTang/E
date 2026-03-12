@@ -1,0 +1,25 @@
+@using ERPCore2.Models.Charts
+@using ERPCore2.Services.Purchase
+@inject IPurchaseChartService ChartService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericChartModalComponent IsVisible="@IsVisible"
+                            IsVisibleChanged="@IsVisibleChanged"
+                            Category="@ChartCategory.Purchase"
+                            Title="@L["Purchase.ChartTitle"]"
+                            Icon="bi bi-truck"
+                            OnDataLoading="@LoadSummaryAsync">
+</GenericChartModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private PurchaseChartSummary? _summary;
+
+    private async Task LoadSummaryAsync()
+    {
+        _summary = await ChartService.GetSummaryAsync();
+        StateHasChanged();
+    }
+}

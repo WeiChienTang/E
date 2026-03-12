@@ -131,6 +131,7 @@
     private CustomerTransactionTab? transactionTab;
     private GenericAccountingTabComponent? accountingTab;
     private CustomerProductTab? productTab;
+    private BusinessCardTab? businessCardTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -157,6 +158,11 @@
     private RenderFragment CreateProductTabContent() => __builder =>
     {
         <CustomerProductTab @ref="productTab" CustomerId="@CustomerId" />
+    };
+
+    private RenderFragment CreateBusinessCardTabContent() => __builder =>
+    {
+        <BusinessCardTab @ref="businessCardTab" OwnerType="Customer" OwnerId="@CustomerId" />
     };
 
     // ===== 生命週期 =====
@@ -206,11 +212,12 @@
         {
             if (loadedEntityId > 0)
             {
-                if (vehicleTab != null)      await vehicleTab.LoadAsync(loadedEntityId);
-                if (visitTab != null)        await visitTab.LoadAsync(loadedEntityId);
-                if (transactionTab != null)  await transactionTab.LoadAsync(loadedEntityId);
-                if (accountingTab != null)   await accountingTab.LoadAsync(loadedEntityId);
-                if (productTab != null)      await productTab.LoadAsync(loadedEntityId);
+                if (vehicleTab != null)       await vehicleTab.LoadAsync(loadedEntityId);
+                if (visitTab != null)         await visitTab.LoadAsync(loadedEntityId);
+                if (transactionTab != null)   await transactionTab.LoadAsync(loadedEntityId);
+                if (accountingTab != null)    await accountingTab.LoadAsync(loadedEntityId);
+                if (productTab != null)       await productTab.LoadAsync(loadedEntityId);
+                if (businessCardTab != null)  await businessCardTab.LoadAsync(loadedEntityId);
             }
             else
             {
@@ -219,6 +226,7 @@
                 transactionTab?.Clear();
                 accountingTab?.Clear();
                 productTab?.Clear();
+                businessCardTab?.Clear();
             }
             StateHasChanged();
         }
@@ -669,6 +677,7 @@
                 .GroupIntoCustomTab(L["Tab.CustomerProducts"].ToString(), "bi-box-seam", CreateProductTabContent(), nameof(CustomerProductTab))
                 .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), nameof(CustomerVisitTab))
                 .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), nameof(CustomerTransactionTab))
+                .GroupIntoCustomTab(L["Tab.BusinessCards"].ToString(), "bi-person-vcard", CreateBusinessCardTabContent(), nameof(BusinessCardTab))
                 .BuildAll();
 
             formSections = layout.FieldSections;

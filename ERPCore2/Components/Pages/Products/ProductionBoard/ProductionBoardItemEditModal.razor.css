@@ -89,3 +89,14 @@
 .settlement-reason {
     max-width: 160px;
 }
+
+/* 組件領料表格表頭 */
+.material-table-thead {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+[data-bs-theme=dark] .material-table-thead {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}

@@ -140,6 +140,16 @@
     align-items: stretch;
 }
 
+/* 日模式：單欄置中，限制寬度避免過寬 */
+.board-week-columns.view-day {
+    justify-content: center;
+}
+
+.board-week-columns.view-day > :deep(*) {
+    max-width: 480px;
+    flex: 0 0 480px;
+}
+
 /* ── 9.1 摘要列 ── */
 .board-summary-bar {
     display: flex;

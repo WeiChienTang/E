@@ -3,11 +3,6 @@
     background-color: var(--bg-secondary);
 }
 
-/* 統計摘要列背景 */
-.tx-stats-bar {
-    background-color: var(--bg-primary);
-}
-
 /* 淨採購額儲存格背景 */
 .tx-net-purchase-cell {
     background-color: var(--bg-secondary);

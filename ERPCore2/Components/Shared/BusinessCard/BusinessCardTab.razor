@@ -1,0 +1,278 @@
+@* 名片照片 Tab - 共用元件，供客戶與廠商 EditModal 使用 *@
+@inject IBusinessCardService BusinessCardService
+@inject INotificationService NotificationService
+@inject IWebHostEnvironment Environment
+@inject IStringLocalizer<SharedResource> L
+
+@if (!OwnerId.HasValue || OwnerId.Value <= 0)
+{
+    <div class="text-center text-muted py-4">
+        <i class="bi bi-person-vcard fs-1 d-block mb-2"></i>
+        <span>@L["BusinessCard.SaveFirst"]</span>
+    </div>
+}
+else
+{
+    <div class="business-card-tab">
+
+        @* 上傳區域 *@
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <span class="fw-semibold">@L["BusinessCard.PhotoList"]</span>
+            <label class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-upload me-1"></i>@L["BusinessCard.UploadPhoto"]
+                <InputFile OnChange="@HandleFileSelected" accept=".jpg,.jpeg,.png" multiple class="d-none" />
+            </label>
+        </div>
+
+        @if (!string.IsNullOrEmpty(uploadError))
+        {
+            <div class="alert alert-danger py-2 mb-2">@uploadError</div>
+        }
+
+        @if (isUploading)
+        {
+            <div class="text-center text-muted py-3">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                @L["Label.PleaseWait"]
+            </div>
+        }
+
+        @* 名片列表 *@
+        @if (!businessCards.Any())
+        {
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-person-vcard fs-1 d-block mb-2"></i>
+                <span>@L["BusinessCard.NoPhotos"]</span>
+            </div>
+        }
+        else
+        {
+            <div class="business-card-grid">
+                @foreach (var card in businessCards)
+                {
+                    <div class="business-card-item">
+                        <div class="business-card-photo-wrapper">
+                            <img src="@card.PhotoPath" alt="@(card.ContactPersonName ?? L["BusinessCard.BusinessCard"])"
+                                 class="business-card-photo"
+                                 @onclick="@(() => OpenPreview(card))" />
+                        </div>
+                        <div class="business-card-info px-2 py-1">
+                            <input type="text"
+                                   class="form-control form-control-sm border-0 p-0 fw-semibold"
+                                   value="@card.ContactPersonName"
+                                   placeholder="@L["BusinessCard.ContactPersonName"]"
+                                   @onchange="@(e => SaveCardFieldAsync(card, nameof(card.ContactPersonName), e.Value?.ToString()))" />
+                            <input type="text"
+                                   class="form-control form-control-sm border-0 p-0 text-muted small"
+                                   value="@card.JobTitle"
+                                   placeholder="@L["BusinessCard.JobTitle"]"
+                                   @onchange="@(e => SaveCardFieldAsync(card, nameof(card.JobTitle), e.Value?.ToString()))" />
+                        </div>
+                        <div class="business-card-actions px-2 pb-2 d-flex gap-1">
+                            <button class="btn btn-xs btn-outline-danger flex-fill"
+                                    title="@L["Button.Delete"]"
+                                    @onclick="@(() => RequestDelete(card))">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@* 刪除確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showDeleteModal"
+                              IsVisibleChanged="@((bool v) => showDeleteModal = v)"
+                              Title="@L["BusinessCard.DeleteTitle"]"
+                              Icon="bi-trash"
+                              Message="@L["BusinessCard.DeleteMessage"]"
+                              ConfirmButtonText="@L["Button.ConfirmDelete"]"
+                              CancelButtonText="@L["Button.Cancel"]"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@ConfirmDeleteAsync"
+                              OnCancel="@(() => showDeleteModal = false)" />
+
+@* 照片預覽 Modal *@
+@if (previewCard != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.7);" @onclick="ClosePreview">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(previewCard.ContactPersonName ?? L["BusinessCard.BusinessCard"])</h5>
+                    <button type="button" class="btn-close" @onclick="ClosePreview"></button>
+                </div>
+                <div class="modal-body text-center p-2">
+                    <img src="@previewCard.PhotoPath" class="img-fluid" alt="@previewCard.ContactPersonName" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string OwnerType { get; set; } = string.Empty;
+    [Parameter] public int? OwnerId { get; set; }
+
+    private List<BusinessCard> businessCards = new();
+    private bool isUploading = false;
+    private string? uploadError = null;
+    private bool showDeleteModal = false;
+    private BusinessCard? deletingCard = null;
+    private BusinessCard? previewCard = null;
+    private int? _loadedOwnerId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (OwnerId != _loadedOwnerId)
+        {
+            _loadedOwnerId = OwnerId;
+            if (OwnerId.HasValue && OwnerId.Value > 0)
+                await LoadAsync(OwnerId.Value);
+            else
+                Clear();
+        }
+    }
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    public async Task LoadAsync(int ownerId)
+    {
+        businessCards = await BusinessCardService.GetByOwnerAsync(OwnerType, ownerId);
+        StateHasChanged();
+    }
+
+    public void Clear()
+    {
+        businessCards = new();
+        uploadError = null;
+        StateHasChanged();
+    }
+
+    // ===== 上傳 =====
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        if (!OwnerId.HasValue || OwnerId.Value <= 0) return;
+
+        uploadError = null;
+        isUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            var nextSortOrder = businessCards.Count > 0 ? businessCards.Max(c => c.SortOrder) + 1 : 0;
+
+            foreach (var file in e.GetMultipleFiles(10))
+            {
+                var (success, message, filePath) = await FileUploadHelper.UploadImageAsync(
+                    file, "business-cards", Environment);
+
+                if (!success)
+                {
+                    uploadError = message;
+                    break;
+                }
+
+                var card = new BusinessCard
+                {
+                    OwnerType = OwnerType,
+                    OwnerId = OwnerId.Value,
+                    OriginalFileName = file.Name,
+                    PhotoPath = filePath!,
+                    SortOrder = nextSortOrder++
+                };
+
+                var result = await BusinessCardService.CreateAsync(card);
+                if (result.IsSuccess)
+                    businessCards.Add(card);
+                else
+                    uploadError = result.ErrorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadError = $"上傳失敗：{ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+            // 重新載入確保資料與 DB 同步（取得正確 Id）
+            if (OwnerId.HasValue && OwnerId.Value > 0)
+                businessCards = await BusinessCardService.GetByOwnerAsync(OwnerType, OwnerId.Value);
+            StateHasChanged();
+        }
+    }
+
+    // ===== 編輯姓名 / 職稱（失去焦點時自動儲存） =====
+
+    private async Task SaveCardFieldAsync(BusinessCard card, string fieldName, string? value)
+    {
+        if (fieldName == nameof(card.ContactPersonName))
+            card.ContactPersonName = value;
+        else if (fieldName == nameof(card.JobTitle))
+            card.JobTitle = value;
+
+        var result = await BusinessCardService.UpdateAsync(card);
+        if (!result.IsSuccess)
+            await NotificationService.ShowErrorAsync(result.ErrorMessage);
+    }
+
+    // ===== 刪除 =====
+
+    private void RequestDelete(BusinessCard card)
+    {
+        deletingCard = card;
+        showDeleteModal = true;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (deletingCard == null) return;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(deletingCard.PhotoPath))
+                FileUploadHelper.DeleteFile(deletingCard.PhotoPath, Environment);
+
+            var result = await BusinessCardService.DeleteAsync(deletingCard.Id);
+            if (result.IsSuccess)
+            {
+                businessCards.Remove(deletingCard);
+                await NotificationService.ShowSuccessAsync(L["BusinessCard.DeleteSuccess"]);
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除失敗：{ex.Message}");
+        }
+        finally
+        {
+            deletingCard = null;
+            showDeleteModal = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 預覽 =====
+
+    private void OpenPreview(BusinessCard card)
+    {
+        previewCard = card;
+        StateHasChanged();
+    }
+
+    private void ClosePreview()
+    {
+        previewCard = null;
+        StateHasChanged();
+    }
+}

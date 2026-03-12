@@ -56,13 +56,11 @@
     font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-word;
 }
 
 .product-code {
-    font-size: 0.8rem;
+    font-size: 1rem;
     color: var(--text-secondary);
     font-weight: 400;
 }
@@ -81,39 +79,16 @@
 }
 
 .info-label {
-    font-size: 0.8rem;
+    font-size: 1rem;
     color: var(--text-secondary);
     white-space: nowrap;
     flex-shrink: 0;
 }
 
 .info-value {
-    font-size: 0.85rem;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.card-footer-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.card-qty {
     font-size: 1rem;
     color: var(--text-primary);
-    display: flex;
-    align-items: baseline;
-    gap: 2px;
-}
-
-.qty-label {
-    font-size: 1rem;
-    color: var(--text-secondary);
-    font-weight: 400;
-    white-space: nowrap;
+    word-break: break-word;
 }
 
 .qty-done {
@@ -130,21 +105,13 @@
     font-weight: 600;
 }
 
-.card-due {
-    font-size: 1rem;
-    color: var(--text-secondary);
-    padding: 1px 5px;
-    border-radius: 3px;
-    border: 1px solid var(--border-color);
-}
-
-.due-urgent  { color: #fd7e14; border-color: #fd7e14; }
-.due-overdue { color: #dc3545; border-color: #dc3545; background: rgba(220,53,69,0.08); }
+.due-urgent  { color: #fd7e14; }
+.due-overdue { color: #dc3545; font-weight: 600; }
 
 .card-status-badge {
     flex-shrink: 0;
     display: inline-block;
-    font-size: 0.75rem;
+    font-size: 1rem;
     padding: 1px 6px;
     border-radius: 10px;
     font-weight: 500;

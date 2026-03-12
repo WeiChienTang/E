@@ -53,6 +53,7 @@ namespace ERPCore2.Services
         /// <param name="logoPath">LOGO 檔案路徑</param>
         /// <returns>更新結果</returns>
         Task<ServiceResult> UpdateLogoPathAsync(int companyId, string logoPath);
+        Task<ServiceResult> ClearLogoAsync(int companyId);
 
         /// <summary>
         /// 設定指定公司為預設公司

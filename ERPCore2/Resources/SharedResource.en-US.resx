@@ -399,6 +399,18 @@
   <data name="Nav.SupplierCharts" xml:space="preserve">
     <value>Supplier Charts</value>
   </data>
+  <data name="Nav.EmployeeCharts" xml:space="preserve">
+    <value>Employee Charts</value>
+  </data>
+  <data name="Nav.PurchaseCharts" xml:space="preserve">
+    <value>Purchase Charts</value>
+  </data>
+  <data name="Nav.SalesCharts" xml:space="preserve">
+    <value>Sales Charts</value>
+  </data>
+  <data name="Nav.InventoryCharts" xml:space="preserve">
+    <value>Inventory Charts</value>
+  </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>Visit Report</value>
   </data>
@@ -1462,6 +1474,48 @@
   <data name="Tab.CustomerData" xml:space="preserve"><value>Customer Data</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>Visit Records</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>Transaction Records</value></data>
+  <data name="Tab.BusinessCards" xml:space="preserve"><value>Business Cards</value></data>
+  <data name="Tab.CompanyData" xml:space="preserve"><value>Company Data</value></data>
+  <data name="Tab.CompanyLogo" xml:space="preserve"><value>Company Logo</value></data>
+  <data name="CompanyLogo.SaveFirst" xml:space="preserve"><value>Please save company data before uploading a logo</value></data>
+  <data name="CompanyLogo.NoLogo" xml:space="preserve"><value>No logo uploaded yet</value></data>
+  <data name="CompanyLogo.Upload" xml:space="preserve"><value>Upload Logo</value></data>
+  <data name="CompanyLogo.Change" xml:space="preserve"><value>Change Logo</value></data>
+  <data name="CompanyLogo.Delete" xml:space="preserve"><value>Delete Logo</value></data>
+  <data name="CompanyLogo.DeleteSuccess" xml:space="preserve"><value>Logo deleted</value></data>
+  <data name="CompanyLogo.UploadSuccess" xml:space="preserve"><value>Logo uploaded successfully</value></data>
+  <data name="CompanyLogo.DeleteMessage" xml:space="preserve"><value>Are you sure you want to delete this logo? This action cannot be undone.</value></data>
+  <data name="CompanyLogo.Hint" xml:space="preserve"><value>Supports JPG, PNG, GIF, SVG formats, max 500KB</value></data>
+  <data name="BusinessCard.SaveFirst" xml:space="preserve"><value>Please save first before uploading business card photos</value></data>
+  <data name="BusinessCard.PhotoList" xml:space="preserve"><value>Business Card Photos</value></data>
+  <data name="BusinessCard.UploadPhoto" xml:space="preserve"><value>Upload Card</value></data>
+  <data name="BusinessCard.NoPhotos" xml:space="preserve"><value>No business card photos uploaded yet</value></data>
+  <data name="BusinessCard.BusinessCard" xml:space="preserve"><value>Business Card</value></data>
+  <data name="BusinessCard.ContactPersonName" xml:space="preserve"><value>Contact Name</value></data>
+  <data name="BusinessCard.JobTitle" xml:space="preserve"><value>Job Title</value></data>
+  <data name="BusinessCard.SaveSuccess" xml:space="preserve"><value>Business card updated</value></data>
+  <data name="BusinessCard.DeleteTitle" xml:space="preserve"><value>Delete Business Card</value></data>
+  <data name="BusinessCard.DeleteMessage" xml:space="preserve"><value>Are you sure you want to delete this business card photo? This action cannot be undone.</value></data>
+  <data name="BusinessCard.DeleteSuccess" xml:space="preserve"><value>Business card deleted</value></data>
+  <data name="Tab.EmployeePhoto" xml:space="preserve"><value>Employee Photo</value></data>
+  <data name="EmployeePhoto.SaveFirst" xml:space="preserve"><value>Please save employee data before uploading a photo</value></data>
+  <data name="EmployeePhoto.NoPhoto" xml:space="preserve"><value>No photo uploaded yet</value></data>
+  <data name="EmployeePhoto.Upload" xml:space="preserve"><value>Upload Photo</value></data>
+  <data name="EmployeePhoto.Change" xml:space="preserve"><value>Change Photo</value></data>
+  <data name="EmployeePhoto.Delete" xml:space="preserve"><value>Delete Photo</value></data>
+  <data name="EmployeePhoto.DeleteSuccess" xml:space="preserve"><value>Photo deleted</value></data>
+  <data name="EmployeePhoto.UploadSuccess" xml:space="preserve"><value>Photo uploaded successfully</value></data>
+  <data name="EmployeePhoto.DeleteMessage" xml:space="preserve"><value>Are you sure you want to delete this photo? This action cannot be undone.</value></data>
+  <data name="EmployeePhoto.Hint" xml:space="preserve"><value>Supports JPG, PNG formats, max 2MB</value></data>
+  <data name="Tab.ProductPhotos" xml:space="preserve"><value>Product Photos</value></data>
+  <data name="ProductPhoto.SaveFirst" xml:space="preserve"><value>Please save product data before uploading photos</value></data>
+  <data name="ProductPhoto.PhotoList" xml:space="preserve"><value>Product Photos</value></data>
+  <data name="ProductPhoto.UploadPhoto" xml:space="preserve"><value>Upload Photo</value></data>
+  <data name="ProductPhoto.NoPhotos" xml:space="preserve"><value>No product photos uploaded yet</value></data>
+  <data name="ProductPhoto.Caption" xml:space="preserve"><value>Caption</value></data>
+  <data name="ProductPhoto.DeleteTitle" xml:space="preserve"><value>Delete Photo</value></data>
+  <data name="ProductPhoto.DeleteMessage" xml:space="preserve"><value>Are you sure you want to delete this photo? This action cannot be undone.</value></data>
+  <data name="ProductPhoto.DeleteSuccess" xml:space="preserve"><value>Photo deleted</value></data>
   <data name="Tab.ProductData" xml:space="preserve"><value>Product Data</value></data>
   <data name="Tab.OrderData" xml:space="preserve"><value>Order Data</value></data>
   <data name="Tab.OrderDetail" xml:space="preserve"><value>Order Detail</value></data>
@@ -2059,6 +2113,14 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>Customer Analysis Charts</value></data>
   <!-- ===== Supplier Module ===== -->
   <data name="Supplier.ChartTitle" xml:space="preserve"><value>Supplier Analysis Charts</value></data>
+  <!-- ===== Employee Module ===== -->
+  <data name="Employee.ChartTitle" xml:space="preserve"><value>Employee Analysis Charts</value></data>
+  <!-- ===== Purchase Module ===== -->
+  <data name="Purchase.ChartTitle" xml:space="preserve"><value>Purchase Analysis Charts</value></data>
+  <!-- ===== Sales Module ===== -->
+  <data name="Sales.ChartTitle" xml:space="preserve"><value>Sales Analysis Charts</value></data>
+  <!-- ===== Inventory Module ===== -->
+  <data name="Inventory.ChartTitle" xml:space="preserve"><value>Inventory Analysis Charts</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>No related transaction records</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>No visit records yet</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>No related transaction records</value></data>

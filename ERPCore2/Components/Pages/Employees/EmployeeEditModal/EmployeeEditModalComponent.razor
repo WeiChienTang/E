@@ -126,6 +126,7 @@
     private EmployeeTrainingTab? trainingTab;
     private EmployeePermissionTab? permissionTab;
     private EmployeePayrollTab? payrollTab;
+    private EmployeePhotoTab? photoTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -152,6 +153,13 @@
     private RenderFragment CreatePayrollTabContent() => __builder =>
     {
         <EmployeePayrollTab @ref="payrollTab" EmployeeId="@EmployeeId" />
+    };
+
+    private RenderFragment CreatePhotoTabContent() => __builder =>
+    {
+        <EmployeePhotoTab @ref="photoTab"
+                          EmployeeId="@EmployeeId"
+                          InitialPhotoPath="@editModalComponent?.Entity?.PhotoPath" />
     };
 
     // ===== 生命週期 =====
@@ -273,6 +281,7 @@
                 if (trainingTab != null) await trainingTab.LoadAsync(loadedEntityId);
                 if (permissionTab != null) await permissionTab.LoadAsync(loadedEntityId);
                 if (payrollTab != null) await payrollTab.LoadAsync(loadedEntityId);
+                photoTab?.Load(loadedEntityId, editModalComponent?.Entity?.PhotoPath);
             }
             else
             {
@@ -281,6 +290,7 @@
                 trainingTab?.Clear();
                 permissionTab?.Clear();
                 payrollTab?.Clear();
+                photoTab?.Clear();
             }
             StateHasChanged();
         }
@@ -353,6 +363,7 @@
                 if (trainingTab != null) await trainingTab.LoadAsync(editModalComponent.Entity.Id);
                 if (permissionTab != null) await permissionTab.LoadAsync(editModalComponent.Entity.Id);
                 if (payrollTab != null) await payrollTab.LoadAsync(editModalComponent.Entity.Id);
+                photoTab?.Load(editModalComponent.Entity.Id, editModalComponent.Entity.PhotoPath);
                 await OnEmployeeSaved.InvokeAsync(editModalComponent.Entity);
             }
         }
@@ -462,6 +473,8 @@
 
             if (isPayrollEnabled && EmployeeId.HasValue)
                 builder = builder.GroupIntoCustomTab(L["Tab.Payroll"].ToString(), "bi-cash-coin", CreatePayrollTabContent(), nameof(EmployeePayrollTab));
+
+            builder = builder.GroupIntoCustomTab(L["Tab.EmployeePhoto"].ToString(), "bi-person-circle", CreatePhotoTabContent(), nameof(EmployeePhotoTab));
 
             var layout = builder.BuildAll();
 

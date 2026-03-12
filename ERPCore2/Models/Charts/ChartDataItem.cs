@@ -33,3 +33,43 @@ public class SupplierChartSummary
     public int SuppliersThisMonth { get; set; }
     public decimal TotalPayable { get; set; }
 }
+
+public class EmployeeChartSummary
+{
+    public int TotalEmployees { get; set; }
+    public int ActiveEmployees { get; set; }
+    public int ProbationEmployees { get; set; }
+    public int HiredThisMonth { get; set; }
+    public int ResignedThisMonth { get; set; }
+    public int ExpiringLicenses { get; set; }
+}
+
+public class PurchaseChartSummary
+{
+    public int TotalOrdersThisMonth { get; set; }
+    public int PendingApprovalOrders { get; set; }
+    public int ApprovedOrders { get; set; }
+    public decimal ThisMonthReceivingAmount { get; set; }
+    public decimal ThisMonthReturnAmount { get; set; }
+    public int TotalReceivingsThisMonth { get; set; }
+}
+
+public class SalesChartSummary
+{
+    public int TotalDeliveriesThisMonth { get; set; }
+    public decimal ThisMonthDeliveryAmount { get; set; }
+    public decimal ThisMonthReturnAmount { get; set; }
+    public int TotalOrdersThisMonth { get; set; }
+    public int PendingApprovalDeliveries { get; set; }
+    public decimal YearToDateDeliveryAmount { get; set; }
+}
+
+public class InventoryChartSummary
+{
+    public int TotalProductsWithStock { get; set; }
+    public decimal TotalStockValue { get; set; }
+    public int LowStockCount { get; set; }
+    public int ExpiringStockCount { get; set; }
+    public int WarehouseCount { get; set; }
+    public int TransactionsLast30Days { get; set; }
+}

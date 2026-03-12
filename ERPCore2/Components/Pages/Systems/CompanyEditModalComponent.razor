@@ -19,6 +19,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           DataLoader="@LoadCompanyData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(CompanyId.HasValue ? L["Message.UpdateSuccess", L["Entity.Company"]].ToString() : L["Message.CreateSuccess", L["Entity.Company"]].ToString())"
@@ -26,11 +27,7 @@
                           RequiredPermission="@PermissionRegistry.Company.Read"
                           OnEntitySaved="@OnCompanySaved"
                           OnCancel="@OnCancel"
-                          CustomActionButtons="@LogoManagementButtons"
                           ComponentName="CompanyEditModalComponent" />
-
-@* 隱藏的檔案輸入元素 *@
-<InputFile id="logo-file-input" OnChange="HandleLogoFileSelected" accept=".jpg,.jpeg,.png,.gif,.svg" style="display: none;" @ref="logoInputFile" />
 
 @code {
     // ===== 參數 =====
@@ -45,7 +42,9 @@
     private GenericEditModalComponent<Company, ICompanyService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    
+    private List<FormTabDefinition>? tabDefinitions;
+    private CompanyLogoTab? logoTab;
+
     // 資料載入狀態標記
     private bool isDataLoaded = false;
 
@@ -243,7 +242,7 @@
                 FormFieldConfigurationHelper.CreateRemarksField<Company>()
             };
 
-            formSections = FormSectionHelper<Company>.Create()
+            var layout = FormSectionHelper<Company>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     c => c.Code,
                     c => c.CompanyName,
@@ -267,7 +266,16 @@
                 .AddToSection(FormSectionNames.AdditionalData,
                     c => c.Description,
                     c => c.Remarks)
-                .Build();
+                .GroupIntoTab(L["Tab.CompanyData"].ToString(), "bi-building",
+                    FormSectionNames.BasicInfo,
+                    FormSectionNames.CompanyData,
+                    FormSectionNames.ContactInfo,
+                    FormSectionNames.AdditionalData)
+                .GroupIntoCustomTab(L["Tab.CompanyLogo"].ToString(), "bi-image", CreateLogoTabContent(), "CompanyLogoTab")
+                .BuildAll();
+
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
         }
         catch (Exception)
         {
@@ -275,44 +283,14 @@
         }
     }
 
-    // ===== LOGO 管理相關 =====
-    
-    private InputFile? logoInputFile;
-    
-    /// <summary>
-    /// LOGO 管理按鈕 - 顯示在 Modal Footer 最左側
-    /// </summary>
-    private RenderFragment LogoManagementButtons => 
-        @<text>
-            @if (editModalComponent?.Entity != null)
-            {
-                <GenericButtonComponent Text="@(string.IsNullOrEmpty(editModalComponent.Entity.LogoPath) ? "上傳 LOGO" : "更換 LOGO")"
-                                      Variant="ButtonVariant.DarkBlue"
-                                      Size="ButtonSize.Small"
-                                      OnClick="TriggerFileInput" />
-                
-                @if (!string.IsNullOrEmpty(editModalComponent.Entity.LogoPath))
-                {
-                    <GenericButtonComponent Text="@L["Button.PreviewLogo"]"
-                                          Variant="ButtonVariant.DarkBlue"
-                                          Size="ButtonSize.Small"
-                                          OnClick="PreviewLogo" />
-                }
-            }
-        </text>;
+    // ===== LOGO Tab 相關 =====
 
-
-    
-    /// <summary>
-    /// 觸發檔案選擇
-    /// </summary>
-    private async Task TriggerFileInput()
+    private RenderFragment CreateLogoTabContent() => __builder =>
     {
-        if (logoInputFile != null)
-        {
-            await JSRuntime.InvokeVoidAsync("eval", $"document.getElementById('logo-file-input').click()");
-        }
-    }
+        <CompanyLogoTab @ref="logoTab"
+                        CompanyId="@CompanyId"
+                        InitialLogoPath="@editModalComponent?.Entity?.LogoPath" />
+    };
     
     /// <summary>
     /// 產生公司網站操作按鈕
@@ -396,12 +374,8 @@
             // 上傳檔案
             var companyId = editModalComponent?.Entity?.Id ?? 0;
             
-            // 如果是新增模式（companyId = 0），先提示使用者需要先儲存公司資料
-            if (companyId == 0)
-            {
-                await NotificationService.ShowWarningAsync("請先儲存公司資料後，再上傳 LOGO");
-                return;
-            }
+            // Tab 顯示已處理新建模式，此處作為防護
+            if (companyId == 0) return;
             
             // 取得舊的 Logo 路徑（用於刪除舊檔案）
             var oldLogoPath = editModalComponent?.Entity?.LogoPath;
@@ -444,9 +418,35 @@
     private async Task PreviewLogo()
     {
         if (!string.IsNullOrEmpty(editModalComponent?.Entity?.LogoPath))
+            await JSRuntime.InvokeVoidAsync("open", editModalComponent.Entity.LogoPath, "_blank");
+    }
+
+    /// <summary>
+    /// 刪除 LOGO
+    /// </summary>
+    private async Task DeleteLogoAsync()
+    {
+        var entity = editModalComponent?.Entity;
+        if (entity == null || string.IsNullOrEmpty(entity.LogoPath)) return;
+
+        try
         {
-            var logoUrl = editModalComponent.Entity.LogoPath;
-            await JSRuntime.InvokeVoidAsync("open", logoUrl, "_blank");
+            FileUploadHelper.DeleteFile(entity.LogoPath, WebHostEnvironment);
+            var result = await CompanyService.ClearLogoAsync(entity.Id);
+            if (result.IsSuccess)
+            {
+                entity.LogoPath = null;
+                await NotificationService.ShowSuccessAsync(L["CompanyLogo.DeleteSuccess"]);
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除 LOGO 時發生錯誤：{ex.Message}");
         }
     }
 

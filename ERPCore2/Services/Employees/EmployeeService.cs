@@ -1114,6 +1114,50 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 照片管理
+
+        public async Task<ServiceResult> UpdatePhotoPathAsync(int employeeId, string photoPath)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees.FindAsync(employeeId);
+                if (employee == null)
+                    return ServiceResult.Failure("找不到員工");
+
+                employee.PhotoPath = photoPath;
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdatePhotoPathAsync), GetType(), _logger, new { EmployeeId = employeeId });
+                return ServiceResult.Failure($"更新照片路徑時發生錯誤：{ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResult> ClearPhotoAsync(int employeeId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees.FindAsync(employeeId);
+                if (employee == null)
+                    return ServiceResult.Failure("找不到員工");
+
+                employee.PhotoPath = null;
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ClearPhotoAsync), GetType(), _logger, new { EmployeeId = employeeId });
+                return ServiceResult.Failure($"清除照片時發生錯誤：{ex.Message}");
+            }
+        }
+
+        #endregion
     }
 }
 

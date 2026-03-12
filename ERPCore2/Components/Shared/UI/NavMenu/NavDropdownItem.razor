@@ -136,10 +136,9 @@ else
     /// <summary>
     /// 處理下拉選單項目點擊事件
     /// </summary>
-    private void OnDropdownItemClick()
+    private async Task OnDropdownItemClick()
     {
-        // 這裡可以添加任何需要的邏輯
-        // JavaScript 會自動處理手機模式下的選單隱藏
+        await JSRuntime.InvokeVoidAsync("navMenuMobile.hideNavMenu");
     }
 
     /// <summary>
@@ -153,6 +152,7 @@ else
         {
             try
             {
+                await JSRuntime.InvokeVoidAsync("navMenuMobile.hideNavMenu");
                 await JSRuntime.InvokeVoidAsync("location.assign", Url);
             }
             catch (TaskCanceledException)
@@ -178,6 +178,7 @@ else
         
         try
         {
+            await JSRuntime.InvokeVoidAsync("navMenuMobile.hideNavMenu");
             // 透過 NavMenu 觸發動作
             if (NavMenuInstance != null)
             {

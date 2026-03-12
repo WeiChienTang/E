@@ -438,8 +438,10 @@ else
         }
 
         // 批次載入生產排程狀態
+        // 注意：不用 ScheduledQuantity > 0 過濾，因為該欄位是冗餘欄位（§4.4 非原子操作 Bug 可能使其不準確）
+        // 改為對所有已儲存的明細查詢即時聚合狀態，由 GetAggregateStatusMapAsync 決定是否有排程記錄
         var detailIds = Items
-            .Where(i => i.ScheduledQuantity > 0 && i.ExistingDetailEntity is SalesOrderDetail d && d.Id > 0)
+            .Where(i => i.ExistingDetailEntity is SalesOrderDetail d && d.Id > 0)
             .Select(i => ((SalesOrderDetail)i.ExistingDetailEntity!).Id)
             .ToList();
 
@@ -699,9 +701,12 @@ else
         // 檢查是否有沖款記錄
         if (HasPaymentRecord(item)) return true;
         
+        // 檢查是否已有排程（使用即時聚合狀態，比冗餘欄位 ScheduledQuantity 更可靠）
+        if (item.ProductionStatus.HasValue) return true;
+
         // 檢查是否已轉下一步（已出貨）
         if (item.DeliveredQuantity > 0) return true;
-        
+
         // 其他情況可編輯
         return false;
     }

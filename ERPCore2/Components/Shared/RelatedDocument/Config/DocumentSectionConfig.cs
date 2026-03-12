@@ -109,8 +109,8 @@ public class DocumentSectionConfig
             {
                 Title = "生產排程",
                 Icon = "calendar-check",
-                TextColor = "dark",
-                BadgeColor = "dark",
+                TextColor = "body",
+                BadgeColor = "secondary",
                 ShowAddButton = false
             },
             

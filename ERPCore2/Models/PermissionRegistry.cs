@@ -87,7 +87,8 @@ public static class PermissionRegistry
 
     public static class Employee
     {
-        public const string Read = "Employee.Read";
+        public const string Read      = "Employee.Read";
+        public const string ChartRead = "EmployeeChart.Read";
     }
 
     public static class Department
@@ -199,7 +200,8 @@ public static class PermissionRegistry
 
     public static class Inventory
     {
-        public const string Read = "Inventory.Read";
+        public const string Read      = "Inventory.Read";
+        public const string ChartRead = "InventoryChart.Read";
     }
 
     public static class WarehouseLocation
@@ -275,7 +277,8 @@ public static class PermissionRegistry
 
     public static class Sales
     {
-        public const string Read = "Sales.Read";
+        public const string Read      = "Sales.Read";
+        public const string ChartRead = "SalesChart.Read";
     }
 
     public static class SalesOrder
@@ -303,8 +306,9 @@ public static class PermissionRegistry
 
     public static class PurchaseOrder
     {
-        public const string Read = "PurchaseOrder.Read";
-        public const string Approve = "PurchaseOrder.Approve";
+        public const string Read      = "PurchaseOrder.Read";
+        public const string Approve   = "PurchaseOrder.Approve";
+        public const string ChartRead = "PurchaseChart.Read";
     }
 
     public static class PurchaseReceiving
@@ -393,9 +397,10 @@ public static class PermissionRegistry
 
         // ===== 一般權限：人力 =====
         new(User.Read,              "檢視使用者",   PermissionLevel.Normal, "檢視系統使用者基本資料",       "Nav.HumanResources"),
-        new(Employee.Read,          "檢視員工",     PermissionLevel.Normal, "檢視員工基本資料與組織架構",   "Nav.HumanResources"),
-        new(Department.Read,        "檢視部門",     PermissionLevel.Normal, "檢視公司部門組織架構資料",     "Nav.HumanResources"),
-        new(EmployeePosition.Read,  "檢視員工職位", PermissionLevel.Normal, "檢視員工職位與職級設定",       "Nav.HumanResources"),
+        new(Employee.Read,          "檢視員工",     PermissionLevel.Normal, "檢視員工基本資料與組織架構",         "Nav.HumanResources"),
+        new(Employee.ChartRead,     "檢視員工圖表", PermissionLevel.Normal, "檢視員工統計分析圖表（主管層級）",   "Nav.HumanResources"),
+        new(Department.Read,        "檢視部門",     PermissionLevel.Normal, "檢視公司部門組織架構資料",           "Nav.HumanResources"),
+        new(EmployeePosition.Read,  "檢視員工職位", PermissionLevel.Normal, "檢視員工職位與職級設定",             "Nav.HumanResources"),
 
         // ===== 一般權限：客戶 =====
         new(Customer.Read,      "檢視客戶",     PermissionLevel.Normal, "檢視客戶基本資料與相關資訊",   "Nav.CustomerGroup"),
@@ -428,6 +433,7 @@ public static class PermissionRegistry
         // ===== 一般權限：倉庫 =====
         new(Warehouse.Read,             "檢視倉庫",         PermissionLevel.Normal, "檢視倉庫基本資料與儲位設定",     "Nav.InventoryGroup"),
         new(Inventory.Read,             "檢視庫存",         PermissionLevel.Normal, "檢視庫存數量與庫存狀況",         "Nav.InventoryGroup"),
+        new(Inventory.ChartRead,        "檢視庫存圖表",     PermissionLevel.Normal, "檢視庫存統計分析圖表（主管層級）", "Nav.InventoryGroup"),
         new(WarehouseLocation.Read,     "檢視倉庫位置",     PermissionLevel.Normal, "檢視倉庫內部位置與儲位設定",     "Nav.InventoryGroup"),
         new(InventoryTransaction.Read,  "檢視庫存異動",     PermissionLevel.Normal, "檢視庫存進出異動記錄",           "Nav.InventoryGroup"),
         new(InventoryTransactionType.Read,"檢視庫存異動類型",PermissionLevel.Normal, "檢視庫存異動類型與分類設定",     "Nav.InventoryGroup"),
@@ -449,6 +455,7 @@ public static class PermissionRegistry
         // ===== 一般權限：銷貨 =====
         new(Quotation.Read,         "檢視報價單",       PermissionLevel.Normal, "檢視報價單與客戶交易紀錄",       "Nav.SalesGroup"),
         new(Sales.Read,             "檢視銷售訂單",     PermissionLevel.Normal, "檢視銷售訂單與客戶交易紀錄",     "Nav.SalesGroup"),
+        new(Sales.ChartRead,        "檢視銷貨圖表",     PermissionLevel.Normal, "檢視銷貨統計分析圖表（主管層級）", "Nav.SalesGroup"),
         new(SalesOrder.Read,        "檢視銷貨訂單",     PermissionLevel.Normal, "檢視銷貨訂單詳細資料",           "Nav.SalesGroup"),
         new(SalesDelivery.Read,     "檢視銷貨出貨",     PermissionLevel.Normal, "檢視銷貨出貨單與配送記錄",       "Nav.SalesGroup"),
         new(SalesReturn.Read,       "檢視銷貨退回",     PermissionLevel.Normal, "檢視銷貨退回與退貨處理",         "Nav.SalesGroup"),
@@ -456,6 +463,7 @@ public static class PermissionRegistry
 
         // ===== 一般權限：採購 =====
         new(PurchaseOrder.Read,         "檢視採購訂單",     PermissionLevel.Normal, "檢視採購訂單與供應商交易",       "Nav.PurchaseGroup"),
+        new(PurchaseOrder.ChartRead,    "檢視採購圖表",     PermissionLevel.Normal, "檢視採購統計分析圖表（主管層級）", "Nav.PurchaseGroup"),
         new(PurchaseReceiving.Read,     "檢視採購收貨",     PermissionLevel.Normal, "檢視採購收貨單與驗收記錄",       "Nav.PurchaseGroup"),
         new(PurchaseReturn.Read,        "檢視採購退回貨",   PermissionLevel.Normal, "檢視採購退貨與退回處理",         "Nav.PurchaseGroup"),
         new(PurchaseReturnReason.Read,  "檢視採購退回原因", PermissionLevel.Normal, "檢視採購退回原因設定與管理",     "Nav.PurchaseGroup"),

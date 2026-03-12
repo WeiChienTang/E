@@ -89,7 +89,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "選擇狀態",
                             Options = new List<SelectOption>
                             {
-                                new() { Value = "",                                             Text = L?["Label.All"].ToString()                  ?? "全部" },
                                 new() { Value = ((int)CustomerStatus.Active).ToString(),      Text = L?["CustomerStatus.Active"].ToString()      ?? "正常往來" },
                                 new() { Value = ((int)CustomerStatus.Inactive).ToString(),    Text = L?["CustomerStatus.Inactive"].ToString()    ?? "停用" },
                                 new() { Value = ((int)CustomerStatus.Blacklisted).ToString(), Text = L?["CustomerStatus.Blacklisted"].ToString() ?? "黑名單" }
@@ -132,7 +131,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "選擇類型",
                             Options = new List<SelectOption>
                             {
-                                new() { Value = "",                                                   Text = L?["Label.All"].ToString()                      ?? "全部" },
                                 new() { Value = ((int)CustomerTypeEnum.Enterprise).ToString(),       Text = L?["CustomerType.Enterprise"].ToString()        ?? "企業" },
                                 new() { Value = ((int)CustomerTypeEnum.Individual).ToString(),       Text = L?["CustomerType.Individual"].ToString()        ?? "個人" },
                                 new() { Value = ((int)CustomerTypeEnum.Government).ToString(),       Text = L?["CustomerType.Government"].ToString()        ?? "政府機關" }

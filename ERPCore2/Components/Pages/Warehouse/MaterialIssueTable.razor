@@ -61,7 +61,7 @@
     private GenericInteractiveTableComponent<DetailItem>? tableComponent;
     
     // ===== 資料載入完成標記 =====
-    private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    private bool _dataLoadCompleted = false; // 初始為 false，LoadExistingDetailsAsync 完成後才設為 true，確保空白行在資料載入後才加入
     private bool _isInitialLoad = true;      // 初次載入標記，避免觸發 MarkDirty
     
     // ===== 參數 =====
@@ -219,6 +219,7 @@
             _dataLoadCompleted = true;
             _isInitialLoad = false;
             StateHasChanged();
+            tableComponent?.RefreshEmptyRow(); // 確保資料載入後空白行正確顯示
         }
         catch (Exception ex)
         {

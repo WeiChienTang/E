@@ -419,6 +419,18 @@
   <data name="Nav.SupplierCharts" xml:space="preserve">
     <value>Tsart ng Supplier</value>
   </data>
+  <data name="Nav.EmployeeCharts" xml:space="preserve">
+    <value>Tsart ng Empleyado</value>
+  </data>
+  <data name="Nav.PurchaseCharts" xml:space="preserve">
+    <value>Tsart ng Pagbili</value>
+  </data>
+  <data name="Nav.SalesCharts" xml:space="preserve">
+    <value>Tsart ng Benta</value>
+  </data>
+  <data name="Nav.InventoryCharts" xml:space="preserve">
+    <value>Tsart ng Imbentaryo</value>
+  </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>Ulat ng Pagbisita</value>
   </data>
@@ -1462,6 +1474,48 @@
   <data name="Tab.CustomerData" xml:space="preserve"><value>Data ng Customer</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>Mga Talaan ng Pagbisita</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>Mga Talaan ng Transaksyon</value></data>
+  <data name="Tab.BusinessCards" xml:space="preserve"><value>Mga Business Card</value></data>
+  <data name="Tab.CompanyData" xml:space="preserve"><value>Data ng Kumpanya</value></data>
+  <data name="Tab.CompanyLogo" xml:space="preserve"><value>Logo ng Kumpanya</value></data>
+  <data name="CompanyLogo.SaveFirst" xml:space="preserve"><value>Mangyaring i-save muna ang data ng kumpanya bago mag-upload ng logo</value></data>
+  <data name="CompanyLogo.NoLogo" xml:space="preserve"><value>Wala pang na-upload na logo</value></data>
+  <data name="CompanyLogo.Upload" xml:space="preserve"><value>Mag-upload ng Logo</value></data>
+  <data name="CompanyLogo.Change" xml:space="preserve"><value>Palitan ang Logo</value></data>
+  <data name="CompanyLogo.Delete" xml:space="preserve"><value>Burahin ang Logo</value></data>
+  <data name="CompanyLogo.DeleteSuccess" xml:space="preserve"><value>Nabura ang logo</value></data>
+  <data name="CompanyLogo.UploadSuccess" xml:space="preserve"><value>Matagumpay na na-upload ang logo</value></data>
+  <data name="CompanyLogo.DeleteMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong burahin ang logo na ito? Hindi na ito mababawi.</value></data>
+  <data name="CompanyLogo.Hint" xml:space="preserve"><value>Sinusuportahan ang JPG, PNG, GIF, SVG na format, maximum 500KB</value></data>
+  <data name="BusinessCard.SaveFirst" xml:space="preserve"><value>Mangyaring i-save muna bago mag-upload ng mga larawan ng business card</value></data>
+  <data name="BusinessCard.PhotoList" xml:space="preserve"><value>Mga Larawan ng Business Card</value></data>
+  <data name="BusinessCard.UploadPhoto" xml:space="preserve"><value>Mag-upload ng Card</value></data>
+  <data name="BusinessCard.NoPhotos" xml:space="preserve"><value>Wala pang na-upload na larawan ng business card</value></data>
+  <data name="BusinessCard.BusinessCard" xml:space="preserve"><value>Business Card</value></data>
+  <data name="BusinessCard.ContactPersonName" xml:space="preserve"><value>Pangalan ng Contact</value></data>
+  <data name="BusinessCard.JobTitle" xml:space="preserve"><value>Titulo sa Trabaho</value></data>
+  <data name="BusinessCard.SaveSuccess" xml:space="preserve"><value>Na-update ang business card</value></data>
+  <data name="BusinessCard.DeleteTitle" xml:space="preserve"><value>Burahin ang Business Card</value></data>
+  <data name="BusinessCard.DeleteMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong burahin ang larawang ito ng business card? Hindi na ito maibabalik.</value></data>
+  <data name="BusinessCard.DeleteSuccess" xml:space="preserve"><value>Nabura ang business card</value></data>
+  <data name="Tab.EmployeePhoto" xml:space="preserve"><value>Larawan ng Empleyado</value></data>
+  <data name="EmployeePhoto.SaveFirst" xml:space="preserve"><value>Mangyaring i-save muna ang datos ng empleyado bago mag-upload ng larawan</value></data>
+  <data name="EmployeePhoto.NoPhoto" xml:space="preserve"><value>Wala pang na-upload na larawan</value></data>
+  <data name="EmployeePhoto.Upload" xml:space="preserve"><value>Mag-upload ng Larawan</value></data>
+  <data name="EmployeePhoto.Change" xml:space="preserve"><value>Palitan ang Larawan</value></data>
+  <data name="EmployeePhoto.Delete" xml:space="preserve"><value>Burahin ang Larawan</value></data>
+  <data name="EmployeePhoto.DeleteSuccess" xml:space="preserve"><value>Nabura ang larawan</value></data>
+  <data name="EmployeePhoto.UploadSuccess" xml:space="preserve"><value>Matagumpay na na-upload ang larawan</value></data>
+  <data name="EmployeePhoto.DeleteMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong burahin ang larawang ito? Hindi na ito mababawi.</value></data>
+  <data name="EmployeePhoto.Hint" xml:space="preserve"><value>Sinusuportahan ang JPG, PNG na format, maximum 2MB</value></data>
+  <data name="Tab.ProductPhotos" xml:space="preserve"><value>Mga Larawan ng Produkto</value></data>
+  <data name="ProductPhoto.SaveFirst" xml:space="preserve"><value>Mangyaring i-save muna ang datos ng produkto bago mag-upload ng larawan</value></data>
+  <data name="ProductPhoto.PhotoList" xml:space="preserve"><value>Mga Larawan ng Produkto</value></data>
+  <data name="ProductPhoto.UploadPhoto" xml:space="preserve"><value>Mag-upload ng Larawan</value></data>
+  <data name="ProductPhoto.NoPhotos" xml:space="preserve"><value>Wala pang na-upload na mga larawan ng produkto</value></data>
+  <data name="ProductPhoto.Caption" xml:space="preserve"><value>Paliwanag</value></data>
+  <data name="ProductPhoto.DeleteTitle" xml:space="preserve"><value>Burahin ang Larawan</value></data>
+  <data name="ProductPhoto.DeleteMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong burahin ang larawang ito? Hindi na ito maibabalik.</value></data>
+  <data name="ProductPhoto.DeleteSuccess" xml:space="preserve"><value>Nabura ang larawan</value></data>
   <data name="Tab.ProductData" xml:space="preserve"><value>Data ng Produkto</value></data>
   <data name="Tab.OrderData" xml:space="preserve"><value>Data ng Order</value></data>
   <data name="Tab.OrderDetail" xml:space="preserve"><value>Detalye ng Order</value></data>
@@ -2059,6 +2113,14 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Customer</value></data>
   <!-- ===== Supplier Module ===== -->
   <data name="Supplier.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Supplier</value></data>
+  <!-- ===== Employee Module ===== -->
+  <data name="Employee.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Empleyado</value></data>
+  <!-- ===== Purchase Module ===== -->
+  <data name="Purchase.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Pagbili</value></data>
+  <!-- ===== Sales Module ===== -->
+  <data name="Sales.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Benta</value></data>
+  <!-- ===== Inventory Module ===== -->
+  <data name="Inventory.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Imbentaryo</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>Walang kaugnay na mga transaksyon</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>Wala pang mga rekord ng pagbisita</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>Walang kaugnay na mga transaksyon</value></data>

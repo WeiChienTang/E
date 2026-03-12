@@ -9,6 +9,7 @@
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject IProductCompositionService ProductCompositionService
+@inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
 @inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
 @inject INavigationPermissionService NavigationPermissionService
@@ -21,17 +22,30 @@
         @* Row 1：導航 + 右側工具 *@
         <div class="toolbar-row-1">
             <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                IconClass="bi bi-chevron-left" OnClick="PreviousWeek" Title="上一週" />
+                IconClass="bi bi-chevron-left" OnClick="Previous" Title="上一個" />
 
             <span class="week-label">
-                @WeekStart.ToString("yyyy/MM/dd") – @WeekEnd.ToString("MM/dd")
+                @DateRangeLabel
             </span>
 
             <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                IconClass="bi bi-chevron-right" OnClick="NextWeek" Title="下一週" />
+                IconClass="bi bi-chevron-right" OnClick="Next" Title="下一個" />
 
             <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small"
                 Text="今天" OnClick="GoToToday" />
+
+            @* 視圖模式切換 *@
+            <div class="btn-group btn-group-sm" role="group" aria-label="視圖模式">
+                <GenericButtonComponent Text="日"
+                    Variant="@(viewMode == ViewMode.Day ? ButtonVariant.DarkBlue : ButtonVariant.OutlineGray)"
+                    OnClick="@(() => SetViewMode(ViewMode.Day))" />
+                <GenericButtonComponent Text="3天"
+                    Variant="@(viewMode == ViewMode.ThreeDay ? ButtonVariant.DarkBlue : ButtonVariant.OutlineGray)"
+                    OnClick="@(() => SetViewMode(ViewMode.ThreeDay))" />
+                <GenericButtonComponent Text="週"
+                    Variant="@(viewMode == ViewMode.Week ? ButtonVariant.DarkBlue : ButtonVariant.OutlineGray)"
+                    OnClick="@(() => SetViewMode(ViewMode.Week))" />
+            </div>
 
             <div class="ms-auto d-flex align-items-center gap-2">
                 @* 9.5 交期預警 *@
@@ -62,15 +76,23 @@
         @* Row 2：篩選 + 操作按鈕 *@
         <div class="toolbar-row-2">
             @* 9.3 狀態篩選 *@
-            <div class="btn-group btn-group-sm" role="group" aria-label="狀態篩選">
-                <button type="button" class="btn @(statusFilter == null ? "btn-primary" : "btn-outline-secondary")"
-                        @onclick="() => statusFilter = null">全部</button>
-                <button type="button" class="btn @(statusFilter == ProductionItemStatus.WaitingMaterial ? "btn-warning" : "btn-outline-secondary")"
-                        @onclick="() => statusFilter = ProductionItemStatus.WaitingMaterial">待領料</button>
-                <button type="button" class="btn @(statusFilter == ProductionItemStatus.InProgress ? "btn-primary" : "btn-outline-secondary")"
-                        @onclick="() => statusFilter = ProductionItemStatus.InProgress">生產中</button>
-                <button type="button" class="btn @(statusFilter == ProductionItemStatus.Completed ? "btn-success" : "btn-outline-secondary")"
-                        @onclick="() => statusFilter = ProductionItemStatus.Completed">已完成</button>
+            <div class="btn-group" role="group" aria-label="狀態篩選">
+                <GenericButtonComponent
+                    Text="全部"
+                    Variant="@(statusFilter == null ? ButtonVariant.DarkBlue : ButtonVariant.OutlineGray)"
+                    OnClick="@(() => statusFilter = null)" />
+                <GenericButtonComponent
+                    Text="待領料"
+                    Variant="@(statusFilter == ProductionItemStatus.WaitingMaterial ? ButtonVariant.Yellow : ButtonVariant.OutlineGray)"
+                    OnClick="@(() => statusFilter = ProductionItemStatus.WaitingMaterial)" />
+                <GenericButtonComponent
+                    Text="生產中"
+                    Variant="@(statusFilter == ProductionItemStatus.InProgress ? ButtonVariant.DarkBlue : ButtonVariant.OutlineGray)"
+                    OnClick="@(() => statusFilter = ProductionItemStatus.InProgress)" />
+                <GenericButtonComponent
+                    Text="已完成"
+                    Variant="@(statusFilter == ProductionItemStatus.Completed ? ButtonVariant.Green : ButtonVariant.OutlineGray)"
+                    OnClick="@(() => statusFilter = ProductionItemStatus.Completed)" />
             </div>
 
             @* 手機版換行節點：將功能按鈕推到第三行（桌面無作用） *@
@@ -81,7 +103,7 @@
                 IconClass="bi bi-check2-all" Text="批次完工"
                 OnClick="@(() => showBatchCompleteModal = true)"
                 IsDisabled="@(!boardItems.Any(i => i.ProductionItemStatus == ProductionItemStatus.InProgress))"
-                Title="批次確認本週生產中項目完工" />
+                Title="批次確認目前視圖生產中項目完工" />
 
             @* 列印本週排程 *@
             <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
@@ -106,7 +128,7 @@
 
     @* 9.1 摘要列 *@
     <div class="board-summary-bar">
-        <span class="summary-item summary-total">本週 @TotalBoardItems 件</span>
+        <span class="summary-item summary-total">@ViewLabel @TotalBoardItems 件</span>
         @if (WaitingCount > 0)
         {
             <span class="summary-item summary-waiting">等待領料 @WaitingCount</span>
@@ -153,8 +175,8 @@
             IsMobileOpen="@showMobileSidebar" />
 
         @* 週視圖主體 *@
-        <div class="board-week-columns">
-            @foreach (var day in WeekDays)
+        <div class="board-week-columns @(viewMode == ViewMode.Day ? "view-day" : viewMode == ViewMode.ThreeDay ? "view-three" : "")">
+            @foreach (var day in ViewDays)
             {
                 <ProductionBoardDayColumn
                     Date="@day"
@@ -223,10 +245,26 @@
     InitialCriteria="@materialReqInitialCriteria" />
 
 @code {
-    // ── 週導航 ──
-    private DateTime WeekStart { get; set; } = GetMonday(DateTime.Today);
-    private DateTime WeekEnd   => WeekStart.AddDays(6);
-    private IEnumerable<DateTime> WeekDays => Enumerable.Range(0, 7).Select(d => WeekStart.AddDays(d));
+    // ── 視圖模式 ──
+    private enum ViewMode { Day, ThreeDay, Week }
+    private ViewMode viewMode = ViewMode.Week;
+
+    // ── 視圖導航 ──
+    private DateTime ViewStart { get; set; } = GetMonday(DateTime.Today);
+    private DateTime ViewEnd   => ViewStart.AddDays(DayCount - 1);
+    private IEnumerable<DateTime> ViewDays => Enumerable.Range(0, DayCount).Select(d => ViewStart.AddDays(d));
+    private int DayCount => viewMode switch { ViewMode.Day => 1, ViewMode.ThreeDay => 3, _ => 7 };
+
+    private string ViewLabel => viewMode switch
+    {
+        ViewMode.Day      => "今日",
+        ViewMode.ThreeDay => "近 3 日",
+        _                 => "本週"
+    };
+
+    private string DateRangeLabel => viewMode == ViewMode.Day
+        ? $"{ViewStart:yyyy/MM/dd}（{GetDayOfWeekLabel(ViewStart.DayOfWeek)}）"
+        : $"{ViewStart:yyyy/MM/dd} – {ViewEnd:MM/dd}";
 
     // ── 資料 ──
     private List<BoardScheduleItemDto> boardItems = new();
@@ -295,7 +333,7 @@
         StateHasChanged();
         try
         {
-            var boardTask        = ScheduleItemService.GetByDateRangeAsync(WeekStart, WeekEnd);
+            var boardTask        = ScheduleItemService.GetByDateRangeAsync(ViewStart, ViewEnd);
             var scheduledMapTask = ScheduleItemService.GetScheduledQuantityMapAsync();
             var pendingDetailsTask = SalesOrderDetailService.GetForProductionBoardAsync();
             await Task.WhenAll(boardTask, scheduledMapTask, pendingDetailsTask);
@@ -377,25 +415,48 @@
         }).ToList();
     }
 
-    // ── 週導航 ──
+    // ── 導航 ──
 
-    private async Task PreviousWeek()
+    private async Task Previous()
     {
-        WeekStart = WeekStart.AddDays(-7);
+        ViewStart = ViewStart.AddDays(-DayCount);
         await LoadDataAsync();
     }
 
-    private async Task NextWeek()
+    private async Task Next()
     {
-        WeekStart = WeekStart.AddDays(7);
+        ViewStart = ViewStart.AddDays(DayCount);
         await LoadDataAsync();
     }
 
     private async Task GoToToday()
     {
-        WeekStart = GetMonday(DateTime.Today);
+        ViewStart = viewMode == ViewMode.Week ? GetMonday(DateTime.Today) : DateTime.Today;
         await LoadDataAsync();
     }
+
+    private async Task SetViewMode(ViewMode mode)
+    {
+        if (viewMode == mode) return;
+        ViewStart = mode switch
+        {
+            ViewMode.Week => GetMonday(ViewStart), // 切到週：保留錨點所在的週一
+            _             => DateTime.Today        // 切到日/3天：以今天為起點
+        };
+        viewMode = mode;
+        await LoadDataAsync();
+    }
+
+    private static string GetDayOfWeekLabel(DayOfWeek dow) => dow switch
+    {
+        DayOfWeek.Monday    => "週一",
+        DayOfWeek.Tuesday   => "週二",
+        DayOfWeek.Wednesday => "週三",
+        DayOfWeek.Thursday  => "週四",
+        DayOfWeek.Friday    => "週五",
+        DayOfWeek.Saturday  => "週六",
+        _                   => "週日"
+    };
 
     // ── 卡片點擊 → 快速編輯 ──
 
@@ -539,7 +600,7 @@
         }
 
         // 展開 BOM，建立 ProductionScheduleDetail
-        await ExpandBomAsync(item.Id, pending.ProductId, pending.PendingQuantity);
+        await ExpandBomAsync(item.Id, pending.ProductId, pending.PendingQuantity, pending.SalesOrderDetailId);
 
         // 檢查每項 BOM 組件的可用庫存，不足時顯示警告（不阻擋）
         var bomDetails = await ScheduleDetailService.GetByScheduleItemIdAsync(item.Id);
@@ -579,10 +640,32 @@
         }
     }
 
-    private async Task ExpandBomAsync(int itemId, int productId, decimal qty)
+    private async Task ExpandBomAsync(int itemId, int productId, decimal qty, int salesOrderDetailId = 0)
     {
         try
         {
+            // 優先使用銷貨訂單的自訂 BOM（SalesOrderCompositionDetail）
+            if (salesOrderDetailId > 0)
+            {
+                var customBom = await SalesOrderCompositionDetailService.GetBySalesOrderDetailIdAsync(salesOrderDetailId);
+                if (customBom.Any())
+                {
+                    var customDetails = customBom.Select(d => new ProductionScheduleDetail
+                    {
+                        ProductionScheduleItemId   = itemId,
+                        ComponentProductId         = d.ComponentProductId,
+                        RequiredQuantity           = d.Quantity * qty,
+                        IssuedQuantity             = 0,
+                        Status                     = EntityStatus.Active,
+                        CreatedAt                  = DateTime.Now
+                    }).ToList();
+
+                    await ScheduleDetailService.CreateDetailsForItemAsync(itemId, customDetails);
+                    return;
+                }
+            }
+
+            // Fallback：使用商品預設 BOM（ProductComposition）
             var compositions = await ProductCompositionService.GetCompositionsByProductIdAsync(productId);
             var composition  = compositions.FirstOrDefault();
             if (composition == null) return;
@@ -592,13 +675,13 @@
 
             var details = full.CompositionDetails.Select(d => new ProductionScheduleDetail
             {
-                ProductionScheduleItemId  = itemId,
-                ComponentProductId        = d.ComponentProductId,
+                ProductionScheduleItemId   = itemId,
+                ComponentProductId         = d.ComponentProductId,
                 ProductCompositionDetailId = d.Id,
-                RequiredQuantity          = d.Quantity * qty,
-                IssuedQuantity            = 0,
-                Status                    = EntityStatus.Active,
-                CreatedAt                 = DateTime.Now
+                RequiredQuantity           = d.Quantity * qty,
+                IssuedQuantity             = 0,
+                Status                     = EntityStatus.Active,
+                CreatedAt                  = DateTime.Now
             }).ToList();
 
             await ScheduleDetailService.CreateDetailsForItemAsync(itemId, details);
@@ -737,8 +820,8 @@
     {
         printInitialCriteria = new ProductionScheduleCriteria
         {
-            StartDate = WeekStart,
-            EndDate   = WeekEnd
+            StartDate = ViewStart,
+            EndDate   = ViewEnd
         };
         showPrintModal = true;
     }
@@ -747,8 +830,8 @@
     {
         materialReqInitialCriteria = new MaterialRequirementsCriteria
         {
-            StartDate = WeekStart,
-            EndDate   = WeekEnd
+            StartDate = ViewStart,
+            EndDate   = ViewEnd
         };
         showMaterialReqModal = true;
     }

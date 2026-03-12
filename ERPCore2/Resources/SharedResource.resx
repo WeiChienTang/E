@@ -420,6 +420,18 @@
   <data name="Nav.SupplierCharts" xml:space="preserve">
     <value>廠商圖表</value>
   </data>
+  <data name="Nav.EmployeeCharts" xml:space="preserve">
+    <value>員工圖表</value>
+  </data>
+  <data name="Nav.PurchaseCharts" xml:space="preserve">
+    <value>採購圖表</value>
+  </data>
+  <data name="Nav.SalesCharts" xml:space="preserve">
+    <value>銷貨圖表</value>
+  </data>
+  <data name="Nav.InventoryCharts" xml:space="preserve">
+    <value>庫存圖表</value>
+  </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>拜訪報告</value>
   </data>
@@ -1482,6 +1494,48 @@
   <data name="Tab.CustomerData" xml:space="preserve"><value>客戶資料</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>拜訪紀錄</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>交易紀錄</value></data>
+  <data name="Tab.BusinessCards" xml:space="preserve"><value>名片</value></data>
+  <data name="Tab.CompanyData" xml:space="preserve"><value>公司資料</value></data>
+  <data name="Tab.CompanyLogo" xml:space="preserve"><value>公司 Logo</value></data>
+  <data name="CompanyLogo.SaveFirst" xml:space="preserve"><value>請先儲存公司資料後再上傳 Logo</value></data>
+  <data name="CompanyLogo.NoLogo" xml:space="preserve"><value>尚未上傳 Logo</value></data>
+  <data name="CompanyLogo.Upload" xml:space="preserve"><value>上傳 Logo</value></data>
+  <data name="CompanyLogo.Change" xml:space="preserve"><value>更換 Logo</value></data>
+  <data name="CompanyLogo.Delete" xml:space="preserve"><value>刪除 Logo</value></data>
+  <data name="CompanyLogo.DeleteSuccess" xml:space="preserve"><value>Logo 已刪除</value></data>
+  <data name="CompanyLogo.UploadSuccess" xml:space="preserve"><value>Logo 上傳成功</value></data>
+  <data name="CompanyLogo.DeleteMessage" xml:space="preserve"><value>確定要刪除此 Logo 嗎？此操作無法復原。</value></data>
+  <data name="CompanyLogo.Hint" xml:space="preserve"><value>支援 JPG、PNG、GIF、SVG 格式，上限 500KB</value></data>
+  <data name="BusinessCard.SaveFirst" xml:space="preserve"><value>請先儲存後再上傳名片照片</value></data>
+  <data name="BusinessCard.PhotoList" xml:space="preserve"><value>名片照片</value></data>
+  <data name="BusinessCard.UploadPhoto" xml:space="preserve"><value>上傳名片</value></data>
+  <data name="BusinessCard.NoPhotos" xml:space="preserve"><value>尚未上傳任何名片照片</value></data>
+  <data name="BusinessCard.BusinessCard" xml:space="preserve"><value>名片</value></data>
+  <data name="BusinessCard.ContactPersonName" xml:space="preserve"><value>聯絡人姓名</value></data>
+  <data name="BusinessCard.JobTitle" xml:space="preserve"><value>職稱</value></data>
+  <data name="BusinessCard.SaveSuccess" xml:space="preserve"><value>名片資訊已更新</value></data>
+  <data name="BusinessCard.DeleteTitle" xml:space="preserve"><value>刪除名片</value></data>
+  <data name="BusinessCard.DeleteMessage" xml:space="preserve"><value>確定要刪除此名片照片嗎？此操作無法還原。</value></data>
+  <data name="BusinessCard.DeleteSuccess" xml:space="preserve"><value>名片已刪除</value></data>
+  <data name="Tab.EmployeePhoto" xml:space="preserve"><value>員工照片</value></data>
+  <data name="EmployeePhoto.SaveFirst" xml:space="preserve"><value>請先儲存員工資料後再上傳照片</value></data>
+  <data name="EmployeePhoto.NoPhoto" xml:space="preserve"><value>尚未上傳照片</value></data>
+  <data name="EmployeePhoto.Upload" xml:space="preserve"><value>上傳照片</value></data>
+  <data name="EmployeePhoto.Change" xml:space="preserve"><value>更換照片</value></data>
+  <data name="EmployeePhoto.Delete" xml:space="preserve"><value>刪除照片</value></data>
+  <data name="EmployeePhoto.DeleteSuccess" xml:space="preserve"><value>照片已刪除</value></data>
+  <data name="EmployeePhoto.UploadSuccess" xml:space="preserve"><value>照片上傳成功</value></data>
+  <data name="EmployeePhoto.DeleteMessage" xml:space="preserve"><value>確定要刪除此照片嗎？此操作無法復原。</value></data>
+  <data name="EmployeePhoto.Hint" xml:space="preserve"><value>支援 JPG、PNG 格式，上限 2MB</value></data>
+  <data name="Tab.ProductPhotos" xml:space="preserve"><value>商品照片</value></data>
+  <data name="ProductPhoto.SaveFirst" xml:space="preserve"><value>請先儲存商品資料後再上傳照片</value></data>
+  <data name="ProductPhoto.PhotoList" xml:space="preserve"><value>商品照片</value></data>
+  <data name="ProductPhoto.UploadPhoto" xml:space="preserve"><value>上傳照片</value></data>
+  <data name="ProductPhoto.NoPhotos" xml:space="preserve"><value>尚未上傳任何商品照片</value></data>
+  <data name="ProductPhoto.Caption" xml:space="preserve"><value>圖說</value></data>
+  <data name="ProductPhoto.DeleteTitle" xml:space="preserve"><value>刪除照片</value></data>
+  <data name="ProductPhoto.DeleteMessage" xml:space="preserve"><value>確定要刪除此照片嗎？此操作無法還原。</value></data>
+  <data name="ProductPhoto.DeleteSuccess" xml:space="preserve"><value>照片已刪除</value></data>
   <data name="Tab.ProductData" xml:space="preserve"><value>商品資料</value></data>
   <data name="Tab.OrderData" xml:space="preserve"><value>訂單資料</value></data>
   <data name="Tab.OrderDetail" xml:space="preserve"><value>訂單明細</value></data>
@@ -2084,6 +2138,14 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>客戶分析圖表</value></data>
   <!-- ===== Supplier 廠商模組 ===== -->
   <data name="Supplier.ChartTitle" xml:space="preserve"><value>廠商分析圖表</value></data>
+  <!-- ===== Employee 員工模組 ===== -->
+  <data name="Employee.ChartTitle" xml:space="preserve"><value>員工分析圖表</value></data>
+  <!-- ===== Purchase 採購模組 ===== -->
+  <data name="Purchase.ChartTitle" xml:space="preserve"><value>採購分析圖表</value></data>
+  <!-- ===== Sales 銷貨模組 ===== -->
+  <data name="Sales.ChartTitle" xml:space="preserve"><value>銷貨分析圖表</value></data>
+  <!-- ===== Inventory 庫存模組 ===== -->
+  <data name="Inventory.ChartTitle" xml:space="preserve"><value>庫存分析圖表</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>沒有相關交易紀錄</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>尚無拜訪紀錄</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>沒有相關交易紀錄</value></data>

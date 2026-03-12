@@ -1,0 +1,29 @@
+using ERPCore2.Models.Charts;
+
+namespace ERPCore2.Services.Sales;
+
+public interface ISalesChartService
+{
+    /// <summary>依商品統計銷售金額排行 Top N（含稅）</summary>
+    Task<List<ChartDataItem>> GetTopProductsBySalesAmountAsync(int top = 10);
+
+    /// <summary>依業務員統計銷售業績排行 Top N（含稅）</summary>
+    Task<List<ChartDataItem>> GetTopEmployeesBySalesAmountAsync(int top = 10);
+
+    /// <summary>取得近 N 個月每月出貨金額趨勢（含稅）</summary>
+    Task<List<ChartDataItem>> GetMonthlyDeliveryTrendAsync(int months = 12);
+
+    /// <summary>依退回原因統計銷貨退回次數</summary>
+    Task<List<ChartDataItem>> GetReturnsByReasonAsync();
+
+    /// <summary>取得近 N 個月每月銷貨退回金額趨勢（含稅）</summary>
+    Task<List<ChartDataItem>> GetMonthlyReturnTrendAsync(int months = 12);
+
+    /// <summary>取得銷貨統計摘要</summary>
+    Task<SalesChartSummary> GetSummaryAsync();
+
+    // ===== Drill-down 明細查詢 =====
+    Task<List<ChartDetailItem>> GetDeliveryDetailsByProductAsync(string productLabel);
+    Task<List<ChartDetailItem>> GetDeliveryDetailsByEmployeeAsync(string employeeLabel);
+    Task<List<ChartDetailItem>> GetReturnDetailsByReasonAsync(string reasonLabel);
+}

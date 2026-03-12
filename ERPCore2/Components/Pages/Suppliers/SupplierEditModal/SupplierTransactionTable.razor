@@ -56,52 +56,62 @@ else
     @* 統計摘要（基於全部資料，不受篩選影響） *@
     @if (_allTransactions.Any())
     {
-        <div class="d-flex align-items-stretch gap-0 border rounded mt-2 overflow-hidden tx-stats-bar">
+        <div class="row g-2 mt-2">
 
             @* 淨採購額 - 主要指標 *@
-            <div class="d-flex flex-column align-items-center justify-content-center px-3 py-2 border-end tx-net-purchase-cell">
-                <span class="text-muted">@L["Supplier.NetPurchase"]</span>
-                <span class="fw-bold fs-5 @(NetPurchase >= 0 ? "text-success" : "text-danger")">
-                    @NumberFormatHelper.FormatSmartTrim(NetPurchase, useThousandsSeparator: true)
-                </span>
+            <div class="col-6 col-md-auto">
+                <div class="border rounded px-3 py-2 h-100 text-center tx-net-purchase-cell">
+                    <div class="text-muted small">@L["Supplier.NetPurchase"]</div>
+                    <div class="fw-bold fs-5 @(NetPurchase >= 0 ? "text-success" : "text-danger")">
+                        @NumberFormatHelper.FormatSmartTrim(NetPurchase, useThousandsSeparator: true)
+                    </div>
+                </div>
             </div>
 
             @* 進貨 *@
-            <div class="d-flex flex-column justify-content-center px-3 py-2 border-end">
-                <span class="text-muted">@L["Supplier.Receiving"]</span>
-                <span>
-                    <span class="text-success fw-semibold">@string.Format(L["Label.RecordCount"], ReceivingCount)</span>
-                    <span class="text-muted ms-1">@NumberFormatHelper.FormatSmartTrim(ReceivingTotal, useThousandsSeparator: true)</span>
-                </span>
+            <div class="col-6 col-md-auto">
+                <div class="border rounded px-3 py-2 h-100">
+                    <div class="text-muted small">@L["Supplier.Receiving"]</div>
+                    <div>
+                        <span class="text-success fw-semibold">@string.Format(L["Label.RecordCount"], ReceivingCount)</span>
+                        <span class="text-muted ms-1">@NumberFormatHelper.FormatSmartTrim(ReceivingTotal, useThousandsSeparator: true)</span>
+                    </div>
+                </div>
             </div>
 
             @* 退貨 *@
-            <div class="d-flex flex-column justify-content-center px-3 py-2 border-end">
-                <span class="text-muted">@L["Supplier.Return"]@(ReturnRate.HasValue ? $"（{ReturnRate.Value:F1}%）" : "")</span>
-                <span>
-                    <span class="text-danger fw-semibold">@string.Format(L["Label.RecordCount"], ReturnCount)</span>
-                    <span class="text-muted ms-1">@NumberFormatHelper.FormatSmartTrim(ReturnTotal, useThousandsSeparator: true)</span>
-                </span>
+            <div class="col-6 col-md-auto">
+                <div class="border rounded px-3 py-2 h-100">
+                    <div class="text-muted small">@L["Supplier.Return"]@(ReturnRate.HasValue ? $"（{ReturnRate.Value:F1}%）" : "")</div>
+                    <div>
+                        <span class="text-danger fw-semibold">@string.Format(L["Label.RecordCount"], ReturnCount)</span>
+                        <span class="text-muted ms-1">@NumberFormatHelper.FormatSmartTrim(ReturnTotal, useThousandsSeparator: true)</span>
+                    </div>
+                </div>
             </div>
 
             @* 最後交易 *@
             @if (LastTxDate.HasValue)
             {
-                <div class="d-flex flex-column justify-content-center px-3 py-2 border-end">
-                    <span class="text-muted">@L["Supplier.LastTransaction"]</span>
-                    <span>
-                        <span class="@LastTxRecencyClass fw-semibold">@LastTxDate.Value.ToString("yyyy-MM-dd")</span>
-                        <span class="text-muted ms-1">@string.Format(L["Label.DaysAgo"], DaysSinceLastTx)</span>
-                    </span>
+                <div class="col-6 col-md-auto">
+                    <div class="border rounded px-3 py-2 h-100">
+                        <div class="text-muted small">@L["Supplier.LastTransaction"]</div>
+                        <div>
+                            <span class="@LastTxRecencyClass fw-semibold">@LastTxDate.Value.ToString("yyyy-MM-dd")</span>
+                            <span class="text-muted ms-1">@string.Format(L["Label.DaysAgo"], DaysSinceLastTx)</span>
+                        </div>
+                    </div>
                 </div>
             }
 
             @* 平均進貨金額（僅當有進貨單時顯示） *@
             @if (AvgReceiving.HasValue)
             {
-                <div class="d-flex flex-column justify-content-center px-3 py-2">
-                    <span class="text-muted">@L["Supplier.AvgReceiving"]</span>
-                    <span class="text-primary fw-semibold">@NumberFormatHelper.FormatSmartTrim(AvgReceiving.Value, useThousandsSeparator: true)</span>
+                <div class="col-6 col-md-auto">
+                    <div class="border rounded px-3 py-2 h-100">
+                        <div class="text-muted small">@L["Supplier.AvgReceiving"]</div>
+                        <div class="text-primary fw-semibold">@NumberFormatHelper.FormatSmartTrim(AvgReceiving.Value, useThousandsSeparator: true)</div>
+                    </div>
                 </div>
             }
 

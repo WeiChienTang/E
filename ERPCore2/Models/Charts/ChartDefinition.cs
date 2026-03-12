@@ -29,11 +29,13 @@ public class ChartDefinition
 /// <summary>圖表分類常數</summary>
 public static class ChartCategory
 {
-    public const string Customer = "Customer";
-    public const string Supplier = "Supplier";
-    public const string Employee = "Employee";
-    public const string Product  = "Product";
-    public const string Sales    = "Sales";
+    public const string Customer  = "Customer";
+    public const string Supplier  = "Supplier";
+    public const string Employee  = "Employee";
+    public const string Product   = "Product";
+    public const string Sales     = "Sales";
+    public const string Purchase  = "Purchase";
+    public const string Inventory = "Inventory";
 }
 
 /// <summary>SeriesType 中文名稱與 Bootstrap Icon 對照表</summary>

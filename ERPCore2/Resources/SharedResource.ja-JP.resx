@@ -419,6 +419,18 @@
   <data name="Nav.SupplierCharts" xml:space="preserve">
     <value>仕入先グラフ</value>
   </data>
+  <data name="Nav.EmployeeCharts" xml:space="preserve">
+    <value>従業員グラフ</value>
+  </data>
+  <data name="Nav.PurchaseCharts" xml:space="preserve">
+    <value>仕入グラフ</value>
+  </data>
+  <data name="Nav.SalesCharts" xml:space="preserve">
+    <value>売上グラフ</value>
+  </data>
+  <data name="Nav.InventoryCharts" xml:space="preserve">
+    <value>在庫グラフ</value>
+  </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>訪問レポート</value>
   </data>
@@ -1462,6 +1474,48 @@
   <data name="Tab.CustomerData" xml:space="preserve"><value>顧客情報</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>訪問記録</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>取引記録</value></data>
+  <data name="Tab.BusinessCards" xml:space="preserve"><value>名刺</value></data>
+  <data name="Tab.CompanyData" xml:space="preserve"><value>会社情報</value></data>
+  <data name="Tab.CompanyLogo" xml:space="preserve"><value>会社ロゴ</value></data>
+  <data name="CompanyLogo.SaveFirst" xml:space="preserve"><value>ロゴをアップロードする前に会社情報を保存してください</value></data>
+  <data name="CompanyLogo.NoLogo" xml:space="preserve"><value>ロゴがまだアップロードされていません</value></data>
+  <data name="CompanyLogo.Upload" xml:space="preserve"><value>ロゴをアップロード</value></data>
+  <data name="CompanyLogo.Change" xml:space="preserve"><value>ロゴを変更</value></data>
+  <data name="CompanyLogo.Delete" xml:space="preserve"><value>ロゴを削除</value></data>
+  <data name="CompanyLogo.DeleteSuccess" xml:space="preserve"><value>ロゴを削除しました</value></data>
+  <data name="CompanyLogo.UploadSuccess" xml:space="preserve"><value>ロゴのアップロードが完了しました</value></data>
+  <data name="CompanyLogo.DeleteMessage" xml:space="preserve"><value>このロゴを削除してもよろしいですか？この操作は元に戻せません。</value></data>
+  <data name="CompanyLogo.Hint" xml:space="preserve"><value>JPG、PNG、GIF、SVG形式、最大500KBまで対応</value></data>
+  <data name="BusinessCard.SaveFirst" xml:space="preserve"><value>名刺写真をアップロードする前に保存してください</value></data>
+  <data name="BusinessCard.PhotoList" xml:space="preserve"><value>名刺写真</value></data>
+  <data name="BusinessCard.UploadPhoto" xml:space="preserve"><value>名刺をアップロード</value></data>
+  <data name="BusinessCard.NoPhotos" xml:space="preserve"><value>名刺写真がまだアップロードされていません</value></data>
+  <data name="BusinessCard.BusinessCard" xml:space="preserve"><value>名刺</value></data>
+  <data name="BusinessCard.ContactPersonName" xml:space="preserve"><value>担当者名</value></data>
+  <data name="BusinessCard.JobTitle" xml:space="preserve"><value>役職</value></data>
+  <data name="BusinessCard.SaveSuccess" xml:space="preserve"><value>名刺情報を更新しました</value></data>
+  <data name="BusinessCard.DeleteTitle" xml:space="preserve"><value>名刺を削除</value></data>
+  <data name="BusinessCard.DeleteMessage" xml:space="preserve"><value>この名刺写真を削除してもよろしいですか？この操作は元に戻せません。</value></data>
+  <data name="BusinessCard.DeleteSuccess" xml:space="preserve"><value>名刺を削除しました</value></data>
+  <data name="Tab.EmployeePhoto" xml:space="preserve"><value>従業員写真</value></data>
+  <data name="EmployeePhoto.SaveFirst" xml:space="preserve"><value>写真をアップロードする前に従業員情報を保存してください</value></data>
+  <data name="EmployeePhoto.NoPhoto" xml:space="preserve"><value>写真がまだアップロードされていません</value></data>
+  <data name="EmployeePhoto.Upload" xml:space="preserve"><value>写真をアップロード</value></data>
+  <data name="EmployeePhoto.Change" xml:space="preserve"><value>写真を変更</value></data>
+  <data name="EmployeePhoto.Delete" xml:space="preserve"><value>写真を削除</value></data>
+  <data name="EmployeePhoto.DeleteSuccess" xml:space="preserve"><value>写真を削除しました</value></data>
+  <data name="EmployeePhoto.UploadSuccess" xml:space="preserve"><value>写真のアップロードが完了しました</value></data>
+  <data name="EmployeePhoto.DeleteMessage" xml:space="preserve"><value>この写真を削除してもよろしいですか？この操作は元に戻せません。</value></data>
+  <data name="EmployeePhoto.Hint" xml:space="preserve"><value>JPG、PNG形式、最大2MBまで対応</value></data>
+  <data name="Tab.ProductPhotos" xml:space="preserve"><value>商品写真</value></data>
+  <data name="ProductPhoto.SaveFirst" xml:space="preserve"><value>写真をアップロードする前に商品情報を保存してください</value></data>
+  <data name="ProductPhoto.PhotoList" xml:space="preserve"><value>商品写真</value></data>
+  <data name="ProductPhoto.UploadPhoto" xml:space="preserve"><value>写真をアップロード</value></data>
+  <data name="ProductPhoto.NoPhotos" xml:space="preserve"><value>商品写真がまだアップロードされていません</value></data>
+  <data name="ProductPhoto.Caption" xml:space="preserve"><value>キャプション</value></data>
+  <data name="ProductPhoto.DeleteTitle" xml:space="preserve"><value>写真を削除</value></data>
+  <data name="ProductPhoto.DeleteMessage" xml:space="preserve"><value>この写真を削除してもよろしいですか？この操作は元に戻せません。</value></data>
+  <data name="ProductPhoto.DeleteSuccess" xml:space="preserve"><value>写真を削除しました</value></data>
   <data name="Tab.ProductData" xml:space="preserve"><value>商品情報</value></data>
   <data name="Tab.OrderData" xml:space="preserve"><value>受注情報</value></data>
   <data name="Tab.OrderDetail" xml:space="preserve"><value>受注明細</value></data>
@@ -2059,6 +2113,14 @@
   <data name="Customer.ChartTitle" xml:space="preserve"><value>顧客分析チャート</value></data>
   <!-- ===== Supplier 仕入先モジュール ===== -->
   <data name="Supplier.ChartTitle" xml:space="preserve"><value>仕入先分析チャート</value></data>
+  <!-- ===== Employee 従業員モジュール ===== -->
+  <data name="Employee.ChartTitle" xml:space="preserve"><value>従業員分析チャート</value></data>
+  <!-- ===== Purchase 仕入モジュール ===== -->
+  <data name="Purchase.ChartTitle" xml:space="preserve"><value>仕入分析チャート</value></data>
+  <!-- ===== Sales 売上モジュール ===== -->
+  <data name="Sales.ChartTitle" xml:space="preserve"><value>売上分析チャート</value></data>
+  <!-- ===== Inventory 在庫モジュール ===== -->
+  <data name="Inventory.ChartTitle" xml:space="preserve"><value>在庫分析チャート</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>訪問記録がありません</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>

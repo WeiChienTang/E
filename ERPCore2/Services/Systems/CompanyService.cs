@@ -330,6 +330,31 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<ServiceResult> ClearLogoAsync(int companyId)
+        {
+            try
+            {
+                if (companyId <= 0)
+                    return ServiceResult.Failure("公司 ID 無效");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var company = await context.Companies.FindAsync(companyId);
+                if (company == null)
+                    return ServiceResult.Failure("找不到指定的公司");
+
+                company.LogoPath = null;
+                company.UpdatedAt = DateTime.Now;
+                company.UpdatedBy = "System";
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ClearLogoAsync), GetType(), _logger, new { CompanyId = companyId });
+                return ServiceResult.Failure("清除 LOGO 時發生錯誤");
+            }
+        }
+
         /// <summary>
         /// 設定指定公司為預設公司
         /// </summary>

@@ -108,6 +108,22 @@
 <SupplierChartModalComponent IsVisible="@showSupplierCharts"
                              IsVisibleChanged="@((bool visible) => showSupplierCharts = visible)" />
 
+@* 員工分析圖表 Modal *@
+<EmployeeChartModalComponent IsVisible="@showEmployeeCharts"
+                             IsVisibleChanged="@((bool visible) => showEmployeeCharts = visible)" />
+
+@* 採購分析圖表 Modal *@
+<PurchaseChartModalComponent IsVisible="@showPurchaseCharts"
+                             IsVisibleChanged="@((bool visible) => showPurchaseCharts = visible)" />
+
+@* 銷貨分析圖表 Modal *@
+<SalesChartModalComponent IsVisible="@showSalesCharts"
+                          IsVisibleChanged="@((bool visible) => showSalesCharts = visible)" />
+
+@* 庫存分析圖表 Modal *@
+<InventoryChartModalComponent IsVisible="@showInventoryCharts"
+                              IsVisibleChanged="@((bool visible) => showInventoryCharts = visible)" />
+
 @* 系統參數設定 Modal *@
 <SystemParameterSettingsModal IsVisible="@showSystemParameterSettings"
                              IsVisibleChanged="@((bool visible) => showSystemParameterSettings = visible)" />
@@ -254,7 +270,19 @@
 
     // 廠商分析圖表 Modal 狀態
     private bool showSupplierCharts = false;
-    
+
+    // 員工分析圖表 Modal 狀態
+    private bool showEmployeeCharts = false;
+
+    // 採購分析圖表 Modal 狀態
+    private bool showPurchaseCharts = false;
+
+    // 銷貨分析圖表 Modal 狀態
+    private bool showSalesCharts = false;
+
+    // 庫存分析圖表 Modal 狀態
+    private bool showInventoryCharts = false;
+
     // 系統參數設定 Modal 狀態
     private bool showSystemParameterSettings = false;
 
@@ -327,6 +355,10 @@
         actionRegistry.Register("OpenCustomerReportIndex", OpenCustomerReportIndex);
         actionRegistry.Register("OpenCustomerCharts", OpenCustomerCharts);
         actionRegistry.Register("OpenSupplierCharts", OpenSupplierCharts);
+        actionRegistry.Register("OpenEmployeeCharts", OpenEmployeeCharts);
+        actionRegistry.Register("OpenPurchaseCharts", OpenPurchaseCharts);
+        actionRegistry.Register("OpenSalesCharts", OpenSalesCharts);
+        actionRegistry.Register("OpenInventoryCharts", OpenInventoryCharts);
         actionRegistry.Register("OpenSupplierReportIndex", OpenSupplierReportIndex);        
         actionRegistry.Register("OpenProductReportIndex", OpenProductReportIndex);
         actionRegistry.Register("OpenPurchaseReportIndex", OpenPurchaseReportIndex);
@@ -717,6 +749,46 @@
     public void OpenSupplierCharts()
     {
         try { showSupplierCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 開啟員工分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenEmployeeCharts()
+    {
+        try { showEmployeeCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 開啟採購分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenPurchaseCharts()
+    {
+        try { showPurchaseCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 開啟銷貨分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenSalesCharts()
+    {
+        try { showSalesCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 開啟庫存分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenInventoryCharts()
+    {
+        try { showInventoryCharts = true; StateHasChanged(); }
         catch { }
     }
 

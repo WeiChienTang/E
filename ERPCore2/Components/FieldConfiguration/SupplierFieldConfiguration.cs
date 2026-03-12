@@ -50,7 +50,6 @@ namespace ERPCore2.FieldConfiguration
                             TableOrder = 2,
                             Options = new List<SelectOption>
                             {
-                                new() { Value = "",                                                    Text = L?["Label.All"].ToString() ?? "全部" },
                                 new() { Value = ((int)SupplierType.Manufacturer).ToString(),          Text = L?["SupplierType.Manufacturer"].ToString() ?? "製造商" },
                                 new() { Value = ((int)SupplierType.Trader).ToString(),                Text = L?["SupplierType.Trader"].ToString() ?? "貿易商" },
                                 new() { Value = ((int)SupplierType.Agent).ToString(),                 Text = L?["SupplierType.Agent"].ToString() ?? "代理商" },
@@ -131,7 +130,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "選擇狀態",
                             Options = new List<SelectOption>
                             {
-                                new() { Value = "",                                               Text = L?["Label.All"].ToString() ?? "全部" },
                                 new() { Value = ((int)SupplierStatus.Active).ToString(),         Text = L?["SupplierStatus.Active"].ToString() ?? "正常往來" },
                                 new() { Value = ((int)SupplierStatus.Inactive).ToString(),       Text = L?["SupplierStatus.Inactive"].ToString() ?? "停用" },
                                 new() { Value = ((int)SupplierStatus.Suspended).ToString(),      Text = L?["SupplierStatus.Suspended"].ToString() ?? "暫停往來" }

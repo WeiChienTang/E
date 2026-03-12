@@ -478,10 +478,9 @@
 
                 if (validationErrors.Any())
                 {
-                    if (isDraftEligible)
-                        editModalComponent!.PendingSaveError = string.Join("; ", validationErrors);
-                    else
-                        await NotificationService.ShowErrorAsync(string.Join("；", validationErrors));
+                    // 明細驗證錯誤一律以 Toast 顯示，不觸發「儲存草稿」提示
+                    // 草稿提示僅適用於必填表單欄位（如領料日期），不適用於明細資料問題
+                    await NotificationService.ShowErrorAsync(string.Join("；", validationErrors));
                     return false;
                 }
             }

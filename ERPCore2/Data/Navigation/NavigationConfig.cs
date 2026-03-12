@@ -160,7 +160,6 @@ public static class NavigationConfig
                         SearchKeywords = new List<string> { "權限", "permission", "授權", "权限", "権限", "アクセス権限" }
                     },
 
-                    // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
                         IsDivider = true
@@ -176,6 +175,27 @@ public static class NavigationConfig
                         searchKeywords: new List<string> { "人力報表", "人力報表集", "HR report", "員工名冊", "人力资源报表", "従業員レポート", "人事报表" },
                         nameKey: "Nav.HRReportIndex"
                     ),
+
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
+                    new NavigationItem
+                    {
+                        Name = "員工圖表",
+                        NameKey = "Nav.EmployeeCharts",
+                        Description = "依多維度查看員工統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenEmployeeCharts",
+                        Category = "人力管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.Employee.ChartRead,
+                        SearchKeywords = new List<string> { "員工圖表", "員工分析", "統計分析", "人力分析", "employee chart", "HR analytics", "员工图表", "従業員分析" },
+                        IsChartWidget = true
+                    },
                 }
             },
 
@@ -526,7 +546,6 @@ public static class NavigationConfig
                         QuickActionName = "新增領料"
                     },
 
-                    // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
                         IsDivider = true
@@ -542,6 +561,27 @@ public static class NavigationConfig
                         searchKeywords: new List<string> { "倉庫報表", "庫存報表", "倉庫報表集", "inventory report", "庫存現況", "库存报表", "在庫レポート", "庫存盤點報表" },
                         nameKey: "Nav.InventoryReportIndex"
                     ),
+
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
+                    new NavigationItem
+                    {
+                        Name = "庫存圖表",
+                        NameKey = "Nav.InventoryCharts",
+                        Description = "依多維度查看庫存統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenInventoryCharts",
+                        Category = "庫存管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.Inventory.ChartRead,
+                        SearchKeywords = new List<string> { "庫存圖表", "庫存分析", "統計分析", "inventory chart", "stock analytics", "库存图表", "在庫分析" },
+                        IsChartWidget = true
+                    },
                 }
             },
 
@@ -614,12 +654,11 @@ public static class NavigationConfig
                         QuickActionName = "新增進貨退出原因"
                     },
 
-                    // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
                         IsDivider = true
-                    },
-                    
+                    },                 
+
                     NavigationActionHelper.CreateActionItem(
                         name: "採購報表集",
                         description: "查看和列印所有採購相關報表",
@@ -630,6 +669,27 @@ public static class NavigationConfig
                         searchKeywords: new List<string> { "採購報表", "採購報表集", "purchase report", "進貨報表", "采购报表", "仕入レポート", "進貨統計" },
                         nameKey: "Nav.PurchaseReportIndex"
                     ),
+
+                                        // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    
+                    new NavigationItem
+                    {
+                        Name = "採購圖表",
+                        NameKey = "Nav.PurchaseCharts",
+                        Description = "依多維度查看採購統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenPurchaseCharts",
+                        Category = "採購管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.PurchaseOrder.ChartRead,
+                        SearchKeywords = new List<string> { "採購圖表", "採購分析", "統計分析", "purchase chart", "procurement analytics", "采购图表", "仕入分析" },
+                        IsChartWidget = true
+                    },
                 }
             },
 
@@ -721,6 +781,26 @@ public static class NavigationConfig
                         IsDivider = true
                     },
                     
+                    new NavigationItem
+                    {
+                        Name = "銷貨圖表",
+                        NameKey = "Nav.SalesCharts",
+                        Description = "依多維度查看銷貨統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenSalesCharts",
+                        Category = "銷售管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.Sales.ChartRead,
+                        SearchKeywords = new List<string> { "銷貨圖表", "銷售分析", "業績分析", "sales chart", "sales analytics", "销货图表", "売上分析", "業績圖表" },
+                        IsChartWidget = true
+                    },
+
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
                     NavigationActionHelper.CreateActionItem(
                         name: "銷貨報表集",
                         description: "查看和列印所有銷貨相關報表",

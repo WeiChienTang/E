@@ -112,6 +112,7 @@
     private GenericAccountingTabComponent? accountingTab;
     private SupplierVisitTab? visitTab;
     private SupplierTransactionTab? transactionTab;
+    private BusinessCardTab? businessCardTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -138,6 +139,11 @@
     private RenderFragment CreateTransactionTabContent() => __builder =>
     {
         <SupplierTransactionTab @ref="transactionTab" SupplierId="@SupplierId" />
+    };
+
+    private RenderFragment CreateBusinessCardTabContent() => __builder =>
+    {
+        <BusinessCardTab @ref="businessCardTab" OwnerType="Supplier" OwnerId="@SupplierId" />
     };
 
     // ===== 生命週期 =====
@@ -190,6 +196,7 @@
                 if (accountingTab != null)      await accountingTab.LoadAsync(loadedEntityId);
                 if (visitTab != null)           await visitTab.LoadAsync(loadedEntityId);
                 if (transactionTab != null)     await transactionTab.LoadAsync(loadedEntityId);
+                if (businessCardTab != null)    await businessCardTab.LoadAsync(loadedEntityId);
             }
             else
             {
@@ -198,6 +205,7 @@
                 accountingTab?.Clear();
                 visitTab?.Clear();
                 transactionTab?.Clear();
+                businessCardTab?.Clear();
             }
             StateHasChanged();
         }
@@ -655,6 +663,7 @@
                 .GroupIntoCustomTab(L["Tab.SupplierProducts"].ToString(), "bi-box-seam", CreateSupplierProductTabContent(), nameof(SupplierProductTab))
                 .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), nameof(SupplierVisitTab))
                 .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), nameof(SupplierTransactionTab))
+                .GroupIntoCustomTab(L["Tab.BusinessCards"].ToString(), "bi-person-vcard", CreateBusinessCardTabContent(), nameof(BusinessCardTab))
                 .BuildAll();
 
             formSections = layout.FieldSections;

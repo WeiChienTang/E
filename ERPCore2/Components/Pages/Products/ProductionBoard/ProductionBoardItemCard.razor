@@ -39,22 +39,25 @@
             </div>
         }
 
-        @* 數量與交期 *@
-        <div class="card-footer-row">
-            <div class="card-qty">
-                <span class="qty-label">訂單量：</span>
-                @if (Item.CompletedQuantity > 0)
-                {
-                    <span class="qty-done">@NumberFormatHelper.FormatSmart(Item.CompletedQuantity)</span>
-                    <span class="qty-sep">/</span>
-                }
-                <span class="qty-total">@NumberFormatHelper.FormatSmart(Item.ScheduledQuantity)</span>
-            </div>
-            @if (Item.ExpectedDeliveryDate.HasValue)
+        @* 數量 *@
+        <div class="card-info-row">
+            <span class="info-label">訂單量：</span>
+            @if (Item.CompletedQuantity > 0)
             {
-                <span class="card-due @DeliveryUrgencyCss">交期：@DeliveryDateText</span>
+                <span class="qty-done">@NumberFormatHelper.FormatSmart(Item.CompletedQuantity)</span>
+                <span class="qty-sep">/</span>
             }
+            <span class="qty-total">@NumberFormatHelper.FormatSmart(Item.ScheduledQuantity)</span>
         </div>
+
+        @* 交期 *@
+        @if (Item.ExpectedDeliveryDate.HasValue)
+        {
+            <div class="card-info-row">
+                <span class="info-label">交期：</span>
+                <span class="info-value @DeliveryUrgencyCss">@DeliveryDateText</span>
+            </div>
+        }
 
         @* 進度條（全寬） *@
         @if (Item.CompletedQuantity > 0 && Item.ScheduledQuantity > 0)
@@ -117,8 +120,7 @@
             if (days < 0)  return $"逾期{-days}天";
             if (days == 0) return "今天";
             if (days == 1) return "明天";
-            if (days <= 3) return $"+{days}天";
-            return Item.ExpectedDeliveryDate.Value.ToString("MM/dd");
+            return $"{days}天後";
         }
     }
 

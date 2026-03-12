@@ -176,5 +176,19 @@ namespace ERPCore2.Services
             int pageSize);
 
         #endregion
+
+        #region 照片管理
+
+        /// <summary>
+        /// 更新員工照片路徑
+        /// </summary>
+        Task<ServiceResult> UpdatePhotoPathAsync(int employeeId, string photoPath);
+
+        /// <summary>
+        /// 清除員工照片
+        /// </summary>
+        Task<ServiceResult> ClearPhotoAsync(int employeeId);
+
+        #endregion
     }
 }

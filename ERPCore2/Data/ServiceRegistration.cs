@@ -71,6 +71,10 @@ namespace ERPCore2.Data
             services.AddScoped<IEmployeeTrainingRecordService, EmployeeTrainingRecordService>();
             services.AddScoped<ERPCore2.Services.Customers.ICustomerChartService, ERPCore2.Services.Customers.CustomerChartService>();
             services.AddScoped<ERPCore2.Services.Suppliers.ISupplierChartService, ERPCore2.Services.Suppliers.SupplierChartService>();
+            services.AddScoped<ERPCore2.Services.Employees.IEmployeeChartService, ERPCore2.Services.Employees.EmployeeChartService>();
+            services.AddScoped<ERPCore2.Services.Purchase.IPurchaseChartService, ERPCore2.Services.Purchase.PurchaseChartService>();
+            services.AddScoped<ERPCore2.Services.Sales.ISalesChartService, ERPCore2.Services.Sales.SalesChartService>();
+            services.AddScoped<ERPCore2.Services.Inventory.IInventoryChartService, ERPCore2.Services.Inventory.InventoryChartService>();
 
             services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 
@@ -88,6 +92,9 @@ namespace ERPCore2.Data
             services.AddScoped<ISetoffPrepaymentUsageService, SetoffPrepaymentUsageService>();
             services.AddScoped<IPrepaymentTypeService, PrepaymentTypeService>();
 
+            // 名片服務
+            services.AddScoped<IBusinessCardService, BusinessCardService>();
+
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();
             services.AddScoped<ISupplierVisitService, SupplierVisitService>();
@@ -97,6 +104,7 @@ namespace ERPCore2.Data
             services.AddScoped<IProductCategoryService, ProductCategoryService>();
             services.AddScoped<IProductSupplierService, ProductSupplierService>();
             services.AddScoped<IProductCustomerService, ProductCustomerService>();
+            services.AddScoped<IProductPhotoService, ProductPhotoService>();
             services.AddScoped<ISizeService, SizeService>();
             
             // 商品價格服務

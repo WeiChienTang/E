@@ -137,6 +137,15 @@
     }
 
     /// <summary>
+    /// 關閉下拉選單（供子項目呼叫）
+    /// </summary>
+    public void CloseDropdown()
+    {
+        isDropdownOpen = false;
+        StateHasChanged();
+    }
+
+    /// <summary>
     /// 處理導航連結點擊事件
     /// </summary>
     private void OnNavLinkClick()

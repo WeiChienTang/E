@@ -259,6 +259,18 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/Resources"
 });
 
+// 設定靜態檔案存取 - 提供 wwwroot/uploads 資料夾（執行期上傳的檔案，不在 MapStaticAssets 編譯時清單中）
+var uploadsPath = Path.Combine(builder.Environment.WebRootPath, "uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
 // 加入反偽造令牌中間件
 app.UseAntiforgery();
 

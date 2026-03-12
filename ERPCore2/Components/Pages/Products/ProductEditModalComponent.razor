@@ -121,10 +121,16 @@
 
     // Tab 元件參考
     private ProductAccountingTab? accountingTab;
+    private ProductPhotoTab? photoTab;
 
     private RenderFragment CreateAccountingTabContent() => __builder =>
     {
         <ProductAccountingTab @ref="accountingTab" ProductId="@ProductId" />
+    };
+
+    private RenderFragment CreatePhotoTabContent() => __builder =>
+    {
+        <ProductPhotoTab @ref="photoTab" ProductId="@ProductId" />
     };
     
     // 標誌變數，用於追蹤是否需要在實體載入後刷新欄位
@@ -238,9 +244,15 @@
             await RefreshFormFieldsAfterEntityLoadAsync();
 
             if (loadedEntityId > 0)
+            {
                 if (accountingTab != null) await accountingTab.LoadAsync(loadedEntityId);
+                if (photoTab != null) await photoTab.LoadAsync(loadedEntityId);
+            }
             else
+            {
                 accountingTab?.Clear();
+                photoTab?.Clear();
+            }
         }
         catch (Exception ex)
         {
@@ -508,6 +520,8 @@
 
         if (isAccountingEnabled)
             builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent(), nameof(ProductAccountingTab));
+
+        builder = builder.GroupIntoCustomTab(L["Tab.ProductPhotos"].ToString(), "bi-images", CreatePhotoTabContent(), nameof(ProductPhotoTab));
 
         var layout = builder.BuildAll();
         formSections = layout.FieldSections;
