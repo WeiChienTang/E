@@ -1,0 +1,349 @@
+@* 可重用的客戶投訴紀錄編輯組件 - 用於客訴 Index 頁面及客戶 EditModal 的 Tab 頁籤中 *@
+@inject ICustomerComplaintService CustomerComplaintService
+@inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="CustomerComplaint"
+                          TService="ICustomerComplaintService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@CustomerComplaintId"
+                          Service="@CustomerComplaintService"
+                          EntityName="@L["Entity.CustomerComplaint"]"
+                          EntityNamePlural="@L["Entity.CustomerComplaint"]"
+                          ModalTitle="@(CustomerComplaintId.HasValue ? L["Message.EditTitle", L["Entity.CustomerComplaint"]].ToString() : L["Message.CreateTitle", L["Entity.CustomerComplaint"]].ToString())"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          ModalManagers="@modalManagers?.AsDictionary()"
+                          DataLoader="@LoadComplaintData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(CustomerComplaintId.HasValue ? L["Message.UpdateSuccess", L["Entity.CustomerComplaint"]].ToString() : L["Message.CreateSuccess", L["Entity.CustomerComplaint"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.CustomerComplaint"]]"
+                          RequiredPermission="@PermissionRegistry.CustomerComplaint.Read"
+                          OnEntitySaved="@OnCustomerComplaintSaved"
+                          OnCancel="@OnCancel"
+                          ComponentName="CustomerComplaintEditModalComponent" />
+
+@* 客戶編輯 Modal *@
+<CustomerEditModalComponent @ref="customerEditModal"
+                           IsVisible="@customerModalManager.IsModalVisible"
+                           IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
+                           CustomerId="@customerModalManager.SelectedEntityId"
+                           OnCustomerSaved="@customerModalManager.OnSavedAsync"
+                           OnCancel="@customerModalManager.HandleModalCancelAsync" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? CustomerComplaintId { get; set; }
+    [Parameter] public int? PrefilledCustomerId { get; set; }
+    [Parameter] public EventCallback<CustomerComplaint> OnCustomerComplaintSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<CustomerComplaint, ICustomerComplaintService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    // 選項資料
+    private List<Customer> availableCustomers = new();
+    private List<Employee> availableEmployees = new();
+
+    // Modal Manager 集合
+    private ModalManagerCollection? modalManagers;
+
+    // 客戶編輯 Modal
+    private CustomerEditModalComponent? customerEditModal;
+    private RelatedEntityModalManager<Customer> customerModalManager = default!;
+
+    // 員工編輯 Modal
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalManagers = ModalManagerInitHelper.CreateBuilder<CustomerComplaint, ICustomerComplaintService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Customer>(nameof(CustomerComplaint.CustomerId), "客戶")
+                .AddManager<Employee>(nameof(CustomerComplaint.EmployeeId), "員工")
+                .Build();
+
+            customerModalManager = modalManagers.Get<Customer>(nameof(CustomerComplaint.CustomerId));
+            employeeModalManager = modalManagers.Get<Employee>(nameof(CustomerComplaint.EmployeeId));
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化客訴編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task<CustomerComplaint?> LoadComplaintData()
+    {
+        try
+        {
+            if (!CustomerComplaintId.HasValue)
+            {
+                var newComplaint = new CustomerComplaint
+                {
+                    ComplaintDate = DateTime.Today,
+                    Category = ComplaintCategory.ProductQuality,
+                    ComplaintStatus = ComplaintStatus.Open,
+                    Status = EntityStatus.Active
+                };
+
+                if (PrefilledCustomerId.HasValue)
+                    newComplaint.CustomerId = PrefilledCustomerId.Value;
+
+                return newComplaint;
+            }
+
+            return await CustomerComplaintService.GetByIdAsync(CustomerComplaintId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入客訴資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(CustomerComplaint.CustomerId),
+                    Label = L["Entity.Customer"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Customer"]],
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "此次投訴的客戶",
+                    IsVisible = !PrefilledCustomerId.HasValue,
+                    ActionButtons = await GetCustomerActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerComplaint.ComplaintDate),
+                    Label = L["Field.ComplaintDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "客戶提出投訴的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerComplaint.Title),
+                    Label = L["Field.ComplaintTitle"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ComplaintTitle"]],
+                    IsRequired = true,
+                    MaxLength = 200,
+                    HelpText = "簡要描述投訴主題"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerComplaint.Category),
+                    Label = L["Field.ComplaintCategory"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "選擇投訴的類別",
+                    Options = Enum.GetValues(typeof(ComplaintCategory))
+                        .Cast<ComplaintCategory>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = e switch
+                            {
+                                ComplaintCategory.ProductQuality  => L["ComplaintCategory.ProductQuality"],
+                                ComplaintCategory.DeliveryDelay   => L["ComplaintCategory.DeliveryDelay"],
+                                ComplaintCategory.ServiceAttitude => L["ComplaintCategory.ServiceAttitude"],
+                                ComplaintCategory.PriceDispute    => L["ComplaintCategory.PriceDispute"],
+                                ComplaintCategory.Other           => L["ComplaintCategory.Other"],
+                                _ => e.ToString()
+                            },
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerComplaint.ComplaintStatus),
+                    Label = L["Field.ComplaintStatus"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "目前的處理狀態",
+                    Options = Enum.GetValues(typeof(ComplaintStatus))
+                        .Cast<ComplaintStatus>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = e switch
+                            {
+                                ComplaintStatus.Open       => L["ComplaintStatus.Open"],
+                                ComplaintStatus.InProgress => L["ComplaintStatus.InProgress"],
+                                ComplaintStatus.Resolved   => L["ComplaintStatus.Resolved"],
+                                ComplaintStatus.Closed     => L["ComplaintStatus.Closed"],
+                                _ => e.ToString()
+                            },
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerComplaint.EmployeeId),
+                    Label = L["Field.ResponsibleEmployee"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.ResponsibleEmployee"]],
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "負責處理此客訴的人員",
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerComplaint.Description),
+                    Label = L["Field.ComplaintDescription"],
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ComplaintDescription"]],
+                    IsRequired = false,
+                    MaxLength = 2000,
+                    HelpText = "詳細描述客訴內容與問題點"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerComplaint.Resolution),
+                    Label = L["Field.ComplaintResolution"],
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ComplaintResolution"]],
+                    IsRequired = false,
+                    MaxLength = 2000,
+                    HelpText = "說明處理方式與解決方案"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerComplaint.ResolvedDate),
+                    Label = L["Field.ResolvedDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "問題實際解決的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(CustomerComplaint.FollowUpDate),
+                    Label = L["Field.FollowUpDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "預計追蹤或回訪的日期"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<CustomerComplaint>()
+            };
+
+            formSections = FormSectionHelper<CustomerComplaint>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    c => c.CustomerId,
+                    c => c.ComplaintDate,
+                    c => c.Title,
+                    c => c.Category,
+                    c => c.ComplaintStatus,
+                    c => c.EmployeeId)
+                .AddToSection("投訴詳情",
+                    c => c.Description)
+                .AddToSection("處理記錄",
+                    c => c.Resolution,
+                    c => c.ResolvedDate,
+                    c => c.FollowUpDate)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    c => c.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化客訴表單欄位時發生錯誤");
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            availableCustomers = await CustomerService.GetAllAsync();
+
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<CustomerComplaint>()
+                .AddField(nameof(CustomerComplaint.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(CustomerComplaint.EmployeeId), "Name", availableEmployees)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入客訴編輯相關資料時發生錯誤");
+            availableCustomers = new List<Customer>();
+            availableEmployees = new List<Employee>();
+        }
+    }
+
+    private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            customerModalManager,
+            nameof(CustomerComplaint.CustomerId)
+        );
+    }
+
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            employeeModalManager,
+            nameof(CustomerComplaint.EmployeeId)
+        );
+    }
+}

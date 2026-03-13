@@ -155,51 +155,21 @@
     </div>
 }
 
-@* 便條貼與行事曆專屬浮動按鈕（右下角，QuickAction 左側）*@
-<div class="personal-tools-btns">
-
-    @* 行事曆按鈕：啟用時顯示 *@
-    @if (_currentPreference?.EnableCalendar ?? true)
-    {
-        <button class="personal-tool-btn @(NotificationService.UpcomingEventCount > 0 ? "tool-btn-active tool-btn-calendar" : "tool-btn-inactive")"
-                @onclick="OpenCalendar"
-                title="@L["QuickAction.Calendar"]">
-            <span class="bi bi-calendar3"></span>
-            @if ((_currentPreference?.ShowCalendarBadge ?? true) && NotificationService.UpcomingEventCount > 0)
-            {
-                <span class="personal-tool-badge">@(NotificationService.UpcomingEventCount > 9 ? "9+" : NotificationService.UpcomingEventCount.ToString())</span>
-            }
-        </button>
-    }
-
-    @* 全景模式按鈕 *@
-    <button class="personal-tool-btn @(_isPageFullscreen ? "tool-btn-active" : "tool-btn-inactive")"
-            @onclick="TogglePageFullscreen"
-            title="@(_isPageFullscreen ? "退出全景模式" : "全景模式")">
-        <span class="bi @(_isPageFullscreen ? "bi-fullscreen-exit" : "bi-fullscreen")"></span>
-    </button>
-
-    @* 便條貼按鈕：啟用時顯示 *@
-    @if (_currentPreference?.EnableStickyNote ?? true)
-    {
-        <button class="personal-tool-btn @(NotificationService.StickyNoteCount > 0 ? "tool-btn-active tool-btn-note" : "tool-btn-inactive")"
-                @onclick="OpenStickyNotes"
-                title="@L["QuickAction.StickyNotes"]">
-            <span class="bi bi-sticky"></span>
-            @if ((_currentPreference?.ShowNoteBadge ?? true) && NotificationService.StickyNoteCount > 0)
-            {
-                <span class="personal-tool-badge">@(NotificationService.StickyNoteCount > 9 ? "9+" : NotificationService.StickyNoteCount.ToString())</span>
-            }
-        </button>
-    }
-
-</div>
-
-@* 快速功能表（右下角浮動按鈕） *@
+@* 快速功能表（右下角浮動按鈕，含個人工具） *@
 <QuickActionMenu @rendermode="InteractiveServer"
                 OnPageSearchClick="@OpenPageSearch"
                 OnReportSearchClick="@OpenReportSearch"
-                OnShortcutKeysClick="@OpenShortcutKeys" />
+                OnShortcutKeysClick="@OpenShortcutKeys"
+                EnableCalendar="@(_currentPreference?.EnableCalendar ?? true)"
+                EnableStickyNote="@(_currentPreference?.EnableStickyNote ?? true)"
+                CalendarBadgeCount="@NotificationService.UpcomingEventCount"
+                ShowCalendarBadge="@(_currentPreference?.ShowCalendarBadge ?? true)"
+                StickyNoteBadgeCount="@NotificationService.StickyNoteCount"
+                ShowNoteBadge="@(_currentPreference?.ShowNoteBadge ?? true)"
+                IsFullscreen="@_isPageFullscreen"
+                OnCalendarClick="@OpenCalendar"
+                OnStickyNotesClick="@OpenStickyNotes"
+                OnFullscreenClick="@TogglePageFullscreen" />
 
 @* 便條貼面板 *@
 @if (_currentPreference?.EnableStickyNote ?? true)

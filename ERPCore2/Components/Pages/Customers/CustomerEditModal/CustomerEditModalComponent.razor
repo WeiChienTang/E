@@ -128,6 +128,7 @@
     // Tab 元件參考（透過 @ref 呼叫公開方法）
     private CustomerVehicleTab? vehicleTab;
     private CustomerVisitTab? visitTab;
+    private CustomerComplaintTab? complaintTab;
     private CustomerTransactionTab? transactionTab;
     private GenericAccountingTabComponent? accountingTab;
     private CustomerProductTab? productTab;
@@ -148,6 +149,11 @@
     private RenderFragment CreateVisitTabContent() => __builder =>
     {
         <CustomerVisitTab @ref="visitTab" CustomerId="@CustomerId" />
+    };
+
+    private RenderFragment CreateComplaintTabContent() => __builder =>
+    {
+        <CustomerComplaintTab @ref="complaintTab" CustomerId="@CustomerId" />
     };
 
     private RenderFragment CreateTransactionTabContent() => __builder =>
@@ -214,6 +220,7 @@
             {
                 if (vehicleTab != null)       await vehicleTab.LoadAsync(loadedEntityId);
                 if (visitTab != null)         await visitTab.LoadAsync(loadedEntityId);
+                if (complaintTab != null)     await complaintTab.LoadAsync(loadedEntityId);
                 if (transactionTab != null)   await transactionTab.LoadAsync(loadedEntityId);
                 if (accountingTab != null)    await accountingTab.LoadAsync(loadedEntityId);
                 if (productTab != null)       await productTab.LoadAsync(loadedEntityId);
@@ -223,6 +230,7 @@
             {
                 vehicleTab?.Clear();
                 visitTab?.Clear();
+                complaintTab?.Clear();
                 transactionTab?.Clear();
                 accountingTab?.Clear();
                 productTab?.Clear();
@@ -258,6 +266,7 @@
             {
                 vehicleTab?.Clear();
                 visitTab?.Clear();
+                complaintTab?.Clear();
                 transactionTab?.Clear();
                 productTab?.Clear();
 
@@ -676,6 +685,7 @@
             var layout = builder
                 .GroupIntoCustomTab(L["Tab.CustomerProducts"].ToString(), "bi-box-seam", CreateProductTabContent(), nameof(CustomerProductTab))
                 .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), nameof(CustomerVisitTab))
+                .GroupIntoCustomTab(L["Tab.ComplaintRecords"].ToString(), "bi-exclamation-circle", CreateComplaintTabContent(), nameof(CustomerComplaintTab))
                 .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), nameof(CustomerTransactionTab))
                 .GroupIntoCustomTab(L["Tab.BusinessCards"].ToString(), "bi-person-vcard", CreateBusinessCardTabContent(), nameof(BusinessCardTab))
                 .BuildAll();

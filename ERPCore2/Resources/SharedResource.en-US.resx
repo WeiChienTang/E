@@ -393,6 +393,9 @@
   <data name="Nav.CustomerVisits" xml:space="preserve">
     <value>Visit Records</value>
   </data>
+  <data name="Nav.CustomerComplaints" xml:space="preserve">
+    <value>Complaints</value>
+  </data>
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>Customer Charts</value>
   </data>
@@ -657,6 +660,7 @@
   <data name="Report.CustomerRoster" xml:space="preserve"><value>Customer Roster</value></data>
   <data name="Report.CustomerDetail" xml:space="preserve"><value>Customer Detail</value></data>
   <data name="Report.CustomerVisitReport" xml:space="preserve"><value>Visit Report</value></data>
+  <data name="Report.CustomerComplaintReport" xml:space="preserve"><value>Complaint Report</value></data>
   <data name="Report.SupplierStatement" xml:space="preserve"><value>Supplier Statement</value></data>
   <data name="Report.SupplierPurchaseAnalysis" xml:space="preserve"><value>Supplier Purchase Analysis</value></data>
   <data name="Report.SupplierRoster" xml:space="preserve"><value>Supplier Roster</value></data>
@@ -716,6 +720,7 @@
   <data name="Entity.SalesReturnReason" xml:space="preserve"><value>Return Reason</value></data>
   <data name="Entity.Customer" xml:space="preserve"><value>Customer</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>Customer Visit</value></data>
+  <data name="Entity.CustomerComplaint" xml:space="preserve"><value>Complaint</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>Supplier Visit</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>Supplier</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>Product</value></data>
@@ -1073,6 +1078,25 @@
   <data name="Field.VisitContent" xml:space="preserve"><value>Visit Content</value></data>
   <data name="Field.VisitDate" xml:space="preserve"><value>Visit Date</value></data>
   <data name="Field.VisitMethod" xml:space="preserve"><value>Visit Method</value></data>
+  <data name="Field.ComplaintDate" xml:space="preserve"><value>Complaint Date</value></data>
+  <data name="Field.ComplaintTitle" xml:space="preserve"><value>Complaint Title</value></data>
+  <data name="Field.ComplaintCategory" xml:space="preserve"><value>Category</value></data>
+  <data name="Field.ComplaintStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="Field.ComplaintDescription" xml:space="preserve"><value>Description</value></data>
+  <data name="Field.ComplaintResolution" xml:space="preserve"><value>Resolution</value></data>
+  <data name="Field.ResolvedDate" xml:space="preserve"><value>Resolved Date</value></data>
+  <data name="Field.FollowUpDate" xml:space="preserve"><value>Follow-up Date</value></data>
+  <data name="Field.ResponsibleEmployee" xml:space="preserve"><value>Responsible Employee</value></data>
+  <data name="Column.ComplaintDate" xml:space="preserve"><value>Complaint Date</value></data>
+  <data name="ComplaintCategory.ProductQuality" xml:space="preserve"><value>Product Quality</value></data>
+  <data name="ComplaintCategory.DeliveryDelay" xml:space="preserve"><value>Delivery Delay</value></data>
+  <data name="ComplaintCategory.ServiceAttitude" xml:space="preserve"><value>Service Attitude</value></data>
+  <data name="ComplaintCategory.PriceDispute" xml:space="preserve"><value>Price Dispute</value></data>
+  <data name="ComplaintCategory.Other" xml:space="preserve"><value>Other</value></data>
+  <data name="ComplaintStatus.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="ComplaintStatus.InProgress" xml:space="preserve"><value>In Progress</value></data>
+  <data name="ComplaintStatus.Resolved" xml:space="preserve"><value>Resolved</value></data>
+  <data name="ComplaintStatus.Closed" xml:space="preserve"><value>Closed</value></data>
   <data name="Field.VisitPurpose" xml:space="preserve"><value>Visit Purpose</value></data>
   <data name="Field.VisitResult" xml:space="preserve"><value>Visit Result</value></data>
   <!-- ===== Field - Supplier keys ===== -->
@@ -1473,6 +1497,7 @@
   <data name="Tab.CustomerProducts" xml:space="preserve"><value>Customer Products</value></data>
   <data name="Tab.CustomerData" xml:space="preserve"><value>Customer Data</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>Visit Records</value></data>
+  <data name="Tab.ComplaintRecords" xml:space="preserve"><value>Complaints</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>Transaction Records</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>Business Cards</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>Company Data</value></data>
@@ -1802,6 +1827,7 @@
   <data name="Report.CustomerRosterDesc" xml:space="preserve"><value>Print customer basic data list including customer code, company name, contact person, tax ID, phone, and address</value></data>
   <data name="Report.CustomerDetailDesc" xml:space="preserve"><value>Print complete customer details including contact info, payment terms, and sales rep, one block per customer</value></data>
   <data name="Report.CustomerVisitReportDesc" xml:space="preserve"><value>Print customer visit records including visit date, customer, visitor, purpose, and result summary</value></data>
+  <data name="Report.CustomerComplaintReportDesc" xml:space="preserve"><value>Print customer complaint records including complaint date, customer, category, status, responsible person, and resolved date</value></data>
   <data name="Report.SupplierStatementDesc" xml:space="preserve"><value>Generate supplier statement for a specified period, including purchase, return, and payment details with opening/closing balances</value></data>
   <data name="Report.SupplierPurchaseAnalysisDesc" xml:space="preserve"><value>Analyze supplier purchase amounts and trends</value></data>
   <data name="Report.SupplierRosterDesc" xml:space="preserve"><value>Print supplier basic data list including supplier code, name, contact, tax ID, phone, and address</value></data>
@@ -2055,6 +2081,8 @@
   <data name="QuickAction.NotificationsDev" xml:space="preserve"><value>Notification feature under development...</value></data>
   <data name="QuickAction.RecentPagesDev" xml:space="preserve"><value>Recent pages feature under development...</value></data>
   <data name="QuickAction.SettingsDev" xml:space="preserve"><value>Quick settings feature under development...</value></data>
+  <data name="QuickAction.Fullscreen" xml:space="preserve"><value>Full Screen</value></data>
+  <data name="QuickAction.FullscreenExit" xml:space="preserve"><value>Exit Full Screen</value></data>
 
   <!-- ===== Chart ===== -->
   <data name="Chart.LoadingData" xml:space="preserve"><value>Loading chart data...</value></data>
@@ -2123,6 +2151,7 @@
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>Inventory Analysis Charts</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>No related transaction records</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>No visit records yet</value></data>
+  <data name="Customer.NoComplaints" xml:space="preserve"><value>No complaint records yet</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>No related transaction records</value></data>
   <data name="Supplier.NetPurchase" xml:space="preserve"><value>Net Purchase</value></data>
   <data name="Supplier.Receiving" xml:space="preserve"><value>Receiving</value></data>
@@ -2179,6 +2208,7 @@
 
   <!-- ===== Button (new) ===== -->
   <data name="Button.AddVisitRecord" xml:space="preserve"><value>Add Visit Record</value></data>
+  <data name="Button.AddComplaint" xml:space="preserve"><value>Add Complaint</value></data>
   <data name="Button.ConfirmDelete" xml:space="preserve"><value>Confirm Delete</value></data>
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>Confirm Remove</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>Clear Details</value></data>
@@ -2218,9 +2248,12 @@
   <!-- ===== Modal (new) ===== -->
   <data name="Modal.DeleteVisitRecord" xml:space="preserve"><value>Delete Visit Record</value></data>
   <data name="Modal.ConfirmDeleteVisitRecord" xml:space="preserve"><value>Are you sure you want to delete this visit record?</value></data>
+  <data name="Modal.DeleteComplaintRecord" xml:space="preserve"><value>Delete Complaint Record</value></data>
+  <data name="Modal.ConfirmDeleteComplaintRecord" xml:space="preserve"><value>Are you sure you want to delete this complaint record?</value></data>
 
   <!-- ===== Message (new) ===== -->
   <data name="Message.VisitDeleted" xml:space="preserve"><value>Visit record deleted</value></data>
+  <data name="Message.ComplaintDeleted" xml:space="preserve"><value>Complaint record deleted</value></data>
 
   <!-- ===== Supplier Module (new) ===== -->
   <data name="Supplier.AutoSyncNote" xml:space="preserve"><value>Auto-synced when purchase order is saved. ★ indicates preferred supplier</value></data>
@@ -3074,6 +3107,8 @@
   <data name="Page.CustomerSubtitle" xml:space="preserve"><value>Manage all customer data and contact information</value></data>
   <data name="Page.CustomerVisitTitle" xml:space="preserve"><value>Customer Visits</value></data>
   <data name="Page.CustomerVisitSubtitle" xml:space="preserve"><value>Manage customer visit and contact records</value></data>
+  <data name="Page.CustomerComplaintTitle" xml:space="preserve"><value>Customer Complaints</value></data>
+  <data name="Page.CustomerComplaintSubtitle" xml:space="preserve"><value>Record and track customer complaint events and handling status</value></data>
   <data name="Page.DocumentCategoryTitle" xml:space="preserve"><value>Document Categories</value></data>
   <data name="Page.DocumentCategorySubtitle" xml:space="preserve"><value>Manage document categories and source settings</value></data>
   <data name="Page.DocumentTitle" xml:space="preserve"><value>Documents</value></data>

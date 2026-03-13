@@ -294,6 +294,17 @@ public static class NavigationConfig
                         QuickActionId = "NewCustomer",
                         QuickActionName = "新增客戶"
                     },
+                    new NavigationItem
+                    {
+                        Name = "客訴管理",
+                        NameKey = "Nav.CustomerComplaints",
+                        Description = "記錄與追蹤客戶投訴事件及處理狀態",
+                        Route = "/customer-complaints",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "客戶關係管理",
+                        RequiredPermission = PermissionRegistry.CustomerComplaint.Read,
+                        SearchKeywords = new List<string> { "客訴", "投訴", "客戶投訴", "complaint", "客诉", "クレーム", "苦情" }
+                    },
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {

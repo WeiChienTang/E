@@ -158,6 +158,26 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // AR008 - 客訴報告（依客戶、類別、狀態與投訴日期篩選客訴記錄）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.CustomerComplaintReport,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(CustomerComplaintReportCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerComplaintReportService),
+            PreviewTitle = "客訴報告預覽",
+            FilterTitle = "客訴報告篩選條件",
+            IconClass = "bi-exclamation-circle",
+            GetDocumentName = criteria =>
+            {
+                var c = (CustomerComplaintReportCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"客訴報告-{dateRange}";
+            }
+        });
+
         // ==================== 廠商報表 ====================
 
         // 廠商對帳單（含期初餘額、進貨/退貨/付款明細、期末餘額）

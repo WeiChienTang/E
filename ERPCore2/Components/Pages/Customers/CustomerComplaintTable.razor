@@ -1,0 +1,166 @@
+@* 可重用的客戶投訴紀錄列表面板 - 用於客戶 EditModal 的 Tab 頁籤中 *@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Models.Enums
+@inject IStringLocalizer<SharedResource> L
+
+<div class="customer-complaint-table-panel">
+    @* 工具列 *@
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        @if (!IsReadOnly)
+        {
+            <GenericButtonComponent Text="@L["Button.AddComplaint"]"
+                                  Variant="ButtonVariant.DarkBlue"
+                                  Size="ButtonSize.Small"
+                                  OnClick="@HandleAddComplaint"
+                                  Title="@L["Button.AddComplaint"]" />
+        }
+        else
+        {
+            <span></span>
+        }
+    </div>
+
+    @* 投訴紀錄表格 *@
+    <GenericInteractiveTableComponent TItem="CustomerComplaint"
+                              Items="@(Complaints ?? new List<CustomerComplaint>())"
+                              ColumnDefinitions="@GetColumnDefinitions()"
+                              ShowHeader="true"
+                              ShowRowNumbers="true"
+                              IsStriped="true"
+                              IsHoverable="true"
+                              IsBordered="true"
+                              IsReadOnly="true"
+                              ShowBuiltInActions="@(!IsReadOnly)"
+                              ShowBuiltInDeleteButton="false"
+                              EnableAutoEmptyRow="false"
+                              EmptyMessage="@L["Customer.NoComplaints"]"
+                              CustomActionsTemplate="@GetActionsTemplate()"
+                              ActionsColumnWidth="80px" />
+</div>
+
+@code {
+    /// <summary>投訴紀錄清單</summary>
+    [Parameter] public List<CustomerComplaint>? Complaints { get; set; }
+
+    /// <summary>是否唯讀模式</summary>
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+
+    /// <summary>點擊「新增投訴紀錄」的回調</summary>
+    [Parameter] public EventCallback OnAddComplaint { get; set; }
+
+    /// <summary>點擊編輯的回調</summary>
+    [Parameter] public EventCallback<CustomerComplaint> OnEditComplaint { get; set; }
+
+    /// <summary>點擊刪除的回調</summary>
+    [Parameter] public EventCallback<CustomerComplaint> OnDeleteComplaint { get; set; }
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = L["Column.ComplaintDate"],
+                PropertyName = nameof(CustomerComplaint.ComplaintDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                DisplayFormatter = item =>
+                {
+                    if (item is CustomerComplaint c)
+                        return c.ComplaintDate.ToString("yyyy-MM-dd");
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Field.ComplaintTitle"],
+                PropertyName = nameof(CustomerComplaint.Title),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "200px",
+                NullDisplayText = "-"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Field.ComplaintCategory"],
+                PropertyName = nameof(CustomerComplaint.Category),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                DisplayFormatter = item =>
+                {
+                    if (item is CustomerComplaint c)
+                        return c.Category switch
+                        {
+                            ComplaintCategory.ProductQuality  => L["ComplaintCategory.ProductQuality"],
+                            ComplaintCategory.DeliveryDelay   => L["ComplaintCategory.DeliveryDelay"],
+                            ComplaintCategory.ServiceAttitude => L["ComplaintCategory.ServiceAttitude"],
+                            ComplaintCategory.PriceDispute    => L["ComplaintCategory.PriceDispute"],
+                            ComplaintCategory.Other           => L["ComplaintCategory.Other"],
+                            _ => "-"
+                        };
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Field.ComplaintStatus"],
+                PropertyName = nameof(CustomerComplaint.ComplaintStatus),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "90px",
+                DisplayFormatter = item =>
+                {
+                    if (item is CustomerComplaint c)
+                        return c.ComplaintStatus switch
+                        {
+                            ComplaintStatus.Open       => L["ComplaintStatus.Open"],
+                            ComplaintStatus.InProgress => L["ComplaintStatus.InProgress"],
+                            ComplaintStatus.Resolved   => L["ComplaintStatus.Resolved"],
+                            ComplaintStatus.Closed     => L["ComplaintStatus.Closed"],
+                            _ => "-"
+                        };
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Field.ResponsibleEmployee"],
+                PropertyName = nameof(CustomerComplaint.EmployeeId),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "90px",
+                DisplayFormatter = item =>
+                {
+                    if (item is CustomerComplaint c && c.Employee != null)
+                        return c.Employee.Name ?? "-";
+                    return "-";
+                }
+            }
+        };
+    }
+
+    private RenderFragment<CustomerComplaint>? GetActionsTemplate()
+    {
+        if (IsReadOnly) return null;
+
+        return complaint => __builder =>
+        {
+            <div class="d-flex gap-1">
+                <GenericButtonComponent IconClass="bi bi-pencil-square text-white"
+                                      Variant="ButtonVariant.DarkBlue"
+                                      Size="ButtonSize.Large"
+                                      OnClick="@(() => OnEditComplaint.InvokeAsync(complaint))"
+                                      Title="編輯此筆紀錄"
+                                      CssClass="btn-square" />
+                <GenericButtonComponent IconClass="bi bi-trash text-white"
+                                      Variant="ButtonVariant.Red"
+                                      Size="ButtonSize.Large"
+                                      OnClick="@(() => OnDeleteComplaint.InvokeAsync(complaint))"
+                                      Title="刪除此筆紀錄"
+                                      CssClass="btn-square" />
+            </div>
+        };
+    }
+
+    private async Task HandleAddComplaint()
+    {
+        await OnAddComplaint.InvokeAsync();
+    }
+}

@@ -107,6 +107,11 @@ public static class PermissionRegistry
         public const string ChartRead = "CustomerChart.Read";
     }
 
+    public static class CustomerComplaint
+    {
+        public const string Read = "CustomerComplaint.Read";
+    }
+
     public static class CustomerType
     {
         public const string Read = "CustomerType.Read";
@@ -403,9 +408,10 @@ public static class PermissionRegistry
         new(EmployeePosition.Read,  "檢視員工職位", PermissionLevel.Normal, "檢視員工職位與職級設定",             "Nav.HumanResources"),
 
         // ===== 一般權限：客戶 =====
-        new(Customer.Read,      "檢視客戶",     PermissionLevel.Normal, "檢視客戶基本資料與相關資訊",   "Nav.CustomerGroup"),
-        new(Customer.ChartRead, "檢視客戶圖表", PermissionLevel.Normal, "檢視客戶統計分析圖表（主管層級）", "Nav.CustomerGroup"),
-        new(CustomerType.Read,  "檢視客戶類型", PermissionLevel.Normal, "檢視客戶分類與類型設定",       "Nav.CustomerGroup"),
+        new(Customer.Read,          "檢視客戶",     PermissionLevel.Normal, "檢視客戶基本資料與相關資訊",   "Nav.CustomerGroup"),
+        new(Customer.ChartRead,     "檢視客戶圖表", PermissionLevel.Normal, "檢視客戶統計分析圖表（主管層級）", "Nav.CustomerGroup"),
+        new(CustomerComplaint.Read, "檢視客訴",     PermissionLevel.Normal, "檢視客戶投訴紀錄與處理狀態",   "Nav.CustomerGroup"),
+        new(CustomerType.Read,      "檢視客戶類型", PermissionLevel.Normal, "檢視客戶分類與類型設定",       "Nav.CustomerGroup"),
 
         // ===== 一般權限：廠商 =====
         new(Supplier.Read,      "檢視供應商",   PermissionLevel.Normal, "檢視供應商基本資料與相關資訊", "Nav.SupplierGroup"),

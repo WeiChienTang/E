@@ -89,22 +89,15 @@
     animation-fill-mode: both;
 }
 
-/* 為每個項目添加延遲動畫 */
-.quick-action-item:nth-child(1) {
-    animation-delay: 0.05s;
-}
-
-.quick-action-item:nth-child(2) {
-    animation-delay: 0.1s;
-}
-
-.quick-action-item:nth-child(3) {
-    animation-delay: 0.15s;
-}
-
-.quick-action-item:nth-child(4) {
-    animation-delay: 0.2s;
-}
+/* 為每個項目添加延遲動畫（含個人工具後最多 8 項） */
+.quick-action-item:nth-child(1) { animation-delay: 0.05s; }
+.quick-action-item:nth-child(2) { animation-delay: 0.1s; }
+.quick-action-item:nth-child(3) { animation-delay: 0.15s; }
+.quick-action-item:nth-child(4) { animation-delay: 0.2s; }
+.quick-action-item:nth-child(5) { animation-delay: 0.25s; }
+.quick-action-item:nth-child(6) { animation-delay: 0.3s; }
+.quick-action-item:nth-child(7) { animation-delay: 0.35s; }
+.quick-action-item:nth-child(8) { animation-delay: 0.4s; }
 
 @keyframes itemSlideIn {
     from {
@@ -148,6 +141,51 @@
     min-width: 18px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== 主按鈕徽章（行事曆 + 便條貼合計） ===== */
+.quick-action-main-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 5px;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 16px;
+    text-align: center;
+    pointer-events: none;
+    border: 2px solid white;
+    line-height: 1.4;
+    z-index: 1;
+}
+
+[data-bs-theme=dark] .quick-action-main-badge {
+    border-color: #0d1117;
+}
+
+/* ===== 個人工具 active 狀態 ===== */
+.quick-item-calendar {
+    border-color: var(--primary-blue, #0d6efd) !important;
+    color: var(--primary-blue, #0d6efd) !important;
+}
+
+.quick-item-note {
+    border-color: #f59e0b !important;
+    color: #d97706 !important;
+}
+
+/* ===== 分隔線 ===== */
+.quick-action-divider {
+    width: calc(100% - 8px);
+    height: 1px;
+    background: var(--border-color);
+    margin: 2px 4px;
+    opacity: 0.7;
+    pointer-events: none;
+    animation: none !important;
 }
 
 /* ===== 遮罩層 ===== */
@@ -197,26 +235,48 @@
     }
 }
 
-/* 手機 */
+/* 手機 — D 形書籤 */
 @media (max-width: 640px) {
+    /* 書籤貼邊定位 */
     .quick-action-menu {
-        bottom: 16px;
-        right: 16px;
+        bottom: 80px;   /* 避開 iOS 手勢條 */
+        right: 0;       /* 貼齊右側螢幕邊 */
     }
 
+    /* 主按鈕：小型書籤形（左側圓角，右直邊，夠大可點即可） */
     .quick-action-main-btn {
-        width: 48px;
+        width: 32px;
         height: 48px;
-        font-size: 17px;
+        border-radius: 24px 0 0 24px;
+        font-size: 15px;
+        /* 僅左側投影，貼齊右邊緣時更自然 */
+        box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.18), -1px 1px 3px rgba(0, 0, 0, 0.08);
     }
 
-    /* 手機版改為從下往上展開 */
+    /* 展開時 D 形不旋轉，只換色 */
+    .quick-action-menu.expanded .quick-action-main-btn {
+        transform: none;
+    }
+
+    .quick-action-menu.expanded .quick-action-main-btn:hover {
+        transform: none;
+    }
+
+    /* 主按鈕 badge 移至左上角（D 形可見的圓弧側） */
+    .quick-action-main-badge {
+        top: 4px;
+        right: auto;
+        left: 4px;
+    }
+
+    /* 展開項目：稍微內縮避免右側截斷 */
     .quick-action-items {
         flex-direction: column-reverse;
+        padding-right: 4px;
     }
 
     .quick-action-item {
-        min-width: 120px;
+        min-width: 130px;
         padding: 8px 12px;
         font-size: 12px;
         border-radius: 24px;
@@ -230,34 +290,34 @@
         font-size: 12px;
     }
 
-    /* 手機版項目動畫調整 */
+    /* 手機版項目動畫改為從右側滑入（配合書籤方向） */
     @keyframes itemSlideIn {
         from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateX(20px);
         }
         to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateX(0);
         }
     }
 
     .quick-action-item:hover {
-        transform: translateY(-2px);
+        transform: translateX(-3px);
     }
 }
 
 /* 小型手機 */
 @media (max-width: 360px) {
     .quick-action-menu {
-        bottom: 12px;
-        right: 12px;
+        bottom: 70px;
     }
 
     .quick-action-main-btn {
-        width: 44px;
-        height: 44px;
-        font-size: 16px;
+        width: 28px;
+        height: 42px;
+        border-radius: 21px 0 0 21px;
+        font-size: 13px;
     }
 }
 

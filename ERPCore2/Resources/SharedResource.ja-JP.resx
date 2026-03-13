@@ -413,6 +413,9 @@
   <data name="Nav.CustomerVisits" xml:space="preserve">
     <value>訪問記録</value>
   </data>
+  <data name="Nav.CustomerComplaints" xml:space="preserve">
+    <value>クレーム管理</value>
+  </data>
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>顧客グラフ</value>
   </data>
@@ -657,6 +660,7 @@
   <data name="Report.CustomerRoster" xml:space="preserve"><value>得意先一覧表</value></data>
   <data name="Report.CustomerDetail" xml:space="preserve"><value>得意先詳細</value></data>
   <data name="Report.CustomerVisitReport" xml:space="preserve"><value>訪問レポート</value></data>
+  <data name="Report.CustomerComplaintReport" xml:space="preserve"><value>クレームレポート</value></data>
   <data name="Report.SupplierStatement" xml:space="preserve"><value>仕入先照合書</value></data>
   <data name="Report.SupplierPurchaseAnalysis" xml:space="preserve"><value>仕入先仕入分析</value></data>
   <data name="Report.SupplierRoster" xml:space="preserve"><value>仕入先一覧表</value></data>
@@ -716,6 +720,7 @@
   <data name="Entity.SalesReturnReason" xml:space="preserve"><value>返品理由</value></data>
   <data name="Entity.Customer" xml:space="preserve"><value>得意先</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>訪問記録</value></data>
+  <data name="Entity.CustomerComplaint" xml:space="preserve"><value>クレーム</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>仕入先訪問記録</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>仕入先</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>商品</value></data>
@@ -1073,6 +1078,25 @@
   <data name="Field.VisitContent" xml:space="preserve"><value>訪問内容</value></data>
   <data name="Field.VisitDate" xml:space="preserve"><value>訪問日付</value></data>
   <data name="Field.VisitMethod" xml:space="preserve"><value>訪問方法</value></data>
+  <data name="Field.ComplaintDate" xml:space="preserve"><value>クレーム日付</value></data>
+  <data name="Field.ComplaintTitle" xml:space="preserve"><value>クレームタイトル</value></data>
+  <data name="Field.ComplaintCategory" xml:space="preserve"><value>カテゴリ</value></data>
+  <data name="Field.ComplaintStatus" xml:space="preserve"><value>処理状況</value></data>
+  <data name="Field.ComplaintDescription" xml:space="preserve"><value>クレーム内容</value></data>
+  <data name="Field.ComplaintResolution" xml:space="preserve"><value>対応内容</value></data>
+  <data name="Field.ResolvedDate" xml:space="preserve"><value>解決日付</value></data>
+  <data name="Field.FollowUpDate" xml:space="preserve"><value>フォローアップ日付</value></data>
+  <data name="Field.ResponsibleEmployee" xml:space="preserve"><value>担当者</value></data>
+  <data name="Column.ComplaintDate" xml:space="preserve"><value>クレーム日付</value></data>
+  <data name="ComplaintCategory.ProductQuality" xml:space="preserve"><value>製品品質</value></data>
+  <data name="ComplaintCategory.DeliveryDelay" xml:space="preserve"><value>納期遅延</value></data>
+  <data name="ComplaintCategory.ServiceAttitude" xml:space="preserve"><value>サービス態度</value></data>
+  <data name="ComplaintCategory.PriceDispute" xml:space="preserve"><value>価格紛争</value></data>
+  <data name="ComplaintCategory.Other" xml:space="preserve"><value>その他</value></data>
+  <data name="ComplaintStatus.Open" xml:space="preserve"><value>未処理</value></data>
+  <data name="ComplaintStatus.InProgress" xml:space="preserve"><value>処理中</value></data>
+  <data name="ComplaintStatus.Resolved" xml:space="preserve"><value>解決済み</value></data>
+  <data name="ComplaintStatus.Closed" xml:space="preserve"><value>クローズ</value></data>
   <data name="Field.VisitPurpose" xml:space="preserve"><value>訪問目的</value></data>
   <data name="Field.VisitResult" xml:space="preserve"><value>訪問結果</value></data>
   <!-- ===== Field - Supplier keys ===== -->
@@ -1473,6 +1497,7 @@
   <data name="Tab.CustomerProducts" xml:space="preserve"><value>顧客商品</value></data>
   <data name="Tab.CustomerData" xml:space="preserve"><value>顧客情報</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>訪問記録</value></data>
+  <data name="Tab.ComplaintRecords" xml:space="preserve"><value>クレーム記録</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>取引記録</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>名刺</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>会社情報</value></data>
@@ -1802,6 +1827,7 @@
   <data name="Report.CustomerRosterDesc" xml:space="preserve"><value>顧客コード、会社名、担当者、税番号、電話番号、住所等を含む顧客基本情報リストを印刷</value></data>
   <data name="Report.CustomerDetailDesc" xml:space="preserve"><value>連絡先情報、支払条件、担当営業等を含む顧客の完全な詳細情報を1ブロック毎に印刷</value></data>
   <data name="Report.CustomerVisitReportDesc" xml:space="preserve"><value>訪問日、顧客、訪問者、訪問目的および結果要約を含む顧客訪問記録を印刷</value></data>
+  <data name="Report.CustomerComplaintReportDesc" xml:space="preserve"><value>クレーム日、顧客、カテゴリ、ステータス、担当者、解決日を含む顧客クレーム記録を印刷</value></data>
   <data name="Report.SupplierStatementDesc" xml:space="preserve"><value>指定期間の仕入先対照表を生成し、仕入・返品・支払明細と期首・期末残高を含む</value></data>
   <data name="Report.SupplierPurchaseAnalysisDesc" xml:space="preserve"><value>仕入先の仕入金額とトレンドを分析</value></data>
   <data name="Report.SupplierRosterDesc" xml:space="preserve"><value>仕入先コード、名称、担当者、税番号、電話番号、住所等を含む仕入先基本情報リストを印刷</value></data>
@@ -2055,6 +2081,8 @@
   <data name="QuickAction.NotificationsDev" xml:space="preserve"><value>通知機能は開発中です...</value></data>
   <data name="QuickAction.RecentPagesDev" xml:space="preserve"><value>最近使用機能は開発中です...</value></data>
   <data name="QuickAction.SettingsDev" xml:space="preserve"><value>クイック設定機能は開発中です...</value></data>
+  <data name="QuickAction.Fullscreen" xml:space="preserve"><value>全画面</value></data>
+  <data name="QuickAction.FullscreenExit" xml:space="preserve"><value>全画面を終了</value></data>
 
   <!-- ===== Chart グラフ ===== -->
   <data name="Chart.LoadingData" xml:space="preserve"><value>グラフデータを読み込み中...</value></data>
@@ -2123,6 +2151,7 @@
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>在庫分析チャート</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>訪問記録がありません</value></data>
+  <data name="Customer.NoComplaints" xml:space="preserve"><value>クレーム記録がありません</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>
   <data name="Supplier.NetPurchase" xml:space="preserve"><value>純仕入額</value></data>
   <data name="Supplier.Receiving" xml:space="preserve"><value>仕入</value></data>
@@ -2179,6 +2208,7 @@
 
   <!-- ===== Button ボタン（新規） ===== -->
   <data name="Button.AddVisitRecord" xml:space="preserve"><value>訪問記録を追加</value></data>
+  <data name="Button.AddComplaint" xml:space="preserve"><value>クレームを追加</value></data>
   <data name="Button.ConfirmDelete" xml:space="preserve"><value>削除確認</value></data>
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>削除確認</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>明細をクリア</value></data>
@@ -2218,9 +2248,12 @@
   <!-- ===== Modal モーダル（新規） ===== -->
   <data name="Modal.DeleteVisitRecord" xml:space="preserve"><value>訪問記録を削除</value></data>
   <data name="Modal.ConfirmDeleteVisitRecord" xml:space="preserve"><value>この訪問記録を削除してよろしいですか？</value></data>
+  <data name="Modal.DeleteComplaintRecord" xml:space="preserve"><value>クレーム記録を削除</value></data>
+  <data name="Modal.ConfirmDeleteComplaintRecord" xml:space="preserve"><value>このクレーム記録を削除してよろしいですか？</value></data>
 
   <!-- ===== Message メッセージ（新規） ===== -->
   <data name="Message.VisitDeleted" xml:space="preserve"><value>訪問記録が削除されました</value></data>
+  <data name="Message.ComplaintDeleted" xml:space="preserve"><value>クレーム記録が削除されました</value></data>
 
   <!-- ===== Supplier 仕入先モジュール（新規） ===== -->
   <data name="Supplier.AutoSyncNote" xml:space="preserve"><value>発注書保存時に自動同期。★ は優先仕入先を示します</value></data>
@@ -3059,6 +3092,8 @@
   <data name="Page.CustomerSubtitle" xml:space="preserve"><value>すべての顧客データと連絡先情報を管理する</value></data>
   <data name="Page.CustomerVisitTitle" xml:space="preserve"><value>訪問記録管理</value></data>
   <data name="Page.CustomerVisitSubtitle" xml:space="preserve"><value>顧客への訪問と連絡記録を管理する</value></data>
+  <data name="Page.CustomerComplaintTitle" xml:space="preserve"><value>クレーム管理</value></data>
+  <data name="Page.CustomerComplaintSubtitle" xml:space="preserve"><value>顧客のクレームと対応状況を記録・追跡する</value></data>
   <data name="Page.DocumentCategoryTitle" xml:space="preserve"><value>ファイル分類</value></data>
   <data name="Page.DocumentCategorySubtitle" xml:space="preserve"><value>文書分類とソース設定を管理する</value></data>
   <data name="Page.DocumentTitle" xml:space="preserve"><value>ファイル保存</value></data>

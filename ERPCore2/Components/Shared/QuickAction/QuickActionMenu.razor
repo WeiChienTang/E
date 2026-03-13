@@ -11,6 +11,10 @@
     <div class="quick-action-backdrop" @onclick="CloseMenu"></div>
 }
 
+@{
+    var totalBadge = (ShowCalendarBadge ? CalendarBadgeCount : 0) + (ShowNoteBadge ? StickyNoteBadgeCount : 0);
+}
+
 <div class="quick-action-menu @(isExpanded ? "expanded" : "")">
 
     @* 主按鈕 *@
@@ -20,12 +24,61 @@
             aria-label="@L["QuickAction.MenuAriaLabel"]"
             aria-expanded="@isExpanded">
         <span class="bi @(isExpanded ? "bi-x-lg" : "bi-lightning-charge-fill")"></span>
+        @if (!isExpanded && totalBadge > 0)
+        {
+            <span class="quick-action-main-badge">@(totalBadge > 9 ? "9+" : totalBadge.ToString())</span>
+        }
     </button>
 
     @* 展開的功能選單 *@
     @if (isExpanded)
     {
         <div class="quick-action-items">
+
+            @* ===== 個人工具（放最前，column-reverse 後出現在最下方靠近按鈕） ===== *@
+
+            @* 行事曆 *@
+            @if (EnableCalendar)
+            {
+                <button class="quick-action-item @(CalendarBadgeCount > 0 ? "quick-item-calendar" : "")"
+                        @onclick="HandleCalendarClick"
+                        title="@L["QuickAction.CalendarTooltip"]">
+                    <span class="bi bi-calendar3"></span>
+                    <span class="quick-action-label">@L["QuickAction.Calendar"]</span>
+                    @if (ShowCalendarBadge && CalendarBadgeCount > 0)
+                    {
+                        <span class="quick-action-badge">@(CalendarBadgeCount > 9 ? "9+" : CalendarBadgeCount.ToString())</span>
+                    }
+                </button>
+            }
+
+            @* 便條貼 *@
+            @if (EnableStickyNote)
+            {
+                <button class="quick-action-item @(StickyNoteBadgeCount > 0 ? "quick-item-note" : "")"
+                        @onclick="HandleStickyNotesClick"
+                        title="@L["QuickAction.StickyNotesTooltip"]">
+                    <span class="bi bi-sticky"></span>
+                    <span class="quick-action-label">@L["QuickAction.StickyNotes"]</span>
+                    @if (ShowNoteBadge && StickyNoteBadgeCount > 0)
+                    {
+                        <span class="quick-action-badge">@(StickyNoteBadgeCount > 9 ? "9+" : StickyNoteBadgeCount.ToString())</span>
+                    }
+                </button>
+            }
+
+            @* 全景模式 *@
+            <button class="quick-action-item"
+                    @onclick="HandleFullscreenClick"
+                    title="@(IsFullscreen ? L["QuickAction.FullscreenExit"] : L["QuickAction.Fullscreen"])">
+                <span class="bi @(IsFullscreen ? "bi-fullscreen-exit" : "bi-fullscreen")"></span>
+                <span class="quick-action-label">@(IsFullscreen ? L["QuickAction.FullscreenExit"] : L["QuickAction.Fullscreen"])</span>
+            </button>
+
+            @* 分隔線 *@
+            <div class="quick-action-divider"></div>
+
+            @* ===== 系統工具 ===== *@
 
             @* 頁面搜尋 *@
             <button class="quick-action-item"
@@ -107,42 +160,54 @@
 
 @code {
     // ===== 參數 =====
-    
-    /// <summary>
-    /// 當點擊頁面搜尋時觸發
-    /// </summary>
-    [Parameter]
-    public EventCallback OnPageSearchClick { get; set; }
 
-    /// <summary>
-    /// 當點擊快捷鍵說明時觸發
-    /// </summary>
-    [Parameter]
-    public EventCallback OnShortcutKeysClick { get; set; }
+    /// <summary>當點擊頁面搜尋時觸發</summary>
+    [Parameter] public EventCallback OnPageSearchClick { get; set; }
 
-    /// <summary>
-    /// 當點擊報表搜尋時觸發
-    /// </summary>
-    [Parameter]
-    public EventCallback OnReportSearchClick { get; set; }
+    /// <summary>當點擊快捷鍵說明時觸發</summary>
+    [Parameter] public EventCallback OnShortcutKeysClick { get; set; }
 
-    /// <summary>
-    /// 是否顯示通知功能（預留）
-    /// </summary>
-    [Parameter]
-    public bool showNotifications { get; set; } = false;
+    /// <summary>當點擊報表搜尋時觸發</summary>
+    [Parameter] public EventCallback OnReportSearchClick { get; set; }
 
-    /// <summary>
-    /// 是否顯示最近頁面功能（預留）
-    /// </summary>
-    [Parameter]
-    public bool showRecentPages { get; set; } = false;
+    /// <summary>是否顯示行事曆項目</summary>
+    [Parameter] public bool EnableCalendar { get; set; } = true;
 
-    /// <summary>
-    /// 是否顯示設定功能（預留）
-    /// </summary>
-    [Parameter]
-    public bool showSettings { get; set; } = false;
+    /// <summary>是否顯示便條貼項目</summary>
+    [Parameter] public bool EnableStickyNote { get; set; } = true;
+
+    /// <summary>行事曆待辦數量（顯示 badge）</summary>
+    [Parameter] public int CalendarBadgeCount { get; set; }
+
+    /// <summary>是否顯示行事曆 badge</summary>
+    [Parameter] public bool ShowCalendarBadge { get; set; } = true;
+
+    /// <summary>便條貼數量（顯示 badge）</summary>
+    [Parameter] public int StickyNoteBadgeCount { get; set; }
+
+    /// <summary>是否顯示便條貼 badge</summary>
+    [Parameter] public bool ShowNoteBadge { get; set; } = true;
+
+    /// <summary>目前是否為全景模式（影響圖示與文字）</summary>
+    [Parameter] public bool IsFullscreen { get; set; }
+
+    /// <summary>當點擊行事曆時觸發</summary>
+    [Parameter] public EventCallback OnCalendarClick { get; set; }
+
+    /// <summary>當點擊便條貼時觸發</summary>
+    [Parameter] public EventCallback OnStickyNotesClick { get; set; }
+
+    /// <summary>當點擊全景模式時觸發</summary>
+    [Parameter] public EventCallback OnFullscreenClick { get; set; }
+
+    /// <summary>是否顯示通知功能（預留）</summary>
+    [Parameter] public bool showNotifications { get; set; } = false;
+
+    /// <summary>是否顯示最近頁面功能（預留）</summary>
+    [Parameter] public bool showRecentPages { get; set; } = false;
+
+    /// <summary>是否顯示設定功能（預留）</summary>
+    [Parameter] public bool showSettings { get; set; } = false;
 
     // ===== 狀態 =====
 
@@ -212,25 +277,40 @@
 
     // ===== 事件處理 =====
 
-    /// <summary>
-    /// 切換選單展開/收起
-    /// </summary>
+    /// <summary>切換選單展開/收起</summary>
     private void ToggleMenu()
     {
         isExpanded = !isExpanded;
     }
 
-    /// <summary>
-    /// 關閉選單
-    /// </summary>
+    /// <summary>關閉選單</summary>
     private void CloseMenu()
     {
         isExpanded = false;
     }
 
-    /// <summary>
-    /// 處理頁面搜尋點擊
-    /// </summary>
+    private async Task HandleCalendarClick()
+    {
+        CloseMenu();
+        if (OnCalendarClick.HasDelegate)
+            await OnCalendarClick.InvokeAsync();
+    }
+
+    private async Task HandleStickyNotesClick()
+    {
+        CloseMenu();
+        if (OnStickyNotesClick.HasDelegate)
+            await OnStickyNotesClick.InvokeAsync();
+    }
+
+    private async Task HandleFullscreenClick()
+    {
+        CloseMenu();
+        if (OnFullscreenClick.HasDelegate)
+            await OnFullscreenClick.InvokeAsync();
+    }
+
+    /// <summary>處理頁面搜尋點擊</summary>
     private async Task HandlePageSearchClick()
     {
         CloseMenu();

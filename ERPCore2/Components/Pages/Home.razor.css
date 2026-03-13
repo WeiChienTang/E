@@ -207,7 +207,7 @@
     }
 
     .add-shortcut-card span {
-        font-size: 0.75rem;
+        font-size: 1rem;
     }
 }
 
@@ -217,12 +217,8 @@
         padding: 0.6rem 0.75rem;
     }
 
-    .welcome-title {
-        font-size: 0.9rem;
-    }
-
     .welcome-subtitle {
-        font-size: 0.75rem;
+        font-size: 1rem;
     }
 
     .dashboard-panel {
@@ -235,17 +231,9 @@
         padding: 0.55rem 0.3rem 0.45rem;
     }
 
-    .add-shortcut-card i {
-        font-size: 1rem;
-    }
-
-    .add-shortcut-card span {
-        font-size: 0.68rem;
-    }
-
     .add-panel-card {
         padding: 0.65rem 0.75rem;
-        font-size: 0.82rem;
+        font-size: 1rem;
     }
 }
 

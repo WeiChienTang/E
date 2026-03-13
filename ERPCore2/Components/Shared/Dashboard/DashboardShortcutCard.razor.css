@@ -198,7 +198,7 @@
     }
 
     .shortcut-name {
-        font-size: 0.75rem;
+        font-size: 1rem;
     }
 }
 
@@ -214,11 +214,6 @@
         width: 30px;
         height: 30px;
         font-size: 0.9rem;
-    }
-
-    .shortcut-name {
-        font-size: 0.68rem;
-        line-height: 1.2;
     }
 
     .btn-remove {

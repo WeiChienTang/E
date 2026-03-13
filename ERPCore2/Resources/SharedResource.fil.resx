@@ -413,6 +413,9 @@
   <data name="Nav.CustomerVisits" xml:space="preserve">
     <value>Mga Rekord ng Pagbisita</value>
   </data>
+  <data name="Nav.CustomerComplaints" xml:space="preserve">
+    <value>Mga Reklamo</value>
+  </data>
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>Tsart ng Customer</value>
   </data>
@@ -657,6 +660,7 @@
   <data name="Report.CustomerRoster" xml:space="preserve"><value>Listahan ng Customer</value></data>
   <data name="Report.CustomerDetail" xml:space="preserve"><value>Detalye ng Customer</value></data>
   <data name="Report.CustomerVisitReport" xml:space="preserve"><value>Ulat ng Pagbisita</value></data>
+  <data name="Report.CustomerComplaintReport" xml:space="preserve"><value>Ulat ng Reklamo</value></data>
   <data name="Report.SupplierStatement" xml:space="preserve"><value>Pahayag ng Supplier</value></data>
   <data name="Report.SupplierPurchaseAnalysis" xml:space="preserve"><value>Pagsusuri ng Pagbili ng Supplier</value></data>
   <data name="Report.SupplierRoster" xml:space="preserve"><value>Listahan ng Supplier</value></data>
@@ -716,6 +720,7 @@
   <data name="Entity.SalesReturnReason" xml:space="preserve"><value>Dahilan ng Pagbabalik</value></data>
   <data name="Entity.Customer" xml:space="preserve"><value>Kliyente</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>Pagbisita sa Kliyente</value></data>
+  <data name="Entity.CustomerComplaint" xml:space="preserve"><value>Reklamo ng Kliyente</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>Pagbisita sa Supplier</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>Supplier</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>Produkto</value></data>
@@ -1073,6 +1078,25 @@
   <data name="Field.VisitContent" xml:space="preserve"><value>Nilalaman ng Pagbisita</value></data>
   <data name="Field.VisitDate" xml:space="preserve"><value>Petsa ng Pagbisita</value></data>
   <data name="Field.VisitMethod" xml:space="preserve"><value>Paraan ng Pagbisita</value></data>
+  <data name="Field.ComplaintDate" xml:space="preserve"><value>Petsa ng Reklamo</value></data>
+  <data name="Field.ComplaintTitle" xml:space="preserve"><value>Pamagat ng Reklamo</value></data>
+  <data name="Field.ComplaintCategory" xml:space="preserve"><value>Kategorya</value></data>
+  <data name="Field.ComplaintStatus" xml:space="preserve"><value>Katayuan</value></data>
+  <data name="Field.ComplaintDescription" xml:space="preserve"><value>Paglalarawan ng Reklamo</value></data>
+  <data name="Field.ComplaintResolution" xml:space="preserve"><value>Resolusyon</value></data>
+  <data name="Field.ResolvedDate" xml:space="preserve"><value>Petsa ng Resolusyon</value></data>
+  <data name="Field.FollowUpDate" xml:space="preserve"><value>Petsa ng Follow-up</value></data>
+  <data name="Field.ResponsibleEmployee" xml:space="preserve"><value>Responsableng Empleyado</value></data>
+  <data name="Column.ComplaintDate" xml:space="preserve"><value>Petsa ng Reklamo</value></data>
+  <data name="ComplaintCategory.ProductQuality" xml:space="preserve"><value>Kalidad ng Produkto</value></data>
+  <data name="ComplaintCategory.DeliveryDelay" xml:space="preserve"><value>Pagkaantala ng Paghahatid</value></data>
+  <data name="ComplaintCategory.ServiceAttitude" xml:space="preserve"><value>Saloobin sa Serbisyo</value></data>
+  <data name="ComplaintCategory.PriceDispute" xml:space="preserve"><value>Alitan sa Presyo</value></data>
+  <data name="ComplaintCategory.Other" xml:space="preserve"><value>Iba pa</value></data>
+  <data name="ComplaintStatus.Open" xml:space="preserve"><value>Bukas</value></data>
+  <data name="ComplaintStatus.InProgress" xml:space="preserve"><value>Isinasagawa</value></data>
+  <data name="ComplaintStatus.Resolved" xml:space="preserve"><value>Nalutas</value></data>
+  <data name="ComplaintStatus.Closed" xml:space="preserve"><value>Sarado</value></data>
   <data name="Field.VisitPurpose" xml:space="preserve"><value>Layunin ng Pagbisita</value></data>
   <data name="Field.VisitResult" xml:space="preserve"><value>Resulta ng Pagbisita</value></data>
   <!-- ===== Field - Supplier keys ===== -->
@@ -1473,6 +1497,7 @@
   <data name="Tab.CustomerProducts" xml:space="preserve"><value>Mga Produkto ng Customer</value></data>
   <data name="Tab.CustomerData" xml:space="preserve"><value>Data ng Customer</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>Mga Talaan ng Pagbisita</value></data>
+  <data name="Tab.ComplaintRecords" xml:space="preserve"><value>Mga Reklamo</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>Mga Talaan ng Transaksyon</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>Mga Business Card</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>Data ng Kumpanya</value></data>
@@ -1802,6 +1827,7 @@
   <data name="Report.CustomerRosterDesc" xml:space="preserve"><value>I-print ang listahan ng pangunahing data ng customer kasama ang code, pangalan ng kumpanya, contact person, tax ID, telepono, at address</value></data>
   <data name="Report.CustomerDetailDesc" xml:space="preserve"><value>I-print ang kumpletong detalye ng customer kasama ang impormasyon sa pakikipag-ugnayan, mga tuntunin sa pagbabayad, at kinatawan ng benta</value></data>
   <data name="Report.CustomerVisitReportDesc" xml:space="preserve"><value>I-print ang ulat ng pagbisita sa customer kasama ang petsa ng pagbisita, customer, bisita, layunin, at buod ng resulta</value></data>
+  <data name="Report.CustomerComplaintReportDesc" xml:space="preserve"><value>I-print ang mga rekord ng reklamo ng customer kasama ang petsa ng reklamo, customer, kategorya, katayuan, responsableng tao, at petsa ng resolusyon</value></data>
   <data name="Report.SupplierStatementDesc" xml:space="preserve"><value>Bumuo ng pahayag ng supplier para sa isang tinukoy na panahon, kasama ang detalye ng pagbili, pagbabalik, at bayad na may mga panimula/pangwakas na balanse</value></data>
   <data name="Report.SupplierPurchaseAnalysisDesc" xml:space="preserve"><value>Suriin ang mga halaga ng pagbili ng supplier at mga trend</value></data>
   <data name="Report.SupplierRosterDesc" xml:space="preserve"><value>I-print ang listahan ng pangunahing data ng supplier kasama ang code, pangalan, contact, tax ID, telepono, at address</value></data>
@@ -2055,6 +2081,8 @@
   <data name="QuickAction.NotificationsDev" xml:space="preserve"><value>Ang feature ng notification ay nasa development...</value></data>
   <data name="QuickAction.RecentPagesDev" xml:space="preserve"><value>Ang feature ng recent pages ay nasa development...</value></data>
   <data name="QuickAction.SettingsDev" xml:space="preserve"><value>Ang feature ng quick settings ay nasa development...</value></data>
+  <data name="QuickAction.Fullscreen" xml:space="preserve"><value>Buong Screen</value></data>
+  <data name="QuickAction.FullscreenExit" xml:space="preserve"><value>Lumabas sa Buong Screen</value></data>
 
   <!-- ===== Chart ===== -->
   <data name="Chart.LoadingData" xml:space="preserve"><value>Naglo-load ng chart data...</value></data>
@@ -2123,6 +2151,7 @@
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Imbentaryo</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>Walang kaugnay na mga transaksyon</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>Wala pang mga rekord ng pagbisita</value></data>
+  <data name="Customer.NoComplaints" xml:space="preserve"><value>Wala pang mga rekord ng reklamo</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>Walang kaugnay na mga transaksyon</value></data>
   <data name="Supplier.NetPurchase" xml:space="preserve"><value>Net na Pagbili</value></data>
   <data name="Supplier.Receiving" xml:space="preserve"><value>Pagtanggap</value></data>
@@ -2179,6 +2208,7 @@
 
   <!-- ===== Button (new) ===== -->
   <data name="Button.AddVisitRecord" xml:space="preserve"><value>Magdagdag ng Rekord ng Pagbisita</value></data>
+  <data name="Button.AddComplaint" xml:space="preserve"><value>Magdagdag ng Reklamo</value></data>
   <data name="Button.ConfirmDelete" xml:space="preserve"><value>Kumpirmahin ang Pagtanggal</value></data>
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>Kumpirmahin ang Pag-alis</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>I-clear ang Mga Detalye</value></data>
@@ -2218,9 +2248,12 @@
   <!-- ===== Modal (new) ===== -->
   <data name="Modal.DeleteVisitRecord" xml:space="preserve"><value>Tanggalin ang Rekord ng Pagbisita</value></data>
   <data name="Modal.ConfirmDeleteVisitRecord" xml:space="preserve"><value>Sigurado ka bang gusto mong tanggalin ang rekord ng pagbisitang ito?</value></data>
+  <data name="Modal.DeleteComplaintRecord" xml:space="preserve"><value>Tanggalin ang Rekord ng Reklamo</value></data>
+  <data name="Modal.ConfirmDeleteComplaintRecord" xml:space="preserve"><value>Sigurado ka bang gusto mong tanggalin ang rekord ng reklamong ito?</value></data>
 
   <!-- ===== Message (new) ===== -->
   <data name="Message.VisitDeleted" xml:space="preserve"><value>Natanggal na ang rekord ng pagbisita</value></data>
+  <data name="Message.ComplaintDeleted" xml:space="preserve"><value>Natanggal na ang rekord ng reklamo</value></data>
 
   <!-- ===== Supplier Module (new) ===== -->
   <data name="Supplier.AutoSyncNote" xml:space="preserve"><value>Awtomatikong sini-sync kapag na-save ang purchase order. ★ ay nagpapahiwatig ng preferred na supplier</value></data>
@@ -3059,6 +3092,8 @@
   <data name="Page.CustomerSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng customer at impormasyon sa pakikipag-ugnayan</value></data>
   <data name="Page.CustomerVisitTitle" xml:space="preserve"><value>Pagpapanatili ng Rekord ng Pagbisita</value></data>
   <data name="Page.CustomerVisitSubtitle" xml:space="preserve"><value>Pamahalaan ang mga rekord ng pagbisita at pakikipag-ugnayan sa customer</value></data>
+  <data name="Page.CustomerComplaintTitle" xml:space="preserve"><value>Mga Reklamo ng Customer</value></data>
+  <data name="Page.CustomerComplaintSubtitle" xml:space="preserve"><value>Itala at subaybayan ang mga reklamo ng customer at katayuan ng pagtugon</value></data>
   <data name="Page.DocumentCategoryTitle" xml:space="preserve"><value>Kategorya ng File</value></data>
   <data name="Page.DocumentCategorySubtitle" xml:space="preserve"><value>Pamahalaan ang kategorya ng dokumento at mga setting ng pinagmulan</value></data>
   <data name="Page.DocumentTitle" xml:space="preserve"><value>Pag-iimbak ng File</value></data>

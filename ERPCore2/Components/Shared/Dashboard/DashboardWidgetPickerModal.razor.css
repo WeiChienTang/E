@@ -281,7 +281,7 @@
 
     .picker-tab {
         padding: 0.35rem 0.65rem;
-        font-size: 0.78rem;
+        font-size: 1rem;
     }
 
     .picker-item {
@@ -297,7 +297,7 @@
     }
 
     .picker-name {
-        font-size: 0.72rem;
+        font-size: 1rem;
     }
 }
 
@@ -312,10 +312,6 @@
         width: 28px;
         height: 28px;
         font-size: 0.85rem;
-    }
-
-    .picker-name {
-        font-size: 0.65rem;
     }
 
     .picker-check-badge {

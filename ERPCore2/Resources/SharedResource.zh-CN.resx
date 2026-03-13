@@ -413,6 +413,9 @@
   <data name="Nav.CustomerVisits" xml:space="preserve">
     <value>拜访记录</value>
   </data>
+  <data name="Nav.CustomerComplaints" xml:space="preserve">
+    <value>客诉管理</value>
+  </data>
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>客户图表</value>
   </data>
@@ -657,6 +660,7 @@
   <data name="Report.CustomerRoster" xml:space="preserve"><value>客户名册表</value></data>
   <data name="Report.CustomerDetail" xml:space="preserve"><value>客户详细资料</value></data>
   <data name="Report.CustomerVisitReport" xml:space="preserve"><value>拜访报告</value></data>
+  <data name="Report.CustomerComplaintReport" xml:space="preserve"><value>客诉报告</value></data>
   <data name="Report.SupplierStatement" xml:space="preserve"><value>供应商对账单</value></data>
   <data name="Report.SupplierPurchaseAnalysis" xml:space="preserve"><value>供应商进货分析</value></data>
   <data name="Report.SupplierRoster" xml:space="preserve"><value>供应商名册表</value></data>
@@ -716,6 +720,7 @@
   <data name="Entity.SalesReturnReason" xml:space="preserve"><value>退货原因</value></data>
   <data name="Entity.Customer" xml:space="preserve"><value>客户</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>拜访记录</value></data>
+  <data name="Entity.CustomerComplaint" xml:space="preserve"><value>客诉</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>供应商拜访记录</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>供应商</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>商品</value></data>
@@ -1073,6 +1078,25 @@
   <data name="Field.VisitContent" xml:space="preserve"><value>拜访内容</value></data>
   <data name="Field.VisitDate" xml:space="preserve"><value>拜访日期</value></data>
   <data name="Field.VisitMethod" xml:space="preserve"><value>拜访方式</value></data>
+  <data name="Field.ComplaintDate" xml:space="preserve"><value>投诉日期</value></data>
+  <data name="Field.ComplaintTitle" xml:space="preserve"><value>投诉标题</value></data>
+  <data name="Field.ComplaintCategory" xml:space="preserve"><value>投诉类别</value></data>
+  <data name="Field.ComplaintStatus" xml:space="preserve"><value>处理状态</value></data>
+  <data name="Field.ComplaintDescription" xml:space="preserve"><value>投诉描述</value></data>
+  <data name="Field.ComplaintResolution" xml:space="preserve"><value>处理方式</value></data>
+  <data name="Field.ResolvedDate" xml:space="preserve"><value>解决日期</value></data>
+  <data name="Field.FollowUpDate" xml:space="preserve"><value>跟进日期</value></data>
+  <data name="Field.ResponsibleEmployee" xml:space="preserve"><value>负责人员</value></data>
+  <data name="Column.ComplaintDate" xml:space="preserve"><value>投诉日期</value></data>
+  <data name="ComplaintCategory.ProductQuality" xml:space="preserve"><value>产品质量</value></data>
+  <data name="ComplaintCategory.DeliveryDelay" xml:space="preserve"><value>交期延误</value></data>
+  <data name="ComplaintCategory.ServiceAttitude" xml:space="preserve"><value>服务态度</value></data>
+  <data name="ComplaintCategory.PriceDispute" xml:space="preserve"><value>价格争议</value></data>
+  <data name="ComplaintCategory.Other" xml:space="preserve"><value>其他</value></data>
+  <data name="ComplaintStatus.Open" xml:space="preserve"><value>待处理</value></data>
+  <data name="ComplaintStatus.InProgress" xml:space="preserve"><value>处理中</value></data>
+  <data name="ComplaintStatus.Resolved" xml:space="preserve"><value>已解决</value></data>
+  <data name="ComplaintStatus.Closed" xml:space="preserve"><value>已关闭</value></data>
   <data name="Field.VisitPurpose" xml:space="preserve"><value>拜访目的</value></data>
   <data name="Field.VisitResult" xml:space="preserve"><value>拜访结果</value></data>
   <!-- ===== Field - Supplier keys ===== -->
@@ -1473,6 +1497,7 @@
   <data name="Tab.CustomerProducts" xml:space="preserve"><value>客户商品</value></data>
   <data name="Tab.CustomerData" xml:space="preserve"><value>客户资料</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>拜访记录</value></data>
+  <data name="Tab.ComplaintRecords" xml:space="preserve"><value>投诉记录</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>交易记录</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>名片</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>公司资料</value></data>
@@ -1806,6 +1831,7 @@
   <data name="Report.CustomerRosterDesc" xml:space="preserve"><value>打印客户基本资料清单，含客户编号、公司名称、联系人、统编、联系电话、地址等</value></data>
   <data name="Report.CustomerDetailDesc" xml:space="preserve"><value>打印客户完整详细资料，含联系资讯、付款条件、业务负责人等，每位客户各占一区块</value></data>
   <data name="Report.CustomerVisitReportDesc" xml:space="preserve"><value>打印客户拜访记录报告，含拜访日期、客户、拜访人员、拜访目的及结果摘要</value></data>
+  <data name="Report.CustomerComplaintReportDesc" xml:space="preserve"><value>打印客诉记录报告，含投诉日期、客户、类别、状态、负责人员及解决日期</value></data>
   <data name="Report.SupplierStatementDesc" xml:space="preserve"><value>生成指定期间厂商对账单，含进货、退货、付款明细及期初期末余额</value></data>
   <data name="Report.SupplierPurchaseAnalysisDesc" xml:space="preserve"><value>分析厂商进货金额与趋势</value></data>
   <data name="Report.SupplierRosterDesc" xml:space="preserve"><value>打印厂商基本资料清单，含厂商编号、厂商名称、联系人、统编、联系电话、地址等</value></data>
@@ -2059,6 +2085,8 @@
   <data name="QuickAction.NotificationsDev" xml:space="preserve"><value>通知功能开发中...</value></data>
   <data name="QuickAction.RecentPagesDev" xml:space="preserve"><value>最近使用功能开发中...</value></data>
   <data name="QuickAction.SettingsDev" xml:space="preserve"><value>快速设置功能开发中...</value></data>
+  <data name="QuickAction.Fullscreen" xml:space="preserve"><value>全屏模式</value></data>
+  <data name="QuickAction.FullscreenExit" xml:space="preserve"><value>退出全屏</value></data>
 
   <!-- ===== Chart 图表 ===== -->
   <data name="Chart.LoadingData" xml:space="preserve"><value>正在加载图表数据...</value></data>
@@ -2127,6 +2155,7 @@
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>库存分析图表</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>没有相关交易记录</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>暂无拜访记录</value></data>
+  <data name="Customer.NoComplaints" xml:space="preserve"><value>暂无投诉记录</value></data>
   <data name="Supplier.NoTransactions" xml:space="preserve"><value>没有相关交易记录</value></data>
   <data name="Supplier.NetPurchase" xml:space="preserve"><value>净采购额</value></data>
   <data name="Supplier.Receiving" xml:space="preserve"><value>进货</value></data>
@@ -2183,6 +2212,7 @@
 
   <!-- ===== Button 按钮（新增） ===== -->
   <data name="Button.AddVisitRecord" xml:space="preserve"><value>新增拜访记录</value></data>
+  <data name="Button.AddComplaint" xml:space="preserve"><value>新增投诉记录</value></data>
   <data name="Button.ConfirmDelete" xml:space="preserve"><value>确认删除</value></data>
   <data name="Button.ConfirmRemove" xml:space="preserve"><value>确认移除</value></data>
   <data name="Button.ClearDetails" xml:space="preserve"><value>清除明细</value></data>
@@ -2222,9 +2252,12 @@
   <!-- ===== Modal 弹窗文字（新增） ===== -->
   <data name="Modal.DeleteVisitRecord" xml:space="preserve"><value>删除拜访记录</value></data>
   <data name="Modal.ConfirmDeleteVisitRecord" xml:space="preserve"><value>确定要删除此条拜访记录吗？</value></data>
+  <data name="Modal.DeleteComplaintRecord" xml:space="preserve"><value>删除投诉记录</value></data>
+  <data name="Modal.ConfirmDeleteComplaintRecord" xml:space="preserve"><value>确定要删除此条投诉记录吗？</value></data>
 
   <!-- ===== Message 消息（新增） ===== -->
   <data name="Message.VisitDeleted" xml:space="preserve"><value>拜访记录已删除</value></data>
+  <data name="Message.ComplaintDeleted" xml:space="preserve"><value>投诉记录已删除</value></data>
 
   <!-- ===== Supplier 供应商模块（新增） ===== -->
   <data name="Supplier.AutoSyncNote" xml:space="preserve"><value>采购单保存时自动同步，★ 表示常用供应商</value></data>
@@ -3072,6 +3105,8 @@
   <data name="Page.CustomerSubtitle" xml:space="preserve"><value>管理所有客户资料与联系信息</value></data>
   <data name="Page.CustomerVisitTitle" xml:space="preserve"><value>拜访记录维护</value></data>
   <data name="Page.CustomerVisitSubtitle" xml:space="preserve"><value>管理客户拜访与联系记录</value></data>
+  <data name="Page.CustomerComplaintTitle" xml:space="preserve"><value>客诉管理</value></data>
+  <data name="Page.CustomerComplaintSubtitle" xml:space="preserve"><value>记录与追踪客户投诉事件及处理状态</value></data>
   <data name="Page.DocumentCategoryTitle" xml:space="preserve"><value>文件分类</value></data>
   <data name="Page.DocumentCategorySubtitle" xml:space="preserve"><value>管理文档分类与来源设置</value></data>
   <data name="Page.DocumentTitle" xml:space="preserve"><value>文件存留</value></data>

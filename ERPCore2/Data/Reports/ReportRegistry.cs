@@ -107,6 +107,21 @@ public static class ReportRegistry
                 SortOrder = 7,
                 IsEnabled = true
             },
+            new ReportDefinition
+            {
+                Id = ReportIds.CustomerComplaintReport,
+                Name = "客訴報告",
+                NameKey = "Report.CustomerComplaintReport",
+                Description = "列印客訴記錄報告，含投訴日期、客戶、類別、狀態、負責人員及解決日期",
+                DescriptionKey = "Report.CustomerComplaintReportDesc",
+                IconClass = "bi bi-exclamation-circle",
+                Category = ReportCategory.Customer,
+                ModuleKey = "Customers",
+                RequiredPermission = PermissionRegistry.CustomerComplaint.Read,
+                ActionId = "OpenCustomerComplaintReport",
+                SortOrder = 8,
+                IsEnabled = true
+            },
 
             // ==================== 廠商報表 ====================
             new ReportDefinition

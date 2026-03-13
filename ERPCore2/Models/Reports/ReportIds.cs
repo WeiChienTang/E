@@ -29,6 +29,9 @@ public static class ReportIds
     /// <summary>客戶拜訪報告</summary>
     public const string CustomerVisitReport = "AR007";
 
+    /// <summary>客訴報告</summary>
+    public const string CustomerComplaintReport = "AR008";
+
     // ==================== 廠商報表 (AP) ====================
 
     /// <summary>應付帳款報表</summary>

@@ -22,6 +22,7 @@ namespace ERPCore2.Data.Context
 
       public DbSet<Customer> Customers { get; set; }
       public DbSet<CustomerVisit> CustomerVisits { get; set; }
+      public DbSet<CustomerComplaint> CustomerComplaints { get; set; }
       public DbSet<PaymentMethod> PaymentMethods { get; set; }
       public DbSet<Bank> Banks { get; set; }            
       public DbSet<Employee> Employees { get; set; }

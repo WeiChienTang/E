@@ -1,0 +1,150 @@
+@* 客戶投訴紀錄 Tab - 自包含元件，主組件透過 @ref 協調 *@
+@inject ICustomerComplaintService CustomerComplaintService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@* 投訴紀錄列表 *@
+<CustomerComplaintTable Complaints="@customerComplaints"
+                        OnAddComplaint="@HandleAddComplaint"
+                        OnEditComplaint="@HandleEditComplaint"
+                        OnDeleteComplaint="@HandleDeleteComplaintRequest" />
+
+@* 投訴紀錄編輯 Modal *@
+<CustomerComplaintEditModalComponent IsVisible="@isComplaintModalVisible"
+                                     IsVisibleChanged="@HandleComplaintModalVisibilityChanged"
+                                     CustomerComplaintId="@editingComplaintId"
+                                     PrefilledCustomerId="@CustomerId"
+                                     OnCustomerComplaintSaved="@OnComplaintSavedWrapper"
+                                     OnCancel="@HandleComplaintModalCancel" />
+
+@* 刪除確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showDeleteComplaintModal"
+                              IsVisibleChanged="@((bool v) => showDeleteComplaintModal = v)"
+                              Title="@L["Modal.DeleteComplaintRecord"]"
+                              Icon="bi-trash"
+                              Message="@L["Modal.ConfirmDeleteComplaintRecord"]"
+                              ConfirmButtonText="@L["Button.ConfirmDelete"]"
+                              CancelButtonText="@L["Button.Cancel"]"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@HandleConfirmDeleteComplaint"
+                              OnCancel="@(() => showDeleteComplaintModal = false)" />
+
+@code {
+    /// <summary>目前客戶 ID（供新增投訴紀錄時預填）</summary>
+    [Parameter] public int? CustomerId { get; set; }
+
+    // ===== 內部狀態 =====
+    private List<CustomerComplaint> customerComplaints = new();
+    private bool isComplaintModalVisible = false;
+    private int? editingComplaintId = null;
+    private bool showDeleteComplaintModal = false;
+    private CustomerComplaint? deletingComplaint = null;
+    private int? _loadedCustomerId;
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (CustomerId != _loadedCustomerId)
+        {
+            _loadedCustomerId = CustomerId;
+            if (CustomerId.HasValue && CustomerId.Value > 0)
+                await LoadAsync(CustomerId.Value);
+            else
+                Clear();
+        }
+    }
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    /// <summary>載入指定客戶的投訴紀錄</summary>
+    public async Task LoadAsync(int customerId)
+    {
+        customerComplaints = await CustomerComplaintService.GetByCustomerAsync(customerId);
+        StateHasChanged();
+    }
+
+    /// <summary>清除投訴紀錄（切換至新增模式時使用）</summary>
+    public void Clear()
+    {
+        customerComplaints = new();
+        StateHasChanged();
+    }
+
+    // ===== 投訴紀錄 Modal 處理 =====
+
+    private void HandleAddComplaint()
+    {
+        editingComplaintId = null;
+        isComplaintModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleEditComplaint(CustomerComplaint complaint)
+    {
+        editingComplaintId = complaint.Id;
+        isComplaintModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleDeleteComplaintRequest(CustomerComplaint complaint)
+    {
+        deletingComplaint = complaint;
+        showDeleteComplaintModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleConfirmDeleteComplaint()
+    {
+        if (deletingComplaint == null) return;
+
+        try
+        {
+            var result = await CustomerComplaintService.DeleteAsync(deletingComplaint.Id);
+            if (result.IsSuccess)
+            {
+                customerComplaints.RemoveAll(c => c.Id == deletingComplaint.Id);
+                await NotificationService.ShowSuccessAsync(L["Message.ComplaintDeleted"]);
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"刪除失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除投訴紀錄時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            deletingComplaint = null;
+            showDeleteComplaintModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnComplaintSavedWrapper(CustomerComplaint savedComplaint)
+    {
+        var existingIndex = customerComplaints.FindIndex(c => c.Id == savedComplaint.Id);
+        if (existingIndex >= 0)
+            customerComplaints[existingIndex] = savedComplaint;
+        else
+            customerComplaints.Insert(0, savedComplaint);
+
+        isComplaintModalVisible = false;
+        StateHasChanged();
+    }
+
+    private void HandleComplaintModalVisibilityChanged(bool isVisible)
+    {
+        isComplaintModalVisible = isVisible;
+        StateHasChanged();
+    }
+
+    private void HandleComplaintModalCancel()
+    {
+        isComplaintModalVisible = false;
+        StateHasChanged();
+    }
+}

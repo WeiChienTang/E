@@ -62,6 +62,7 @@ namespace ERPCore2.Data
             // 客戶相關服務
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<ICustomerVisitService, CustomerVisitService>();
+            services.AddScoped<ICustomerComplaintService, CustomerComplaintService>();
 
             // 員工工具配給服務
             services.AddScoped<IEmployeeToolService, EmployeeToolService>();
@@ -305,6 +306,8 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerRosterReportService, CustomerRosterReportService>();
             // 客戶詳細資料報表服務（AR006）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerDetailReportService, CustomerDetailReportService>();
+            // 客訴報告服務（AR008）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerComplaintReportService, CustomerComplaintReportService>();
             // 廠商名冊表報表服務（AP004）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierRosterReportService, SupplierRosterReportService>();
             // 廠商詳細資料報表服務（AP005）

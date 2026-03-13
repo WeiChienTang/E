@@ -18,12 +18,14 @@
         <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 bg-transparent">
             <span class="fw-semibold small"><i class="bi bi-boxes me-2 text-primary"></i>庫存明細</span>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="ToggleAddWarehouseForm">
-                    <i class="bi bi-building me-1"></i>新增倉庫
-                </button>
-                <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="ToggleAddLocationForm">
-                    <i class="bi bi-pin-map me-1"></i>新增庫位
-                </button>
+                <GenericButtonComponent Text="新增倉庫"
+                                        Variant="ButtonVariant.OutlineGray"
+                                        IconClass="bi bi-building"
+                                        OnClick="ToggleAddWarehouseForm" />
+                <GenericButtonComponent Text="新增庫位"
+                                        Variant="ButtonVariant.OutlineGray"
+                                        IconClass="bi bi-pin-map"
+                                        OnClick="ToggleAddLocationForm" />
             </div>
         </div>
     }
@@ -34,25 +36,25 @@
         <div class="px-3 py-2 border-bottom small" style="background-color: var(--bg-secondary);">
             <div class="d-flex gap-2 align-items-end flex-wrap">
                 <div>
+                    <label class="form-label form-label-sm mb-1">倉庫編號 <span class="text-danger">*</span></label>
+                    <input class="form-control form-control-sm" style="min-width:100px"
+                           placeholder="系統自動產生"
+                           @bind="_newWarehouseCode" @bind:event="oninput" />
+                </div>
+                <div>
                     <label class="form-label form-label-sm mb-1">倉庫名稱 <span class="text-danger">*</span></label>
                     <input class="form-control form-control-sm" style="min-width:130px"
                            placeholder="倉庫名稱"
                            @bind="_newWarehouseName" @bind:event="oninput" />
                 </div>
-                <div>
-                    <label class="form-label form-label-sm mb-1">倉庫編號 <span class="text-danger">*</span></label>
-                    <input class="form-control form-control-sm" style="min-width:100px"
-                           placeholder="WH001"
-                           @bind="_newWarehouseCode" @bind:event="oninput" />
-                </div>
-                <button class="btn btn-primary btn-sm" type="button"
+                <button class="btn btn-primary" type="button"
                         disabled="@(_isSavingWarehouse || string.IsNullOrWhiteSpace(_newWarehouseName) || string.IsNullOrWhiteSpace(_newWarehouseCode))"
                         @onclick="SaveNewWarehouseAsync">
                     @if (_isSavingWarehouse) { <span class="spinner-border spinner-border-sm me-1"></span> }
                     else { <i class="bi bi-check2 me-1"></i> }
                     儲存
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CancelAddWarehouse">
+                <button class="btn btn-outline-secondary" type="button" @onclick="CancelAddWarehouse">
                     <i class="bi bi-x"></i>
                 </button>
             </div>
@@ -65,6 +67,18 @@
         <div class="px-3 py-2 border-bottom small" style="background-color: var(--bg-secondary);">
             <div class="d-flex gap-2 align-items-end flex-wrap">
                 <div>
+                    <label class="form-label form-label-sm mb-1">庫位編號 <span class="text-danger">*</span></label>
+                    <input class="form-control form-control-sm" style="min-width:100px"
+                           placeholder="系統自動產生"
+                           @bind="_newLocationCode" @bind:event="oninput" />
+                </div>
+                <div>
+                    <label class="form-label form-label-sm mb-1">庫位名稱 <span class="text-danger">*</span></label>
+                    <input class="form-control form-control-sm" style="min-width:130px"
+                           placeholder="庫位名稱"
+                           @bind="_newLocationName" @bind:event="oninput" />
+                </div>
+                <div>
                     <label class="form-label form-label-sm mb-1">所屬倉庫 <span class="text-danger">*</span></label>
                     <select class="form-select form-select-sm" style="min-width:130px" @bind="_newLocationWarehouseId">
                         <option value="">請選擇</option>
@@ -74,26 +88,14 @@
                         }
                     </select>
                 </div>
-                <div>
-                    <label class="form-label form-label-sm mb-1">庫位名稱 <span class="text-danger">*</span></label>
-                    <input class="form-control form-control-sm" style="min-width:130px"
-                           placeholder="庫位名稱"
-                           @bind="_newLocationName" @bind:event="oninput" />
-                </div>
-                <div>
-                    <label class="form-label form-label-sm mb-1">庫位編號 <span class="text-danger">*</span></label>
-                    <input class="form-control form-control-sm" style="min-width:100px"
-                           placeholder="A-01"
-                           @bind="_newLocationCode" @bind:event="oninput" />
-                </div>
-                <button class="btn btn-primary btn-sm" type="button"
+                <button class="btn btn-primary" type="button"
                         disabled="@(_isSavingLocation || !_newLocationWarehouseId.HasValue || string.IsNullOrWhiteSpace(_newLocationName) || string.IsNullOrWhiteSpace(_newLocationCode))"
                         @onclick="SaveNewLocationAsync">
                     @if (_isSavingLocation) { <span class="spinner-border spinner-border-sm me-1"></span> }
                     else { <i class="bi bi-check2 me-1"></i> }
                     儲存
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CancelAddLocation">
+                <button class="btn btn-outline-secondary" type="button" @onclick="CancelAddLocation">
                     <i class="bi bi-x"></i>
                 </button>
             </div>
@@ -1124,10 +1126,17 @@
 
     // ===== 快速新增倉庫/庫位 =====
 
-    private void ToggleAddWarehouseForm()
+    private async Task ToggleAddWarehouseForm()
     {
         _showAddWarehouseForm = !_showAddWarehouseForm;
-        if (!_showAddWarehouseForm) CancelAddWarehouse();
+        if (_showAddWarehouseForm)
+        {
+            _newWarehouseCode = await EntityCodeGenerationHelper.GenerateForEntity<Warehouse, IWarehouseService>(WarehouseService, "WH");
+        }
+        else
+        {
+            CancelAddWarehouse();
+        }
     }
 
     private void CancelAddWarehouse()
@@ -1137,10 +1146,17 @@
         _newWarehouseCode = "";
     }
 
-    private void ToggleAddLocationForm()
+    private async Task ToggleAddLocationForm()
     {
         _showAddLocationForm = !_showAddLocationForm;
-        if (!_showAddLocationForm) CancelAddLocation();
+        if (_showAddLocationForm)
+        {
+            _newLocationCode = await EntityCodeGenerationHelper.GenerateForEntity<WarehouseLocation, IWarehouseLocationService>(WarehouseLocationService, "WL");
+        }
+        else
+        {
+            CancelAddLocation();
+        }
     }
 
     private void CancelAddLocation()
