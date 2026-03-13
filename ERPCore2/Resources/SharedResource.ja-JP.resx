@@ -602,9 +602,6 @@
   <data name="Nav.ErrorLogs" xml:space="preserve">
     <value>エラーログ</value>
   </data>
-  <data name="Nav.PrinterConfigurations" xml:space="preserve">
-    <value>プリンター</value>
-  </data>
   <data name="Nav.PaperSettings" xml:space="preserve">
     <value>用紙設定</value>
   </data>
@@ -1721,6 +1718,8 @@
   <data name="Report.FilterTitle" xml:space="preserve"><value>帳票フィルター</value></data>
   <data name="Report.FilterConfigNotFound" xml:space="preserve"><value>帳票ID「{0}」のフィルター設定が見つかりません</value></data>
   <data name="Report.FilterTemplateNotConfigured" xml:space="preserve"><value>この帳票にはフィルターテンプレートが設定されていません</value></data>
+  <data name="Report.NoCriteriaHint" xml:space="preserve"><value>条件を選択しない場合、すべてが対象となります。データの過負荷を避けるため、絞り込み条件を設定してから検索することをお勧めします。</value></data>
+  <data name="Report.NoFilterConfirmMessage" xml:space="preserve"><value>絞り込み条件が設定されていません。すべての情報が読み込まれます。続行してよろしいですか？</value></data>
   <data name="Report.PrintSettings" xml:space="preserve"><value>印刷設定</value></data>
   <data name="Report.PrinterLabel" xml:space="preserve"><value>プリンター</value></data>
   <data name="Report.PaperLabel" xml:space="preserve"><value>用紙</value></data>
@@ -3295,4 +3294,13 @@
   <data name="Label.SelectedCount" xml:space="preserve"><value>{0} 件選択中</value></data>
   <data name="Button.ClearSelection" xml:space="preserve"><value>選択解除</value></data>
   <data name="Message.ConfirmBatchDelete" xml:space="preserve"><value>選択した {0} 件の{1}を削除してもよろしいですか？</value></data>
+  <data name="SalesTarget.Year" xml:space="preserve"><value>年度</value></data>
+  <data name="SalesTarget.Month" xml:space="preserve"><value>月</value></data>
+  <data name="SalesTarget.AllYear" xml:space="preserve"><value>通年</value></data>
+  <data name="SalesTarget.CompanyTotal" xml:space="preserve"><value>会社全体</value></data>
+  <data name="SalesTarget.TargetAmount" xml:space="preserve"><value>目標金額</value></data>
+  <data name="Entity.SalesTarget" xml:space="preserve"><value>営業目標</value></data>
+  <data name="Page.SalesTargetTitle" xml:space="preserve"><value>営業目標管理</value></data>
+  <data name="Page.SalesTargetSubtitle" xml:space="preserve"><value>営業担当者の販売目標を設定・追跡</value></data>
+  <data name="Nav.SalesTargets" xml:space="preserve"><value>営業目標</value></data>
 </root>

@@ -3,7 +3,6 @@
 @using ERPCore2.Data
 @using ERPCore2.Models
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
-@inject IPrinterConfigurationService PrinterConfigurationService
 @inject IPaperSettingService PaperSettingService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -56,12 +55,10 @@
     private AutoCompleteConfig? autoCompleteConfig;
 
     // 原始資料集合（用於 AutoComplete）
-    private List<PrinterConfiguration> availablePrinters = new();
     private List<PaperSetting> availablePaperSettings = new();
     private List<ReportDefinition> availableReports = new();
 
     // 下拉選單選項（向下相容）
-    private List<SelectOption> printerConfigurationOptions = new();
     private List<SelectOption> paperSettingOptions = new();
     private List<SelectOption> reportOptions = new();
     
@@ -101,14 +98,6 @@
                 .OrderBy(r => r.Value)
                 .ToList();
 
-            // 載入印表機設定選項
-            var printerConfigurations = await PrinterConfigurationService.GetAllAsync();
-            availablePrinters = printerConfigurations.Where(p => p.Status == EntityStatus.Active).ToList();
-            printerConfigurationOptions = availablePrinters
-                .Select(p => new SelectOption { Text = p.Name, Value = p.Id.ToString() })
-                .OrderBy(p => p.Text)
-                .ToList();
-
             // 載入紙張設定選項
             var paperSettings = await PaperSettingService.GetAllAsync();
             availablePaperSettings = paperSettings.Where(p => p.Status == EntityStatus.Active).ToList();
@@ -119,7 +108,6 @@
             
             // 使用 AutoCompleteConfigBuilder 建立配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<ReportPrintConfiguration>()
-                .AddField(nameof(ReportPrintConfiguration.PrinterConfigurationId), "Name", availablePrinters)
                 .AddField(nameof(ReportPrintConfiguration.PaperSettingId), "Name", availablePaperSettings)
                 .Build();
         }
@@ -127,10 +115,8 @@
         {
             await NotificationService.ShowErrorAsync($"載入下拉選單選項時發生錯誤：{ex.Message}");
             availableReports = new List<ReportDefinition>();
-            availablePrinters = new List<PrinterConfiguration>();
             availablePaperSettings = new List<PaperSetting>();
             reportOptions = new List<SelectOption>();
-            printerConfigurationOptions = new List<SelectOption>();
             paperSettingOptions = new List<SelectOption>();
         }
     }
@@ -249,16 +235,6 @@
                 // 列印設定區段
                 new()
                 {
-                    PropertyName = nameof(ReportPrintConfiguration.PrinterConfigurationId),
-                    Label = L["Field.Printer"],
-                    FieldType = FormFieldType.AutoComplete,
-                    IsRequired = true,
-                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.Printer"]],
-                    MinSearchLength = 0,
-                    HelpText = "輸入印表機名稱進行搜尋，或直接選擇"
-                },
-                new()
-                {
                     PropertyName = nameof(ReportPrintConfiguration.PaperSettingId),
                     Label = L["Field.Paper"],
                     FieldType = FormFieldType.AutoComplete,
@@ -304,14 +280,12 @@
             if (isCurrentUserSuperAdmin)
             {
                 sectionBuilder = sectionBuilder.AddToSection(L["Section.PrintSettings"],
-                    rpc => rpc.PrinterConfigurationId,
                     rpc => rpc.PaperSettingId,
                     rpc => rpc.Status);
             }
             else
             {
                 sectionBuilder = sectionBuilder.AddToSection(L["Section.PrintSettings"],
-                    rpc => rpc.PrinterConfigurationId,
                     rpc => rpc.PaperSettingId);
             }
 

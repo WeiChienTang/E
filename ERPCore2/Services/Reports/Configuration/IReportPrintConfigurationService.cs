@@ -40,13 +40,6 @@ namespace ERPCore2.Services.Reports.Configuration
         Task<List<string>> GetReportNamesAsync();
 
         /// <summary>
-        /// 根據印表機設定ID取得相關的報表配置
-        /// </summary>
-        /// <param name="printerConfigurationId">印表機設定ID</param>
-        /// <returns>相關的報表配置清單</returns>
-        Task<List<ReportPrintConfiguration>> GetByPrinterConfigurationIdAsync(int printerConfigurationId);
-
-        /// <summary>
         /// 根據紙張設定ID取得相關的報表配置
         /// </summary>
         /// <param name="paperSettingId">紙張設定ID</param>
@@ -83,17 +76,17 @@ namespace ERPCore2.Services.Reports.Configuration
         Task<bool> CopyConfigurationAsync(string sourceReportName, string targetReportName);
 
         /// <summary>
-        /// 取得未設定印表機或紙張的報表列印配置
+        /// 取得未設定紙張的報表列印配置
         /// </summary>
         /// <returns>未設定的報表列印配置清單</returns>
-        Task<List<ReportPrintConfiguration>> GetReportsWithoutPrinterOrPaperSettingAsync();
+        Task<List<ReportPrintConfiguration>> GetReportsWithoutPaperSettingAsync();
 
         /// <summary>
-        /// 批次更新印表機和紙張設定
+        /// 批次更新紙張設定
         /// </summary>
-        /// <param name="updates">更新資料列表 (報表配置ID, 印表機ID, 紙張ID)</param>
+        /// <param name="updates">更新資料列表 (報表配置ID, 紙張ID)</param>
         /// <returns>執行結果</returns>
-        Task<ServiceResult> BatchUpdatePrinterAndPaperSettingsAsync(List<(int configId, int? printerConfigurationId, int? paperSettingId)> updates);
+        Task<ServiceResult> BatchUpdatePaperSettingsAsync(List<(int configId, int? paperSettingId)> updates);
 
         /// <summary>
         /// 取得報表列印配置統計資料

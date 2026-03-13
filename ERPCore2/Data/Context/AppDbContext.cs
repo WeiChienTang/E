@@ -74,6 +74,7 @@ namespace ERPCore2.Data.Context
       public DbSet<QuotationDetail> QuotationDetails { get; set; }
       public DbSet<QuotationCompositionDetail> QuotationCompositionDetails { get; set; }
       public DbSet<SalesOrderCompositionDetail> SalesOrderCompositionDetails { get; set; }
+      public DbSet<SalesTarget> SalesTargets { get; set; }
       public DbSet<SetoffDocument> SetoffDocuments { get; set; }
       public DbSet<SetoffPayment> SetoffPayments { get; set; }
       public DbSet<SetoffProductDetail> SetoffProductDetails { get; set; }
@@ -98,7 +99,6 @@ namespace ERPCore2.Data.Context
       public DbSet<SystemParameter> SystemParameters { get; set; }
       public DbSet<Company> Companies { get; set; }
       public DbSet<PaperSetting> PaperSettings { get; set; }
-      public DbSet<PrinterConfiguration> PrinterConfigurations { get; set; }
       public DbSet<ReportPrintConfiguration> ReportPrintConfigurations { get; set; }
       public DbSet<TextMessageTemplate> TextMessageTemplates { get; set; }
       public DbSet<EmployeeDashboardPanel> EmployeeDashboardPanels { get; set; }
@@ -585,6 +585,11 @@ namespace ERPCore2.Data.Context
                         .WithMany()
                         .HasForeignKey(so => so.EmployeeId)
                         .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(so => so.Salesperson)
+                        .WithMany()
+                        .HasForeignKey(so => so.SalespersonId)
+                        .OnDelete(DeleteBehavior.NoAction);
                   });
 
                   modelBuilder.Entity<SalesOrderDetail>(entity =>
@@ -608,6 +613,30 @@ namespace ERPCore2.Data.Context
                   });
 
 
+
+                  // SalesDelivery Relationships
+                  modelBuilder.Entity<SalesDelivery>(entity =>
+                  {
+                        entity.HasOne(sd => sd.Customer)
+                        .WithMany()
+                        .HasForeignKey(sd => sd.CustomerId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(sd => sd.Employee)
+                        .WithMany()
+                        .HasForeignKey(sd => sd.EmployeeId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(sd => sd.Salesperson)
+                        .WithMany()
+                        .HasForeignKey(sd => sd.SalespersonId)
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                        entity.HasOne(sd => sd.ApprovedByUser)
+                        .WithMany()
+                        .HasForeignKey(sd => sd.ApprovedBy)
+                        .OnDelete(DeleteBehavior.Restrict);
+                  });
 
                   // Sales Return Relationships
                   modelBuilder.Entity<SalesReturn>(entity =>
@@ -672,6 +701,11 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(q => q.EmployeeId)
                         .OnDelete(DeleteBehavior.SetNull);
 
+                        entity.HasOne(q => q.Salesperson)
+                        .WithMany()
+                        .HasForeignKey(q => q.SalespersonId)
+                        .OnDelete(DeleteBehavior.NoAction);
+
                         entity.HasOne(q => q.ApprovedByUser)
                         .WithMany()
                         .HasForeignKey(q => q.ApprovedBy)
@@ -724,6 +758,20 @@ namespace ERPCore2.Data.Context
                               .WithMany()
                               .HasForeignKey(qcd => qcd.UnitId)
                               .OnDelete(DeleteBehavior.ClientSetNull);
+                  });
+
+                  // 業績目標配置
+                  modelBuilder.Entity<SalesTarget>(entity =>
+                  {
+                        entity.HasKey(st => st.Id);
+
+                        entity.HasOne(st => st.Salesperson)
+                              .WithMany()
+                              .HasForeignKey(st => st.SalespersonId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.Property(st => st.TargetAmount)
+                              .HasPrecision(18, 2);
                   });
 
                   // 銷貨訂單組成明細配置
@@ -948,11 +996,6 @@ namespace ERPCore2.Data.Context
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                         // 外鍵關係設定
-                        entity.HasOne(e => e.PrinterConfiguration)
-                              .WithMany()
-                              .HasForeignKey(e => e.PrinterConfigurationId)
-                              .OnDelete(DeleteBehavior.SetNull);
-
                         entity.HasOne(e => e.PaperSetting)
                               .WithMany()
                               .HasForeignKey(e => e.PaperSettingId)

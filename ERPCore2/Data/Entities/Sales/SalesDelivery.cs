@@ -107,9 +107,13 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Customer))]
         public int? CustomerId { get; set; }
 
-        [Display(Name = "業務人員")]
+        [Display(Name = "製表者")]
         [ForeignKey(nameof(Employee))]
         public int? EmployeeId { get; set; }
+
+        [Display(Name = "業務人員")]
+        [ForeignKey(nameof(Salesperson))]
+        public int? SalespersonId { get; set; }
 
         [Display(Name = "出貨倉庫")]
         [ForeignKey(nameof(Warehouse))]
@@ -118,6 +122,7 @@ namespace ERPCore2.Data.Entities
         // Navigation Properties
         public Customer? Customer { get; set; }
         public Employee? Employee { get; set; }
+        public Employee? Salesperson { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public Warehouse? Warehouse { get; set; }
         public ICollection<SalesDeliveryDetail> DeliveryDetails { get; set; } = new List<SalesDeliveryDetail>();

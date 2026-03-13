@@ -20,7 +20,6 @@ namespace ERPCore2.Services.Reports
     public class FormattedPrintService : IFormattedPrintService
     {
         private readonly IReportPrintConfigurationService _reportPrintConfigService;
-        private readonly IPrinterConfigurationService _printerConfigService;
         private readonly IPaperSettingService _paperSettingService;
 
         /// <summary>
@@ -35,11 +34,9 @@ namespace ERPCore2.Services.Reports
 
         public FormattedPrintService(
             IReportPrintConfigurationService reportPrintConfigService,
-            IPrinterConfigurationService printerConfigService,
             IPaperSettingService paperSettingService)
         {
             _reportPrintConfigService = reportPrintConfigService;
-            _printerConfigService = printerConfigService;
             _paperSettingService = paperSettingService;
         }
 
@@ -52,249 +49,11 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
-        /// 列印格式化文件到指定印表機
+        /// 已停用：伺服器端列印已移除，請改用瀏覽器列印
         /// </summary>
-        [SupportedOSPlatform("windows6.1")]
-        public ServiceResult Print(FormattedDocument document, string printerName, int copies = 1)
+        public Task<ServiceResult> PrintByReportIdAsync(FormattedDocument document, string reportId, int copies = 1)
         {
-            try
-            {
-                if (!IsSupported())
-                {
-                    return ServiceResult.Failure("格式化列印功能僅支援 Windows 平台");
-                }
-
-                if (document == null || !document.Elements.Any())
-                {
-                    return ServiceResult.Failure("列印文件不能為空");
-                }
-
-                if (string.IsNullOrWhiteSpace(printerName))
-                {
-                    return ServiceResult.Failure("印表機名稱不能為空");
-                }
-
-                copies = Math.Max(1, Math.Min(copies, 99));
-
-                using var printDocument = new PrintDocument();
-                printDocument.PrinterSettings.PrinterName = printerName;
-                printDocument.DocumentName = document.DocumentName;
-                printDocument.PrinterSettings.Copies = (short)copies;
-
-                // 設定紙張尺寸（公分轉百分之一英吋：1 cm = 0.3937 inch，乘以 100）
-                // PaperSize 使用百分之一英吋為單位
-                const float CmToHundredthsInch = 39.37f;  // 1 cm = 100/2.54 百分之一英吋
-                var paperWidthHundredthsInch = (int)(document.PageSettings.PageWidth * CmToHundredthsInch);
-                var paperHeightHundredthsInch = (int)(document.PageSettings.PageHeight * CmToHundredthsInch);
-                var customPaperSize = new PaperSize("Custom", paperWidthHundredthsInch, paperHeightHundredthsInch);
-                printDocument.DefaultPageSettings.PaperSize = customPaperSize;
-
-                // 設定邊距（Margins 使用百分之一英吋為單位，與 PaperSize 一致）
-                var margins = new Margins(
-                    (int)(document.PageSettings.LeftMargin * CmToHundredthsInch),
-                    (int)(document.PageSettings.RightMargin * CmToHundredthsInch),
-                    (int)(document.PageSettings.TopMargin * CmToHundredthsInch),
-                    (int)(document.PageSettings.BottomMargin * CmToHundredthsInch)
-                );
-                printDocument.DefaultPageSettings.Margins = margins;
-
-                if (!printDocument.PrinterSettings.IsValid)
-                {
-                    return ServiceResult.Failure($"印表機 '{printerName}' 無效或不可用");
-                }
-
-                // === 第一次模擬渲染：計算總頁數（與預覽相同的邏輯）===
-                int totalPages = 0;
-                {
-                    var countState = new PrintState(document);
-                    int maxPages = 100;
-                    
-                    // 使用與預覽相同的計算邏輯（包含硬邊界模擬）
-                    const float simDpi = 96f;
-                    float simCmToPixels = simDpi / 2.54f;
-                    
-                    // 預設硬邊界（與預覽一致）
-                    const float DefaultHardMarginCm = 0.3f;
-                    int simHardMargin = (int)(DefaultHardMarginCm * simCmToPixels);
-                    
-                    int simPageWidth = (int)(document.PageSettings.PageWidth * simCmToPixels);
-                    int simPageHeight = (int)(document.PageSettings.PageHeight * simCmToPixels);
-                    
-                    // 可列印區域
-                    int simPrintableWidth = simPageWidth - simHardMargin * 2;
-                    int simPrintableHeight = simPageHeight - simHardMargin * 2;
-                    
-                    // 使用者邊距
-                    int simMarginLeft = (int)(document.PageSettings.LeftMargin * simCmToPixels);
-                    int simMarginTop = (int)(document.PageSettings.TopMargin * simCmToPixels);
-                    int simMarginRight = (int)(document.PageSettings.RightMargin * simCmToPixels);
-                    int simMarginBottom = (int)(document.PageSettings.BottomMargin * simCmToPixels);
-                    
-                    // 內容區域（基於可列印區域）
-                    int simContentWidth = simPrintableWidth - simMarginLeft - simMarginRight;
-                    int simContentHeight = simPrintableHeight - simMarginTop - simMarginBottom;
-                    
-                    var simBounds = new Rectangle(
-                        simHardMargin + simMarginLeft, 
-                        simHardMargin + simMarginTop, 
-                        simContentWidth, 
-                        simContentHeight);
-
-                    while (!countState.IsComplete && totalPages < maxPages)
-                    {
-                        totalPages++;
-                        using var bitmap = new Bitmap(simPageWidth, simPageHeight);
-                        using var graphics = Graphics.FromImage(bitmap);
-                        graphics.SmoothingMode = SmoothingMode.HighQuality;
-                        graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
-                        graphics.Clear(DrawingColor.White);
-                        RenderPage(graphics, simBounds, document, countState);
-                    }
-                }
-
-                // === 第二次實際列印：帶入正確的頁次資訊 ===
-                var printState = new PrintState(document);
-                int currentPageNumber = 0;
-                Exception? printException = null;
-
-                printDocument.PrintPage += (sender, e) =>
-                {
-                    try
-                    {
-                        if (e.Graphics == null) return;
-                        
-                        currentPageNumber++;
-                        
-                        // ===== 修正預覽與列印不一致的問題 =====
-                        // 
-                        // 關鍵理解：
-                        // 1. e.PageBounds 使用 1/100 英吋為單位（不是像素）
-                        // 2. e.Graphics.DpiX 是印表機實際 DPI（如 300-600），但 Graphics 座標系統與 PageBounds 一致
-                        // 3. Graphics 原點在 PrintableArea 左上角，不是紙張左上角
-                        //
-                        // 問題根因：
-                        // - 預覽使用完整紙張尺寸渲染（Bitmap 大小 = 紙張尺寸）
-                        // - 列印時 Graphics 原點在 HardMargin 處，內容會往右下偏移
-                        // - 如果內容超出 PrintableArea，右側會被裁切
-                        //
-                        // 解決方案：
-                        // - 使用 PrintableArea 作為可用區域，確保內容在可列印範圍內
-                        // - 邊距相對於 PrintableArea 而非紙張
-                        
-                        // 公分轉 1/100 英吋（與 PageBounds 單位一致）
-                        const float CmToHundredthsInch = 39.37f;
-                        
-                        // 獲取可列印區域（已排除印表機硬邊界）
-                        var printableArea = e.PageSettings.PrintableArea;
-                        
-                        // 使用者設定的邊距（轉換為 1/100 英吋）
-                        int marginLeft = (int)(document.PageSettings.LeftMargin * CmToHundredthsInch);
-                        int marginTop = (int)(document.PageSettings.TopMargin * CmToHundredthsInch);
-                        int marginRight = (int)(document.PageSettings.RightMargin * CmToHundredthsInch);
-                        int marginBottom = (int)(document.PageSettings.BottomMargin * CmToHundredthsInch);
-                        
-                        // 內容區域基於可列印區域（而非完整紙張）
-                        // 這確保內容不會超出印表機可列印範圍
-                        int contentWidth = (int)printableArea.Width - marginLeft - marginRight;
-                        int contentHeight = (int)printableArea.Height - marginTop - marginBottom;
-                        
-                        // 確保內容區域不為負
-                        if (contentWidth < 100) 
-                        {
-                            marginLeft = (int)(printableArea.Width * 0.05f);
-                            marginRight = (int)(printableArea.Width * 0.05f);
-                            contentWidth = (int)printableArea.Width - marginLeft - marginRight;
-                        }
-                        if (contentHeight < 100)
-                        {
-                            marginTop = (int)(printableArea.Height * 0.05f);
-                            marginBottom = (int)(printableArea.Height * 0.05f);
-                            contentHeight = (int)printableArea.Height - marginTop - marginBottom;
-                        }
-                        
-                        // 渲染起點：由於 Graphics 原點已在 PrintableArea 左上角，
-                        // 所以 (0,0) 就是可列印區域的起點
-                        var actualBounds = new Rectangle(
-                            marginLeft,
-                            marginTop,
-                            contentWidth,
-                            contentHeight
-                        );
-                        
-                        RenderPage(e.Graphics, actualBounds, document, printState, currentPageNumber, totalPages);
-                        e.HasMorePages = !printState.IsComplete;
-                    }
-                    catch (Exception ex)
-                    {
-                        printException = ex;
-                        e.HasMorePages = false;
-                    }
-                };
-
-                printDocument.Print();
-                Thread.Sleep(PrintWaitTimeMs);
-
-                if (printException != null)
-                {
-                    return ServiceResult.Failure($"列印時發生錯誤: {printException.Message}");
-                }
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 使用報表配置列印格式化文件
-        /// </summary>
-        public async Task<ServiceResult> PrintByReportIdAsync(FormattedDocument document, string reportId, int copies = 1)
-        {
-            try
-            {
-                if (!IsSupported())
-                {
-                    return ServiceResult.Failure("格式化列印功能僅支援 Windows 平台");
-                }
-
-                var printConfig = await _reportPrintConfigService.GetByReportIdAsync(reportId);
-                if (printConfig == null)
-                {
-                    return ServiceResult.Failure($"找不到報表 '{reportId}' 的列印配置");
-                }
-
-                if (!printConfig.PrinterConfigurationId.HasValue)
-                {
-                    return ServiceResult.Failure("列印配置未設定印表機");
-                }
-
-                var printerConfig = await _printerConfigService.GetByIdAsync(printConfig.PrinterConfigurationId.Value);
-                if (printerConfig == null)
-                {
-                    return ServiceResult.Failure("印表機配置不存在");
-                }
-
-                // 載入紙張設定並套用邊距
-                if (printConfig.PaperSettingId.HasValue)
-                {
-                    var paperSetting = await _paperSettingService.GetByIdAsync(printConfig.PaperSettingId.Value);
-                    if (paperSetting != null)
-                    {
-                        document.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
-                        document.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
-                        document.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
-                        document.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
-                    }
-                }
-
-                return Print(document, printerConfig.Name, copies);
-            }
-            catch (Exception ex)
-            {
-                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
-            }
+            return Task.FromResult(ServiceResult.Failure("伺服器端列印已移除，請使用瀏覽器列印功能"));
         }
 
         /// <summary>

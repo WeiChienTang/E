@@ -7,7 +7,6 @@
 @using ERPCore2.Services.Reports.Configuration
 @using ERPCore2.Models
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
-@inject IPrinterConfigurationService PrinterConfigurationService
 @inject IPaperSettingService PaperSettingService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -35,16 +34,6 @@
                 </div>
 
                 @* 批次填入輸入區 *@
-                <div class="input-group input-group-sm" style="width: 200px;">
-                    <span class="input-group-text">@L["Report.PrinterInputLabel"]</span>
-                    <select class="form-select form-select-sm" @bind="batchPrinterId">
-                        <option value="">@L["Report.SelectPlaceholder"]</option>
-                        @foreach (var printer in printers)
-                        {
-                            <option value="@printer.Id">@printer.Name</option>
-                        }
-                    </select>
-                </div>
                 <div class="input-group input-group-sm" style="width: 200px;">
                     <span class="input-group-text">@L["Report.PaperInputLabel"]</span>
                     <select class="form-select form-select-sm" @bind="batchPaperId">
@@ -135,11 +124,9 @@
     // ===== 私有欄位 =====
     private bool isLoading = false;
     private List<ReportPrintSettingItem> reportConfigs = new();
-    private List<PrinterConfiguration> printers = new();
     private List<PaperSetting> papers = new();
-    
+
     // 批次填入相關
-    private int? batchPrinterId = null;
     private int? batchPaperId = null;
 
     // ===== 生命週期方法 =====
@@ -164,21 +151,18 @@
             isLoading = true;
             StateHasChanged();
 
-            // 載入印表機和紙張選項
-            printers = await PrinterConfigurationService.GetAllAsync();
+            // 載入紙張選項
             papers = await PaperSettingService.GetAllAsync();
 
             // 載入未設定的報表
-            var configs = await ReportPrintConfigurationService.GetReportsWithoutPrinterOrPaperSettingAsync();
-            
+            var configs = await ReportPrintConfigurationService.GetReportsWithoutPaperSettingAsync();
+
             reportConfigs = configs.Select(c => new ReportPrintSettingItem
             {
                 ConfigId = c.Id,
                 ReportId = c.ReportId,
                 ReportName = c.ReportName,
-                PrinterConfigurationId = c.PrinterConfigurationId,
                 PaperSettingId = c.PaperSettingId,
-                CurrentPrinterName = c.PrinterConfiguration?.Name ?? L["Report.NotConfigured"].ToString(),
                 CurrentPaperName = c.PaperSetting?.Name ?? L["Report.NotConfigured"].ToString()
             }).ToList();
         }
@@ -197,12 +181,6 @@
 
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
     {
-        var printerOptions = printers.Select(p => new InteractiveSelectOption
-        {
-            Value = p.Id,
-            Text = p.Name
-        }).ToList();
-
         var paperOptions = papers.Select(p => new InteractiveSelectOption
         {
             Value = p.Id,
@@ -224,15 +202,6 @@
                 PropertyName = nameof(ReportPrintSettingItem.ReportName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "200px"
-            },
-            new()
-            {
-                Title = L["Report.PrinterInputLabel"].ToString(),
-                PropertyName = nameof(ReportPrintSettingItem.PrinterConfigurationId),
-                ColumnType = InteractiveColumnType.Select,
-                Width = "180px",
-                Options = printerOptions,
-                Placeholder = L["Placeholder.SelectPrinter"].ToString()
             },
             new()
             {
@@ -262,9 +231,7 @@
             }
 
             // 檢查是否有任何變更
-            var hasChanges = reportConfigs.Any(c =>
-                (c.PrinterConfigurationId.HasValue && c.PrinterConfigurationId.Value > 0) ||
-                (c.PaperSettingId.HasValue && c.PaperSettingId.Value > 0));
+            var hasChanges = reportConfigs.Any(c => c.PaperSettingId.HasValue && c.PaperSettingId.Value > 0);
 
             if (!hasChanges)
             {
@@ -277,17 +244,15 @@
 
             // 準備更新資料（只更新有設定值的）
             var updates = reportConfigs
-                .Where(c => (c.PrinterConfigurationId.HasValue && c.PrinterConfigurationId.Value > 0) ||
-                           (c.PaperSettingId.HasValue && c.PaperSettingId.Value > 0))
+                .Where(c => c.PaperSettingId.HasValue && c.PaperSettingId.Value > 0)
                 .Select(item => (
-                    item.ConfigId, 
-                    item.PrinterConfigurationId.HasValue && item.PrinterConfigurationId.Value > 0 ? item.PrinterConfigurationId : null,
+                    item.ConfigId,
                     item.PaperSettingId.HasValue && item.PaperSettingId.Value > 0 ? item.PaperSettingId : null
                 ))
                 .ToList();
 
             // 批次更新
-            var result = await ReportPrintConfigurationService.BatchUpdatePrinterAndPaperSettingsAsync(updates);
+            var result = await ReportPrintConfigurationService.BatchUpdatePaperSettingsAsync(updates);
 
             if (result.IsSuccess)
             {
@@ -335,7 +300,7 @@
         try
         {
             // 驗證輸入
-            if (!batchPrinterId.HasValue && !batchPaperId.HasValue)
+            if (!batchPaperId.HasValue)
             {
                 await NotificationService.ShowWarningAsync(L["Report.NeedChoicePrinterPaper"].ToString());
                 return;
@@ -344,11 +309,6 @@
             // 套用到所有項目
             foreach (var item in reportConfigs)
             {
-                if (batchPrinterId.HasValue && batchPrinterId.Value > 0)
-                {
-                    item.PrinterConfigurationId = batchPrinterId.Value;
-                }
-                
                 if (batchPaperId.HasValue && batchPaperId.Value > 0)
                 {
                     item.PaperSettingId = batchPaperId.Value;
@@ -356,7 +316,6 @@
             }
 
             // 清空輸入值
-            batchPrinterId = null;
             batchPaperId = null;
             
             await NotificationService.ShowSuccessAsync(string.Format(L["Report.BatchFillSuccess"].ToString(), reportConfigs.Count));
@@ -378,7 +337,6 @@
             // 清空所有設定
             foreach (var item in reportConfigs)
             {
-                item.PrinterConfigurationId = null;
                 item.PaperSettingId = null;
             }
 
@@ -397,9 +355,7 @@
     private async Task CloseModal()
     {
         reportConfigs.Clear();
-        printers.Clear();
         papers.Clear();
-        batchPrinterId = null;
         batchPaperId = null;
         
         if (IsVisibleChanged.HasDelegate)
@@ -418,9 +374,7 @@
         public int ConfigId { get; set; }
         public string ReportId { get; set; } = string.Empty;
         public string ReportName { get; set; } = string.Empty;
-        public int? PrinterConfigurationId { get; set; }
         public int? PaperSettingId { get; set; }
-        public string CurrentPrinterName { get; set; } = string.Empty;
         public string CurrentPaperName { get; set; } = string.Empty;
     }
 }

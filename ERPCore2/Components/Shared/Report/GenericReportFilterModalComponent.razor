@@ -45,6 +45,12 @@
     
     <BodyContent>
         <div class="filter-body-wrapper">
+            @* 固定公告：提醒使用者設定篩選條件 *@
+            <div class="alert alert-warning filter-no-criteria-hint mb-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                @L["Report.NoCriteriaHint"]
+            </div>
+
             @if (filterConfig == null)
             {
                 <div class="alert alert-warning">
@@ -78,6 +84,29 @@
                                  style="width: @(_previewProgressValue)%">
                                 @_previewProgressValue%
                             </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* 無篩選條件確認 Overlay *@
+            @if (_showNoFilterConfirm)
+            {
+                <div class="filter-progress-overlay">
+                    <div class="filter-progress-card">
+                        <div class="mb-3 text-center">
+                            <i class="bi bi-exclamation-triangle-fill text-warning fs-3 d-block mb-2"></i>
+                            <div class="filter-progress-message">@L["Report.NoFilterConfirmMessage"]</div>
+                        </div>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                                   Size="ButtonSize.Small"
+                                                   Text="@L["Button.Confirm"]"
+                                                   OnClick="HandleNoFilterConfirmedAsync" />
+                            <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                                   Size="ButtonSize.Small"
+                                                   Text="@L["Button.Cancel"]"
+                                                   OnClick="HandleNoFilterCancel" />
                         </div>
                     </div>
                 </div>
@@ -140,9 +169,13 @@
     public IReportFilterCriteria? InitialCriteria { get; set; }
     
     // ===== 私有欄位 =====
-    
+
     private ReportFilterConfig? filterConfig;
     private DynamicComponent? dynamicComponentRef;
+
+    // 無篩選確認
+    private bool _showNoFilterConfirm = false;
+    private IReportFilterCriteria? _pendingCriteria;
     private ReportPreviewModalComponent? reportPreviewModal;
     
     private bool isLoading = false;
@@ -282,31 +315,58 @@
     
     private async Task HandleConfirmAsync()
     {
+        // 取得篩選條件
+        IReportFilterCriteria criteria;
+
+        var templateInstance = dynamicComponentRef?.Instance;
+        if (templateInstance is IFilterTemplateComponent templateComponent)
+        {
+            criteria = templateComponent.GetCriteria();
+        }
+        else
+        {
+            criteria = filterConfig?.CreateDefaultCriteria() ?? new EmptyFilterCriteria();
+        }
+
+        // 驗證篩選條件
+        if (!criteria.Validate(out var errorMessage))
+        {
+            await NotificationService.ShowWarningAsync(errorMessage!);
+            return;
+        }
+
+        // 若完全無篩選（GetSummary 回傳 "全部" 或空字串），先詢問使用者確認
+        var summary = criteria.GetSummary();
+        if (string.IsNullOrEmpty(summary) || summary == "全部")
+        {
+            _pendingCriteria = criteria;
+            _showNoFilterConfirm = true;
+            StateHasChanged();
+            return;
+        }
+
+        await GenerateReportAsync(criteria);
+    }
+
+    private async Task HandleNoFilterConfirmedAsync()
+    {
+        _showNoFilterConfirm = false;
+        if (_pendingCriteria != null)
+            await GenerateReportAsync(_pendingCriteria);
+        _pendingCriteria = null;
+    }
+
+    private void HandleNoFilterCancel()
+    {
+        _showNoFilterConfirm = false;
+        _pendingCriteria = null;
+        StateHasChanged();
+    }
+
+    private async Task GenerateReportAsync(IReportFilterCriteria criteria)
+    {
         try
         {
-            // 取得篩選條件
-            IReportFilterCriteria criteria;
-            
-            // 從 DynamicComponent 取得模板實例
-            var templateInstance = dynamicComponentRef?.Instance;
-            
-            if (templateInstance is IFilterTemplateComponent templateComponent)
-            {
-                criteria = templateComponent.GetCriteria();
-            }
-            else
-            {
-                // 使用預設空篩選條件
-                criteria = filterConfig?.CreateDefaultCriteria() ?? new EmptyFilterCriteria();
-            }
-            
-            // 驗證篩選條件
-            if (!criteria.Validate(out var errorMessage))
-            {
-                await NotificationService.ShowWarningAsync(errorMessage!);
-                return;
-            }
-            
             isLoading = true;
             _showPreviewProgress = true;
             await SetPreviewProgress(10, "正在準備篩選條件...");
@@ -439,7 +499,7 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleConfirmAsync), GetType());
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GenerateReportAsync), GetType());
             await NotificationService.ShowErrorAsync($"產生報表失敗：{ex.Message}");
         }
         finally
@@ -449,7 +509,7 @@
             StateHasChanged();
         }
     }
-    
+
     private async Task HandleCancel()
     {
         await IsVisibleChanged.InvokeAsync(false);

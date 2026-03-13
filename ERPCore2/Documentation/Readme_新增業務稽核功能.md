@@ -4,460 +4,400 @@
 
 ---
 
-## 一、背景與問題說明
+## 一、業務流程說明
 
-### 現況問題
+### 情況一：有業務員的銷售流程
 
-目前銷售流程中，「業務員」與「製表者（打單人員）」是同一個欄位，造成以下問題：
-
-| 單據 | 欄位 | Entity Display | UI 顯示標籤 | 語義矛盾 |
-|------|------|---------------|------------|---------|
-| 報價單 | `EmployeeId` | 業務人員 | 製表者 | ✅ 矛盾 |
-| 銷貨訂單 | `EmployeeId` | 員工 | 業務員 | — |
-| 出貨單 | `EmployeeId` | 員工 | 員工 | — |
-
-**轉單邏輯的錯誤傳遞**（`SalesOrderEditModalComponent.razor:1952`）：
-
-```csharp
-// 報價單轉銷貨訂單時，把「製表者」誤當「業務員」複製
-salesOrder.EmployeeId = quotation.EmployeeId;
+```
+報價單 (Quotation)
+  ├── 業務員：負責與客戶洽談、拿下訂單的人
+  └── 製表者：辦公室人員，將報價內容輸入系統
+        ↓ 轉單
+銷貨訂單 (SalesOrder)
+  ├── 業務員：從報價單帶入，可調整
+  └── 製表者：建立訂單的辦公室人員
+        ↓ 完成排程後
+銷貨單 (SalesDelivery)
+  ├── 業務員：從訂單帶入
+  └── 製表者：執行銷貨作業的辦公室人員
 ```
 
-**圖表計算基準錯誤**（`SalesChartService.cs`）：
+### 情況二：客戶直接到店購買（無業務員）
 
-SA002「業務員業績排行」目前使用 `SalesDelivery.EmployeeId`（出貨操作員），而非 `SalesOrder.EmployeeId`（業務員），導致業績歸屬不正確。
-
-### 根本原因
-
-在小公司環境下，制表者通常即是業務員，兩者角色重疊，因此初期設計未做區分。隨著使用規模擴大，需要正式拆分兩個概念。
+```
+銷貨單 (SalesDelivery)
+  ├── 業務員：null（無業務，列入「其他」）
+  └── 製表者：處理此次交易的辦公室人員
+```
 
 ---
 
-## 二、資料模型修改
+## 二、欄位設計原則
 
-### 2-1. Quotation（報價單）新增 `SalespersonId`
+**三張主單全部同時具備兩個欄位**，無例外：
 
-**檔案**：`Data/Entities/Sales/Quotation.cs`
+| 單據 | `SalespersonId`（業務員） | `EmployeeId`（製表者） |
+|------|--------------------------|----------------------|
+| Quotation（報價單） | 談成生意的業務員 | 建立報價單的人員 |
+| SalesOrder（銷貨訂單） | 從報價單帶入，可修改 | 建立訂單的人員 |
+| SalesDelivery（銷貨單） | 從訂單帶入；無訂單則 null | 執行銷貨的人員 |
+
+> 目前系統仍在測試階段，無歷史資料包袱，可進行完整的欄位重構。
+
+---
+
+## 三、資料模型修改
+
+### 3-1. 三張 Entity 統一新增 `SalespersonId`
+
+**Quotation.cs**、**SalesOrder.cs**、**SalesDelivery.cs** 各自新增：
 
 ```csharp
-// 新增：業務員（負責拿下這張案子的人）
+// 新增：業務員
 [Display(Name = "業務員")]
 [ForeignKey(nameof(Salesperson))]
 public int? SalespersonId { get; set; }
 
-// 原有：製表者（負責輸入這張單據的人）
+// 原有 EmployeeId：重新定位為「製表者」
 [Display(Name = "製表者")]
 [ForeignKey(nameof(Employee))]
 public int? EmployeeId { get; set; }
 
 // 新增導覽屬性
 public Employee? Salesperson { get; set; }
-public Employee? Employee { get; set; }    // 原有，保留
 ```
 
-**欄位語義區分**：
+### 3-2. 資料庫 Migration
 
-| 欄位 | 意義 | 必填 |
-|------|------|------|
-| `SalespersonId` | 負責業務開發、與客戶洽談的業務員 | 否（可不填） |
-| `EmployeeId` | 在系統內建立此報價單的操作人員 | 否 |
+三張表各新增一欄：
 
-### 2-2. SalesOrder（銷貨訂單）不需新增欄位
-
-`SalesOrder.EmployeeId` 標籤已是「業務員」（`Field.SalesPerson`），語義正確，保留不動。
-
-### 2-3. 資料庫 Migration
-
-```
-新增欄位：Quotations.SalespersonId  int?  FK → Employees(Id)
-建立索引：IX_Quotations_SalespersonId
+```sql
+ALTER TABLE Quotations    ADD SalespersonId INT NULL REFERENCES Employees(Id);
+ALTER TABLE SalesOrders   ADD SalespersonId INT NULL REFERENCES Employees(Id);
+ALTER TABLE SalesDeliveries ADD SalespersonId INT NULL REFERENCES Employees(Id);
 ```
 
-> 舊資料 `SalespersonId` 預設為 `null`，不影響現有功能。
+> 建議合併為一個 Migration：`AddSalespersonIdToSalesTables`
 
 ---
 
-## 三、轉單邏輯修正
+## 四、各單據 UI 修改
 
-**檔案**：`Components/Pages/Sales/SalesOrderEditModalComponent.razor`（約第 1952 行）
+### 共用原則
 
-```csharp
-// 修改前（錯誤）
-salesOrder.EmployeeId = quotation.EmployeeId;  // 製表者 → 業務員
+每張單據的表單都需要：
+1. 新增「業務員」欄位（`SalespersonId`，AutoComplete，非必填）
+2. 原有 `EmployeeId` 欄位標籤改為「製表者」
+3. `AutoCompleteConfig` 加入 `SalespersonId` mapping
+4. `ModalManager` 加入 `SalespersonId` Manager
+5. `FormFieldLockHelper.LockMultipleFields` 加入 `SalespersonId`
+6. `FormSection` 的 BasicInfo 加入 `SalespersonId`（排在製表者之前）
 
-// 修改後（正確）
-salesOrder.EmployeeId = quotation.SalespersonId;  // 業務員 → 業務員
-```
+### QuotationEditModalComponent.razor
 
-> **注意**：刻意不 Fallback 到 `EmployeeId`（製表者）。若報價單未填業務員，轉出來的訂單業務員欄位為 `null`，需由使用者手動補填，避免將錯誤的人誤植為業務員。
+| 項目 | 修改內容 |
+|------|---------|
+| 現有 `EmployeeId` 標籤 | `Field.QuotationCreator`（製表者）維持不變 |
+| 新增 `SalespersonId` 欄位 | 標籤 `Field.SalesPerson`，排在製表者之前 |
+| ModalManager | 新增 `SalespersonId` → "業務員" |
 
----
+### SalesOrderEditModalComponent.razor
 
-## 四、UI 修改（報價單編輯 Modal）
+| 項目 | 修改內容 |
+|------|---------|
+| 現有 `EmployeeId` 標籤 | 改為 `Field.DocumentCreator`（製表者）|
+| 新增 `SalespersonId` 欄位 | 標籤 `Field.SalesPerson` |
+| ModalManager | 新增 `SalespersonId` → "業務員" |
 
-**檔案**：`Components/Pages/Sales/QuotationEditModalComponent.razor`
+### SalesDeliveryEditModalComponent.razor
 
-### 4-1. 新增 AutoComplete 設定
-
-```csharp
-autoCompleteConfig = new AutoCompleteConfigBuilder<Quotation>()
-    .AddField(nameof(Quotation.CustomerId),    "CompanyName", availableCustomers)
-    .AddField(nameof(Quotation.CompanyId),     "CompanyName", availableCompanies)
-    .AddField(nameof(Quotation.SalespersonId), "Name",        availableEmployees) // 新增
-    .AddField(nameof(Quotation.EmployeeId),    "Name",        availableEmployees)
-    .Build();
-```
-
-### 4-2. 新增 ModalManager
-
-```csharp
-modalManagers = ModalManagerInitHelper.CreateBuilder<Quotation, IQuotationService>(...)
-    .AddManager<Employee>(nameof(Quotation.SalespersonId), "業務員")  // 新增
-    .AddManager<Employee>(nameof(Quotation.EmployeeId),    "製表者")  // 原有，重新標記
-    .AddManager<Customer>(nameof(Quotation.CustomerId),   "客戶")
-    .AddManager<Company> (nameof(Quotation.CompanyId),    "公司")
-    .Build();
-```
-
-### 4-3. 新增表單欄位
-
-在 `InitializeFormFieldsAsync()` 的 `EmployeeId`（製表者）欄位之前插入：
-
-```csharp
-new FormFieldDefinition
-{
-    PropertyName = nameof(Quotation.SalespersonId),
-    Label        = L["Field.SalesPerson"],
-    FieldType    = FormFieldType.AutoComplete,
-    Placeholder  = L["Placeholder.PleaseInputOrSelect", L["Field.SalesPerson"]],
-    IsRequired   = false,
-    MinSearchLength = 0,
-    HelpText     = "負責此次業務洽談的業務員",
-    ActionButtons = await GetSalespersonActionButtonsAsync(),
-    IsReadOnly   = shouldLock
-},
-```
-
-### 4-4. FormSection 調整
-
-```csharp
-.AddToSection(FormSectionNames.BasicInfo,
-    q => q.Code,
-    q => q.CustomerId,
-    q => q.CompanyId,
-    q => q.SalespersonId,  // 新增（排在製表者之前）
-    q => q.EmployeeId,
-    q => q.ProjectName,
-    q => q.QuotationDate)
-```
+| 項目 | 修改內容 |
+|------|---------|
+| 現有 `EmployeeId` 標籤 | 改為 `Field.DocumentCreator`（製表者）|
+| 新增 `SalespersonId` 欄位 | 標籤 `Field.SalesPerson`，情況二可不填 |
+| ModalManager | 新增 `SalespersonId` → "業務員" |
 
 ---
 
-## 五、圖表查詢修正
+## 五、轉單邏輯
+
+### 報價單 → 銷貨訂單
+
+**檔案**：`SalesOrderEditModalComponent.razor`（`ShowAddModalWithPrefilledQuotation`）
+
+```csharp
+// 修改前（錯誤：把製表者當業務員）
+salesOrder.EmployeeId = quotation.EmployeeId;
+
+// 修改後
+salesOrder.SalespersonId = quotation.SalespersonId;  // 業務員帶入
+salesOrder.EmployeeId    = currentUserId;             // 製表者 = 當前操作人員
+```
+
+### 銷貨訂單 → 銷貨單
+
+建立 SalesDelivery 時帶入：
+
+```csharp
+salesDelivery.SalespersonId = salesOrder.SalespersonId;  // 業務員帶入
+salesDelivery.EmployeeId    = currentUserId;              // 製表者 = 當前操作人員
+```
+
+> 情況二（直接建立銷貨單）：`SalespersonId` = null，`EmployeeId` = 操作人員。
+
+---
+
+## 六、報表修正
+
+### QuotationReportService.cs
+
+```csharp
+// 修改前（讀製表者，但列印標籤寫「業務員」）
+employee = await _employeeService.GetByIdAsync(quotation.EmployeeId.Value);
+
+// 修改後（分別讀取兩欄）
+var salesperson  = quotation.SalespersonId.HasValue
+    ? await _employeeService.GetByIdAsync(quotation.SalespersonId.Value) : null;
+var documentCreator = quotation.EmployeeId.HasValue
+    ? await _employeeService.GetByIdAsync(quotation.EmployeeId.Value) : null;
+
+// 列印時分兩行顯示
+("業務員", salesperson?.Name ?? ""),
+("製表者", documentCreator?.Name ?? "")
+```
+
+同理修正：`SalesOrderReportService.cs`、`SalesDeliveryReportService.cs`
+
+---
+
+## 七、圖表修正（SA002）
+
+原本 SA002「業務員業績排行」使用 `SalesDelivery.EmployeeId`（製表者），**現在直接改用新欄位，不需要跨表 JOIN**：
 
 **檔案**：`Services/Sales/SalesChartService.cs`
 
-### SA002 — 業務員業績排行修正
-
 ```csharp
-// 修改前（錯誤：使用出貨單的員工）
-from d in context.SalesDeliveries
+// 修改前（錯誤：使用製表者）
 join e in context.Employees on d.EmployeeId equals e.Id into eg
 
-// 修改後（正確：透過訂單取業務員）
-from d  in context.SalesDeliveries
-join dd in context.SalesDeliveryDetails  on d.Id  equals dd.SalesDeliveryId
-join od in context.SalesOrderDetails     on dd.SalesOrderDetailId equals od.Id
-join o  in context.SalesOrders           on od.SalesOrderId equals o.Id
-join e  in context.Employees             on o.EmployeeId    equals e.Id into eg
+// 修改後（正確：直接使用業務員）
+join e in context.Employees on d.SalespersonId equals e.Id into eg
 from emp in eg.DefaultIfEmpty()
+// SalespersonId = null → emp = null → 歸入「其他」
 group new { d.TotalAmount, d.TaxAmount } by
-    (emp != null ? emp.Name : "未分配") into g
+    (emp != null ? emp.Name : "其他") into g
 ```
 
-同步修正 `GetDeliveryDetailsByEmployeeAsync()` 的 JOIN 路徑，使 Drill-down 明細與排行榜一致。
-
-### 注意事項
-
-修正後，歷史資料中「出貨員 ≠ 業務員」的訂單，業績歸屬將重新計算，圖表數字會改變。**這是預期中的修正行為，不是 Bug。**
+同步修正 `GetDeliveryDetailsByEmployeeAsync()`，查詢條件改用 `SalespersonId`。
 
 ---
 
-## 六、業績目標管理（KPI）模組設計
+## 八、CustomerSalesAnalysis 報表修正（現有 Bug）
 
-以上修正完成後，業務員欄位已正確，可開始開發 KPI 模組。
+**檔案**：`Services/Reports/CustomerSalesAnalysisReportService.cs`
 
-### 6-1. 新增 Entity
+`criteria.EmployeeIds` 篩選在服務層完全未被執行，需要補實作：
 
-**檔案**：`Data/Entities/Sales/SalesTarget.cs`
+```csharp
+// 補上業務員篩選（依 SalesDelivery.SalespersonId）
+if (criteria.EmployeeIds.Any())
+{
+    deliveries = deliveries
+        .Where(d => d.SalespersonId.HasValue &&
+                    criteria.EmployeeIds.Contains(d.SalespersonId.Value))
+        .ToList();
+}
+```
+
+---
+
+## 九、KPI 業績歸屬規則
+
+| 銷貨單來源 | `SalespersonId` | KPI 歸屬 |
+|-----------|----------------|---------|
+| 情況一（報價 → 訂單 → 銷貨） | 有值（業務員） | 計入業務員個人業績 |
+| 情況二（直接到店購買） | null | 計入「其他」，列入公司整體但不分配給個人 |
+
+### 達成率圖表顯示
+
+```
+業務員業績達成率
+  王小明   ████████████ 98%
+  陳大華   ██████░░░░░░ 62%
+  ────────────────────
+  其他     ██████████░░ 81%   ← 情況二的銷貨匯總
+  ════════════════════
+  公司整體 ████████░░░░ 75%   ← 全部加總
+```
+
+> 「其他」不設定個人 KPI 目標，只統計實績，用於顯示非業務員管道的銷售佔比。
+
+---
+
+## 十、業績目標管理（KPI）模組設計
+
+### 10-1. 新增 SalesTarget Entity
 
 ```csharp
 public class SalesTarget : BaseEntity
 {
     [Required]
-    public int Year { get; set; }           // 年度，例如 2026
+    public int Year  { get; set; }   // 年度
 
-    [Required]
-    [Range(0, 12)]
-    public int Month { get; set; }          // 月份，0 = 年度目標，1~12 = 月度目標
+    [Required, Range(0, 12)]
+    public int Month { get; set; }   // 0 = 年度目標，1~12 = 月度目標
 
-    public int? EmployeeId { get; set; }    // null = 公司整體目標
-    public int? CustomerId { get; set; }    // null = 不限客戶
-    public int? ProductId  { get; set; }    // null = 不限商品
+    public int? EmployeeId { get; set; }   // null = 公司整體目標（含「其他」）
 
-    [Required]
-    [Column(TypeName = "decimal(18,2)")]
+    [Required, Column(TypeName = "decimal(18,2)")]
     public decimal TargetAmount { get; set; }
 
-    // 導覽屬性
     public Employee? Employee { get; set; }
-    public Customer? Customer { get; set; }
-    public Product?  Product  { get; set; }
 }
 ```
 
-**設計說明**：三個維度（員工 / 客戶 / 商品）皆可獨立設定，不強制同時填寫：
+> `SalespersonId = null` 的銷貨（「其他」管道）會計入公司整體目標，不計入任何個人目標。
 
-| 情境 | EmployeeId | CustomerId | ProductId |
-|------|-----------|-----------|----------|
-| 公司整體目標 | null | null | null |
-| 業務員月度目標 | 有值 | null | null |
-| 特定客戶目標 | null | 有值 | null |
-| 特定商品目標 | null | null | 有值 |
-
-### 6-2. Service 設計
-
-**檔案**：`Services/Sales/ISalesTargetService.cs` / `SalesTargetService.cs`
+### 10-2. Service 介面
 
 ```csharp
 public interface ISalesTargetService : IGenericManagementService<SalesTarget>
 {
-    // 取得特定期間的目標清單
-    Task<List<SalesTarget>> GetByPeriodAsync(int year, int? month = null);
-
-    // 計算業務員達成率列表（目標 + 實績合併）
-    Task<List<SalesAchievementItem>> GetEmployeeAchievementListAsync(int year, int? month = null);
-
-    // 批次新增/更新（整年 12 個月一次設定）
-    Task<ServiceResult> UpsertBatchAsync(List<SalesTarget> targets);
-
-    // 複製上一年度目標（快速初始化）
-    Task<ServiceResult> CopyFromPreviousYearAsync(int targetYear);
+    Task<List<SalesTarget>>            GetByPeriodAsync(int year, int? month = null);
+    Task<List<SalesAchievementItem>>   GetEmployeeAchievementListAsync(int year, int? month = null);
+    Task<ServiceResult>                UpsertBatchAsync(List<SalesTarget> targets);
+    Task<ServiceResult>                CopyFromPreviousYearAsync(int targetYear);
 }
 
-// 達成率計算結果模型
 public class SalesAchievementItem
 {
-    public int?    EmployeeId    { get; set; }
-    public string  EmployeeName  { get; set; } = string.Empty;
-    public decimal TargetAmount  { get; set; }
-    public decimal ActualAmount  { get; set; }
+    public int?    EmployeeId      { get; set; }  // null = 公司整體
+    public string  EmployeeName    { get; set; } = string.Empty;
+    public decimal TargetAmount    { get; set; }
+    public decimal ActualAmount    { get; set; }  // SalesDelivery.SalespersonId 匯總
+    public decimal OtherAmount     { get; set; }  // SalespersonId = null 的銷貨金額
     public decimal AchievementRate => TargetAmount > 0
-        ? Math.Round(ActualAmount / TargetAmount * 100, 1)
-        : 0;
-    public bool    IsOnTrack     => AchievementRate >= 80;
+        ? Math.Round(ActualAmount / TargetAmount * 100, 1) : 0;
 }
 ```
 
-**業績計算基準**：以 `SalesDelivery.DeliveryDate`（出貨日期）為準，金額為 `TotalAmount + TaxAmount`（含稅）。業務員來源為 `SalesOrder.EmployeeId`（透過 JOIN 取得）。
+### 10-3. 目標設定頁 UI（矩陣式編輯）
 
-### 6-3. 圖表擴充
-
-新增兩個圖表定義（`Services/Sales/SalesChartDefinitions.cs`）：
-
-| ChartId | 標題 | 類型 | 說明 |
-|---------|------|------|------|
-| `SA006` | 目標 vs 實績月度趨勢 | 雙折線 | 全公司每月目標線 vs 實績線 |
-| `SA007` | 業務員達成率排行 | 水平長條 | 含達成率 % 標籤，由高到低排列 |
-
-SA006 需要 `GenericChartModalComponent` 支援多 Series（詳見下方架構升級章節）。
-
-### 6-4. 儀表板 Widget
-
-在 `NavigationConfig.cs` Sales 區段新增：
-
-```csharp
-new NavigationItem
-{
-    Name             = "業績達成率",
-    NameKey          = "Nav.SalesAchievement",
-    IsChartWidget    = true,
-    IconClass        = "bi bi-bullseye",
-    ItemType         = NavigationItemType.Action,
-    ActionId         = "OpenSalesAchievement",
-    Category         = "銷售管理",
-    ModuleKey        = "Charts",
-    RequiredPermission = PermissionRegistry.SalesTarget.Read,
-    SearchKeywords   = new List<string> { "業績達成率", "KPI", "目標管理", "sales target" }
-},
-```
-
-Widget 開啟後顯示 `SalesAchievementModalComponent.razor`，內容：
-- 本月 / 本年整體進度條（目標 vs 實績）
-- SA006 目標 vs 實績折線圖
-- SA007 業務員達成率排行
-
-### 6-5. 目標設定頁
-
-路由：`/sales-targets`，加入 NavigationConfig Sales 子選單。
-
-**UI 設計（矩陣式編輯）**：
+路由：`/sales-targets`，權限：`SalesTarget.Write`（主管限定）
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│ 業績目標設定           年度: [2026▼]   [+ 新增業務員]  [複製去年] │
-├──────────────┬────┬────┬────┬─────┬────┬──────────────────────────┤
-│ 業務員        │ 1月 │ 2月 │ 3月 │ ... │12月│ 年度合計                │
-├──────────────┼────┼────┼────┼─────┼────┼──────────────────────────┤
-│ 王小明        │ 50 │ 50 │ 60 │ ... │ 70 │ 720 萬                   │
-│ 陳大華        │ 30 │ 30 │ 35 │ ... │ 40 │ 420 萬                   │
-├──────────────┼────┼────┼────┼─────┼────┼──────────────────────────┤
-│ 公司整體      │200 │200 │220 │ ... │240 │ 2,400 萬                 │
-└──────────────┴────┴────┴────┴─────┴────┴──────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│ 業績目標設定    年度: [2026▼]   [複製去年]  [儲存]    │
+├──────────────┬────┬────┬─────┬────┬──────────────────┤
+│ 業務員        │ 1月 │ 2月 │ ... │12月 │ 年度合計         │
+├──────────────┼────┼────┼─────┼────┼──────────────────┤
+│ 王小明        │ 50 │ 50 │ ... │ 70 │ 720 萬           │
+│ 陳大華        │ 30 │ 30 │ ... │ 40 │ 420 萬           │
+├──────────────┼────┼────┼─────┼────┼──────────────────┤
+│ 公司整體      │200 │200 │ ... │240 │ 2,400 萬         │
+└──────────────┴────┴────┴─────┴────┴──────────────────┘
+    ℹ 「其他」管道銷售會自動計入公司整體，無需設定個人目標
 ```
-
-- 數字欄位 Inline 直接編輯
-- 「複製去年目標」按鈕：呼叫 `CopyFromPreviousYearAsync()`
-- 儲存：呼叫 `UpsertBatchAsync()`
 
 ---
 
-## 七、架構升級：GenericChartModalComponent 多 Series 支援
+## 十一、架構升級（配合 KPI 圖表）
 
-SA006 需要在同一圖表中渲染兩條折線（目標 + 實績），現有架構僅支援單 Series。
+### ChartModalHost 重構
 
-### 7-1. ChartDefinition 擴充
-
-**檔案**：`Models/Charts/ChartDefinition.cs`
+新增 `ChartModalHost.razor`，統一管理所有圖表 Widget 的開啟，取代 MainLayout 目前的多個 bool 狀態：
 
 ```csharp
-// 新增模型
-public class ChartSeriesData
-{
-    public string SeriesName   { get; set; } = string.Empty;
-    public List<ChartDataItem> Items { get; set; } = new();
-    public bool IsDashed       { get; set; } = false;   // 目標線顯示為虛線
-}
-
-// ChartDefinition 新增屬性
-public class ChartDefinition
-{
-    // 現有單 Series（保留不動）
-    public Func<IServiceProvider, Task<List<ChartDataItem>>>? DataFetcher { get; set; }
-
-    // 新增多 Series（設定後自動切換至多 Series 渲染模式）
-    public Func<IServiceProvider, Task<List<ChartSeriesData>>>? MultiSeriesDataFetcher { get; set; }
-
-    public bool IsMultiSeries => MultiSeriesDataFetcher != null;
-}
-```
-
-### 7-2. GenericChartModalComponent 渲染分支
-
-**檔案**：`Components/Shared/Chart/GenericChartModalComponent.razor`
-
-```razor
-@if (chart.IsMultiSeries)
-{
-    // 多 Series 渲染（目標 vs 實績）
-    var multiData = _multiData.GetValueOrDefault(chart.ChartId, new());
-    <ApexChart TItem="ChartDataItem" Options="@GetMultiSeriesOptions(chart)">
-        @foreach (var series in multiData)
-        {
-            <ApexPointSeries TItem="ChartDataItem"
-                             Items="@series.Items"
-                             Name="@series.SeriesName"
-                             SeriesType="SeriesType.Line"
-                             XValue="@(e => e.Label)"
-                             YValue="@(e => (decimal?)e.Value)" />
-        }
-    </ApexChart>
-}
-else
-{
-    // 原有單 Series 渲染（不變）
-}
-```
-
-**向下相容**：SA001~SA005 使用 `DataFetcher`，完全不受影響。
-
----
-
-## 八、ChartModalHost 重構（MainLayout 優化）
-
-目前 MainLayout 每加一個圖表 Widget 需要在四個地方修改。重構後統一由 `ChartModalHost` 管理。
-
-### 8-1. 新增 ChartModalHost.razor
-
-```csharp
-// 對外只暴露一個方法
-public void Open(string category, RenderFragment? summaryContent = null)
-{
-    _currentCategory = category;
-    _summaryContent  = summaryContent;
-    _isVisible       = true;
-    StateHasChanged();
-}
-```
-
-### 8-2. MainLayout 簡化
-
-```csharp
-// 修改前：每個 Widget 三行
-private bool showSalesCharts = false;
-actionRegistry.Register("OpenSalesCharts", () => { showSalesCharts = true; StateHasChanged(); });
-public void OpenSalesCharts() { showSalesCharts = true; StateHasChanged(); }
-
-// 修改後：每個 Widget 一行
-actionRegistry.Register("OpenSalesCharts",      () => chartModalHost.Open("Sales"));
+// MainLayout 只需 ref + 一行 Register
 actionRegistry.Register("OpenSalesAchievement", () => chartModalHost.Open("SalesAchievement"));
 ```
 
+### GenericChartModalComponent 多 Series 支援
+
+SA006（目標 vs 實績月度折線）需要雙 Series，擴充 `ChartDefinition`：
+
+```csharp
+// 新增多 Series 模式（與現有單 Series 向下相容）
+public Func<IServiceProvider, Task<List<ChartSeriesData>>>? MultiSeriesDataFetcher { get; set; }
+public bool IsMultiSeries => MultiSeriesDataFetcher != null;
+
+public class ChartSeriesData
+{
+    public string SeriesName { get; set; } = string.Empty;
+    public List<ChartDataItem> Items { get; set; } = new();
+    public bool IsDashed { get; set; } = false;  // 目標線顯示虛線
+}
+```
+
 ---
 
-## 九、權限設計
+## 十二、新圖表定義
 
-新增 `SalesTarget` 模組權限：
+| ChartId | 標題 | 類型 | 資料來源 |
+|---------|------|------|---------|
+| `SA006` | 目標 vs 實績月度趨勢 | 雙折線 | SalesTarget + SalesDelivery.SalespersonId |
+| `SA007` | 業務員達成率排行 | 水平長條 | SalesAchievementItem（含「其他」列） |
+
+---
+
+## 十三、權限設計
 
 | Permission Key | 說明 | 建議角色 |
 |---------------|------|---------|
-| `SalesTarget.Read` | 查看業績目標與達成率圖表 | 業務員、主管 |
+| `SalesTarget.Read` | 查看達成率圖表與報表 | 業務員、主管 |
 | `SalesTarget.Write` | 新增 / 修改業績目標 | 主管、管理員 |
 
 ---
 
-## 十、實作順序
+## 十四、實作順序
 
 ```
-Phase 1 — 資料修正（先做，影響所有後續）
-  ├── Quotation.cs 新增 SalespersonId 欄位
-  ├── 建立 Migration
-  ├── QuotationEditModalComponent 新增業務員欄位
-  ├── SalesOrderEditModalComponent 修正轉單邏輯
-  └── SalesChartService SA002 修正 JOIN 路徑
+Phase 1 — 欄位拆分（三張單據同步，趁測試階段一次完成）
+  ├── Quotation.cs / SalesOrder.cs / SalesDelivery.cs 各新增 SalespersonId
+  ├── 一個 Migration：AddSalespersonIdToSalesTables
+  ├── 三張 EditModalComponent 各自新增業務員欄位、改製表者標籤
+  ├── 轉單邏輯修正（Quotation → SalesOrder → SalesDelivery）
+  └── 三份 ReportService 修正（業務員欄位改讀 SalespersonId）
 
-Phase 2 — 架構升級
+Phase 2 — 圖表與報表修正
+  ├── SA002 改用 SalesDelivery.SalespersonId（最簡化，無需 JOIN）
+  └── CustomerSalesAnalysis EmployeeIds 篩選補實作
+
+Phase 3 — 架構升級
   ├── ChartDefinition 新增 MultiSeriesDataFetcher
-  ├── GenericChartModalComponent 新增多 Series 分支
+  ├── GenericChartModalComponent 多 Series 渲染分支
   └── ChartModalHost 重構 MainLayout
 
-Phase 3 — KPI 功能開發
+Phase 4 — KPI 功能開發
   ├── SalesTarget Entity + Migration
   ├── ISalesTargetService / SalesTargetService
   ├── /sales-targets 目標設定頁
-  ├── SA006 / SA007 圖表定義與 DataFetcher
+  ├── SA006 / SA007 圖表定義
   ├── SalesAchievementModalComponent
   └── NavigationConfig 新增 Widget + 目標設定頁入口
 ```
 
 ---
 
-## 十一、開工前確認事項
+## 十五、resx 需新增的 key
 
-- [ ] 確認「製表者」與「業務員」在實際作業中是否真的不同人（已確認：需分開）
-- [ ] 確認業績計算基準：以**出貨日期**計算（與現有 SA002/SA003 一致）
-- [ ] 確認目標設定頁的存取權限（`SalesTarget.Write`，僅主管可編輯）
-- [ ] 確認 SA002 圖表數字變動是否需要對使用者說明（建議在版本記錄中標註「業績歸屬修正」）
+| Key | zh-TW | en-US | ja-JP | zh-CN | fil |
+|-----|-------|-------|-------|-------|-----|
+| `Field.DocumentCreator` | 製表者 | Created By | 作成者 | 制表者 | Ginawa ng |
+| `Field.SalesPerson`（已存在） | 業務員 | — | — | — | — |
+
+> `Field.SalesPerson` 已存在於所有 resx，只需新增 `Field.DocumentCreator`。
+
+---
+
+## 十六、開工前確認事項
+
+- [x] 業務員 ≠ 製表者，需分開（已確認）
+- [x] 三張主單都需要兩個欄位（已確認）
+- [x] 直接到店購買（情況二）：`SalespersonId = null`，歸入「其他」（已確認）
+- [x] 「其他」計入公司整體 KPI，不計入個人（已確認）
+- [x] 目前無歷史資料，可完整重構（已確認）
+- [x] SalesDelivery EditModal 需顯示業務員欄位，讓使用者可見並可調整（已確認）
 
 ---
 

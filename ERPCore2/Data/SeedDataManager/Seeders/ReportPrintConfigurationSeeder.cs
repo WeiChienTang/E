@@ -53,7 +53,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Code = $"RPC{codeSequence:D3}",
                     ReportId = report.Id,
                     ReportName = report.Name,
-                    PrinterConfigurationId = null,  // 預設無印表機
                     PaperSettingId = null,          // 預設無紙張
                     Remarks = report.Description,
                     Status = report.IsEnabled ? EntityStatus.Active : EntityStatus.Inactive,

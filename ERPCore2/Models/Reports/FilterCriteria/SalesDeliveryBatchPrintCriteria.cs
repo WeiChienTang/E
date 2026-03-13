@@ -171,6 +171,6 @@ public class SalesDeliveryBatchPrintCriteria : IReportFilterCriteria
         if (!string.IsNullOrEmpty(DocumentNumberKeyword))
             summary.Add($"單號含：{DocumentNumberKeyword}");
 
-        return string.Join(" | ", summary);
+        return summary.Any() ? string.Join(" | ", summary) : "全部";
     }
 }

@@ -76,6 +76,12 @@ namespace ERPCore2.Services.Reports
                 employee = await _employeeService.GetByIdAsync(salesDelivery.EmployeeId.Value);
             }
 
+            Employee? salesperson = null;
+            if (salesDelivery.SalespersonId.HasValue && salesDelivery.SalespersonId.Value > 0)
+            {
+                salesperson = await _employeeService.GetByIdAsync(salesDelivery.SalespersonId.Value);
+            }
+
             Company? company = await _companyService.GetPrimaryCompanyAsync();
 
             var allProducts = await _productService.GetAllAsync();
@@ -85,7 +91,7 @@ namespace ERPCore2.Services.Reports
             var unitDict = allUnits.ToDictionary(u => u.Id, u => u);
 
             // 建構格式化文件
-            return BuildFormattedDocument(salesDelivery, deliveryDetails, customer, employee, company, productDict, unitDict);
+            return BuildFormattedDocument(salesDelivery, deliveryDetails, customer, employee, salesperson, company, productDict, unitDict);
         }
 
         /// <summary>
@@ -219,6 +225,7 @@ namespace ERPCore2.Services.Reports
             List<SalesDeliveryDetail> deliveryDetails,
             Customer? customer,
             Employee? employee,
+            Employee? salesperson,
             Company? company,
             Dictionary<int, Product> productDict,
             Dictionary<int, Unit> unitDict)
@@ -268,9 +275,10 @@ namespace ERPCore2.Services.Reports
                 header.AddKeyValueRow(
                     ("送貨地址", salesDelivery.DeliveryAddress ?? customer?.ShippingAddress ?? ""));
 
-                // === 業務員 ===
+                // === 業務員 / 製表者 ===
                 header.AddKeyValueRow(
-                    ("業務員", employee?.Name ?? ""));
+                    ("業務員", salesperson?.Name ?? ""),
+                    ("製表者", employee?.Name ?? ""));
 
                 header.AddSpacing(3);
             });

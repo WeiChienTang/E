@@ -80,13 +80,21 @@
                            OnCustomerSaved="@customerModalManager.OnSavedAsync"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
-@* 業務員編輯 Modal *@
+@* 製表者編輯 Modal *@
 <EmployeeEditModalComponent @ref="employeeEditModal"
                            IsVisible="@employeeModalManager.IsModalVisible"
                            IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
                            EmployeeId="@employeeModalManager.SelectedEntityId"
                            OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@* 業務員編輯 Modal *@
+<EmployeeEditModalComponent @ref="salespersonEditModal"
+                           IsVisible="@salespersonModalManager.IsModalVisible"
+                           IsVisibleChanged="@salespersonModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@salespersonModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@salespersonModalManager.OnSavedAsync"
+                           OnCancel="@salespersonModalManager.HandleModalCancelAsync" />
 
 @* 銷貨退貨編輯 Modal *@
 @if (showSalesReturnModal)
@@ -177,6 +185,8 @@
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+    private EmployeeEditModalComponent? salespersonEditModal;
+    private RelatedEntityModalManager<Employee> salespersonModalManager = default!;
     
     // ===== 相關單據 Modal =====
     private SalesReturnEditModalComponent? salesReturnEditModal;
@@ -222,11 +232,13 @@
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
                 .AddManager<Customer>(nameof(SalesDelivery.CustomerId), "客戶")
-                .AddManager<Employee>(nameof(SalesDelivery.EmployeeId), "業務員")
+                .AddManager<Employee>(nameof(SalesDelivery.EmployeeId), "製表者")
+                .AddManager<Employee>(nameof(SalesDelivery.SalespersonId), "業務員")
                 .Build();
 
             customerModalManager = modalManagers.Get<Customer>(nameof(SalesDelivery.CustomerId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(SalesDelivery.EmployeeId));
+            salespersonModalManager = modalManagers.Get<Employee>(nameof(SalesDelivery.SalespersonId));
 
             // 載入審核開關設定
             isManualApproval = await SystemParameterService.IsSalesDeliveryManualApprovalAsync();
@@ -386,7 +398,7 @@
                     if (salesOrder != null)
                     {
                         newDelivery.CustomerId = salesOrder.CustomerId;
-                        newDelivery.EmployeeId = salesOrder.EmployeeId;
+                        newDelivery.SalespersonId = salesOrder.SalespersonId;
                     }
                     // 明細載入會在 OnAfterRenderAsync 中由 DocumentConversionHelper 自動觸發
                 }
@@ -508,6 +520,7 @@
             autoCompleteConfig = new AutoCompleteConfigBuilder<SalesDelivery>()
                 .AddField(nameof(SalesDelivery.CustomerId), "CompanyName", availableCustomers)
                 .AddField(nameof(SalesDelivery.EmployeeId), "Name", availableEmployees)
+                .AddField(nameof(SalesDelivery.SalespersonId), "Name", availableEmployees)
                 .AddField(nameof(SalesDelivery.WarehouseId), "Name", availableWarehouses)
                 .AddField("FilterSalesOrderId", "Code", availableSalesOrders)
                 .AddField("FilterProductId", "Name", availableProducts)
@@ -581,13 +594,24 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(SalesDelivery.EmployeeId),
+                    PropertyName = nameof(SalesDelivery.SalespersonId),
                     Label = L["Field.SalesPerson"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseSelect", L["Field.SalesPerson"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇負責此出貨的業務員",
+                    ActionButtons = await GetSalespersonActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesDelivery.EmployeeId),
+                    Label = L["Field.QuotationCreator"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseSelect", L["Field.QuotationCreator"]],
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "選擇製表此出貨單的員工",
                     ActionButtons = await GetEmployeeActionButtonsAsync()
                 },
                 new()
@@ -695,6 +719,7 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     sd => sd.Code,
                     sd => sd.CustomerId,
+                    sd => sd.SalespersonId,
                     sd => sd.EmployeeId,
                     sd => sd.DeliveryDate)
                 .AddCustomFields(FormSectionNames.FilterConditions, "FilterSalesOrderId", "FilterProductId")  // 虛擬篩選欄位，不存DB
@@ -749,7 +774,7 @@
 
             filterSalesOrderId = salesOrderId;
             delivery.CustomerId = salesOrder.CustomerId;
-            delivery.EmployeeId = salesOrder.EmployeeId;
+            delivery.SalespersonId = salesOrder.SalespersonId;
 
             var orderDetails = await SalesOrderDetailService.GetBySalesOrderIdAsync(salesOrderId);
             salesDeliveryDetails.Clear();
@@ -909,6 +934,8 @@
             new[]
             {
                 nameof(SalesDelivery.CustomerId),
+                nameof(SalesDelivery.SalespersonId),
+                nameof(SalesDelivery.EmployeeId),
                 nameof(SalesDelivery.DeliveryDate),
                 nameof(SalesDelivery.TaxCalculationMethod),
                 nameof(BaseEntity.Remarks)
@@ -916,7 +943,9 @@
             isLocked: hasUndeletableDetails,
             actionButtonsMap: new Dictionary<string, Func<Task<List<FieldActionButton>>>>
             {
-                { nameof(SalesDelivery.CustomerId), GetCustomerActionButtonsAsync }
+                { nameof(SalesDelivery.CustomerId), GetCustomerActionButtonsAsync },
+                { nameof(SalesDelivery.SalespersonId), GetSalespersonActionButtonsAsync },
+                { nameof(SalesDelivery.EmployeeId), GetEmployeeActionButtonsAsync }
             }
         );
 
@@ -946,6 +975,14 @@
             editModalComponent,
             employeeModalManager,
             nameof(SalesDelivery.EmployeeId));
+    }
+
+    private async Task<List<FieldActionButton>> GetSalespersonActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            salespersonModalManager,
+            nameof(SalesDelivery.SalespersonId));
     }
 
 

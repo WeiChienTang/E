@@ -66,35 +66,13 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        "PrinterConfigurationName",
-                        new FieldDefinition<ReportPrintConfiguration>
-                        {
-                            PropertyName = "PrinterConfigurationName",
-                            DisplayName = Dn("Field.Printer", "印表機設定"),
-                            FilterPlaceholder = Fp("Field.Printer", "輸入印表機名稱搜尋"),
-                            TableOrder = 4,
-                            CustomTemplate = (data) => (RenderFragment)((builder) =>
-                            {
-                                if (data is ReportPrintConfiguration report)
-                                {
-                                    builder.OpenElement(0, "span");
-                                    builder.AddContent(1, report.PrinterConfiguration?.Name ?? "未設定");
-                                    builder.CloseElement();
-                                }
-                            }),
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, "PrinterConfigurationName", 
-                                r => r.PrinterConfiguration != null ? r.PrinterConfiguration.Name : string.Empty)
-                        }
-                    },
-                    {
                         "PaperSettingName",
                         new FieldDefinition<ReportPrintConfiguration>
                         {
                             PropertyName = "PaperSettingName",
                             DisplayName = Dn("Field.Paper", "紙張設定"),
                             FilterPlaceholder = Fp("Field.Paper", "輸入紙張名稱搜尋"),
-                            TableOrder = 5,
+                            TableOrder = 4,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
                                 if (data is ReportPrintConfiguration report)

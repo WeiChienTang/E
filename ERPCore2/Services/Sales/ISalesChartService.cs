@@ -26,4 +26,11 @@ public interface ISalesChartService
     Task<List<ChartDetailItem>> GetDeliveryDetailsByProductAsync(string productLabel);
     Task<List<ChartDetailItem>> GetDeliveryDetailsByEmployeeAsync(string employeeLabel);
     Task<List<ChartDetailItem>> GetReturnDetailsByReasonAsync(string reasonLabel);
+
+    // ===== 業績目標圖表 =====
+    /// <summary>本月業績達成率（%）按業務員</summary>
+    Task<List<ChartDataItem>> GetMonthlyAchievementRateAsync();
+
+    /// <summary>本年度目標金額排行（按業務員）</summary>
+    Task<List<ChartDataItem>> GetAnnualTargetByPersonAsync();
 }

@@ -47,16 +47,15 @@
                            placeholder="倉庫名稱"
                            @bind="_newWarehouseName" @bind:event="oninput" />
                 </div>
-                <button class="btn btn-primary" type="button"
-                        disabled="@(_isSavingWarehouse || string.IsNullOrWhiteSpace(_newWarehouseName) || string.IsNullOrWhiteSpace(_newWarehouseCode))"
-                        @onclick="SaveNewWarehouseAsync">
-                    @if (_isSavingWarehouse) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                    else { <i class="bi bi-check2 me-1"></i> }
-                    儲存
-                </button>
-                <button class="btn btn-outline-secondary" type="button" @onclick="CancelAddWarehouse">
-                    <i class="bi bi-x"></i>
-                </button>
+                <GenericButtonComponent Text="儲存"
+                                        Variant="ButtonVariant.DarkBlue"
+                                        IconClass="bi bi-check2"
+                                        IsLoading="_isSavingWarehouse"
+                                        IsDisabled="@(_isSavingWarehouse || string.IsNullOrWhiteSpace(_newWarehouseName) || string.IsNullOrWhiteSpace(_newWarehouseCode))"
+                                        OnClick="SaveNewWarehouseAsync" />
+                <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                                        IconClass="bi bi-x"
+                                        OnClick="CancelAddWarehouse" />
             </div>
         </div>
     }
@@ -88,16 +87,15 @@
                         }
                     </select>
                 </div>
-                <button class="btn btn-primary" type="button"
-                        disabled="@(_isSavingLocation || !_newLocationWarehouseId.HasValue || string.IsNullOrWhiteSpace(_newLocationName) || string.IsNullOrWhiteSpace(_newLocationCode))"
-                        @onclick="SaveNewLocationAsync">
-                    @if (_isSavingLocation) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                    else { <i class="bi bi-check2 me-1"></i> }
-                    儲存
-                </button>
-                <button class="btn btn-outline-secondary" type="button" @onclick="CancelAddLocation">
-                    <i class="bi bi-x"></i>
-                </button>
+                <GenericButtonComponent Text="儲存"
+                                        Variant="ButtonVariant.DarkBlue"
+                                        IconClass="bi bi-check2"
+                                        IsLoading="_isSavingLocation"
+                                        IsDisabled="@(_isSavingLocation || !_newLocationWarehouseId.HasValue || string.IsNullOrWhiteSpace(_newLocationName) || string.IsNullOrWhiteSpace(_newLocationCode))"
+                                        OnClick="SaveNewLocationAsync" />
+                <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                                        IconClass="bi bi-x"
+                                        OnClick="CancelAddLocation" />
             </div>
         </div>
     }

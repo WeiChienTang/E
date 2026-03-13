@@ -33,7 +33,7 @@
 .filter-progress-message {
     font-size: 1rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     margin-bottom: 1rem;
 }
 
@@ -50,4 +50,10 @@
     align-items: center;
     justify-content: center;
     transition: width 0.4s ease;
+}
+
+/* ===== 深色模式覆寫 ===== */
+
+[data-bs-theme=dark] .filter-progress-overlay {
+    background: rgba(13, 17, 23, 0.92);
 }

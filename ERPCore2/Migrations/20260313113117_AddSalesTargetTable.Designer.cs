@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260313113117_AddSalesTargetTable")]
+    partial class AddSalesTargetTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3919,6 +3922,66 @@ namespace ERPCore2.Migrations
                     b.ToTable("PriceHistories");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.PrinterConfiguration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("ConnectionType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("UsbPort")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PrinterConfigurations");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -5693,6 +5756,9 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("PaperSettingId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("PrinterConfigurationId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -5720,6 +5786,8 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PaperSettingId");
+
+                    b.HasIndex("PrinterConfigurationId");
 
                     b.HasIndex("ReportName")
                         .IsUnique();
@@ -9681,7 +9749,14 @@ namespace ERPCore2.Migrations
                         .HasForeignKey("PaperSettingId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("ERPCore2.Data.Entities.PrinterConfiguration", "PrinterConfiguration")
+                        .WithMany()
+                        .HasForeignKey("PrinterConfigurationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("PaperSetting");
+
+                    b.Navigation("PrinterConfiguration");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.RolePermission", b =>

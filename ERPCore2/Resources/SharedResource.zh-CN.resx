@@ -602,9 +602,6 @@
   <data name="Nav.ErrorLogs" xml:space="preserve">
     <value>错误记录</value>
   </data>
-  <data name="Nav.PrinterConfigurations" xml:space="preserve">
-    <value>打印机</value>
-  </data>
   <data name="Nav.PaperSettings" xml:space="preserve">
     <value>纸张</value>
   </data>
@@ -1725,6 +1722,8 @@
   <data name="Report.FilterTitle" xml:space="preserve"><value>报表筛选条件</value></data>
   <data name="Report.FilterConfigNotFound" xml:space="preserve"><value>找不到报表ID「{0}」的筛选配置</value></data>
   <data name="Report.FilterTemplateNotConfigured" xml:space="preserve"><value>此报表尚未配置筛选模板</value></data>
+  <data name="Report.NoCriteriaHint" xml:space="preserve"><value>若未选择条件，则视为全部选择，建议设置筛选条件后再查询，避免加载过多数据。</value></data>
+  <data name="Report.NoFilterConfirmMessage" xml:space="preserve"><value>当前没有任何筛选条件，将会加载全部信息，确定继续吗？</value></data>
   <data name="Report.PrintSettings" xml:space="preserve"><value>打印设置</value></data>
   <data name="Report.PrinterLabel" xml:space="preserve"><value>打印机</value></data>
   <data name="Report.PaperLabel" xml:space="preserve"><value>纸张</value></data>
@@ -3308,4 +3307,13 @@
   <data name="Label.SelectedCount" xml:space="preserve"><value>已选取 {0} 条</value></data>
   <data name="Button.ClearSelection" xml:space="preserve"><value>清除选取</value></data>
   <data name="Message.ConfirmBatchDelete" xml:space="preserve"><value>确定要删除选取的 {0} 条{1}吗？</value></data>
+  <data name="SalesTarget.Year" xml:space="preserve"><value>年度</value></data>
+  <data name="SalesTarget.Month" xml:space="preserve"><value>月份</value></data>
+  <data name="SalesTarget.AllYear" xml:space="preserve"><value>全年</value></data>
+  <data name="SalesTarget.CompanyTotal" xml:space="preserve"><value>公司整体</value></data>
+  <data name="SalesTarget.TargetAmount" xml:space="preserve"><value>目标金额</value></data>
+  <data name="Entity.SalesTarget" xml:space="preserve"><value>业绩目标</value></data>
+  <data name="Page.SalesTargetTitle" xml:space="preserve"><value>业绩目标管理</value></data>
+  <data name="Page.SalesTargetSubtitle" xml:space="preserve"><value>设定与追踪业务员销售目标</value></data>
+  <data name="Nav.SalesTargets" xml:space="preserve"><value>业绩目标</value></data>
 </root>

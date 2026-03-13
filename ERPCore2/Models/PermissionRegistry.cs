@@ -60,11 +60,6 @@ public static class PermissionRegistry
         public const string Read = "PaperSetting.Read";
     }
 
-    public static class PrinterConfiguration
-    {
-        public const string Read = "PrinterConfiguration.Read";
-    }
-
     public static class ReportPrintConfiguration
     {
         public const string Read = "ReportPrintConfiguration.Read";
@@ -309,6 +304,11 @@ public static class PermissionRegistry
         public const string Read = "SalesReturnReason.Read";
     }
 
+    public static class SalesTarget
+    {
+        public const string Read = "SalesTarget.Read";
+    }
+
     public static class PurchaseOrder
     {
         public const string Read      = "PurchaseOrder.Read";
@@ -395,7 +395,6 @@ public static class PermissionRegistry
 
         // ===== 一般權限：系統 =====
         new(PaperSetting.Read,              "檢視紙張設定",     PermissionLevel.Normal, "檢視紙張設定基本資料與相關資訊",   "Nav.SystemGroup"),
-        new(PrinterConfiguration.Read,      "檢視印表機設定",   PermissionLevel.Normal, "檢視印表機設定基本資料與相關資訊", "Nav.SystemGroup"),
         new(ReportPrintConfiguration.Read,  "檢視報表列印設定", PermissionLevel.Normal, "檢視報表列印設定基本資料與相關資訊", "Nav.SystemGroup"),
         new(SystemParameter.Read,           "檢視系統參數",     PermissionLevel.Normal, "檢視系統全域參數設定",             "Nav.SystemGroup"),
         new(ErrorLog.Read,                  "檢視錯誤記錄",     PermissionLevel.Normal, "檢視系統錯誤記錄與問題追蹤",       "Nav.SystemGroup"),
@@ -466,6 +465,7 @@ public static class PermissionRegistry
         new(SalesDelivery.Read,     "檢視銷貨出貨",     PermissionLevel.Normal, "檢視銷貨出貨單與配送記錄",       "Nav.SalesGroup"),
         new(SalesReturn.Read,       "檢視銷貨退回",     PermissionLevel.Normal, "檢視銷貨退回與退貨處理",         "Nav.SalesGroup"),
         new(SalesReturnReason.Read, "檢視銷貨退回原因", PermissionLevel.Normal, "檢視銷貨退回原因設定與管理",     "Nav.SalesGroup"),
+        new(SalesTarget.Read,       "檢視業績目標",     PermissionLevel.Normal, "檢視與設定業務員業績目標",         "Nav.SalesGroup"),
 
         // ===== 一般權限：採購 =====
         new(PurchaseOrder.Read,         "檢視採購訂單",     PermissionLevel.Normal, "檢視採購訂單與供應商交易",       "Nav.PurchaseGroup"),

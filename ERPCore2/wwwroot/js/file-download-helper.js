@@ -43,56 +43,62 @@ window.downloadFileFromBase64 = function (fileName, base64Content, contentType) 
 
 /**
  * 開啟瀏覽器列印對話框（本機列印）
- * 將報表頁面圖片嵌入可列印的 HTML 視窗，讓使用者透過瀏覽器選擇任何本機印表機列印
+ * 使用隱藏 iframe 嵌入報表圖片並呼叫 window.print()。
+ * 相較於 popup 視窗，iframe 不受彈出視窗封鎖限制，且 @page size CSS 較可靠。
+ * 圖片直接以公分為單位設定尺寸，確保列印尺寸與紙張完全符合。
  * @param {string[]} base64Images - Base64 編碼的 PNG 圖片陣列（每個元素對應一頁）
  * @param {string} title - 列印標題
  * @param {number} widthCm - 頁面寬度（公分），預設 21（A4）
  * @param {number} heightCm - 頁面高度（公分），預設 29.7（A4）
- 
+ */
 window.browserPrintImages = function (base64Images, title, widthCm, heightCm) {
     try {
         widthCm = widthCm || 21;
         heightCm = heightCm || 29.7;
 
-        const printWindow = window.open('', '_blank', 'width=800,height=600');
-        if (!printWindow) {
-            console.error('無法開啟列印視窗，請確認瀏覽器未封鎖彈出視窗');
-            return false;
-        }
+        // 建立隱藏 iframe，避免彈出視窗被封鎖，同時讓 @page size CSS 更可靠
+        var iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;visibility:hidden;';
+        document.body.appendChild(iframe);
 
-        let content = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>${title || '報表列印'}</title>
-<style>
-    @page { margin: 0; size: ${widthCm}cm ${heightCm}cm; }
-    html, body { margin: 0; padding: 0; background: white; }
-    .page {
-        width: ${widthCm}cm;
-        height: ${heightCm}cm;
-        page-break-after: always;
-        overflow: hidden;
-    }
-    .page:last-child { page-break-after: auto; }
-    img { width: 100%; height: 100%; display: block; object-fit: fill; }
-</style>
-</head>
-<body>`;
+        var doc = iframe.contentDocument || iframe.contentWindow.document;
+
+        // widthCm/heightCm 已由 C# 端依紙張方向正確傳入（Landscape 時 width > height）
+        var orientation = widthCm > heightCm ? 'landscape' : 'portrait';
+
+        var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'
+            + (title || '報表列印')
+            + '</title><style>'
+            // 明確指定紙張尺寸與方向，確保瀏覽器及印表機驅動程式正確套用
+            + '@page{margin:0;size:' + widthCm + 'cm ' + heightCm + 'cm ' + orientation + ';}'
+            + 'html,body{margin:0;padding:0;background:white;}'
+            // 每張圖片直接以 cm 設定，確保與渲染時的紙張尺寸一致
+            + 'img{display:block;width:' + widthCm + 'cm;height:' + heightCm + 'cm;page-break-after:always;}'
+            + 'img:last-child{page-break-after:auto;}'
+            + '</style></head><body>';
 
         base64Images.forEach(function (img) {
-            content += `<div class="page"><img src="data:image/png;base64,${img}"></div>`;
+            html += '<img src="data:image/png;base64,' + img + '">';
         });
+        html += '</body></html>';
 
-        content += '</body></html>';
+        doc.open();
+        doc.write(html);
+        doc.close();
 
-        printWindow.document.write(content);
-        printWindow.document.close();
-
-        printWindow.onload = function () {
-            printWindow.focus();
-            printWindow.print();
-        };
+        // 等待 Base64 圖片在 iframe 內完成解碼與繪製，再觸發列印
+        setTimeout(function () {
+            if (iframe.contentWindow) {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            }
+            // 列印對話框關閉後清理 iframe（延遲以確保列印任務已送出）
+            setTimeout(function () {
+                if (iframe.parentNode) {
+                    iframe.parentNode.removeChild(iframe);
+                }
+            }, 3000);
+        }, 500);
 
         return true;
     } catch (e) {
@@ -100,7 +106,6 @@ window.browserPrintImages = function (base64Images, title, widthCm, heightCm) {
         return false;
     }
 };
-*/
 /**
  * 從 byte 陣列下載檔案
  * @param {string} fileName - 檔案名稱（含副檔名）

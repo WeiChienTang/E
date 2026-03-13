@@ -35,11 +35,13 @@ public static class ChartIds
     public const string PurchaseReturnByReason      = "PO004";
     public const string PurchaseMonthlyReturnTrend  = "PO005";
 
-    public const string SalesTopProductByAmount     = "SA001";
-    public const string SalesTopEmployeeByAmount    = "SA002";
-    public const string SalesMonthlyTrend           = "SA003";
-    public const string SalesReturnByReason         = "SA004";
-    public const string SalesMonthlyReturnTrend     = "SA005";
+    public const string SalesTopProductByAmount       = "SA001";
+    public const string SalesTopEmployeeByAmount      = "SA002";
+    public const string SalesMonthlyTrend             = "SA003";
+    public const string SalesReturnByReason           = "SA004";
+    public const string SalesMonthlyReturnTrend       = "SA005";
+    public const string SalesMonthlyAchievementRate   = "SA006";
+    public const string SalesAnnualTargetByPerson     = "SA007";
 
     public const string InventoryTopByValue         = "IN001";
     public const string InventoryTopByQuantity      = "IN002";

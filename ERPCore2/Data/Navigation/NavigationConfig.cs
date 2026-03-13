@@ -785,7 +785,20 @@ public static class NavigationConfig
                         QuickActionId = "NewSalesReturnReason",
                         QuickActionName = "新增銷貨退回原因"
                     },
-                    
+                    new NavigationItem
+                    {
+                        Name = "業績目標",
+                        NameKey = "Nav.SalesTargets",
+                        Description = "設定與追蹤業務員銷售目標",
+                        Route = "/sales-targets",
+                        IconClass = "bi bi-trophy",
+                        Category = "銷售管理",
+                        RequiredPermission = PermissionRegistry.SalesTarget.Read,
+                        SearchKeywords = new List<string> { "業績目標", "銷售目標", "KPI", "目標金額", "sales target" },
+                        QuickActionId = "NewSalesTarget",
+                        QuickActionName = "新增業績目標"
+                    },
+
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
@@ -1300,19 +1313,6 @@ public static class NavigationConfig
                         Category = "系統管理",
                         RequiredPermission = PermissionRegistry.SystemControl.Read,
                         SearchKeywords = new List<string> { "錯誤記錄", "錯誤", "log", "error", "system error", "错误记录", "エラーログ", "異常記錄", "系統錯誤" }
-                    },
-                    new NavigationItem
-                    {
-                        Name = "印表機",
-                        NameKey = "Nav.PrinterConfigurations",
-                        Description = "管理印表機配置",
-                        Route = "/printerCconfigurations",
-                        IconClass = "",
-                        Category = "系統管理",
-                        RequiredPermission = PermissionRegistry.PrinterConfiguration.Read,
-                        SearchKeywords = new List<string> { "印表機", "列印設定", "printer", "打印机", "打印设置", "プリンター", "印刷設定" },
-                        QuickActionId = "NewPrinterConfiguration",
-                        QuickActionName = "新增印表機設定"
                     },
                     new NavigationItem
                     {

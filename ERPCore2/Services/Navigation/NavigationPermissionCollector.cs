@@ -10,7 +10,9 @@ namespace ERPCore2.Services
     /// </summary>
     public class NavigationPermissionCollector : INavigationPermissionCollector
     {
-        private readonly ConcurrentDictionary<string, HashSet<string>> _menuPermissions = new();
+        // 以 ConcurrentDictionary<string, byte> 模擬 concurrent set，避免 HashSet 在
+        // ConcurrentDictionary.AddOrUpdate updateValueFactory 中被多執行緒同時寫入而損毀。
+        private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> _menuPermissions = new();
         private readonly ILogger<NavigationPermissionCollector> _logger;
 
         public NavigationPermissionCollector(ILogger<NavigationPermissionCollector> logger)
@@ -24,19 +26,10 @@ namespace ERPCore2.Services
         public void RegisterPermission(string menuKey, string permission)
         {
             if (string.IsNullOrEmpty(menuKey) || string.IsNullOrEmpty(permission))
-            {
                 return;
-            }
 
-            _menuPermissions.AddOrUpdate(
-                menuKey,
-                new HashSet<string> { permission },
-                (key, existing) =>
-                {
-                    existing.Add(permission);
-                    return existing;
-                }
-            );
+            var set = _menuPermissions.GetOrAdd(menuKey, _ => new ConcurrentDictionary<string, byte>());
+            set.TryAdd(permission, 0);
         }
 
         /// <summary>
@@ -45,15 +38,11 @@ namespace ERPCore2.Services
         public string[] GetPermissions(string menuKey)
         {
             if (string.IsNullOrEmpty(menuKey))
-            {
-                return new string[0];
-            }
+                return Array.Empty<string>();
 
-            var result = _menuPermissions.TryGetValue(menuKey, out var permissions)
-                ? permissions.ToArray()
-                : new string[0];
-
-            return result;
+            return _menuPermissions.TryGetValue(menuKey, out var permissions)
+                ? permissions.Keys.ToArray()
+                : Array.Empty<string>();
         }
 
         /// <summary>
@@ -62,9 +51,7 @@ namespace ERPCore2.Services
         public void ClearPermissions(string menuKey)
         {
             if (!string.IsNullOrEmpty(menuKey))
-            {
-                var removed = _menuPermissions.TryRemove(menuKey, out var removedPermissions);
-            }
+                _menuPermissions.TryRemove(menuKey, out _);
         }
     }
 }

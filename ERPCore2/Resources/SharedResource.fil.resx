@@ -602,9 +602,6 @@
   <data name="Nav.ErrorLogs" xml:space="preserve">
     <value>Mga Error Log</value>
   </data>
-  <data name="Nav.PrinterConfigurations" xml:space="preserve">
-    <value>Mga Printer</value>
-  </data>
   <data name="Nav.PaperSettings" xml:space="preserve">
     <value>Mga Setting ng Papel</value>
   </data>
@@ -1721,6 +1718,8 @@
   <data name="Report.FilterTitle" xml:space="preserve"><value>Filter ng Ulat</value></data>
   <data name="Report.FilterConfigNotFound" xml:space="preserve"><value>Hindi mahanap ang filter configuration para sa report ID "{0}"</value></data>
   <data name="Report.FilterTemplateNotConfigured" xml:space="preserve"><value>Walang naka-configure na filter template para sa ulat na ito</value></data>
+  <data name="Report.NoCriteriaHint" xml:space="preserve"><value>Kung walang napiling kondisyon, lahat ng rekord ay isasama. Inirerekomenda na magtakda ng filter bago mag-query upang maiwasan ang paglo-load ng napakaraming data.</value></data>
+  <data name="Report.NoFilterConfirmMessage" xml:space="preserve"><value>Walang filter conditions na nakatakda. Lahat ng impormasyon ay ilo-load. Sigurado ka bang gusto mong magpatuloy?</value></data>
   <data name="Report.PrintSettings" xml:space="preserve"><value>Mga Setting ng Print</value></data>
   <data name="Report.PrinterLabel" xml:space="preserve"><value>Printer</value></data>
   <data name="Report.PaperLabel" xml:space="preserve"><value>Papel</value></data>
@@ -3295,4 +3294,13 @@
   <data name="Label.SelectedCount" xml:space="preserve"><value>Napili ang {0} item</value></data>
   <data name="Button.ClearSelection" xml:space="preserve"><value>I-clear ang Pagpili</value></data>
   <data name="Message.ConfirmBatchDelete" xml:space="preserve"><value>Sigurado ka bang gusto mong tanggalin ang {0} napiling {1}?</value></data>
+  <data name="SalesTarget.Year" xml:space="preserve"><value>Taon</value></data>
+  <data name="SalesTarget.Month" xml:space="preserve"><value>Buwan</value></data>
+  <data name="SalesTarget.AllYear" xml:space="preserve"><value>Buong Taon</value></data>
+  <data name="SalesTarget.CompanyTotal" xml:space="preserve"><value>Kabuuan ng Kumpanya</value></data>
+  <data name="SalesTarget.TargetAmount" xml:space="preserve"><value>Target na Halaga</value></data>
+  <data name="Entity.SalesTarget" xml:space="preserve"><value>Sales Target</value></data>
+  <data name="Page.SalesTargetTitle" xml:space="preserve"><value>Pamamahala ng Sales Target</value></data>
+  <data name="Page.SalesTargetSubtitle" xml:space="preserve"><value>Itakda at subaybayan ang mga target sa benta</value></data>
+  <data name="Nav.SalesTargets" xml:space="preserve"><value>Mga Target sa Benta</value></data>
 </root>

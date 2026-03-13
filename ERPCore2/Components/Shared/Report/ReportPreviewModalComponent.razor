@@ -13,7 +13,6 @@
 @inject IPdfExportService PdfExportService
 @inject IJSRuntime JSRuntime
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
-@inject IPrinterConfigurationService PrinterConfigurationService
 @inject IPaperSettingService PaperSettingService
 
 <BaseModalComponent IsVisible="@IsVisible"
@@ -39,73 +38,34 @@
                 <GenericButtonComponent Text="@L["Button.ExportExcel"]"
                                       Variant="ButtonVariant.Green"
                                       OnClick="HandleExportExcel"
-                                      IsDisabled="@(IsLoading || IsPrinting || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
+                                      IsDisabled="@(IsLoading || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
 
                 <GenericButtonComponent Text="@L["Button.DownloadPdf"]"
                                       Variant="ButtonVariant.Orange"
                                       OnClick="HandleExportPdf"
-                                      IsDisabled="@(IsLoading || IsPrinting || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
-
-                <GenericButtonComponent Text="@L["Button.BrowserPrint"]"
-                                      Variant="ButtonVariant.Cyan"
-                                      OnClick="HandleBrowserPrint"
-                                      IsDisabled="@(IsLoading || IsPrinting || _isGeneratingPdf || PreviewImages == null || !PreviewImages.Any())" />
+                                      IsDisabled="@(IsLoading || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
 
                 <GenericButtonComponent Text="@L["Button.Print"]"
                                       Variant="ButtonVariant.Blue"
-                                      OnClick="HandlePrint"
-                                      IsDisabled="@(IsLoading || IsPrinting || _isGeneratingPdf || string.IsNullOrEmpty(_printerName))" />
+                                      OnClick="HandleBrowserPrint"
+                                      IsDisabled="@(IsLoading || _isGeneratingPdf || PreviewImages == null || !PreviewImages.Any())" />
 
                 <GenericButtonComponent Text="@L["Button.Cancel"]"
                                       Variant="ButtonVariant.Red"
                                       OnClick="HandleCancel"
-                                      IsDisabled="@(IsLoading || IsPrinting || _isGeneratingPdf)" />
+                                      IsDisabled="@(IsLoading || _isGeneratingPdf)" />
             </div>
         </div>
     </HeaderButtons>
     
     <BodyContent>
-        @if (IsPrinting)
-        {
-            <div class="d-flex justify-content-center align-items-center py-5">
-                <div class="spinner-border text-primary me-3" role="status">
-                    <span class="visually-hidden">@L["Report.Printing"]</span>
-                </div>
-                <span class="fs-5">@L["Report.SendingToPrinter"]</span>
-            </div>
-        }
-        else
-        {
-            @* 左右分欄佈局：左側設定區域、右側預覽區域 *@
-            <div class="report-modal-layout">
+        @* 左右分欄佈局：左側設定區域、右側預覽區域 *@
+        <div class="report-modal-layout">
                 @* 左側：列印設定區域 *@
                 <div class="print-settings-panel">
                     <h6 class="settings-section-title">
                         <i class="fas fa-cog me-2"></i>@L["Report.PrintSettings"]
                     </h6>
-                    
-                    @* 印表機選擇 *@
-                    <div class="setting-item-row">
-                        <label class="setting-label-inline">
-                            <i class="fas fa-print me-1"></i>@L["Report.PrinterLabel"]
-                        </label>
-                        <select class="form-select form-select-sm setting-input" 
-                                @bind="_selectedPrinterConfigurationId" 
-                                @bind:after="OnPrinterChanged"
-                                disabled="@IsLoading">
-                            <option value="">-- 請選擇 --</option>
-                            @foreach (var printer in _printerConfigurations)
-                            {
-                                <option value="@printer.Id">@printer.Name</option>
-                            }
-                        </select>
-                    </div>
-                    @if (string.IsNullOrEmpty(_printerName))
-                    {
-                        <small class="text-warning">
-                            <i class="fas fa-exclamation-triangle me-1"></i>@L["Report.SelectPrinterWarning"]
-                        </small>
-                    }
                     
                     @* 紙張選擇 *@
                     <div class="setting-item-row">
@@ -199,19 +159,6 @@
                     
                     <hr class="my-3" />
                     
-                    @* 列印份數 *@
-                    <div class="setting-item-row">
-                        <label class="setting-label-inline">
-                            <i class="fas fa-copy me-1"></i>@L["Report.CopiesLabel"]
-                        </label>
-                        <input type="number" 
-                               class="form-control form-control-sm setting-input-small" 
-                               @bind="_copies" 
-                               min="1" 
-                               max="99"
-                               disabled="@IsLoading" />
-                    </div>
-                    
                     @* 頁數顯示 *@
                     <div class="setting-item-row">
                         <label class="setting-label-inline">
@@ -268,7 +215,6 @@
                     </div>
                 }
             </div>
-        }
     </BodyContent>
 </BaseModalComponent>
 
@@ -336,7 +282,6 @@
     // ===== 內部狀態 =====
     
     private bool IsLoading { get; set; } = false;
-    private bool IsPrinting { get; set; } = false;
     private bool IsExporting { get; set; } = false;
     private bool _isGeneratingPdf = false;
     private string LoadingMessage { get; set; } = "載入中...";
@@ -346,12 +291,6 @@
     private int _exportProgressValue = 0;
     private string _exportProgressMessage = "";
     private string _exportProgressColorClass = "bg-warning";
-    
-    // 印表機相關
-    private string? _printerName = null;
-    private int? _printerConfigurationId = null;
-    private int _selectedPrinterConfigurationId;
-    private List<PrinterConfiguration> _printerConfigurations = new();
     
     // 紙張相關
     private int? _paperSettingId = null;
@@ -365,8 +304,7 @@
     private decimal _marginLeft = 0.8m;
     private decimal _marginRight = 0.8m;
     
-    // 列印設定
-    private int _copies = 1;
+    // 頁數統計
     private int _estimatedPages = 1;
     
     // 預覽縮放控制
@@ -409,9 +347,6 @@
             StateHasChanged();
 
             // 重設所有選擇狀態，避免殘留上次開啟時的值
-            _selectedPrinterConfigurationId = 0;
-            _printerConfigurationId = null;
-            _printerName = null;
             _selectedPaperSettingId = 0;
             _paperSettingId = null;
             _selectedPaper = null;
@@ -420,38 +355,23 @@
             _marginLeft = 0.8m;
             _marginRight = 0.8m;
 
-            // 載入所有印表機和紙張選項
-            var printerTask = PrinterConfigurationService.GetAllAsync();
-            var paperTask = PaperSettingService.GetAllAsync();
-            
-            await Task.WhenAll(printerTask, paperTask);
-            
-            _printerConfigurations = (await printerTask)?.ToList() ?? new List<PrinterConfiguration>();
-            _paperSettings = (await paperTask)?.ToList() ?? new List<PaperSetting>();
-            
+            // 載入所有紙張選項
+            _paperSettings = (await PaperSettingService.GetAllAsync())?.ToList() ?? new List<PaperSetting>();
+
             // 根據 ReportId 查詢預設配置
             if (!string.IsNullOrEmpty(ReportId))
             {
                 var reportConfig = await ReportPrintConfigurationService.GetByReportIdAsync(ReportId);
-                
+
                 if (reportConfig != null)
                 {
-                    // 設定預設印表機
-                    if (reportConfig.PrinterConfigurationId.HasValue)
-                    {
-                        _selectedPrinterConfigurationId = reportConfig.PrinterConfigurationId.Value;
-                        _printerConfigurationId = reportConfig.PrinterConfigurationId.Value;
-                        var printerConfig = _printerConfigurations.FirstOrDefault(p => p.Id == _printerConfigurationId);
-                        _printerName = printerConfig?.Name;
-                    }
-                    
                     // 設定預設紙張
                     if (reportConfig.PaperSettingId.HasValue)
                     {
                         _selectedPaperSettingId = reportConfig.PaperSettingId.Value;
                         _paperSettingId = reportConfig.PaperSettingId.Value;
                         _selectedPaper = _paperSettings.FirstOrDefault(p => p.Id == _paperSettingId);
-                        
+
                         // 初始化邊距值
                         if (_selectedPaper != null)
                         {
@@ -463,10 +383,7 @@
                     }
                 }
             }
-            
-            // 重設列印份數
-            _copies = 1;
-            
+
             // 標記配置已載入
             _isConfigurationLoaded = true;
             
@@ -477,7 +394,6 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入列印配置失敗：{ex.Message}");
-            _printerName = null;
         }
         finally
         {
@@ -529,24 +445,6 @@
         if (_previewZoom > 50)
         {
             _previewZoom -= 10;
-        }
-    }
-    
-    /// <summary>
-    /// 印表機變更事件
-    /// </summary>
-    private void OnPrinterChanged()
-    {
-        if (_selectedPrinterConfigurationId > 0)
-        {
-            var printer = _printerConfigurations.FirstOrDefault(p => p.Id == _selectedPrinterConfigurationId);
-            _printerName = printer?.Name;
-            _printerConfigurationId = _selectedPrinterConfigurationId;
-        }
-        else
-        {
-            _printerName = null;
-            _printerConfigurationId = null;
         }
     }
     
@@ -644,75 +542,6 @@
     // ===== 事件處理 =====
 
     /// <summary>
-    /// 處理列印按鈕點擊
-    /// 使用格式化列印服務
-    /// </summary>
-    private async Task HandlePrint()
-    {
-        // 檢查是否有內容可列印
-        if (IsPrinting || FormattedDocument == null)
-            return;
-        
-        if (string.IsNullOrEmpty(_printerName))
-        {
-            await NotificationService.ShowWarningAsync(L["Report.SelectPrinterWarning"]);
-            return;
-        }
-        
-        // 確保份數至少為 1
-        if (_copies < 1) _copies = 1;
-        
-        try
-        {
-            IsPrinting = true;
-            StateHasChanged();
-            
-            // 使用格式化列印服務（支援表格線、圖片）
-            var result = FormattedPrintService.Print(FormattedDocument, _printerName, _copies);
-            
-            if (result.IsSuccess)
-            {
-                var message = _copies > 1 
-                    ? $"已送出 {_copies} 份列印到印表機：{_printerName}" 
-                    : $"已送出列印到印表機：{_printerName}";
-                await NotificationService.ShowSuccessAsync(message);
-                
-                if (OnPrintSuccess.HasDelegate)
-                {
-                    await OnPrintSuccess.InvokeAsync();
-                }
-                
-                // 列印成功後關閉 Modal
-                await CloseModal();
-            }
-            else
-            {
-                var errorMessage = result.ErrorMessage ?? "列印失敗";
-                await NotificationService.ShowErrorAsync($"列印失敗：{errorMessage}");
-                
-                if (OnPrintFailure.HasDelegate)
-                {
-                    await OnPrintFailure.InvokeAsync(errorMessage);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"列印時發生錯誤：{ex.Message}");
-            
-            if (OnPrintFailure.HasDelegate)
-            {
-                await OnPrintFailure.InvokeAsync(ex.Message);
-            }
-        }
-        finally
-        {
-            IsPrinting = false;
-            StateHasChanged();
-        }
-    }
-    
-    /// <summary>
     /// 處理轉Excel按鈕點擊
     /// 將 FormattedDocument 轉換為 Excel 檔案並下載
     /// </summary>
@@ -788,8 +617,8 @@
 
             await SetExportProgress(60, "正在產生 PDF...");
 
-            var widthCm = _selectedPaper != null ? (double)_selectedPaper.Width : 21.0;
-            var heightCm = _selectedPaper != null ? (double)_selectedPaper.Height : 29.7;
+            // 必須使用實際渲染方向的寬高（Landscape 時 Width/Height 已在 RenderToImages 內互換）
+            var (widthCm, heightCm) = GetActualPaperDimensions();
 
             var pdfBytes = await PdfExportService.ExportToPdfAsync(pdfImages, widthCm, heightCm);
 
@@ -820,9 +649,10 @@
     }
 
     /// <summary>
-    /// 處理本機列印按鈕點擊
-    /// 將預覽圖片傳送到瀏覽器，透過 window.print() 開啟本機列印對話框
-    /// 適合外地工作者使用本機或 VPN 連線的印表機
+    /// 處理列印按鈕點擊。
+    /// 直接使用 PreviewImages（已在父組件以 96 DPI 渲染，版面與預覽一致）傳給
+    /// browserPrintImages JS，透過隱藏 iframe 呼叫 window.print()。
+    /// 列印對話框開啟後 Modal 保持顯示，讓使用者可以繼續預覽或關閉。
     /// </summary>
     private async Task HandleBrowserPrint()
     {
@@ -830,8 +660,7 @@
             return;
 
         var base64Images = PreviewImages.Select(img => Convert.ToBase64String(img)).ToArray();
-        var widthCm = _selectedPaper != null ? (double)_selectedPaper.Width : 21.0;
-        var heightCm = _selectedPaper != null ? (double)_selectedPaper.Height : 29.7;
+        var (widthCm, heightCm) = GetActualPaperDimensions();
 
         var success = await JSRuntime.InvokeAsync<bool>(
             "browserPrintImages",
@@ -841,7 +670,10 @@
             heightCm);
 
         if (!success)
-            await NotificationService.ShowWarningAsync("無法開啟列印視窗，請確認瀏覽器未封鎖彈出視窗");
+        {
+            await NotificationService.ShowWarningAsync("列印初始化失敗，請稍後再試");
+        }
+        // Modal 保持開啟，讓使用者確認列印結果後再手動關閉
     }
 
     /// <summary>
@@ -862,9 +694,6 @@
     /// </summary>
     private async Task CloseModal()
     {
-        // 重設狀態
-        _copies = 1;
-        
         if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(false);
@@ -872,7 +701,23 @@
     }
     
     // ===== 輔助方法 =====
-    
+
+    /// <summary>
+    /// 取得實際渲染後的紙張寬高（公分）。
+    /// RenderToImages 在 Landscape 方向時會交換 Width/Height，
+    /// 傳給 JS 的尺寸必須與渲染圖片的實際像素比例一致。
+    /// </summary>
+    private (double width, double height) GetActualPaperDimensions()
+    {
+        if (_selectedPaper == null)
+            return (21.0, 29.7);
+
+        bool isLandscape = _selectedPaper.Orientation == "Landscape";
+        return isLandscape
+            ? ((double)_selectedPaper.Height, (double)_selectedPaper.Width)
+            : ((double)_selectedPaper.Width, (double)_selectedPaper.Height);
+    }
+
     /// <summary>
     /// 取得 Modal 標題
     /// </summary>

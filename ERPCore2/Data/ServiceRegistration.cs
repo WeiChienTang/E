@@ -154,6 +154,7 @@ namespace ERPCore2.Data
             services.AddScoped<ISalesReturnService, SalesReturnService>();
             services.AddScoped<ISalesReturnDetailService, SalesReturnDetailService>();
             services.AddScoped<ISalesReturnReasonService, SalesReturnReasonService>();
+            services.AddScoped<ISalesTargetService, SalesTargetService>();
 
             // BOM基礎資料表服務
             services.AddScoped<IWeatherService, WeatherService>();
@@ -227,10 +228,6 @@ namespace ERPCore2.Data
             // 紙張設定服務
             services.AddScoped<IPaperSettingService, PaperSettingService>();
             
-            // 印表機設定服務
-            services.AddScoped<IPrinterConfigurationService, PrinterConfigurationService>();
-            services.AddScoped<IPrinterTestService, PrinterTestService>();
-            
             // 報表列印配置服務
             services.AddScoped<ERPCore2.Services.Reports.Configuration.IReportPrintConfigurationService, 
                               ERPCore2.Services.Reports.Configuration.ReportPrintConfigurationService>();
@@ -240,13 +237,9 @@ namespace ERPCore2.Data
             
             // 報表服務 - 介面位於 ERPCore2.Services.Reports.Interfaces
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IReportService, ReportService>();
-            // 報表列印服務（伺服器端直接列印）- 僅 Windows 平台
+            // 格式化列印服務（支援表格線、圖片等格式化列印）- 僅 Windows 平台
             if (OperatingSystem.IsWindowsVersionAtLeast(6, 1))
             {
-                services.AddScoped<ERPCore2.Services.Reports.Interfaces.IReportPrintService, ERPCore2.Services.Reports.ReportPrintService>();
-                // 純文字列印服務（共用的純文字報表列印功能）
-                services.AddScoped<IPlainTextPrintService, PlainTextPrintService>();
-                // 格式化列印服務（支援表格線、圖片等格式化列印）
                 services.AddScoped<ERPCore2.Services.Reports.Interfaces.IFormattedPrintService, FormattedPrintService>();
                 // 商品條碼報表服務（使用 System.Drawing，僅 Windows 平台）
                 services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductBarcodeReportService, ProductBarcodeReportService>();

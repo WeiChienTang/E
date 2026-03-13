@@ -76,13 +76,21 @@
                            OnCustomerSaved="@customerModalManager.OnSavedAsync"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
-@* 業務員編輯 Modal *@
+@* 製表者編輯 Modal *@
 <EmployeeEditModalComponent @ref="employeeEditModal"
                            IsVisible="@employeeModalManager.IsModalVisible"
                            IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
                            EmployeeId="@employeeModalManager.SelectedEntityId"
                            OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@* 業務員編輯 Modal *@
+<EmployeeEditModalComponent @ref="salespersonEditModal"
+                           IsVisible="@salespersonModalManager.IsModalVisible"
+                           IsVisibleChanged="@salespersonModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@salespersonModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@salespersonModalManager.OnSavedAsync"
+                           OnCancel="@salespersonModalManager.HandleModalCancelAsync" />
 
 @* 公司編輯 Modal *@
 <CompanyEditModalComponent @ref="companyEditModal"
@@ -146,6 +154,8 @@
     private RelatedEntityModalManager<Company> companyModalManager = default!;
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+    private EmployeeEditModalComponent? salespersonEditModal;
+    private RelatedEntityModalManager<Employee> salespersonModalManager = default!;
     
     // ===== 相關單據 Modal =====
     private SalesOrderEditModalComponent? salesOrderEditModal;
@@ -187,13 +197,15 @@
                     InitializeFormFieldsAsync)
                 .AddManager<Customer>(nameof(Quotation.CustomerId), "客戶")
                 .AddManager<Company>(nameof(Quotation.CompanyId), "公司")
-                .AddManager<Employee>(nameof(Quotation.EmployeeId), "業務員")
+                .AddManager<Employee>(nameof(Quotation.EmployeeId), "製表者")
+                .AddManager<Employee>(nameof(Quotation.SalespersonId), "業務員")
                 .Build();
-            
+
             // 取得個別 Manager 供組件使用
             customerModalManager = modalManagers.Get<Customer>(nameof(Quotation.CustomerId));
             companyModalManager = modalManagers.Get<Company>(nameof(Quotation.CompanyId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(Quotation.EmployeeId));
+            salespersonModalManager = modalManagers.Get<Employee>(nameof(Quotation.SalespersonId));
             
             // 載入系統參數（審核開關）
             await LoadSystemParametersAsync();
@@ -351,6 +363,7 @@
                 .AddField(nameof(Quotation.CustomerId), "CompanyName", availableCustomers)
                 .AddField(nameof(Quotation.CompanyId), "CompanyName", availableCompanies)
                 .AddField(nameof(Quotation.EmployeeId), "Name", availableEmployees)
+                .AddField(nameof(Quotation.SalespersonId), "Name", availableEmployees)
                 .Build();
         }
         catch (Exception)
@@ -437,6 +450,18 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "選擇進行此次報價的公司",
+                    IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.SalespersonId),
+                    Label = L["Field.SalesPerson"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseSelect", L["Field.SalesPerson"]],
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "選擇負責此報價的業務員",
+                    ActionButtons = await GetSalespersonActionButtonsAsync(),
                     IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
                 new()
@@ -593,6 +618,7 @@
                     q => q.Code,
                     q => q.CustomerId,
                     q => q.CompanyId,
+                    q => q.SalespersonId,
                     q => q.EmployeeId,
                     q => q.ProjectName,
                     q => q.QuotationDate)
@@ -1110,6 +1136,7 @@
                 nameof(BaseEntity.Remarks),
                 nameof(Quotation.CustomerId),
                 nameof(Quotation.CompanyId),
+                nameof(Quotation.SalespersonId),
                 nameof(Quotation.EmployeeId)
             },
             isLocked: shouldLock,
@@ -1117,6 +1144,7 @@
             {
                 { nameof(Quotation.CustomerId), GetCustomerActionButtonsAsync },
                 { nameof(Quotation.CompanyId), GetCompanyActionButtonsAsync },
+                { nameof(Quotation.SalespersonId), GetSalespersonActionButtonsAsync },
                 { nameof(Quotation.EmployeeId), GetEmployeeActionButtonsAsync }
             }
         );
@@ -1128,11 +1156,23 @@
     /// <summary>
     /// 使用統一 Helper 產生業務員操作按鈕
     /// </summary>
+    private async Task<List<FieldActionButton>> GetSalespersonActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            salespersonModalManager,
+            nameof(Quotation.SalespersonId)
+        );
+    }
+
+    /// <summary>
+    /// 使用統一 Helper 產生製表者操作按鈕
+    /// </summary>
     private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
     {
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            employeeModalManager, 
+            editModalComponent,
+            employeeModalManager,
             nameof(Quotation.EmployeeId)
         );
     }
@@ -1250,7 +1290,7 @@
                 await salesOrderEditModal.ShowAddModalWithPrefilledQuotation(
                     editModalComponent.Entity.CustomerId ?? 0,
                     editModalComponent.Entity.CompanyId ?? 0,
-                    editModalComponent.Entity.EmployeeId,
+                    editModalComponent.Entity.SalespersonId,
                     QuotationId.Value
                 );
             }

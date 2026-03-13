@@ -87,13 +87,21 @@
                           OnCompanySaved="@companyModalManager.OnSavedAsync"
                           OnCancel="@companyModalManager.HandleModalCancelAsync" />
 
-@* 業務員編輯 Modal *@
+@* 製表者編輯 Modal *@
 <EmployeeEditModalComponent @ref="employeeEditModal"
                            IsVisible="@employeeModalManager.IsModalVisible"
                            IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
                            EmployeeId="@employeeModalManager.SelectedEntityId"
                            OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@* 業務員編輯 Modal *@
+<EmployeeEditModalComponent @ref="salespersonEditModal"
+                           IsVisible="@salespersonModalManager.IsModalVisible"
+                           IsVisibleChanged="@salespersonModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@salespersonModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@salespersonModalManager.OnSavedAsync"
+                           OnCancel="@salespersonModalManager.HandleModalCancelAsync" />
 
 @* 銷貨退回編輯 Modal *@
 @if (showSalesReturnModal)
@@ -196,6 +204,8 @@
     private RelatedEntityModalManager<Company> companyModalManager = default!;
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+    private EmployeeEditModalComponent? salespersonEditModal;
+    private RelatedEntityModalManager<Employee> salespersonModalManager = default!;
     private RelatedEntityModalManager<Product> productModalManager = default!;
     
     // 商品篩選
@@ -257,7 +267,8 @@
                     InitializeFormFieldsAsync)
                 .AddManager<Customer>(nameof(SalesOrder.CustomerId), "客戶")
                 .AddManager<Company>(nameof(SalesOrder.CompanyId), "公司")
-                .AddManager<Employee>(nameof(SalesOrder.EmployeeId), "業務員")
+                .AddManager<Employee>(nameof(SalesOrder.EmployeeId), "製表者")
+                .AddManager<Employee>(nameof(SalesOrder.SalespersonId), "業務員")
                 .AddManager<Product>("FilterProductId", "商品")
                 .Build();
 
@@ -265,6 +276,7 @@
             customerModalManager = modalManagers.Get<Customer>(nameof(SalesOrder.CustomerId));
             companyModalManager = modalManagers.Get<Company>(nameof(SalesOrder.CompanyId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(SalesOrder.EmployeeId));
+            salespersonModalManager = modalManagers.Get<Employee>(nameof(SalesOrder.SalespersonId));
             productModalManager = modalManagers.Get<Product>("FilterProductId");
 
             // 審核開關在 Modal 管理器初始化後才 await，確保前面同步程式碼已完成
@@ -463,6 +475,7 @@
                 .AddField(nameof(SalesOrder.CustomerId), "CompanyName", customers)
                 .AddField(nameof(SalesOrder.CompanyId), "CompanyName", companies)
                 .AddField(nameof(SalesOrder.EmployeeId), "Name", employees)
+                .AddField(nameof(SalesOrder.SalespersonId), "Name", employees)
                 .AddField("FilterQuotationId", "Code", quotations)
                 .AddField("FilterProductId", "Name", products)
                 .Build();
@@ -549,13 +562,25 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(SalesOrder.EmployeeId),
+                    PropertyName = nameof(SalesOrder.SalespersonId),
                     Label = L["Field.SalesPerson"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseSelect", L["Field.SalesPerson"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇負責此訂單的業務員",
+                    ActionButtons = await GetSalespersonActionButtonsAsync(),
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesOrder.EmployeeId),
+                    Label = L["Field.QuotationCreator"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseSelect", L["Field.QuotationCreator"]],
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "選擇製表此訂單的員工",
                     ActionButtons = await GetEmployeeActionButtonsAsync(),
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
@@ -700,6 +725,7 @@
                     so => so.Code,
                     so => so.CustomerId,
                     so => so.CompanyId,
+                    so => so.SalespersonId,
                     so => so.EmployeeId,
                     so => so.OrderDate,
                     so => so.ExpectedDeliveryDate)
@@ -852,6 +878,18 @@
     
     /// <summary>
     /// 產生業務員操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetSalespersonActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            salespersonModalManager,
+            nameof(SalesOrder.SalespersonId)
+        );
+    }
+
+    /// <summary>
+    /// 產生製表者操作按鈕 - 使用統一 Helper
     /// </summary>
     private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
     {
@@ -1101,6 +1139,7 @@
                 nameof(SalesOrder.Code),
                 nameof(SalesOrder.CustomerId),
                 nameof(SalesOrder.CompanyId),
+                nameof(SalesOrder.SalespersonId),
                 nameof(SalesOrder.EmployeeId),
                 nameof(SalesOrder.OrderDate),
                 nameof(SalesOrder.TaxCalculationMethod),
@@ -1114,6 +1153,7 @@
             {
                 { nameof(SalesOrder.CustomerId), GetCustomerActionButtonsAsync },
                 { nameof(SalesOrder.CompanyId), GetCompanyActionButtonsAsync },
+                { nameof(SalesOrder.SalespersonId), GetSalespersonActionButtonsAsync },
                 { nameof(SalesOrder.EmployeeId), GetEmployeeActionButtonsAsync }
             }
         );
@@ -1949,8 +1989,8 @@
             // 設定公司ID
             salesOrder.CompanyId = quotation.CompanyId;
 
-            // 設定業務員ID
-            salesOrder.EmployeeId = quotation.EmployeeId;
+            // 設定業務員ID（從報價單的業務員欄位轉入）
+            salesOrder.SalespersonId = quotation.SalespersonId;
 
             // 設定稅別
             salesOrder.TaxCalculationMethod = quotation.TaxCalculationMethod;

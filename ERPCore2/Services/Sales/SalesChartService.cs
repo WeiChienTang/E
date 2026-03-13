@@ -55,11 +55,11 @@ public class SalesChartService : ISalesChartService
         var raw = await (
             from d in context.SalesDeliveries
             where d.Status != EntityStatus.Deleted
-            join e in context.Employees on d.EmployeeId equals e.Id into eg
+            join e in context.Employees on d.SalespersonId equals e.Id into eg
             from emp in eg.DefaultIfEmpty()
             select new
             {
-                EmployeeName = emp != null && emp.Name != null ? emp.Name : "未分配",
+                EmployeeName = emp != null && emp.Name != null ? emp.Name : "其他",
                 Amount = d.TotalAmount + d.TaxAmount
             }
         ).ToListAsync();
@@ -224,10 +224,10 @@ public class SalesChartService : ISalesChartService
     {
         using var context = await _factory.CreateDbContextAsync();
 
-        if (employeeLabel == "未分配")
+        if (employeeLabel == "其他")
         {
             var unassigned = await context.SalesDeliveries
-                .Where(d => d.Status != EntityStatus.Deleted && d.EmployeeId == null)
+                .Where(d => d.Status != EntityStatus.Deleted && d.SalespersonId == null)
                 .OrderByDescending(d => d.DeliveryDate)
                 .Take(50)
                 .Select(d => new ChartDetailItem
@@ -243,7 +243,7 @@ public class SalesChartService : ISalesChartService
         var raw = await (
             from d in context.SalesDeliveries
             where d.Status != EntityStatus.Deleted
-            join e in context.Employees on d.EmployeeId equals e.Id
+            join e in context.Employees on d.SalespersonId equals e.Id
             where (e.Name ?? "") == employeeLabel
             orderby d.DeliveryDate descending
             select new
@@ -287,5 +287,73 @@ public class SalesChartService : ISalesChartService
             Name     = x.ReturnDate.ToString("yyyy/MM/dd"),
             SubLabel = x.Amount.ToString("N0")
         }).ToList();
+    }
+
+    /// <summary>本月業績達成率（%）按業務員</summary>
+    public async Task<List<ChartDataItem>> GetMonthlyAchievementRateAsync()
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        var now = DateTime.Today;
+        var startDate = new DateTime(now.Year, now.Month, 1);
+        var endDate = startDate.AddMonths(1).AddDays(-1);
+
+        // 取得本月目標
+        var targets = await context.SalesTargets
+            .Include(t => t.Salesperson)
+            .Where(t => t.Status != EntityStatus.Deleted && t.Year == now.Year && t.Month == now.Month)
+            .ToListAsync();
+
+        if (!targets.Any())
+            return new List<ChartDataItem>();
+
+        // 取得本月實際出貨金額
+        var deliveries = await context.SalesDeliveries
+            .Where(d => d.Status != EntityStatus.Deleted
+                     && d.DeliveryDate >= startDate && d.DeliveryDate <= endDate)
+            .ToListAsync();
+
+        var actualBySalesperson = deliveries
+            .GroupBy(d => d.SalespersonId ?? 0)
+            .ToDictionary(g => g.Key, g => g.Sum(d => d.TotalAmount + d.TaxAmount));
+
+        return targets
+            .Where(t => t.TargetAmount > 0)
+            .Select(t => new ChartDataItem
+            {
+                Label = t.SalespersonId.HasValue
+                    ? (t.Salesperson?.Name ?? "其他")
+                    : "公司整體",
+                Value = t.TargetAmount > 0
+                    ? Math.Round(actualBySalesperson.GetValueOrDefault(t.SalespersonId ?? 0, 0m) / t.TargetAmount * 100, 1)
+                    : 0
+            })
+            .OrderByDescending(x => x.Value)
+            .ToList();
+    }
+
+    /// <summary>本年度目標金額排行（按業務員）</summary>
+    public async Task<List<ChartDataItem>> GetAnnualTargetByPersonAsync()
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        var year = DateTime.Today.Year;
+
+        var targets = await context.SalesTargets
+            .Include(t => t.Salesperson)
+            .Where(t => t.Status != EntityStatus.Deleted && t.Year == year && t.Month == null)
+            .ToListAsync();
+
+        if (!targets.Any())
+            return new List<ChartDataItem>();
+
+        return targets
+            .Select(t => new ChartDataItem
+            {
+                Label = t.SalespersonId.HasValue
+                    ? (t.Salesperson?.Name ?? "其他")
+                    : "公司整體",
+                Value = t.TargetAmount
+            })
+            .OrderByDescending(x => x.Value)
+            .ToList();
     }
 }

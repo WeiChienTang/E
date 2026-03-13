@@ -85,7 +85,30 @@ public static class SalesChartDefinitions
             AllowedSeriesTypes = new() { SeriesType.Line, SeriesType.Area },
             IsMoneyChart       = true,
             DataFetcher        = sp => sp.GetRequiredService<ISalesChartService>().GetMonthlyReturnTrendAsync()
-            // 月趨勢圖不支援 drill-down
+        });
+
+        definitions.Add(new ChartDefinition
+        {
+            ChartId            = ChartIds.SalesMonthlyAchievementRate,
+            Title              = "本月業績達成率（%）",
+            Category           = ChartCategory.Sales,
+            SortOrder          = 6,
+            DefaultSeriesType  = SeriesType.Bar,
+            AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.RadialBar },
+            IsMoneyChart       = false,
+            DataFetcher        = sp => sp.GetRequiredService<ISalesChartService>().GetMonthlyAchievementRateAsync()
+        });
+
+        definitions.Add(new ChartDefinition
+        {
+            ChartId            = ChartIds.SalesAnnualTargetByPerson,
+            Title              = "年度目標金額（按業務員）",
+            Category           = ChartCategory.Sales,
+            SortOrder          = 7,
+            DefaultSeriesType  = SeriesType.Bar,
+            AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Treemap },
+            IsMoneyChart       = true,
+            DataFetcher        = sp => sp.GetRequiredService<ISalesChartService>().GetAnnualTargetByPersonAsync()
         });
     }
 }

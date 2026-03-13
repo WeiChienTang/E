@@ -25,23 +25,12 @@ namespace ERPCore2.Data.Entities
         public string ReportName { get; set; } = string.Empty;
 
         /// <summary>
-        /// 印表機設定ID
-        /// </summary>
-        [Display(Name = "印表機設定")]
-        public int? PrinterConfigurationId { get; set; }
-
-        /// <summary>
         /// 紙張設定ID
         /// </summary>
         [Display(Name = "紙張設定")]
         public int? PaperSettingId { get; set; }
 
         // 導航屬性
-        /// <summary>
-        /// 印表機設定
-        /// </summary>
-        public PrinterConfiguration? PrinterConfiguration { get; set; }
-
         /// <summary>
         /// 紙張設定
         /// </summary>

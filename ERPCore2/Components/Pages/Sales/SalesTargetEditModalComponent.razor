@@ -1,0 +1,177 @@
+@* 業績目標編輯組件 *@
+@inject ISalesTargetService SalesTargetService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="SalesTarget"
+                          TService="ISalesTargetService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@SalesTargetId"
+                          Service="@SalesTargetService"
+                          EntityName="@L["Entity.SalesTarget"]"
+                          EntityNamePlural="@L["Entity.SalesTarget"]"
+                          ModalTitle="@(SalesTargetId.HasValue ? L["Message.EditTitle", L["Entity.SalesTarget"]].ToString() : L["Message.CreateTitle", L["Entity.SalesTarget"]].ToString())"
+                          Size="GenericEditModalComponent<SalesTarget, ISalesTargetService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          DataLoader="@LoadSalesTargetData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          ShowDraftButton="false"
+                          SaveSuccessMessage="@(SalesTargetId.HasValue ? L["Message.UpdateSuccess", L["Entity.SalesTarget"]].ToString() : L["Message.CreateSuccess", L["Entity.SalesTarget"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SalesTarget"]]"
+                          RequiredPermission="@PermissionRegistry.SalesTarget.Read"
+                          OnEntitySaved="@OnSalesTargetSaved"
+                          OnCancel="@OnCancel"
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ComponentName="SalesTargetEditModalComponent" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? SalesTargetId { get; set; }
+    [Parameter] public EventCallback<SalesTarget> OnSalesTargetSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<SalesTarget, ISalesTargetService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<Employee> availableEmployees = new();
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            availableEmployees = await EmployeeService.GetAllAsync();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<SalesTarget>()
+                .AddFieldWithMultipleSearchProperties<Employee>(
+                    nameof(SalesTarget.SalespersonId),
+                    "Name",
+                    availableEmployees,
+                    new[] { "Name", "Code" })
+                .Build();
+
+            InitializeFormFields();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入員工資料時發生錯誤：{ex.Message}");
+            availableEmployees = new List<Employee>();
+        }
+    }
+
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try { StateHasChanged(); }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task<SalesTarget?> LoadSalesTargetData()
+    {
+        try
+        {
+            if (!SalesTargetId.HasValue)
+            {
+                var newTarget = new SalesTarget
+                {
+                    Year = DateTime.Today.Year,
+                    Month = DateTime.Today.Month,
+                    TargetAmount = 0,
+                    Status = EntityStatus.Active
+                };
+                PrefilledValueHelper.ApplyPrefilledValues(newTarget, PrefilledValues);
+                return newTarget;
+            }
+            else
+            {
+                return await SalesTargetService.GetByIdAsync(SalesTargetId.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesTargetData), GetType(), additionalData: "載入業績目標資料失敗");
+            await NotificationService.ShowErrorAsync("載入業績目標資料失敗");
+            return null;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+            InitializeFormFields();
+    }
+
+    private void InitializeFormFields()
+    {
+        // 月份選項：null = 全年，1–12 = 各月
+        var monthOptions = new List<SelectOption>
+        {
+            new() { Value = "", Text = L["SalesTarget.AllYear"] }
+        };
+        for (int m = 1; m <= 12; m++)
+            monthOptions.Add(new() { Value = m.ToString(), Text = $"{m:D2} 月" });
+
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(SalesTarget.Year),
+                Label = L["SalesTarget.Year"],
+                FieldType = FormFieldType.Number,
+                IsRequired = true,
+                HelpText = "西元年（例如 2026）"
+            },
+            new()
+            {
+                PropertyName = nameof(SalesTarget.Month),
+                Label = L["SalesTarget.Month"],
+                FieldType = FormFieldType.Select,
+                IsRequired = false,
+                Options = monthOptions,
+                HelpText = "留空代表全年度整體目標"
+            },
+            new()
+            {
+                PropertyName = nameof(SalesTarget.SalespersonId),
+                Label = L["Field.SalesPerson"],
+                FieldType = FormFieldType.AutoComplete,
+                IsRequired = false,
+                MinSearchLength = 0,
+                HelpText = "留空代表公司整體目標（非特定業務員）"
+            },
+            new()
+            {
+                PropertyName = nameof(SalesTarget.TargetAmount),
+                Label = L["SalesTarget.TargetAmount"],
+                FieldType = FormFieldType.Number,
+                IsRequired = true,
+                HelpText = "目標銷售金額（含稅）"
+            },
+            FormFieldConfigurationHelper.CreateRemarksField<SalesTarget>(),
+        };
+
+        formSections = FormSectionHelper<SalesTarget>.Create()
+            .AddToSection(FormSectionNames.BasicInfo,
+                t => t.Year,
+                t => t.Month,
+                t => t.SalespersonId,
+                t => t.TargetAmount)
+            .AddToSection(FormSectionNames.AdditionalData,
+                t => t.Remarks)
+            .Build();
+    }
+}

@@ -18,6 +18,12 @@ public interface IReportFilterCriteria
     /// </summary>
     /// <returns>參數字典</returns>
     Dictionary<string, object?> ToQueryParameters();
+
+    /// <summary>
+    /// 取得篩選條件摘要文字（顯示於預覽標題或確認提示）
+    /// 若完全無篩選，應回傳 "全部"；有篩選則回傳摘要字串。
+    /// </summary>
+    string GetSummary() => string.Empty;
 }
 
 /// <summary>

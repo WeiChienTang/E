@@ -27,7 +27,7 @@ namespace ERPCore2.Services.Reports.Configuration
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
-                    .Include(r => r.PrinterConfiguration)
+
                     .Include(r => r.PaperSetting)
                     .Where(r => (r.ReportName.Contains(searchTerm) ||
                          (r.Code != null && r.Code.Contains(searchTerm)) ||
@@ -65,15 +65,6 @@ namespace ERPCore2.Services.Reports.Configuration
                 if (reportIdExists)
                     return ServiceResult.Failure("報表識別碼已存在，每個報表只能有一個列印配置");
 
-                // 檢查印表機設定是否存在（如果有提供的話）
-                if (entity.PrinterConfigurationId.HasValue)
-                {
-                    var printerExists = await context.PrinterConfigurations
-                        .AnyAsync(p => p.Id == entity.PrinterConfigurationId.Value);
-                    if (!printerExists)
-                        return ServiceResult.Failure("指定的印表機設定不存在");
-                }
-
                 // 檢查紙張設定是否存在（如果有提供的話）
                 if (entity.PaperSettingId.HasValue)
                 {
@@ -101,7 +92,6 @@ namespace ERPCore2.Services.Reports.Configuration
         protected override IQueryable<ReportPrintConfiguration> BuildGetAllQuery(AppDbContext context)
         {
             return context.ReportPrintConfigurations
-                .Include(r => r.PrinterConfiguration)
                 .Include(r => r.PaperSetting)
                 .OrderBy(r => r.ReportName);
         }
@@ -112,7 +102,7 @@ namespace ERPCore2.Services.Reports.Configuration
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
-                    .Include(r => r.PrinterConfiguration)
+
                     .Include(r => r.PaperSetting)
                     .FirstOrDefaultAsync(r => r.Id == id);
             }
@@ -170,7 +160,7 @@ namespace ERPCore2.Services.Reports.Configuration
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
-                    .Include(r => r.PrinterConfiguration)
+
                     .Include(r => r.PaperSetting)
                     .FirstOrDefaultAsync(r => r.ReportName == reportName);
             }
@@ -221,7 +211,7 @@ namespace ERPCore2.Services.Reports.Configuration
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
-                    .Include(r => r.PrinterConfiguration)
+
                     .Include(r => r.PaperSetting)
                     .Where(r => r.Status == EntityStatus.Active)
                     .OrderBy(r => r.ReportName)
@@ -261,29 +251,6 @@ namespace ERPCore2.Services.Reports.Configuration
             }
         }
 
-        public async Task<List<ReportPrintConfiguration>> GetByPrinterConfigurationIdAsync(int printerConfigurationId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ReportPrintConfigurations
-                    .Include(r => r.PrinterConfiguration)
-                    .Include(r => r.PaperSetting)
-                    .Where(r => r.PrinterConfigurationId == printerConfigurationId)
-                    .OrderBy(r => r.ReportName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByPrinterConfigurationIdAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetByPrinterConfigurationIdAsync),
-                    ServiceType = GetType().Name,
-                    PrinterConfigurationId = printerConfigurationId
-                });
-                return new List<ReportPrintConfiguration>();
-            }
-        }
 
         public async Task<List<ReportPrintConfiguration>> GetByPaperSettingIdAsync(int paperSettingId)
         {
@@ -291,7 +258,7 @@ namespace ERPCore2.Services.Reports.Configuration
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
-                    .Include(r => r.PrinterConfiguration)
+
                     .Include(r => r.PaperSetting)
                     .Where(r => r.PaperSettingId == paperSettingId)
                     .OrderBy(r => r.ReportName)
@@ -318,7 +285,7 @@ namespace ERPCore2.Services.Reports.Configuration
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
-                    .Include(r => r.PrinterConfiguration)
+
                     .Include(r => r.PaperSetting)
                     .FirstOrDefaultAsync(r => r.ReportName == reportName && r.Status == EntityStatus.Active);
             }
@@ -343,7 +310,7 @@ namespace ERPCore2.Services.Reports.Configuration
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
-                    .Include(r => r.PrinterConfiguration)
+
                     .Include(r => r.PaperSetting)
                     .FirstOrDefaultAsync(r => r.ReportId == reportId && r.Status == EntityStatus.Active);
             }
@@ -379,7 +346,7 @@ namespace ERPCore2.Services.Reports.Configuration
                         if (existing != null)
                         {
                             existing.ReportName = config.ReportName;
-                            existing.PrinterConfigurationId = config.PrinterConfigurationId;
+
                             existing.PaperSettingId = config.PaperSettingId;
                             existing.Status = config.Status;
                             existing.Remarks = config.Remarks;
@@ -432,7 +399,7 @@ namespace ERPCore2.Services.Reports.Configuration
                 var newConfig = new ReportPrintConfiguration
                 {
                     ReportName = targetReportName,
-                    PrinterConfigurationId = sourceConfig.PrinterConfigurationId,
+
                     PaperSettingId = sourceConfig.PaperSettingId,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.UtcNow,
@@ -457,31 +424,29 @@ namespace ERPCore2.Services.Reports.Configuration
             }
         }
 
-        public async Task<List<ReportPrintConfiguration>> GetReportsWithoutPrinterOrPaperSettingAsync()
+        public async Task<List<ReportPrintConfiguration>> GetReportsWithoutPaperSettingAsync()
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
-                    .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .Where(r => r.Status == EntityStatus.Active &&
-                               (!r.PrinterConfigurationId.HasValue || !r.PaperSettingId.HasValue))
+                    .Where(r => r.Status == EntityStatus.Active && !r.PaperSettingId.HasValue)
                     .OrderBy(r => r.ReportName)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReportsWithoutPrinterOrPaperSettingAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReportsWithoutPaperSettingAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetReportsWithoutPrinterOrPaperSettingAsync),
+                    Method = nameof(GetReportsWithoutPaperSettingAsync),
                     ServiceType = GetType().Name
                 });
                 return new List<ReportPrintConfiguration>();
             }
         }
 
-        public async Task<ServiceResult> BatchUpdatePrinterAndPaperSettingsAsync(List<(int configId, int? printerConfigurationId, int? paperSettingId)> updates)
+        public async Task<ServiceResult> BatchUpdatePaperSettingsAsync(List<(int configId, int? paperSettingId)> updates)
         {
             try
             {
@@ -489,7 +454,7 @@ namespace ERPCore2.Services.Reports.Configuration
                     return ServiceResult.Failure("更新資料不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                
+
                 var configIds = updates.Select(u => u.configId).ToList();
                 var configs = await context.ReportPrintConfigurations
                     .Where(r => configIds.Contains(r.Id))
@@ -498,21 +463,9 @@ namespace ERPCore2.Services.Reports.Configuration
                 if (configs.Count != updates.Count)
                     return ServiceResult.Failure("部分報表配置不存在");
 
-                // 驗證印表機和紙張設定是否存在
-                var printerIds = updates.Where(u => u.printerConfigurationId.HasValue)
-                    .Select(u => u.printerConfigurationId!.Value).Distinct().ToList();
+                // 驗證紙張設定是否存在
                 var paperIds = updates.Where(u => u.paperSettingId.HasValue)
                     .Select(u => u.paperSettingId!.Value).Distinct().ToList();
-
-                if (printerIds.Any())
-                {
-                    var existingPrinters = await context.PrinterConfigurations
-                        .Where(p => printerIds.Contains(p.Id))
-                        .Select(p => p.Id)
-                        .ToListAsync();
-                    if (existingPrinters.Count != printerIds.Count)
-                        return ServiceResult.Failure("部分印表機設定不存在");
-                }
 
                 if (paperIds.Any())
                 {
@@ -528,8 +481,6 @@ namespace ERPCore2.Services.Reports.Configuration
                 foreach (var update in updates)
                 {
                     var config = configs.First(c => c.Id == update.configId);
-                    if (update.printerConfigurationId.HasValue)
-                        config.PrinterConfigurationId = update.printerConfigurationId.Value;
                     if (update.paperSettingId.HasValue)
                         config.PaperSettingId = update.paperSettingId.Value;
                     config.UpdatedAt = DateTime.UtcNow;
@@ -541,9 +492,9 @@ namespace ERPCore2.Services.Reports.Configuration
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchUpdatePrinterAndPaperSettingsAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchUpdatePaperSettingsAsync), GetType(), _logger, new
                 {
-                    Method = nameof(BatchUpdatePrinterAndPaperSettingsAsync),
+                    Method = nameof(BatchUpdatePaperSettingsAsync),
                     ServiceType = GetType().Name,
                     UpdateCount = updates?.Count ?? 0
                 });
@@ -564,17 +515,15 @@ namespace ERPCore2.Services.Reports.Configuration
                     .CountAsync();
                 statistics["TotalCount"] = totalCount;
 
-                // 未設定印表機或紙張的報表數量
+                // 未設定紙張的報表數量
                 var noSettingCount = await context.ReportPrintConfigurations
-                    .Where(r => r.Status == EntityStatus.Active &&
-                               (!r.PrinterConfigurationId.HasValue || !r.PaperSettingId.HasValue))
+                    .Where(r => r.Status == EntityStatus.Active && !r.PaperSettingId.HasValue)
                     .CountAsync();
                 statistics["NoSettingCount"] = noSettingCount;
 
-                // 已完整設定的報表數量
+                // 已設定紙張的報表數量
                 var configuredCount = await context.ReportPrintConfigurations
-                    .Where(r => r.Status == EntityStatus.Active &&
-                               r.PrinterConfigurationId.HasValue && r.PaperSettingId.HasValue)
+                    .Where(r => r.Status == EntityStatus.Active && r.PaperSettingId.HasValue)
                     .CountAsync();
                 statistics["ConfiguredCount"] = configuredCount;
 

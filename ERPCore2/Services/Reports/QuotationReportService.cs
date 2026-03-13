@@ -73,6 +73,12 @@ namespace ERPCore2.Services.Reports
                 employee = await _employeeService.GetByIdAsync(quotation.EmployeeId.Value);
             }
 
+            Employee? salesperson = null;
+            if (quotation.SalespersonId.HasValue && quotation.SalespersonId.Value > 0)
+            {
+                salesperson = await _employeeService.GetByIdAsync(quotation.SalespersonId.Value);
+            }
+
             Company? company = await _companyService.GetPrimaryCompanyAsync();
 
             var allProducts = await _productService.GetAllAsync();
@@ -82,7 +88,7 @@ namespace ERPCore2.Services.Reports
             var unitDict = allUnits.ToDictionary(u => u.Id, u => u);
 
             // 建構格式化文件
-            return BuildFormattedDocument(quotation, quotationDetails, customer, employee, company, productDict, unitDict);
+            return BuildFormattedDocument(quotation, quotationDetails, customer, employee, salesperson, company, productDict, unitDict);
         }
 
         /// <summary>
@@ -188,6 +194,7 @@ namespace ERPCore2.Services.Reports
             List<QuotationDetail> quotationDetails,
             Customer? customer,
             Employee? employee,
+            Employee? salesperson,
             Company? company,
             Dictionary<int, Product> productDict,
             Dictionary<int, Unit> unitDict)
@@ -237,18 +244,20 @@ namespace ERPCore2.Services.Reports
                 header.AddKeyValueRow(
                     ("聯絡地址", customer?.ContactAddress ?? ""));
 
-                // === 工程名稱和業務員 ===
+                // === 工程名稱、業務員、製表者 ===
                 if (!string.IsNullOrWhiteSpace(quotation.ProjectName))
                 {
                     header.AddKeyValueRow(
                         ("工程名稱", quotation.ProjectName),
-                        ("業務員", employee?.Name ?? ""));
+                        ("業務員", salesperson?.Name ?? ""));
                 }
                 else
                 {
                     header.AddKeyValueRow(
-                        ("業務員", employee?.Name ?? ""));
+                        ("業務員", salesperson?.Name ?? ""));
                 }
+                header.AddKeyValueRow(
+                    ("製表者", employee?.Name ?? ""));
 
                 header.AddSpacing(3);
             });

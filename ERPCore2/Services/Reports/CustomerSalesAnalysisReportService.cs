@@ -93,6 +93,12 @@ namespace ERPCore2.Services.Reports
                 deliveries = deliveries.Where(d => d.CustomerId.HasValue && criteria.CustomerIds.Contains(d.CustomerId.Value)).ToList();
             }
 
+            // 篩選指定業務員（依 SalespersonId）
+            if (criteria.EmployeeIds.Any())
+            {
+                deliveries = deliveries.Where(d => d.SalespersonId.HasValue && criteria.EmployeeIds.Contains(d.SalespersonId.Value)).ToList();
+            }
+
             // 按客戶彙總
             var grouped = deliveries
                 .GroupBy(d => new { d.CustomerId, CustomerCode = d.Customer?.Code ?? "", CustomerName = d.Customer?.CompanyName ?? "未知客戶" })

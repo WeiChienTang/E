@@ -92,14 +92,19 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Customer))]
         public int? CustomerId { get; set; }  // 客戶直接關聯
 
-        [Display(Name = "員工")]
+        [Display(Name = "製表者")]
         [ForeignKey(nameof(Employee))]
         public int? EmployeeId { get; set; }
+
+        [Display(Name = "業務人員")]
+        [ForeignKey(nameof(Salesperson))]
+        public int? SalespersonId { get; set; }
 
         // Navigation Properties
         public Company? Company { get; set; }
         public Customer? Customer { get; set; }
         public Employee? Employee { get; set; }
+        public Employee? Salesperson { get; set; }
         public Employee? ApprovedByUser { get; set; }
         public ICollection<SalesOrderDetail> SalesOrderDetails { get; set; } = new List<SalesOrderDetail>();
     }
