@@ -4,6 +4,7 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.3);
     z-index: 1050;
+    cursor: pointer; /* iOS Safari：div 需要 cursor:pointer 才會觸發 click 事件 */
     animation: fadeIn 0.2s ease;
 }
 
@@ -474,7 +475,7 @@
 /* ===== 響應式 ===== */
 @media (max-width: 480px) {
     .calendar-drawer {
-        width: 100%;
+        width: calc(100% - 56px);
     }
 }
 

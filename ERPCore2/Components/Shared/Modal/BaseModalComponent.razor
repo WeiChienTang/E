@@ -17,9 +17,9 @@
 
 @if (IsVisible)
 {
-    <div class="modal fade show" 
-         tabindex="-1" 
-         style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: @GetModalZIndex(); overflow: hidden;"
+    <div class="modal fade show"
+         tabindex="-1"
+         style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: @GetModalZIndex(); overflow: hidden; cursor: pointer;"
          @onclick="@HandleBackdropClick">
         
         <div class="modal-dialog @GetModalSizeClass()"

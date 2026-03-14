@@ -123,6 +123,42 @@ kbd {
     gap: 0.25rem;
 }
 
+/* ===== 手機版排版 ===== */
+@media (max-width: 576px) {
+    /* Header badge：subtitle 換行顯示而非溢出 */
+    .debug-identity-badge {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .debug-subtitle {
+        display: block;
+        margin-left: 0;
+        margin-top: 0.2rem;
+    }
+
+    /* 每行：縮小 gap 和 padding，讓三欄擠進一列 */
+    .shortcut-row {
+        gap: 0.5rem;
+        padding: 0.5rem 0.625rem;
+        align-items: center;
+    }
+
+    /* 取消固定寬度，依內容自動縮小，讓 label 有足夠空間 */
+    .shortcut-display {
+        flex: 0 0 auto;
+        justify-content: flex-start;
+    }
+
+    .shortcut-actions {
+        flex: 0 0 auto;
+    }
+
+    /* 隱藏功能說明小字，避免 label 換行造成每行過高 */
+    .shortcut-label small {
+        display: none;
+    }
+}
+
 /* 深色模式適配 */
 [data-bs-theme=dark] .shortcut-row--fixed {
     background-color: var(--bg-secondary);

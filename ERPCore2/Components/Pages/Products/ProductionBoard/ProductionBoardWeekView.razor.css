@@ -75,6 +75,7 @@
         inset: 0;
         background: rgba(0, 0, 0, 0.45);
         z-index: 99;
+        cursor: pointer; /* iOS Safari：div 需要 cursor:pointer 才會觸發 click 事件 */
     }
 
     /* 左側頁簽把手 */

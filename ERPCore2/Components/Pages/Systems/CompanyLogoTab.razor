@@ -96,7 +96,7 @@ else
 @* 預覽 Modal *@
 @if (showPreview)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.7);" @onclick="ClosePreview">
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.7); cursor:pointer;" @onclick="ClosePreview">
         <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
             <div class="modal-content">
                 <div class="modal-header">
