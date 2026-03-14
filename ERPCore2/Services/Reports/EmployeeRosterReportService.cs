@@ -126,6 +126,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var employees = await GetEmployeesByCriteriaAsync(criteria);
+                employees = employees.ExcludeDrafts();
 
                 if (!employees.Any())
                 {
@@ -138,7 +139,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, employees.Count);
+                return BatchPreviewResult.Success(images, document, employees.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -160,6 +161,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var employees = await GetEmployeesByTypedCriteriaAsync(criteria);
+                employees = employees.ExcludeDrafts();
 
                 if (!employees.Any())
                 {
@@ -172,7 +174,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, employees.Count);
+                return BatchPreviewResult.Success(images, document, employees.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

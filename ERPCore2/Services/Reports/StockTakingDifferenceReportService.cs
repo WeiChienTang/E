@@ -59,7 +59,7 @@ namespace ERPCore2.Services.Reports
                     : _formattedPrintService.RenderToImages(document);
 
                 var totalItems = stockTakingGroups.Sum(g => g.Items.Count);
-                return BatchPreviewResult.Success(images, document, totalItems);
+                return BatchPreviewResult.Success(images, document, totalItems, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -195,6 +195,7 @@ namespace ERPCore2.Services.Reports
             var startDate = criteria.StartDate ?? DateTime.MinValue;
             var endDate = criteria.EndDate ?? DateTime.MaxValue;
             var stockTakings = await _stockTakingService.GetByDateRangeAsync(startDate, endDate);
+            stockTakings = stockTakings.ExcludeDrafts();
 
             // 篩選倉庫
             if (criteria.WarehouseIds.Any())

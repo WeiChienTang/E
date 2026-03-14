@@ -124,6 +124,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var accountItems = await GetAccountItemsByCriteriaAsync(criteria);
+                accountItems = accountItems.ExcludeDrafts();
 
                 if (!accountItems.Any())
                 {
@@ -136,7 +137,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, accountItems.Count);
+                return BatchPreviewResult.Success(images, document, accountItems.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -158,6 +159,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var accountItems = await GetAccountItemsByTypedCriteriaAsync(criteria);
+                accountItems = accountItems.ExcludeDrafts();
 
                 if (!accountItems.Any())
                 {
@@ -170,7 +172,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, accountItems.Count);
+                return BatchPreviewResult.Success(images, document, accountItems.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

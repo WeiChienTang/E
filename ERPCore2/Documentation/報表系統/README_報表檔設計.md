@@ -1,20 +1,22 @@
 # 報表檔案架構說明
 
 ## 更新日期
-2026-02-27
+2026-03-14
 
 ---
 
 ## 設計理念
 
-本系統報表採用**統一格式化模式**，使用 `System.Drawing.Graphics` 進行圖形化渲染：
+本系統報表採用**統一格式化模式**，以 `FormattedDocument` Fluent API 建構報表結構：
 
 - **表格框線**：支援實線、虛線、雙線等樣式
 - **圖片嵌入**：支援 JPG、PNG、BMP 等格式
 - **精確排版**：自動計算位置，支援多種對齊方式
 - **自動換頁**：內容超過頁面時自動分頁
-- **預覽功能**：可渲染為圖片供預覽
-- **Excel 匯出**：支援將報表轉換為 .xlsx 檔案
+- **列印**：`FormattedHtmlRenderer` 將文件轉為含 `@page { size }` 的 HTML，由瀏覽器原生排版（跨平台）
+- **預覽**：`FormattedPrintService` 使用 GDI+（Windows 專屬）渲染為 PNG 圖片
+- **PDF 匯出**：GDI+ 150 DPI 重新渲染後由 PuppeteerSharp 合併為 PDF
+- **Excel 匯出**：ClosedXML 轉換，跨平台
 
 ---
 
@@ -26,16 +28,16 @@ Helpers/
 
 Services/Reports/
 ├── Interfaces/
-│   ├── IFormattedPrintService.cs           # 格式化列印介面
+│   ├── IFormattedPrintService.cs           # GDI+ 渲染介面（預覽 / PDF）
 │   ├── IExcelExportService.cs              # Excel 匯出介面
 │   ├── IPdfExportService.cs                # PDF 匯出介面
-│   ├── IEntityReportService.cs             # 報表服務泛型介面 + BatchPreviewResult
-│   └── IPurchaseOrderReportService.cs      # 報表服務介面（範本）
-├── FormattedPrintService.cs                # 格式化列印服務實作
+│   ├── IEntityReportService.cs             # 報表服務泛型介面 + BatchPreviewResult（含 Documents）
+│   └── I[Entity]ReportService.cs           # 各報表服務介面
+├── FormattedPrintService.cs                # GDI+ 渲染實作（預覽 96 DPI / PDF 150 DPI）
+├── FormattedHtmlRenderer.cs               # HTML 列印渲染（跨平台靜態類別）
 ├── ExcelExportService.cs                   # Excel 匯出服務實作
-├── PdfExportService.cs                     # PDF 匯出服務實作（使用 PuppeteerSharp）
-├── PurchaseOrderReportService.cs           # 報表服務實作（範本）
-└── ...
+├── PdfExportService.cs                     # PDF 匯出服務實作（PuppeteerSharp）
+└── [Entity]ReportService.cs               # 各報表服務實作
 
 Models/Reports/
 ├── ReportIds.cs                            # 報表 ID 常數（唯一來源）
@@ -50,11 +52,12 @@ Models/Reports/
     └── FilterTemplateRegistry.cs           # 模板註冊表（集中管理所有配置）
 
 Components/Shared/Report/
-├── ReportPreviewModalComponent.razor       # 報表預覽 Modal
+├── ReportPreviewModalComponent.razor       # 報表預覽 Modal（列印/PDF/Excel）
 ├── GenericReportFilterModalComponent.razor # 通用篩選 Modal（呼叫 RenderBatchToImagesAsync）
 ├── FilterTemplateInitializer.cs            # 篩選模板初始化
 └── FilterTemplates/                        # 篩選模板組件
-    └── PurchaseOrderBatchFilterTemplate.razor
+    ├── DynamicFilterTemplate.razor         # 通用動態篩選（所有報表共用）
+    └── ProductBarcodeBatchFilterTemplate.razor  # 條碼列印專用（唯一例外）
 ```
 
 ---
@@ -137,11 +140,11 @@ var document = new FormattedDocument()
     // 簽名區
     .AddSignatureSection("採購人員", "核准人員", "收貨確認");
 
-// 列印到指定印表機
-await _formattedPrintService.PrintByReportIdAsync(document, "PO001", copies: 1);
-
-// 或渲染為圖片預覽
+// 渲染為圖片（預覽 / PDF 用）
 var images = _formattedPrintService.RenderToImages(document);
+
+// HTML 列印（由 ReportPreviewModalComponent 呼叫）
+var html = FormattedHtmlRenderer.RenderBatchToHtml(new List<FormattedDocument> { document }, paperSetting);
 ```
 
 ### 介面定義
@@ -149,13 +152,32 @@ var images = _formattedPrintService.RenderToImages(document);
 ```csharp
 public interface IFormattedPrintService
 {
-    ServiceResult Print(FormattedDocument document, string printerName, int copies = 1);
-    Task<ServiceResult> PrintByReportIdAsync(FormattedDocument document, string reportId, int copies = 1);
+    // 渲染為 PNG 圖片陣列（預覽 96 DPI / PDF 150 DPI）
     List<byte[]> RenderToImages(FormattedDocument document, int pageWidth = 794, int pageHeight = 1123, int dpi = 96);
     List<byte[]> RenderToImages(FormattedDocument document, PaperSetting paperSetting, int dpi = 96);
+
+    // 已停用（伺服器端列印已移除）
+    Task<ServiceResult> PrintByReportIdAsync(FormattedDocument document, string reportId, int copies = 1);
+
     bool IsSupported();
 }
 ```
+
+### FormattedHtmlRenderer（HTML 列印，跨平台）
+
+```csharp
+// 靜態類別，無需注入
+public static class FormattedHtmlRenderer
+{
+    // 批次文件 → HTML（每份文件間 page-break-after: always）
+    public static string RenderBatchToHtml(IEnumerable<FormattedDocument> documents, PaperSetting? paper = null);
+
+    // 單一文件 → HTML
+    public static string RenderToHtml(FormattedDocument document, PaperSetting? paper = null);
+}
+```
+
+> **`@page { size }` 注意**：自定義尺寸只能寫 `size: Xcm Ycm`，**不可**在長度後加 `landscape/portrait`（那是預定義紙張名稱的語法）。方向由寬高大小決定。
 
 ---
 
@@ -288,27 +310,44 @@ public class BatchPreviewResult
 {
     public bool IsSuccess { get; set; }
     public string? ErrorMessage { get; set; }
-    public List<byte[]> PreviewImages { get; set; }    // 所有頁面的預覽圖片
-    public FormattedDocument? MergedDocument { get; set; } // 合併的文件（用於列印）
-    public int DocumentCount { get; set; }              // 符合條件的單據數量
-    public int TotalPages { get; set; }                 // 總頁數
-    
-    public static BatchPreviewResult Success(List<byte[]> images, FormattedDocument? document, int documentCount);
+    public List<byte[]> PreviewImages { get; set; }        // 所有頁面的預覽圖片（96 DPI）
+    public FormattedDocument? MergedDocument { get; set; } // 合併文件（Excel / PDF 匯出用）
+    public List<FormattedDocument> Documents { get; set; } // 獨立文件清單（HTML 列印用，每份保有正確表頭/頁尾）
+    public int DocumentCount { get; set; }                 // 符合條件的單據數量
+    public int TotalPages { get; set; }                    // 總頁數
+
+    // documents 為選用參數；Type B 服務傳入 new List<FormattedDocument> { document }
+    public static BatchPreviewResult Success(List<byte[]> images, FormattedDocument? document, int documentCount,
+                                             List<FormattedDocument>? documents = null);
     public static BatchPreviewResult Failure(string errorMessage);
 }
 ```
 
 ### 已實作的報表服務
 
-| 服務 | 介面 | 報表 ID |
-|------|------|---------|
-| PurchaseOrderReportService | IPurchaseOrderReportService | PO001 |
-| PurchaseReceivingReportService | IPurchaseReceivingReportService | PO002 |
-| PurchaseReturnReportService | IPurchaseReturnReportService | PO003 |
-| QuotationReportService | IQuotationReportService | SO001 |
-| SalesOrderReportService | ISalesOrderReportService | SO002 |
-| SalesDeliveryReportService | ISalesDeliveryReportService | SO004 |
-| SalesReturnReportService | ISalesReturnReportService | SO005 |
+| 服務 | 報表 ID | 類型 |
+|------|---------|------|
+| PurchaseOrderReportService | PO001 | A（BatchReportHelper） |
+| PurchaseReceivingReportService | PO002 | A |
+| PurchaseReturnReportService | PO003 | A |
+| QuotationReportService | SO001 | A |
+| SalesOrderReportService | SO002 | A |
+| SalesDeliveryReportService | SO004 | A |
+| SalesReturnReportService | SO005 | A |
+| SetoffDocumentReportService | SO006 | A |
+| CustomerRosterReportService | AR001 | B（單一合併文件） |
+| SupplierRosterReportService | AP002 | B |
+| EmployeeRosterReportService | HR001 | B |
+| CustomerDetailReportService | AR002 | B |
+| SupplierDetailReportService | AP004 | B |
+| EmployeeDetailReportService | HR002 | B |
+| ProductDetailReportService | PD001 | B |
+| ProductListReportService | PD002 | B |
+| ProductBarcodeReportService | PD003 | C（物件初始化語法） |
+| AccountItemListReportService | FN005 | B |
+| 其餘 21 個服務 | — | B |
+
+> **類型說明**：A — 逐筆批次，BatchReportHelper 自動收集 `Documents`；B — 彙總型，`Success()` 需傳第 4 參數 `new List<FormattedDocument> { document }`；C — 物件初始化，需明確設定 `Documents` 屬性。
 
 ---
 
@@ -390,7 +429,7 @@ mergedDocument.MergeFrom(document);
 |------|------|------|
 | `ShowPrintButton` | `bool` | 是否顯示列印按鈕 |
 | `ReportService` | `IEntityReportService<TEntity>` | 報表服務 |
-| `ReportId` | `string` | 報表 ID（用於查詢印表機配置） |
+| `ReportId` | `string` | 報表 ID（用於查詢紙張設定） |
 | `ReportPreviewTitle` | `string` | 報表預覽 Modal 標題 |
 | `GetReportDocumentName` | `Func<TEntity, string>` | 產生列印文件名稱的函數 |
 | `OnPrintSuccess` | `EventCallback` | 列印成功後的回調事件 |
@@ -432,10 +471,11 @@ mergedDocument.MergeFrom(document);
 
 ## 注意事項
 
-1. **Windows 專屬**：`FormattedPrintService` 使用 `System.Drawing.Printing`，僅支援 Windows
-2. **Excel 匯出跨平台**：`ExcelExportService` 使用 ClosedXML，支援所有平台
-3. **預覽與列印一致**：`RenderToImages` 和 `Print` 使用相同的渲染邏輯
-4. **SQL 配置印表機**：透過 `ReportPrintConfiguration` 資料表設定預設印表機
+1. **GDI+ Windows 專屬**：`FormattedPrintService.RenderToImages()` 使用 `System.Drawing`，僅支援 Windows。用於螢幕預覽（96 DPI）與 PDF 匯出（150 DPI）。
+2. **列印已改 HTML，跨平台**：`FormattedHtmlRenderer` 是純靜態類別，無 GDI+ 依賴，可在 Linux/macOS 執行。
+3. **Excel 匯出跨平台**：`ExcelExportService` 使用 ClosedXML，支援所有平台。
+4. **紙張設定**：透過 `ReportPrintConfiguration` 資料表為每個報表指定 `PaperSetting`，`ReportPreviewModalComponent` 在開啟時靜默載入並傳入 `FormattedHtmlRenderer`。
+5. **PrintByReportIdAsync 已停用**：介面方法保留但標記為 obsolete，所有列印改走 `FormattedHtmlRenderer → browserPrintHtml`，不再使用此方法。
 
 ---
 

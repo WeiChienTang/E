@@ -8,6 +8,7 @@
 @inject INavigationPermissionService PermissionService
 @inject ICompanyModuleService CompanyModuleService
 @inject IEmployeePreferenceService EmployeePreferenceService
+@inject IEmployeeService EmployeeService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> L
@@ -15,17 +16,18 @@
 
 <CascadingValue Value="@this" Name="NavMenuInstance">
 <div class="nav-menu-container">
-    @* 手機版選單切換按鈕 - 必須在外層才能與 nav-scrollable 成為兄弟元素 *@
+    @* 選單切換用 Checkbox（透明，由 label 觸發）*@
     <input type="checkbox" title="Navigation menu" class="navbar-toggler" id="nav-toggle" />
 
-    @* 手機版頂部列 - 僅含切換按鈕 *@
-    <div class="top-row navbar navbar-dark">
-        <div class="top-row-content">
-            <label for="nav-toggle" class="navbar-toggler-label" title="@L["Nav.ToggleNav"]">
-                <span class="navbar-toggler-icon"></span>
-            </label>
-        </div>
+    @* 手機版固定頂部列（漢堡按鈕列） *@
+    <div class="top-row">
+        <label for="nav-toggle" class="navbar-toggler-label" title="@L["Nav.ToggleNav"]">
+            <i class="bi bi-list"></i>
+        </label>
     </div>
+
+    @* 手機版半透明遮罩（點擊可關閉抽屜） *@
+    <label for="nav-toggle" class="nav-backdrop"></label>
 
     <div class="nav-scrollable">
         @* 使用者資訊區 - 固定在頂部 *@
@@ -39,7 +41,14 @@
                 }
                 <div class="nav-user-section">
                     <div class="nav-user-toggle" @onclick="ToggleUserMenu">
-                        <div class="nav-user-avatar">@userInitial</div>
+                        @if (!string.IsNullOrEmpty(_currentUserPhotoPath))
+                        {
+                            <img src="@_currentUserPhotoPath" class="nav-user-avatar nav-user-avatar-photo" alt="@userName" />
+                        }
+                        else
+                        {
+                            <div class="nav-user-avatar">@userInitial</div>
+                        }
                         <span class="nav-user-name">@userName</span>
                         <i class="bi bi-chevron-down nav-user-chevron @(isUserMenuOpen ? "open" : "")"></i>
                     </div>
@@ -152,6 +161,7 @@
     private List<NavigationItem> filteredMenuGroups = new();
     private HashSet<string> _disabledModuleKeys = new();
     private bool _showDisabledModules = false;
+    private string? _currentUserPhotoPath = null;
 
     // ===== 生命週期方法 =====
 
@@ -176,6 +186,13 @@
 
         // 檢查是否為系統管理員
         bool isAdmin = await PermissionService.CanAccessAsync("System.Admin");
+
+        // 載入使用者照片
+        if (currentEmployeeId > 0)
+        {
+            var emp = await EmployeeService.GetByIdAsync(currentEmployeeId);
+            _currentUserPhotoPath = emp?.PhotoPath;
+        }
 
         // 載入停用模組清單（SuperAdmin 略過，因為對他們全部啟用）
         if (!isAdmin)
@@ -355,6 +372,20 @@
         if (OnActionTriggered.HasDelegate)
         {
             await OnActionTriggered.InvokeAsync(actionId);
+        }
+    }
+
+    /// <summary>
+    /// 重新載入當前使用者照片並更新頭像，供 MainLayout 在照片變更後呼叫
+    /// </summary>
+    public async Task RefreshAvatarAsync()
+    {
+        var currentEmployeeId = await PermissionService.GetCurrentEmployeeIdAsync();
+        if (currentEmployeeId > 0)
+        {
+            var emp = await EmployeeService.GetByIdAsync(currentEmployeeId);
+            _currentUserPhotoPath = emp?.PhotoPath;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

@@ -39,7 +39,7 @@ public static class BatchReportHelper
         try
         {
             var entityList = entities.ToList();
-            
+
             if (!entityList.Any())
             {
                 var message = string.IsNullOrEmpty(criteriaMessage)
@@ -143,7 +143,7 @@ public static class BatchReportHelper
         ILogger? logger = null) where TEntity : Data.BaseEntity
     {
         return RenderBatchToImagesAsync(
-            entities,
+            entities.ToList().ExcludeDrafts(),
             e => e.Id,
             generateReportAsync,
             formattedPrintService,
@@ -166,7 +166,7 @@ public static class BatchReportHelper
         ILogger? logger = null) where TEntity : Data.BaseEntity
     {
         return RenderBatchToImagesAsync(
-            entities,
+            entities.ToList().ExcludeDrafts(),
             e => e.Id,
             (id, _) => generateReportAsync(id),
             formattedPrintService,

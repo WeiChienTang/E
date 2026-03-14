@@ -125,6 +125,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var complaints = await GetComplaintsByCriteriaAsync(criteria);
+                complaints = complaints.ExcludeDrafts();
                 if (!complaints.Any())
                     return BatchPreviewResult.Failure($"無符合條件的客訴\n篩選條件：{criteria.GetSummary()}");
 
@@ -134,7 +135,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, complaints.Count);
+                return BatchPreviewResult.Success(images, document, complaints.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -156,6 +157,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var complaints = await GetComplaintsByTypedCriteriaAsync(criteria);
+                complaints = complaints.ExcludeDrafts();
                 if (!complaints.Any())
                     return BatchPreviewResult.Failure($"無符合條件的客訴\n篩選條件：{criteria.GetSummary()}");
 
@@ -165,7 +167,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, complaints.Count);
+                return BatchPreviewResult.Success(images, document, complaints.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

@@ -148,7 +148,7 @@
 ::deep .form-control,
 ::deep .form-select {
     padding: 0.2rem 0.4rem !important; /* 進一步縮小 padding */
-    font-size: 1rem !important; /* 縮小字體 */
+    font-size: max(16px, 1rem) !important; /* 最小 16px，防止 iOS Safari 自動縮放觸發版面錯位 */
     height: 32px !important; /* 固定較小的高度 */
     line-height: 1.4 !important; /* 調整行高 */
     transition: border-color 0.2s ease;
@@ -164,7 +164,7 @@
 /* textarea 特別調整 */
 ::deep textarea.form-control {
     padding: 0.2rem 0.4rem !important;
-    font-size: 1rem !important;
+    font-size: max(16px, 1rem) !important; /* 最小 16px，防止 iOS Safari 自動縮放 */
     line-height: 1.4 !important;
     min-height: 60px !important; /* 設定最小高度避免太小 */
     transition: border-color 0.2s ease;
@@ -364,11 +364,12 @@
     }
     
     /* 手機版 Input 佔滿寬度並增加觸控區域 */
-    .form-field-input .form-control,
-    .form-field-input .form-select,
-    .form-field-input input,
-    .form-field-input select,
-    .form-field-input textarea {
+    /* 注意：必須使用 ::deep 才能穿透子組件（FormTextField 等）的 CSS scope */
+    ::deep .form-field-input .form-control,
+    ::deep .form-field-input .form-select,
+    ::deep .form-field-input input,
+    ::deep .form-field-input select,
+    ::deep .form-field-input textarea {
         width: 100% !important;
         height: 44px !important; /* Apple 建議的最小觸控區域 */
         font-size: 16px !important; /* 防止 iOS 自動縮放 */

@@ -126,6 +126,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var vehicles = await GetVehiclesByCriteriaAsync(criteria);
+                vehicles = vehicles.ExcludeDrafts();
 
                 if (!vehicles.Any())
                 {
@@ -138,7 +139,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, vehicles.Count);
+                return BatchPreviewResult.Success(images, document, vehicles.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -160,6 +161,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var vehicles = await GetVehiclesByTypedCriteriaAsync(criteria);
+                vehicles = vehicles.ExcludeDrafts();
 
                 if (!vehicles.Any())
                 {
@@ -172,7 +174,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, vehicles.Count);
+                return BatchPreviewResult.Success(images, document, vehicles.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

@@ -244,6 +244,9 @@
   <data name="Preference.LanguageRegion" xml:space="preserve">
     <value>Language &amp; Region</value>
   </data>
+  <data name="Preference.Avatar" xml:space="preserve">
+    <value>Avatar</value>
+  </data>
   <data name="Preference.ChangePassword" xml:space="preserve">
     <value>Change Password</value>
   </data>
@@ -1532,6 +1535,8 @@
   <data name="EmployeePhoto.UploadSuccess" xml:space="preserve"><value>Photo uploaded successfully</value></data>
   <data name="EmployeePhoto.DeleteMessage" xml:space="preserve"><value>Are you sure you want to delete this photo? This action cannot be undone.</value></data>
   <data name="EmployeePhoto.Hint" xml:space="preserve"><value>Supports JPG, PNG formats, max 2MB</value></data>
+  <data name="EmployeePhoto.UploadFailed" xml:space="preserve"><value>Upload failed</value></data>
+  <data name="EmployeePhoto.DeleteFailed" xml:space="preserve"><value>Delete failed</value></data>
   <data name="Tab.ProductPhotos" xml:space="preserve"><value>Product Photos</value></data>
   <data name="ProductPhoto.SaveFirst" xml:space="preserve"><value>Please save product data before uploading photos</value></data>
   <data name="ProductPhoto.PhotoList" xml:space="preserve"><value>Product Photos</value></data>

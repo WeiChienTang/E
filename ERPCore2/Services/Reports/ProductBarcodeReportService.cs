@@ -78,6 +78,7 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
                 IsSuccess = true,
                 PreviewImages = previewImages,
                 MergedDocument = document,
+                Documents = new List<FormattedDocument> { document },
                 DocumentCount = products.Count,
                 TotalPages = previewImages.Count
             };

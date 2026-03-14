@@ -134,6 +134,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var compositions = await GetCompositionsByCriteriaAsync(criteria);
+                compositions = compositions.ExcludeDrafts();
 
                 if (!compositions.Any())
                 {
@@ -148,7 +149,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, compositions.Count);
+                return BatchPreviewResult.Success(images, document, compositions.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -170,6 +171,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var compositions = await GetCompositionsByTypedCriteriaAsync(criteria);
+                compositions = compositions.ExcludeDrafts();
 
                 if (!compositions.Any())
                 {
@@ -184,7 +186,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, compositions.Count);
+                return BatchPreviewResult.Success(images, document, compositions.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

@@ -62,7 +62,7 @@ namespace ERPCore2.Services.Reports
                     : _formattedPrintService.RenderToImages(document);
 
                 var totalItems = warehouseGroups.Sum(g => g.Items.Count);
-                return BatchPreviewResult.Success(images, document, totalItems);
+                return BatchPreviewResult.Success(images, document, totalItems, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -216,6 +216,7 @@ namespace ERPCore2.Services.Reports
         {
             // 取得所有庫存明細（含 Product、Warehouse、WarehouseLocation 導航屬性）
             var allDetails = await _inventoryStockDetailService.GetAllAsync();
+            allDetails = allDetails.ExcludeDrafts();
 
             // 篩選倉庫
             if (criteria.WarehouseIds.Any())

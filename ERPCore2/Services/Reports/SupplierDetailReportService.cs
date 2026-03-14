@@ -1,4 +1,5 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
 using ERPCore2.Models.Reports;
@@ -119,6 +120,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var suppliers = await GetSuppliersByCriteriaAsync(criteria);
+                suppliers = suppliers.ExcludeDrafts();
                 if (!suppliers.Any())
                     return BatchPreviewResult.Failure($"無符合條件的廠商\n篩選條件：{criteria.GetSummary()}");
 
@@ -128,7 +130,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, suppliers.Count);
+                return BatchPreviewResult.Success(images, document, suppliers.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -150,6 +152,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var suppliers = await GetSuppliersByTypedCriteriaAsync(criteria);
+                suppliers = suppliers.ExcludeDrafts();
                 if (!suppliers.Any())
                     return BatchPreviewResult.Failure($"無符合條件的廠商\n篩選條件：{criteria.GetSummary()}");
 
@@ -159,7 +162,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, suppliers.Count);
+                return BatchPreviewResult.Success(images, document, suppliers.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

@@ -54,6 +54,9 @@
     [Parameter]
     public EventCallback OnSaved { get; set; }
 
+    [Parameter]
+    public EventCallback OnPhotoChanged { get; set; }
+
     // ===== 私有欄位 =====
 
     private bool isLoading = false;
@@ -113,8 +116,18 @@
                          NewPassword="@newPassword"
                          NewPasswordChanged="@((pwd) => { newPassword = pwd; StateHasChanged(); })"
                          ConfirmPassword="@confirmPassword"
-                         ConfirmPasswordChanged="@((pwd) => { confirmPassword = pwd; StateHasChanged(); })" />
+                         ConfirmPasswordChanged="@((pwd) => { confirmPassword = pwd; StateHasChanged(); })"
+                         OnPhotoChanged="@HandlePhotoChanged" />
     };
+
+    private async Task HandlePhotoChanged(string? newPhotoPath)
+    {
+        if (currentEmployee != null)
+            currentEmployee.PhotoPath = newPhotoPath;
+
+        if (OnPhotoChanged.HasDelegate)
+            await OnPhotoChanged.InvokeAsync();
+    }
 
     private RenderFragment CreateLanguageRegionTabContent() => __builder =>
     {

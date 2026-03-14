@@ -53,7 +53,7 @@ namespace ERPCore2.Services.Reports
                     : _formattedPrintService.RenderToImages(document);
 
                 var totalRows = groups.Sum(g => g.Details.Count);
-                return BatchPreviewResult.Success(images, document, totalRows);
+                return BatchPreviewResult.Success(images, document, totalRows, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -94,6 +94,7 @@ namespace ERPCore2.Services.Reports
                     .Where(psd => psd.ScrapQty > 0 || psd.ReturnQty > 0)
                     .Where(psd => (psd.UpdatedAt ?? psd.CreatedAt) >= startDate
                                && (psd.UpdatedAt ?? psd.CreatedAt) < endDate)
+                    .Where(psd => !psd.IsDraft)
                     .AsQueryable();
 
                 // 成品篩選

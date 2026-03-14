@@ -62,7 +62,7 @@ namespace ERPCore2.Services.Reports
                     : _formattedPrintService.RenderToImages(document);
 
                 var totalRecords = customerGroups.Sum(g => g.Transactions.Count);
-                return BatchPreviewResult.Success(images, document, totalRecords);
+                return BatchPreviewResult.Success(images, document, totalRecords, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -189,6 +189,7 @@ namespace ERPCore2.Services.Reports
             if (criteria.IncludePayments)
             {
                 var allSetoffs = await _setoffDocumentService.GetBySetoffTypeAsync(SetoffType.AccountsReceivable);
+                allSetoffs = allSetoffs.ExcludeDrafts();
 
                 if (criteria.CustomerIds.Any())
                     allSetoffs = allSetoffs.Where(s => criteria.CustomerIds.Contains(s.RelatedPartyId)).ToList();

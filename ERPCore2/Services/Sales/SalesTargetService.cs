@@ -220,7 +220,7 @@ namespace ERPCore2.Services
                 rows.Add(companyRow);
 
                 // 每位業務員一列
-                foreach (var emp in employees.OrderBy(e => e.Name))
+                foreach (var emp in employees.Where(e => !e.IsSuperAdmin).OrderBy(e => e.Name))
                 {
                     var row = new SalesTargetMatrixRow
                     {

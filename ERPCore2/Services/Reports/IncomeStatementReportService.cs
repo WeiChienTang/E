@@ -59,7 +59,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, accountLines.Count);
+                return BatchPreviewResult.Success(images, document, accountLines.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

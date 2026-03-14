@@ -244,6 +244,9 @@
   <data name="Preference.LanguageRegion" xml:space="preserve">
     <value>Wika at Rehiyon</value>
   </data>
+  <data name="Preference.Avatar" xml:space="preserve">
+    <value>Avatar</value>
+  </data>
   <data name="Preference.ChangePassword" xml:space="preserve">
     <value>Baguhin ang Password</value>
   </data>
@@ -1532,6 +1535,8 @@
   <data name="EmployeePhoto.UploadSuccess" xml:space="preserve"><value>Matagumpay na na-upload ang larawan</value></data>
   <data name="EmployeePhoto.DeleteMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong burahin ang larawang ito? Hindi na ito mababawi.</value></data>
   <data name="EmployeePhoto.Hint" xml:space="preserve"><value>Sinusuportahan ang JPG, PNG na format, maximum 2MB</value></data>
+  <data name="EmployeePhoto.UploadFailed" xml:space="preserve"><value>Nabigo ang pag-upload</value></data>
+  <data name="EmployeePhoto.DeleteFailed" xml:space="preserve"><value>Nabigo ang pagbura</value></data>
   <data name="Tab.ProductPhotos" xml:space="preserve"><value>Mga Larawan ng Produkto</value></data>
   <data name="ProductPhoto.SaveFirst" xml:space="preserve"><value>Mangyaring i-save muna ang datos ng produkto bago mag-upload ng larawan</value></data>
   <data name="ProductPhoto.PhotoList" xml:space="preserve"><value>Mga Larawan ng Produkto</value></data>

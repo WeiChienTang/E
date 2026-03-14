@@ -126,6 +126,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var maintenances = await GetMaintenancesByCriteriaAsync(criteria);
+                maintenances = maintenances.ExcludeDrafts();
 
                 if (!maintenances.Any())
                 {
@@ -138,7 +139,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, maintenances.Count);
+                return BatchPreviewResult.Success(images, document, maintenances.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -160,6 +161,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var maintenances = await GetMaintenancesByTypedCriteriaAsync(criteria);
+                maintenances = maintenances.ExcludeDrafts();
 
                 if (!maintenances.Any())
                 {
@@ -172,7 +174,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, maintenances.Count);
+                return BatchPreviewResult.Success(images, document, maintenances.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

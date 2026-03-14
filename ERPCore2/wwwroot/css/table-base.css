@@ -62,21 +62,20 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
-/* --- 表頭 — 統一漸層深色風格（兩個 Table 組件共用）--- */
+/* --- 表頭 — 輕色底 + 主色下邊框（兩個 Table 組件共用，與 section-header-primary 設計語言一致）--- */
 .table-header-primary {
-    background: linear-gradient(135deg, #1F2937 0%, #263345 100%) !important;
-    color: white !important;
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
     border-radius: 6px 6px 0 0 !important;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
 .table-header-primary th {
     background: transparent !important;
-    color: white !important;
-    border-color: rgba(255, 255, 255, 0.12) !important;
-    border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.18) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-light) !important;
+    border-left: 1px solid var(--border-light) !important;
+    border-right: 1px solid var(--border-light) !important;
+    border-bottom: 2px solid var(--primary-blue) !important;
     border-top: none !important;
     padding: 0.2rem 0.75rem !important;
     font-weight: 600 !important;
@@ -100,13 +99,13 @@
 
 /* 表頭圖標 */
 .table-header-primary th i {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: var(--primary-blue) !important;
     margin-right: 0.5rem;
 }
 
 /* 表頭必填標記 */
 .table-header-primary th .text-danger {
-    color: rgba(255, 150, 150, 0.95) !important;
+    color: var(--danger-color) !important;
     font-weight: bold !important;
 }
 
@@ -405,7 +404,7 @@
 }
 
 .table-container-hover .table thead th .fa-sort:hover {
-    color: #0d6efd !important;
+    color: var(--primary-blue) !important;
     transform: scale(1.1);
     transition: all 0.15s ease-in-out;
 }

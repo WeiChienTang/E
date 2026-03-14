@@ -27,7 +27,7 @@
 <CascadingValue Value="@((Action<string>)HandleNavigationAction)" Name="NavigationActionHandler">
 <div class="page">    
     <div class="sidebar">
-        <NavMenu OnActionTriggered="@HandleNavigationAction" />
+        <NavMenu @ref="navMenuRef" OnActionTriggered="@HandleNavigationAction" />
     </div>
 
     <main class="main-content">
@@ -131,7 +131,8 @@
 @* 個人化設定 Modal *@
 <PersonalPreferenceModalComponent IsVisible="@showPersonalPreference"
                                   IsVisibleChanged="@((bool visible) => showPersonalPreference = visible)"
-                                  OnSaved="@HandlePreferenceSaved" />
+                                  OnSaved="@HandlePreferenceSaved"
+                                  OnPhotoChanged="@HandleAvatarChanged" />
 
 @* 行事曆提醒 Toast（到期事項通知） *@
 @if (_dueReminders.Any() && (_currentPreference?.EnableCalendar ?? true) && (_currentPreference?.ShowCalendarBadge ?? true))
@@ -255,6 +256,9 @@
 
     // 系統參數設定 Modal 狀態
     private bool showSystemParameterSettings = false;
+
+    // NavMenu 參考（用於照片變更後刷新頭像）
+    private NavMenu? navMenuRef;
 
     // 個人化設定 Modal 狀態
     private bool showPersonalPreference = false;
@@ -628,6 +632,12 @@
     /// <summary>
     /// 個人化設定儲存後，重新載入偏好以立即套用啟用/停用狀態
     /// </summary>
+    private async Task HandleAvatarChanged()
+    {
+        if (navMenuRef != null)
+            await navMenuRef.RefreshAvatarAsync();
+    }
+
     private async Task HandlePreferenceSaved()
     {
         try

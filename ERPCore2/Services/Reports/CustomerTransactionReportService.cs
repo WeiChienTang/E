@@ -59,7 +59,7 @@ namespace ERPCore2.Services.Reports
                     : _formattedPrintService.RenderToImages(document);
 
                 var totalRecords = customerGroups.Sum(g => g.Transactions.Count);
-                return BatchPreviewResult.Success(images, document, totalRecords);
+                return BatchPreviewResult.Success(images, document, totalRecords, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

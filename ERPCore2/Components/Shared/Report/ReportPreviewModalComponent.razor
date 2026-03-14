@@ -1,6 +1,7 @@
 @* 報表列印操作 Modal *@
 @* 設計：篩選完成後提供「列印」「下載 PDF」「匯出 Excel」三個操作，不顯示預覽圖片。 *@
-@* 預覽圖片由 browserPrintImages iframe 負責；格式以報表列印配置的紙張設定為準。 *@
+@* 列印：FormattedHtmlRenderer → @page{size:Xcm Ycm} HTML → browserPrintHtml JS → iframe.print() *@
+@* PDF ：FormattedPrintService 150 DPI 重新渲染 → PdfExportService → 下載 *@
 
 @using ERPCore2.Services.Reports
 @using ERPCore2.Services.Reports.Interfaces
@@ -45,7 +46,7 @@
             <GenericButtonComponent Text="@L["Button.Print"]"
                                   Variant="ButtonVariant.Blue"
                                   OnClick="HandleBrowserPrint"
-                                  IsDisabled="@(IsLoading || _isGeneratingPdf || PreviewImages == null || !PreviewImages.Any())" />
+                                  IsDisabled="@(IsLoading || _isGeneratingPdf || (Documents == null && FormattedDocument == null))" />
 
             <GenericButtonComponent Text="@L["Button.Cancel"]"
                                   Variant="ButtonVariant.Red"
@@ -184,17 +185,11 @@
             if (!string.IsNullOrEmpty(ReportId))
             {
                 var reportConfig = await ReportPrintConfigurationService.GetByReportIdAsync(ReportId);
-                Console.WriteLine($"[ReportPreview] ReportId={ReportId}, Config={reportConfig?.Id}, PaperSettingId={reportConfig?.PaperSettingId}");
                 if (reportConfig?.PaperSettingId.HasValue == true)
                 {
                     var papers = await PaperSettingService.GetAllAsync();
                     _selectedPaper = papers?.FirstOrDefault(p => p.Id == reportConfig.PaperSettingId.Value);
-                    Console.WriteLine($"[ReportPreview] SelectedPaper={_selectedPaper?.Name}, W={_selectedPaper?.Width}, H={_selectedPaper?.Height}, Orientation={_selectedPaper?.Orientation}");
                 }
-            }
-            else
-            {
-                Console.WriteLine($"[ReportPreview] ReportId is empty → A4 fallback");
             }
 
             _isConfigurationLoaded = true;
@@ -333,36 +328,27 @@
                          : FormattedDocument != null ? new List<FormattedDocument> { FormattedDocument }
                          : null;
 
-            Console.WriteLine($"[Print] Documents={Documents?.Count ?? -1}, FormattedDocument={FormattedDocument?.DocumentName ?? "null"}, htmlDocs={htmlDocs?.Count.ToString() ?? "null"}");
-
             if (htmlDocs != null)
             {
                 var html = ERPCore2.Services.Reports.FormattedHtmlRenderer
                     .RenderBatchToHtml(htmlDocs, _selectedPaper);
 
-                // 輸出 @page 那行讓我們確認尺寸
-                var pageLineStart = html.IndexOf("@page");
-                if (pageLineStart >= 0)
-                    Console.WriteLine($"[Print] HTML @page: {html.Substring(pageLineStart, Math.Min(80, html.Length - pageLineStart))}");
-
                 var success = await JSRuntime.InvokeAsync<bool>("browserPrintHtml", html);
-                if (!success)
+                if (success)
+                {
+                    if (OnPrintSuccess.HasDelegate)
+                        await OnPrintSuccess.InvokeAsync();
+                    await CloseModal();
+                }
+                else
+                {
                     await NotificationService.ShowWarningAsync("列印初始化失敗，請稍後再試");
+                }
                 return;
             }
 
-            // 退回：圖片列印（無文件時）
-            Console.WriteLine($"[Print] 走圖片路徑，PreviewImages={PreviewImages?.Count ?? -1}");
-            if (PreviewImages == null || !PreviewImages.Any())
-                return;
-
-            var (widthCm, heightCm) = GetActualPaperDimensions();
-            Console.WriteLine($"[Print] 圖片列印 widthCm={widthCm}, heightCm={heightCm}");
-            var base64 = PreviewImages.Select(img => Convert.ToBase64String(img)).ToArray();
-            var imgSuccess = await JSRuntime.InvokeAsync<bool>(
-                "browserPrintImages", base64, DocumentName, widthCm, heightCm);
-            if (!imgSuccess)
-                await NotificationService.ShowWarningAsync("列印初始化失敗，請稍後再試");
+            // htmlDocs 為 null 時（文件和 FormattedDocument 都不存在），不應執行到這裡（按鈕已 disabled）
+            await NotificationService.ShowWarningAsync("無可列印的文件內容");
         }
         finally
         {

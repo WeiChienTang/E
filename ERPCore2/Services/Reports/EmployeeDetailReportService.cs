@@ -1,4 +1,5 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Reports;
 using ERPCore2.Models.Reports.FilterCriteria;
@@ -118,6 +119,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var employees = await GetEmployeesByCriteriaAsync(criteria);
+                employees = employees.ExcludeDrafts();
                 if (!employees.Any())
                     return BatchPreviewResult.Failure($"無符合條件的員工\n篩選條件：{criteria.GetSummary()}");
 
@@ -127,7 +129,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, employees.Count);
+                return BatchPreviewResult.Success(images, document, employees.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -149,6 +151,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var employees = await GetEmployeesByTypedCriteriaAsync(criteria);
+                employees = employees.ExcludeDrafts();
                 if (!employees.Any())
                     return BatchPreviewResult.Failure($"無符合條件的員工\n篩選條件：{criteria.GetSummary()}");
 
@@ -158,7 +161,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, employees.Count);
+                return BatchPreviewResult.Success(images, document, employees.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

@@ -1,0 +1,50 @@
+.avatar-preview-wrapper {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: 2px solid var(--border-color, #dee2e6);
+    transition: border-color 0.2s;
+}
+
+.avatar-preview-wrapper:hover {
+    border-color: var(--bs-primary);
+}
+
+.avatar-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatar-preview-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-secondary, #f8f9fa);
+    color: var(--text-secondary, #6c757d);
+    font-size: 2rem;
+}
+
+[data-bs-theme=dark] .avatar-preview-placeholder {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+/* 區段標題 — 與 GenericFormComponent 的 form-section-header 一致 */
+.section-header {
+    padding: 0.25rem 0;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-blue);
+}

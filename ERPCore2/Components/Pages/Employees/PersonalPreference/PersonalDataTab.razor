@@ -1,17 +1,101 @@
 @* 個人資料 Tab *@
-@* 帳號唯讀、姓名/手機/Email 可編輯；密碼獨立區塊 *@
+@* 帳號唯讀、姓名/手機/Email 可編輯；密碼獨立區塊；頭像自助上傳 *@
 @inject IStringLocalizer<SharedResource> L
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IWebHostEnvironment Environment
+@inject IJSRuntime JS
+
+@* ===== 頭像 ===== *@
+@if (Model != null && Model.Id > 0)
+{
+    <div class="mb-4">
+        <div class="section-header">
+            <span class="section-title"><i class="bi bi-person-circle me-2"></i>@L["Preference.Avatar"]</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="avatar-preview-wrapper" @onclick="OpenPreview" title="@L["Button.Preview"]">
+                @if (!string.IsNullOrEmpty(_currentPhotoPath))
+                {
+                    <img src="@_currentPhotoPath" class="avatar-preview-img" alt="Avatar" />
+                }
+                else
+                {
+                    <div class="avatar-preview-placeholder">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                }
+            </div>
+            <div class="d-flex flex-column gap-2">
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                       Size="ButtonSize.Small"
+                                       Text="@(string.IsNullOrEmpty(_currentPhotoPath) ? L["EmployeePhoto.Upload"].ToString() : L["EmployeePhoto.Change"].ToString())"
+                                       OnClick="TriggerFileInput" />
+                <InputFile id="photo-file-input" OnChange="@HandleFileSelected" accept=".jpg,.jpeg,.png" class="d-none" />
+                @if (!string.IsNullOrEmpty(_currentPhotoPath))
+                {
+                    <GenericButtonComponent Variant="ButtonVariant.Red"
+                                           Size="ButtonSize.Small"
+                                           Text="@L["Button.Delete"]"
+                                           OnClick="RequestDelete" />
+                }
+            </div>
+        </div>
+        @if (isUploading)
+        {
+            <div class="text-muted small mt-2">
+                <div class="spinner-border spinner-border-sm me-1" role="status"></div>
+                @L["Label.PleaseWait"]
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(uploadError))
+        {
+            <div class="alert alert-danger py-2 mt-2 mb-0">@uploadError</div>
+        }
+    </div>
+}
 
 <GenericFormComponent TModel="Employee"
                       Model="@(Model ?? _fallback)"
                       FieldDefinitions="@allFields"
                       FieldSections="@fieldSections" />
 
+@* ===== 刪除確認 Modal ===== *@
+<GenericConfirmModalComponent IsVisible="@showDeleteModal"
+                              IsVisibleChanged="@((bool v) => showDeleteModal = v)"
+                              Title="@L["EmployeePhoto.Delete"]"
+                              Icon="bi-trash"
+                              Message="@L["EmployeePhoto.DeleteMessage"]"
+                              ConfirmButtonText="@L["Button.ConfirmDelete"]"
+                              CancelButtonText="@L["Button.Cancel"]"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@ConfirmDeleteAsync"
+                              OnCancel="@(() => showDeleteModal = false)" />
+
+@* ===== 預覽 Modal ===== *@
+@if (showPreview && !string.IsNullOrEmpty(_currentPhotoPath))
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.7);" @onclick="ClosePreview">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@L["Preference.Avatar"]</h5>
+                    <GenericButtonComponent CssClass="btn-close" OnClick="ClosePreview" />
+                </div>
+                <div class="modal-body text-center p-2">
+                    <img src="@_currentPhotoPath" class="img-fluid" alt="Avatar" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @* ===== 變更密碼 ===== *@
-<div class="mt-4 pt-3 border-top">
-    <h6 class="mb-3">
-        <i class="bi bi-shield-lock me-2"></i>@L["Preference.ChangePassword"]
-    </h6>
+<div class="mt-4">
+    <div class="section-header">
+        <span class="section-title"><i class="bi bi-shield-lock me-2"></i>@L["Preference.ChangePassword"]</span>
+    </div>
     <p class="text-muted small mb-3">@L["Password.LeaveBlank"]。</p>
 
     <div class="row g-3">
@@ -71,10 +155,27 @@
     [Parameter]
     public EventCallback<string> ConfirmPasswordChanged { get; set; }
 
+    [Parameter]
+    public EventCallback<string?> OnPhotoChanged { get; set; }
+
     private readonly Employee _fallback = new();
+
+    // ===== 頭像狀態 =====
+    private string? _currentPhotoPath;
+    private bool isUploading = false;
+    private string? uploadError = null;
+    private bool showDeleteModal = false;
+    private bool showPreview = false;
 
     private List<FormFieldDefinition> allFields = new();
     private Dictionary<string, string> fieldSections = new();
+
+    protected override void OnParametersSet()
+    {
+        // 每次 Model 換人時同步照片路徑（避免殘留上一個員工的狀態）
+        _currentPhotoPath = Model?.PhotoPath;
+        uploadError = null;
+    }
 
     protected override void OnInitialized()
     {
@@ -121,5 +222,105 @@
             { nameof(Employee.Mobile),  L["Preference.BasicInfo"] },
             { nameof(Employee.Email),   L["Preference.BasicInfo"] }
         };
+    }
+
+    // ===== 頭像上傳 =====
+
+    private async Task TriggerFileInput()
+    {
+        await JS.InvokeVoidAsync("eval", "document.getElementById('photo-file-input').click()");
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        if (Model == null || Model.Id <= 0) return;
+
+        uploadError = null;
+        isUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            var (success, message, filePath) = await FileUploadHelper.UploadImageAsync(
+                e.File, "employee-photos", Environment, _currentPhotoPath);
+
+            if (!success)
+            {
+                uploadError = message;
+                return;
+            }
+
+            var result = await EmployeeService.UpdatePhotoPathAsync(Model.Id, filePath!);
+            if (result.IsSuccess)
+            {
+                _currentPhotoPath = filePath;
+                await NotificationService.ShowSuccessAsync(L["EmployeePhoto.UploadSuccess"]);
+                await OnPhotoChanged.InvokeAsync(_currentPhotoPath);
+            }
+            else
+            {
+                uploadError = result.ErrorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadError = $"{L["EmployeePhoto.UploadFailed"]}：{ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void RequestDelete()
+    {
+        showDeleteModal = true;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (string.IsNullOrEmpty(_currentPhotoPath)) return;
+
+        try
+        {
+            FileUploadHelper.DeleteFile(_currentPhotoPath, Environment);
+            var result = await EmployeeService.ClearPhotoAsync(Model!.Id);
+            if (result.IsSuccess)
+            {
+                _currentPhotoPath = null;
+                await NotificationService.ShowSuccessAsync(L["EmployeePhoto.DeleteSuccess"]);
+                await OnPhotoChanged.InvokeAsync(null);
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"{L["EmployeePhoto.DeleteFailed"]}：{ex.Message}");
+        }
+        finally
+        {
+            showDeleteModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OpenPreview()
+    {
+        if (!string.IsNullOrEmpty(_currentPhotoPath))
+        {
+            showPreview = true;
+            StateHasChanged();
+        }
+    }
+
+    private void ClosePreview()
+    {
+        showPreview = false;
+        StateHasChanged();
     }
 }

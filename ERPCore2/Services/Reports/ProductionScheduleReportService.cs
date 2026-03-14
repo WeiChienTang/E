@@ -59,7 +59,7 @@ namespace ERPCore2.Services.Reports
                     : _formattedPrintService.RenderToImages(document);
 
                 var totalItems = scheduleGroups.Sum(g => g.Items.Count);
-                return BatchPreviewResult.Success(images, document, totalItems);
+                return BatchPreviewResult.Success(images, document, totalItems, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -214,6 +214,7 @@ namespace ERPCore2.Services.Reports
                 // 取得日期範圍內的排程主檔
                 schedules = await _scheduleService.GetByDateRangeAsync(startDate.Date, endDate.Date);
             }
+            schedules = schedules.ExcludeDrafts();
 
             // 篩選客戶
             if (criteria.CustomerIds.Any())
@@ -228,6 +229,7 @@ namespace ERPCore2.Services.Reports
 
             // 取得所有排程項目（含 Product、ProductionSchedule 等導航屬性）
             var allItems = await _itemService.GetAllAsync();
+            allItems = allItems.ExcludeDrafts();
 
             var scheduleIds = schedules.Select(s => s.Id).ToHashSet();
 

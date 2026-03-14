@@ -120,6 +120,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var records = await GetRecordsByCriteriaAsync(criteria);
+                records = records.ExcludeDrafts();
 
                 if (!records.Any())
                     return BatchPreviewResult.Failure($"無符合條件的磅秤紀錄\n篩選條件：{criteria.GetSummary()}");
@@ -130,7 +131,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, records.Count);
+                return BatchPreviewResult.Success(images, document, records.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -152,6 +153,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var records = await GetRecordsByTypedCriteriaAsync(criteria);
+                records = records.ExcludeDrafts();
 
                 if (!records.Any())
                     return BatchPreviewResult.Failure($"無符合條件的磅秤紀錄\n篩選條件：{criteria.GetSummary()}");
@@ -162,7 +164,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, records.Count);
+                return BatchPreviewResult.Success(images, document, records.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

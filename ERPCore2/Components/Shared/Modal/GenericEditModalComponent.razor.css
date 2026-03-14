@@ -21,7 +21,7 @@
     /* 按鈕容器：水平單行捲動（避免垂直堆疊過高推擠 modal-body） */
     .modal-buttons-container {
         flex-direction: row;
-        flex-wrap: nowrap;
+        flex-wrap: nowrap !important;
         align-items: center !important;
         gap: 0.25rem;
         padding: 0 !important;

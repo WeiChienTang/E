@@ -38,54 +38,16 @@ main {
 }
 
 @media (max-width: 640.98px) {
-    .top-row {
-        justify-content: space-between;
+    /* 手機模式：sidebar 不佔流式空間，NavMenu 子元素自行處理 fixed 定位 */
+    .sidebar {
+        height: 0;
+        overflow: visible;
+        position: static;
     }
 
-    .top-row a, .top-row .btn-link {
-        margin-left: 0;
-    }
-    
-    /* 手機模式下 sidebar 不佔用空間，NavMenu 使用 fixed 定位 */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 1050;
-        height: auto;
-        width: 100%;
-    }
-    
-    /* 主內容區域需要為固定的 top-row 留出空間 */
+    /* 主內容為 NavMenu 的固定 Header（3rem）留出空間 */
     .main-content {
-        margin-top: 3.5rem;
-        transition: opacity 0.2s ease;
-    }
-    
-    /* 當導航選單開啟時，主內容可以有輕微的視覺提示 */
-    .page:has(.navbar-toggler:checked) .main-content {
-        position: relative;
-    }
-    
-    .page:has(.navbar-toggler:checked) .main-content::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.1);
-        z-index: 999;
-        pointer-events: none;
-        opacity: 0;
-        animation: fadeIn 0.2s ease forwards;
-    }
-    
-    @keyframes fadeIn {
-        to {
-            opacity: 1;
-        }
+        margin-top: 3rem;
     }
 }
 

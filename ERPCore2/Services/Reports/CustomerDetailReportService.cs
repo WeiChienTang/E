@@ -1,4 +1,5 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
 using ERPCore2.Models.Reports;
@@ -124,6 +125,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var customers = await GetCustomersByCriteriaAsync(criteria);
+                customers = customers.ExcludeDrafts();
                 if (!customers.Any())
                     return BatchPreviewResult.Failure($"無符合條件的客戶\n篩選條件：{criteria.GetSummary()}");
 
@@ -134,7 +136,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, customers.Count);
+                return BatchPreviewResult.Success(images, document, customers.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -156,6 +158,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var customers = await GetCustomersByTypedCriteriaAsync(criteria);
+                customers = customers.ExcludeDrafts();
                 if (!customers.Any())
                     return BatchPreviewResult.Failure($"無符合條件的客戶\n篩選條件：{criteria.GetSummary()}");
 
@@ -166,7 +169,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, customers.Count);
+                return BatchPreviewResult.Success(images, document, customers.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

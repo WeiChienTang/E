@@ -55,7 +55,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, analysisData.Count);
+                return BatchPreviewResult.Success(images, document, analysisData.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {

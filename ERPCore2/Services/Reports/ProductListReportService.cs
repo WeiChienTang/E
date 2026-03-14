@@ -125,6 +125,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var products = await GetProductsByCriteriaAsync(criteria);
+                products = products.ExcludeDrafts();
 
                 if (!products.Any())
                 {
@@ -137,7 +138,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, products.Count);
+                return BatchPreviewResult.Success(images, document, products.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
@@ -156,6 +157,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var products = await GetProductsByTypedCriteriaAsync(criteria);
+                products = products.ExcludeDrafts();
 
                 if (!products.Any())
                 {
@@ -168,7 +170,7 @@ namespace ERPCore2.Services.Reports
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
 
-                return BatchPreviewResult.Success(images, document, products.Count);
+                return BatchPreviewResult.Success(images, document, products.Count, new List<FormattedDocument> { document });
             }
             catch (Exception ex)
             {
