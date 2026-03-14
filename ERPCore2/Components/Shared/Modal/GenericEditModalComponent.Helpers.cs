@@ -60,32 +60,6 @@ public partial class GenericEditModalComponent<TEntity, TService>
             await OnPrintSuccess.InvokeAsync();
     }
 
-    private async Task HandlePaperSettingChanged(PaperSetting paperSetting)
-    {
-        try
-        {
-            if (Entity == null || Entity.Id <= 0 || ReportService == null) return;
-
-            if (_formattedDocument != null)
-            {
-                _formattedDocument.PageSettings.PageWidth = (float)paperSetting.Width;
-                _formattedDocument.PageSettings.PageHeight = (float)paperSetting.Height;
-                _formattedDocument.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
-                _formattedDocument.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
-                _formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
-                _formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
-            }
-
-            _reportPreviewImages = await ReportService.RenderToImagesAsync(Entity.Id, paperSetting);
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync("更新預覽時發生錯誤");
-            LogError("HandlePaperSettingChanged", ex);
-        }
-    }
-
     private async Task HandlePreview()
     {
         if (OnPreview.HasDelegate)

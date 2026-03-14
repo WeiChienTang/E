@@ -13,7 +13,11 @@
     <Compile Remove="DeploymentPackages\**" />
     <EmbeddedResource Remove="DeploymentPackages\**" />
     <None Remove="DeploymentPackages\**" />
+    <Content Remove="publish\**" />
     <Compile Remove="publish\**" />
+    <EmbeddedResource Remove="publish\**" />
+    <None Remove="publish\**" />
+    <StaticWebAsset Remove="publish\**" />
   </ItemGroup>
 
   <ItemGroup>

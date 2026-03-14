@@ -110,6 +110,19 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(PaperSetting.Orientation),
+                    Label = L["Field.PaperOrientation"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "直式：高度 > 寬度；橫式：寬度 > 高度",
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = "Portrait", Text = L["PaperOrientation.Portrait"] },
+                        new() { Value = "Landscape", Text = L["PaperOrientation.Landscape"] }
+                    }
+                },
+                new()
+                {
                     PropertyName = nameof(PaperSetting.TopMargin),
                     Label = L["Field.PaperTopMargin"],
                     FieldType = FormFieldType.Number,
@@ -160,6 +173,7 @@
                 .AddToSection(L["Section.PaperSize"],
                     ps => ps.Width,
                     ps => ps.Height,
+                    ps => ps.Orientation,
                     ps => ps.TopMargin,
                     ps => ps.BottomMargin,
                     ps => ps.LeftMargin,
@@ -214,6 +228,7 @@
             var entity = editModalComponent.Entity;
             entity.Width = selectedPaper.Width;
             entity.Height = selectedPaper.Height;
+            entity.Orientation = selectedPaper.Orientation;
             entity.TopMargin = selectedPaper.TopMargin;
             entity.BottomMargin = selectedPaper.BottomMargin;
             entity.LeftMargin = selectedPaper.LeftMargin;

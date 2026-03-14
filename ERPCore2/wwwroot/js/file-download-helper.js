@@ -107,6 +107,62 @@ window.browserPrintImages = function (base64Images, title, widthCm, heightCm) {
     }
 };
 /**
+ * 以 HTML 字串開啟瀏覽器列印對話框
+ * 使用隱藏 iframe，讓瀏覽器原生處理排版、DPI 與紙張尺寸，
+ * 徹底解決點陣圖渲染的尺寸不符問題。
+ * @param {string} htmlContent - 完整 HTML 字串（含 @page CSS）
+ */
+window.browserPrintHtml = function (htmlContent) {
+    try {
+        var iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;visibility:hidden;';
+        document.body.appendChild(iframe);
+
+        var doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(htmlContent);
+        doc.close();
+
+        setTimeout(function () {
+            if (iframe.contentWindow) {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            }
+            setTimeout(function () {
+                if (iframe.parentNode) {
+                    iframe.parentNode.removeChild(iframe);
+                }
+            }, 3000);
+        }, 300);
+
+        return true;
+    } catch (e) {
+        console.error('HTML 列印失敗:', e);
+        return false;
+    }
+};
+
+/**
+ * 【測試用】在新分頁預覽 HTML（不觸發列印對話框）
+ * @param {string} htmlContent - 完整 HTML 字串
+ */
+window.previewHtmlInNewTab = function (htmlContent) {
+    try {
+        var w = window.open('', '_blank');
+        if (w) {
+            w.document.open();
+            w.document.write(htmlContent);
+            w.document.close();
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error('HTML 預覽失敗:', e);
+        return false;
+    }
+};
+
+/**
  * 從 byte 陣列下載檔案
  * @param {string} fileName - 檔案名稱（含副檔名）
  * @param {Uint8Array} byteArray - byte 陣列

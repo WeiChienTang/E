@@ -18,42 +18,58 @@
 /* ===== 手機版響應式設計 ===== */
 
 @media (max-width: 576px) {
-    /* 按鈕容器：允許換行並置中 */
+    /* 按鈕容器：水平單行捲動（避免垂直堆疊過高推擠 modal-body） */
     .modal-buttons-container {
-        flex-direction: column;
-        align-items: stretch !important;
-        gap: 0.5rem;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center !important;
+        gap: 0.25rem;
         padding: 0 !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
-    
-    /* 自訂按鈕區：佔滿一行並置中 */
+
+    .modal-buttons-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* 自訂按鈕區：不全寬，靠左對齊，右側分隔線 */
     .custom-buttons-section {
-        margin-right: 0 !important;
-        justify-content: center !important;
-        width: 100%;
-        padding-bottom: 0.25rem;
-        border-bottom: 1px solid var(--border-color);
+        margin-right: 0.25rem !important;
+        justify-content: flex-start !important;
+        width: auto;
+        flex-shrink: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+        border-right: 1px solid var(--border-color);
+        padding-right: 0.25rem;
     }
-    
+
     /* 狀態訊息區域 */
-    .modal-buttons-container > div:not(.custom-buttons-section):not(.d-flex:last-child) {
-        text-align: center;
-        width: 100%;
+    .modal-buttons-container > div:not(.custom-buttons-section):not(.d-flex) {
+        text-align: left;
+        width: auto;
+        flex-shrink: 0;
     }
-    
-    /* 右側標準按鈕區：允許換行 */
+
+    /* 右側標準按鈕區：不換行 */
     .modal-buttons-container > .d-flex:last-child {
-        flex-wrap: wrap;
-        justify-content: center;
-        width: 100%;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        width: auto;
+        flex-shrink: 0;
         gap: 0.25rem !important;
     }
-    
-    /* 審核按鈕區也要置中 */
+
+    /* 審核按鈕區 */
     .modal-buttons-container > .d-flex.me-3 {
-        margin-right: 0 !important;
-        justify-content: center;
-        width: 100%;
+        margin-right: 0.25rem !important;
+        justify-content: flex-start;
+        width: auto;
+        flex-shrink: 0;
     }
 }
 

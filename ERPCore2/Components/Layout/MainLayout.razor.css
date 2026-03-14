@@ -10,7 +10,7 @@ main {
 }
 
 .sidebar {
-    background: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-blue-alt) 70%);
+    background: var(--nav-bg);
 }
 
 .top-row {

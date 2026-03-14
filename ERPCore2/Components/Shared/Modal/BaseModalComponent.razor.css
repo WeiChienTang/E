@@ -77,8 +77,11 @@
 /* Body 樣式優化 */
 ::deep .modal-body {
     padding: 1.5rem;
-    max-height: calc(100vh - 210px);
+    max-height: calc(100vh - 210px);   /* fallback */
+    max-height: calc(100svh - 210px);  /* iOS 15.4+：小視窗高度，含 Safari UI */
+    max-height: calc(100dvh - 210px);  /* iOS 16+ / Chrome 108+：動態調整 */
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* iOS 慣性捲動 */
 }
 
 /* Footer 樣式優化 */
@@ -157,9 +160,11 @@
         margin: 0.5rem;
         max-width: calc(100% - 1rem);
     }
-    
+
     ::deep .modal-body {
-        max-height: calc(100vh - 180px);
+        max-height: calc(100vh - 180px);   /* fallback */
+        max-height: calc(100svh - 180px);  /* iOS 15.4+ */
+        max-height: calc(100dvh - 180px);  /* iOS 16+ / Chrome 108+ */
     }
 }
 
@@ -196,7 +201,9 @@
 ::deep .modal-dialog.modal-desktop {
     max-width: 95%;
     width: 95%;
-    height: calc(100vh - 3rem);
+    height: calc(100vh - 3rem);   /* fallback */
+    height: calc(100svh - 3rem);  /* iOS 15.4+：確保不超出可見視窗 */
+    height: calc(100dvh - 3rem);  /* iOS 16+ / Chrome 108+：動態調整 */
 }
 
 /* 中等螢幕（≥ 1200px）：90% 寬度，最大 1400px */
@@ -235,6 +242,7 @@
     min-height: 0;
     max-height: none;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* iOS 慣性捲動 */
 }
 
 /* ===== 確保 Modal 可互動性 ===== */
@@ -267,34 +275,29 @@
     background-color: var(--bg-secondary);
 }
 
-/* 手機版：允許換行 + 水平捲動 */
+/* 手機版：水平單行捲動（防止過高推擠 modal-body） */
 @media (max-width: 576px) {
     ::deep .modal-action-bar {
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-wrap: nowrap;                    /* 不換行，保持單行 */
+        overflow-x: auto;                     /* 水平捲動 */
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;    /* iOS 慣性捲動 */
+        justify-content: flex-start;
         gap: 0.25rem;
-        padding: 0.5rem !important;
+        padding: 0.375rem 0.5rem !important;
+        scrollbar-width: none;                /* Firefox 隱藏捲軸 */
+        -ms-overflow-style: none;
     }
-    
-    /* 讓內部的 flex 容器也允許換行 */
+
+    ::deep .modal-action-bar::-webkit-scrollbar {
+        display: none;                        /* WebKit 隱藏捲軸 */
+    }
+
+    /* 內部 flex 容器不換行、不壓縮 */
     ::deep .modal-action-bar > .d-flex {
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-wrap: nowrap;
+        flex-shrink: 0;
         gap: 0.25rem !important;
-    }
-    
-    /* 左側自訂按鈕區 */
-    ::deep .modal-action-bar > .d-flex.me-auto {
-        margin-right: 0 !important;
-        width: 100%;
-        justify-content: center;
-        margin-bottom: 0.25rem;
-    }
-    
-    /* 右側標準按鈕區 */
-    ::deep .modal-action-bar > .d-flex:last-child {
-        width: 100%;
-        justify-content: center;
     }
 }
 

@@ -1178,7 +1178,10 @@
   <data name="Field.PaperLeftMargin" xml:space="preserve"><value>Left Margin</value></data>
   <data name="Field.PaperRightMargin" xml:space="preserve"><value>Right Margin</value></data>
   <data name="Field.PaperTopMargin" xml:space="preserve"><value>Top Margin</value></data>
+  <data name="Field.PaperOrientation" xml:space="preserve"><value>Paper Orientation</value></data>
   <data name="Field.PaperWidth" xml:space="preserve"><value>Paper Width</value></data>
+  <data name="PaperOrientation.Portrait" xml:space="preserve"><value>Portrait</value></data>
+  <data name="PaperOrientation.Landscape" xml:space="preserve"><value>Landscape</value></data>
   <data name="Field.Printer" xml:space="preserve"><value>Printer</value></data>
   <data name="Field.PrinterCode" xml:space="preserve"><value>Printer Code</value></data>
   <data name="Field.PrinterIpAddress" xml:space="preserve"><value>IP Address</value></data>
@@ -3326,6 +3329,25 @@
   <data name="SalesTarget.AllYear" xml:space="preserve"><value>Full Year</value></data>
   <data name="SalesTarget.CompanyTotal" xml:space="preserve"><value>Company Total</value></data>
   <data name="SalesTarget.TargetAmount" xml:space="preserve"><value>Target Amount</value></data>
+  <data name="SalesTarget.BatchInput" xml:space="preserve"><value>Batch Set Targets</value></data>
+  <data name="SalesTarget.CopyLastYear" xml:space="preserve"><value>Copy Last Year</value></data>
+  <data name="SalesTarget.MonthlySum" xml:space="preserve"><value>Monthly Sum</value></data>
+  <data name="SalesTarget.Annual" xml:space="preserve"><value>Annual Target</value></data>
+  <data name="SalesTarget.BatchEmptyHint" xml:space="preserve"><value>Select a year and click Load</value></data>
+  <data name="SalesTarget.BatchFooterHint" xml:space="preserve"><value>Year {0}: Set amount to 0 to delete the target</value></data>
+  <data name="SalesTarget.RowCount" xml:space="preserve"><value>Salesperson Count</value></data>
+  <data name="Button.Load" xml:space="preserve"><value>Load</value></data>
+  <data name="SalesTarget.ManagementTitle" xml:space="preserve"><value>Sales Target Management</value></data>
+  <data name="SalesTarget.AddYear" xml:space="preserve"><value>Add Year</value></data>
+  <data name="SalesTarget.PersonalTargets" xml:space="preserve"><value>Personal Targets (Optional)</value></data>
+  <data name="SalesTarget.HasData" xml:space="preserve"><value>Set</value></data>
+  <data name="SalesTarget.UnsavedChanges" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="SalesTarget.YearSwitchConfirm" xml:space="preserve"><value>Year {0} has unsaved changes. Save before switching?</value></data>
+  <data name="SalesTarget.CloseConfirm" xml:space="preserve"><value>Year {0} has unsaved changes. Save before closing?</value></data>
+  <data name="SalesTarget.SaveAndSwitch" xml:space="preserve"><value>Save &amp; Switch</value></data>
+  <data name="SalesTarget.DiscardAndSwitch" xml:space="preserve"><value>Discard &amp; Switch</value></data>
+  <data name="SalesTarget.SaveAndClose" xml:space="preserve"><value>Save &amp; Close</value></data>
+  <data name="SalesTarget.DiscardAndClose" xml:space="preserve"><value>Discard &amp; Close</value></data>
   <data name="Entity.SalesTarget" xml:space="preserve"><value>Sales Target</value></data>
   <data name="Page.SalesTargetTitle" xml:space="preserve"><value>Sales Target Management</value></data>
   <data name="Page.SalesTargetSubtitle" xml:space="preserve"><value>Set and track salesperson sales targets</value></data>

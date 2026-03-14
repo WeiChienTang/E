@@ -1,0 +1,527 @@
+@* 業績目標管理 Modal — 統一入口（年份 Tab + 公司整體 + 個人目標 toggle） *@
+@inject ISalesTargetService SalesTargetService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@HandleModalVisibleChanged"
+                   Title="@L["SalesTarget.ManagementTitle"]"
+                   Icon="bi bi-bullseye"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   Size="BaseModalComponent.ModalSize.Desktop"
+                   AllowFullscreen="true"
+                   ScrollableBody="true"
+                   CloseOnBackdropClick="false"
+                   CloseOnEscape="true"
+                   IsLoading="@isLoading"
+                   LoadingMessage="@L["Label.Loading"]"
+                   ShowFooter="true"
+                   DebugComponentName="SalesTargetManagementModal">
+
+    <HeaderButtons>
+        <div class="w-100 d-flex align-items-center gap-2">
+
+            @* ── 年份 Tab 捲動區（flex-grow，最新靠左） ── *@
+            <div class="year-tabs-wrapper">
+                @foreach (var year in availableYears)
+                {
+                    <button type="button"
+                            class="year-tab-btn @(year == selectedYear ? "active" : "")"
+                            @onclick="() => HandleYearTabClickAsync(year)">
+                        @year
+                    </button>
+                }
+
+                @* 新增年度 — 內聯輸入 *@
+                @if (_showAddYearInput)
+                {
+                    <span class="d-inline-flex align-items-center gap-1 ms-1">
+                        <input type="number"
+                               class="form-control year-input"
+                               value="@_newYear"
+                               min="2000" max="2100"
+                               @onchange="OnNewYearChanged" />
+                        <button type="button" class="btn btn-success p-1 lh-1"
+                                @onclick="ConfirmAddYearAsync" title="確認">
+                            <i class="bi bi-check2"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary p-1 lh-1"
+                                @onclick="CancelAddYear" title="取消">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </span>
+                }
+                else
+                {
+                    <button type="button" class="year-tab-btn add-year-btn"
+                            @onclick="StartAddYear"
+                            title="@L["SalesTarget.AddYear"]">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                }
+            </div>
+
+            @* ── 操作按鈕群（靠右，不換行） ── *@
+            <div class="d-flex gap-2 flex-shrink-0">
+                <GenericButtonComponent Text="@L["SalesTarget.CopyLastYear"]"
+                                        Variant="ButtonVariant.DarkBlue"
+                                        Size="ButtonSize.Small"
+                                        OnClick="@CopyFromLastYearAsync" />
+                <GenericButtonComponent Text="@L["Button.Save"]"
+                                        Variant="ButtonVariant.Green"
+                                        Size="ButtonSize.Small"
+                                        IsDisabled="@(!_isDirty)"
+                                        OnClick="@HandleSaveAsync" />
+                <GenericButtonComponent Text="@L["Button.Close"]"
+                                        Variant="ButtonVariant.Red"
+                                        Size="ButtonSize.Small"
+                                        OnClick="@HandleCloseAsync" />
+            </div>
+        </div>
+    </HeaderButtons>
+
+    <BodyContent>
+        <div class="target-body-container">
+            <div style="overflow-x: auto;">
+                <GenericInteractiveTableComponent TItem="SalesTargetMatrixRow"
+                                                  Items="@_currentDisplayRows"
+                                                  ColumnDefinitions="@columnDefinitions"
+                                                  ShowHeader="true"
+                                                  ShowActions="false"
+                                                  ShowBuiltInActions="false"
+                                                  ShowRowNumbers="false"
+                                                  IsStriped="false"
+                                                  IsHoverable="false"
+                                                  IsBordered="true"
+                                                  EnableAutoEmptyRow="false"
+                                                  DataLoadCompleted="@dataLoadCompleted"
+                                                  GetRowCssClass="@GetRowCssClass"
+                                                  OnDataChanged="@HandleDataChanged"
+                                                  EmptyMessage="@L["SalesTarget.BatchEmptyHint"]" />
+            </div>
+
+            @* ── 個人目標 toggle ── *@
+            <div class="mt-2 ms-1">
+                <button type="button"
+                        class="personal-toggle-btn"
+                        @onclick="TogglePersonalTargets">
+                    <i class="bi @(_showPersonalTargets ? "bi-chevron-down" : "bi-chevron-right") me-1"></i>
+                    <span>@L["SalesTarget.PersonalTargets"]</span>
+                    @if (!_showPersonalTargets && matrixRows.Any(r => !r.IsCompanyTotal && (r.MonthlySum > 0 || r.Annual > 0)))
+                    {
+                        <span class="badge rounded-pill ms-1 has-data-badge">@L["SalesTarget.HasData"]</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </BodyContent>
+
+    <FooterContent>
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <span class="text-muted">@string.Format(L["SalesTarget.BatchFooterHint"].ToString(), selectedYear)</span>
+            @if (_isDirty)
+            {
+                <span class="unsaved-indicator">
+                    <i class="bi bi-exclamation-circle me-1"></i>@L["SalesTarget.UnsavedChanges"]
+                </span>
+            }
+        </div>
+    </FooterContent>
+</BaseModalComponent>
+
+@* 未儲存變更確認對話框（年份切換 / 關閉共用） *@
+<GenericConfirmModalComponent IsVisible="@_showUnsavedConfirm"
+                               IsVisibleChanged="@HandleUnsavedConfirmVisibleChanged"
+                               Title="@L["SalesTarget.UnsavedChanges"]"
+                               Icon="bi-exclamation-triangle"
+                               HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                               Message="@_unsavedConfirmMessage"
+                               ConfirmButtonText="@_unsavedConfirmText"
+                               CancelButtonText="@_unsavedDiscardText"
+                               ConfirmButtonVariant="ButtonVariant.Green"
+                               OnConfirm="@HandleUnsavedConfirm"
+                               OnCancel="@HandleUnsavedDiscard" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // ── 資料狀態 ──
+    private bool isLoading = false;
+    private bool dataLoadCompleted = true;
+    private List<int> availableYears = new();
+    private int selectedYear = DateTime.Today.Year;
+    private List<SalesTargetMatrixRow> matrixRows = new();
+    private List<SalesTargetMatrixRow> _currentDisplayRows = new();
+    private List<InteractiveColumnDefinition> columnDefinitions = new();
+    private List<Employee> employees = new();
+
+    // ── UI 狀態 ──
+    private bool _showPersonalTargets = false;
+    private bool _isDirty = false;
+    private bool _showAddYearInput = false;
+    private int _newYear = DateTime.Today.Year + 1;
+    private bool _previousIsVisible = false;
+
+    // ── 未儲存確認 Modal ──
+    private bool _showUnsavedConfirm = false;
+    private string _unsavedConfirmMessage = "";
+    private string _unsavedConfirmText = "";
+    private string _unsavedDiscardText = "";
+    private Func<Task>? _onUnsavedSave;
+    private Func<Task>? _onUnsavedDiscard;
+
+    // ══════════════════════════════════════════════════
+    // 生命週期
+    // ══════════════════════════════════════════════════
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !_previousIsVisible)
+            await InitializeAsync();
+        _previousIsVisible = IsVisible;
+    }
+
+    private async Task InitializeAsync()
+    {
+        try
+        {
+            isLoading = true;
+            dataLoadCompleted = false;
+            _isDirty = false;
+            StateHasChanged();
+
+            employees = await EmployeeService.GetAllAsync();
+            availableYears = await SalesTargetService.GetAvailableYearsAsync();
+            selectedYear = availableYears.FirstOrDefault(DateTime.Today.Year);
+
+            BuildColumnDefinitions();
+            await LoadYearDataAsync(selectedYear);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"初始化失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            dataLoadCompleted = true;
+            StateHasChanged();
+        }
+    }
+
+    // ══════════════════════════════════════════════════
+    // 資料載入
+    // ══════════════════════════════════════════════════
+
+    private async Task LoadYearDataAsync(int year)
+    {
+        matrixRows = await SalesTargetService.GetMatrixByYearAsync(year, employees);
+        _showPersonalTargets = false;
+        UpdateDisplayRows();
+    }
+
+    private void UpdateDisplayRows()
+    {
+        var newRows = new List<SalesTargetMatrixRow>();
+        var companyRow = matrixRows.FirstOrDefault(r => r.IsCompanyTotal);
+        if (companyRow != null) newRows.Add(companyRow);
+        if (_showPersonalTargets)
+            newRows.AddRange(matrixRows.Where(r => !r.IsCompanyTotal));
+        _currentDisplayRows = newRows;
+    }
+
+    private void BuildColumnDefinitions()
+    {
+        columnDefinitions = new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = L["Field.SalesPerson"].ToString(),
+                PropertyName = nameof(SalesTargetMatrixRow.SalespersonName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "130px",
+                IsReadOnly = true
+            }
+        };
+
+        for (int m = 1; m <= 12; m++)
+        {
+            columnDefinitions.Add(new InteractiveColumnDefinition
+            {
+                Title = $"{m:D2}月",
+                PropertyName = $"M{m:D2}",
+                ColumnType = InteractiveColumnType.Number,
+                Width = "85px",
+                MinValue = 0,
+                UseThousandsSeparator = true,
+                TextAlign = "right"
+            });
+        }
+
+        columnDefinitions.Add(new InteractiveColumnDefinition
+        {
+            Title = L["SalesTarget.MonthlySum"].ToString(),
+            PropertyName = nameof(SalesTargetMatrixRow.MonthlySum),
+            ColumnType = InteractiveColumnType.Display,
+            Width = "95px",
+            IsReadOnly = true,
+            TextAlign = "right",
+            DisplayFormatter = item => item is SalesTargetMatrixRow r ? r.MonthlySum.ToString("N0") : ""
+        });
+
+        columnDefinitions.Add(new InteractiveColumnDefinition
+        {
+            Title = L["SalesTarget.Annual"].ToString(),
+            PropertyName = nameof(SalesTargetMatrixRow.Annual),
+            ColumnType = InteractiveColumnType.Number,
+            Width = "95px",
+            MinValue = 0,
+            UseThousandsSeparator = true,
+            TextAlign = "right"
+        });
+    }
+
+    // ══════════════════════════════════════════════════
+    // 年份 Tab
+    // ══════════════════════════════════════════════════
+
+    private async Task HandleYearTabClickAsync(int year)
+    {
+        if (year == selectedYear) return;
+
+        if (_isDirty)
+        {
+            ShowUnsavedConfirm(
+                string.Format(L["SalesTarget.YearSwitchConfirm"].ToString(), selectedYear),
+                L["SalesTarget.SaveAndSwitch"].ToString(),
+                L["SalesTarget.DiscardAndSwitch"].ToString(),
+                async () => { await SaveCurrentYearInternalAsync(); await SwitchYearAsync(year); },
+                async () => await SwitchYearAsync(year));
+            return;
+        }
+
+        await SwitchYearAsync(year);
+    }
+
+    private async Task SwitchYearAsync(int year)
+    {
+        isLoading = true;
+        dataLoadCompleted = false;
+        _isDirty = false;
+        _showAddYearInput = false;
+        StateHasChanged();
+        try
+        {
+            selectedYear = year;
+            await LoadYearDataAsync(year);
+        }
+        finally
+        {
+            isLoading = false;
+            dataLoadCompleted = true;
+            StateHasChanged();
+        }
+    }
+
+    // ── 新增年度 ──
+
+    private void StartAddYear()
+    {
+        _newYear = availableYears.Any() ? availableYears.Max() + 1 : DateTime.Today.Year + 1;
+        _showAddYearInput = true;
+    }
+
+    private void OnNewYearChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var y))
+            _newYear = y;
+    }
+
+    private async Task ConfirmAddYearAsync()
+    {
+        if (_newYear < 2000 || _newYear > 2100)
+        {
+            await NotificationService.ShowWarningAsync("年度範圍需為 2000–2100");
+            return;
+        }
+        _showAddYearInput = false;
+
+        if (!availableYears.Contains(_newYear))
+        {
+            availableYears.Add(_newYear);
+            availableYears.Sort((a, b) => b.CompareTo(a)); // 降冪
+        }
+
+        await HandleYearTabClickAsync(_newYear);
+    }
+
+    private void CancelAddYear() => _showAddYearInput = false;
+
+    // ══════════════════════════════════════════════════
+    // 個人目標 toggle
+    // ══════════════════════════════════════════════════
+
+    private void TogglePersonalTargets()
+    {
+        _showPersonalTargets = !_showPersonalTargets;
+        UpdateDisplayRows();
+        StateHasChanged();
+    }
+
+    // ══════════════════════════════════════════════════
+    // 儲存 / 關閉
+    // ══════════════════════════════════════════════════
+
+    private async Task HandleSaveAsync()
+    {
+        await SaveCurrentYearInternalAsync();
+    }
+
+    private async Task SaveCurrentYearInternalAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            await SalesTargetService.BatchUpsertAsync(selectedYear, matrixRows);
+            _isDirty = false;
+            await NotificationService.ShowSuccessAsync($"{selectedYear} 年度目標已儲存");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleCloseAsync()
+    {
+        if (_isDirty)
+        {
+            ShowUnsavedConfirm(
+                string.Format(L["SalesTarget.CloseConfirm"].ToString(), selectedYear),
+                L["SalesTarget.SaveAndClose"].ToString(),
+                L["SalesTarget.DiscardAndClose"].ToString(),
+                async () => { await SaveCurrentYearInternalAsync(); await DoClose(); },
+                async () => await DoClose());
+            return;
+        }
+        await DoClose();
+    }
+
+    private async Task DoClose()
+    {
+        _isDirty = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task HandleModalVisibleChanged(bool visible)
+    {
+        if (!visible)
+            await HandleCloseAsync();
+        else
+            await IsVisibleChanged.InvokeAsync(visible);
+    }
+
+    // ══════════════════════════════════════════════════
+    // 複製上一年
+    // ══════════════════════════════════════════════════
+
+    private async Task CopyFromLastYearAsync()
+    {
+        try
+        {
+            isLoading = true;
+            dataLoadCompleted = false;
+            StateHasChanged();
+
+            var lastYearRows = await SalesTargetService.GetMatrixByYearAsync(selectedYear - 1, employees);
+            if (!lastYearRows.Any(r => r.MonthlySum > 0 || r.Annual > 0))
+            {
+                await NotificationService.ShowWarningAsync($"{selectedYear - 1} 年度無目標資料可複製");
+                return;
+            }
+
+            foreach (var srcRow in lastYearRows)
+            {
+                var dstRow = matrixRows.FirstOrDefault(r => r.SalespersonId == srcRow.SalespersonId);
+                if (dstRow != null)
+                {
+                    for (int m = 1; m <= 12; m++)
+                        dstRow.SetMonth(m, srcRow.GetMonth(m));
+                    dstRow.Annual = srcRow.Annual;
+                }
+            }
+
+            _isDirty = true;
+            await NotificationService.ShowSuccessAsync($"已複製 {selectedYear - 1} 年度目標資料");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"複製失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            dataLoadCompleted = true;
+            StateHasChanged();
+        }
+    }
+
+    // ══════════════════════════════════════════════════
+    // 未儲存確認 Modal（共用）
+    // ══════════════════════════════════════════════════
+
+    private void ShowUnsavedConfirm(string msg, string saveText, string discardText,
+        Func<Task> onSave, Func<Task> onDiscard)
+    {
+        _unsavedConfirmMessage = msg;
+        _unsavedConfirmText = saveText;
+        _unsavedDiscardText = discardText;
+        _onUnsavedSave = onSave;
+        _onUnsavedDiscard = onDiscard;
+        _showUnsavedConfirm = true;
+    }
+
+    private async Task HandleUnsavedConfirm()
+    {
+        _showUnsavedConfirm = false;
+        if (_onUnsavedSave != null) await _onUnsavedSave();
+    }
+
+    private async Task HandleUnsavedDiscard()
+    {
+        _showUnsavedConfirm = false;
+        if (_onUnsavedDiscard != null) await _onUnsavedDiscard();
+    }
+
+    private void HandleUnsavedConfirmVisibleChanged(bool visible)
+    {
+        if (!visible)
+        {
+            // X 關閉 = 取消操作（不切換、不關閉）
+            _showUnsavedConfirm = false;
+            _onUnsavedSave = null;
+            _onUnsavedDiscard = null;
+        }
+    }
+
+    // ══════════════════════════════════════════════════
+    // 輔助
+    // ══════════════════════════════════════════════════
+
+    private void HandleDataChanged()
+    {
+        _isDirty = true;
+        StateHasChanged();
+    }
+
+    private string GetRowCssClass(SalesTargetMatrixRow row, int index)
+        => row.IsCompanyTotal ? "company-target-row" : "";
+}

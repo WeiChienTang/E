@@ -1,6 +1,6 @@
-@* 通用報表預覽 Modal - 整合預覽與列印功能 *@
-@* 設計理念：使用者先預覽報表內容，確認無誤後再按「列印」發送到印表機 *@
-@* 統一使用格式化模式：圖片預覽，支援表格線、圖片 *@
+@* 報表列印操作 Modal *@
+@* 設計：篩選完成後提供「列印」「下載 PDF」「匯出 Excel」三個操作，不顯示預覽圖片。 *@
+@* 預覽圖片由 browserPrintImages iframe 負責；格式以報表列印配置的紙張設定為準。 *@
 
 @using ERPCore2.Services.Reports
 @using ERPCore2.Services.Reports.Interfaces
@@ -18,8 +18,8 @@
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
                    Title="@GetModalTitle()"
-                   Icon="fas fa-file-alt"
-                   Size="BaseModalComponent.ModalSize.Desktop"
+                   Icon="fas fa-print"
+                   Size="BaseModalComponent.ModalSize.Large"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    CloseOnEscape="true"
                    CloseOnBackdropClick="false"
@@ -27,260 +27,113 @@
                    IsLoading="@IsLoading"
                    LoadingMessage="@LoadingMessage"
                    ShowFooter="false"
-                   BodyCssClass="p-0 report-preview-modal-body"
                    OnClose="@HandleCancel"
                    DebugComponentName="ReportPreviewModalComponent">
-    
+
     <HeaderButtons>
-        <div class="w-100 d-flex flex-wrap align-items-center px-2 modal-buttons-container">
-            @* 右側：操作按鈕 *@
-            <div class="d-flex gap-2 ms-auto">
-                <GenericButtonComponent Text="@L["Button.ExportExcel"]"
-                                      Variant="ButtonVariant.Green"
-                                      OnClick="HandleExportExcel"
-                                      IsDisabled="@(IsLoading || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
+        <div class="d-flex gap-2 ms-auto">
+            <GenericButtonComponent Text="@L["Button.ExportExcel"]"
+                                  Variant="ButtonVariant.Green"
+                                  OnClick="HandleExportExcel"
+                                  IsDisabled="@(IsLoading || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
 
-                <GenericButtonComponent Text="@L["Button.DownloadPdf"]"
-                                      Variant="ButtonVariant.Orange"
-                                      OnClick="HandleExportPdf"
-                                      IsDisabled="@(IsLoading || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
+            <GenericButtonComponent Text="@L["Button.DownloadPdf"]"
+                                  Variant="ButtonVariant.Orange"
+                                  OnClick="HandleExportPdf"
+                                  IsDisabled="@(IsLoading || IsExporting || _isGeneratingPdf || FormattedDocument == null)" />
 
-                <GenericButtonComponent Text="@L["Button.Print"]"
-                                      Variant="ButtonVariant.Blue"
-                                      OnClick="HandleBrowserPrint"
-                                      IsDisabled="@(IsLoading || _isGeneratingPdf || PreviewImages == null || !PreviewImages.Any())" />
+            <GenericButtonComponent Text="@L["Button.Print"]"
+                                  Variant="ButtonVariant.Blue"
+                                  OnClick="HandleBrowserPrint"
+                                  IsDisabled="@(IsLoading || _isGeneratingPdf || PreviewImages == null || !PreviewImages.Any())" />
 
-                <GenericButtonComponent Text="@L["Button.Cancel"]"
-                                      Variant="ButtonVariant.Red"
-                                      OnClick="HandleCancel"
-                                      IsDisabled="@(IsLoading || _isGeneratingPdf)" />
-            </div>
+            <GenericButtonComponent Text="@L["Button.Cancel"]"
+                                  Variant="ButtonVariant.Red"
+                                  OnClick="HandleCancel"
+                                  IsDisabled="@(IsLoading || _isGeneratingPdf)" />
         </div>
     </HeaderButtons>
-    
+
     <BodyContent>
-        @* 左右分欄佈局：左側設定區域、右側預覽區域 *@
-        <div class="report-modal-layout">
-                @* 左側：列印設定區域 *@
-                <div class="print-settings-panel">
-                    <h6 class="settings-section-title">
-                        <i class="fas fa-cog me-2"></i>@L["Report.PrintSettings"]
-                    </h6>
-                    
-                    @* 紙張選擇 *@
-                    <div class="setting-item-row">
-                        <label class="setting-label-inline">
-                            <i class="fas fa-file me-1"></i>@L["Report.PaperLabel"]
-                        </label>
-                        <select class="form-select form-select-sm setting-input" 
-                                @bind="_selectedPaperSettingId"
-                                @bind:after="OnPaperChanged"
-                                disabled="@IsLoading">
-                            <option value="">-- 請選擇 --</option>
-                            @foreach (var paper in _paperSettings)
-                            {
-                                <option value="@paper.Id">@paper.Name (@paper.Width×@paper.Height cm)</option>
-                            }
-                        </select>
-                    </div>
+        <div class="report-action-body">
 
-                    @* 預覽縮放 *@
-                    <div class="setting-item-row">
-                        <label class="setting-label-inline">
-                            <i class="fas fa-search-plus me-1"></i>@L["Report.ZoomLabel"]
-                        </label>
-                        <div class="d-flex align-items-center gap-1 setting-input">
-                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                    @onclick="ZoomOut" disabled="@(_previewZoom <= 50)">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <div class="zoom-display">@_previewZoom%</div>
-                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                    @onclick="ZoomIn" disabled="@(_previewZoom >= 200)">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    @* 邊距設定 *@
-                    <div class="margin-settings-group mt-2">
-                        <label class="setting-label-inline mb-1">
-                            <i class="fas fa-border-style me-1"></i>@L["Report.MarginLabel"]
-                        </label>
-                        <div class="margin-inputs-grid">
-                            <div class="margin-input-item">
-                                <label class="margin-label">@L["Label.MarginTop"]</label>
-                                <input type="number"
-                                       class="form-control form-control-sm margin-input"
-                                       @bind="_marginTop"
-                                       @bind:after="OnMarginChanged"
-                                       step="0.1"
-                                       min="0"
-                                       max="10"
-                                       disabled="@(IsLoading || _selectedPaper == null)" />
-                            </div>
-                            <div class="margin-input-item">
-                                <label class="margin-label">@L["Label.MarginBottom"]</label>
-                                <input type="number"
-                                       class="form-control form-control-sm margin-input"
-                                       @bind="_marginBottom"
-                                       @bind:after="OnMarginChanged"
-                                       step="0.1"
-                                       min="0"
-                                       max="10"
-                                       disabled="@(IsLoading || _selectedPaper == null)" />
-                            </div>
-                            <div class="margin-input-item">
-                                <label class="margin-label">@L["Label.MarginLeft"]</label>
-                                <input type="number"
-                                       class="form-control form-control-sm margin-input"
-                                       @bind="_marginLeft"
-                                       @bind:after="OnMarginChanged"
-                                       step="0.1"
-                                       min="0"
-                                       max="10"
-                                       disabled="@(IsLoading || _selectedPaper == null)" />
-                            </div>
-                            <div class="margin-input-item">
-                                <label class="margin-label">@L["Label.MarginRight"]</label>
-                                <input type="number"
-                                       class="form-control form-control-sm margin-input"
-                                       @bind="_marginRight"
-                                       @bind:after="OnMarginChanged"
-                                       step="0.1"
-                                       min="0"
-                                       max="10"
-                                       disabled="@(IsLoading || _selectedPaper == null)" />
-                            </div>
-                        </div>
-                    </div>
-                    
-
-                    
-                    <hr class="my-3" />
-                    
-                    @* 頁數顯示 *@
-                    <div class="setting-item-row">
-                        <label class="setting-label-inline">
-                            <i class="fas fa-file-alt me-1"></i>@L["Report.PagesLabel"]
-                        </label>
-                        <div class="form-control form-control-sm bg-light text-center setting-input-small">
-                            @string.Format(L["Report.PageNum"], _estimatedPages)
-                        </div>
+            @* 報表資訊區 *@
+            <div class="report-action-info">
+                <div class="report-action-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="report-action-details">
+                    <div class="report-action-name">@(FormattedDocument?.DocumentName ?? DocumentName)</div>
+                    <div class="report-action-meta">
+                        @if (PreviewImages != null && PreviewImages.Count > 0)
+                        {
+                            <span>
+                                <i class="fas fa-copy me-1"></i>
+                                @PreviewImages.Count @L["Report.PagesLabel"]
+                            </span>
+                        }
+                        @if (_selectedPaper != null)
+                        {
+                            <span class="ms-3">
+                                <i class="fas fa-file me-1"></i>
+                                @_selectedPaper.Name
+                                (@_selectedPaper.Width × @_selectedPaper.Height cm@(_selectedPaper.Orientation == "Landscape" ? " 橫向" : ""))
+                            </span>
+                        }
                     </div>
                 </div>
-                
-                @* 右側：報表預覽區域 *@
-                <div class="report-preview-outer-container">
-                    @if (PreviewImages != null && PreviewImages.Any())
-                    {
-                        @* 顯示圖片預覽 *@
-                        <div class="formatted-preview-wrapper" style="@GetPreviewZoomStyle()">
-                            @foreach (var (imageData, index) in PreviewImages.Select((img, i) => (img, i)))
-                            {
-                                <div class="page-preview-container mb-3">
-                                    <div class="page-number-badge">@string.Format(L["Report.PageNum"], index + 1)</div>
-                                    <img src="data:image/png;base64,@Convert.ToBase64String(imageData)"
-                                         class="formatted-page-preview"
-                                         alt="@string.Format(L["Report.PageNum"], index + 1)" />
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="d-flex justify-content-center align-items-center py-5 text-muted h-100">
-                            <div class="text-center">
-                                <i class="fas fa-file-alt fa-3x mb-3"></i>
-                                <div class="fs-5">@L["Report.NoContent"]</div>
-                            </div>
-                        </div>
-                    }
-                </div>
-
-                @* 匯出進度條 Overlay *@
-                @if (_showExportProgress)
-                {
-                    <div class="export-progress-overlay">
-                        <div class="export-progress-card">
-                            <div class="export-progress-message">@_exportProgressMessage</div>
-                            <div class="progress export-progress-bar" role="progressbar"
-                                 aria-valuenow="@_exportProgressValue" aria-valuemin="0" aria-valuemax="100">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated @_exportProgressColorClass"
-                                     style="width: @(_exportProgressValue)%">
-                                    @_exportProgressValue%
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
             </div>
+
+            @* 匯出進度條 Overlay *@
+            @if (_showExportProgress)
+            {
+                <div class="export-progress-overlay">
+                    <div class="export-progress-card">
+                        <div class="export-progress-message">@_exportProgressMessage</div>
+                        <div class="progress export-progress-bar" role="progressbar"
+                             aria-valuenow="@_exportProgressValue" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated @_exportProgressColorClass"
+                                 style="width: @(_exportProgressValue)%">
+                                @_exportProgressValue%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
     </BodyContent>
+
 </BaseModalComponent>
 
 @code {
     // ===== 參數 =====
-    
-    /// <summary>
-    /// Modal 是否顯示
-    /// </summary>
+
     [Parameter] public bool IsVisible { get; set; } = false;
-    
-    /// <summary>
-    /// Modal 顯示狀態變更事件
-    /// </summary>
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    
-    /// <summary>
-    /// Modal 標題
-    /// </summary>
-    [Parameter] public string Title { get; set; } = "報表預覽";
-    
-    /// <summary>
-    /// 報表預覽圖片
-    /// 由 RenderToImages 生成的 PNG 圖片 byte[] 列表
-    /// </summary>
+    [Parameter] public string Title { get; set; } = "報表列印";
+
+    /// <summary>預覽圖片（由父組件渲染後傳入，列印時直接使用，不顯示於畫面）</summary>
     [Parameter] public List<byte[]>? PreviewImages { get; set; }
-    
-    /// <summary>
-    /// 格式化文件（列印時需要）
-    /// </summary>
+
+    /// <summary>格式化文件（PDF / Excel 匯出時需要）</summary>
     [Parameter] public FormattedDocument? FormattedDocument { get; set; }
-    
-    /// <summary>
-    /// 報表 ID（用於查詢印表機配置）
-    /// 例如：PO001（採購單）、PR001（進貨單）、SO001（銷貨單）
-    /// </summary>
+
+    /// <summary>獨立文件清單（批次列印時每份保有正確表頭/頁尾，供 HTML 列印使用）</summary>
+    [Parameter] public List<FormattedDocument>? Documents { get; set; }
+
+    /// <summary>報表 ID，用於查詢已配置的紙張設定</summary>
     [Parameter] public string ReportId { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// 列印文件名稱（顯示在列印佇列中）
-    /// </summary>
+
+    /// <summary>文件名稱（顯示於列印佇列及檔案下載名稱）</summary>
     [Parameter] public string DocumentName { get; set; } = "報表列印";
-    
-    /// <summary>
-    /// 列印成功事件
-    /// </summary>
+
     [Parameter] public EventCallback OnPrintSuccess { get; set; }
-    
-    /// <summary>
-    /// 列印失敗事件
-    /// </summary>
     [Parameter] public EventCallback<string> OnPrintFailure { get; set; }
-    
-    /// <summary>
-    /// 取消事件
-    /// </summary>
     [Parameter] public EventCallback OnCancel { get; set; }
-    
-    /// <summary>
-    /// 紙張設定變更事件
-    /// 當用戶變更紙張選擇時觸發，父組件應根據新紙張重新渲染預覽圖片
-    /// </summary>
-    [Parameter] public EventCallback<PaperSetting> OnPaperSettingChanged { get; set; }
-    
+
     // ===== 內部狀態 =====
-    
+
     private bool IsLoading { get; set; } = false;
     private bool IsExporting { get; set; } = false;
     private bool _isGeneratingPdf = false;
@@ -291,52 +144,32 @@
     private int _exportProgressValue = 0;
     private string _exportProgressMessage = "";
     private string _exportProgressColorClass = "bg-warning";
-    
-    // 紙張相關
-    private int? _paperSettingId = null;
-    private int _selectedPaperSettingId;
-    private List<PaperSetting> _paperSettings = new();
+
+    // 紙張（從 ReportPrintConfiguration 靜默載入，僅用於取得實際尺寸）
     private PaperSetting? _selectedPaper = null;
-    
-    // 邊距設定（單位：公分）
-    private decimal _marginTop = 0.3m;
-    private decimal _marginBottom = 0.3m;
-    private decimal _marginLeft = 0.8m;
-    private decimal _marginRight = 0.8m;
-    
-    // 頁數統計
-    private int _estimatedPages = 1;
-    
-    // 預覽縮放控制
-    private int _previewZoom = 100;  // 縮放百分比（50-200）
-    
-    // 初始化標記（避免參數變更時重複載入配置）
+
+    // 初始化標記
     private bool _isConfigurationLoaded = false;
-    
+
     // ===== 生命週期 =====
-    
+
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible)
         {
-            // 只在第一次開啟 Modal 時載入預設配置
             if (!_isConfigurationLoaded)
-            {
                 await LoadPrintConfigurations();
-            }
-            CalculateEstimatedPages();
         }
         else
         {
-            // Modal 關閉時重設標記，下次開啟時重新載入
             _isConfigurationLoaded = false;
         }
     }
-    
+
     // ===== 資料載入 =====
-    
+
     /// <summary>
-    /// 載入所有列印相關配置
+    /// 靜默載入報表的紙張配置，僅用於取得列印/PDF 的實際尺寸，不影響 UI 顯示。
     /// </summary>
     private async Task LoadPrintConfigurations()
     {
@@ -346,50 +179,25 @@
             LoadingMessage = "載入列印配置...";
             StateHasChanged();
 
-            // 重設所有選擇狀態，避免殘留上次開啟時的值
-            _selectedPaperSettingId = 0;
-            _paperSettingId = null;
             _selectedPaper = null;
-            _marginTop = 0.3m;
-            _marginBottom = 0.3m;
-            _marginLeft = 0.8m;
-            _marginRight = 0.8m;
 
-            // 載入所有紙張選項
-            _paperSettings = (await PaperSettingService.GetAllAsync())?.ToList() ?? new List<PaperSetting>();
-
-            // 根據 ReportId 查詢預設配置
             if (!string.IsNullOrEmpty(ReportId))
             {
                 var reportConfig = await ReportPrintConfigurationService.GetByReportIdAsync(ReportId);
-
-                if (reportConfig != null)
+                Console.WriteLine($"[ReportPreview] ReportId={ReportId}, Config={reportConfig?.Id}, PaperSettingId={reportConfig?.PaperSettingId}");
+                if (reportConfig?.PaperSettingId.HasValue == true)
                 {
-                    // 設定預設紙張
-                    if (reportConfig.PaperSettingId.HasValue)
-                    {
-                        _selectedPaperSettingId = reportConfig.PaperSettingId.Value;
-                        _paperSettingId = reportConfig.PaperSettingId.Value;
-                        _selectedPaper = _paperSettings.FirstOrDefault(p => p.Id == _paperSettingId);
-
-                        // 初始化邊距值
-                        if (_selectedPaper != null)
-                        {
-                            _marginTop = _selectedPaper.TopMargin ?? 0.3m;
-                            _marginBottom = _selectedPaper.BottomMargin ?? 0.3m;
-                            _marginLeft = _selectedPaper.LeftMargin ?? 0.8m;
-                            _marginRight = _selectedPaper.RightMargin ?? 0.8m;
-                        }
-                    }
+                    var papers = await PaperSettingService.GetAllAsync();
+                    _selectedPaper = papers?.FirstOrDefault(p => p.Id == reportConfig.PaperSettingId.Value);
+                    Console.WriteLine($"[ReportPreview] SelectedPaper={_selectedPaper?.Name}, W={_selectedPaper?.Width}, H={_selectedPaper?.Height}, Orientation={_selectedPaper?.Orientation}");
                 }
             }
+            else
+            {
+                Console.WriteLine($"[ReportPreview] ReportId is empty → A4 fallback");
+            }
 
-            // 標記配置已載入
             _isConfigurationLoaded = true;
-            
-            // 如果有預設紙張設定，通知父組件用正確的紙張尺寸重新渲染預覽
-            // 這確保預覽圖片與設定的紙張格式一致（例如中一刀而非預設 A4）
-            await NotifyPaperSettingChanged();
         }
         catch (Exception ex)
         {
@@ -401,136 +209,9 @@
             StateHasChanged();
         }
     }
-    
-    /// <summary>
-    /// 計算預估頁數
-    /// </summary>
-    private void CalculateEstimatedPages()
-    {
-        // 根據圖片數量計算頁數
-        if (PreviewImages != null)
-        {
-            _estimatedPages = PreviewImages.Count;
-            return;
-        }
-        
-        _estimatedPages = 0;
-    }
-    
-    /// <summary>
-    /// 取得預覽縮放樣式
-    /// </summary>
-    private string GetPreviewZoomStyle()
-    {
-        var scale = _previewZoom / 100.0;
-        return $"transform: scale({scale:F2});";
-    }
-    
-    /// <summary>
-    /// 放大預覽
-    /// </summary>
-    private void ZoomIn()
-    {
-        if (_previewZoom < 200)
-        {
-            _previewZoom += 10;
-        }
-    }
-    
-    /// <summary>
-    /// 縮小預覽
-    /// </summary>
-    private void ZoomOut()
-    {
-        if (_previewZoom > 50)
-        {
-            _previewZoom -= 10;
-        }
-    }
-    
-    /// <summary>
-    /// 紙張變更事件
-    /// </summary>
-    private async Task OnPaperChanged()
-    {
-        if (_selectedPaperSettingId > 0)
-        {
-            _selectedPaper = _paperSettings.FirstOrDefault(p => p.Id == _selectedPaperSettingId);
-            _paperSettingId = _selectedPaperSettingId;
-            
-            // 載入該紙張的預設邊距值
-            if (_selectedPaper != null)
-            {
-                _marginTop = _selectedPaper.TopMargin ?? 0.3m;
-                _marginBottom = _selectedPaper.BottomMargin ?? 0.3m;
-                _marginLeft = _selectedPaper.LeftMargin ?? 0.8m;
-                _marginRight = _selectedPaper.RightMargin ?? 0.8m;
-            }
-        }
-        else
-        {
-            _selectedPaper = null;
-            _paperSettingId = null;
-            // 重設為預設邊距
-            _marginTop = 0.3m;
-            _marginBottom = 0.3m;
-            _marginLeft = 0.8m;
-            _marginRight = 0.8m;
-        }
-        
-        // 重新計算頁數
-        CalculateEstimatedPages();
-        
-        // 通知父組件紙張已變更，需要重新渲染預覽圖片
-        await NotifyPaperSettingChanged();
-    }
-    
-    /// <summary>
-    /// 邊距變更事件
-    /// </summary>
-    private async Task OnMarginChanged()
-    {
-        // 確保邊距值在合理範圍內
-        _marginTop = Math.Max(0, Math.Min(10, _marginTop));
-        _marginBottom = Math.Max(0, Math.Min(10, _marginBottom));
-        _marginLeft = Math.Max(0, Math.Min(10, _marginLeft));
-        _marginRight = Math.Max(0, Math.Min(10, _marginRight));
-        
-        // 更新 _selectedPaper 的邊距值
-        if (_selectedPaper != null)
-        {
-            _selectedPaper.TopMargin = _marginTop;
-            _selectedPaper.BottomMargin = _marginBottom;
-            _selectedPaper.LeftMargin = _marginLeft;
-            _selectedPaper.RightMargin = _marginRight;
-        }
-        
-        // 通知父組件重新渲染預覽圖片
-        await NotifyPaperSettingChanged();
-    }
-    
-    /// <summary>
-    /// 通知父組件紙張設定已變更
-    /// </summary>
-    private async Task NotifyPaperSettingChanged()
-    {
-        if (_selectedPaper != null && OnPaperSettingChanged.HasDelegate)
-        {
-            // 確保邊距值已更新到 _selectedPaper
-            _selectedPaper.TopMargin = _marginTop;
-            _selectedPaper.BottomMargin = _marginBottom;
-            _selectedPaper.LeftMargin = _marginLeft;
-            _selectedPaper.RightMargin = _marginRight;
-            
-            await OnPaperSettingChanged.InvokeAsync(_selectedPaper);
-        }
-    }
-    
+
     // ===== 匯出進度條 =====
 
-    /// <summary>
-    /// 更新匯出進度條，並讓 UI 刷新後再繼續
-    /// </summary>
     private async Task SetExportProgress(int value, string message)
     {
         _exportProgressValue = value;
@@ -541,10 +222,6 @@
 
     // ===== 事件處理 =====
 
-    /// <summary>
-    /// 處理轉Excel按鈕點擊
-    /// 將 FormattedDocument 轉換為 Excel 檔案並下載
-    /// </summary>
     private async Task HandleExportExcel()
     {
         if (IsExporting || FormattedDocument == null)
@@ -585,11 +262,8 @@
             StateHasChanged();
         }
     }
-    
-    /// <summary>
-    /// 處理下載PDF按鈕點擊
-    /// 重新以高解析度（150 DPI）渲染報表，再透過 PuppeteerSharp 產生 PDF 並下載
-    /// </summary>
+
+    /// <summary>以 150 DPI 重新渲染後產生 PDF 下載</summary>
     private async Task HandleExportPdf()
     {
         if (_isGeneratingPdf || FormattedDocument == null)
@@ -602,24 +276,16 @@
             _exportProgressColorClass = "bg-warning";
             await SetExportProgress(5, "準備中...");
 
-            // 以 150 DPI 重新渲染以獲得更佳列印品質
             await SetExportProgress(15, "正在渲染頁面...");
             List<byte[]> pdfImages;
             if (_selectedPaper != null)
-            {
                 pdfImages = FormattedPrintService.RenderToImages(FormattedDocument, _selectedPaper, dpi: 150);
-            }
             else
-            {
-                // A4 @ 150 DPI：21cm × 150/2.54 ≈ 1240px，29.7cm × 150/2.54 ≈ 1754px
                 pdfImages = FormattedPrintService.RenderToImages(FormattedDocument, 1240, 1754, 150);
-            }
 
             await SetExportProgress(60, "正在產生 PDF...");
 
-            // 必須使用實際渲染方向的寬高（Landscape 時 Width/Height 已在 RenderToImages 內互換）
             var (widthCm, heightCm) = GetActualPaperDimensions();
-
             var pdfBytes = await PdfExportService.ExportToPdfAsync(pdfImages, widthCm, heightCm);
 
             await SetExportProgress(85, "正在下載...");
@@ -649,108 +315,115 @@
     }
 
     /// <summary>
-    /// 處理列印按鈕點擊。
-    /// 直接使用 PreviewImages（已在父組件以 96 DPI 渲染，版面與預覽一致）傳給
-    /// browserPrintImages JS，透過隱藏 iframe 呼叫 window.print()。
-    /// 列印對話框開啟後 Modal 保持顯示，讓使用者可以繼續預覽或關閉。
+    /// 列印前先確保圖片與紙張尺寸一致，再傳給 browserPrintImages JS。
+    /// 優先使用 HTML 渲染列印（真實文字、無 DPI 問題）。
+    /// 若無可用文件則退回圖片列印。
     /// </summary>
     private async Task HandleBrowserPrint()
     {
-        if (PreviewImages == null || !PreviewImages.Any())
-            return;
+        IsLoading = true;
+        LoadingMessage = "正在準備列印...";
+        StateHasChanged();
+        await Task.Delay(10);
 
-        var base64Images = PreviewImages.Select(img => Convert.ToBase64String(img)).ToArray();
-        var (widthCm, heightCm) = GetActualPaperDimensions();
-
-        var success = await JSRuntime.InvokeAsync<bool>(
-            "browserPrintImages",
-            base64Images,
-            DocumentName,
-            widthCm,
-            heightCm);
-
-        if (!success)
+        try
         {
-            await NotificationService.ShowWarningAsync("列印初始化失敗，請稍後再試");
+            // 優先：HTML 列印（有獨立文件清單 → 批次；有單一文件 → 單張）
+            var htmlDocs = Documents?.Any() == true ? Documents
+                         : FormattedDocument != null ? new List<FormattedDocument> { FormattedDocument }
+                         : null;
+
+            Console.WriteLine($"[Print] Documents={Documents?.Count ?? -1}, FormattedDocument={FormattedDocument?.DocumentName ?? "null"}, htmlDocs={htmlDocs?.Count.ToString() ?? "null"}");
+
+            if (htmlDocs != null)
+            {
+                var html = ERPCore2.Services.Reports.FormattedHtmlRenderer
+                    .RenderBatchToHtml(htmlDocs, _selectedPaper);
+
+                // 輸出 @page 那行讓我們確認尺寸
+                var pageLineStart = html.IndexOf("@page");
+                if (pageLineStart >= 0)
+                    Console.WriteLine($"[Print] HTML @page: {html.Substring(pageLineStart, Math.Min(80, html.Length - pageLineStart))}");
+
+                var success = await JSRuntime.InvokeAsync<bool>("browserPrintHtml", html);
+                if (!success)
+                    await NotificationService.ShowWarningAsync("列印初始化失敗，請稍後再試");
+                return;
+            }
+
+            // 退回：圖片列印（無文件時）
+            Console.WriteLine($"[Print] 走圖片路徑，PreviewImages={PreviewImages?.Count ?? -1}");
+            if (PreviewImages == null || !PreviewImages.Any())
+                return;
+
+            var (widthCm, heightCm) = GetActualPaperDimensions();
+            Console.WriteLine($"[Print] 圖片列印 widthCm={widthCm}, heightCm={heightCm}");
+            var base64 = PreviewImages.Select(img => Convert.ToBase64String(img)).ToArray();
+            var imgSuccess = await JSRuntime.InvokeAsync<bool>(
+                "browserPrintImages", base64, DocumentName, widthCm, heightCm);
+            if (!imgSuccess)
+                await NotificationService.ShowWarningAsync("列印初始化失敗，請稍後再試");
         }
-        // Modal 保持開啟，讓使用者確認列印結果後再手動關閉
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
     }
 
-    /// <summary>
-    /// 處理取消按鈕點擊
-    /// </summary>
+    /// <summary>【測試用】在新分頁預覽 HTML，可在列印前確認格式與頁數</summary>
+    public async Task PreviewHtmlInNewTab()
+    {
+        var htmlDocs = Documents?.Any() == true ? Documents
+                     : FormattedDocument != null ? new List<FormattedDocument> { FormattedDocument }
+                     : null;
+        if (htmlDocs == null) return;
+
+        var html = ERPCore2.Services.Reports.FormattedHtmlRenderer
+            .RenderBatchToHtml(htmlDocs, _selectedPaper);
+        await JSRuntime.InvokeAsync<bool>("previewHtmlInNewTab", html);
+    }
+
     private async Task HandleCancel()
     {
         if (OnCancel.HasDelegate)
-        {
             await OnCancel.InvokeAsync();
-        }
-        
+
         await CloseModal();
     }
-    
-    /// <summary>
-    /// 關閉 Modal
-    /// </summary>
+
     private async Task CloseModal()
     {
         if (IsVisibleChanged.HasDelegate)
-        {
             await IsVisibleChanged.InvokeAsync(false);
-        }
     }
-    
+
     // ===== 輔助方法 =====
 
     /// <summary>
-    /// 取得實際渲染後的紙張寬高（公分）。
-    /// RenderToImages 在 Landscape 方向時會交換 Width/Height，
-    /// 傳給 JS 的尺寸必須與渲染圖片的實際像素比例一致。
+    /// 取得實際渲染後的紙張寬高（Landscape 時 Width/Height 已在 RenderToImages 內互換）。
     /// </summary>
     private (double width, double height) GetActualPaperDimensions()
     {
         if (_selectedPaper == null)
             return (21.0, 29.7);
 
-        bool isLandscape = _selectedPaper.Orientation == "Landscape";
-        return isLandscape
-            ? ((double)_selectedPaper.Height, (double)_selectedPaper.Width)
-            : ((double)_selectedPaper.Width, (double)_selectedPaper.Height);
+        // Width/Height 直接對應列印方向的寬高，不需要 Orientation 換算
+        return ((double)_selectedPaper.Width, (double)_selectedPaper.Height);
     }
 
-    /// <summary>
-    /// 取得 Modal 標題
-    /// </summary>
     private string GetModalTitle()
     {
-        return string.IsNullOrEmpty(Title) ? "報表預覽" : Title;
-    }
-    
-    /// <summary>
-    /// 取得紙張資訊文字
-    /// </summary>
-    private string GetPaperInfoText()
-    {
-        if (_selectedPaper == null)
-        {
-            return "A4 (21×29.7 cm)";
-        }
-        
-        return $"{_selectedPaper.Name} ({_selectedPaper.Width}×{_selectedPaper.Height} cm)";
+        return string.IsNullOrEmpty(Title) ? "報表列印" : Title;
     }
 
-    /// <summary>
-    /// 取得當前的紙張版面配置
-    /// 可供父組件在需要時取得當前設定
-    /// </summary>
+    /// <summary>取得當前的紙張版面配置（供父組件查詢）</summary>
     public PaperLayout GetCurrentPaperLayout()
     {
         return PaperLayoutCalculator.Calculate(_selectedPaper);
     }
 
-    /// <summary>
-    /// 取得當前選擇的紙張設定
-    /// </summary>
+    /// <summary>取得當前選擇的紙張設定（供父組件查詢）</summary>
     public PaperSetting? GetSelectedPaperSetting()
     {
         return _selectedPaper;

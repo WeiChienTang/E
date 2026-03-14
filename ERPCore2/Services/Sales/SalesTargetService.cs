@@ -197,6 +197,159 @@ namespace ERPCore2.Services
                 .AnyAsync();
         }
 
+        public async Task<List<SalesTargetMatrixRow>> GetMatrixByYearAsync(int year, List<Employee> employees)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var existing = await context.SalesTargets
+                    .Where(t => t.Status != EntityStatus.Deleted && t.Year == year)
+                    .ToListAsync();
+
+                var rows = new List<SalesTargetMatrixRow>();
+
+                // 公司整體目標列（SalespersonId == null）
+                var companyRow = new SalesTargetMatrixRow { SalespersonId = null, SalespersonName = "公司整體" };
+                foreach (var target in existing.Where(t => t.SalespersonId == null))
+                {
+                    if (target.Month.HasValue)
+                        companyRow.SetMonth(target.Month.Value, target.TargetAmount);
+                    else
+                        companyRow.Annual = target.TargetAmount;
+                }
+                rows.Add(companyRow);
+
+                // 每位業務員一列
+                foreach (var emp in employees.OrderBy(e => e.Name))
+                {
+                    var row = new SalesTargetMatrixRow
+                    {
+                        SalespersonId = emp.Id,
+                        SalespersonName = emp.Name ?? ""
+                    };
+                    foreach (var target in existing.Where(t => t.SalespersonId == emp.Id))
+                    {
+                        if (target.Month.HasValue)
+                            row.SetMonth(target.Month.Value, target.TargetAmount);
+                        else
+                            row.Annual = target.TargetAmount;
+                    }
+                    rows.Add(row);
+                }
+
+                return rows;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetMatrixByYearAsync), GetType(), _logger,
+                    new { Year = year });
+                return new List<SalesTargetMatrixRow>();
+            }
+        }
+
+        public async Task BatchUpsertAsync(int year, List<SalesTargetMatrixRow> rows)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var existing = await context.SalesTargets
+                    .Where(t => t.Status != EntityStatus.Deleted && t.Year == year)
+                    .ToListAsync();
+
+                foreach (var row in rows)
+                {
+                    // 各月目標
+                    for (int m = 1; m <= 12; m++)
+                    {
+                        var amount = row.GetMonth(m);
+                        var record = existing.FirstOrDefault(t => t.SalespersonId == row.SalespersonId && t.Month == m);
+
+                        if (amount > 0)
+                        {
+                            if (record == null)
+                            {
+                                context.SalesTargets.Add(new SalesTarget
+                                {
+                                    Year = year,
+                                    Month = m,
+                                    SalespersonId = row.SalespersonId,
+                                    TargetAmount = amount,
+                                    Status = EntityStatus.Active
+                                });
+                            }
+                            else
+                            {
+                                record.TargetAmount = amount;
+                                record.UpdatedAt = DateTime.Now;
+                            }
+                        }
+                        else if (record != null)
+                        {
+                            record.Status = EntityStatus.Deleted;
+                        }
+                    }
+
+                    // 全年整體目標（Month == null）
+                    var annualRecord = existing.FirstOrDefault(t => t.SalespersonId == row.SalespersonId && t.Month == null);
+                    if (row.Annual > 0)
+                    {
+                        if (annualRecord == null)
+                        {
+                            context.SalesTargets.Add(new SalesTarget
+                            {
+                                Year = year,
+                                Month = null,
+                                SalespersonId = row.SalespersonId,
+                                TargetAmount = row.Annual,
+                                Status = EntityStatus.Active
+                            });
+                        }
+                        else
+                        {
+                            annualRecord.TargetAmount = row.Annual;
+                            annualRecord.UpdatedAt = DateTime.Now;
+                        }
+                    }
+                    else if (annualRecord != null)
+                    {
+                        annualRecord.Status = EntityStatus.Deleted;
+                    }
+                }
+
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchUpsertAsync), GetType(), _logger,
+                    new { Year = year, RowCount = rows.Count });
+                throw;
+            }
+        }
+
+        public async Task<List<int>> GetAvailableYearsAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var yearsFromDb = await context.SalesTargets
+                    .Where(t => t.Status != EntityStatus.Deleted)
+                    .Select(t => t.Year)
+                    .Distinct()
+                    .ToListAsync();
+
+                var currentYear = DateTime.Today.Year;
+                if (!yearsFromDb.Contains(currentYear))
+                    yearsFromDb.Add(currentYear);
+
+                return yearsFromDb.OrderByDescending(y => y).ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableYearsAsync), GetType(), _logger, null);
+                return new List<int> { DateTime.Today.Year };
+            }
+        }
+
         public async Task<(List<SalesTarget> Items, int TotalCount)> GetPagedWithFiltersAsync(
             Func<IQueryable<SalesTarget>, IQueryable<SalesTarget>>? filterFunc,
             int pageNumber,

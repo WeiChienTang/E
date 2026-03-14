@@ -1196,7 +1196,10 @@
   <data name="Field.PaperLeftMargin" xml:space="preserve"><value>左邊距</value></data>
   <data name="Field.PaperRightMargin" xml:space="preserve"><value>右邊距</value></data>
   <data name="Field.PaperTopMargin" xml:space="preserve"><value>上邊距</value></data>
+  <data name="Field.PaperOrientation" xml:space="preserve"><value>紙張方向</value></data>
   <data name="Field.PaperWidth" xml:space="preserve"><value>紙張寬度</value></data>
+  <data name="PaperOrientation.Portrait" xml:space="preserve"><value>直式</value></data>
+  <data name="PaperOrientation.Landscape" xml:space="preserve"><value>橫式</value></data>
   <data name="Field.Printer" xml:space="preserve"><value>列印機</value></data>
   <data name="Field.PrinterCode" xml:space="preserve"><value>印表機代碼</value></data>
   <data name="Field.PrinterIpAddress" xml:space="preserve"><value>IP 位址</value></data>
@@ -3390,6 +3393,25 @@
   <data name="SalesTarget.AllYear" xml:space="preserve"><value>全年</value></data>
   <data name="SalesTarget.CompanyTotal" xml:space="preserve"><value>公司整體</value></data>
   <data name="SalesTarget.TargetAmount" xml:space="preserve"><value>目標金額</value></data>
+  <data name="SalesTarget.BatchInput" xml:space="preserve"><value>批次設定目標</value></data>
+  <data name="SalesTarget.CopyLastYear" xml:space="preserve"><value>複製上一年</value></data>
+  <data name="SalesTarget.MonthlySum" xml:space="preserve"><value>月合計</value></data>
+  <data name="SalesTarget.Annual" xml:space="preserve"><value>全年目標</value></data>
+  <data name="SalesTarget.BatchEmptyHint" xml:space="preserve"><value>請先選擇年度並點擊「載入」</value></data>
+  <data name="SalesTarget.BatchFooterHint" xml:space="preserve"><value>{0} 年度：金額設為 0 代表刪除該目標</value></data>
+  <data name="SalesTarget.RowCount" xml:space="preserve"><value>業務員人數</value></data>
+  <data name="Button.Load" xml:space="preserve"><value>載入</value></data>
+  <data name="SalesTarget.ManagementTitle" xml:space="preserve"><value>業績目標管理</value></data>
+  <data name="SalesTarget.AddYear" xml:space="preserve"><value>新增年度</value></data>
+  <data name="SalesTarget.PersonalTargets" xml:space="preserve"><value>個人目標（選填）</value></data>
+  <data name="SalesTarget.HasData" xml:space="preserve"><value>已設定</value></data>
+  <data name="SalesTarget.UnsavedChanges" xml:space="preserve"><value>有未儲存的變更</value></data>
+  <data name="SalesTarget.YearSwitchConfirm" xml:space="preserve"><value>{0} 年度有未儲存的變更，是否先儲存？</value></data>
+  <data name="SalesTarget.CloseConfirm" xml:space="preserve"><value>{0} 年度有未儲存的變更，是否先儲存？</value></data>
+  <data name="SalesTarget.SaveAndSwitch" xml:space="preserve"><value>儲存並切換</value></data>
+  <data name="SalesTarget.DiscardAndSwitch" xml:space="preserve"><value>放棄並切換</value></data>
+  <data name="SalesTarget.SaveAndClose" xml:space="preserve"><value>儲存並關閉</value></data>
+  <data name="SalesTarget.DiscardAndClose" xml:space="preserve"><value>放棄並關閉</value></data>
   <data name="Entity.SalesTarget" xml:space="preserve"><value>業績目標</value></data>
   <data name="Page.SalesTargetTitle" xml:space="preserve"><value>業績目標管理</value></data>
   <data name="Page.SalesTargetSubtitle" xml:space="preserve"><value>設定與追蹤業務員銷售目標</value></data>

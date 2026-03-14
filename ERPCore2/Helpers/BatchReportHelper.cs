@@ -49,6 +49,7 @@ public static class BatchReportHelper
             }
 
             var allImages = new List<byte[]>();
+            var allDocuments = new List<FormattedDocument>();
             FormattedDocument? mergedDocument = null;
             int successCount = 0;
 
@@ -59,25 +60,27 @@ public static class BatchReportHelper
                 try
                 {
                     var document = await generateReportAsync(entityId, paperSetting);
-                    
+
                     // 根據是否有紙張設定來選擇渲染方法
-                    var images = paperSetting != null 
+                    var images = paperSetting != null
                         ? formattedPrintService.RenderToImages(document, paperSetting)
                         : formattedPrintService.RenderToImages(document);
                     allImages.AddRange(images);
 
-                    // 合併 FormattedDocument（用於列印）
+                    // 保存獨立文件（供 HTML 列印使用，每份保有正確的表頭/頁尾）
+                    allDocuments.Add(document);
+
+                    // 合併 FormattedDocument（供 Excel/PDF 匯出使用）
                     if (mergedDocument == null)
                     {
                         mergedDocument = document;
                     }
                     else
                     {
-                        // 加入分頁標記並合併內容
                         mergedDocument.AddPageBreak();
                         mergedDocument.MergeFrom(document);
                     }
-                    
+
                     successCount++;
                 }
                 catch (Exception ex)
@@ -91,8 +94,8 @@ public static class BatchReportHelper
             {
                 return BatchPreviewResult.Failure($"所有{entityDisplayName}的預覽產生都失敗");
             }
-            
-            return BatchPreviewResult.Success(allImages, mergedDocument, successCount);
+
+            return BatchPreviewResult.Success(allImages, mergedDocument, successCount, allDocuments);
         }
         catch (Exception ex)
         {

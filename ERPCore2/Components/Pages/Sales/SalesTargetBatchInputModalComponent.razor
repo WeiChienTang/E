@@ -1,0 +1,319 @@
+@* 業績目標批次設定 Modal — 矩陣輸入（業務員 × 月份） *@
+@inject ISalesTargetService SalesTargetService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@HandleModalVisibleChanged"
+                   Title="@L["SalesTarget.BatchInput"]"
+                   Icon="bi bi-table"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   Size="BaseModalComponent.ModalSize.Desktop"
+                   AllowFullscreen="true"
+                   ScrollableBody="false"
+                   CloseOnBackdropClick="false"
+                   CloseOnEscape="true"
+                   IsLoading="@isLoading"
+                   LoadingMessage="@L["Label.Loading"]"
+                   ShowFooter="true"
+                   DebugComponentName="SalesTargetBatchInputModalComponent">
+
+    <HeaderButtons>
+        <div class="w-100 d-flex align-items-center gap-2 flex-wrap px-1">
+            @* 年度選擇 *@
+            <div class="d-flex align-items-center gap-1">
+                <label class="form-label mb-0 text-nowrap">@L["SalesTarget.Year"]</label>
+                <input type="number"
+                       class="form-control"
+                       style="width: 90px;"
+                       value="@selectedYear"
+                       min="2000" max="2100"
+                       @onchange="OnYearChanged" />
+            </div>
+
+            @* 載入按鈕 *@
+            <GenericButtonComponent Text="@L["Button.Load"]"
+                                    Variant="ButtonVariant.DarkBlue"
+                                    Size="ButtonSize.Small"
+                                    IconClass="bi bi-arrow-clockwise"
+                                    OnClick="@LoadMatrixAsync" />
+
+            @* 複製上一年 *@
+            <GenericButtonComponent Text="@L["SalesTarget.CopyLastYear"]"
+                                    Variant="ButtonVariant.OutlineGray"
+                                    Size="ButtonSize.Small"
+                                    IconClass="bi bi-copy"
+                                    OnClick="@CopyFromLastYearAsync" />
+
+            @* 儲存 *@
+            <div class="ms-auto d-flex gap-2">
+                <GenericButtonComponent Text="@L["Button.Save"]"
+                                        Variant="ButtonVariant.Green"
+                                        Size="ButtonSize.Small"
+                                        IconClass="bi bi-floppy"
+                                        IsDisabled="@(!matrixRows.Any())"
+                                        OnClick="@HandleSaveAsync" />
+                <GenericButtonComponent Text="@L["Button.Cancel"]"
+                                        Variant="ButtonVariant.Red"
+                                        Size="ButtonSize.Small"
+                                        OnClick="@HandleCancelAsync" />
+            </div>
+        </div>
+    </HeaderButtons>
+
+    <BodyContent>
+        <div style="overflow-x: auto;">
+            <GenericInteractiveTableComponent TItem="SalesTargetMatrixRow"
+                                              Items="@matrixRows"
+                                              ColumnDefinitions="@columnDefinitions"
+                                              ShowHeader="true"
+                                              ShowActions="false"
+                                              ShowBuiltInActions="false"
+                                              ShowRowNumbers="false"
+                                              IsStriped="true"
+                                              IsHoverable="false"
+                                              IsBordered="true"
+                                              EnableAutoEmptyRow="false"
+                                              DataLoadCompleted="@dataLoadCompleted"
+                                              GetRowCssClass="@GetRowCssClass"
+                                              EmptyMessage="@L["SalesTarget.BatchEmptyHint"]" />
+        </div>
+    </BodyContent>
+
+    <FooterContent>
+        <div class="d-flex justify-content-between align-items-center w-100 text-muted">
+            <span>@string.Format(L["SalesTarget.BatchFooterHint"].ToString(), selectedYear)</span>
+            @if (matrixRows.Any())
+            {
+                <span>@L["SalesTarget.RowCount"]：@matrixRows.Count</span>
+            }
+        </div>
+    </FooterContent>
+</BaseModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private int selectedYear = DateTime.Today.Year;
+    private bool isLoading = false;
+    private bool dataLoadCompleted = true;
+    private List<SalesTargetMatrixRow> matrixRows = new();
+    private List<Employee> employees = new();
+    private List<InteractiveColumnDefinition> columnDefinitions = new();
+    private bool _previousIsVisible = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !_previousIsVisible)
+        {
+            await InitializeAsync();
+        }
+        _previousIsVisible = IsVisible;
+    }
+
+    private async Task InitializeAsync()
+    {
+        try
+        {
+            isLoading = true;
+            dataLoadCompleted = false;
+            StateHasChanged();
+
+            employees = await EmployeeService.GetAllAsync();
+            BuildColumnDefinitions();
+            await LoadMatrixCoreAsync(selectedYear);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"初始化批次設定失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            dataLoadCompleted = true;
+            StateHasChanged();
+        }
+    }
+
+    private void BuildColumnDefinitions()
+    {
+        columnDefinitions = new List<InteractiveColumnDefinition>();
+
+        // 業務員欄（固定，唯讀顯示）
+        columnDefinitions.Add(new InteractiveColumnDefinition
+        {
+            Title = L["Field.SalesPerson"].ToString(),
+            PropertyName = nameof(SalesTargetMatrixRow.SalespersonName),
+            ColumnType = InteractiveColumnType.Display,
+            Width = "120px",
+            IsReadOnly = true
+        });
+
+        // 各月欄位（01–12）
+        for (int m = 1; m <= 12; m++)
+        {
+            var propName = $"M{m:D2}";
+            columnDefinitions.Add(new InteractiveColumnDefinition
+            {
+                Title = $"{m:D2}月",
+                PropertyName = propName,
+                ColumnType = InteractiveColumnType.Number,
+                Width = "85px",
+                MinValue = 0,
+                UseThousandsSeparator = true,
+                TextAlign = "right"
+            });
+        }
+
+        // 月合計（唯讀，計算顯示）
+        columnDefinitions.Add(new InteractiveColumnDefinition
+        {
+            Title = L["SalesTarget.MonthlySum"].ToString(),
+            PropertyName = nameof(SalesTargetMatrixRow.MonthlySum),
+            ColumnType = InteractiveColumnType.Display,
+            Width = "95px",
+            IsReadOnly = true,
+            TextAlign = "right",
+            DisplayFormatter = item => item is SalesTargetMatrixRow r
+                ? r.MonthlySum.ToString("N0")
+                : ""
+        });
+
+        // 全年目標欄
+        columnDefinitions.Add(new InteractiveColumnDefinition
+        {
+            Title = L["SalesTarget.Annual"].ToString(),
+            PropertyName = nameof(SalesTargetMatrixRow.Annual),
+            ColumnType = InteractiveColumnType.Number,
+            Width = "95px",
+            MinValue = 0,
+            UseThousandsSeparator = true,
+            TextAlign = "right"
+        });
+    }
+
+    private async Task LoadMatrixAsync()
+    {
+        try
+        {
+            isLoading = true;
+            dataLoadCompleted = false;
+            StateHasChanged();
+
+            await LoadMatrixCoreAsync(selectedYear);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入目標資料失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            dataLoadCompleted = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadMatrixCoreAsync(int year)
+    {
+        matrixRows = await SalesTargetService.GetMatrixByYearAsync(year, employees);
+    }
+
+    private async Task CopyFromLastYearAsync()
+    {
+        try
+        {
+            isLoading = true;
+            dataLoadCompleted = false;
+            StateHasChanged();
+
+            var lastYearRows = await SalesTargetService.GetMatrixByYearAsync(selectedYear - 1, employees);
+            if (!lastYearRows.Any(r => r.MonthlySum > 0 || r.Annual > 0))
+            {
+                await NotificationService.ShowWarningAsync($"{selectedYear - 1} 年度無目標資料可複製");
+                return;
+            }
+
+            // 複製到當前列（僅覆寫，不重置已設定的值）
+            foreach (var srcRow in lastYearRows)
+            {
+                var dstRow = matrixRows.FirstOrDefault(r => r.SalespersonId == srcRow.SalespersonId);
+                if (dstRow != null)
+                {
+                    for (int m = 1; m <= 12; m++)
+                        dstRow.SetMonth(m, srcRow.GetMonth(m));
+                    dstRow.Annual = srcRow.Annual;
+                }
+            }
+
+            await NotificationService.ShowSuccessAsync($"已複製 {selectedYear - 1} 年度目標資料");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"複製失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            dataLoadCompleted = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleSaveAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            await SalesTargetService.BatchUpsertAsync(selectedYear, matrixRows);
+
+            await NotificationService.ShowSuccessAsync($"{selectedYear} 年度目標已儲存");
+
+            if (OnSaved.HasDelegate)
+                await OnSaved.InvokeAsync();
+
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleCancelAsync()
+    {
+        if (OnCancel.HasDelegate)
+            await OnCancel.InvokeAsync();
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task HandleModalVisibleChanged(bool visible)
+    {
+        if (!visible)
+        {
+            await HandleCancelAsync();
+            return;
+        }
+        await IsVisibleChanged.InvokeAsync(visible);
+    }
+
+    private void OnYearChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var y) && y >= 2000 && y <= 2100)
+            selectedYear = y;
+    }
+
+    private string GetRowCssClass(SalesTargetMatrixRow row, int index)
+        => row.IsCompanyTotal ? "table-warning fw-bold" : "";
+}

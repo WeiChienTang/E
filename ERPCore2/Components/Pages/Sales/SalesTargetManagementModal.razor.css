@@ -1,0 +1,121 @@
+/* ════════════════════════════════════════════════
+   年份 Tab 捲動區
+   ════════════════════════════════════════════════ */
+.year-tabs-wrapper {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+    align-items: center;
+}
+
+.year-tabs-wrapper::-webkit-scrollbar {
+    height: 4px;
+}
+
+.year-tabs-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.year-tabs-wrapper::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+/* ── 年份 Tab 按鈕（modal-action-bar 背景為 var(--bg-secondary)，使用 CSS 變數自動適配） ── */
+.year-tab-btn {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 3px 12px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.year-tab-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--primary-blue);
+}
+
+.year-tab-btn.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: #fff;
+    font-weight: 600;
+}
+
+.year-tab-btn.add-year-btn {
+    border-style: dashed;
+    padding: 3px 8px;
+}
+
+/* ── 新增年度輸入框 ── */
+.year-input {
+    width: 72px !important;
+    padding: 2px 6px !important;
+    height: auto !important;
+    font-size: 1rem !important;
+}
+
+/* ════════════════════════════════════════════════
+   公司整體目標列（使用 CSS 變數，深色模式自動適配）
+   ════════════════════════════════════════════════ */
+.company-target-row {
+    background-color: var(--bg-tertiary) !important;
+    font-weight: 700;
+}
+
+.company-target-row td:first-child {
+    border-left: 3px solid var(--primary-blue) !important;
+}
+
+/* ════════════════════════════════════════════════
+   個人目標 toggle 按鈕
+   ════════════════════════════════════════════════ */
+.personal-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.personal-toggle-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+/* ── 有資料 badge ── */
+.has-data-badge {
+    background-color: var(--primary-blue) !important;
+    font-size: 1rem;
+    padding: 2px 5px;
+}
+
+/* ════════════════════════════════════════════════
+   未儲存提示
+   ════════════════════════════════════════════════ */
+.unsaved-indicator {
+    color: var(--bs-warning, #ffc107);
+}
+
+/* ════════════════════════════════════════════════
+   Body 容器
+   ════════════════════════════════════════════════ */
+.target-body-container {
+    padding: 4px 0;
+}

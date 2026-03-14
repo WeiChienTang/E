@@ -9,62 +9,59 @@
 @inject ICompanyModuleService CompanyModuleService
 @inject IEmployeePreferenceService EmployeePreferenceService
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> L
+@implements IDisposable
 
 <CascadingValue Value="@this" Name="NavMenuInstance">
 <div class="nav-menu-container">
     @* 手機版選單切換按鈕 - 必須在外層才能與 nav-scrollable 成為兄弟元素 *@
     <input type="checkbox" title="Navigation menu" class="navbar-toggler" id="nav-toggle" />
-    
+
+    @* 手機版頂部列 - 僅含切換按鈕 *@
     <div class="top-row navbar navbar-dark">
         <div class="top-row-content">
-            <nav class="nav flex-column user-info-nav">
-                @* 使用者資訊選單 *@
-                <AuthorizeView>
-                    <Authorized>
-                        @{
-                            var userName = context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
-                                ?? context.User.Identity?.Name
-                                ?? L["Nav.DefaultUser"].ToString();
-                            var userInitial = !string.IsNullOrEmpty(userName) ? userName[0].ToString().ToUpper() : "U";
-                        }
-                        <div class="user-profile-area">
-                            <div class="user-avatar-circle">
-                                @userInitial
-                                <span class="user-online-dot"></span>
-                            </div>
-                            <NavMenuItem Text="@userName"
-                                        IconClass=""
-                                        ShowDropdownArrow="false"
-                                        AutoDetectPermissions="false">
-                                <DropdownItems>
-                                    <NavDropdownItem Text="@L["Nav.PersonalData"]"
-                                                   ItemType="NavigationItemType.Action"
-                                                   ActionId="OpenPersonalPreference"
-                                                   IconClass="bi bi-person" />
-                                    <NavDropdownItem Text="@L["Nav.SignOut"]"
-                                                   Url="/auth/signout"
-                                                   IconClass="bi bi-box-arrow-right" />
-                                </DropdownItems>
-                            </NavMenuItem>
-                        </div>
-                    </Authorized>
-                    <NotAuthorized>
-                        <NavMenuItem Text="@L["Nav.SignIn"]"
-                                    IconClass="bi bi-box-arrow-in-right"
-                                    Url="/auth/login" />
-                    </NotAuthorized>
-                </AuthorizeView>
-            </nav>
-            
-            @* 切換按鈕的視覺 label *@
             <label for="nav-toggle" class="navbar-toggler-label" title="@L["Nav.ToggleNav"]">
                 <span class="navbar-toggler-icon"></span>
             </label>
         </div>
     </div>
 
-    <div class="nav-scrollable">    
+    <div class="nav-scrollable">
+        @* 使用者資訊區 - 固定在頂部 *@
+        <AuthorizeView>
+            <Authorized>
+                @{
+                    var userName = context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+                        ?? context.User.Identity?.Name
+                        ?? L["Nav.DefaultUser"].ToString();
+                    var userInitial = !string.IsNullOrEmpty(userName) ? userName[0].ToString().ToUpper() : "U";
+                }
+                <div class="nav-user-section">
+                    <div class="nav-user-toggle" @onclick="ToggleUserMenu">
+                        <div class="nav-user-avatar">@userInitial</div>
+                        <span class="nav-user-name">@userName</span>
+                        <i class="bi bi-chevron-down nav-user-chevron @(isUserMenuOpen ? "open" : "")"></i>
+                    </div>
+                    <div class="nav-user-dropdown @(isUserMenuOpen ? "show" : "")">
+                        <div class="nav-user-dropdown-item" @onclick="HandlePersonalPreference">
+                            <i class="bi bi-person"></i>
+                            <span>@L["Nav.PersonalData"]</span>
+                        </div>
+                        <a class="nav-user-dropdown-item" href="/auth/signout" @onclick="CloseUserMenu">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>@L["Nav.SignOut"]</span>
+                        </a>
+                    </div>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <NavMenuItem Text="@L["Nav.SignIn"]"
+                            IconClass="bi bi-box-arrow-in-right"
+                            Url="/auth/login" />
+            </NotAuthorized>
+        </AuthorizeView>
+
         <nav class="nav flex-column">
             @if (isInitialized)
             {
@@ -119,35 +116,53 @@
                 }
             }
         </nav>
+
     </div>
 </div>
 </CascadingValue>
 
 @code {
     // ===== 參數 =====
-    
+
     /// <summary>
     /// 動作觸發事件
     /// </summary>
     [Parameter]
     public EventCallback<string> OnActionTriggered { get; set; }
-    
+
+    // ===== 使用者選單狀態 =====
+
+    private bool isUserMenuOpen = false;
+
+    private void ToggleUserMenu() => isUserMenuOpen = !isUserMenuOpen;
+
+    private void CloseUserMenu() => isUserMenuOpen = false;
+
+    private async Task HandlePersonalPreference()
+    {
+        isUserMenuOpen = false;
+        await TriggerActionAsync("OpenPersonalPreference");
+        // 手機模式下收合導航選單
+        await JSRuntime.InvokeVoidAsync("navMenuMobile.hideNavMenu");
+    }
+
     // ===== 私有欄位 =====
 
     private bool isInitialized = false;
     private List<NavigationItem> filteredMenuGroups = new();
     private HashSet<string> _disabledModuleKeys = new();
     private bool _showDisabledModules = false;
-    
+
     // ===== 生命週期方法 =====
-    
+
     protected override async Task OnInitializedAsync()
     {
+        NavigationManager.LocationChanged += OnLocationChanged;
         // 在初始化時過濾出有權限的選單項目
         await FilterMenuGroupsAsync();
         isInitialized = true;
     }
-    
+
     /// <summary>
     /// 過濾選單群組，只保留使用者有權限訪問的項目
     /// </summary>
@@ -259,7 +274,7 @@
             {
                 // 單一項目，檢查權限
                 bool hasPermission = false;
-                
+
                 if (isAdmin)
                 {
                     hasPermission = true;
@@ -274,7 +289,7 @@
                     // 檢查是否有特定權限
                     hasPermission = await PermissionService.CanAccessAsync(menuGroup.RequiredPermission);
                 }
-                
+
                 if (hasPermission)
                 {
                     filteredMenuGroups.Add(menuGroup);
@@ -282,17 +297,17 @@
             }
         }
     }
-    
+
     /// <summary>
     /// 清理分隔線：移除開頭、結尾和連續的分隔線
     /// </summary>
     private List<NavigationItem> CleanDividers(List<NavigationItem> items)
     {
         if (!items.Any()) return items;
-        
+
         var result = new List<NavigationItem>();
         bool lastWasDivider = true; // 初始化為 true 以移除開頭的分隔線
-        
+
         foreach (var item in items)
         {
             if (item.IsDivider)
@@ -309,18 +324,29 @@
                 lastWasDivider = false;
             }
         }
-        
+
         // 移除結尾的分隔線
         while (result.Any() && result.Last().IsDivider)
         {
             result.RemoveAt(result.Count - 1);
         }
-        
+
         return result;
     }
-    
+
     // ===== 事件處理 =====
-    
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        isUserMenuOpen = false;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
     /// <summary>
     /// 觸發導航動作
     /// </summary>
@@ -331,7 +357,7 @@
             await OnActionTriggered.InvokeAsync(actionId);
         }
     }
-    
+
     private async Task ShowUnderConstructionMessage()
     {
         await JSRuntime.InvokeVoidAsync("alert", L["Nav.UnderConstruction"].ToString());

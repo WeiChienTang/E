@@ -93,6 +93,26 @@
   --detail-tab-active-border: #fde68a;            /* 活躍標籤底線 - 黃色 */
   --detail-tab-hover-bg: var(--bg-tertiary);      /* hover 背景 */
   --detail-tab-shadow: var(--shadow-lg);          /* 標籤頁容器陰影 */
+
+  /* 導航側邊欄色彩（nav-scrollable 區域，不含深色 top-row） */
+  --nav-bg: #FFFFFF;
+  --nav-text: var(--text-primary);
+  --nav-text-dim: rgba(0, 0, 0, 0.35);
+  --nav-hover-bg: rgba(0, 0, 0, 0.05);
+  --nav-active-bg: rgba(30, 58, 138, 0.09);
+  --nav-active-hover-bg: rgba(30, 58, 138, 0.13);
+  --nav-active-border: #1E3A8A;
+  --nav-expanded-bg: rgba(0, 0, 0, 0.04);
+  --nav-content-bg: rgba(0, 0, 0, 0.02);
+  --nav-content-left-border: rgba(30, 58, 138, 0.25);
+  --nav-dropdown-text: var(--text-primary);
+  --nav-dropdown-hover-border: rgba(30, 58, 138, 0.50);
+  --nav-divider: rgba(0, 0, 0, 0.10);
+  --nav-scrollbar: rgba(0, 0, 0, 0.12);
+  --nav-scrollbar-hover: rgba(0, 0, 0, 0.22);
+  /* 使用者頭像（avatar 背景恆為深色，白字始終可讀） */
+  --nav-avatar-bg: var(--primary-blue);
+  --nav-avatar-hover-shadow: rgba(30, 58, 138, 0.20);
 }
 
 /* ===== 深色模式覆寫（GitHub Dark 調色盤）===== */
@@ -151,6 +171,26 @@
 
   /* 標籤頁色彩 - Detail Tabs */
   --detail-tab-active-border: #e3b341;
+
+  /* 導航側邊欄色彩（深色模式覆寫） */
+  --nav-bg: #1c2d3e;
+  --nav-text: #FFFFFF;
+  --nav-text-dim: rgba(255, 255, 255, 0.50);
+  --nav-hover-bg: rgba(255, 255, 255, 0.08);
+  --nav-active-bg: rgba(255, 255, 255, 0.10);
+  --nav-active-hover-bg: rgba(255, 255, 255, 0.14);
+  --nav-active-border: #60a5fa;
+  --nav-expanded-bg: rgba(255, 255, 255, 0.06);
+  --nav-content-bg: rgba(255, 255, 255, 0.03);
+  --nav-content-left-border: rgba(120, 170, 255, 0.40);
+  --nav-dropdown-text: rgba(255, 255, 255, 0.82);
+  --nav-dropdown-hover-border: rgba(120, 170, 255, 0.60);
+  --nav-divider: rgba(255, 255, 255, 0.15);
+  --nav-scrollbar: rgba(255, 255, 255, 0.15);
+  --nav-scrollbar-hover: rgba(255, 255, 255, 0.30);
+  /* 使用者頭像 */
+  --nav-avatar-bg: rgba(255, 255, 255, 0.15);
+  --nav-avatar-hover-shadow: rgba(255, 255, 255, 0.10);
 
   /* focus */
   --focus-shadow-primary: 0 0 0 0.2rem rgba(88, 166, 255, 0.35);

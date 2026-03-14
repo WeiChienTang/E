@@ -85,9 +85,14 @@ namespace ERPCore2.Services.Reports.Interfaces
         public List<byte[]> PreviewImages { get; set; } = new();
 
         /// <summary>
-        /// 合併的格式化文件（用於列印）
+        /// 合併的格式化文件（用於 Excel/PDF 匯出）
         /// </summary>
         public FormattedDocument? MergedDocument { get; set; }
+
+        /// <summary>
+        /// 各份文件的獨立 FormattedDocument（用於 HTML 列印，每份保有正確的表頭/頁尾）
+        /// </summary>
+        public List<FormattedDocument> Documents { get; set; } = new();
 
         /// <summary>
         /// 符合條件的單據數量
@@ -102,7 +107,7 @@ namespace ERPCore2.Services.Reports.Interfaces
         /// <summary>
         /// 建立成功結果
         /// </summary>
-        public static BatchPreviewResult Success(List<byte[]> images, FormattedDocument? document, int documentCount)
+        public static BatchPreviewResult Success(List<byte[]> images, FormattedDocument? document, int documentCount, List<FormattedDocument>? documents = null)
         {
             return new BatchPreviewResult
             {
@@ -110,7 +115,8 @@ namespace ERPCore2.Services.Reports.Interfaces
                 PreviewImages = images,
                 MergedDocument = document,
                 DocumentCount = documentCount,
-                TotalPages = images.Count
+                TotalPages = images.Count,
+                Documents = documents ?? new List<FormattedDocument>()
             };
         }
 

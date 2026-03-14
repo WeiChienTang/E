@@ -14,6 +14,8 @@
 @inject IServiceProvider ServiceProvider
 @inject Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> L
 @inject INavigationPermissionService NavigationPermissionService
+@inject ERPCore2.Services.Reports.Configuration.IReportPrintConfigurationService ReportPrintConfigurationService
+@inject ERPCore2.Services.IPaperSettingService PaperSettingService
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@HandleVisibilityChanged"
@@ -123,11 +125,11 @@
                             Title="@(filterConfig?.PreviewTitle ?? "報表預覽")"
                             PreviewImages="@previewImages"
                             FormattedDocument="@formattedDocument"
+                            Documents="@documentList"
                             ReportId="@savedReportId"
                             DocumentName="@documentName"
                             OnPrintSuccess="@HandlePrintSuccess"
-                            OnCancel="@HandlePreviewCancel"
-                            OnPaperSettingChanged="@HandlePaperSettingChanged" />
+                            OnCancel="@HandlePreviewCancel" />
 
 @code {
     // ===== 參數定義 =====
@@ -188,6 +190,7 @@
     
     private List<byte[]>? previewImages;
     private FormattedDocument? formattedDocument;
+    private List<FormattedDocument>? documentList;
     private string documentName = "";
     
     // 保存 ReportId 的本地副本，避免關閉篩選 Modal 時參數被外部清空
@@ -372,9 +375,20 @@
             await SetPreviewProgress(10, "正在準備篩選條件...");
 
             // 產生文件名稱
-            documentName = filterConfig?.GetDocumentName?.Invoke(criteria) 
+            documentName = filterConfig?.GetDocumentName?.Invoke(criteria)
                           ?? $"報表-{DateTime.Now:yyyyMMddHHmmss}";
-            
+
+            // 查詢此報表配置的紙張設定，供渲染時使用（確保圖片尺寸與列印紙張一致）
+            var reportPaperSetting = await LoadReportPaperSettingAsync(savedReportId);
+
+            // 若 criteria 本身有 PaperSetting 屬性且尚未設定，透過反射注入
+            if (reportPaperSetting != null)
+            {
+                var paperProp = criteria.GetType().GetProperty("PaperSetting");
+                if (paperProp != null && paperProp.CanWrite && paperProp.GetValue(criteria) == null)
+                    paperProp.SetValue(criteria, reportPaperSetting);
+            }
+
             // 檢查是否有對應的報表服務
             if (filterConfig?.ReportServiceType != null)
             {
@@ -414,6 +428,7 @@
                     // 設定預覽資料
                     previewImages = result.PreviewImages;
                     formattedDocument = result.MergedDocument;
+                    documentList = result.Documents.Any() ? result.Documents : null;
 
                     // 保存報表服務和具體類型的 Criteria（紙張變更時用）
                     currentReportService = reportService;
@@ -434,7 +449,7 @@
                     // 降級使用 BatchPrintCriteria 方式
                     // 轉換篩選條件為 BatchPrintCriteria
                     BatchPrintCriteria batchCriteria;
-                    
+
                     // 嘗試使用 ToBatchPrintCriteria 方法轉換
                     var toBatchMethod = criteriaType.GetMethod("ToBatchPrintCriteria");
                     if (toBatchMethod != null)
@@ -446,7 +461,11 @@
                         // 使用預設轉換
                         batchCriteria = ConvertToBatchCriteria(criteria);
                     }
-                    
+
+                    // 套用報表紙張設定（確保渲染圖片尺寸與列印 CSS 一致）
+                    if (reportPaperSetting != null)
+                        batchCriteria.PaperSetting = reportPaperSetting;
+
                     // 呼叫批次預覽方法
                     var renderMethod = reportService.GetType().GetMethod("RenderBatchToImagesAsync", 
                         new[] { typeof(BatchPrintCriteria) });
@@ -468,6 +487,7 @@
                         // 設定預覽資料
                         previewImages = result.PreviewImages;
                         formattedDocument = result.MergedDocument;
+                        documentList = result.Documents.Any() ? result.Documents : null;
 
                         // 保存報表服務和篩選條件，用於紙張變更時重新產生預覽
                         currentReportService = reportService;
@@ -536,98 +556,6 @@
         showPreview = false;
         // 保持篩選 Modal 開啟，讓使用者可以修改條件
     }
-    
-    /// <summary>
-    /// 處理紙張設定變更事件
-    /// 當使用者在預覽 Modal 中變更紙張時，重新渲染預覽圖片
-    /// </summary>
-    private async Task HandlePaperSettingChanged(PaperSetting paperSetting)
-    {
-        try
-        {
-            if (currentReportService == null) return;
-
-            // 必須有 BatchPrintCriteria 或 TypedCriteria 其中一個
-            if (currentBatchCriteria == null && currentTypedCriteria == null) return;
-
-            isLoading = true;
-            _showPreviewProgress = true;
-            await SetPreviewProgress(10, "正在更新紙張設定...");
-            
-            BatchPreviewResult? result = null;
-            
-            if (currentTypedCriteria != null)
-            {
-                // 使用具體類型的 Criteria（如 ProductBarcodeBatchPrintCriteria）
-                // 透過反射設定 PaperSetting 屬性
-                var paperSettingProp = currentTypedCriteria.GetType().GetProperty("PaperSetting");
-                if (paperSettingProp != null && paperSettingProp.CanWrite)
-                {
-                    paperSettingProp.SetValue(currentTypedCriteria, paperSetting);
-                }
-                
-                // 呼叫具體類型的 RenderBatchToImagesAsync 方法
-                var criteriaType = currentTypedCriteria.GetType();
-                var typedRenderMethod = currentReportService.GetType().GetMethods()
-                    .FirstOrDefault(m => m.Name == "RenderBatchToImagesAsync" && 
-                                        m.GetParameters().Length == 1 &&
-                                        m.GetParameters()[0].ParameterType == criteriaType);
-                
-                if (typedRenderMethod != null)
-                {
-                    await SetPreviewProgress(30, "正在重新渲染...");
-                    var task = (Task<BatchPreviewResult>)typedRenderMethod.Invoke(currentReportService, new object[] { currentTypedCriteria })!;
-                    result = await task;
-                }
-            }
-            else if (currentBatchCriteria != null)
-            {
-                // 使用標準 BatchPrintCriteria
-                currentBatchCriteria.PaperSetting = paperSetting;
-
-                // 更新 FormattedDocument 的紙張尺寸
-                if (formattedDocument != null)
-                {
-                    formattedDocument.PageSettings.PageWidth = (float)paperSetting.Width;
-                    formattedDocument.PageSettings.PageHeight = (float)paperSetting.Height;
-                    formattedDocument.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
-                    formattedDocument.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
-                    formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
-                    formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
-                }
-
-                // 呼叫批次預覽方法
-                var renderMethod = currentReportService.GetType().GetMethod("RenderBatchToImagesAsync",
-                    new[] { typeof(BatchPrintCriteria) });
-                if (renderMethod != null)
-                {
-                    await SetPreviewProgress(30, "正在重新渲染...");
-                    var task = (Task<BatchPreviewResult>)renderMethod.Invoke(currentReportService, new object[] { currentBatchCriteria })!;
-                    result = await task;
-                }
-            }
-
-            // 更新預覽圖片
-            if (result != null && result.IsSuccess)
-            {
-                await SetPreviewProgress(100, "更新完成！");
-                await Task.Delay(300);
-                previewImages = result.PreviewImages;
-                formattedDocument = result.MergedDocument;
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"更新預覽時發生錯誤：{ex.Message}");
-        }
-        finally
-        {
-            isLoading = false;
-            _showPreviewProgress = false;
-            StateHasChanged();
-        }
-    }
-    
     /// <summary>
     /// 將 IReportFilterCriteria 轉換為 BatchPrintCriteria（預設實作）
     /// </summary>
@@ -658,5 +586,27 @@
         }
         
         return batchCriteria;
+    }
+
+    /// <summary>
+    /// 查詢報表配置的紙張設定，供渲染時使用
+    /// </summary>
+    private async Task<ERPCore2.Data.Entities.PaperSetting?> LoadReportPaperSettingAsync(string reportId)
+    {
+        if (string.IsNullOrEmpty(reportId))
+            return null;
+
+        try
+        {
+            var reportConfig = await ReportPrintConfigurationService.GetByReportIdAsync(reportId);
+            if (reportConfig?.PaperSettingId.HasValue == true)
+            {
+                var papers = await PaperSettingService.GetAllAsync();
+                return papers?.FirstOrDefault(p => p.Id == reportConfig.PaperSettingId.Value);
+            }
+        }
+        catch { /* 查詢失敗時使用預設紙張，不中斷主流程 */ }
+
+        return null;
     }
 }

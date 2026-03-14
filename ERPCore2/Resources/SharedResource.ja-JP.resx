@@ -1178,7 +1178,10 @@
   <data name="Field.PaperLeftMargin" xml:space="preserve"><value>左余白</value></data>
   <data name="Field.PaperRightMargin" xml:space="preserve"><value>右余白</value></data>
   <data name="Field.PaperTopMargin" xml:space="preserve"><value>上余白</value></data>
+  <data name="Field.PaperOrientation" xml:space="preserve"><value>用紙の向き</value></data>
   <data name="Field.PaperWidth" xml:space="preserve"><value>用紙幅</value></data>
+  <data name="PaperOrientation.Portrait" xml:space="preserve"><value>縦向き</value></data>
+  <data name="PaperOrientation.Landscape" xml:space="preserve"><value>横向き</value></data>
   <data name="Field.Printer" xml:space="preserve"><value>プリンター</value></data>
   <data name="Field.PrinterCode" xml:space="preserve"><value>プリンターコード</value></data>
   <data name="Field.PrinterIpAddress" xml:space="preserve"><value>IPアドレス</value></data>
@@ -3299,6 +3302,25 @@
   <data name="SalesTarget.AllYear" xml:space="preserve"><value>通年</value></data>
   <data name="SalesTarget.CompanyTotal" xml:space="preserve"><value>会社全体</value></data>
   <data name="SalesTarget.TargetAmount" xml:space="preserve"><value>目標金額</value></data>
+  <data name="SalesTarget.BatchInput" xml:space="preserve"><value>目標一括設定</value></data>
+  <data name="SalesTarget.CopyLastYear" xml:space="preserve"><value>前年度コピー</value></data>
+  <data name="SalesTarget.MonthlySum" xml:space="preserve"><value>月合計</value></data>
+  <data name="SalesTarget.Annual" xml:space="preserve"><value>年間目標</value></data>
+  <data name="SalesTarget.BatchEmptyHint" xml:space="preserve"><value>年度を選択して「読み込む」をクリックしてください</value></data>
+  <data name="SalesTarget.BatchFooterHint" xml:space="preserve"><value>{0}年度：金額を0にすると目標を削除します</value></data>
+  <data name="SalesTarget.RowCount" xml:space="preserve"><value>担当者数</value></data>
+  <data name="Button.Load" xml:space="preserve"><value>読み込む</value></data>
+  <data name="SalesTarget.ManagementTitle" xml:space="preserve"><value>営業目標管理</value></data>
+  <data name="SalesTarget.AddYear" xml:space="preserve"><value>年度を追加</value></data>
+  <data name="SalesTarget.PersonalTargets" xml:space="preserve"><value>個人目標（任意）</value></data>
+  <data name="SalesTarget.HasData" xml:space="preserve"><value>設定済み</value></data>
+  <data name="SalesTarget.UnsavedChanges" xml:space="preserve"><value>未保存の変更があります</value></data>
+  <data name="SalesTarget.YearSwitchConfirm" xml:space="preserve"><value>{0}年度に未保存の変更があります。切り替え前に保存しますか？</value></data>
+  <data name="SalesTarget.CloseConfirm" xml:space="preserve"><value>{0}年度に未保存の変更があります。閉じる前に保存しますか？</value></data>
+  <data name="SalesTarget.SaveAndSwitch" xml:space="preserve"><value>保存して切替</value></data>
+  <data name="SalesTarget.DiscardAndSwitch" xml:space="preserve"><value>破棄して切替</value></data>
+  <data name="SalesTarget.SaveAndClose" xml:space="preserve"><value>保存して閉じる</value></data>
+  <data name="SalesTarget.DiscardAndClose" xml:space="preserve"><value>破棄して閉じる</value></data>
   <data name="Entity.SalesTarget" xml:space="preserve"><value>営業目標</value></data>
   <data name="Page.SalesTargetTitle" xml:space="preserve"><value>営業目標管理</value></data>
   <data name="Page.SalesTargetSubtitle" xml:space="preserve"><value>営業担当者の販売目標を設定・追跡</value></data>

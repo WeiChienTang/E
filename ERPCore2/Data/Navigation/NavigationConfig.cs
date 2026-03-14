@@ -296,7 +296,7 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "客訴管理",
+                        Name = "客訴記錄",
                         NameKey = "Nav.CustomerComplaints",
                         Description = "記錄與追蹤客戶投訴事件及處理狀態",
                         Route = "/customer-complaints",

@@ -1178,7 +1178,10 @@
   <data name="Field.PaperLeftMargin" xml:space="preserve"><value>Kaliwang Margin</value></data>
   <data name="Field.PaperRightMargin" xml:space="preserve"><value>Kanang Margin</value></data>
   <data name="Field.PaperTopMargin" xml:space="preserve"><value>Itaas na Margin</value></data>
+  <data name="Field.PaperOrientation" xml:space="preserve"><value>Oryentasyon ng Papel</value></data>
   <data name="Field.PaperWidth" xml:space="preserve"><value>Lapad ng Papel</value></data>
+  <data name="PaperOrientation.Portrait" xml:space="preserve"><value>Portrait</value></data>
+  <data name="PaperOrientation.Landscape" xml:space="preserve"><value>Landscape</value></data>
   <data name="Field.Printer" xml:space="preserve"><value>Printer</value></data>
   <data name="Field.PrinterCode" xml:space="preserve"><value>Kodigo ng Printer</value></data>
   <data name="Field.PrinterIpAddress" xml:space="preserve"><value>IP Address</value></data>
@@ -3299,6 +3302,25 @@
   <data name="SalesTarget.AllYear" xml:space="preserve"><value>Buong Taon</value></data>
   <data name="SalesTarget.CompanyTotal" xml:space="preserve"><value>Kabuuan ng Kumpanya</value></data>
   <data name="SalesTarget.TargetAmount" xml:space="preserve"><value>Target na Halaga</value></data>
+  <data name="SalesTarget.BatchInput" xml:space="preserve"><value>Batch na Pagtatakda ng Target</value></data>
+  <data name="SalesTarget.CopyLastYear" xml:space="preserve"><value>Kopyahin ang Nakaraang Taon</value></data>
+  <data name="SalesTarget.MonthlySum" xml:space="preserve"><value>Kabuuang Buwanan</value></data>
+  <data name="SalesTarget.Annual" xml:space="preserve"><value>Taunang Target</value></data>
+  <data name="SalesTarget.BatchEmptyHint" xml:space="preserve"><value>Pumili ng taon at i-click ang Load</value></data>
+  <data name="SalesTarget.BatchFooterHint" xml:space="preserve"><value>Taon {0}: Itakda sa 0 para burahin ang target</value></data>
+  <data name="SalesTarget.RowCount" xml:space="preserve"><value>Bilang ng Nagbebenta</value></data>
+  <data name="Button.Load" xml:space="preserve"><value>I-load</value></data>
+  <data name="SalesTarget.ManagementTitle" xml:space="preserve"><value>Pamamahala ng Sales Target</value></data>
+  <data name="SalesTarget.AddYear" xml:space="preserve"><value>Magdagdag ng Taon</value></data>
+  <data name="SalesTarget.PersonalTargets" xml:space="preserve"><value>Personal na Target (Opsyonal)</value></data>
+  <data name="SalesTarget.HasData" xml:space="preserve"><value>Nakatakda</value></data>
+  <data name="SalesTarget.UnsavedChanges" xml:space="preserve"><value>May hindi pa nai-save na pagbabago</value></data>
+  <data name="SalesTarget.YearSwitchConfirm" xml:space="preserve"><value>Ang taon {0} ay may hindi pa nai-save na pagbabago. I-save bago lumipat?</value></data>
+  <data name="SalesTarget.CloseConfirm" xml:space="preserve"><value>Ang taon {0} ay may hindi pa nai-save na pagbabago. I-save bago isara?</value></data>
+  <data name="SalesTarget.SaveAndSwitch" xml:space="preserve"><value>I-save at Lumipat</value></data>
+  <data name="SalesTarget.DiscardAndSwitch" xml:space="preserve"><value>Itapon at Lumipat</value></data>
+  <data name="SalesTarget.SaveAndClose" xml:space="preserve"><value>I-save at Isara</value></data>
+  <data name="SalesTarget.DiscardAndClose" xml:space="preserve"><value>Itapon at Isara</value></data>
   <data name="Entity.SalesTarget" xml:space="preserve"><value>Sales Target</value></data>
   <data name="Page.SalesTargetTitle" xml:space="preserve"><value>Pamamahala ng Sales Target</value></data>
   <data name="Page.SalesTargetSubtitle" xml:space="preserve"><value>Itakda at subaybayan ang mga target sa benta</value></data>

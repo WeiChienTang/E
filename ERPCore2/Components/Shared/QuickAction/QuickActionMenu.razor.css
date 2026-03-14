@@ -235,51 +235,25 @@
     }
 }
 
-/* 手機 — D 形書籤 */
+/* 手機 — 圓形 FAB */
 @media (max-width: 640px) {
-    /* 書籤貼邊定位 */
     .quick-action-menu {
-        bottom: 80px;   /* 避開 iOS 手勢條 */
-        right: 0;       /* 貼齊右側螢幕邊 */
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        right: 12px;
     }
 
-    /* 主按鈕：小型書籤形（左側圓角，右直邊，夠大可點即可） */
     .quick-action-main-btn {
-        width: 32px;
-        height: 48px;
-        border-radius: 24px 0 0 24px;
-        font-size: 15px;
-        /* 僅左側投影，貼齊右邊緣時更自然 */
-        box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.18), -1px 1px 3px rgba(0, 0, 0, 0.08);
-    }
-
-    /* 展開時 D 形不旋轉，只換色 */
-    .quick-action-menu.expanded .quick-action-main-btn {
-        transform: none;
-    }
-
-    .quick-action-menu.expanded .quick-action-main-btn:hover {
-        transform: none;
-    }
-
-    /* 主按鈕 badge 移至左上角（D 形可見的圓弧側） */
-    .quick-action-main-badge {
-        top: 4px;
-        right: auto;
-        left: 4px;
-    }
-
-    /* 展開項目：稍微內縮避免右側截斷 */
-    .quick-action-items {
-        flex-direction: column-reverse;
-        padding-right: 4px;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        font-size: 18px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .quick-action-item {
         min-width: 130px;
         padding: 8px 12px;
         font-size: 12px;
-        border-radius: 24px;
     }
 
     .quick-action-item .bi {
@@ -290,18 +264,6 @@
         font-size: 12px;
     }
 
-    /* 手機版項目動畫改為從右側滑入（配合書籤方向） */
-    @keyframes itemSlideIn {
-        from {
-            opacity: 0;
-            transform: translateX(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
     .quick-action-item:hover {
         transform: translateX(-3px);
     }
@@ -310,14 +272,15 @@
 /* 小型手機 */
 @media (max-width: 360px) {
     .quick-action-menu {
-        bottom: 70px;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        right: 10px;
     }
 
     .quick-action-main-btn {
-        width: 28px;
-        height: 42px;
-        border-radius: 21px 0 0 21px;
-        font-size: 13px;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        font-size: 16px;
     }
 }
 

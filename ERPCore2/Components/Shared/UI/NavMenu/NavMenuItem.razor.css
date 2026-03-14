@@ -10,7 +10,7 @@
 }
 
 .nav-menu-dropdown-toggle-btn {
-    color: var(--primary-white);
+    color: var(--nav-text);
     background-color: transparent;
     border: none;
     border-radius: var(--radius-lg);
@@ -29,26 +29,26 @@
 }
 
 .nav-menu-dropdown-toggle-btn:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: var(--primary-white);
+    background-color: var(--nav-hover-bg);
+    color: var(--nav-text);
 }
 
 /* 展開狀態背景 */
 .nav-menu-dropdown-container.expanded .nav-menu-dropdown-toggle-btn:not(:hover) {
-    background-color: rgba(255, 255, 255, 0.06);
+    background-color: var(--nav-expanded-bg);
     border-radius: var(--radius-lg);
 }
 
 /* 展開且 hover */
 .nav-menu-dropdown-container.expanded .nav-menu-dropdown-toggle-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--primary-white);
+    background-color: var(--nav-hover-bg);
+    color: var(--nav-text);
     border-radius: var(--radius-lg);
 }
 
 /* 下拉內容 - 平滑展開動畫 */
 .nav-menu-dropdown-content {
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: var(--nav-content-bg);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     margin-top: 0;
     overflow: hidden;
@@ -68,7 +68,7 @@
     max-height: 600px;
     opacity: 1;
     margin-top: 2px;
-    border-left-color: rgba(120, 170, 255, 0.4);
+    border-left-color: var(--nav-content-left-border);
 }
 
 /* 下拉箭頭 - 使用 bi-chevron-down */
@@ -76,7 +76,7 @@
     margin-left: auto;
     font-size: 0.75rem;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--nav-text-dim);
     flex-shrink: 0;
 }
 
@@ -90,7 +90,7 @@
 
 /* 簡單連結 */
 .nav-menu-nav-link {
-    color: var(--primary-white);
+    color: var(--nav-text);
     background-color: transparent;
     border: none;
     border-radius: var(--radius-lg);
@@ -109,21 +109,21 @@
 }
 
 .nav-menu-nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: var(--primary-white);
+    background-color: var(--nav-hover-bg);
+    color: var(--nav-text);
     text-decoration: none;
 }
 
 /* 當前頁面指示器 */
 .nav-menu-nav-link.active {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-left-color: #60a5fa;
-    color: var(--primary-white);
+    background-color: var(--nav-active-bg);
+    border-left-color: var(--nav-active-border);
+    color: var(--nav-text);
     font-weight: 500;
 }
 
 .nav-menu-nav-link.active:hover {
-    background-color: rgba(255, 255, 255, 0.14);
+    background-color: var(--nav-active-hover-bg);
 }
 
 /* Icon 樣式 */
