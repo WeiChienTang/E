@@ -1,0 +1,266 @@
+@* 訂單照片 Tab - 多張附件照片，結構與 ProductPhotoTab 一致 *@
+@inject ISalesOrderPhotoService SalesOrderPhotoService
+@inject INotificationService NotificationService
+@inject IWebHostEnvironment Environment
+@inject IStringLocalizer<SharedResource> L
+
+@if (!SalesOrderId.HasValue || SalesOrderId.Value <= 0)
+{
+    <div class="text-center text-muted py-4">
+        <i class="bi bi-image fs-1 d-block mb-2"></i>
+        <span>@L["SalesOrderPhoto.SaveFirst"]</span>
+    </div>
+}
+else
+{
+    <div class="business-card-tab">
+
+        @* Header *@
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <span class="fw-semibold">@L["SalesOrderPhoto.PhotoList"]</span>
+            <label class="btn btn-sm btn-outline-primary" style="cursor:pointer; margin-bottom:0;">
+                <i class="bi bi-upload me-1"></i>@L["SalesOrderPhoto.UploadPhoto"]
+                <InputFile OnChange="@HandleFileSelected" accept=".jpg,.jpeg,.png" multiple class="d-none" />
+            </label>
+        </div>
+
+        @if (!string.IsNullOrEmpty(uploadError))
+        {
+            <div class="alert alert-danger py-2 mb-2">@uploadError</div>
+        }
+
+        @if (isUploading)
+        {
+            <div class="text-center text-muted py-3">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                @L["Label.PleaseWait"]
+            </div>
+        }
+
+        @* 照片列表 *@
+        @if (!photos.Any())
+        {
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-image fs-1 d-block mb-2"></i>
+                <span>@L["SalesOrderPhoto.NoPhotos"]</span>
+            </div>
+        }
+        else
+        {
+            <div class="business-card-grid">
+                @foreach (var photo in photos)
+                {
+                    <div class="business-card-item">
+                        <div class="business-card-photo-wrapper">
+                            <img src="@photo.PhotoPath" alt="@(photo.Caption ?? L["Entity.SalesOrder"])"
+                                 class="business-card-photo"
+                                 @onclick="@(() => OpenPreview(photo))" />
+                        </div>
+                        <div class="business-card-info px-2 py-1">
+                            <input type="text"
+                                   class="form-control form-control-sm border-0 p-0 fw-semibold"
+                                   value="@photo.Caption"
+                                   placeholder="@L["SalesOrderPhoto.Caption"]"
+                                   @onchange="@(e => SaveCaptionAsync(photo, e.Value?.ToString()))" />
+                        </div>
+                        <div class="business-card-actions px-2 pb-2 d-flex gap-1">
+                            <button class="btn btn-xs btn-outline-danger flex-fill"
+                                    title="@L["Button.Delete"]"
+                                    @onclick="@(() => RequestDelete(photo))">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@* 刪除確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showDeleteModal"
+                              IsVisibleChanged="@((bool v) => showDeleteModal = v)"
+                              Title="@L["SalesOrderPhoto.DeleteTitle"]"
+                              Icon="bi-trash"
+                              Message="@L["SalesOrderPhoto.DeleteMessage"]"
+                              ConfirmButtonText="@L["Button.ConfirmDelete"]"
+                              CancelButtonText="@L["Button.Cancel"]"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@ConfirmDeleteAsync"
+                              OnCancel="@(() => showDeleteModal = false)" />
+
+@* 照片預覽 Modal *@
+@if (previewPhoto != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.7);" @onclick="ClosePreview">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(previewPhoto.Caption ?? L["Entity.SalesOrder"])</h5>
+                    <button type="button" class="btn-close" @onclick="ClosePreview"></button>
+                </div>
+                <div class="modal-body text-center p-2">
+                    <img src="@previewPhoto.PhotoPath" class="img-fluid" alt="@previewPhoto.Caption" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int? SalesOrderId { get; set; }
+
+    private List<SalesOrderPhoto> photos = new();
+    private bool isUploading = false;
+    private string? uploadError = null;
+    private bool showDeleteModal = false;
+    private SalesOrderPhoto? deletingPhoto = null;
+    private SalesOrderPhoto? previewPhoto = null;
+    private int? _loadedSalesOrderId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SalesOrderId != _loadedSalesOrderId)
+        {
+            _loadedSalesOrderId = SalesOrderId;
+            if (SalesOrderId.HasValue && SalesOrderId.Value > 0)
+                await LoadAsync(SalesOrderId.Value);
+            else
+                Clear();
+        }
+    }
+
+    // ===== 公開方法（供主組件透過 @ref 呼叫） =====
+
+    public async Task LoadAsync(int salesOrderId)
+    {
+        photos = await SalesOrderPhotoService.GetBySalesOrderAsync(salesOrderId);
+        StateHasChanged();
+    }
+
+    public void Clear()
+    {
+        photos = new();
+        uploadError = null;
+        StateHasChanged();
+    }
+
+    // ===== 上傳 =====
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        if (!SalesOrderId.HasValue || SalesOrderId.Value <= 0) return;
+
+        uploadError = null;
+        isUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            var nextSortOrder = photos.Count > 0 ? photos.Max(p => p.SortOrder) + 1 : 0;
+
+            foreach (var file in e.GetMultipleFiles(10))
+            {
+                var (success, message, filePath) = await FileUploadHelper.UploadImageAsync(
+                    file, "sales-order-photos", Environment);
+
+                if (!success)
+                {
+                    uploadError = message;
+                    break;
+                }
+
+                var photo = new SalesOrderPhoto
+                {
+                    SalesOrderId = SalesOrderId.Value,
+                    OriginalFileName = file.Name,
+                    PhotoPath = filePath!,
+                    SortOrder = nextSortOrder++
+                };
+
+                var result = await SalesOrderPhotoService.CreateAsync(photo);
+                if (result.IsSuccess)
+                    photos.Add(photo);
+                else
+                    uploadError = result.ErrorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadError = $"上傳失敗：{ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+            if (SalesOrderId.HasValue && SalesOrderId.Value > 0)
+                photos = await SalesOrderPhotoService.GetBySalesOrderAsync(SalesOrderId.Value);
+            StateHasChanged();
+        }
+    }
+
+    // ===== 圖說（失去焦點自動儲存）=====
+
+    private async Task SaveCaptionAsync(SalesOrderPhoto photo, string? value)
+    {
+        photo.Caption = value;
+        var result = await SalesOrderPhotoService.UpdateAsync(photo);
+        if (!result.IsSuccess)
+            await NotificationService.ShowErrorAsync(result.ErrorMessage);
+    }
+
+    // ===== 刪除 =====
+
+    private void RequestDelete(SalesOrderPhoto photo)
+    {
+        deletingPhoto = photo;
+        showDeleteModal = true;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (deletingPhoto == null) return;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(deletingPhoto.PhotoPath))
+                FileUploadHelper.DeleteFile(deletingPhoto.PhotoPath, Environment);
+
+            var result = await SalesOrderPhotoService.DeleteAsync(deletingPhoto.Id);
+            if (result.IsSuccess)
+            {
+                photos.Remove(deletingPhoto);
+                await NotificationService.ShowSuccessAsync(L["SalesOrderPhoto.DeleteSuccess"]);
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除失敗：{ex.Message}");
+        }
+        finally
+        {
+            deletingPhoto = null;
+            showDeleteModal = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 預覽 =====
+
+    private void OpenPreview(SalesOrderPhoto photo)
+    {
+        previewPhoto = photo;
+        StateHasChanged();
+    }
+
+    private void ClosePreview()
+    {
+        previewPhoto = null;
+        StateHasChanged();
+    }
+}

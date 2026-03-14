@@ -1546,6 +1546,24 @@
   <data name="ProductPhoto.DeleteTitle" xml:space="preserve"><value>删除照片</value></data>
   <data name="ProductPhoto.DeleteMessage" xml:space="preserve"><value>确定要删除此照片吗？此操作无法还原。</value></data>
   <data name="ProductPhoto.DeleteSuccess" xml:space="preserve"><value>照片已删除</value></data>
+  <data name="Tab.QuotationPhotos" xml:space="preserve"><value>附件照片</value></data>
+  <data name="QuotationPhoto.SaveFirst" xml:space="preserve"><value>请先保存报价单资料后再上传照片</value></data>
+  <data name="QuotationPhoto.PhotoList" xml:space="preserve"><value>报价单附件照片</value></data>
+  <data name="QuotationPhoto.UploadPhoto" xml:space="preserve"><value>上传照片</value></data>
+  <data name="QuotationPhoto.NoPhotos" xml:space="preserve"><value>尚未上传任何附件照片</value></data>
+  <data name="QuotationPhoto.Caption" xml:space="preserve"><value>图说</value></data>
+  <data name="QuotationPhoto.DeleteTitle" xml:space="preserve"><value>删除照片</value></data>
+  <data name="QuotationPhoto.DeleteMessage" xml:space="preserve"><value>确定要删除此照片吗？此操作无法还原。</value></data>
+  <data name="QuotationPhoto.DeleteSuccess" xml:space="preserve"><value>照片已删除</value></data>
+  <data name="Tab.SalesOrderPhotos" xml:space="preserve"><value>附件照片</value></data>
+  <data name="SalesOrderPhoto.SaveFirst" xml:space="preserve"><value>请先保存订单资料后再上传照片</value></data>
+  <data name="SalesOrderPhoto.PhotoList" xml:space="preserve"><value>订单附件照片</value></data>
+  <data name="SalesOrderPhoto.UploadPhoto" xml:space="preserve"><value>上传照片</value></data>
+  <data name="SalesOrderPhoto.NoPhotos" xml:space="preserve"><value>尚未上传任何附件照片</value></data>
+  <data name="SalesOrderPhoto.Caption" xml:space="preserve"><value>图说</value></data>
+  <data name="SalesOrderPhoto.DeleteTitle" xml:space="preserve"><value>删除照片</value></data>
+  <data name="SalesOrderPhoto.DeleteMessage" xml:space="preserve"><value>确定要删除此照片吗？此操作无法还原。</value></data>
+  <data name="SalesOrderPhoto.DeleteSuccess" xml:space="preserve"><value>照片已删除</value></data>
   <data name="Tab.ProductData" xml:space="preserve"><value>商品资料</value></data>
   <data name="Tab.OrderData" xml:space="preserve"><value>订单资料</value></data>
   <data name="Tab.OrderDetail" xml:space="preserve"><value>订单明细</value></data>

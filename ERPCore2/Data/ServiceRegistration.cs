@@ -143,10 +143,12 @@ namespace ERPCore2.Data
             services.AddScoped<IQuotationService, QuotationService>();
             services.AddScoped<IQuotationDetailService, QuotationDetailService>();
             services.AddScoped<IQuotationCompositionDetailService, QuotationCompositionDetailService>();
-            
+            services.AddScoped<IQuotationPhotoService, QuotationPhotoService>();
+
             services.AddScoped<ISalesOrderService, SalesOrderService>();
             services.AddScoped<ISalesOrderDetailService, SalesOrderDetailService>();
             services.AddScoped<ISalesOrderCompositionDetailService, SalesOrderCompositionDetailService>();
+            services.AddScoped<ISalesOrderPhotoService, SalesOrderPhotoService>();
 
             services.AddScoped<ISalesDeliveryService, SalesDeliveryService>();
             services.AddScoped<ISalesDeliveryDetailService, SalesDeliveryDetailService>();

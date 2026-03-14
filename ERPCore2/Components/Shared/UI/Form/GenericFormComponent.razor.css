@@ -363,7 +363,7 @@
         min-width: 0;
     }
     
-    /* 手機版 Input 佔滿寬度並增加觸控區域 */
+    /* 手機版 Input 佔滿寬度 */
     /* 注意：必須使用 ::deep 才能穿透子組件（FormTextField 等）的 CSS scope */
     ::deep .form-field-input .form-control,
     ::deep .form-field-input .form-select,
@@ -371,9 +371,7 @@
     ::deep .form-field-input select,
     ::deep .form-field-input textarea {
         width: 100% !important;
-        height: 44px !important; /* Apple 建議的最小觸控區域 */
         font-size: 16px !important; /* 防止 iOS 自動縮放 */
-        padding: 0.5rem 0.75rem !important;
     }
     
     /* Checkbox 在手機版保持同行 - Label 在左、Checkbox 在右 */
@@ -508,7 +506,9 @@
 
 /* 手機版 Tab：水平可滑動列 */
 @media (max-width: 576px) {
-    /* Tab 按鈕群組：不換行，允許水平滑動，隱藏捲軸 */
+    /* Tab 按鈕群組：不換行，允許水平滑動，隱藏捲軸
+       sticky 固定在 modal-body 頂端，避免捲動時消失，並用實色背景與 action bar 清楚分隔
+       padding-top 確保無論是否捲動，tab 按鈕與上方 action bar 之間始終保有視覺間距 */
     .form-tab-btn-group {
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -517,8 +517,13 @@
         scrollbar-width: none;
         -ms-overflow-style: none;
         gap: 0;
+        padding-top: 0.375rem;
         padding-bottom: 0;
         border-bottom: 2px solid var(--border-light);
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background-color: var(--bg-primary);
     }
 
     .form-tab-btn-group::-webkit-scrollbar {
@@ -530,7 +535,7 @@
         flex-shrink: 0;
         flex-direction: row;
         padding: 0.45rem 0.65rem;
-        font-size: 0.82rem;
+        font-size: 1rem;
         border-radius: 0;
         border: none;
         border-bottom: 2px solid transparent;
@@ -540,7 +545,7 @@
     }
 
     .form-tab-btn i {
-        font-size: 0.9rem;
+        font-size: 1rem;
     }
 
     /* 作用中：底線藍色 + 文字藍色 */

@@ -120,6 +120,8 @@ namespace ERPCore2.Data.Context
       public DbSet<CalendarEvent> CalendarEvents { get; set; }
       public DbSet<BusinessCard> BusinessCards { get; set; }
       public DbSet<ProductPhoto> ProductPhotos { get; set; }
+      public DbSet<QuotationPhoto> QuotationPhotos { get; set; }
+      public DbSet<SalesOrderPhoto> SalesOrderPhotos { get; set; }
 
       // ── 薪資模組 ──────────────────────────────────────────────────────────
       public DbSet<PayrollPeriod> PayrollPeriods { get; set; }
@@ -1562,6 +1564,26 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(e => e.Product)
                               .WithMany()
                               .HasForeignKey(e => e.ProductId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  modelBuilder.Entity<QuotationPhoto>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        entity.HasIndex(e => e.QuotationId);
+                        entity.HasOne(e => e.Quotation)
+                              .WithMany()
+                              .HasForeignKey(e => e.QuotationId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  modelBuilder.Entity<SalesOrderPhoto>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        entity.HasIndex(e => e.SalesOrderId);
+                        entity.HasOne(e => e.SalesOrder)
+                              .WithMany()
+                              .HasForeignKey(e => e.SalesOrderId)
                               .OnDelete(DeleteBehavior.Cascade);
                   });
 

@@ -1,7 +1,7 @@
 # 會計模組 Phase 1：基礎補強
 
 ## 更新日期
-2026-03-08
+2026-03-14
 
 ## 優先等級
 🔴 最高優先（基礎補強完成前，帳務資料不可靠）
@@ -48,6 +48,31 @@ Phase 1 解決三個互相依存的根本缺口：**會計期間管理**、**期
 | 3 | Closed | 已關帳（不可新增/修改傳票） |
 | 4 | Locked | 永久鎖定（年度結帳後） |
 
+### FiscalPeriod 與 JournalEntry 關係決策
+
+> **決策：不在 JournalEntry 上新增 FiscalPeriodId FK**
+
+理由：
+- JournalEntry 已有 `FiscalYear int` + `FiscalPeriod int`，維持整數方式符合 SAP/Oracle 業界慣例
+- 加 FK 會造成「雞蛋問題」：期間不存在就無法建傳票，妨礙初始導入
+- 現有資料不需複雜 Migration 更新
+- 期間鎖定邏輯僅在 `PostEntryAsync` Service 層驗證即可
+
+### FiscalPeriod 初始化策略（混合式）
+
+| 情境 | 行為 |
+|------|------|
+| 當年度期間不存在 | 在公司設定精靈或年底結帳後**自動建立** 12 個期間（Open 狀態） |
+| 過去期間不存在（補登歷史）| 自動建立（Open 狀態）並寫入 Warning Log，允許過帳 |
+| 期間存在且 Status == Closed | **嚴格阻擋**，PostEntryAsync 拋出錯誤 |
+| 期間存在且 Status == Locked | **嚴格阻擋**，任何傳票（含沖銷）均不可寫入 |
+| 未來期間 | 允許建立但顯示提示「此期間尚未正式開始」 |
+
+初始化觸發點：
+1. 公司第一次使用會計功能 → 自動初始化當年度
+2. P3-B 年底結帳 → 自動呼叫 `InitializeYearAsync(year+1)`
+3. 管理員手動在 `FiscalPeriodIndex.razor` 操作
+
 ### Service 設計
 
 **檔案：** `Services/FinancialManagement/IFiscalPeriodService.cs` / `FiscalPeriodService.cs`
@@ -56,9 +81,9 @@ Phase 1 解決三個互相依存的根本缺口：**會計期間管理**、**期
 |------|------|
 | `GetCurrentOpenPeriodAsync()` | 取得目前開放期間 |
 | `GetByYearAsync(year)` | 取得指定年度的所有期間 |
-| `IsOpenAsync(year, period)` | 確認指定期間是否可記帳 |
+| `IsOpenAsync(year, period)` | 確認指定期間是否可記帳（不存在則自動建立） |
 | `CloseAsync(year, period)` | 執行關帳（Open → Closed） |
-| `InitializeYearAsync(year)` | 初始化年度的 12 個期間 |
+| `InitializeYearAsync(year)` | 初始化年度的 12 個期間（若已存在則跳過） |
 
 ### 傳票過帳整合
 
@@ -68,6 +93,18 @@ Phase 1 解決三個互相依存的根本缺口：**會計期間管理**、**期
 2. FiscalPeriodService.IsOpenAsync(...)
    └─ false → 拋出 "會計期間 {Year}-{Period} 已關帳，不允許過帳"
 ```
+
+### 沖銷傳票（Reversing Entry）期間驗證
+
+`JournalEntryService.ReverseEntryAsync(entryId, reversalDate)` 需同步新增驗證：
+```
+1. 從 reversalDate 推算 reversalYear, reversalPeriod
+2. FiscalPeriodService.IsOpenAsync(reversalYear, reversalPeriod)
+   └─ false → 拋出 "沖銷日期所在期間已關帳，請選擇開放期間（建議下個月份）"
+```
+
+> **實務說明：** 沖銷傳票通常建議日期為「次月 1 日」，避免沖到當月已關帳期間。
+> 系統應在 UI 上提示建議日期，但不強制（允許使用者選擇同月開放期間）。
 
 ### UI 設計
 
@@ -108,19 +145,37 @@ Phase 1 解決三個互相依存的根本缺口：**會計期間管理**、**期
 - 建立/編輯需要特別權限 `JournalEntry.OpeningBalance`
 - 科目可選所有明細科目（Level 4 + 子科目）
 
-**借貸平衡特殊規則：**
-期初餘額傳票借貸**不一定平衡**（歷史資料可能有差異），
-系統允許不平衡過帳，但顯示警告並記錄差額於「期初差額調整」科目。
+**借貸平衡規則（決策：強制平衡）：**
+
+> 期初餘額傳票**必須借貸平衡才可過帳**，不允許不平衡的期初餘額。
+
+理由：
+- 若資產 + 費用 ≠ 負債 + 收入 + 權益，代表輸入有誤，而非歷史資料的真實差異
+- 允許不平衡過帳會造成試算表永久無法平衡，所有後續報表數字均不可信
+- 正確的歷史帳務在任何一個時間點都應該符合會計恆等式
+
+修正流程：
+- 系統顯示「借方合計：$X / 貸方合計：$Y / 差額：$Z」
+- 使用者需補齊差額（如：將差額記入「保留盈餘」或「業主往來」科目）
+- 完全平衡後方可過帳
+
+若已過帳後發現輸入錯誤：
+- **草稿狀態（Draft）：** 可直接編輯
+- **已過帳（Posted）：** 建立**調整分錄**（Adjusting Entry）修正差額，不得重設或刪除
 
 ### UI 設計
 
 **檔案：** `Components/Pages/FinancialManagement/OpeningBalancePage.razor`
 - 路由：`/opening-balance`
 - 顯示「期初餘額設定精靈」
-  - Step 1：輸入系統啟用日期
+  - Step 1：輸入系統啟用日期（設定前一天為傳票日期，例如 2024-12-31）
   - Step 2：依科目大類分組，輸入各明細科目期初餘額
-  - Step 3：確認借貸合計，提交過帳
-- 已設定後改為「唯讀檢視 + 重設按鈕（需管理員權限）」
+  - Step 3：確認借貸合計（**差額不為零則拒絕提交，顯示錯誤提示**）
+  - Step 4：確認並過帳
+- 已過帳後改為「唯讀檢視」
+- 若需修正，應引導使用者建立**調整分錄**（連結至傳票建立頁面）
+
+> **移除「重設按鈕」設計**：重設會破壞稽核軌跡，改以調整分錄方式修正。
 
 ---
 
@@ -142,13 +197,15 @@ Phase 1 解決三個互相依存的根本缺口：**會計期間管理**、**期
 
 > 目前 FN006 沒有「期初餘額」欄，建議補充，改為**標準試算表格式（六欄）**。
 
-### FN007 損益表（修正）
+### FN007 損益表 / FN008 資產負債表（修正）
 
-**現行問題：** 年度結帳後，下一年度損益表的「期初損益」不應包含上年度科目餘額。
+**現行問題（根源相同）：**
+- FN007 損益表：跨年度損益科目不歸零，下年度報表包含歷史累計
+- FN008 資產負債表：「本期損益（3351）」欄位顯示所有年度累計數字，非當年度淨損益
 
-**修正：** 損益表的日期範圍需對應**結帳後的期間**。
-若結帳功能（Phase 3）完成後，上年度損益科目會被歸零（Closing Entries），則此問題自動解決。
-**目前暫不修正**，等 Phase 3 結帳功能完成後一併處理。
+**修正方向：** 等 Phase 3-B 年底結帳完成後，Closing Entry 會將損益科目歸零，此問題自動解決。
+
+> **⚠ 注意：** 在 P3-B 完成前，FN007 與 FN008 的損益數字均**不可靠**，應告知使用者這是已知限制。
 
 ### FN009 總分類帳 / FN011 明細科目餘額表（修正）
 
@@ -173,15 +230,23 @@ Phase 1 解決三個互相依存的根本缺口：**會計期間管理**、**期
 
 ## 完成標準（Definition of Done）
 
+### P1-A 會計期間管理
 - [ ] `FiscalPeriod` Entity + Migration 完成
-- [ ] `FiscalPeriodService` 實作（含 IsOpenAsync）
-- [ ] `PostEntryAsync` 加入期間開放檢查
-- [ ] `FiscalPeriodIndex.razor` UI 可操作
+- [ ] `FiscalPeriodService` 實作（含 IsOpenAsync、混合式初始化邏輯）
+- [ ] `PostEntryAsync` 加入期間開放檢查（不存在則自動建立 Open 期間）
+- [ ] `ReverseEntryAsync` 加入 reversalDate 對應期間的開放檢查
+- [ ] `FiscalPeriodIndex.razor` UI 可操作（初始化年度 / 關帳）
+
+### P1-B 期初餘額機制
 - [ ] `JournalEntryType.OpeningBalance = 6` Enum 補充
-- [ ] 期初餘額傳票可建立並過帳
-- [ ] `OpeningBalancePage.razor` 精靈 UI 可操作
-- [ ] FN006 試算表補充「期初餘額借/貸」兩欄
+- [ ] 期初餘額傳票強制借貸平衡後才可過帳
+- [ ] `OpeningBalancePage.razor` 精靈 UI（Step 1-4）可操作
+- [ ] 已過帳後顯示唯讀 + 提示建立調整分錄（不提供重設按鈕）
+
+### P1-C 報表修正
+- [ ] FN006 試算表補充「期初餘額借/貸」兩欄（標準六欄格式）
 - [ ] 期初餘額後 FN008 資產負債表餘額正確
+- [ ] 確認 FN007/FN008 損益科目跨年問題的 UI 提示文字
 
 ---
 

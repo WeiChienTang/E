@@ -1,11 +1,11 @@
 # 會計模組 — 實作狀態與缺口分析
 
 ## 更新日期
-2026-03-12
+2026-03-14
 
 ## 說明
 
-本文件記錄截至 2026-03-12 的會計模組**實際程式碼狀態**，
+本文件記錄截至 2026-03-14 的會計模組**實際程式碼狀態**，
 與設計文件（Phase 1–4）逐項比對，列出缺口、文件錯誤、及待決策事項。
 
 ---
@@ -69,9 +69,17 @@
 **`JournalEntryService.PostEntryAsync` 目前無期間鎖定：**
 目前任何時候均可對任意歷史月份過帳，無法防止補登已關帳期間。
 
+**`JournalEntryService.ReverseEntryAsync` 同樣無期間驗證：**
+沖銷傳票（ReverseEntryAsync）的 `reversalDate` 對應的期間若已關帳，目前不會阻擋，需同步補充驗證邏輯。
+
 ---
 
 ### P1-B：期初餘額機制 — 完全未實作
+
+**設計決策（已確認）：**
+- 期初餘額傳票**必須借貸平衡**才可過帳，系統拒絕不平衡提交
+- 已過帳後不提供「重設」功能，改以建立**調整分錄**方式修正
+- 借貸平衡是因為任何時間點的歷史帳務都應符合會計恆等式
 
 **缺少的程式碼：**
 
@@ -81,6 +89,7 @@
 | `Components/Pages/Accounting/OpeningBalancePage.razor` | 精靈 UI 不存在 |
 | 期初餘額傳票建立邏輯 | JournalEntryService 無相關方法 |
 | 每公司一筆限制驗證 | 未設計 |
+| 借貸平衡強制檢查 | 未設計（舊設計允許不平衡） |
 
 ---
 
@@ -106,11 +115,15 @@
 
 > Phase 1 完成後執行。
 
-### P2-A：薪資傳票整合 — 完全未實作，且有設計問題
+### P2-A：薪資傳票整合 — 暫緩（薪資模組設計尚未完整）
 
-**⚠️ 設計文件問題：**
+> **P2-A 推遲：薪資模組本身仍有許多設計缺陷尚待修正，待薪資模組重新設計後再處理傳票整合。**
 
-原文件以 `PayrollBatch` 為整合目標，但薪資模組實際 Entity 結構為：
+**⚠️ 已知問題（暫緩前記錄，待薪資重設計後確認）：**
+
+- `PayrollPeriod.Year` 使用民國年（如 114），而 `JournalEntry.FiscalYear` 使用西元年（2025）
+- 薪資傳票建立時必須做 `payrollYear + 1911` 年份轉換
+- 原文件以 `PayrollBatch` 為整合目標，但薪資模組實際 Entity 結構為：
 
 | Entity | 路徑 | 說明 |
 |--------|------|------|
@@ -141,11 +154,21 @@
 
 ### P2-B：材料領用傳票整合 — 部分缺失，有待決策項目
 
-**現有狀況：**
+**現有狀況（程式碼確認）：**
 - `MaterialIssue` Entity 存在於 `Data/Entities/Inventory/`
-- `ProductionScheduleId`（關聯生產排程）已有，可判斷是否為生產用料
+- `MaterialIssueDetail.UnitCost` 欄位**已存在**（nullable decimal），`TotalCost` 為計算屬性
+- `ProductionScheduleDetailId`（關聯生產排程明細）已有
+- **無 `IsConfirmed` 欄位**（缺少領料確認狀態）
 - **無 `IsJournalized` 欄位**
 - **無正式用途分類欄位**（Remarks 為自由文字）
+
+**⚠️ 成本來源待確認：**
+`MaterialIssueDetail.UnitCost` 為 nullable，需確認領料確認時是否自動填入商品當下的移動均價（`Product.AverageCost`）。
+若未自動填入，傳票金額將為 null，建立時需有警告機制。
+
+**⚠️ 缺少確認狀態（新發現缺口）：**
+`MaterialIssue` 沒有任何代表「已確認」的狀態欄位，批次轉傳票無法篩選「可轉傳票的領料單」（已確認）vs「草稿中的領料單」。
+必須在 P2-B 前先補充 `IsConfirmed`、`ConfirmedAt`、`ConfirmedByEmployeeId`。
 
 **⚠️ 待決策：材料領用用途分類**
 
@@ -171,36 +194,51 @@ public enum MaterialIssuePurpose
 
 | 缺少項目 | 說明 |
 |---------|------|
+| `MaterialIssue.IsConfirmed` | 未新增（**必須先補充，才能篩選可轉傳票的領料單**） |
+| `MaterialIssue.ConfirmedAt` | 未新增 |
+| `MaterialIssue.ConfirmedByEmployeeId` | 未新增 |
 | `MaterialIssuePurpose` Enum（若選 A） | 未建立 |
 | `MaterialIssue.IssuePurpose`（若選 A） | 未新增 |
 | `MaterialIssue.IsJournalized` | 未新增 |
 | `MaterialIssue.JournalizedAt` | 未新增 |
-| Migration | 未建立 |
+| Migration `AddMaterialIssueFields` | 未建立（含以上所有新欄位） |
 | `JournalEntryAutoGenerationService.GetPendingMaterialIssuesAsync()` | 未新增 |
 | `JournalEntryAutoGenerationService.JournalizeMaterialIssueAsync()` | 未新增 |
 | 批次轉傳票頁面 — 材料領用 Section | 未新增 |
 
 ---
 
-### P2-C：生產完工傳票整合 — 完全未實作，有核心待決策
+### P2-C：生產完工傳票整合 — 完全未實作，核心決策已定
 
-**⚠️ 最關鍵待決策：生產完工成本計算方式**
+**成本計算方式（已決策：選項 C — 取自 InventoryTransaction）：**
 
-| 選項 | 說明 | 優點 | 缺點 |
-|------|------|------|------|
-| A：標準成本 | 預設商品標準成本 × 完工數量 | 簡單 | 需先建立商品標準成本 |
-| B：實際投入原料成本 | 彙總對應領料單金額 | 最準確 | 需與 P2-B 領料傳票聯動 |
-| C（建議）：均價倒推 | 完工入庫時的移動加權均價 × 數量 | 與現有庫存邏輯一致，無需額外設定 | 依賴庫存入庫已有均價 |
+`ProductionScheduleCompletion` 已有：
+- `ActualUnitCost` (decimal?, nullable)
+- `InventoryTransactionId` (int?, nullable FK)
+
+取 `InventoryTransaction.TotalAmount` 作為傳票金額，與銷貨出貨 COGS 邏輯一致。
+
+**⚠️ Nullable 風險：**
+兩個欄位均為 nullable。若完工入庫流程未確實填入，傳票金額將為零。
+批次轉傳票前需加檢查：`InventoryTransactionId == null` 的完工記錄顯示警告並跳過。
+
+**IsJournalized 層級設計修正（新發現缺口）：**
+
+> ⚠ `IsJournalized` 應加在 **`ProductionScheduleCompletion`**，而非 `ProductionScheduleItem`
+>
+> 一個 `ProductionScheduleItem` 可有多筆分批完工記錄（`ProductionScheduleCompletion`），
+> 每次完工獨立入庫、獨立建傳票，必須在 Completion 層級追蹤。
 
 **缺少的程式碼：**
 
 | 缺少項目 | 說明 |
 |---------|------|
-| 生產相關 Entity 的 `IsJournalized` | 需確認以哪個 Entity 為單位（ProductionSchedule？） |
-| Migration | 未建立 |
+| `ProductionScheduleCompletion.IsJournalized` | 未新增（加在 Completion 層，非 Item 層）|
+| `ProductionScheduleCompletion.JournalizedAt` | 未新增 |
+| Migration `AddProductionCompletionIsJournalized` | 未建立 |
 | `JournalEntryAutoGenerationService.GetPendingProductionCompletionsAsync()` | 未新增 |
-| `JournalEntryAutoGenerationService.JournalizeProductionCompletionAsync()` | 未新增 |
-| 批次轉傳票頁面 — 生產完工 Section | 未新增 |
+| `JournalEntryAutoGenerationService.JournalizeProductionCompletionAsync()` | 未新增（每筆 Completion 建一張傳票）|
+| 批次轉傳票頁面 — 生產完工 Section | 未新增（需顯示 InventoryTransactionId 為 null 的警告）|
 
 ---
 
@@ -213,10 +251,18 @@ public enum MaterialIssuePurpose
 - `SupplierStatementReportService` 存在，同上
 - **無帳齡區間分析報表**（0-30 / 31-60 / 61-90 / 91-120 / 120+ 天分組）
 
+**計算設計決策（已確認）：**
+- 帳齡計算單位：**SalesDelivery 主檔**（非逐行商品明細）
+- 未收金額：`SalesDelivery.TotalAmount - SUM(SetoffProductDetail.CurrentSetoffAmount WHERE 關聯此單據)`
+- 帳齡天數基準：`DeliveryDate + Customer.PaymentDays`（需確認 `Customer` Entity 是否有 `PaymentDays` 欄位）
+- `SetoffProductDetail` 為多型 FK，查詢需批量處理避免 N+1
+
 **缺少的程式碼：**
 
 | 缺少項目 | 說明 |
 |---------|------|
+| `Customer.PaymentDays` 欄位 | 需確認是否存在，若無需先新增 |
+| `Supplier.PaymentDays` 欄位 | 同上 |
 | `Models/Reports/FilterCriteria/ARAgingCriteria.cs` | 未建立 |
 | `Services/Reports/IARAgingReportService.cs` | 未建立 |
 | `Services/Reports/ARAgingReportService.cs` | 未建立 |
@@ -243,7 +289,10 @@ public enum MaterialIssuePurpose
 
 ---
 
-### P3-C：業務單據顯示相關傳票 — 完全未實作
+### P3-C：業務單據顯示相關傳票 — 完全未實作（但可立即執行）
+
+> ✅ `JournalEntryService.GetBySourceDocumentAsync` 已實作，後端無任何依賴。
+> 這是 Phase 3 中最容易完成的項目，建議優先執行。
 
 **需在以下 5 個 EditModal 底部新增「相關傳票」折疊區塊：**
 
@@ -276,15 +325,19 @@ var entries = await JournalEntryService.GetBySourceDocumentAsync("PurchaseReceiv
 
 ## 七、待決策彙總
 
-在開始實作前，以下問題需要業務討論或架構決策：
-
-| # | 問題 | 影響 Phase | 選項 |
-|---|------|-----------|------|
-| 1 | 薪資傳票的轉傳票單位：以 `PayrollPeriod`（期間）還是 `PayrollRecord`（員工）為單位？ | P2-A | 建議以 PayrollPeriod 為單位（一期一張傳票） |
-| 2 | 材料領用用途分類：新增 Enum 還是靠 `ProductionScheduleId` 判斷？ | P2-B | 建議新增 `MaterialIssuePurpose` Enum |
-| 3 | 生產完工成本計算：標準成本 / 實際投入成本 / 均價倒推？ | P2-C | 建議均價倒推（與現有庫存邏輯一致） |
-| 4 | 帳齡分析（FN012/013）計算基礎：以業務單據計算還是以傳票分錄計算？ | P3-A | 建議以業務單據（銷貨出貨單/進貨入庫單）為基礎 |
-| 5 | 生產完工的轉傳票單位：以 `ProductionSchedule` 還是另一個 Entity？ | P2-C | 需確認 ProductionSchedule 是否有完工確認欄位 |
+| # | 問題 | 影響 Phase | 狀態 | 決策 |
+|---|------|-----------|------|------|
+| 1 | FiscalPeriod FK vs 整數查詢 | P1-A | ✅ 已決策 | 維持整數，Service 層驗證（不加 FK） |
+| 2 | FiscalPeriod 初始化策略 | P1-A | ✅ 已決策 | 混合式：當年度自動建立，過去期間自動建立+警告，Closed/Locked 嚴格阻擋 |
+| 3 | 期初餘額借貸平衡規則 | P1-B | ✅ 已決策 | **強制平衡**，不允許不平衡過帳（舊設計允許需修正） |
+| 4 | 期初餘額修正方式 | P1-B | ✅ 已決策 | 草稿可直接編輯；已過帳只能建調整分錄（移除重設按鈕） |
+| 5 | 薪資傳票整合 | P2-A | ⏸ 暫緩 | 等薪資模組重新設計完成後處理 |
+| 6 | 材料領用用途分類欄位 | P2-B | 🔲 待決策 | 建議新增 `MaterialIssuePurpose` Enum |
+| 7 | 材料領用 UnitCost 填入時機 | P2-B | 🔲 待確認 | 確認領料確認流程是否自動填入移動均價 |
+| 8 | 生產完工成本計算方式 | P2-C | ✅ 已決策 | 取 `InventoryTransaction.TotalAmount`（與 COGS 邏輯一致） |
+| 9 | 生產完工 IsJournalized 層級 | P2-C | ✅ 已決策 | 加在 `ProductionScheduleCompletion`，非 `ProductionScheduleItem` |
+| 10 | 帳齡計算單位 | P3-A | ✅ 已決策 | SalesDelivery / PurchaseReceiving 主檔層級 |
+| 11 | 帳齡天數基準欄位 | P3-A | 🔲 待確認 | 確認 `Customer.PaymentDays` / `Supplier.PaymentDays` 是否存在 |
 
 ---
 
@@ -293,21 +346,24 @@ var entries = await JournalEntryService.GetBySourceDocumentAsync("PurchaseReceiv
 ```
 Phase 1（必須優先）
   ├─ P1-A：FiscalPeriod Entity + Service + UI           ← 所有關帳/鎖定的基礎
-  ├─ P1-B：OpeningBalance Enum + 精靈頁面               ← 歷史帳務導入
-  └─ P1-C：FN006 六欄格式修正                           ← 報表格式正確化
+  │          含：ReverseEntryAsync 期間驗證
+  │          含：混合式初始化（自動建立 + 警告）
+  ├─ P1-B：OpeningBalance Enum + 精靈頁面（強制借貸平衡）
+  └─ P1-C：FN006 六欄格式修正
 
 Phase 2（Phase 1 後執行）
-  ├─ P2-A：決策薪資 Entity → 新增 IsJournalized → 實作薪資傳票方法
-  ├─ P2-B：決策用途分類 → 新增欄位 → 實作材料領用傳票方法
-  └─ P2-C：決策成本計算方式 → 實作生產完工傳票方法
+  ├─ P2-B 前置：MaterialIssue 補充 IsConfirmed 欄位（Mission Critical）
+  ├─ P2-B：決策用途分類 → 新增欄位 → 確認 UnitCost 填入機制 → 實作材料領用傳票
+  ├─ P2-C：IsJournalized 加到 Completion 層 → 確認 InventoryTransactionId nullable 處理 → 實作完工傳票
+  └─ P2-A：薪資暫緩（等薪資模組重新設計）
 
-Phase 3（可與 Phase 2 平行）
-  ├─ P3-C：業務單據顯示相關傳票（最簡單，可優先做）
-  ├─ P3-A：AR/AP 帳齡分析報表
-  └─ P3-B：年底結帳（需 P1-A 完成後才可執行）
+Phase 3（可與 Phase 2 平行推進）
+  ├─ P3-C：業務單據顯示相關傳票（✅ 最快，立即可做，後端已完備）
+  ├─ P3-A：確認 Customer/Supplier.PaymentDays → 建立帳齡分析 Service + 報表
+  └─ P3-B：年底結帳（需 P1-A 完成，自動初始化下年度期間）
 
 Phase 4（最後執行）
-  ├─ P4-B：Excel 匯出（依賴套件評估）
+  ├─ P4-B：Excel 匯出
   ├─ P4-A：現金流量表（依賴 Phase 1 期初餘額）
   ├─ P4-C：銀行對帳
   └─ P4-D：傳票附件

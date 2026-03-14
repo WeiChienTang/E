@@ -126,6 +126,7 @@
     
     // Tab 元件參考
     private CustomerInfoTab? customerInfoTab;
+    private QuotationPhotoTab? quotationPhotoTab;
 
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -642,7 +643,9 @@
                     FormSectionNames.BasicInfo, FormSectionNames.AmountInfo,
                     FormSectionNames.TradingTerms, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)
                 .GroupIntoCustomTab(L["Tab.CustomerInfo"].ToString(), "bi-people",
-                    CreateCustomerInfoTabContent(), nameof(CustomerInfoTab));
+                    CreateCustomerInfoTabContent(), nameof(CustomerInfoTab))
+                .GroupIntoCustomTab(L["Tab.QuotationPhotos"].ToString(), "bi-images",
+                    CreateQuotationPhotoTabContent(), nameof(QuotationPhotoTab));
 
             var layout = formBuilder.BuildAll();
             formSections = layout.FieldSections;
@@ -946,6 +949,12 @@
     {
         <CustomerInfoTab @ref="customerInfoTab"
                         CustomerId="@editModalComponent?.Entity?.CustomerId" />
+    };
+
+    private RenderFragment CreateQuotationPhotoTabContent() => __builder =>
+    {
+        <QuotationPhotoTab @ref="quotationPhotoTab"
+                           QuotationId="@QuotationId" />
     };
 
     /// <summary>
@@ -1546,6 +1555,12 @@
             else
                 customerInfoTab?.Clear();
 
+            // 載入報價單照片 Tab
+            if (loadedEntityId > 0)
+                await (quotationPhotoTab?.LoadAsync(loadedEntityId) ?? Task.CompletedTask);
+            else
+                quotationPhotoTab?.Clear();
+
             StateHasChanged();
         }
         catch (Exception ex)
@@ -1555,7 +1570,7 @@
             await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
         }
     }
-    
+
     /// <summary>
     /// 載入報價單明細
     /// </summary>

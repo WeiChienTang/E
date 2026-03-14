@@ -1546,6 +1546,24 @@
   <data name="ProductPhoto.DeleteTitle" xml:space="preserve"><value>Delete Photo</value></data>
   <data name="ProductPhoto.DeleteMessage" xml:space="preserve"><value>Are you sure you want to delete this photo? This action cannot be undone.</value></data>
   <data name="ProductPhoto.DeleteSuccess" xml:space="preserve"><value>Photo deleted</value></data>
+  <data name="Tab.QuotationPhotos" xml:space="preserve"><value>Attachments</value></data>
+  <data name="QuotationPhoto.SaveFirst" xml:space="preserve"><value>Please save the quotation before uploading photos</value></data>
+  <data name="QuotationPhoto.PhotoList" xml:space="preserve"><value>Quotation Attachments</value></data>
+  <data name="QuotationPhoto.UploadPhoto" xml:space="preserve"><value>Upload Photo</value></data>
+  <data name="QuotationPhoto.NoPhotos" xml:space="preserve"><value>No attachment photos uploaded yet</value></data>
+  <data name="QuotationPhoto.Caption" xml:space="preserve"><value>Caption</value></data>
+  <data name="QuotationPhoto.DeleteTitle" xml:space="preserve"><value>Delete Photo</value></data>
+  <data name="QuotationPhoto.DeleteMessage" xml:space="preserve"><value>Are you sure you want to delete this photo? This action cannot be undone.</value></data>
+  <data name="QuotationPhoto.DeleteSuccess" xml:space="preserve"><value>Photo deleted</value></data>
+  <data name="Tab.SalesOrderPhotos" xml:space="preserve"><value>Attachments</value></data>
+  <data name="SalesOrderPhoto.SaveFirst" xml:space="preserve"><value>Please save the order before uploading photos</value></data>
+  <data name="SalesOrderPhoto.PhotoList" xml:space="preserve"><value>Order Attachments</value></data>
+  <data name="SalesOrderPhoto.UploadPhoto" xml:space="preserve"><value>Upload Photo</value></data>
+  <data name="SalesOrderPhoto.NoPhotos" xml:space="preserve"><value>No attachment photos uploaded yet</value></data>
+  <data name="SalesOrderPhoto.Caption" xml:space="preserve"><value>Caption</value></data>
+  <data name="SalesOrderPhoto.DeleteTitle" xml:space="preserve"><value>Delete Photo</value></data>
+  <data name="SalesOrderPhoto.DeleteMessage" xml:space="preserve"><value>Are you sure you want to delete this photo? This action cannot be undone.</value></data>
+  <data name="SalesOrderPhoto.DeleteSuccess" xml:space="preserve"><value>Photo deleted</value></data>
   <data name="Tab.ProductData" xml:space="preserve"><value>Product Data</value></data>
   <data name="Tab.OrderData" xml:space="preserve"><value>Order Data</value></data>
   <data name="Tab.OrderDetail" xml:space="preserve"><value>Order Detail</value></data>

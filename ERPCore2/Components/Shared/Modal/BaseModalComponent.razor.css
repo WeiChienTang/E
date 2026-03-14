@@ -238,7 +238,7 @@
 }
 
 ::deep .modal-dialog.modal-desktop .modal-body {
-    flex: 1 1 auto;
+    flex: 1 1 0;    /* flex-basis: 0 確保 modal-body 從 0 開始擴展，不受內容高度影響 */
     min-height: 0;
     max-height: none;
     overflow-y: auto;

@@ -174,6 +174,7 @@
     
     // Tab 元件參考
     private CustomerInfoTab? customerInfoTab;
+    private SalesOrderPhotoTab? salesOrderPhotoTab;
 
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -750,7 +751,9 @@
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)
                 .GroupIntoCustomTab(L["Tab.CustomerInfo"].ToString(), "bi-people",
-                    CreateCustomerInfoTabContent(), nameof(CustomerInfoTab));
+                    CreateCustomerInfoTabContent(), nameof(CustomerInfoTab))
+                .GroupIntoCustomTab(L["Tab.SalesOrderPhotos"].ToString(), "bi-images",
+                    CreateSalesOrderPhotoTabContent(), nameof(SalesOrderPhotoTab));
 
             var layout = formBuilder.BuildAll();
             formSections = layout.FieldSections;
@@ -820,6 +823,12 @@
     {
         <CustomerInfoTab @ref="customerInfoTab"
                         CustomerId="@editModalComponent?.Entity?.CustomerId" />
+    };
+
+    private RenderFragment CreateSalesOrderPhotoTabContent() => __builder =>
+    {
+        <SalesOrderPhotoTab @ref="salesOrderPhotoTab"
+                            SalesOrderId="@SalesOrderId" />
     };
 
     /// <summary>
@@ -1026,6 +1035,12 @@
                 await customerInfoTab.LoadAsync(editModalComponent.Entity.CustomerId.Value);
             else
                 customerInfoTab?.Clear();
+
+            // 載入訂單照片 Tab
+            if (loadedEntityId > 0)
+                await (salesOrderPhotoTab?.LoadAsync(loadedEntityId) ?? Task.CompletedTask);
+            else
+                salesOrderPhotoTab?.Clear();
 
             StateHasChanged();
         }

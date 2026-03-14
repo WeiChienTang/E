@@ -1,7 +1,7 @@
 # 會計模組設計總綱
 
 ## 更新日期
-2026-03-08
+2026-03-14
 
 ---
 
@@ -94,6 +94,10 @@ Level 1: Code "1"      → 資產（ParentId: null）
 | 批次轉傳票（非即時） | 業務單據確認後仍可修改，讓會計月底審核無誤後再執行 |
 | COGS 取自 InventoryTransaction.TotalAmount | 移動加權均價，出庫時由 `ReduceStockAsync` 自動寫入，無須重新計算 |
 | 子科目延遲建立（GetOrCreate） | 未啟用時自動 fallback 統制科目，不影響既有流程 |
+| FiscalPeriod 不對 JournalEntry 加 FK | JournalEntry 維持 `FiscalYear int` + `FiscalPeriod int`，FiscalPeriod 管理表獨立維護，期間驗證在 Service 層完成（符合業界 SAP/Oracle 慣例，避免雞蛋問題與 Migration 負擔） |
+| 期初餘額傳票必須借貸平衡 | 不允許不平衡的期初餘額傳票過帳；差額代表輸入有誤，系統應拒絕並提示哪邊相差多少（詳見 Phase 1） |
+| AR/AP 帳齡以主檔（Invoice）層級計算 | 帳齡追蹤單位為 SalesDelivery / PurchaseReceiving 整張單據，而非逐行商品明細；帳齡天數基準 = 交貨日 + 客戶信用天數 |
+| FiscalPeriod 混合式初始化 | 當年度自動建立；過去期間不存在時自動建立（記錄警告）；已 Closed/Locked 期間嚴格阻擋過帳（詳見 Phase 1） |
 
 > 詳細設計決策說明請見各子文件。
 
@@ -143,14 +147,18 @@ Level 1: Code "1"      → 資產（ParentId: null）
 
 ## 已知設計缺陷與修正說明
 
-| 問題 | 嚴重程度 | 修正計畫 |
-|------|----------|----------|
-| 試算表（FN006）缺少「期初餘額」欄，為五欄而非標準六欄 | 🔴 高 | Phase 1-C |
-| 無法鎖定已關帳期間，任何時候都可補登歷史傳票 | 🔴 高 | Phase 1-A |
-| 損益表科目跨年不歸零，下年度報表包含歷史累計 | 🔴 高 | Phase 3-B |
-| 薪資模組已建立，但無對應傳票自動產生 | 🟠 中 | Phase 2-A |
-| 材料領用無傳票，存貨帳與財務帳脫節 | 🟠 中 | Phase 2-B |
-| 無 AR/AP 帳齡分析，無法管理應收/應付逾期 | 🟡 中 | Phase 3-A |
+| # | 問題 | 嚴重程度 | 修正計畫 |
+|---|------|----------|----------|
+| 1 | 試算表（FN006）缺少「期初餘額」欄，為五欄而非標準六欄 | 🔴 高 | Phase 1-C |
+| 2 | 無法鎖定已關帳期間，任何時候都可補登歷史傳票 | 🔴 高 | Phase 1-A |
+| 3 | 損益表（FN007）科目跨年不歸零，下年度報表包含歷史累計 | 🔴 高 | Phase 3-B（FN008 資產負債表的「本期損益」同根源） |
+| 4 | 薪資模組已建立，但無對應傳票自動產生（薪資暫緩，待薪資模組設計完整後處理） | 🟠 中 | Phase 2-A |
+| 5 | 材料領用無傳票，存貨帳與財務帳脫節；且 MaterialIssue 缺少「確認狀態」欄位，無法判斷哪些領料單已確認可轉傳票 | 🔴 高 | Phase 2-B + Entity 補充 |
+| 6 | 生產完工 `IsJournalized` 旗標應設在 `ProductionScheduleCompletion`（分批完工記錄），而非 `ProductionScheduleItem`（排程主檔）；目前設計層級有誤 | 🟠 中 | Phase 2-C 設計修正 |
+| 7 | `ProductionScheduleCompletion.ActualUnitCost` 與 `InventoryTransactionId` 皆為 nullable；若未填入，傳票金額將為零 | 🟠 中 | Phase 2-C 確認必填規則 |
+| 8 | 無 AR/AP 帳齡分析，無法管理應收/應付逾期 | 🟡 中 | Phase 3-A |
+| 9 | 沖銷傳票（ReverseEntryAsync）無驗證目標期間是否已關帳，可能沖到已鎖定期間 | 🟠 中 | Phase 1-A 整合 |
+| 10 | P3-C（業務單據顯示相關傳票）`JournalEntryService.GetBySourceDocumentAsync` 已存在，但五個 EditModal 皆尚未實作 UI | 🟡 低 | Phase 3-C（可立即執行） |
 
 ## 相關文件
 

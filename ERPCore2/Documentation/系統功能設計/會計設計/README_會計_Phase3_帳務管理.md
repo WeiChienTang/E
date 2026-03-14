@@ -1,7 +1,7 @@
 # 會計模組 Phase 3：帳務管理功能
 
 ## 更新日期
-2026-03-08
+2026-03-14
 
 ## 優先等級
 🟡 中優先（Phase 1 完成後可平行推進）
@@ -49,18 +49,32 @@ Phase 3 新增三項帳務管理核心功能：**應收/應付帳齡分析**、*
 | 91-120 天 | 逾期 91 到 120 天 |
 | 120 天以上 | 嚴重逾期 |
 
-**計算邏輯：**
+**計算邏輯（決策：方法一，主檔層級）：**
 
-方法一（建議）：以**銷貨出貨單**為計算基礎
-- 每張銷貨出貨單對應一個應收款，付款期限 = 交貨日 + 付款天數（信用條件）
-- 沖款後的餘額 = 原始應收金額 - 已收款金額
-- 帳齡 = 基準日 - 交貨日（或付款期限）
+方法一（採用）：以**銷貨出貨單（SalesDelivery）為計算主體**
+- 每張 SalesDelivery 為一個應收款單位（非逐行商品明細）
+- 帳齡天數基準 = 交貨日（`DeliveryDate`）+ 客戶付款天數（`Customer.PaymentDays`）
+- 未收金額 = `SalesDelivery.TotalAmount` - `SUM(SetoffProductDetail.CurrentSetoffAmount WHERE SourceDetailType 關聯至此 SalesDelivery)`
 
-方法二（備選）：以**傳票分錄**為計算基礎
+方法二（不採用）：以**傳票分錄**為計算基礎
 - 依應收帳款科目（含子科目）的借貸明細追蹤
-- 較為準確但實作複雜
+- 實作複雜，且與業務資料脫節
 
-> **建議採用方法一**，與現有銷貨/沖款資料直接整合。
+**查詢路徑（三層彙總）：**
+```
+SalesDelivery（主檔）
+  └─ SalesDeliveryDetails（明細行）
+       └─ SetoffProductDetail（WHERE SourceDetailType = SalesDeliveryDetail AND SourceDetailId IN detail IDs）
+            └─ CurrentSetoffAmount 加總 = 已收款金額
+```
+
+> ⚠ `SetoffProductDetail` 使用多型 FK（`SourceDetailType` + `SourceDetailId`），
+> 無 DB 層外鍵約束，查詢時需用 `WHERE SourceDetailType = 5 AND SourceDetailId IN (...)` 方式處理，
+> 需特別注意 N+1 查詢問題，建議一次性批量查詢後在記憶體彙總。
+
+**客戶付款天數欄位確認：**
+> 需確認 `Customer` Entity 是否有 `PaymentDays`（或 `CreditDays`）欄位。
+> 若無，帳齡計算只能用「交貨日」，無法反映信用條件。
 
 **報表格式：**
 ```
@@ -76,9 +90,13 @@ C0002    客戶乙      80,000      40,000                                     1
 ### FN013 — 應付帳款帳齡分析
 
 設計與 FN012 對稱，資料來源改為：
-- 進貨入庫單（應付帳款來源）
-- 應付沖款單（已付款）
+- 進貨入庫單 `PurchaseReceiving`（應付帳款來源）
+- 應付沖款單（`SetoffType = AccountsPayable`）
 - 篩選改為廠商關鍵字
+- 帳齡基準 = 入庫日 + 廠商付款天數（`Supplier.PaymentDays`，需確認欄位存在）
+
+> ⚠ `SetoffProductDetail` 同樣以多型 FK 追蹤 `PurchaseReceivingDetail`（SourceDetailType = 3），
+> 查詢邏輯與 FN012 相同，可共用同一個彙總查詢基底。
 
 ---
 
@@ -164,6 +182,9 @@ C0002    客戶乙      80,000      40,000                                     1
 
 ## P3-C：業務單據相關傳票顯示
 
+> ✅ **可立即執行：** `JournalEntryService.GetBySourceDocumentAsync` 已實作，
+> 五個 EditModal 的 UI 折疊區塊是唯一待完成部分，無任何後端依賴。
+
 ### 問題說明
 
 目前業務單據（進貨入庫、銷貨出貨等）的 EditModal 無法直接看到對應傳票，
@@ -201,8 +222,10 @@ var entries = await JournalEntryService.GetBySourceDocumentAsync(
 ## 完成標準（Definition of Done）
 
 ### P3-A
-- [ ] `ARAgingCriteria.cs` + Service + 報表實作
-- [ ] `APAgingCriteria.cs` + Service + 報表實作
+- [ ] 確認 `Customer.PaymentDays` 與 `Supplier.PaymentDays` 欄位是否存在
+- [ ] `ARAgingCriteria.cs` + Service + 報表實作（計算單位：SalesDelivery 主檔）
+- [ ] `APAgingCriteria.cs` + Service + 報表實作（計算單位：PurchaseReceiving 主檔）
+- [ ] SetoffProductDetail 多型 FK 批量查詢（避免 N+1）
 - [ ] FN012 / FN013 加入 ReportRegistry.cs
 - [ ] 報表格式正確顯示帳齡分組
 
