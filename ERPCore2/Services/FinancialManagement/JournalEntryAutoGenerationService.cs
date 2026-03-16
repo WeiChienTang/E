@@ -225,7 +225,7 @@ namespace ERPCore2.Services
                 if (result.Success)
                 {
                     doc.IsJournalized = true;
-                    doc.JournalizedAt = DateTime.Now;
+                    doc.JournalizedAt = DateTime.UtcNow;
                     await context.SaveChangesAsync();
                 }
 
@@ -309,7 +309,7 @@ namespace ERPCore2.Services
                 if (result.Success)
                 {
                     doc.IsJournalized = true;
-                    doc.JournalizedAt = DateTime.Now;
+                    doc.JournalizedAt = DateTime.UtcNow;
                     await context.SaveChangesAsync();
                 }
 
@@ -387,6 +387,10 @@ namespace ERPCore2.Services
                     .Where(t => t.SourceDocumentType == "SalesDelivery" && t.SourceDocumentId == id)
                     .SumAsync(t => t.TotalAmount);
 
+                if (cogsAmount == 0)
+                    _logger.LogWarning("銷貨出貨 {Id}（{Code}）找不到對應的庫存異動記錄，COGS 分錄未加入傳票。若商品需計成本，請確認出庫流程是否正常執行。",
+                        id, doc.Code);
+
                 if (cogsAmount > 0)
                 {
                     var cogs      = await _accountItemService.GetByCodeAsync(CostOfGoodsSoldCode);
@@ -425,7 +429,7 @@ namespace ERPCore2.Services
                 if (result.Success)
                 {
                     doc.IsJournalized = true;
-                    doc.JournalizedAt = DateTime.Now;
+                    doc.JournalizedAt = DateTime.UtcNow;
                     await context.SaveChangesAsync();
                 }
 
@@ -504,6 +508,10 @@ namespace ERPCore2.Services
                     .Where(t => t.SourceDocumentType == "SalesReturn" && t.SourceDocumentId == id)
                     .SumAsync(t => t.TotalAmount);
 
+                if (returnCogsAmount == 0)
+                    _logger.LogWarning("銷貨退回 {Id}（{Code}）找不到對應的庫存異動記錄，COGS 沖回分錄未加入傳票。若商品需計成本，請確認退回入庫流程是否正常執行。",
+                        id, doc.Code);
+
                 if (returnCogsAmount > 0)
                 {
                     var cogs      = await _accountItemService.GetByCodeAsync(CostOfGoodsSoldCode);
@@ -542,7 +550,7 @@ namespace ERPCore2.Services
                 if (result.Success)
                 {
                     doc.IsJournalized = true;
-                    doc.JournalizedAt = DateTime.Now;
+                    doc.JournalizedAt = DateTime.UtcNow;
                     await context.SaveChangesAsync();
                 }
 
@@ -605,20 +613,26 @@ namespace ERPCore2.Services
 
                 if (doc.SetoffType == SetoffType.AccountsReceivable)
                 {
-                    // 應收沖款：借 銀行存款+銷貨折讓+預收貨款 / 貸 應收帳款
-                    var receivable = await _accountItemService.GetByCodeAsync(AccountReceivableCode);
+                    // 應收沖款：借 銀行存款+銷貨折讓+預收貨款沖回 / 貸 應收帳款+預收貨款(新建)
+                    // 正確公式（來自 UI 驗證）：
+                    //   借方：實收現金(TotalCollectionAmount-TotalAllowanceAmount) + 折讓(TotalAllowanceAmount) + 預收沖回(PrepaymentSetoffAmount)
+                    //   貸方：應收帳款(CurrentSetoffAmount+TotalAllowanceAmount) + 預收新增(CurrentPrepaymentAmount)
+                    // 優先使用客戶子科目（如 1191.C001），找不到才 fallback 到統制科目 1191
+                    var receivable = await GetARAccountForCustomerAsync(doc.RelatedPartyId);
                     if (receivable == null) return (false, $"找不到科目 {AccountReceivableCode}（應收帳款）");
 
                     lines = new List<JournalEntryLine>();
                     int lineNum = 1;
 
-                    if (doc.TotalCollectionAmount > 0)
+                    // 銀行存款借方 = 實際現金（不含折讓，折讓另設借方科目）
+                    var bankCashAmount = doc.TotalCollectionAmount - doc.TotalAllowanceAmount;
+                    if (bankCashAmount > 0)
                         lines.Add(new JournalEntryLine
                         {
                             LineNumber = lineNum++,
                             AccountItemId = bank.Id,
                             Direction = AccountDirection.Debit,
-                            Amount = doc.TotalCollectionAmount,
+                            Amount = bankCashAmount,
                             LineDescription = $"銀行存款收款－{doc.Code}"
                         });
 
@@ -636,57 +650,97 @@ namespace ERPCore2.Services
                         });
                     }
 
-                    if (doc.PrepaymentSetoffAmount > 0)
+                    // 預收貨款借方：使用既有預收款抵扣應收帳款
+                    AccountItem? advanceFromCustomer = null;
+                    if (doc.PrepaymentSetoffAmount > 0 || doc.CurrentPrepaymentAmount > 0)
                     {
-                        var advanceFromCustomer = await _accountItemService.GetByCodeAsync(AdvanceFromCustomerCode);
+                        advanceFromCustomer = await _accountItemService.GetByCodeAsync(AdvanceFromCustomerCode);
                         if (advanceFromCustomer == null) return (false, $"找不到科目 {AdvanceFromCustomerCode}（預收貨款）");
+                    }
+
+                    if (doc.PrepaymentSetoffAmount > 0)
                         lines.Add(new JournalEntryLine
                         {
                             LineNumber = lineNum++,
-                            AccountItemId = advanceFromCustomer.Id,
+                            AccountItemId = advanceFromCustomer!.Id,
                             Direction = AccountDirection.Debit,
                             Amount = doc.PrepaymentSetoffAmount,
                             LineDescription = "預收貨款沖回"
                         });
-                    }
 
+                    // 應收帳款貸方 = 本期沖銷 + 折讓（全額應收帳款消除）
                     lines.Add(new JournalEntryLine
                     {
-                        LineNumber = lineNum,
+                        LineNumber = lineNum++,
                         AccountItemId = receivable.Id,
                         Direction = AccountDirection.Credit,
-                        Amount = doc.CurrentSetoffAmount,
+                        Amount = doc.CurrentSetoffAmount + doc.TotalAllowanceAmount,
                         LineDescription = $"應收帳款沖銷－{doc.Code}"
                     });
+
+                    // 預收貨款貸方：本期新建立的預收款（客戶多付款）
+                    if (doc.CurrentPrepaymentAmount > 0)
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lineNum,
+                            AccountItemId = advanceFromCustomer!.Id,
+                            Direction = AccountDirection.Credit,
+                            Amount = doc.CurrentPrepaymentAmount,
+                            LineDescription = "預收貨款新增"
+                        });
 
                     description = $"應收沖款：{doc.Code}";
                 }
                 else
                 {
-                    // 應付沖款：借 應付帳款 / 貸 銀行存款+進貨折讓+預付貨款
-                    var payable = await _accountItemService.GetByCodeAsync(AccountPayableCode);
+                    // 應付沖款：借 應付帳款+預付貨款(新建) / 貸 銀行存款+進貨折讓+預付貨款沖回
+                    // 正確公式（來自 UI 驗證）：
+                    //   借方：應付帳款(CurrentSetoffAmount+TotalAllowanceAmount) + 預付新增(CurrentPrepaymentAmount)
+                    //   貸方：實付現金(TotalCollectionAmount-TotalAllowanceAmount) + 折讓(TotalAllowanceAmount) + 預付沖回(PrepaymentSetoffAmount)
+                    // 優先使用廠商子科目（如 2171.S001），找不到才 fallback 到統制科目 2171
+                    var payable = await GetAPAccountForSupplierAsync(doc.RelatedPartyId);
                     if (payable == null) return (false, $"找不到科目 {AccountPayableCode}（應付帳款）");
 
-                    lines = new List<JournalEntryLine>
-                    {
-                        new JournalEntryLine
-                        {
-                            LineNumber = 1,
-                            AccountItemId = payable.Id,
-                            Direction = AccountDirection.Debit,
-                            Amount = doc.CurrentSetoffAmount,
-                            LineDescription = $"應付帳款沖銷－{doc.Code}"
-                        }
-                    };
-                    int lineNum = 2;
+                    lines = new List<JournalEntryLine>();
+                    int lineNum = 1;
 
-                    if (doc.TotalCollectionAmount > 0)
+                    // 應付帳款借方 = 本期沖銷 + 折讓（全額應付帳款消除）
+                    lines.Add(new JournalEntryLine
+                    {
+                        LineNumber = lineNum++,
+                        AccountItemId = payable.Id,
+                        Direction = AccountDirection.Debit,
+                        Amount = doc.CurrentSetoffAmount + doc.TotalAllowanceAmount,
+                        LineDescription = $"應付帳款沖銷－{doc.Code}"
+                    });
+
+                    // 預付貨款借方：本期新建立的預付款（廠商多付款）
+                    AccountItem? advanceToSupplier = null;
+                    if (doc.PrepaymentSetoffAmount > 0 || doc.CurrentPrepaymentAmount > 0)
+                    {
+                        advanceToSupplier = await _accountItemService.GetByCodeAsync(AdvanceToSupplierCode);
+                        if (advanceToSupplier == null) return (false, $"找不到科目 {AdvanceToSupplierCode}（預付貨款）");
+                    }
+
+                    if (doc.CurrentPrepaymentAmount > 0)
+                        lines.Add(new JournalEntryLine
+                        {
+                            LineNumber = lineNum++,
+                            AccountItemId = advanceToSupplier!.Id,
+                            Direction = AccountDirection.Debit,
+                            Amount = doc.CurrentPrepaymentAmount,
+                            LineDescription = "預付貨款新增"
+                        });
+
+                    // 銀行存款貸方 = 實際現金（不含折讓，折讓另設貸方科目）
+                    var bankCashAmount = doc.TotalCollectionAmount - doc.TotalAllowanceAmount;
+                    if (bankCashAmount > 0)
                         lines.Add(new JournalEntryLine
                         {
                             LineNumber = lineNum++,
                             AccountItemId = bank.Id,
                             Direction = AccountDirection.Credit,
-                            Amount = doc.TotalCollectionAmount,
+                            Amount = bankCashAmount,
                             LineDescription = $"銀行存款付款－{doc.Code}"
                         });
 
@@ -704,19 +758,16 @@ namespace ERPCore2.Services
                         });
                     }
 
+                    // 預付貨款貸方：使用既有預付款抵扣應付帳款
                     if (doc.PrepaymentSetoffAmount > 0)
-                    {
-                        var advanceToSupplier = await _accountItemService.GetByCodeAsync(AdvanceToSupplierCode);
-                        if (advanceToSupplier == null) return (false, $"找不到科目 {AdvanceToSupplierCode}（預付貨款）");
                         lines.Add(new JournalEntryLine
                         {
                             LineNumber = lineNum,
-                            AccountItemId = advanceToSupplier.Id,
+                            AccountItemId = advanceToSupplier!.Id,
                             Direction = AccountDirection.Credit,
                             Amount = doc.PrepaymentSetoffAmount,
                             LineDescription = "預付貨款沖回"
                         });
-                    }
 
                     description = $"應付沖款：{doc.Code}";
                 }
@@ -733,7 +784,7 @@ namespace ERPCore2.Services
                 if (!result.Success) return result;
 
                 doc.IsJournalized = true;
-                doc.JournalizedAt = DateTime.Now;
+                doc.JournalizedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
 
                 return (true, string.Empty);
@@ -803,7 +854,12 @@ namespace ERPCore2.Services
             // EF Core 在 SaveChangesAsync 後已將 entry.Id 回填
             var (posted, postError) = await _journalEntryService.PostEntryAsync(entry.Id, createdBy);
             if (!posted)
+            {
+                // 過帳失敗時自動作廢草稿，避免殘留草稿佔用 SourceDocumentType/Id
+                // 導致下次轉傳票時誤報「已有對應傳票」
+                await _journalEntryService.CancelDraftEntryAsync(entry.Id, createdBy);
                 return (false, $"過帳失敗：{postError}");
+            }
 
             return (true, string.Empty);
         }

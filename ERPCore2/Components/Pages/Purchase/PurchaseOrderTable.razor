@@ -660,7 +660,7 @@ else
             if (currentUserId.HasValue)
             {
                 item.CompletedByEmployeeId = currentUserId.Value;
-                item.CompletedAt = DateTime.Now;
+                item.CompletedAt = DateTime.UtcNow;
             }
         }
         else

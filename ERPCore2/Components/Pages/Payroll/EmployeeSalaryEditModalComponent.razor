@@ -1,6 +1,7 @@
 @* 員工薪資設定編輯組件 *@
 @inject IEmployeeSalaryService EmployeeSalaryService
 @inject IEmployeeService EmployeeService
+@inject IPayrollItemService PayrollItemService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
@@ -29,7 +30,13 @@
                           RequiredPermission="@PermissionRegistry.Payroll.SalaryConfig"
                           OnEntitySaved="@OnEmployeeSalarySaved"
                           OnCancel="@OnCancel"
+                          AdditionalSections="@AllowanceSections"
+                          CustomActionButtons="@MinimumWageButton"
                           ComponentName="EmployeeSalaryEditModalComponent" />
+
+@* ── 基本工資管理 Modal ─────────────────────────────────── *@
+<MinimumWageManageModalComponent IsVisible="@_showMinimumWageModal"
+                                 IsVisibleChanged="@(v => { _showMinimumWageModal = v; StateHasChanged(); })" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -47,9 +54,90 @@
     private List<Employee> availableEmployees = new();
     private AutoCompleteConfig? autoCompleteConfig;
 
+    // ── 津貼項目 ────────────────────────────────────────────────
+    private List<PayrollItem> availableAllowanceItems = new();
+    private List<EmployeeSalaryItem> allowanceItems = new();
+
+    // ── 基本工資管理 ──────────────────────────────────────────
+    private bool _showMinimumWageModal = false;
+
+    private RenderFragment MinimumWageButton => __builder =>
+    {
+        <GenericButtonComponent Text="@L["Nav.MinimumWage"]"
+                               Variant="ButtonVariant.OutlineGray"
+                               Size="ButtonSize.Small"
+                               OnClick="@(() => _showMinimumWageModal = true)" />
+    };
+
+    private RenderFragment AllowanceSections => __builder =>
+    {
+        <div class="mt-3 pt-3 border-top">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="fw-bold mb-0">
+                    <i class="bi bi-list-ul me-1"></i>@L["Payroll.FixedAllowances"]
+                </h6>
+                <button type="button" class="btn btn-outline-primary btn-sm"
+                        @onclick="AddAllowanceRow"
+                        disabled="@(availableAllowanceItems.Count == 0)">
+                    <i class="bi bi-plus-lg me-1"></i>@L["Button.Add"]
+                </button>
+            </div>
+
+            @if (!allowanceItems.Any())
+            {
+                <div class="text-muted small py-2 ps-1">@L["Payroll.NoAllowances"]</div>
+            }
+            else
+            {
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>@L["Payroll.AllowanceItem"]</th>
+                            <th style="width:160px">@L["Payroll.MonthlyAmount"]</th>
+                            <th style="width:60px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (item, index) in allowanceItems.Select((x, i) => (x, i)))
+                        {
+                            var i = index;
+                            <tr>
+                                <td>
+                                    <select class="form-select form-select-sm"
+                                            value="@item.PayrollItemId"
+                                            @onchange="e => OnAllowanceItemChanged(i, e)">
+                                        <option value="0">— @L["Payroll.SelectItem"] —</option>
+                                        @foreach (var pi in availableAllowanceItems)
+                                        {
+                                            <option value="@pi.Id" selected="@(pi.Id == item.PayrollItemId)">@pi.Name</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm text-end"
+                                           value="@item.Amount"
+                                           min="0"
+                                           @onchange="e => OnAllowanceAmountChanged(i, e)" />
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            @onclick="() => RemoveAllowanceRow(i)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            <div class="text-muted small mt-1">
+                <i class="bi bi-info-circle me-1"></i>@L["Payroll.AllowanceHint"]
+            </div>
+        </div>
+    };
+
     private Task<EmployeeSalary?> LoadData()
     {
-        // 若指定了員工 ID，預帶填入
         var prefilled = PrefilledValues != null
             ? new Dictionary<string, object?>(PrefilledValues)
             : new Dictionary<string, object?>();
@@ -72,6 +160,7 @@
     {
         try
         {
+            // 載入在職員工
             var result = await EmployeeService.GetActiveEmployeesAsync();
             availableEmployees = result.IsSuccess ? (result.Data ?? new()) : new();
 
@@ -82,6 +171,24 @@
                     availableEmployees,
                     new[] { nameof(Employee.Name), nameof(Employee.Code) })
                 .Build();
+
+            // 載入可用津貼項目（Category = Allowance）
+            var allItems = await PayrollItemService.GetAllAsync();
+            availableAllowanceItems = allItems
+                .Where(i => i.Category == PayrollItemCategory.Allowance && i.Status == EntityStatus.Active)
+                .OrderBy(i => i.SortOrder)
+                .ToList();
+
+            // 若是編輯模式，載入現有津貼項目
+            if (EmployeeSalaryId.HasValue)
+            {
+                var salary = await EmployeeSalaryService.GetByIdAsync(EmployeeSalaryId.Value);
+                allowanceItems = salary?.AllowanceItems?.ToList() ?? new();
+            }
+            else
+            {
+                allowanceItems = new();
+            }
 
             InitializeFormFields();
             StateHasChanged();
@@ -128,7 +235,7 @@
                     }
                 },
 
-                // ── 薪資金額 ──
+                // ── 本薪 ──
                 new()
                 {
                     PropertyName = nameof(EmployeeSalary.BaseSalary),
@@ -137,28 +244,6 @@
                     IsRequired = true,
                     Min = 0,
                     HelpText = "月薪制：元/月；時薪制：元/時"
-                },
-                new()
-                {
-                    PropertyName = nameof(EmployeeSalary.PositionAllowance),
-                    Label = L["Field.PositionAllowance"],
-                    FieldType = FormFieldType.Number,
-                    Min = 0
-                },
-                new()
-                {
-                    PropertyName = nameof(EmployeeSalary.MealAllowance),
-                    Label = L["Field.MealAllowance"],
-                    FieldType = FormFieldType.Number,
-                    Min = 0,
-                    HelpText = "每月餐飲補助（2,400 以內免稅）"
-                },
-                new()
-                {
-                    PropertyName = nameof(EmployeeSalary.TransportAllowance),
-                    Label = L["Field.TransportAllowance"],
-                    FieldType = FormFieldType.Number,
-                    Min = 0
                 },
 
                 // ── 勞健保設定 ──
@@ -237,12 +322,8 @@
             formSections = FormSectionHelper<EmployeeSalary>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     s => s.EmployeeId,
-                    s => s.SalaryType)
-                .AddToSection(FormSectionNames.AmountInfo,
-                    s => s.BaseSalary,
-                    s => s.PositionAllowance,
-                    s => s.MealAllowance,
-                    s => s.TransportAllowance)
+                    s => s.SalaryType,
+                    s => s.BaseSalary)
                 .AddToSection(FormSectionNames.OtherInfo,
                     s => s.LaborInsuredSalary,
                     s => s.HealthInsuredAmount,
@@ -261,19 +342,55 @@
         }
     }
 
-    /// <summary>
-    /// 自訂儲存邏輯：新增時使用 AddWithExpiryAsync 自動關閉前一筆
-    /// </summary>
+    // ── 津貼列操作 ──────────────────────────────────────────────
+    private void AddAllowanceRow()
+    {
+        allowanceItems.Add(new EmployeeSalaryItem { PayrollItemId = 0, Amount = 0 });
+    }
+
+    private void RemoveAllowanceRow(int index)
+    {
+        if (index >= 0 && index < allowanceItems.Count)
+            allowanceItems.RemoveAt(index);
+    }
+
+    private void OnAllowanceItemChanged(int index, ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int itemId))
+            allowanceItems[index].PayrollItemId = itemId;
+    }
+
+    private void OnAllowanceAmountChanged(int index, ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out decimal amount))
+            allowanceItems[index].Amount = amount;
+    }
+
+    // ── 儲存 ────────────────────────────────────────────────────
     private async Task<bool> HandleSaveAsync(EmployeeSalary entity)
     {
         try
         {
-            ServiceResult result;
+            // 驗證：排除未選項目的列
+            var validItems = allowanceItems
+                .Where(i => i.PayrollItemId > 0 && i.Amount > 0)
+                .ToList();
 
+            // 檢查重複項目
+            var duplicates = validItems.GroupBy(i => i.PayrollItemId).Where(g => g.Count() > 1).ToList();
+            if (duplicates.Any())
+            {
+                await NotificationService.ShowErrorAsync("同一津貼項目不可重複設定");
+                return false;
+            }
+
+            entity.AllowanceItems = validItems;
+
+            ServiceResult result;
             if (!EmployeeSalaryId.HasValue)
                 result = await EmployeeSalaryService.AddWithExpiryAsync(entity);
             else
-                result = await EmployeeSalaryService.UpdateAsync(entity);
+                result = await EmployeeSalaryService.UpdateWithAllowanceItemsAsync(entity, validItems);
 
             if (!result.IsSuccess)
             {

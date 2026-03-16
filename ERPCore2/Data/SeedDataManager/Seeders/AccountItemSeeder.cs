@@ -40,7 +40,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     IsDetailAccount = isDetail,
                     SortOrder = sortOrder,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 };
 

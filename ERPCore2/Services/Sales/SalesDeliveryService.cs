@@ -107,6 +107,10 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
+                // 已傳票化的銷貨出貨單不允許修改（修正 Bug-49）
+                if (entity.IsJournalized && entity.Id > 0)
+                    return ServiceResult.Failure("銷貨出貨單已傳票化，不可再修改");
+
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("出貨單號不能為空");
 
@@ -371,7 +375,7 @@ namespace ERPCore2.Services
                             currentInventory[key] = (detail.ProductId, detail.WarehouseId, detail.WarehouseLocationId, 0);
                         }
                         var oldQty = currentInventory[key].CurrentQuantity;
-                        var newQty = oldQty + (int)detail.DeliveryQuantity;
+                        var newQty = oldQty + detail.DeliveryQuantity;
                         currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId, 
                                                currentInventory[key].LocationId, newQty);
                     }
@@ -480,6 +484,35 @@ namespace ERPCore2.Services
         #region 刪除方法覆寫
 
         /// <summary>
+        /// 刪除前檢查：若已有退貨記錄則不允許刪除
+        /// 防止刪除出貨單時因庫存重複回補（退貨已回補一次，刪除出貨又回補全額）造成庫存虛增
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(SalesDelivery entity)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 檢查是否有任何出貨明細已被退貨
+                var hasReturnedDetails = await context.SalesDeliveryDetails
+                    .AnyAsync(sdd => sdd.SalesDeliveryId == entity.Id && sdd.TotalReturnedQuantity > 0);
+
+                if (hasReturnedDetails)
+                    return ServiceResult.Failure("此出貨單已有退貨記錄，無法刪除。請先刪除相關退貨單後再操作。");
+
+                return await base.CanDeleteAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new
+                {
+                    EntityId = entity.Id
+                });
+                return ServiceResult.Failure("檢查刪除條件時發生錯誤");
+            }
+        }
+
+        /// <summary>
         /// 永久刪除銷貨出貨單（含回寫已出貨數量及回補庫存）
         /// 參考 PurchaseReceivingService 的實作邏輯
         /// </summary>
@@ -502,9 +535,18 @@ namespace ERPCore2.Services
                     {
                         return ServiceResult.Failure("找不到要刪除的資料");
                     }
-                    
-                    // 2. 回補庫存（刪除出貨單 = 商品退回倉庫）
-                    if (entity.DeliveryDetails != null && entity.DeliveryDetails.Any())
+
+                    // 2. 檢查是否可以刪除（含退貨記錄檢查）
+                    var canDeleteResult = await CanDeleteAsync(entity);
+                    if (!canDeleteResult.IsSuccess)
+                    {
+                        await transaction.RollbackAsync();
+                        return canDeleteResult;
+                    }
+
+                    // 3. 回補庫存（刪除出貨單 = 商品退回倉庫）- 僅在已核准時才回補
+                    // 未核准的出貨單從未扣減庫存（ShouldUpdateInventory 在核准前為 false），不需回補
+                    if (entity.IsApproved && entity.DeliveryDetails != null && entity.DeliveryDetails.Any())
                     {
                         foreach (var detail in entity.DeliveryDetails)
                         {
@@ -513,7 +555,7 @@ namespace ERPCore2.Services
                                 var addStockResult = await _inventoryStockService.AddStockAsync(
                                     detail.ProductId,
                                     detail.WarehouseId.Value,
-                                    (int)detail.DeliveryQuantity,
+                                    detail.DeliveryQuantity,
                                     InventoryTransactionTypeEnum.SalesReturn,
                                     entity.Code ?? string.Empty,  // 使用原始單號
                                     null,  // 刪除回補不需要成本
@@ -629,7 +671,7 @@ namespace ERPCore2.Services
                             var reduceStockResult = await _inventoryStockService.ReduceStockAsync(
                                 detail.ProductId,
                                 detail.WarehouseId ?? 0,
-                                (int)detail.DeliveryQuantity,
+                                detail.DeliveryQuantity,
                                 InventoryTransactionTypeEnum.Sale,
                                 salesDelivery.Code ?? string.Empty,
                                 detail.WarehouseLocationId,
@@ -724,9 +766,9 @@ namespace ERPCore2.Services
 
                 entity.IsApproved = true;
                 entity.ApprovedBy = approvedBy;
-                entity.ApprovedAt = DateTime.Now;
+                entity.ApprovedAt = DateTime.UtcNow;
                 entity.RejectReason = null;
-                entity.UpdatedAt = DateTime.Now;
+                entity.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -747,9 +789,9 @@ namespace ERPCore2.Services
 
             entity.IsApproved = false;
             entity.ApprovedBy = rejectedBy;
-            entity.ApprovedAt = DateTime.Now;
+            entity.ApprovedAt = DateTime.UtcNow;
             entity.RejectReason = reason;
-            entity.UpdatedAt = DateTime.Now;
+            entity.UpdatedAt = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
             return ServiceResult.Success();

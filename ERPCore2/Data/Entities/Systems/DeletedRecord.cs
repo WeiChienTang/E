@@ -36,7 +36,7 @@ namespace ERPCore2.Data.Entities
         /// 刪除時間
         /// </summary>
         [Display(Name = "刪除時間")]
-        public DateTime DeletedAt { get; set; } = DateTime.Now;
+        public DateTime DeletedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// 執行刪除的用戶

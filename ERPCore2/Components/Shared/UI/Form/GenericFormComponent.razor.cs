@@ -1025,6 +1025,16 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
 
         try
         {
+            // 特別處理 DateOnly（HTML date input 回傳 DateTime，需轉換）
+            if (underlyingType == typeof(DateOnly))
+            {
+                if (value is DateTime dtValue)
+                    return DateOnly.FromDateTime(dtValue);
+                if (value is string strValue && DateTime.TryParse(strValue, out var parsedDt))
+                    return DateOnly.FromDateTime(parsedDt);
+                return null;
+            }
+
             // 特別處理枚舉類型
             if (underlyingType.IsEnum)
             {

@@ -64,10 +64,7 @@
                     }
                     else
                     {
-                        <span class="text-muted">@L["Payroll.NoPeriods"]</span>
-                        <a href="/payroll/periods" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-plus-circle me-1"></i>@L["Payroll.OpenPeriod"]
-                        </a>
+                        <span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>@L["Label.Loading"]</span>
                     }
                 </div>
             </div>
@@ -293,8 +290,15 @@
             canReadAmount = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.ReadAmount);
             canViewPayslip = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Payslip);
 
-            // 載入週期清單
+            // 載入週期清單；若無任何帳期，自動建立本月帳期
             periods = await PeriodService.GetAllAsync();
+            if (!periods.Any())
+            {
+                var today = DateTime.Today;
+                var rocYear = today.Year - 1911;
+                await PeriodService.EnsurePeriodExistsAsync(rocYear, today.Month);
+                periods = await PeriodService.GetAllAsync();
+            }
 
             // 預設選擇最近的 Draft 或 Processing 週期
             selectedPeriod = periods.FirstOrDefault(p => p.PeriodStatus != PayrollPeriodStatus.Closed)

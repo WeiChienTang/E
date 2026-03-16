@@ -17,6 +17,9 @@ namespace ERPCore2.Services.Payroll
         /// <summary>檢查指定年月的週期是否已存在</summary>
         Task<bool> PeriodExistsAsync(int year, int month);
 
+        /// <summary>確保指定年月的週期存在（不存在則自動建立），回傳該週期</summary>
+        Task<ServiceResult<PayrollPeriod>> EnsurePeriodExistsAsync(int year, int month, string? createdBy = null);
+
         /// <summary>取得週期的薪資記錄數量（用於判斷能否刪除）</summary>
         Task<int> GetRecordCountAsync(int periodId);
 

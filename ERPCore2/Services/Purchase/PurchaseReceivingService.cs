@@ -213,6 +213,10 @@ namespace ERPCore2.Services
                 if (entity == null)
                     return ServiceResult.Failure("進貨單資料不可為空");
 
+                // 已傳票化的進貨入庫單不允許修改（修正 Bug-49）
+                if (entity.IsJournalized && entity.Id > 0)
+                    return ServiceResult.Failure("進貨入庫單已傳票化，不可再修改");
+
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     return ServiceResult.Failure("進貨單號為必填");
 
@@ -401,8 +405,9 @@ namespace ERPCore2.Services
                         return canDeleteResult;
                     }
                     
-                    // 3. 檢查是否有庫存服務可用並進行庫存回滾
-                    if (_inventoryStockService != null)
+                    // 3. 檢查是否有庫存服務可用並進行庫存回滾 - 僅在已核准時才回滾
+                    // 未核准的進貨單從未更新庫存（ShouldUpdateInventory 在核准前為 false），不需回滾
+                    if (_inventoryStockService != null && entity.IsApproved)
                     {
                         var eligibleDetails = entity.PurchaseReceivingDetails.Where(d => d.ReceivedQuantity > 0).ToList();
                         
@@ -464,13 +469,16 @@ namespace ERPCore2.Services
                         {
                             var purchaseOrderDetailId = group.Key;
                             var totalReceivedQuantityToReduce = group.Sum(d => d.ReceivedQuantity);
-                            
+                            // 修正 Bug-59：以實際入庫金額小計加總，而非用訂單單價推算
+                            // 若進貨單價與訂單單價不同，原本 newReceivedQuantity * purchaseOrderDetail.UnitPrice 會產生錯誤金額
+                            var totalReceivedAmountToReduce = group.Sum(d => d.SubtotalAmount);
+
                             // 獲取當前的採購訂單明細
                             var purchaseOrderDetail = group.First().PurchaseOrderDetail;
                             if (purchaseOrderDetail != null)
                             {
                                 var newReceivedQuantity = Math.Max(0, purchaseOrderDetail.ReceivedQuantity - totalReceivedQuantityToReduce);
-                                var newReceivedAmount = newReceivedQuantity * purchaseOrderDetail.UnitPrice;
+                                var newReceivedAmount = Math.Max(0, purchaseOrderDetail.ReceivedAmount - totalReceivedAmountToReduce);
                                 
                                 var updateResult = await _purchaseOrderDetailService.UpdateReceivedQuantityAsync(
                                     purchaseOrderDetailId!.Value, 
@@ -931,18 +939,20 @@ namespace ERPCore2.Services
                 if (purchaseReceiving == null)
                     return ServiceResult.Failure("找不到指定的進貨單");
 
+                // 軟刪除：將狀態改為 Inactive（修正 Bug-55：原本僅更新 UpdatedAt，未實際變更狀態）
+                purchaseReceiving.Status = EntityStatus.Inactive;
                 purchaseReceiving.UpdatedAt = DateTime.UtcNow;
-                
+
                 await context.SaveChangesAsync();
-                
+
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CancelReceiptAsync), GetType(), _logger, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CancelReceiptAsync), GetType(), _logger, new {
                     Method = nameof(CancelReceiptAsync),
                     ServiceType = GetType().Name,
-                    Id = id 
+                    Id = id
                 });
                 return ServiceResult.Failure("取消進貨單過程發生錯誤");
             }
@@ -1429,9 +1439,9 @@ namespace ERPCore2.Services
 
                 entity.IsApproved = true;
                 entity.ApprovedBy = approvedBy;
-                entity.ApprovedAt = DateTime.Now;
+                entity.ApprovedAt = DateTime.UtcNow;
                 entity.RejectReason = null;
-                entity.UpdatedAt = DateTime.Now;
+                entity.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -1452,9 +1462,9 @@ namespace ERPCore2.Services
 
             entity.IsApproved = false;
             entity.ApprovedBy = rejectedBy;
-            entity.ApprovedAt = DateTime.Now;
+            entity.ApprovedAt = DateTime.UtcNow;
             entity.RejectReason = reason;
-            entity.UpdatedAt = DateTime.Now;
+            entity.UpdatedAt = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
             return ServiceResult.Success();

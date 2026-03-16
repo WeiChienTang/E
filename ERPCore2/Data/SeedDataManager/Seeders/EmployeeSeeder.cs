@@ -44,7 +44,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 DepartmentId = null, // 先設為 null，部門建立後再更新
                 RoleId = adminRole?.Id ?? 2,
                 Status = EntityStatus.Active,
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow,
                 CreatedBy = "System"
             };
 

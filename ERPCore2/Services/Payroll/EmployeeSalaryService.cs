@@ -18,6 +18,7 @@ namespace ERPCore2.Services.Payroll
         {
             return context.EmployeeSalaries
                 .Include(x => x.Employee)
+                .Include(x => x.AllowanceItems).ThenInclude(i => i.PayrollItem)
                 .OrderBy(x => x.Employee.Name)
                 .ThenByDescending(x => x.EffectiveDate);
         }
@@ -54,6 +55,7 @@ namespace ERPCore2.Services.Payroll
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.EmployeeSalaries
                     .Include(x => x.Employee)
+                    .Include(x => x.AllowanceItems).ThenInclude(i => i.PayrollItem)
                     .FirstOrDefaultAsync(x => x.Id == id);
             }
             catch (Exception ex)
@@ -88,6 +90,7 @@ namespace ERPCore2.Services.Payroll
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.EmployeeSalaries
                     .Include(x => x.Employee)
+                    .Include(x => x.AllowanceItems).ThenInclude(i => i.PayrollItem)
                     .Where(x => x.EmployeeId == employeeId && x.ExpiryDate == null)
                     .OrderByDescending(x => x.EffectiveDate)
                     .FirstOrDefaultAsync();
@@ -115,13 +118,23 @@ namespace ERPCore2.Services.Payroll
                     .Where(x => x.EmployeeId == newSalary.EmployeeId && x.ExpiryDate == null)
                     .ToListAsync();
 
+                // 新薪資生效日必須晚於現有所有有效薪資的生效日，否則會產生 ExpiryDate < EffectiveDate 的無效記錄
+                foreach (var existing in current)
+                {
+                    if (newSalary.EffectiveDate <= existing.EffectiveDate)
+                        return ServiceResult.Failure($"新薪資生效日期（{newSalary.EffectiveDate:yyyy-MM-dd}）必須晚於目前有效薪資的生效日期（{existing.EffectiveDate:yyyy-MM-dd}）");
+                }
+
                 foreach (var existing in current)
                 {
                     existing.ExpiryDate = newSalary.EffectiveDate.AddDays(-1);
-                    existing.UpdatedAt = DateTime.Now;
+                    existing.UpdatedAt = DateTime.UtcNow;
                 }
 
-                newSalary.CreatedAt = DateTime.Now;
+                newSalary.CreatedAt = DateTime.UtcNow;
+                // AllowanceItems 由呼叫端設定好後一併 cascade 儲存
+                foreach (var item in newSalary.AllowanceItems)
+                    item.EmployeeSalaryId = 0; // 確保 EF 視為新增
                 context.EmployeeSalaries.Add(newSalary);
                 await context.SaveChangesAsync();
 
@@ -170,6 +183,59 @@ namespace ERPCore2.Services.Payroll
             }
         }
 
+        public async Task<bool> IsEmployeeSalaryCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.EmployeeSalaries
+                    .AnyAsync(x => x.Code == code && (!excludeId.HasValue || x.Id != excludeId.Value));
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsEmployeeSalaryCodeExistsAsync), GetType(), _logger);
+                return false;
+            }
+        }
+
+        public async Task<ServiceResult> UpdateWithAllowanceItemsAsync(EmployeeSalary entity, List<EmployeeSalaryItem> allowanceItems)
+        {
+            try
+            {
+                var validation = await ValidateAsync(entity);
+                if (!validation.IsSuccess)
+                    return validation;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 先刪除舊的津貼項目
+                var oldItems = await context.EmployeeSalaryItems
+                    .Where(i => i.EmployeeSalaryId == entity.Id)
+                    .ToListAsync();
+                context.EmployeeSalaryItems.RemoveRange(oldItems);
+
+                // 更新主體
+                entity.UpdatedAt = DateTime.UtcNow;
+                context.EmployeeSalaries.Update(entity);
+
+                // 新增新的津貼項目
+                foreach (var item in allowanceItems)
+                {
+                    item.Id = 0;
+                    item.EmployeeSalaryId = entity.Id;
+                    context.EmployeeSalaryItems.Add(item);
+                }
+
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateWithAllowanceItemsAsync), GetType(), _logger);
+                return ServiceResult.Failure("更新薪資設定時發生錯誤");
+            }
+        }
+
         protected override async Task<ServiceResult> CanDeleteAsync(EmployeeSalary entity)
         {
             try
@@ -198,7 +264,8 @@ namespace ERPCore2.Services.Payroll
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 IQueryable<EmployeeSalary> query = context.EmployeeSalaries
-                    .Include(s => s.Employee);
+                    .Include(s => s.Employee)
+                    .Include(s => s.AllowanceItems).ThenInclude(i => i.PayrollItem);
                 if (filterFunc != null) query = filterFunc(query);
                 var totalCount = await query.CountAsync();
                 var items = await query

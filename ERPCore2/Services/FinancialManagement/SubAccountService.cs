@@ -470,11 +470,20 @@ namespace ERPCore2.Services
             string? entityCode = null)
         {
             // 實體編碼模式：直接用實體自身代碼作後綴
+            // 建立前確認代碼唯一性：若不同實體共用相同 entityCode（如客戶代碼重複或被修改），
+            // 會產生相同的子科目代碼，觸發 DB unique constraint 例外。
+            // 衝突時 fallthrough 至流水號模式，確保一定能成功建立。
             if (format == SubAccountCodeFormat.EntityCode && !string.IsNullOrWhiteSpace(entityCode))
             {
                 var sanitized = entityCode.Trim().Replace(".", "");
                 if (!string.IsNullOrWhiteSpace(sanitized))
-                    return $"{parent.Code}.{sanitized}";
+                {
+                    var candidateCode = $"{parent.Code}.{sanitized}";
+                    var codeConflict = await context.AccountItems.AnyAsync(a => a.Code == candidateCode);
+                    if (!codeConflict)
+                        return candidateCode;
+                    // 代碼已被其他科目佔用 → fallthrough 至流水號
+                }
                 // entityCode 過濾後為空 → fallthrough 至流水號
             }
 

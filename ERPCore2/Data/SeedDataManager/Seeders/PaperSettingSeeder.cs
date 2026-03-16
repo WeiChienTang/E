@@ -41,7 +41,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 1.0m,
                     Remarks = "國際標準 A4 紙張，最常用的辦公用紙",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
                 new PaperSetting
                 {
@@ -55,7 +55,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 1.0m,
                     Remarks = "國際標準 A3 紙張，適合大型報表或海報",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
                 new PaperSetting
                 {
@@ -69,7 +69,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 0.5m,
                     Remarks = "國際標準 A5 紙張，適合小型文件或手冊",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
 
                 // B 系列紙張
@@ -85,7 +85,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 1.0m,
                     Remarks = "B4 紙張，介於 A3 和 A4 之間",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
                 new PaperSetting
                 {
@@ -99,7 +99,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 0.8m,
                     Remarks = "B5 紙張，常用於書籍或雜誌",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
 
                 // 美規紙張
@@ -115,7 +115,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 1.0m,
                     Remarks = "美規 Letter 紙張 (8.5\" x 11\")",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
                 new PaperSetting
                 {
@@ -129,7 +129,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 1.0m,
                     Remarks = "美規 Legal 紙張 (8.5\" x 14\")，常用於法律文件",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
 
                 // 出貨單 / 發票常用格式
@@ -145,7 +145,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 0.5m,
                     Remarks = "常用出貨單格式，三聯複寫紙",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
                 new PaperSetting
                 {
@@ -159,7 +159,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 0.3m,
                     Remarks = "台灣統一發票標準格式",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
 
                 // 標籤紙
@@ -175,7 +175,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 0.2m,
                     Remarks = "常用出貨標籤紙 (4\" x 6\")",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
                 new PaperSetting
                 {
@@ -189,7 +189,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 0.1m,
                     Remarks = "小型條碼標籤紙",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
 
                 // 收據紙
@@ -205,7 +205,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 0.2m,
                     Remarks = "POS 收據機常用 80mm 熱感紙",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
                 new PaperSetting
                 {
@@ -219,7 +219,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 0.1m,
                     Remarks = "小型 POS 收據機常用 58mm 熱感紙",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
 
                 // 台灣常用格式
@@ -235,7 +235,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 0.8m,
                     Remarks = "台灣常用中一刀紙張，適合報表列印",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
                 new PaperSetting
                 {
@@ -249,7 +249,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 1.0m,
                     Remarks = "台灣常用中二刀紙張，為中一刀的一半高度",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 },
                 new PaperSetting
                 {
@@ -263,7 +263,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     RightMargin = 1.27m, // 0.5 inch = 1.27cm (針孔邊)
                     Remarks = "連續報表紙全張 (9.5\" x 11\")，針式印表機常用規格",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 }
             };
 

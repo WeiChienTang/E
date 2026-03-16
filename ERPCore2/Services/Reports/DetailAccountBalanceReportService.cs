@@ -68,6 +68,8 @@ namespace ERPCore2.Services.Reports
             using var context = await _contextFactory.CreateDbContextAsync();
 
             // Query 1: 期初餘額（StartDate 之前所有 Posted）
+            // 重要：StartDate 為 null 時不應載入任何分錄作為期初，否則 openingBalance 會
+            // 包含所有歷史資料（甚至 EndDate 之後的未來傳票），造成期初/本期雙重計算。
             var openingQuery = context.JournalEntryLines
                 .Include(l => l.AccountItem)
                 .Include(l => l.JournalEntry)
@@ -75,6 +77,8 @@ namespace ERPCore2.Services.Reports
 
             if (criteria.StartDate.HasValue)
                 openingQuery = openingQuery.Where(l => l.JournalEntry.EntryDate < criteria.StartDate.Value.Date);
+            else
+                openingQuery = openingQuery.Where(l => false); // 無 StartDate → 無期初（避免全表載入）
 
             // Query 2: 本期發生額（StartDate ~ EndDate）
             var periodQuery = context.JournalEntryLines
@@ -257,15 +261,18 @@ namespace ERPCore2.Services.Reports
                          .ShowHeaderSeparator(false)
                          .SetRowHeight(20);
 
+                    // 同一大類內所有科目的 NormalDirection 相同，取第一筆
+                    var groupDirection = group.First().NormalDirection;
+
                     foreach (var item in group)
                     {
                         table.AddRow(
                             item.Code,
                             item.Name,
-                            FormatBalance(item.OpeningBalance),
+                            FormatBalance(item.OpeningBalance, item.NormalDirection),
                             item.PeriodDebit > 0 ? item.PeriodDebit.ToString("N2") : string.Empty,
                             item.PeriodCredit > 0 ? item.PeriodCredit.ToString("N2") : string.Empty,
-                            FormatBalance(item.ClosingBalance)
+                            FormatBalance(item.ClosingBalance, item.NormalDirection)
                         );
                     }
 
@@ -278,10 +285,10 @@ namespace ERPCore2.Services.Reports
                     table.AddRow(
                         string.Empty,
                         $"{typeName} 小計",
-                        FormatBalance(gOpeningBalance),
+                        FormatBalance(gOpeningBalance, groupDirection),
                         gPeriodDebit > 0 ? gPeriodDebit.ToString("N2") : "—",
                         gPeriodCredit > 0 ? gPeriodCredit.ToString("N2") : "—",
-                        FormatBalance(gClosingBalance)
+                        FormatBalance(gClosingBalance, groupDirection)
                     );
                 });
 
@@ -318,12 +325,15 @@ namespace ERPCore2.Services.Reports
             return doc;
         }
 
-        private static string FormatBalance(decimal balance)
+        private static string FormatBalance(decimal balance, AccountDirection normalDirection = AccountDirection.Debit)
         {
-            if (balance == 0) return "0.00";
-            return balance > 0
-                ? balance.ToString("N2")
-                : $"({Math.Abs(balance):N2})";
+            // 依科目正常方向調整符號：貸方正常科目的貸方餘額應顯示為正數，
+            // 括號僅保留給「反方向異常餘額」使用
+            decimal displayBalance = normalDirection == AccountDirection.Debit ? balance : -balance;
+            if (displayBalance == 0) return "0.00";
+            return displayBalance > 0
+                ? displayBalance.ToString("N2")
+                : $"({Math.Abs(displayBalance):N2})";
         }
 
         private static string GetAccountTypeName(AccountType t) => t switch

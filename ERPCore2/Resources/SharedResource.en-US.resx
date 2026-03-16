@@ -424,10 +424,10 @@
     <value>Customer Reports</value>
   </data>
   <data name="Nav.ProductGroup" xml:space="preserve">
-    <value>Products</value>
+    <value>Items</value>
   </data>
   <data name="Nav.Products" xml:space="preserve">
-    <value>Products</value>
+    <value>Items</value>
   </data>
   <data name="Nav.ProductCategories" xml:space="preserve">
     <value>Categories</value>
@@ -448,7 +448,7 @@
     <value>Production Schedules</value>
   </data>
   <data name="Nav.ProductReportIndex" xml:space="preserve">
-    <value>Product Reports</value>
+    <value>Item Reports</value>
   </data>
   <data name="Nav.InventoryGroup" xml:space="preserve">
     <value>Inventory</value>
@@ -723,8 +723,8 @@
   <data name="Entity.CustomerComplaint" xml:space="preserve"><value>Complaint</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>Supplier Visit</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>Supplier</value></data>
-  <data name="Entity.Product" xml:space="preserve"><value>Product</value></data>
-  <data name="Entity.ProductCategory" xml:space="preserve"><value>Product Category</value></data>
+  <data name="Entity.Product" xml:space="preserve"><value>Item</value></data>
+  <data name="Entity.ProductCategory" xml:space="preserve"><value>Item Category</value></data>
   <data name="Entity.ProductComposition" xml:space="preserve"><value>Bill of Materials</value></data>
   <data name="Entity.BOM" xml:space="preserve"><value>BOM</value></data>
   <data name="Entity.CompositionCategory" xml:space="preserve"><value>BOM Category</value></data>
@@ -885,6 +885,7 @@
   <data name="Column.SalesReturnQuantity" xml:space="preserve"><value>Return Qty</value></data>
   <data name="Column.MaterialCodeName" xml:space="preserve"><value>Material Code/Name</value></data>
   <!-- ===== Employee Field keys ===== -->
+  <data name="Field.Employee" xml:space="preserve"><value>Employee</value></data>
   <data name="Field.EmployeeCode" xml:space="preserve"><value>Employee Code</value></data>
   <data name="Field.FullName" xml:space="preserve"><value>Full Name</value></data>
   <data name="Field.Gender" xml:space="preserve"><value>Gender</value></data>
@@ -936,6 +937,7 @@
   <data name="Column.AssignDate" xml:space="preserve"><value>Assigned Date</value></data>
   <data name="Column.ReturnDate" xml:space="preserve"><value>Return Date</value></data>
   <!-- ===== Employee Tab keys ===== -->
+  <data name="Tab.SalaryConfig" xml:space="preserve"><value>Salary Settings</value></data>
   <data name="Tab.EmployeeData" xml:space="preserve"><value>Employee Info</value></data>
   <data name="Tab.VehicleInfo" xml:space="preserve"><value>Vehicle Info</value></data>
   <data name="Tab.PersonalTools" xml:space="preserve"><value>Personal Tools</value></data>
@@ -1110,8 +1112,8 @@
   <data name="Field.CompositionCreator" xml:space="preserve"><value>Composition Creator</value></data>
   <data name="Field.CompositionType" xml:space="preserve"><value>Composition Type</value></data>
   <data name="Field.ForSale" xml:space="preserve"><value>For Sale</value></data>
-  <data name="Field.ProductCode" xml:space="preserve"><value>Product Code</value></data>
-  <data name="Field.ProductName" xml:space="preserve"><value>Product Name</value></data>
+  <data name="Field.ProductCode" xml:space="preserve"><value>Item Code</value></data>
+  <data name="Field.ProductName" xml:space="preserve"><value>Item Name</value></data>
   <data name="Field.ProductionUnit" xml:space="preserve"><value>Production Unit</value></data>
   <data name="Field.PurchaseUnit" xml:space="preserve"><value>Base Unit</value></data>
   <data name="Field.ScheduleCode" xml:space="preserve"><value>Schedule Code</value></data>
@@ -1346,6 +1348,12 @@
   <data name="Payroll.CalculatedAt" xml:space="preserve"><value>Calculated At</value></data>
   <data name="Payroll.CalculatedBy" xml:space="preserve"><value>Calculated By</value></data>
   <data name="Payroll.NoPayrollRecords" xml:space="preserve"><value>No payroll records found</value></data>
+  <data name="Payroll.FixedAllowances" xml:space="preserve"><value>Fixed Monthly Allowances</value></data>
+  <data name="Payroll.NoAllowances" xml:space="preserve"><value>No allowances configured. Click Add to set one.</value></data>
+  <data name="Payroll.AllowanceItem" xml:space="preserve"><value>Allowance Item</value></data>
+  <data name="Payroll.MonthlyAmount" xml:space="preserve"><value>Monthly Amount</value></data>
+  <data name="Payroll.SelectItem" xml:space="preserve"><value>Select Item</value></data>
+  <data name="Payroll.AllowanceHint" xml:space="preserve"><value>Only Allowance-type items can be set here. Meal allowance up to 3,000/mo is tax-free; transport allowance up to 3,000/mo is tax-free.</value></data>
   <!-- ===== Payroll Phase 2 Rate Table keys ===== -->
   <data name="Nav.MinimumWage" xml:space="preserve"><value>Minimum Wage</value></data>
   <data name="Nav.InsuranceRate" xml:space="preserve"><value>Insurance Rate Settings</value></data>
@@ -1376,6 +1384,13 @@
   <data name="Field.InsuredAmount" xml:space="preserve"><value>Insured Amount</value></data>
   <data name="Payroll.AddMinimumWage" xml:space="preserve"><value>Add Minimum Wage</value></data>
   <data name="Payroll.EditMinimumWage" xml:space="preserve"><value>Edit Minimum Wage</value></data>
+  <data name="Payroll.NoMinimumWageRecords" xml:space="preserve"><value>No minimum wage records found</value></data>
+  <data name="Payroll.SyncFromGovernment" xml:space="preserve"><value>Load from Government</value></data>
+  <data name="Payroll.SyncSuccess" xml:space="preserve"><value>Successfully imported {0} minimum wage records</value></data>
+  <data name="Payroll.SyncAlreadyUpToDate" xml:space="preserve"><value>Data is already up to date</value></data>
+  <data name="Payroll.MinimumWageNote" xml:space="preserve"><value>Source: Ministry of Labor open data, updated annually. If the latest year is not yet available, add it manually.</value></data>
+  <data name="Payroll.ClickSyncHint" xml:space="preserve"><value>Click "Load from Government" to import historical minimum wage data</value></data>
+  <data name="Payroll.MonthlyOrHourlyRequired" xml:space="preserve"><value>Monthly or hourly wage must be filled in</value></data>
   <data name="Payroll.AddInsuranceRate" xml:space="preserve"><value>Add Insurance Rate</value></data>
   <data name="Payroll.EditInsuranceRate" xml:space="preserve"><value>Edit Insurance Rate</value></data>
   <data name="Payroll.LaborInsuranceRates" xml:space="preserve"><value>Labor Insurance Rates</value></data>
@@ -2014,6 +2029,8 @@
   <data name="Modal.CreatedBy" xml:space="preserve"><value>Created By:</value></data>
   <data name="Modal.UpdatedAt" xml:space="preserve"><value>Last Updated At:</value></data>
   <data name="Modal.UpdatedBy" xml:space="preserve"><value>Last Updated By:</value></data>
+  <data name="Modal.ShowAuditInfo" xml:space="preserve"><value>Show Audit Info</value></data>
+  <data name="Modal.HideAuditInfo" xml:space="preserve"><value>Hide Audit Info</value></data>
   <data name="Modal.DefaultTitle" xml:space="preserve"><value>Window</value></data>
   <data name="Modal.DefaultLoading" xml:space="preserve"><value>Loading...</value></data>
 
@@ -3162,8 +3179,8 @@
   <data name="Page.ProductCategorySubtitle" xml:space="preserve"><value>Manage all product category data and hierarchy</value></data>
   <data name="Page.ProductCompositionTitle" xml:space="preserve"><value>Bill of Materials</value></data>
   <data name="Page.ProductCompositionSubtitle" xml:space="preserve"><value>Manage product formulas and components</value></data>
-  <data name="Page.ProductTitle" xml:space="preserve"><value>Products</value></data>
-  <data name="Page.ProductSubtitle" xml:space="preserve"><value>Manage all product data and inventory information</value></data>
+  <data name="Page.ProductTitle" xml:space="preserve"><value>Items</value></data>
+  <data name="Page.ProductSubtitle" xml:space="preserve"><value>Manage all item data and inventory information</value></data>
   <data name="Page.ProductionScheduleTitle" xml:space="preserve"><value>Production Schedule</value></data>
   <data name="Page.ProductionScheduleSubtitle" xml:space="preserve"><value>Manage production schedule plans and execution</value></data>
   <data name="Page.SizeTitle" xml:space="preserve"><value>Sizes</value></data>
@@ -3257,7 +3274,7 @@
   <data name="SubAccount.CreateProduct" xml:space="preserve"><value>Create for Products</value></data>
   <data name="SubAccount.CreateCustomerTitle" xml:space="preserve"><value>Create sub-accounts for all existing customers</value></data>
   <data name="SubAccount.CreateSupplierTitle" xml:space="preserve"><value>Create sub-accounts for all existing suppliers</value></data>
-  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>Create sub-accounts for all existing products</value></data>
+  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>Create sub-accounts for all existing items</value></data>
   <data name="SubAccount.CreateResult" xml:space="preserve"><value>{0} sub-account creation complete: created {1}, skipped {2}</value></data>
   <data name="SubAccount.CreateResultWithErrors" xml:space="preserve"><value>{0} sub-account creation complete: created {1}, skipped {2}, errors {3} ({4}{5})</value></data>
   <data name="SubAccount.CreateError" xml:space="preserve"><value>Error during batch creation of {0} sub-accounts: {1}</value></data>

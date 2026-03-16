@@ -182,8 +182,11 @@ builder.Services.AddScoped<INavigationPermissionService, NavigationPermissionSer
 // 註冊使用者偏好 Circuit-scoped 快取（由 MainLayout 寫入，各元件讀取）
 builder.Services.AddScoped<IUserPreferenceContext, UserPreferenceContext>();
 
+// 加入 HttpClient（用於外部 API 呼叫，例如勞動部基本工資資料）
+builder.Services.AddHttpClient();
+
 // Add services to the container.
-builder.Services.AddRazorComponents(options => 
+builder.Services.AddRazorComponents(options =>
     {
         // 在開發模式啟用詳細錯誤
         options.DetailedErrors = builder.Environment.IsDevelopment();

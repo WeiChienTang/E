@@ -68,7 +68,7 @@ namespace ERPCore2.Services.Payroll
                     PeriodStatus = PayrollPeriodStatus.Draft,
                     Code = $"{year:D3}{month:D2}",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = createdBy
                 };
 
@@ -99,9 +99,9 @@ namespace ERPCore2.Services.Payroll
                     return ServiceResult.Failure("此薪資週期已關帳");
 
                 period.PeriodStatus = PayrollPeriodStatus.Closed;
-                period.ClosedAt = DateTime.Now;
+                period.ClosedAt = DateTime.UtcNow;
                 period.ClosedBy = closedBy;
-                period.UpdatedAt = DateTime.Now;
+                period.UpdatedAt = DateTime.UtcNow;
                 period.UpdatedBy = closedBy;
 
                 await context.SaveChangesAsync();
@@ -129,6 +129,25 @@ namespace ERPCore2.Services.Payroll
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCurrentOpenPeriodAsync), GetType(), _logger);
                 return null;
+            }
+        }
+
+        public async Task<ServiceResult<PayrollPeriod>> EnsurePeriodExistsAsync(int year, int month, string? createdBy = null)
+        {
+            try
+            {
+                if (await PeriodExistsAsync(year, month))
+                {
+                    using var context = await _contextFactory.CreateDbContextAsync();
+                    var existing = await context.PayrollPeriods.FirstAsync(x => x.Year == year && x.Month == month);
+                    return ServiceResult<PayrollPeriod>.Success(existing);
+                }
+                return await OpenPeriodAsync(year, month, createdBy);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(EnsurePeriodExistsAsync), GetType(), _logger);
+                return ServiceResult<PayrollPeriod>.Failure("確保薪資週期時發生錯誤");
             }
         }
 

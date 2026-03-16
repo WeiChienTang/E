@@ -58,7 +58,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Description = parentItem.Description,
                     IsEnabled = true,
                     SortOrder = sortOrder,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 };
 
@@ -79,7 +79,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Description = description,
                     IsEnabled = true,
                     SortOrder = sortOrder,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 });
                 sortOrder += 10;

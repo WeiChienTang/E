@@ -127,6 +127,7 @@ namespace ERPCore2.Data.Context
       public DbSet<PayrollPeriod> PayrollPeriods { get; set; }
       public DbSet<PayrollItem> PayrollItems { get; set; }
       public DbSet<EmployeeSalary> EmployeeSalaries { get; set; }
+      public DbSet<EmployeeSalaryItem> EmployeeSalaryItems { get; set; }
       public DbSet<PayrollRecord> PayrollRecords { get; set; }
       public DbSet<PayrollRecordDetail> PayrollRecordDetails { get; set; }
       public DbSet<EmployeeBankAccount> EmployeeBankAccounts { get; set; }
@@ -1417,6 +1418,14 @@ namespace ERPCore2.Data.Context
 
                         // 傳票號碼唯一索引
                         entity.HasIndex(e => e.Code).IsUnique();
+
+                        // 來源單據唯一索引（防止同一業務單據重複轉傳票）
+                        // Filtered：僅在 SourceDocumentType 不為 null 時強制唯一
+                        // 沖銷傳票（Reversing）的 SourceDocumentType 已設為 null，不受此限制
+                        entity.HasIndex(e => new { e.SourceDocumentType, e.SourceDocumentId })
+                              .IsUnique()
+                              .HasFilter("[SourceDocumentType] IS NOT NULL")
+                              .HasDatabaseName("UX_JournalEntry_SourceDocument");
                   });
 
                   modelBuilder.Entity<JournalEntryLine>(entity =>
@@ -1483,6 +1492,19 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(e => e.Employee)
                               .WithMany()
                               .HasForeignKey(e => e.EmployeeId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                        entity.HasMany(e => e.AllowanceItems)
+                              .WithOne(i => i.EmployeeSalary)
+                              .HasForeignKey(i => i.EmployeeSalaryId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  // 員工薪資固定津貼項目
+                  modelBuilder.Entity<EmployeeSalaryItem>(entity =>
+                  {
+                        entity.HasOne(i => i.PayrollItem)
+                              .WithMany()
+                              .HasForeignKey(i => i.PayrollItemId)
                               .OnDelete(DeleteBehavior.Restrict);
                   });
 

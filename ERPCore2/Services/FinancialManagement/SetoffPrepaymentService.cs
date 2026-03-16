@@ -184,11 +184,11 @@ namespace ERPCore2.Services
                     errors.Add("已用金額不能小於0");
 
                 // 檢查來源單號是否重複（預收/預付主記錄的來源單號必須唯一）
-                // 只有新增模式（Id = 0）才需要檢查來源單號是否重複
-                if (!string.IsNullOrWhiteSpace(entity.SourceDocumentCode) && entity.Id == 0)
+                // 新增與編輯均需檢查，編輯時排除自身 Id 避免誤報
+                if (!string.IsNullOrWhiteSpace(entity.SourceDocumentCode))
                 {
-                    var exists = await IsSourceDocumentCodeExistsAsync(entity.SourceDocumentCode, null);
-                    
+                    var exists = await IsSourceDocumentCodeExistsAsync(entity.SourceDocumentCode, entity.Id == 0 ? null : entity.Id);
+
                     if (exists)
                     {
                         errors.Add("來源單號已存在");
@@ -406,7 +406,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("已用金額不能大於總金額");
 
                 prepayment.UsedAmount = newUsedAmount;
-                prepayment.UpdatedAt = DateTime.Now;
+                prepayment.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -421,6 +421,30 @@ namespace ERPCore2.Services
                     AmountToAdd = amountToAdd
                 });
                 return ServiceResult.Failure("更新已用金額時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 覆寫刪除前檢查：若此預收付款項已被其他沖款單使用，禁止刪除
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(SetoffPrepayment entity)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var hasExternalUsage = await context.SetoffPrepaymentUsages
+                    .AnyAsync(u => u.SetoffPrepaymentId == entity.Id
+                                && u.SetoffDocumentId != entity.SetoffDocumentId);
+
+                if (hasExternalUsage)
+                    return ServiceResult.Failure("此預收/預付款項已被其他沖款單使用，無法刪除。請先清除相關使用記錄後再操作。");
+
+                return await base.CanDeleteAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { EntityId = entity.Id });
+                return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
         }
 

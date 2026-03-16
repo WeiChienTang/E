@@ -73,7 +73,7 @@ namespace ERPCore2.Data.Entities.Payroll
 
         // ── 稽核欄位 ──────────────────────────────────────────────────
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [MaxLength(50)]
         public string? CreatedBy { get; set; }

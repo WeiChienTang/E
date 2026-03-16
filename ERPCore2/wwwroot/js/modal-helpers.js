@@ -207,8 +207,15 @@ function handleButtonTabNavigation(event) {
 
 // 處理按鈕焦點事件（備用機制）
 function handleButtonFocus(event) {
+    // iOS fix: do NOT move focus during a touch sequence.
+    // On iOS Safari, focusin fires BEFORE click when tapping a button.
+    // Moving focus away at this point causes iOS to cancel the pending click,
+    // making the button completely unresponsive. Android Chrome is unaffected
+    // because it fires click before focusin.
+    if (_isTouching) return;
+
     var activeElement = event.target;
-    
+
     // 檢查焦點元素是否為按鈕
     if (activeElement && isButton(activeElement)) {
         // 如果按鈕獲得焦點，立即跳到下一個非按鈕元素
@@ -573,6 +580,58 @@ window.cleanupFullscreenChangeListener = function () {
     }
     window._fullscreenDotNetHelper = null;
 };
+
+// ===== 手機向右滑動關閉 Modal =====
+
+var _swipeStartX = 0;
+var _swipeStartY = 0;
+var _swipeOnModal = false;
+
+// iOS fix: track whether a touch is in progress so handleButtonFocus does not
+// steal focus away from a tapped button (iOS fires focusin BEFORE click, and
+// moving focus during that window causes iOS Safari to cancel the click event).
+var _isTouching = false;
+var _isTouchingTimer = null;
+
+function handleModalSwipeTouchStart(event) {
+    var touch = event.touches[0];
+    _swipeStartX = touch.clientX;
+    _swipeStartY = touch.clientY;
+    // 確認觸摸點在某個顯示中的 modal-content 上
+    _swipeOnModal = !!touch.target.closest('.modal.show .modal-content');
+
+    // iOS fix: mark touch in progress
+    _isTouching = true;
+    if (_isTouchingTimer) clearTimeout(_isTouchingTimer);
+}
+
+function handleModalSwipeTouchEnd(event) {
+    if (!_swipeOnModal) return;
+    if (escKeyDotNetHelpers.length === 0) return;
+
+    var touch = event.changedTouches[0];
+    var dx = touch.clientX - _swipeStartX;
+    var dy = touch.clientY - _swipeStartY;
+
+    // 向右滑動 >= 80px，且水平位移明顯大於垂直位移（確保是橫向手勢）
+    if (dx > 80 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        var topHelper = escKeyDotNetHelpers[escKeyDotNetHelpers.length - 1];
+        try {
+            topHelper.invokeMethodAsync('HandleEscapeKey').catch(function () {});
+        } catch (e) {}
+    }
+
+    _swipeOnModal = false;
+
+    // iOS fix: clear touch flag after 350ms (enough time for click to fire)
+    _isTouchingTimer = setTimeout(function () { _isTouching = false; }, 350);
+}
+
+// 頁面載入後自動啟用滑動關閉（與 ESC 鍵共用同一套 helpers）
+window.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('touchstart', handleModalSwipeTouchStart, { passive: true });
+    document.addEventListener('touchend', handleModalSwipeTouchEnd, { passive: true });
+});
 
 // 頁面卸載時清理所有 ESC 鍵監聽器
 window.addEventListener('beforeunload', function () {

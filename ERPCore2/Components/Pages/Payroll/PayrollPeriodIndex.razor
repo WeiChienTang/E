@@ -19,9 +19,8 @@
                         GetEntityDisplayName="@(p => $"{p.Year}年{p.Month}月")"
                         RequiredPermission="@PermissionRegistry.Payroll.Close"
                         RequiredModule="Payroll"
-                        OnAddClick="@ShowOpenPeriodDialogAsync"
+                        ShowAddButton="false"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
-                        AddButtonText="@L["Payroll.OpenPeriod"]"
                         DebugPageName="PayrollPeriodIndex"
                         @ref="indexComponent"/>
 
@@ -31,44 +30,6 @@
                                   OnPayrollPeriodSaved="@modalHandler.OnEntitySavedAsync"
                                   OnCancel="@modalHandler.OnModalCancelAsync"
                                   OnClosePeriod="@HandleClosePeriodAsync" />
-
-@* 開帳確認 Dialog *@
-@if (showOpenDialog)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@L["Payroll.OpenPeriod"]</h5>
-                    <button class="btn-close" @onclick="() => showOpenDialog = false"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <label class="form-label">@L["Field.PayrollYear"]</label>
-                            <input type="number" class="form-control" @bind="openYear" min="100" max="200" />
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">@L["Field.PayrollMonth"]</label>
-                            <input type="number" class="form-control" @bind="openMonth" min="1" max="12" />
-                        </div>
-                    </div>
-                    <small class="text-muted mt-2 d-block">@L["Payroll.OpenPeriodHint"]</small>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => showOpenDialog = false">@L["Button.Cancel"]</button>
-                    <button class="btn btn-primary" @onclick="ConfirmOpenPeriodAsync" disabled="@isOpening">
-                        @if (isOpening)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1"></span>
-                        }
-                        @L["Payroll.OpenPeriod"]
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
 
 @code {
     private GenericIndexPageComponent<PayrollPeriod, IPayrollPeriodService> indexComponent = default!;
@@ -83,12 +44,6 @@
     private List<BreadcrumbItem> breadcrumbItems = new();
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
-
-    // 開帳 Dialog
-    private bool showOpenDialog = false;
-    private bool isOpening = false;
-    private int openYear;
-    private int openMonth;
 
     protected override async Task OnInitializedAsync()
     {
@@ -131,47 +86,6 @@
                 return q;
             },
             page, pageSize);
-    }
-
-    // ===== 開帳 =====
-    private Task ShowOpenPeriodDialogAsync()
-    {
-        // 預設帶入下一個月
-        var now = DateTime.Today;
-        var rocYear = now.Year - 1911;
-        openYear = rocYear;
-        openMonth = now.Month;
-        showOpenDialog = true;
-        return Task.CompletedTask;
-    }
-
-    private async Task ConfirmOpenPeriodAsync()
-    {
-        if (isOpening) return;
-        try
-        {
-            isOpening = true;
-            var result = await PeriodService.OpenPeriodAsync(openYear, openMonth);
-            if (result.IsSuccess)
-            {
-                showOpenDialog = false;
-                await NotificationService.ShowSuccessAsync($"已開立 {openYear} 年 {openMonth} 月薪資週期");
-                await indexComponent.Refresh();
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "開帳失敗");
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmOpenPeriodAsync), GetType());
-            await NotificationService.ShowErrorAsync("開帳時發生錯誤");
-        }
-        finally
-        {
-            isOpening = false;
-        }
     }
 
     // ===== 關帳（由 EditModal 觸發） =====

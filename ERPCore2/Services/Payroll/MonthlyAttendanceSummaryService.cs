@@ -11,13 +11,16 @@ namespace ERPCore2.Services.Payroll
     public class MonthlyAttendanceSummaryService : IMonthlyAttendanceSummaryService
     {
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
+        private readonly IPayrollPeriodService _periodService;
         private readonly ILogger<MonthlyAttendanceSummaryService>? _logger;
 
         public MonthlyAttendanceSummaryService(
             IDbContextFactory<AppDbContext> contextFactory,
+            IPayrollPeriodService periodService,
             ILogger<MonthlyAttendanceSummaryService>? logger = null)
         {
             _contextFactory = contextFactory;
+            _periodService = periodService;
             _logger = logger;
         }
 
@@ -59,6 +62,8 @@ namespace ERPCore2.Services.Payroll
         {
             try
             {
+                await _periodService.EnsurePeriodExistsAsync(model.Year, model.Month, createdBy);
+
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 bool exists = await context.MonthlyAttendanceSummaries
@@ -66,7 +71,7 @@ namespace ERPCore2.Services.Payroll
                 if (exists)
                     return ServiceResult<MonthlyAttendanceSummary>.Failure("該員工此月份的出勤記錄已存在");
 
-                model.CreatedAt = DateTime.Now;
+                model.CreatedAt = DateTime.UtcNow;
                 model.CreatedBy = createdBy;
                 context.MonthlyAttendanceSummaries.Add(model);
                 await context.SaveChangesAsync();
@@ -100,7 +105,7 @@ namespace ERPCore2.Services.Payroll
                 existing.HolidayOvertimeHours = model.HolidayOvertimeHours;
                 existing.NationalHolidayHours = model.NationalHolidayHours;
                 existing.Remarks = model.Remarks;
-                existing.UpdatedAt = DateTime.Now;
+                existing.UpdatedAt = DateTime.UtcNow;
                 existing.UpdatedBy = updatedBy;
 
                 await context.SaveChangesAsync();
@@ -140,6 +145,8 @@ namespace ERPCore2.Services.Payroll
         {
             try
             {
+                await _periodService.EnsurePeriodExistsAsync(year, month, createdBy);
+
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 // 取得所有在職員工
@@ -171,7 +178,7 @@ namespace ERPCore2.Services.Payroll
                         Month = month,
                         ScheduledWorkDays = scheduledDays,
                         ActualWorkDays = scheduledDays,  // 預設全勤
-                        CreatedAt = DateTime.Now,
+                        CreatedAt = DateTime.UtcNow,
                         CreatedBy = createdBy
                     });
                     added++;
@@ -200,7 +207,7 @@ namespace ERPCore2.Services.Payroll
                 if (item == null) return ServiceResult.Success(); // 無記錄無需鎖定
 
                 item.IsLocked = true;
-                item.UpdatedAt = DateTime.Now;
+                item.UpdatedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }

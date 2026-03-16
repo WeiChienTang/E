@@ -316,7 +316,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                
+
                 // 取得所有相關的使用記錄
                 var usages = await context.SetoffPrepaymentUsages
                     .Where(u => u.SetoffDocumentId == setoffDocumentId)
@@ -328,15 +328,30 @@ namespace ERPCore2.Services
                 // 收集所有受影響的預收付款項ID
                 var affectedPrepaymentIds = usages.Select(u => u.SetoffPrepaymentId).Distinct().ToList();
 
-                // 刪除所有使用記錄
+                // 在同一個 context + 交易內完成：刪除 usages 並更新所有 prepayment UsedAmount，
+                // 確保兩步驟為原子操作，避免刪除成功但 UsedAmount 未更新的不一致狀態
+                await using var transaction = await context.Database.BeginTransactionAsync();
+
                 context.SetoffPrepaymentUsages.RemoveRange(usages);
                 await context.SaveChangesAsync();
 
-                // 更新所有受影響的預收付款項的 UsedAmount
+                // 在同一 context 內重新計算（usages 已從追蹤清單移除，Sum 結果為刪除後的值）
                 foreach (var prepaymentId in affectedPrepaymentIds)
                 {
-                    await UpdatePrepaymentUsedAmountAsync(prepaymentId);
+                    var totalUsed = await context.SetoffPrepaymentUsages
+                        .Where(u => u.SetoffPrepaymentId == prepaymentId)
+                        .SumAsync(u => u.UsedAmount);
+
+                    var prepayment = await context.SetoffPrepayments.FindAsync(prepaymentId);
+                    if (prepayment != null)
+                    {
+                        prepayment.UsedAmount = totalUsed;
+                        prepayment.UpdatedAt = DateTime.UtcNow;
+                    }
                 }
+
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 return ServiceResult.Success();
             }
@@ -367,7 +382,7 @@ namespace ERPCore2.Services
                 if (prepayment != null)
                 {
                     prepayment.UsedAmount = totalUsed;
-                    prepayment.UpdatedAt = DateTime.Now;
+                    prepayment.UpdatedAt = DateTime.UtcNow;
                     await context.SaveChangesAsync();
                 }
             }

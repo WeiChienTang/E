@@ -84,7 +84,7 @@ namespace ERPCore2.Data.Entities
         /// 操作時間（用於追蹤變更順序）
         /// </summary>
         [Display(Name = "操作時間")]
-        public DateTime OperationTime { get; set; } = DateTime.Now;
+        public DateTime OperationTime { get; set; } = DateTime.UtcNow;
         
         // === 來源明細關聯（選填）===
         

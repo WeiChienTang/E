@@ -96,8 +96,8 @@ namespace ERPCore2.Services
                     RecordDisplayName = recordDisplayName,
                     DeleteReason = deleteReason,
                     DeletedBy = deletedBy,
-                    DeletedAt = DateTime.Now,
-                    CreatedAt = DateTime.Now,
+                    DeletedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = deletedBy,
                     Status = EntityStatus.Active
                 };

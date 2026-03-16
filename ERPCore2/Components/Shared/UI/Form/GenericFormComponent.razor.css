@@ -241,12 +241,14 @@
     padding-right: 75px !important; /* 為兩個按鈕預留空間 (每個按鈕約 32px + 間距) */
 }
 
-/* ActionButtons 容器 - 定位在 input 右側 */
+/* ActionButtons 容器 - 定位在 input 右側
+   使用 top: 0 + height: 32px（與 input 等高）取代 top: 50% + translateY，
+   避免 invalid-feedback 等子元素撐高父容器後按鈕位置偏移 */
 .input-action-buttons-container {
     position: absolute;
     right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    height: 32px;
     display: flex;
     gap: 4px;
     align-items: center;
@@ -289,7 +291,7 @@
 
 .input-action-button:active:not(:disabled) {
     background-color: rgba(var(--primary-blue-rgb), 0.2);
-    transform: translateY(-50%) scale(0.95);
+    transform: scale(0.95);
 }
 
 /* ===== 停用狀態 ===== */
@@ -306,6 +308,13 @@
 /* 當有 loading spinner 時，調整按鈕位置 */
 .input-with-action-buttons .spinner-border-sm {
     right: 80px !important; /* 為按鈕預留空間 */
+}
+
+/* 移除 Bootstrap is-invalid 在 input 內注入的驚嘆號背景圖示，
+   改由 invalid-feedback 文字前的圖示呈現，避免與 ActionButton 重疊 */
+::deep .form-control.is-invalid {
+    background-image: none !important;
+    padding-right: 0.4rem !important;
 }
 
 /* ===== 響應式設計 ===== */
@@ -367,23 +376,28 @@
     /* 注意：必須使用 ::deep 才能穿透子組件（FormTextField 等）的 CSS scope */
     ::deep .form-field-input .form-control,
     ::deep .form-field-input .form-select,
-    ::deep .form-field-input input,
+    ::deep .form-field-input input:not([type="checkbox"]),
     ::deep .form-field-input select,
     ::deep .form-field-input textarea {
         width: 100% !important;
         font-size: 16px !important; /* 防止 iOS 自動縮放 */
     }
-    
+
     /* Checkbox 在手機版保持同行 - Label 在左、Checkbox 在右 */
     .form-field-row-checkbox {
         flex-direction: row;
         justify-content: flex-start;
     }
-    
+
     .form-field-row-checkbox .form-field-label {
         flex: 0 0 auto;
         min-width: 70px;
         max-width: 100px;
+    }
+
+    /* Checkbox input 容器不擴張（覆蓋下方的 flex: 1 1 auto !important） */
+    .form-field-row-checkbox .form-field-input {
+        flex: 0 0 auto !important;
     }
     
     /* 手機版 ActionButton */

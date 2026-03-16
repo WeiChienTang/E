@@ -162,8 +162,7 @@ namespace ERPCore2.Services.Reports
                 }
 
                 // 期前退貨（用於計算期初餘額）
-                var earlyDate = new DateTime(2000, 1, 1);
-                var preReturns = await _purchaseReturnService.GetByDateRangeAsync(earlyDate, startDate.AddDays(-1));
+                var preReturns = await _purchaseReturnService.GetByDateRangeAsync(DateTime.MinValue, startDate.AddDays(-1));
 
                 if (criteria.ExcludeCancelled)
                     preReturns = preReturns.Where(r => r.Status != EntityStatus.Inactive).ToList();

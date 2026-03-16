@@ -307,12 +307,21 @@ namespace ERPCore2.Services.Reports
             public decimal CumulativeCredit { get; set; }
 
             // 期末借貸餘額（依正常借貸方向計算）
+            // NetCumulative > 0：餘額在正常方向；NetCumulative < 0：餘額反向（異常，但仍需顯示）
             public decimal NetCumulative => NormalDirection == AccountDirection.Debit
                 ? CumulativeDebit - CumulativeCredit
                 : CumulativeCredit - CumulativeDebit;
 
-            public decimal EndingDebitBalance => NetCumulative > 0 && NormalDirection == AccountDirection.Debit ? NetCumulative : 0;
-            public decimal EndingCreditBalance => NetCumulative > 0 && NormalDirection == AccountDirection.Credit ? NetCumulative : 0;
+            // 正值 → 顯示於正常方向欄位；負值 → 絕對值顯示於對面欄位
+            public decimal EndingDebitBalance =>
+                (NetCumulative > 0 && NormalDirection == AccountDirection.Debit) ||
+                (NetCumulative < 0 && NormalDirection == AccountDirection.Credit)
+                    ? Math.Abs(NetCumulative) : 0;
+
+            public decimal EndingCreditBalance =>
+                (NetCumulative > 0 && NormalDirection == AccountDirection.Credit) ||
+                (NetCumulative < 0 && NormalDirection == AccountDirection.Debit)
+                    ? Math.Abs(NetCumulative) : 0;
         }
     }
 }

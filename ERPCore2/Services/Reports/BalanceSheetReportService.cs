@@ -13,8 +13,12 @@ namespace ERPCore2.Services.Reports
 {
     /// <summary>
     /// 資產負債表報表服務實作
-    /// 彙總累積至截止日（EndDate）的 Asset/Liability/Equity 科目餘額
-    /// 資產負債表恆等式：資產合計 = 負債合計 + 權益合計
+    /// 彙總自公司成立至截止日的 Asset/Liability/Equity 科目累積餘額
+    /// 資產負債表恆等式：資產合計 = 負債合計 + 權益合計（含本期淨利/損）
+    ///
+    /// 注意：年底結帳傳票執行前，損益科目尚未轉入保留盈餘，
+    ///       本服務自動將本期淨利/損計算後加入「本期淨利（損）」合成行，
+    ///       確保 A = L + E 恆等式成立。
     /// </summary>
     public class BalanceSheetReportService : IBalanceSheetReportService
     {
@@ -23,12 +27,22 @@ namespace ERPCore2.Services.Reports
         private readonly IFormattedPrintService _formattedPrintService;
         private readonly ILogger<BalanceSheetReportService>? _logger;
 
-        // 資產負債表相關 AccountType
+        // 資產負債表科目大類
         private static readonly AccountType[] BalanceSheetTypes =
         {
             AccountType.Asset,
             AccountType.Liability,
             AccountType.Equity
+        };
+
+        // 損益表科目大類（用於計算本期淨利/損合成行）
+        private static readonly AccountType[] IncomeStatementTypes =
+        {
+            AccountType.Revenue,
+            AccountType.Cost,
+            AccountType.Expense,
+            AccountType.NonOperatingIncomeAndExpense,
+            AccountType.ComprehensiveIncome
         };
 
         public BalanceSheetReportService(
@@ -74,22 +88,20 @@ namespace ERPCore2.Services.Reports
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            // 資產負債表：累積至截止日（若有 StartDate，則從 StartDate 起累計）
+            // 資產負債表必須從公司成立第一天累計到截止日，不設 StartDate
+            // （損益表才需要 StartDate，B/S 用 StartDate 會導致期初餘額消失）
             var asOfDate = criteria.AsOfDate.Date.AddDays(1).AddTicks(-1);
 
-            var query = context.JournalEntryLines
+            // === 1. 資產/負債/權益科目餘額（累積至截止日）===
+            var bsRawLines = await context.JournalEntryLines
                 .Include(l => l.AccountItem)
                 .Include(l => l.JournalEntry)
                 .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted
                          && BalanceSheetTypes.Contains(l.AccountItem.AccountType)
-                         && l.JournalEntry.EntryDate <= asOfDate);
+                         && l.JournalEntry.EntryDate <= asOfDate)
+                .ToListAsync();
 
-            if (criteria.StartDate.HasValue)
-                query = query.Where(l => l.JournalEntry.EntryDate >= criteria.StartDate.Value.Date);
-
-            var lines = await query.ToListAsync();
-
-            return lines
+            var result = bsRawLines
                 .GroupBy(l => l.AccountItemId)
                 .Select(g =>
                 {
@@ -119,6 +131,36 @@ namespace ERPCore2.Services.Reports
                 .ThenBy(l => l.SortOrder)
                 .ThenBy(l => l.Code)
                 .ToList();
+
+            // === 2. 本期淨利/損合成行（年底結帳前損益科目尚未轉入保留盈餘）===
+            // netIncome = 所有損益科目貸方合計 - 借方合計
+            // 正數 = 本期淨利（加入權益），負數 = 本期淨損（減少權益）
+            var plRawLines = await context.JournalEntryLines
+                .Include(l => l.JournalEntry)
+                .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted
+                         && IncomeStatementTypes.Contains(l.AccountItem.AccountType)
+                         && l.JournalEntry.EntryDate <= asOfDate)
+                .ToListAsync();
+
+            var totalPLCredit = plRawLines.Where(l => l.Direction == AccountDirection.Credit).Sum(l => l.Amount);
+            var totalPLDebit  = plRawLines.Where(l => l.Direction == AccountDirection.Debit).Sum(l => l.Amount);
+            var netIncome = totalPLCredit - totalPLDebit;
+
+            if (netIncome != 0)
+            {
+                result.Add(new AccountSummaryLine
+                {
+                    AccountItemId = 0, // 合成行，無對應 AccountItem
+                    Code = string.Empty,
+                    Name = netIncome >= 0 ? "本期淨利" : "本期淨損",
+                    AccountType = AccountType.Equity,         // 置於權益區段
+                    NormalDirection = AccountDirection.Credit,
+                    SortOrder = int.MaxValue,                 // 排在權益區段最後
+                    Balance = netIncome                       // 正=淨利, 負=淨損
+                });
+            }
+
+            return result;
         }
 
         // ===== 報表建構 =====
@@ -223,7 +265,7 @@ namespace ERPCore2.Services.Reports
 
                 var balanced = Math.Abs(totalAssets - totalLiabEquity) < 0.01m;
                 var balanceNote = balanced
-                    ? "✓ 借貸平衡（資產 = 負債 + 權益）"
+                    ? "✓ 借貸平衡（資產 = 負債 + 權益，含本期淨利/損）"
                     : $"⚠ 差額：{totalAssets - totalLiabEquity:N2}（資產 - 負債 - 權益）";
 
                 var summaryLines = new List<string>

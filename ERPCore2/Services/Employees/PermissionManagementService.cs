@@ -396,7 +396,7 @@ namespace ERPCore2.Services
                 // 檢查是否有角色使用該權限
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var isUsed = await context.RolePermissions
-                    .AnyAsync(rp => rp.PermissionId == id);
+                    .AnyAsync(rp => rp.PermissionId == id && rp.Status == EntityStatus.Active);
 
                 if (isUsed)
                     return ServiceResult.Failure("無法刪除此權限，因為仍有角色使用此權限");

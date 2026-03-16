@@ -263,7 +263,7 @@ namespace ERPCore2.Services
                 var totalAmount = quotation.QuotationDetails.Sum(d => d.SubtotalAmount);
 
                 quotation.TotalAmount = totalAmount - quotation.DiscountAmount;
-                quotation.UpdatedAt = DateTime.Now;
+                quotation.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -338,9 +338,9 @@ namespace ERPCore2.Services
 
                 entity.IsApproved = true;
                 entity.ApprovedBy = approvedBy;
-                entity.ApprovedAt = DateTime.Now;
+                entity.ApprovedAt = DateTime.UtcNow;
                 entity.RejectReason = null;
-                entity.UpdatedAt = DateTime.Now;
+                entity.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -361,9 +361,9 @@ namespace ERPCore2.Services
 
             entity.IsApproved = false;
             entity.ApprovedBy = rejectedBy;
-            entity.ApprovedAt = DateTime.Now;
+            entity.ApprovedAt = DateTime.UtcNow;
             entity.RejectReason = reason;
-            entity.UpdatedAt = DateTime.Now;
+            entity.UpdatedAt = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
             return ServiceResult.Success();

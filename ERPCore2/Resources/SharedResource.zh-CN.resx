@@ -444,10 +444,10 @@
     <value>客户报表集</value>
   </data>
   <data name="Nav.ProductGroup" xml:space="preserve">
-    <value>商品</value>
+    <value>品项</value>
   </data>
   <data name="Nav.Products" xml:space="preserve">
-    <value>商品</value>
+    <value>品项</value>
   </data>
   <data name="Nav.ProductCategories" xml:space="preserve">
     <value>类型</value>
@@ -468,7 +468,7 @@
     <value>生产排程</value>
   </data>
   <data name="Nav.ProductReportIndex" xml:space="preserve">
-    <value>商品报表集</value>
+    <value>品项报表集</value>
   </data>
   <data name="Nav.InventoryGroup" xml:space="preserve">
     <value>库存</value>
@@ -723,8 +723,8 @@
   <data name="Entity.CustomerComplaint" xml:space="preserve"><value>客诉</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>供应商拜访记录</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>供应商</value></data>
-  <data name="Entity.Product" xml:space="preserve"><value>商品</value></data>
-  <data name="Entity.ProductCategory" xml:space="preserve"><value>商品类型</value></data>
+  <data name="Entity.Product" xml:space="preserve"><value>品项</value></data>
+  <data name="Entity.ProductCategory" xml:space="preserve"><value>品项类型</value></data>
   <data name="Entity.ProductComposition" xml:space="preserve"><value>物料清单</value></data>
   <data name="Entity.BOM" xml:space="preserve"><value>物料清单</value></data>
   <data name="Entity.CompositionCategory" xml:space="preserve"><value>物料清单类型</value></data>
@@ -885,6 +885,7 @@
   <data name="Column.SalesReturnQuantity" xml:space="preserve"><value>退货数量</value></data>
   <data name="Column.MaterialCodeName" xml:space="preserve"><value>材料编号/名称</value></data>
   <!-- ===== Employee Field keys ===== -->
+  <data name="Field.Employee" xml:space="preserve"><value>员工</value></data>
   <data name="Field.EmployeeCode" xml:space="preserve"><value>员工编号</value></data>
   <data name="Field.FullName" xml:space="preserve"><value>姓名</value></data>
   <data name="Field.Gender" xml:space="preserve"><value>性别</value></data>
@@ -936,6 +937,7 @@
   <data name="Column.AssignDate" xml:space="preserve"><value>配发日期</value></data>
   <data name="Column.ReturnDate" xml:space="preserve"><value>归还日期</value></data>
   <!-- ===== Employee Tab keys ===== -->
+  <data name="Tab.SalaryConfig" xml:space="preserve"><value>薪资设定</value></data>
   <data name="Tab.EmployeeData" xml:space="preserve"><value>员工资料</value></data>
   <data name="Tab.VehicleInfo" xml:space="preserve"><value>车辆信息</value></data>
   <data name="Tab.PersonalTools" xml:space="preserve"><value>个人工具</value></data>
@@ -1110,8 +1112,8 @@
   <data name="Field.CompositionCreator" xml:space="preserve"><value>组成创建人</value></data>
   <data name="Field.CompositionType" xml:space="preserve"><value>组成类型</value></data>
   <data name="Field.ForSale" xml:space="preserve"><value>可销售</value></data>
-  <data name="Field.ProductCode" xml:space="preserve"><value>商品编号</value></data>
-  <data name="Field.ProductName" xml:space="preserve"><value>商品名称</value></data>
+  <data name="Field.ProductCode" xml:space="preserve"><value>品项编号</value></data>
+  <data name="Field.ProductName" xml:space="preserve"><value>品项名称</value></data>
   <data name="Field.ProductionUnit" xml:space="preserve"><value>生产单位</value></data>
   <data name="Field.PurchaseUnit" xml:space="preserve"><value>基本单位</value></data>
   <data name="Field.ScheduleCode" xml:space="preserve"><value>排程单号</value></data>
@@ -1346,6 +1348,12 @@
   <data name="Payroll.CalculatedAt" xml:space="preserve"><value>计算时间</value></data>
   <data name="Payroll.CalculatedBy" xml:space="preserve"><value>计算者</value></data>
   <data name="Payroll.NoPayrollRecords" xml:space="preserve"><value>暂无薪资记录</value></data>
+  <data name="Payroll.FixedAllowances" xml:space="preserve"><value>固定月付津贴项目</value></data>
+  <data name="Payroll.NoAllowances" xml:space="preserve"><value>尚未设置任何固定津贴，点「新增」添加</value></data>
+  <data name="Payroll.AllowanceItem" xml:space="preserve"><value>津贴项目</value></data>
+  <data name="Payroll.MonthlyAmount" xml:space="preserve"><value>每月金额</value></data>
+  <data name="Payroll.SelectItem" xml:space="preserve"><value>请选择项目</value></data>
+  <data name="Payroll.AllowanceHint" xml:space="preserve"><value>只有「津贴补助」类型的项目可在此设置；伙食津贴每月3,000以内免税，交通津贴每月3,000以内免税</value></data>
   <!-- ===== Payroll Phase 2 Rate Table keys ===== -->
   <data name="Nav.MinimumWage" xml:space="preserve"><value>最低工资</value></data>
   <data name="Nav.InsuranceRate" xml:space="preserve"><value>保费费率设置</value></data>
@@ -1376,6 +1384,13 @@
   <data name="Field.InsuredAmount" xml:space="preserve"><value>投保金额</value></data>
   <data name="Payroll.AddMinimumWage" xml:space="preserve"><value>新增最低工资</value></data>
   <data name="Payroll.EditMinimumWage" xml:space="preserve"><value>编辑最低工资</value></data>
+  <data name="Payroll.NoMinimumWageRecords" xml:space="preserve"><value>暂无最低工资记录</value></data>
+  <data name="Payroll.SyncFromGovernment" xml:space="preserve"><value>从政府载入</value></data>
+  <data name="Payroll.SyncSuccess" xml:space="preserve"><value>成功导入 {0} 条最低工资数据</value></data>
+  <data name="Payroll.SyncAlreadyUpToDate" xml:space="preserve"><value>数据已是最新，无需更新</value></data>
+  <data name="Payroll.MinimumWageNote" xml:space="preserve"><value>数据来源：劳动部开放数据，每年调整后自动更新。如最新年度尚未收录，可手动添加。</value></data>
+  <data name="Payroll.ClickSyncHint" xml:space="preserve"><value>点击「从政府载入」可自动导入历年最低工资</value></data>
+  <data name="Payroll.MonthlyOrHourlyRequired" xml:space="preserve"><value>月薪或时薪至少需填写一项</value></data>
   <data name="Payroll.AddInsuranceRate" xml:space="preserve"><value>新增保费费率</value></data>
   <data name="Payroll.EditInsuranceRate" xml:space="preserve"><value>编辑保费费率</value></data>
   <data name="Payroll.LaborInsuranceRates" xml:space="preserve"><value>劳保费率</value></data>
@@ -1769,8 +1784,8 @@
   <data name="Label.MarginLeft" xml:space="preserve"><value>左</value></data>
   <data name="Label.MarginRight" xml:space="preserve"><value>右</value></data>
 
-  <!-- ===== Document Management (档案管理) ===== -->
-  <data name="Nav.DocumentGroup" xml:space="preserve"><value>档案管理</value></data>
+  <!-- ===== Document Management (档案留存) ===== -->
+  <data name="Nav.DocumentGroup" xml:space="preserve"><value>档案留存</value></data>
   <data name="Nav.Documents" xml:space="preserve"><value>档案列表</value></data>
   <data name="Nav.DocumentCategories" xml:space="preserve"><value>档案分类</value></data>
   <data name="Entity.Document" xml:space="preserve"><value>文件</value></data>
@@ -2018,6 +2033,8 @@
   <data name="Modal.CreatedBy" xml:space="preserve"><value>创建者：</value></data>
   <data name="Modal.UpdatedAt" xml:space="preserve"><value>最后更新时间：</value></data>
   <data name="Modal.UpdatedBy" xml:space="preserve"><value>最后修改者：</value></data>
+  <data name="Modal.ShowAuditInfo" xml:space="preserve"><value>显示审计信息</value></data>
+  <data name="Modal.HideAuditInfo" xml:space="preserve"><value>隐藏审计信息</value></data>
   <data name="Modal.DefaultTitle" xml:space="preserve"><value>窗口</value></data>
   <data name="Modal.DefaultLoading" xml:space="preserve"><value>载入中...</value></data>
 
@@ -3160,8 +3177,8 @@
   <data name="Page.ProductCategorySubtitle" xml:space="preserve"><value>管理所有商品类型资料与层次结构</value></data>
   <data name="Page.ProductCompositionTitle" xml:space="preserve"><value>物料清单</value></data>
   <data name="Page.ProductCompositionSubtitle" xml:space="preserve"><value>管理商品配方与组件</value></data>
-  <data name="Page.ProductTitle" xml:space="preserve"><value>商品维护</value></data>
-  <data name="Page.ProductSubtitle" xml:space="preserve"><value>管理所有商品资料与库存信息</value></data>
+  <data name="Page.ProductTitle" xml:space="preserve"><value>品项维护</value></data>
+  <data name="Page.ProductSubtitle" xml:space="preserve"><value>管理所有品项资料与库存信息</value></data>
   <data name="Page.ProductionScheduleTitle" xml:space="preserve"><value>生产排程管理</value></data>
   <data name="Page.ProductionScheduleSubtitle" xml:space="preserve"><value>管理生产排程计划与执行</value></data>
   <data name="Page.SizeTitle" xml:space="preserve"><value>尺寸维护</value></data>
@@ -3249,7 +3266,7 @@
   <data name="SubAccount.CreateProduct" xml:space="preserve"><value>补建商品</value></data>
   <data name="SubAccount.CreateCustomerTitle" xml:space="preserve"><value>为所有现有客户补建子科目</value></data>
   <data name="SubAccount.CreateSupplierTitle" xml:space="preserve"><value>为所有现有供应商补建子科目</value></data>
-  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>为所有现有商品补建子科目</value></data>
+  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>为所有现有品项补建子科目</value></data>
   <data name="SubAccount.CreateResult" xml:space="preserve"><value>{0}子科目补建完成：建立 {1} 笔，略过 {2} 笔</value></data>
   <data name="SubAccount.CreateResultWithErrors" xml:space="preserve"><value>{0}子科目补建完成：建立 {1} 笔，略过 {2} 笔，错误 {3} 笔（{4}{5}）</value></data>
   <data name="SubAccount.CreateError" xml:space="preserve"><value>批量补建{0}子科目时发生错误：{1}</value></data>

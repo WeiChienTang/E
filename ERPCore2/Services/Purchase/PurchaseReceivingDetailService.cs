@@ -764,14 +764,19 @@ namespace ERPCore2.Services
                         
                     if (purchaseOrderDetail != null)
                     {
-                        // 減少已進貨數量
+                        // 減少已進貨數量與金額（修正 Bug-58：原本只更新 ReceivedQuantity，遺漏 ReceivedAmount，
+                        // 導致刪除的明細若是該採購訂單明細的唯一入庫記錄，ReceivedAmount 會永遠殘留舊值）
                         purchaseOrderDetail.ReceivedQuantity = Math.Max(0, purchaseOrderDetail.ReceivedQuantity - entity.ReceivedQuantity);
+                        purchaseOrderDetail.ReceivedAmount = Math.Max(0, purchaseOrderDetail.ReceivedAmount - entity.SubtotalAmount);
                         purchaseOrderDetail.UpdatedAt = DateTime.UtcNow;
                     }
                 }
 
-                // 庫存回滾：因為取消進貨，所以要扣減庫存
-                if (_inventoryStockService != null && entity.ReceivedQuantity > 0)
+                // 庫存回滾：僅在進貨單已核准時才扣減庫存
+                // 未核准的進貨單從未更新庫存（ShouldUpdateInventory 在核准前為 false），不需回滾
+                var receivingHeader = await context.PurchaseReceivings
+                    .FirstOrDefaultAsync(pr => pr.Id == entity.PurchaseReceivingId);
+                if (_inventoryStockService != null && entity.ReceivedQuantity > 0 && (receivingHeader?.IsApproved ?? false))
                 {
                     // 使用 ReduceStockAsync 扣減庫存（因為取消進貨，實際收到的商品應該從庫存中減少）
                     var stockResult = await _inventoryStockService.ReduceStockAsync(

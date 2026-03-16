@@ -49,19 +49,33 @@ namespace ERPCore2.Services
 
             try
             {
-                // 1. 先執行基本的建立邏輯（包含驗證）
-                var createResult = await base.CreateAsync(entity);
-                if (!createResult.IsSuccess || createResult.Data == null)
+                // 1. 驗證（不呼叫 base.CreateAsync，改為在同一個 context/transaction 下執行，
+                //    以確保建立失敗時可以正確回滾，修正 Bug-50：base.CreateAsync 使用獨立 context
+                //    自行 SaveChanges，外層 transaction 無法涵蓋其提交動作）
+                if (!entity.IsDraft)
                 {
-                    return createResult;
+                    var validationResult = await ValidateAsync(entity);
+                    if (!validationResult.IsSuccess)
+                        return ServiceResult<MaterialIssue>.Failure(validationResult.ErrorMessage);
                 }
 
-                var materialIssue = createResult.Data;
+                // 設定建立資訊（同 GenericManagementService.CreateAsync 邏輯）
+                entity.CreatedAt = DateTime.UtcNow;
+                entity.UpdatedAt = DateTime.UtcNow;
+                if (string.IsNullOrEmpty(entity.CreatedBy)) entity.CreatedBy = "系統";
+                if (string.IsNullOrEmpty(entity.UpdatedBy)) entity.UpdatedBy = entity.CreatedBy;
+                if (entity.Status == default) entity.Status = EntityStatus.Active;
 
-                // 2. 載入領料明細
-                var details = await context.MaterialIssueDetails
-                    .Where(d => d.MaterialIssueId == materialIssue.Id && d.Status == EntityStatus.Active)
-                    .ToListAsync();
+                // 將領料單（含明細）寫入 DB，但仍在 transaction 範圍內（尚未 commit）
+                context.MaterialIssues.Add(entity);
+                await context.SaveChangesAsync(); // entity.Id 在此被 EF Core 回填
+
+                var materialIssue = entity;
+
+                // 2. 取得已追蹤的領料明細（SaveChanges 後 navigation property 仍在記憶體中）
+                var details = entity.MaterialIssueDetails?
+                    .Where(d => d.Status == EntityStatus.Active)
+                    .ToList() ?? new List<MaterialIssueDetail>();
 
                 if (!details.Any())
                 {
@@ -274,6 +288,24 @@ namespace ERPCore2.Services
                     }
 
                     // 🔑 說明：由於現在所有異動都在同一個主檔下，不再需要刪除 _ADJ 記錄
+
+                    // 4.5 回寫 ProductionScheduleDetail.IssuedQuantity（對應 CreateAsync 的增量操作）
+                    var scheduleDetailDecrements = entity.MaterialIssueDetails
+                        .Where(d => d.Status == EntityStatus.Active && d.ProductionScheduleDetailId.HasValue && d.IssueQuantity > 0)
+                        .GroupBy(d => d.ProductionScheduleDetailId!.Value)
+                        .ToDictionary(g => g.Key, g => g.Sum(d => d.IssueQuantity));
+
+                    if (scheduleDetailDecrements.Any())
+                    {
+                        var scheduleDetails = await context.ProductionScheduleDetails
+                            .Where(d => scheduleDetailDecrements.Keys.Contains(d.Id))
+                            .ToListAsync();
+
+                        foreach (var sd in scheduleDetails)
+                        {
+                            sd.IssuedQuantity = Math.Max(0, sd.IssuedQuantity - scheduleDetailDecrements[sd.Id]);
+                        }
+                    }
 
                     // 5. 永久刪除主記錄（EF Core 會自動刪除相關的明細）
                     context.MaterialIssues.Remove(entity);

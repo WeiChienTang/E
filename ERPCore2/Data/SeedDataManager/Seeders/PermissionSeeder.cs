@@ -36,7 +36,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = d.Name,
                     Level = d.Level,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System",
                     Remarks = d.Remarks
                 })
@@ -60,7 +60,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         existing.Name = def.Name;
                         existing.Level = def.Level;
                         existing.Remarks = def.Remarks;
-                        existing.UpdatedAt = DateTime.Now;
+                        existing.UpdatedAt = DateTime.UtcNow;
                         existing.UpdatedBy = "System";
                         updatedCount++;
                     }

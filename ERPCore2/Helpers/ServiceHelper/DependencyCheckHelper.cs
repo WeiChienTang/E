@@ -1,4 +1,5 @@
 using ERPCore2.Data.Context;
+using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -450,9 +451,9 @@ namespace ERPCore2.Helpers
                 using var context = await contextFactory.CreateDbContextAsync();
                 var result = new DependencyCheckResult { CanDelete = true };
 
-                // 檢查角色權限關聯
+                // 檢查角色權限關聯（只計算啟用中的記錄，停用的記錄表示已被移除）
                 var rolePermissionCount = await context.RolePermissions
-                    .CountAsync(rp => rp.PermissionId == permissionId);
+                    .CountAsync(rp => rp.PermissionId == permissionId && rp.Status == EntityStatus.Active);
 
                 if (rolePermissionCount > 0)
                 {

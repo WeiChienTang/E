@@ -298,3 +298,4 @@ CalculateEmployeeAsync(employeeId, periodId)
 
 - [Phase 1 資料庫設計](./Readme_薪資_Phase1_資料庫設計.md)
 - [Phase 1 介面設計](./Readme_薪資_Phase1_介面設計.md)
+- [改進項目（設計缺口與待辦）](./Readme_薪資改進項目.md)

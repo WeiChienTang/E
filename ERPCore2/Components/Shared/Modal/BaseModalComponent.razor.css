@@ -58,6 +58,7 @@
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     border: none;
     border-radius: 0.5rem;
+    position: relative;
 }
 
 /* Header 樣式優化 */
@@ -93,23 +94,67 @@
     border-bottom-right-radius: 0.5rem;
 }
 
-/* Metadata 樣式優化（審計資訊區域） */
-::deep .modal-metadata {
-    border-top: 1px solid var(--border-color);
-    padding: 0.75rem 1rem;
-    background-color: var(--bg-secondary);
-    border-bottom-left-radius: 0.5rem;
-    border-bottom-right-radius: 0.5rem;
+/* ===== Audit Info 浮動圖示 ===== */
+
+::deep .audit-info-float-container {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    z-index: 10;
 }
 
-::deep .modal-metadata .text-muted {
-    font-size: 0.875rem;
+::deep .audit-info-toggle-btn {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+    padding: 0;
+    line-height: 1;
+}
+
+::deep .audit-info-toggle-btn:hover {
+    background-color: var(--bg-hover, #e9ecef);
+    color: var(--text-primary);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+::deep .audit-info-popup {
+    position: absolute;
+    bottom: 2.5rem;
+    right: 0;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    min-width: 220px;
+    white-space: nowrap;
+}
+
+::deep .audit-info-row {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    line-height: 1.6;
     color: var(--text-secondary);
 }
 
-::deep .modal-metadata strong {
+::deep .audit-info-label {
     font-weight: 600;
     color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+::deep .audit-info-value {
+    color: var(--text-secondary);
 }
 
 /* ===== 動畫效果 ===== */

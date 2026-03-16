@@ -47,6 +47,11 @@ public class AutoCompleteFieldState : IDisposable
     public bool HasBlurred { get; set; }
 
     /// <summary>
+    /// 使用者輸入的文字無法對應到任何有效選項（失焦後觸發）
+    /// </summary>
+    public bool HasInvalidInput { get; set; }
+
+    /// <summary>
     /// 重設鍵盤導航狀態
     /// </summary>
     public void ResetKeyboardNavigation()

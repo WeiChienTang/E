@@ -50,7 +50,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         RoleId = adminRole.Id,
                         PermissionId = p.Id,
                         Status = EntityStatus.Active,
-                        CreatedAt = DateTime.Now,
+                        CreatedAt = DateTime.UtcNow,
                         CreatedBy = "System"
                     }));
             }
@@ -65,7 +65,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                         RoleId = employeeRole.Id,
                         PermissionId = p.Id,
                         Status = EntityStatus.Active,
-                        CreatedAt = DateTime.Now,
+                        CreatedAt = DateTime.UtcNow,
                         CreatedBy = "System"
                     }));
             }

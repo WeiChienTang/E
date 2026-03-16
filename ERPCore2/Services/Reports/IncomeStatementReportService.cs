@@ -23,12 +23,15 @@ namespace ERPCore2.Services.Reports
         private readonly ILogger<IncomeStatementReportService>? _logger;
 
         // 損益表相關 AccountType
+        // ComprehensiveIncome 必須與 BalanceSheetReportService 的 IncomeStatementTypes 保持一致，
+        // 確保損益表淨利 = 資產負債表「本期淨利/損」合成行的計算基礎相同。
         private static readonly AccountType[] IncomeStatementTypes =
         {
             AccountType.Revenue,
             AccountType.Cost,
             AccountType.Expense,
-            AccountType.NonOperatingIncomeAndExpense
+            AccountType.NonOperatingIncomeAndExpense,
+            AccountType.ComprehensiveIncome
         };
 
         public IncomeStatementReportService(

@@ -110,40 +110,48 @@
                     </div>
                 }
                 
-                @* ===== Modal Metadata (Audit Info) ===== *@
+                @* ===== Modal Metadata (Audit Info) - 浮動圖示，點擊展開 ===== *@
                 @if (ShowFooter && AuditInfo != null)
                 {
-                    <div class="modal-metadata border-top px-3 py-2">
-                        <div class="text-muted small d-flex flex-wrap gap-3">
-                            @if (AuditInfo.CreatedAt.HasValue)
-                            {
-                                <span>
-                                    <strong>@L["Modal.CreatedAt"]</strong>
-                                    @AuditInfo.CreatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")
-                                </span>
-                            }
-                            @if (!string.IsNullOrEmpty(AuditInfo.CreatedBy))
-                            {
-                                <span>
-                                    <strong>@L["Modal.CreatedBy"]</strong>
-                                    @AuditInfo.CreatedBy
-                                </span>
-                            }
-                            @if (AuditInfo.UpdatedAt.HasValue)
-                            {
-                                <span>
-                                    <strong>@L["Modal.UpdatedAt"]</strong>
-                                    @AuditInfo.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")
-                                </span>
-                            }
-                            @if (!string.IsNullOrEmpty(AuditInfo.UpdatedBy))
-                            {
-                                <span>
-                                    <strong>@L["Modal.UpdatedBy"]</strong>
-                                    @AuditInfo.UpdatedBy
-                                </span>
-                            }
-                        </div>
+                    <div class="audit-info-float-container">
+                        <button class="audit-info-toggle-btn"
+                                @onclick="@(() => _showAuditInfo = !_showAuditInfo)"
+                                title="@(_showAuditInfo ? L["Modal.HideAuditInfo"] : L["Modal.ShowAuditInfo"])">
+                            <i class="bi bi-clock-history"></i>
+                        </button>
+                        @if (_showAuditInfo)
+                        {
+                            <div class="audit-info-popup">
+                                @if (AuditInfo.CreatedAt.HasValue)
+                                {
+                                    <div class="audit-info-row">
+                                        <span class="audit-info-label">@L["Modal.CreatedAt"]</span>
+                                        <span class="audit-info-value">@AuditInfo.CreatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(AuditInfo.CreatedBy))
+                                {
+                                    <div class="audit-info-row">
+                                        <span class="audit-info-label">@L["Modal.CreatedBy"]</span>
+                                        <span class="audit-info-value">@AuditInfo.CreatedBy</span>
+                                    </div>
+                                }
+                                @if (AuditInfo.UpdatedAt.HasValue)
+                                {
+                                    <div class="audit-info-row">
+                                        <span class="audit-info-label">@L["Modal.UpdatedAt"]</span>
+                                        <span class="audit-info-value">@AuditInfo.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(AuditInfo.UpdatedBy))
+                                {
+                                    <div class="audit-info-row">
+                                        <span class="audit-info-label">@L["Modal.UpdatedBy"]</span>
+                                        <span class="audit-info-value">@AuditInfo.UpdatedBy</span>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
                 }
 
@@ -354,6 +362,7 @@
     private bool _lastVisible = false;
     private bool _isSuperAdmin = false;
     private bool _isModalFullscreen = false;
+    private bool _showAuditInfo = false;
     private DotNetObjectReference<BaseModalComponent>? _escKeyDotNetRef;
     private bool _isEscKeyListenerActive = false;
     private bool _isDisposed = false;

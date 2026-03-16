@@ -1121,6 +1121,16 @@
                 if (detailToDelete != null)
                 {
                     await SalesDeliveryDetailService.DeleteAsync(detailId);
+
+                    // 修正 Bug-60：刪除出貨明細後必須立即回寫銷貨訂單明細的已出貨數量。
+                    // DeleteAsync 為軟刪除，不觸發 PermanentDeleteAsync 內的重算邏輯；
+                    // 而 SaveSalesDeliveryDetailsAsync 只對「剩餘」明細的 SalesOrderDetailId 進行重算，
+                    // 若被刪除明細的 SalesOrderDetailId 沒有其他剩餘明細，則永遠不會被重算，
+                    // 導致 SalesOrderDetail.DeliveredQuantity 殘留過高的舊值。
+                    if (detailToDelete.SalesOrderDetailId.HasValue && detailToDelete.SalesOrderDetailId.Value > 0)
+                    {
+                        await SalesOrderDetailService.RecalculateDeliveredQuantityAsync(detailToDelete.SalesOrderDetailId.Value);
+                    }
                 }
             }
         }
@@ -1166,12 +1176,25 @@
                 .Where(d => d.ProductId > 0 && d.DeliveryQuantity > 0)
                 .ToList();
 
+            // 修正 Bug-63：儲存前先記錄 DB 中舊有明細的 SalesOrderDetailId，
+            // 以便儲存後也能對「來源已變更」的舊 SalesOrderDetail 進行重算。
+            var oldSalesOrderDetailIds = new HashSet<int>();
+            if (validDetails.Any(d => d.Id > 0))
+            {
+                var existingDbDetails = await SalesDeliveryDetailService.GetByDeliveryIdAsync(salesDelivery.Id);
+                foreach (var dbDetail in existingDbDetails)
+                {
+                    if (dbDetail.SalesOrderDetailId.HasValue && dbDetail.SalesOrderDetailId.Value > 0)
+                        oldSalesOrderDetailIds.Add(dbDetail.SalesOrderDetailId.Value);
+                }
+            }
+
             if (validDetails.Any())
             {
                 foreach (var detail in validDetails)
                 {
                     detail.SalesDeliveryId = salesDelivery.Id;
-                    
+
                     if (detail.Id == 0)
                     {
                         await SalesDeliveryDetailService.CreateAsync(detail);
@@ -1197,23 +1220,24 @@
                     throw new Exception($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
                 }
             }
-            
-            //  關鍵2：更新相關銷貨訂單明細的已出貨量（僅處理有訂單的明細）
-            if (validDetails.Any())
-            {
-                var uniqueSalesOrderDetailIds = validDetails
-                    .Where(d => d.SalesOrderDetailId.HasValue && d.SalesOrderDetailId.Value > 0)
-                    .Select(d => d.SalesOrderDetailId!.Value)
-                    .Distinct();
 
-                foreach (var salesOrderDetailId in uniqueSalesOrderDetailIds)
+            //  關鍵2：更新相關銷貨訂單明細的已出貨量
+            // 合併新明細的 SalesOrderDetailId 與儲存前的舊 SalesOrderDetailId，
+            // 確保來源變更時舊的 SalesOrderDetail.DeliveredQuantity 也能被重算（Bug-63 修正）。
+            var newSalesOrderDetailIds = validDetails
+                .Where(d => d.SalesOrderDetailId.HasValue && d.SalesOrderDetailId.Value > 0)
+                .Select(d => d.SalesOrderDetailId!.Value)
+                .ToHashSet();
+
+            var allSalesOrderDetailIdsToRecalculate = newSalesOrderDetailIds.Union(oldSalesOrderDetailIds);
+
+            foreach (var salesOrderDetailId in allSalesOrderDetailIdsToRecalculate)
+            {
+                var recalculateResult = await SalesOrderDetailService.RecalculateDeliveredQuantityAsync(salesOrderDetailId);
+
+                if (!recalculateResult.IsSuccess)
                 {
-                    var recalculateResult = await SalesOrderDetailService.RecalculateDeliveredQuantityAsync(salesOrderDetailId);
-                    
-                    if (!recalculateResult.IsSuccess)
-                    {
-                        await NotificationService.ShowWarningAsync($"銷貨訂單明細已出貨量更新失敗：{recalculateResult.ErrorMessage}");
-                    }
+                    await NotificationService.ShowWarningAsync($"銷貨訂單明細已出貨量更新失敗：{recalculateResult.ErrorMessage}");
                 }
             }
 

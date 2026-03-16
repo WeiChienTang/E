@@ -332,7 +332,7 @@ namespace ERPCore2.Services
                 // 更新狀態
                 item.ProductionItemStatus = ProductionItemStatus.InProgress;
                 item.ActualStartDate = DateTime.Now;
-                item.UpdatedAt = DateTime.Now;
+                item.UpdatedAt = DateTime.UtcNow;
 
                 // TODO: 扣除組件庫存（加入 InProductionStock）
                 // 這部分需要在 Phase 3 實作，需要與 InventoryStockService 整合
@@ -449,13 +449,13 @@ namespace ERPCore2.Services
                     WarehouseId = effectiveWarehouseId,
                     WarehouseLocationId = effectiveLocationId,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
                 context.ProductionScheduleCompletions.Add(completion);
 
                 // 更新項目的已完成數量
                 item.CompletedQuantity = newTotalCompleted;
-                item.UpdatedAt = DateTime.Now;
+                item.UpdatedAt = DateTime.UtcNow;
 
                 // 最後一次完工：自動結案（D7/§3.6）
                 if (isLastCompletion)
@@ -546,7 +546,7 @@ namespace ERPCore2.Services
                     item.ProductionScheduleId = scheduleId;
                     item.ProductionItemStatus = ProductionItemStatus.Pending;
                     item.CompletedQuantity = 0;
-                    item.CreatedAt = DateTime.Now;
+                    item.CreatedAt = DateTime.UtcNow;
                     item.Status = EntityStatus.Active;
                 }
 
@@ -595,7 +595,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("已完成數量不可大於排程數量");
 
                 item.CompletedQuantity = completedQuantity;
-                item.UpdatedAt = DateTime.Now;
+                item.UpdatedAt = DateTime.UtcNow;
 
                 // 更新狀態
                 if (completedQuantity >= item.ScheduledQuantity)
@@ -688,7 +688,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("排程項目不存在");
 
                 item.PlannedStartDate = plannedStartDate.HasValue ? plannedStartDate.Value.Date : null;
-                item.UpdatedAt = DateTime.Now;
+                item.UpdatedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
@@ -824,7 +824,7 @@ namespace ERPCore2.Services
                 {
                     var update = updates.FirstOrDefault(u => u.Id == item.Id);
                     item.Priority = update.Priority;
-                    item.UpdatedAt = DateTime.Now;
+                    item.UpdatedAt = DateTime.UtcNow;
                 }
 
                 await context.SaveChangesAsync();
@@ -875,7 +875,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("只有生產中的項目可以暫停");
 
                 item.ProductionItemStatus = ProductionItemStatus.Paused;
-                item.UpdatedAt = DateTime.Now;
+                item.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -903,7 +903,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("只有已暫停的項目可以繼續生產");
 
                 item.ProductionItemStatus = ProductionItemStatus.InProgress;
-                item.UpdatedAt = DateTime.Now;
+                item.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -992,7 +992,7 @@ namespace ERPCore2.Services
                 item.ProductionItemStatus = ProductionItemStatus.Aborted;
                 item.ActualEndDate = DateTime.Now;
                 item.IsClosed = true;
-                item.UpdatedAt = DateTime.Now;
+                item.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();

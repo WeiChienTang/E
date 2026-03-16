@@ -75,7 +75,7 @@ namespace ERPCore2.Services.Payroll
                         ActualWorkDays = workDays,   // 預設全勤
                         RecordStatus = PayrollRecordStatus.Draft,
                         Code = $"{period.Year:D3}{period.Month:D2}-{employeeId}",
-                        CreatedAt = DateTime.Now,
+                        CreatedAt = DateTime.UtcNow,
                         CreatedBy = calculatedBy ?? "System"
                     };
                     context.PayrollRecords.Add(record);
@@ -114,9 +114,9 @@ namespace ERPCore2.Services.Payroll
 
                 await DoCalculateAsync(context, record, salary, period, items);
 
-                record.UpdatedAt = DateTime.Now;
+                record.UpdatedAt = DateTime.UtcNow;
                 record.UpdatedBy = calculatedBy ?? "System";
-                record.CalculatedAt = DateTime.Now;
+                record.CalculatedAt = DateTime.UtcNow;
                 record.CalculatedBy = calculatedBy ?? "System";
 
                 await context.SaveChangesAsync();
@@ -197,8 +197,11 @@ namespace ERPCore2.Services.Payroll
                 if (record.Period.PeriodStatus == PayrollPeriodStatus.Closed)
                     return ServiceResult<PayrollRecord>.Failure("此薪資週期已關帳，不可重新計算");
 
-                // 強制重置為 Draft
+                // 強制重置為 Draft，並先儲存至 DB（修正 Bug-P3）
+                // CalculateEmployeeAsync 開啟獨立 DbContext，若不先 SaveChanges，
+                // 新 context 仍從 DB 讀到 Confirmed 狀態而返回錯誤
                 record.RecordStatus = PayrollRecordStatus.Draft;
+                await context.SaveChangesAsync();
 
                 return await CalculateEmployeeAsync(record.EmployeeId, record.PayrollPeriodId, calculatedBy);
             }
@@ -301,8 +304,11 @@ namespace ERPCore2.Services.Payroll
                 if (record.RecordStatus == PayrollRecordStatus.Confirmed)
                     return ServiceResult.Failure("薪資單已是確認狀態");
 
+                if (!record.CalculatedAt.HasValue)
+                    return ServiceResult.Failure("薪資單尚未計算，無法確認");
+
                 record.RecordStatus = PayrollRecordStatus.Confirmed;
-                record.UpdatedAt = DateTime.Now;
+                record.UpdatedAt = DateTime.UtcNow;
                 record.UpdatedBy = confirmedBy ?? "System";
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -330,7 +336,7 @@ namespace ERPCore2.Services.Payroll
                     return ServiceResult.Failure("此薪資週期已關帳，不可取消確認");
 
                 record.RecordStatus = PayrollRecordStatus.Draft;
-                record.UpdatedAt = DateTime.Now;
+                record.UpdatedAt = DateTime.UtcNow;
                 record.UpdatedBy = operatedBy ?? "System";
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -383,20 +389,13 @@ namespace ERPCore2.Services.Payroll
             AddDetail(details, items, "BASE", 1, salary.BaseSalary, basePay,
                 $"本薪 {salary.BaseSalary:N0} × 出勤比例 {attendanceRatio:P0}");
 
-            // ── 3. 職務加給（全額，不依出勤扣減）───────────────────────
-            if (salary.PositionAllowance > 0)
-                AddDetail(details, items, "POS_ALLOWANCE", 1, salary.PositionAllowance, salary.PositionAllowance,
-                    "職務加給（固定）");
-
-            // ── 4. 餐飲補助（全額）──────────────────────────────────
-            if (salary.MealAllowance > 0)
-                AddDetail(details, items, "MEAL", 1, salary.MealAllowance, salary.MealAllowance,
-                    "餐飲補助（固定）");
-
-            // ── 5. 交通津貼（全額）──────────────────────────────────
-            if (salary.TransportAllowance > 0)
-                AddDetail(details, items, "TRANSPORT", 1, salary.TransportAllowance, salary.TransportAllowance,
-                    "交通津貼（固定）");
+            // ── 3. 固定月付津貼項目（動態，從 EmployeeSalaryItem 讀取）──
+            foreach (var allowanceItem in salary.AllowanceItems.Where(i => i.Amount > 0 && i.PayrollItem != null))
+            {
+                AddDetail(details, items, allowanceItem.PayrollItem.Code!, 1,
+                    allowanceItem.Amount, allowanceItem.Amount,
+                    $"{allowanceItem.PayrollItem.Name}（固定）");
+            }
 
             // ── 6. 加班費 ────────────────────────────────────────────
             if (record.OvertimeHours1 > 0)
@@ -473,8 +472,12 @@ namespace ERPCore2.Services.Payroll
 
             // ── 13. 課稅所得 ─────────────────────────────────────────
             // 課稅薪資 = 應發合計 - 免稅津貼（餐、交通）- 勞健保費 - 勞退自提
-            decimal taxFreeMeal = Math.Min(salary.MealAllowance, mealTaxFreeLimit);
-            decimal taxFreeTransport = Math.Min(salary.TransportAllowance, transportTaxFreeLimit);
+            decimal mealAmount = salary.AllowanceItems
+                .FirstOrDefault(i => i.PayrollItem?.Code == "MEAL")?.Amount ?? 0;
+            decimal transportAmount = salary.AllowanceItems
+                .FirstOrDefault(i => i.PayrollItem?.Code == "TRANSPORT")?.Amount ?? 0;
+            decimal taxFreeMeal = Math.Min(mealAmount, mealTaxFreeLimit);
+            decimal taxFreeTransport = Math.Min(transportAmount, transportTaxFreeLimit);
             decimal taxableIncome = grossIncome - taxFreeMeal - taxFreeTransport - laborInsuranceEE - healthInsuranceEE - voluntaryRetirement;
             taxableIncome = Math.Max(taxableIncome, 0);
 
@@ -535,6 +538,7 @@ namespace ERPCore2.Services.Payroll
             var periodDate = new DateOnly(adYear, period.Month, 1);
 
             return await context.EmployeeSalaries
+                .Include(s => s.AllowanceItems).ThenInclude(i => i.PayrollItem)
                 .Where(s => s.EmployeeId == employeeId
                          && s.EffectiveDate <= periodDate
                          && (s.ExpiryDate == null || s.ExpiryDate >= periodDate)

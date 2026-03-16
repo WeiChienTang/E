@@ -1137,6 +1137,8 @@ namespace ERPCore2.Services
                     
                     // 3. 更新庫存數量
                     var stockBefore = stockDetail.CurrentStock;
+                    // 修正 Bug-57：在清除平均成本前先保存，確保異動明細能正確記錄本次出庫成本
+                    var costAtTransaction = stockDetail.AverageCost;
                     stockDetail.CurrentStock -= quantity;
                     stockDetail.LastTransactionDate = DateTime.Now;
 
@@ -1156,8 +1158,8 @@ namespace ERPCore2.Services
                         ProductId = productId,
                         WarehouseLocationId = locationId,
                         Quantity = -quantity, // 負數表示出庫
-                        UnitCost = stockDetail.AverageCost,
-                        Amount = (stockDetail.AverageCost ?? 0) * quantity,
+                        UnitCost = costAtTransaction,
+                        Amount = (costAtTransaction ?? 0) * quantity,
                         StockBefore = stockBefore,
                         StockAfter = stockDetail.CurrentStock,
                         SourceDetailId = sourceDetailId,
@@ -1392,7 +1394,7 @@ namespace ERPCore2.Services
                 
                 // 更新庫存明細的平均成本
                 stockDetail.AverageCost = newAverageCost;
-                stockDetail.UpdatedAt = DateTime.Now;
+                stockDetail.UpdatedAt = DateTime.UtcNow;
                 
                 await context.SaveChangesAsync();
                 

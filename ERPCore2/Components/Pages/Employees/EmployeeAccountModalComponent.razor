@@ -90,7 +90,8 @@
             @* 權限組 *@
             <div class="mb-3">
                 <label class="form-label fw-semibold">@L["Label.PermissionGroup"]</label>
-                <select class="form-select" @bind="_roleIdStr">
+                <select class="form-select" @bind="_roleIdStr"
+                        disabled="@(string.IsNullOrWhiteSpace(_account) || (string.IsNullOrWhiteSpace(_newPassword) && string.IsNullOrWhiteSpace(employee.Password)))">
                     <option value="">@L["Placeholder.SelectPermissionGroup"]</option>
                     @foreach (var role in _availableRoles)
                     {

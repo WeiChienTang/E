@@ -1672,11 +1672,11 @@
                 if (detail.Id == 0)
                 {
                     detail.Status = EntityStatus.Active;
-                    detail.CreatedAt = DateTime.Now;
+                    detail.CreatedAt = DateTime.UtcNow;
                 }
                 else
                 {
-                    detail.UpdatedAt = DateTime.Now;
+                    detail.UpdatedAt = DateTime.UtcNow;
                 }
 
             }
@@ -1709,15 +1709,39 @@
                 }
                 else
                 {
-                    // 更新明細 - 需要檢查數量變化
+                    // 更新明細 - 需要檢查數量變化及報價單來源變更
                     var originalDetail = existingDetails.FirstOrDefault(e => e.Id == detail.Id);
                     var quantityDiff = detail.OrderQuantity - (originalDetail?.OrderQuantity ?? 0);
-                    
+
+                    // 修正 Bug-62：檢查報價單來源明細是否已變更
+                    bool quotationDetailChanged = originalDetail?.QuotationDetailId != detail.QuotationDetailId;
+
                     await SalesOrderDetailService.UpdateAsync(detail);
-                    
-                    //  如果數量有變化且有報價單來源，更新報價單明細的已轉銷貨數量
-                    if (quantityDiff != 0 && detail.QuotationDetailId.HasValue)
+
+                    if (quotationDetailChanged)
                     {
+                        // 報價單來源變更：對舊來源回退、對新來源累加（避免 ConvertedQuantity 殘留）
+                        if (originalDetail?.QuotationDetailId.HasValue == true)
+                        {
+                            await UpdateQuotationDetailConvertedQuantity(
+                                originalDetail.QuotationDetailId.Value,
+                                originalDetail.OrderQuantity,
+                                isAdding: false
+                            );
+                        }
+
+                        if (detail.QuotationDetailId.HasValue)
+                        {
+                            await UpdateQuotationDetailConvertedQuantity(
+                                detail.QuotationDetailId.Value,
+                                detail.OrderQuantity,
+                                isAdding: true
+                            );
+                        }
+                    }
+                    else if (quantityDiff != 0 && detail.QuotationDetailId.HasValue)
+                    {
+                        // 來源未變，只有數量差異需要回寫
                         await UpdateQuotationDetailConvertedQuantity(
                             detail.QuotationDetailId.Value,
                             Math.Abs(quantityDiff),
@@ -1779,7 +1803,7 @@
                         quotationDetail.ConvertedQuantity = 0;
                 }
                 
-                quotationDetail.UpdatedAt = DateTime.Now;
+                quotationDetail.UpdatedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
             }
         }

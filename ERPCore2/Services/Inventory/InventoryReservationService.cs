@@ -349,8 +349,8 @@ namespace ERPCore2.Services
                     ReservationDate = DateTime.Now,
                     ExpiryDate = expiryDate,
                     ReservationRemarks = remarks,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
                     
                 };
 
@@ -392,7 +392,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure($"釋放數量不能超過剩餘預留數量({remainingQuantity})");
 
                 reservation.ReleasedQuantity += actualReleaseQuantity;
-                reservation.UpdatedAt = DateTime.Now;
+                reservation.UpdatedAt = DateTime.UtcNow;
 
                 // 如果完全釋放，更新狀態
                 if (reservation.ReleasedQuantity >= reservation.ReservedQuantity)
@@ -435,7 +435,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("已釋放的預留記錄無法取消");
 
                 reservation.ReservationStatus = InventoryReservationStatus.Cancelled;
-                reservation.UpdatedAt = DateTime.Now;
+                reservation.UpdatedAt = DateTime.UtcNow;
 
                 if (!string.IsNullOrWhiteSpace(reason))
                 {
@@ -476,7 +476,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("新到期日必須大於原到期日");
 
                 reservation.ExpiryDate = newExpiryDate;
-                reservation.UpdatedAt = DateTime.Now;
+                reservation.UpdatedAt = DateTime.UtcNow;
 
                 if (!string.IsNullOrWhiteSpace(remarks))
                 {

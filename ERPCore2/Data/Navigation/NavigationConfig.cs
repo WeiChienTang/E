@@ -28,10 +28,10 @@ public static class NavigationConfig
                 SearchKeywords = new List<string> { "首頁", "主頁", "主畫面", "home", "dashboard", "總覽", "主页", "ホーム", "トップ", "概要" }
             },
             
-            // ==================== 檔案管理 ====================
+            // ==================== 檔案留存 ====================
             new NavigationItem
             {
-                Name = "檔案管理",
+                Name = "檔案留存",
                 NameKey = "Nav.DocumentGroup",
                 Description = "管理與存取各類保存文件",
                 Route = "#",
@@ -39,7 +39,7 @@ public static class NavigationConfig
                 Category = "檔案管理",
                 IsParent = true,
                 MenuKey = "document_management",
-                SearchKeywords = new List<string> { "檔案管理", "文件管理", "document", "file", "档案管理", "ファイル管理", "書類管理" },
+                SearchKeywords = new List<string> { "檔案留存", "檔案管理", "文件管理", "document", "file", "档案管理", "ファイル管理", "書類管理" },
                 Children = new List<NavigationItem>
                 {
                     new NavigationItem
@@ -919,7 +919,7 @@ public static class NavigationConfig
                 NameKey = "Nav.WasteGroup",
                 Description = "磅秤收料紀錄與類型管理",
                 Route = "#",
-                IconClass = "bi bi-recycle",
+                IconClass = "bi bi-truck-flatbed",
                 Category = "磅秤管理",
                 IsParent = true,
                 MenuKey = "waste_management",
@@ -1180,7 +1180,7 @@ public static class NavigationConfig
                         NameKey = "Nav.PayrollItems",
                         Description = "維護薪資收入與扣除項目",
                         Route = "/payroll/items",
-                        IconClass = "bi bi-caret-right-fill",
+                        IconClass = "",
                         Category = "薪資管理",
                         RequiredPermission = PermissionRegistry.Payroll.RateTable,
                         SearchKeywords = new List<string> { "薪資項目", "薪資科目", "payroll item", "薪资项目", "給与項目", "加給", "扣除項目", "薪資明細" }
@@ -1206,18 +1206,6 @@ public static class NavigationConfig
                         Category = "薪資管理",
                         RequiredPermission = PermissionRegistry.Payroll.Attendance,
                         SearchKeywords = new List<string> { "出勤彙總", "出勤記錄", "加班時數", "attendance", "出勤汇总", "勤怠管理", "勤務時間", "出勤管理" }
-                    },
-                    new NavigationItem { IsDivider = true },
-                    new NavigationItem
-                    {
-                        Name = "基本工資",
-                        NameKey = "Nav.MinimumWage",
-                        Description = "維護歷年基本工資（月薪／時薪）",
-                        Route = "/payroll/minimum-wages",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "薪資管理",
-                        RequiredPermission = PermissionRegistry.Payroll.RateTable,
-                        SearchKeywords = new List<string> { "基本工資", "最低工資", "minimum wage", "基本工资", "最低工资", "最低賃金", "法定工資" }
                     },
                     new NavigationItem
                     {

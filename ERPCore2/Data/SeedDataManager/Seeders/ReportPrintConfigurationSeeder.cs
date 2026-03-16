@@ -56,7 +56,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     PaperSettingId = null,          // 預設無紙張
                     Remarks = report.Description,
                     Status = report.IsEnabled ? EntityStatus.Active : EntityStatus.Inactive,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 newConfigurations.Add(config);

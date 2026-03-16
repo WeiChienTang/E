@@ -77,8 +77,8 @@ namespace ERPCore2.Services.PersonalTools
                     EmployeeId = employeeId,
                     Content = content.Trim(),
                     Color = color,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 context.StickyNotes.Add(note);
@@ -111,7 +111,7 @@ namespace ERPCore2.Services.PersonalTools
 
                 note.Content = content.Trim();
                 note.Color = color;
-                note.UpdatedAt = DateTime.Now;
+                note.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult<StickyNote>.Success(note);

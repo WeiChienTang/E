@@ -28,7 +28,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "政府公文",
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     Remarks = "政府機關發文、法規公告、許可證照等"
                 },
                 new DocumentCategory
@@ -37,7 +37,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "廠商合約",
                     DefaultAccessLevel = DocumentAccessLevel.Sensitive,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     Remarks = "廠商報價、採購合約、供應協議等"
                 },
                 new DocumentCategory
@@ -46,7 +46,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "客戶文件",
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     Remarks = "客戶簽約資料、訂單確認書等"
                 },
                 new DocumentCategory
@@ -55,7 +55,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "內部文件",
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     Remarks = "公司內部作業程序、規章制度等"
                 },
                 new DocumentCategory
@@ -64,7 +64,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "其他文件",
                     DefaultAccessLevel = DocumentAccessLevel.Normal,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     Remarks = "其他類型的文件"
                 }
             };

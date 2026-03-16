@@ -291,7 +291,7 @@ namespace ERPCore2.Services
                         LastPurchasePrice = pd.LastPrice,
                         LastPurchaseDate = pd.LastDate,
                         Status = EntityStatus.Active,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTime.UtcNow
                     })
                     .ToList();
 
@@ -348,7 +348,7 @@ namespace ERPCore2.Services
                     {
                         binding.LastPurchasePrice = lastPurchase.UnitPrice;
                         binding.LastPurchaseDate = lastPurchase.OrderDate;
-                        binding.UpdatedAt = DateTime.Now;
+                        binding.UpdatedAt = DateTime.UtcNow;
                         updatedCount++;
                     }
                 }
@@ -388,7 +388,7 @@ namespace ERPCore2.Services
                 {
                     binding.LastPurchasePrice = price;
                     binding.LastPurchaseDate = date;
-                    binding.UpdatedAt = DateTime.Now;
+                    binding.UpdatedAt = DateTime.UtcNow;
 
                     await context.SaveChangesAsync();
                 }

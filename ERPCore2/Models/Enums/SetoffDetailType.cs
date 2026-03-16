@@ -7,8 +7,9 @@ namespace ERPCore2.Models.Enums
     /// </summary>
     public enum SetoffDetailType
     {
-        /// <summary>銷貨訂單明細</summary>
+        /// <summary>銷貨訂單明細 — 已廢棄，訂單尚未出貨時 AR 未成立，不可作為沖款來源</summary>
         [Display(Name = "銷貨明細")]
+        [Obsolete("沖款來源應使用 SalesDeliveryDetail (5)，訂單明細不構成應收帳款")]
         SalesOrderDetail = 1,
         
         /// <summary>銷貨退回明細</summary>

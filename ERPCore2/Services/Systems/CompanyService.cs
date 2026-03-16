@@ -310,7 +310,7 @@ namespace ERPCore2.Services
 
                 // 更新 LOGO 路徑
                 company.LogoPath = logoPath;
-                company.UpdatedAt = DateTime.Now;
+                company.UpdatedAt = DateTime.UtcNow;
                 company.UpdatedBy = "System";
 
                 await context.SaveChangesAsync();
@@ -343,7 +343,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的公司");
 
                 company.LogoPath = null;
-                company.UpdatedAt = DateTime.Now;
+                company.UpdatedAt = DateTime.UtcNow;
                 company.UpdatedBy = "System";
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -388,7 +388,7 @@ namespace ERPCore2.Services
                     }
 
                     targetCompany.IsDefault = true;
-                    targetCompany.UpdatedAt = DateTime.Now;
+                    targetCompany.UpdatedAt = DateTime.UtcNow;
 
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();

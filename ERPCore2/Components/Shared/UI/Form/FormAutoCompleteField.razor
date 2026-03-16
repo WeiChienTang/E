@@ -21,7 +21,14 @@
            @onfocus="HandleFocus"
            @onblur="HandleBlur"
            @onkeydown="HandleKeyDown" />
-    
+
+    @if (_state.HasInvalidInput)
+    {
+        <div class="invalid-feedback">
+            <i class="bi bi-exclamation-circle me-1"></i>@(Field.IsRequired ? $"請從清單中選擇「{Field.Label}」" : "找不到符合的選項，請重新輸入或清空")
+        </div>
+    }
+
     @if (!Field.IsReadOnly && !Field.IsDisabled)
     {
         @if (_state.IsLoading)
@@ -79,9 +86,16 @@
 
     private string FieldId => Field.PropertyName;
     
-    private string InputCssClass => HasActionButtons 
-        ? $"{CssClass} {FormConstants.CssClasses.HasActionButtons}" 
-        : CssClass;
+    private string InputCssClass
+    {
+        get
+        {
+            var cls = HasActionButtons
+                ? $"{CssClass} {FormConstants.CssClasses.HasActionButtons}"
+                : CssClass;
+            return _state.HasInvalidInput ? $"{cls} is-invalid" : cls;
+        }
+    }
 
     private readonly AutoCompleteFieldState _state = new();
     
@@ -213,6 +227,7 @@
     private void HandleInput(string inputValue)
     {
         _state.DisplayValue = inputValue;
+        _state.HasInvalidInput = false;
         _ = PerformSearchAsync(inputValue);
     }
 
@@ -408,6 +423,7 @@
     private async Task SelectOption(SelectOption option)
     {
         _state.DisplayValue = option.Text;
+        _state.HasInvalidInput = false;
         _state.HideDropdown();
         await ValueChanged.InvokeAsync(option.Value);
         StateHasChanged();
@@ -422,6 +438,7 @@
             // 🔑 修正：無論 Value 是否有值都觸發清除事件
             // 這解決了虛擬欄位（Value 始終為 null）清除時無法觸發事件的問題
             // 父組件會根據自己追蹤的狀態來判斷是否需要處理
+            _state.HasInvalidInput = false;
             await ValueChanged.InvokeAsync(null);
             return;
         }
@@ -438,6 +455,7 @@
 
                 if (exactMatch != null)
                 {
+                    _state.HasInvalidInput = false;
                     _state.DisplayValue = exactMatch.Text;
                     await ValueChanged.InvokeAsync(exactMatch.Value);
                     return;
@@ -446,15 +464,16 @@
                 // 單一結果
                 if (results.Count == 1)
                 {
+                    _state.HasInvalidInput = false;
                     _state.DisplayValue = results[0].Text;
                     await ValueChanged.InvokeAsync(results[0].Value);
                     return;
                 }
 
-                // 無匹配則清空
+                // 無匹配 → 標紅提示，保留使用者輸入的文字，清空實體值
+                _state.HasInvalidInput = true;
                 if (!string.IsNullOrEmpty(Value))
                 {
-                    _state.DisplayValue = string.Empty;
                     await ValueChanged.InvokeAsync(null);
                 }
             }

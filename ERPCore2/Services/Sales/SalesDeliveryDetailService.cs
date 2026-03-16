@@ -322,11 +322,16 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure($"找不到ID為 {id} 的銷貨出貨明細");
                 }
 
-                // 回寫銷貨訂單明細的已出貨數量
+                // 先執行實際刪除（修正 Bug-56：必須先刪除再重算，否則重算時 DB 仍存在被刪除的明細，
+                // 導致 SalesOrderDetail.DeliveredQuantity 保留被刪除項目的數量）
+                context.SalesDeliveryDetails.Remove(entity);
+                await context.SaveChangesAsync(); // 刪除在 transaction 內已可見
+
+                // 再回寫銷貨訂單明細的已出貨數量（使用傳入 context 的多載，在同一交易中完成）
                 if (entity.SalesOrderDetailId.HasValue && entity.SalesOrderDetailId.Value > 0)
                 {
                     var recalculateResult = await _salesOrderDetailService
-                        .RecalculateDeliveredQuantityAsync(entity.SalesOrderDetailId.Value);
+                        .RecalculateDeliveredQuantityAsync(entity.SalesOrderDetailId.Value, context);
 
                     if (!recalculateResult.IsSuccess)
                     {
@@ -334,10 +339,6 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure($"回寫銷貨訂單明細失敗: {recalculateResult.ErrorMessage}");
                     }
                 }
-
-                // 執行實際刪除
-                context.SalesDeliveryDetails.Remove(entity);
-                await context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
                 

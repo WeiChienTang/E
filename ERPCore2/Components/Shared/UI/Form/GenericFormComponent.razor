@@ -295,7 +295,7 @@
             case FormFieldType.DateTime:
                 var dateValue = GetPropertyValue(Model, field.PropertyName);
                 <FormDateField Field="@field"
-                               Value="@(dateValue is DateTime dt ? dt : null)"
+                               Value="@(dateValue is DateTime dt ? dt : dateValue is DateOnly d ? d.ToDateTime(TimeOnly.MinValue) : null)"
                                ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))"
                                HasActionButtons="@hasActionButtons"
                                CssClass="@cssClass" />

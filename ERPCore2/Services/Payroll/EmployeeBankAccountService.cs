@@ -116,7 +116,7 @@ namespace ERPCore2.Services.Payroll
                 foreach (var acc in allAccounts)
                 {
                     acc.IsPrimary = acc.Id == bankAccountId;
-                    acc.UpdatedAt = DateTime.Now;
+                    acc.UpdatedAt = DateTime.UtcNow;
                 }
 
                 await context.SaveChangesAsync();

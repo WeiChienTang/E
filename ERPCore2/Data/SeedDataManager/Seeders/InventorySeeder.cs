@@ -35,7 +35,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     NumberPrefix = "PI",
                     IsActive = true,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 },
                 new InventoryTransactionType
@@ -49,7 +49,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     NumberPrefix = "MI",
                     IsActive = true,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 },
                 new InventoryTransactionType
@@ -63,7 +63,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     NumberPrefix = "TI",
                     IsActive = true,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 },
                 new InventoryTransactionType
@@ -77,7 +77,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     NumberPrefix = "SO",
                     IsActive = true,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 },
                 new InventoryTransactionType
@@ -91,7 +91,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     NumberPrefix = "TO",
                     IsActive = true,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 },
                 new InventoryTransactionType
@@ -105,7 +105,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     NumberPrefix = "LO",
                     IsActive = true,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 },
                 new InventoryTransactionType
@@ -119,7 +119,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     NumberPrefix = "ADJ",
                     IsActive = true,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 }
             };

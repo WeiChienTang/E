@@ -379,7 +379,7 @@ namespace ERPCore2.Services
                 if (!details.Any())
                     return ServiceResult.Failure("訂單必須包含至少一項商品");
                 
-                order.UpdatedAt = DateTime.Now;
+                order.UpdatedAt = DateTime.UtcNow;
                 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -420,10 +420,10 @@ namespace ERPCore2.Services
 
                     // 更新採購訂單狀態
                     order.ApprovedBy = approvedBy;
-                    order.ApprovedAt = DateTime.Now;
+                    order.ApprovedAt = DateTime.UtcNow;
                     order.IsApproved = true;
                     order.RejectReason = null;
-                    order.UpdatedAt = DateTime.Now;
+                    order.UpdatedAt = DateTime.UtcNow;
                     // TODO: 根據當前登入使用者設置 UpdatedBy
                     // order.UpdatedBy = currentUser.Name;
 
@@ -470,12 +470,12 @@ namespace ERPCore2.Services
                     // 重置審核狀態
                     order.IsApproved = false;
                     order.ApprovedBy = rejectedBy;
-                    order.ApprovedAt = DateTime.Now;
+                    order.ApprovedAt = DateTime.UtcNow;
                     
                     // 設定駁回原因
                     order.RejectReason = reason;
                     
-                    order.UpdatedAt = DateTime.Now;
+                    order.UpdatedAt = DateTime.UtcNow;
                     // TODO: 根據當前登入使用者設置 UpdatedBy
                     // order.UpdatedBy = currentUser.Name;
                     
@@ -520,7 +520,7 @@ namespace ERPCore2.Services
                 order.Remarks = string.IsNullOrWhiteSpace(order.Remarks) 
                     ? $"取消原因：{reason}" 
                     : $"{order.Remarks}\n取消原因：{reason}";
-                order.UpdatedAt = DateTime.Now;
+                order.UpdatedAt = DateTime.UtcNow;
                 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -550,7 +550,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到採購訂單");
                 
                 // 移除狀態檢查，直接更新
-                order.UpdatedAt = DateTime.Now;
+                order.UpdatedAt = DateTime.UtcNow;
                 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -928,7 +928,7 @@ namespace ERPCore2.Services
                 
                 // 計算稅額: TaxRate(%) * TotalAmount
                 purchaseOrder.PurchaseTaxAmount = Math.Round(purchaseOrder.TotalAmount * (taxRate / 100m), 2);
-                purchaseOrder.UpdatedAt = DateTime.Now;
+                purchaseOrder.UpdatedAt = DateTime.UtcNow;
                 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();

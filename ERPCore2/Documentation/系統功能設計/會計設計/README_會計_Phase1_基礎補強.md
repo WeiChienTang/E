@@ -41,12 +41,18 @@ Phase 1 解決三個互相依存的根本缺口：**會計期間管理**、**期
 
 **Enum：FiscalPeriodStatus**
 
-| 值 | 名稱 | 說明 |
-|----|------|------|
-| 1 | Open | 開放（可記帳） |
-| 2 | Closing | 結帳處理中（暫時鎖定，避免並行） |
-| 3 | Closed | 已關帳（不可新增/修改傳票） |
-| 4 | Locked | 永久鎖定（年度結帳後） |
+| 值 | 名稱 | 說明 | 可重開 |
+|----|------|------|--------|
+| 1 | Open | 開放（可記帳） | — |
+| 2 | Closing | 結帳處理中（暫時鎖定，避免並行） | — |
+| 3 | Closed | 已關帳（不可新增/修改傳票） | ✓ 可重開（需 `Accounting.ClosePeriod` 權限） |
+| 4 | Locked | 永久鎖定（年度結帳後） | ✗ 永久不可重開 |
+
+**期間重開（Reopen）機制：**
+
+`Closed` 狀態允許重開為 `Open`（補記漏帳等需求），需有 `Accounting.ClosePeriod` 權限。
+重開時系統記錄重開原因及操作人員，並在 FiscalPeriodIndex UI 顯示「本期間已曾關閉」警示。
+`Locked` 狀態（年度結帳後）永遠不可重開。
 
 ### FiscalPeriod 與 JournalEntry 關係決策
 
@@ -82,7 +88,8 @@ Phase 1 解決三個互相依存的根本缺口：**會計期間管理**、**期
 | `GetCurrentOpenPeriodAsync()` | 取得目前開放期間 |
 | `GetByYearAsync(year)` | 取得指定年度的所有期間 |
 | `IsOpenAsync(year, period)` | 確認指定期間是否可記帳（不存在則自動建立） |
-| `CloseAsync(year, period)` | 執行關帳（Open → Closed） |
+| `CloseAsync(year, period)` | 執行關帳（Open → Closed），需 `Accounting.ClosePeriod` 權限 |
+| `ReopenAsync(year, period, reason)` | 重開期間（Closed → Open），需 `Accounting.ClosePeriod` 權限；記錄重開原因 |
 | `InitializeYearAsync(year)` | 初始化年度的 12 個期間（若已存在則跳過） |
 
 ### 傳票過帳整合
@@ -108,10 +115,22 @@ Phase 1 解決三個互相依存的根本缺口：**會計期間管理**、**期
 
 ### UI 設計
 
-**檔案：** `Components/Pages/FinancialManagement/FiscalPeriodIndex.razor`
+**檔案：** `Components/Pages/FinancialManagement/FiscalPeriodIndex.razor`（實際路徑應為 `Components/Pages/Accounting/FiscalPeriodIndex.razor`）
 - 路由：`/fiscal-periods`
-- 依年度顯示 12 個月期間卡片，顯示狀態 badge
-- 操作：初始化年度 / 關帳（需確認）
+- 依年度顯示 12 個月期間卡片，顯示狀態 badge（Open / Closed / Locked）
+- 操作：初始化年度 / 關帳 / 重開（均需 `Accounting.ClosePeriod` 權限）
+- 已曾關閉後重開的期間顯示黃色警示 badge「已重開」
+
+**權限設計（會計功能相關）：**
+
+> 所有會計管理操作均使用 `Accounting.*` 權限，透過現有 Role+Permission 系統授予指定員工，**不綁定 SuperAdmin**。
+
+| 權限 | 說明 | 建議授予對象 |
+|------|------|------------|
+| `Accounting.ClosePeriod` | 關帳 / 重開期間 | 財務主管 |
+| `Accounting.OpeningBalance` | 建立期初餘額傳票 | 財務主管 |
+| `Accounting.PostEntry` | 傳票過帳 | 財務人員 |
+| `Accounting.YearEndClosing` | 執行年底結帳 | 財務主管 |
 
 ---
 

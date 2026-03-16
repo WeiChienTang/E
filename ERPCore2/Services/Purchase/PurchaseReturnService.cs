@@ -316,6 +316,10 @@ namespace ERPCore2.Services
 
             try
             {
+                // 已傳票化的進貨退回單不允許修改（修正 Bug-49）
+                if (entity.IsJournalized && entity.Id > 0)
+                    return ServiceResult.Failure("進貨退回單已傳票化，不可再修改");
+
                 // 檢查退回單號是否已存在
                 if (await IsPurchaseReturnCodeExistsAsync(entity.Code ?? string.Empty, entity.Id > 0 ? entity.Id : null))
                 {
@@ -1074,67 +1078,67 @@ namespace ERPCore2.Services
                     if (_inventoryStockService != null)
                     {
                         var eligibleDetails = entity.PurchaseReturnDetails.Where(d => d.ReturnQuantity > 0).ToList();
-                        
+
                         foreach (var detail in eligibleDetails)
                         {
-                            // 從關聯的進貨明細取得倉庫ID
-                            int? warehouseId = null;
-                            
-                            // 方法1：從關聯的進貨明細取得倉庫ID
-                            if (detail.PurchaseReceivingDetailId.HasValue)
+                            // 回復庫存 - 僅在已核准時才回復庫存
+                            // 未核准的退貨單從未更新庫存（ShouldUpdateInventory 在核准前為 false），不需回復
+                            if (entity.IsApproved)
                             {
-                                var receivingDetail = await context.PurchaseReceivingDetails
-                                    .FirstOrDefaultAsync(prd => prd.Id == detail.PurchaseReceivingDetailId.Value);
-                                warehouseId = receivingDetail?.WarehouseId;
-                            }
-                            
-                            // 方法2：如果沒有進貨明細關聯，嘗試從倉庫位置反查
-                            if (!warehouseId.HasValue && detail.WarehouseLocationId.HasValue)
-                            {
-                                var warehouseLocation = await context.WarehouseLocations
-                                    .FirstOrDefaultAsync(wl => wl.Id == detail.WarehouseLocationId.Value);
-                                warehouseId = warehouseLocation?.WarehouseId;
+                                int? warehouseId = null;
+
+                                // 方法1：從關聯的進貨明細取得倉庫ID
+                                if (detail.PurchaseReceivingDetailId.HasValue)
+                                {
+                                    var receivingDetail = await context.PurchaseReceivingDetails
+                                        .FirstOrDefaultAsync(prd => prd.Id == detail.PurchaseReceivingDetailId.Value);
+                                    warehouseId = receivingDetail?.WarehouseId;
+                                }
+
+                                // 方法2：如果沒有進貨明細關聯，嘗試從倉庫位置反查
+                                if (!warehouseId.HasValue && detail.WarehouseLocationId.HasValue)
+                                {
+                                    var warehouseLocation = await context.WarehouseLocations
+                                        .FirstOrDefaultAsync(wl => wl.Id == detail.WarehouseLocationId.Value);
+                                    warehouseId = warehouseLocation?.WarehouseId;
+                                }
+
+                                if (warehouseId.HasValue)
+                                {
+                                    var addResult = await _inventoryStockService.AddStockAsync(
+                                        detail.ProductId,
+                                        warehouseId.Value,
+                                        detail.ReturnQuantity,
+                                        InventoryTransactionTypeEnum.Return,
+                                        entity.Code ?? string.Empty,
+                                        detail.OriginalUnitPrice,
+                                        detail.WarehouseLocationId,
+                                        $"刪除採購退貨單回復庫存 - {entity.Code}",
+                                        null, null, null,
+                                        sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
+                                        sourceDocumentId: entity.Id,
+                                        operationType: InventoryOperationTypeEnum.Delete,
+                                        operationNote: "刪除單據回復庫存"
+                                    );
+
+                                    if (!addResult.IsSuccess)
+                                    {
+                                        await transaction.RollbackAsync();
+                                        return ServiceResult.Failure($"回復庫存失敗：{addResult.ErrorMessage}");
+                                    }
+                                }
                             }
 
-                            // 如果還是沒有倉庫ID，跳過此明細並記錄警告
-                            if (!warehouseId.HasValue)
-                            {
-                                continue;
-                            }
-
-                            // 刪除退貨單時需要增加庫存（回復之前扣減的數量）
-                            var addResult = await _inventoryStockService.AddStockAsync(
-                                detail.ProductId,
-                                warehouseId.Value,
-                                detail.ReturnQuantity, // 回復退貨的數量
-                                InventoryTransactionTypeEnum.Return,
-                                entity.Code ?? string.Empty, // 使用原始單號
-                                detail.OriginalUnitPrice, // 使用原始單價
-                                detail.WarehouseLocationId,
-                                $"刪除採購退貨單回復庫存 - {entity.Code}",
-                                null, null, null, // batchNumber, batchDate, expiryDate
-                                sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
-                                sourceDocumentId: entity.Id,
-                                operationType: InventoryOperationTypeEnum.Delete,
-                                operationNote: "刪除單據回復庫存"
-                            );
-
-                            if (!addResult.IsSuccess)
-                            {
-                                await transaction.RollbackAsync();
-                                return ServiceResult.Failure($"回復庫存失敗：{addResult.ErrorMessage}");
-                            }
-                            
-                            // 🔥 回退進貨明細的累計退貨數量
+                            // 🔥 回退進貨明細的累計退貨數量（無論是否核准，儲存時已增加，刪除時應回退）
                             if (detail.PurchaseReceivingDetailId.HasValue)
                             {
                                 var receivingDetail = await context.PurchaseReceivingDetails
                                     .FirstOrDefaultAsync(rd => rd.Id == detail.PurchaseReceivingDetailId.Value);
-                                
+
                                 if (receivingDetail != null)
                                 {
                                     receivingDetail.TotalReturnedQuantity -= detail.ReturnQuantity;
-                                    
+
                                     // 確保不會變成負數
                                     if (receivingDetail.TotalReturnedQuantity < 0)
                                     {
@@ -1143,9 +1147,6 @@ namespace ERPCore2.Services
                                 }
                             }
                         }
-                    }
-                    else
-                    {
                     }
 
                     // 4. 執行實體刪除
@@ -1336,9 +1337,9 @@ namespace ERPCore2.Services
 
                 entity.IsApproved = true;
                 entity.ApprovedBy = approvedBy;
-                entity.ApprovedAt = DateTime.Now;
+                entity.ApprovedAt = DateTime.UtcNow;
                 entity.RejectReason = null;
-                entity.UpdatedAt = DateTime.Now;
+                entity.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -1359,9 +1360,9 @@ namespace ERPCore2.Services
 
             entity.IsApproved = false;
             entity.ApprovedBy = rejectedBy;
-            entity.ApprovedAt = DateTime.Now;
+            entity.ApprovedAt = DateTime.UtcNow;
             entity.RejectReason = reason;
-            entity.UpdatedAt = DateTime.Now;
+            entity.UpdatedAt = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
             return ServiceResult.Success();

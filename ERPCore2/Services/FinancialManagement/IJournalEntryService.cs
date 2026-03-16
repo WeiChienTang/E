@@ -34,6 +34,12 @@ namespace ERPCore2.Services
         Task<JournalEntry?> GetWithLinesAsync(int id);
 
         /// <summary>
+        /// 作廢草稿：將草稿傳票標記為已取消（不可逆）
+        /// 注意：自動產生的傳票作廢後，呼叫端需自行重置來源業務單據的 IsJournalized
+        /// </summary>
+        Task<(bool Success, string ErrorMessage)> CancelDraftEntryAsync(int id, string updatedBy);
+
+        /// <summary>
         /// 過帳：將傳票狀態從草稿改為已過帳
         /// 前提：傳票必須借貸平衡且至少有一借一貸
         /// </summary>

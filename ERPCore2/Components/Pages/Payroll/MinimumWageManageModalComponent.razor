@@ -1,0 +1,247 @@
+@*
+    基本工資管理 Modal 組件
+    顯示歷年基本工資（月薪／時薪）參考資料，支援從勞動部 API 自動匯入及手動補入
+*@
+@inject IMinimumWageService MinimumWageService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="@L["Page.MinimumWageTitle"]"
+                    Icon="bi bi-cash-stack"
+                    Size="BaseModalComponent.ModalSize.Large"
+                    IsLoading="@_isLoading"
+                    LoadingMessage="@L["Label.Loading"]"
+                    OnClose="@HandleClose"
+                    DebugComponentName="MinimumWageManageModalComponent">
+
+    <HeaderButtons>
+        <GenericButtonComponent Text="@L["Payroll.AddMinimumWage"]"
+                               Variant="ButtonVariant.OutlineGray"
+                               Size="ButtonSize.Small"
+                               CssClass="me-1"
+                               OnClick="@(() => { _isAdding = true; _newWage = new MinimumWage(); })" />
+        <GenericButtonComponent Text="@L["Payroll.SyncFromGovernment"]"
+                               Variant="ButtonVariant.DarkBlue"
+                               Size="ButtonSize.Small"
+                               OnClick="SyncFromGovernmentAsync" />
+    </HeaderButtons>
+
+    <BodyContent>
+        @* ── 說明 ── *@
+        <div class="alert alert-info d-flex align-items-center py-2 px-3 mb-3 small">
+            <i class="bi bi-info-circle me-2 flex-shrink-0"></i>
+            <span>@L["Payroll.MinimumWageNote"]</span>
+        </div>
+
+        @* ── 行內新增表單 ── *@
+        @if (_isAdding && _newWage != null)
+        {
+            <div class="card border-primary mb-3">
+                <div class="card-body p-3">
+                    <h6 class="card-title mb-3 text-primary">
+                        <i class="bi bi-plus-circle me-1"></i>@L["Payroll.AddMinimumWage"]
+                    </h6>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-auto" style="width:170px">
+                            <label class="form-label form-label-sm mb-1">@L["Field.EffectiveDate"] <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control form-control-sm"
+                                   @bind="_newWage.EffectiveDate"
+                                   @bind:format="yyyy-MM-dd" />
+                        </div>
+                        <div class="col-auto" style="width:160px">
+                            <label class="form-label form-label-sm mb-1">@L["Field.MonthlyMinWage"] <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control form-control-sm text-end"
+                                   @bind="_newWage.MonthlyAmount" min="0" />
+                        </div>
+                        <div class="col-auto" style="width:140px">
+                            <label class="form-label form-label-sm mb-1">@L["Field.HourlyMinWage"] <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control form-control-sm text-end"
+                                   @bind="_newWage.HourlyAmount" min="0" step="0.01" />
+                        </div>
+                        <div class="col">
+                            <label class="form-label form-label-sm mb-1">@L["Label.Remarks"]</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   @bind="_newWage.Remarks" maxlength="200" />
+                        </div>
+                        <div class="col-auto d-flex gap-2">
+                            <GenericButtonComponent Text="@L["Button.Confirm"]"
+                                                   IconClass="bi bi-check-lg"
+                                                   Variant="ButtonVariant.Green"
+                                                   Size="ButtonSize.Small"
+                                                   OnClick="ConfirmAddAsync" />
+                            <GenericButtonComponent Text="@L["Button.Cancel"]"
+                                                   Variant="ButtonVariant.OutlineGray"
+                                                   Size="ButtonSize.Small"
+                                                   OnClick="@(() => _isAdding = false)" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── 唯讀資料表格 ── *@
+        @if (_wages.Any())
+        {
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>@L["Field.EffectiveDate"]</th>
+                        <th class="text-end">@L["Field.MonthlyMinWage"]</th>
+                        <th class="text-end">@L["Field.HourlyMinWage"]</th>
+                        <th>@L["Label.Remarks"]</th>
+                        <th style="width:60px"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var wage in _wages)
+                    {
+                        var w = wage;
+                        <tr>
+                            <td>@w.EffectiveDate.ToString("yyyy/MM/dd")</td>
+                            <td class="text-end">@w.MonthlyAmount.ToString("N0")</td>
+                            <td class="text-end">@w.HourlyAmount.ToString("N2")</td>
+                            <td class="text-muted small">@w.Remarks</td>
+                            <td class="text-center">
+                                <GenericButtonComponent IconClass="bi bi-trash"
+                                                       Variant="ButtonVariant.OutlineRed"
+                                                       Size="ButtonSize.Small"
+                                                       Title="@L["Button.Delete"]"
+                                                       OnClick="@(async () => await DeleteAsync(w))" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else if (!_isAdding)
+        {
+            <div class="text-muted text-center py-5">
+                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                <span>@L["Payroll.NoMinimumWageRecords"]</span>
+                <div class="mt-2 small">@L["Payroll.ClickSyncHint"]</div>
+            </div>
+        }
+    </BodyContent>
+
+</BaseModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private bool _isLoading = false;
+    private bool _lastVisible = false;
+    private bool _isAdding = false;
+    private List<MinimumWage> _wages = new();
+    private MinimumWage? _newWage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !_lastVisible)
+            await LoadAsync();
+        _lastVisible = IsVisible;
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _isAdding = false;
+        StateHasChanged();
+        try
+        {
+            _wages = await MinimumWageService.GetAllAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SyncFromGovernmentAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        try
+        {
+            var result = await MinimumWageService.SyncFromGovernmentAsync();
+            if (result.IsSuccess)
+            {
+                if (result.Data > 0)
+                {
+                    await NotificationService.ShowSuccessAsync(
+                        string.Format(L["Payroll.SyncSuccess"].ToString(), result.Data));
+                    await LoadAsync();
+                }
+                else
+                {
+                    await NotificationService.ShowInfoAsync(L["Payroll.SyncAlreadyUpToDate"].ToString());
+                    _isLoading = false;
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.LoadFailed"].ToString());
+                _isLoading = false;
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConfirmAddAsync()
+    {
+        if (_newWage == null) return;
+
+        if (_newWage.EffectiveDate == default)
+        {
+            await NotificationService.ShowWarningAsync(L["Field.EffectiveDate"] + " " + L["Message.Required"].ToString());
+            return;
+        }
+        if (_newWage.MonthlyAmount <= 0 && _newWage.HourlyAmount <= 0)
+        {
+            await NotificationService.ShowWarningAsync(L["Payroll.MonthlyOrHourlyRequired"].ToString());
+            return;
+        }
+
+        var result = await MinimumWageService.CreateAsync(_newWage);
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync(L["Message.CreateSuccess", L["Page.MinimumWageTitle"]].ToString());
+            _isAdding = false;
+            await LoadAsync();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailed"].ToString());
+        }
+    }
+
+    private async Task DeleteAsync(MinimumWage wage)
+    {
+        var result = await MinimumWageService.DeleteAsync(wage.Id);
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync(L["Message.DeleteSuccess"].ToString());
+            _wages.Remove(wage);
+            StateHasChanged();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.DeleteFailed"].ToString());
+        }
+    }
+
+    private void HandleClose()
+    {
+        _wages.Clear();
+        _isAdding = false;
+    }
+}

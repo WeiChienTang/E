@@ -280,7 +280,7 @@ namespace ERPCore2.Services
                             else
                             {
                                 record.TargetAmount = amount;
-                                record.UpdatedAt = DateTime.Now;
+                                record.UpdatedAt = DateTime.UtcNow;
                             }
                         }
                         else if (record != null)
@@ -307,7 +307,7 @@ namespace ERPCore2.Services
                         else
                         {
                             annualRecord.TargetAmount = row.Annual;
-                            annualRecord.UpdatedAt = DateTime.Now;
+                            annualRecord.UpdatedAt = DateTime.UtcNow;
                         }
                     }
                     else if (annualRecord != null)

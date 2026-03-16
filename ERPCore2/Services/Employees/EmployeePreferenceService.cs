@@ -51,7 +51,7 @@ namespace ERPCore2.Services
                 {
                     // 新增
                     preference.EmployeeId = employeeId;
-                    preference.CreatedAt = DateTime.Now;
+                    preference.CreatedAt = DateTime.UtcNow;
                     context.EmployeePreferences.Add(preference);
                 }
                 else
@@ -75,7 +75,7 @@ namespace ERPCore2.Services
                     existing.ToastInfoDurationMs        = preference.ToastInfoDurationMs;
                     existing.ShowDisabledModules        = preference.ShowDisabledModules;
                     existing.DefaultPageSize            = preference.DefaultPageSize;
-                    existing.UpdatedAt = DateTime.Now;
+                    existing.UpdatedAt = DateTime.UtcNow;
                 }
 
                 await context.SaveChangesAsync();

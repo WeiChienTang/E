@@ -31,21 +31,6 @@ namespace ERPCore2.Data.Entities.Payroll
         [Range(0, 9_999_999)]
         public decimal BaseSalary { get; set; }
 
-        /// <summary>職務加給</summary>
-        [Column(TypeName = "decimal(18,0)")]
-        [Display(Name = "職務加給")]
-        public decimal PositionAllowance { get; set; } = 0;
-
-        /// <summary>餐飲補助（每月固定）</summary>
-        [Column(TypeName = "decimal(18,0)")]
-        [Display(Name = "餐飲補助")]
-        public decimal MealAllowance { get; set; } = 0;
-
-        /// <summary>交通津貼（每月固定）</summary>
-        [Column(TypeName = "decimal(18,0)")]
-        [Display(Name = "交通津貼")]
-        public decimal TransportAllowance { get; set; } = 0;
-
         // ── 勞健保設定 ────────────────────────────────────────
         /// <summary>勞保投保薪資（依分級表選取，非實際薪資）</summary>
         [Column(TypeName = "decimal(18,0)")]
@@ -83,5 +68,9 @@ namespace ERPCore2.Data.Entities.Payroll
         /// <summary>失效日期（null = 目前有效）</summary>
         [Display(Name = "失效日期")]
         public DateOnly? ExpiryDate { get; set; }
+
+        // ── 固定月付津貼項目 ───────────────────────────────────────
+        /// <summary>固定月付津貼項目（取代舊有 PositionAllowance / MealAllowance / TransportAllowance 欄位）</summary>
+        public ICollection<EmployeeSalaryItem> AllowanceItems { get; set; } = new List<EmployeeSalaryItem>();
     }
 }

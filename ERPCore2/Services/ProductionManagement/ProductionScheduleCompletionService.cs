@@ -268,7 +268,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("生產排程項目不存在");
 
                 // 設定預設值
-                completion.CreatedAt = DateTime.Now;
+                completion.CreatedAt = DateTime.UtcNow;
                 completion.Status = EntityStatus.Active;
                 if (completion.CompletionDate == default)
                     completion.CompletionDate = DateTime.Now;
@@ -278,7 +278,7 @@ namespace ERPCore2.Services
 
                 // 更新項目的已完成數量
                 item.CompletedQuantity += completion.CompletedQuantity;
-                item.UpdatedAt = DateTime.Now;
+                item.UpdatedAt = DateTime.UtcNow;
 
                 // 更新狀態
                 if (item.CompletedQuantity >= item.ScheduledQuantity)

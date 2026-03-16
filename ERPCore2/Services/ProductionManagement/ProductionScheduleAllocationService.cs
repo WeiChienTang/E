@@ -241,7 +241,7 @@ namespace ERPCore2.Services
                 foreach (var allocation in allocations)
                 {
                     allocation.ProductionScheduleItemId = scheduleItemId;
-                    allocation.CreatedAt = DateTime.Now;
+                    allocation.CreatedAt = DateTime.UtcNow;
                     allocation.Status = EntityStatus.Active;
                 }
 
@@ -296,7 +296,7 @@ namespace ERPCore2.Services
                 foreach (var allocation in allocations)
                 {
                     allocation.ProductionScheduleItemId = scheduleItemId;
-                    allocation.CreatedAt = DateTime.Now;
+                    allocation.CreatedAt = DateTime.UtcNow;
                     allocation.Status = EntityStatus.Active;
                 }
 

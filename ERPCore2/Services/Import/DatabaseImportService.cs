@@ -602,7 +602,7 @@ namespace ERPCore2.Services.Import
         /// </summary>
         private void SetBaseEntityFields(object entity, Type entityType, string? currentUserId)
         {
-            // CreatedAt = DateTime.Now
+            // CreatedAt = DateTime.UtcNow
             var createdAt = entityType.GetProperty("CreatedAt");
             createdAt?.SetValue(entity, DateTime.Now);
 

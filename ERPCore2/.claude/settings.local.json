@@ -117,7 +117,20 @@
       "Bash(powershell -ExecutionPolicy Bypass -File fix_downstream.ps1)",
       "Bash(rm fix_downstream.ps1)",
       "Bash(\"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Products\\\\ProductionBoard\\\\ProductionBoardPendingSidebar.razor.css\")",
-      "Bash(dotnet --version)"
+      "Bash(dotnet --version)",
+      "Bash(where node:*)",
+      "Bash(where dotnet:*)",
+      "Bash(curl -s \"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css\")",
+      "Bash(/tmp/bug_summary.txt:*)",
+      "Read(//tmp/**)",
+      "WebSearch",
+      "WebFetch(domain:data.gov.tw)",
+      "WebFetch(domain:apiservice.mol.gov.tw)",
+      "WebFetch(domain:www.mol.gov.tw)",
+      "Bash(head -10 grep -n \"\\(int\\)detail\\\\.\" \"c:/Users/cses3/source/repos/ERPCore2/ERPCore2/Services/Sales/SalesDeliveryService.cs\" grep -n \"\\(int\\)detail\\\\.\" \"c:/Users/cses3/source/repos/ERPCore2/ERPCore2/Services/Sales/SalesReturnService.cs\")",
+      "Bash(head -10 grep -n \"IsReadOnly\\\\|IsJournalized\" \"c:/Users/cses3/source/repos/ERPCore2/ERPCore2/Components/Pages/Sales/SalesDeliveryEditModalComponent.razor\")",
+      "Bash(for f:*)",
+      "Bash(do echo:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

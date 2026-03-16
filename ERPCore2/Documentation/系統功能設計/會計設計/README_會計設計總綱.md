@@ -98,6 +98,10 @@ Level 1: Code "1"      → 資產（ParentId: null）
 | 期初餘額傳票必須借貸平衡 | 不允許不平衡的期初餘額傳票過帳；差額代表輸入有誤，系統應拒絕並提示哪邊相差多少（詳見 Phase 1） |
 | AR/AP 帳齡以主檔（Invoice）層級計算 | 帳齡追蹤單位為 SalesDelivery / PurchaseReceiving 整張單據，而非逐行商品明細；帳齡天數基準 = 交貨日 + 客戶信用天數 |
 | FiscalPeriod 混合式初始化 | 當年度自動建立；過去期間不存在時自動建立（記錄警告）；已 Closed/Locked 期間嚴格阻擋過帳（詳見 Phase 1） |
+| FiscalPeriod 重開機制 | Closed 可重開（需 `Accounting.ClosePeriod` 權限）；Locked 永久不可重開；重開記錄原因與操作人員 |
+| 會計功能操作權限 | 不使用 SuperAdmin；改用 `Accounting.*` 系列權限（PostEntry / ClosePeriod / OpeningBalance / YearEndClosing），透過現有 Role+Permission 授予財務人員 |
+| 年底結帳冪等性保護 | `ExecuteYearEndClosingAsync` 執行前先確認該年度是否已有 Closing 類型傳票，若有則拒絕重複執行 |
+| AR/AP 帳齡金額口徑 | 使用含稅金額（`TotalAmount + TaxAmount`）；`DiscountAmount` 已含入 `TotalAmount`，無需另扣 |
 
 > 詳細設計決策說明請見各子文件。
 

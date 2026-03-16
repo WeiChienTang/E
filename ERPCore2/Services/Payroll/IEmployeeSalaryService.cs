@@ -13,6 +13,12 @@ namespace ERPCore2.Services.Payroll
         /// <summary>新增薪資設定時，自動將前一筆有效記錄的 ExpiryDate 設為前一天</summary>
         Task<ServiceResult> AddWithExpiryAsync(EmployeeSalary newSalary);
 
+        /// <summary>檢查薪資設定 Code 是否已存在（EditDataLoaderHelper 約定方法）</summary>
+        Task<bool> IsEmployeeSalaryCodeExistsAsync(string code, int? excludeId = null);
+
+        /// <summary>更新薪資設定，同時取代所有固定津貼項目</summary>
+        Task<ServiceResult> UpdateWithAllowanceItemsAsync(EmployeeSalary entity, List<EmployeeSalaryItem> allowanceItems);
+
         #region 伺服器端分頁
 
         /// <summary>

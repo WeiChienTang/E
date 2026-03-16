@@ -38,6 +38,12 @@ public class GeneralLedgerCriteria : IReportFilterCriteria
 
     public bool Validate(out string? errorMessage)
     {
+        // 總分類帳為逐筆明細報表，無任何篩選將載入全部分錄，必須至少提供其中一項
+        if (!StartDate.HasValue && !AccountTypes.Any())
+        {
+            errorMessage = "總分類帳需至少設定「開始日期」或選擇「科目大類」";
+            return false;
+        }
         errorMessage = null;
         return true;
     }

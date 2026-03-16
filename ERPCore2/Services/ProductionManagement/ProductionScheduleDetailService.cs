@@ -253,7 +253,7 @@ namespace ERPCore2.Services
                 foreach (var detail in details)
                 {
                     detail.ProductionScheduleItemId = scheduleItemId;
-                    detail.CreatedAt = DateTime.Now;
+                    detail.CreatedAt = DateTime.UtcNow;
                     detail.Status = EntityStatus.Active;
                 }
 
@@ -308,7 +308,7 @@ namespace ERPCore2.Services
                 foreach (var detail in details)
                 {
                     detail.ProductionScheduleItemId = scheduleItemId;
-                    detail.CreatedAt = DateTime.Now;
+                    detail.CreatedAt = DateTime.UtcNow;
                     detail.Status = EntityStatus.Active;
                 }
 

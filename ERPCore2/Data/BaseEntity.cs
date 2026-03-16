@@ -33,7 +33,7 @@ namespace ERPCore2.Data
         /// 建立時間
         /// </summary>
         [Display(Name = "建立時間")]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         /// <summary>
         /// 最後更新時間

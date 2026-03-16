@@ -578,7 +578,7 @@
             ProductionItemStatus  = ProductionItemStatus.WaitingMaterial,
             PlannedStartDate      = targetDate.Date,
             Status                = EntityStatus.Active,
-            CreatedAt             = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         };
 
         var createResult = await ScheduleItemService.CreateAsync(item);
@@ -657,7 +657,7 @@
                         RequiredQuantity           = d.Quantity * qty,
                         IssuedQuantity             = 0,
                         Status                     = EntityStatus.Active,
-                        CreatedAt                  = DateTime.Now
+                        CreatedAt = DateTime.UtcNow
                     }).ToList();
 
                     await ScheduleDetailService.CreateDetailsForItemAsync(itemId, customDetails);
@@ -681,7 +681,7 @@
                 RequiredQuantity           = d.Quantity * qty,
                 IssuedQuantity             = 0,
                 Status                     = EntityStatus.Active,
-                CreatedAt                  = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             }).ToList();
 
             await ScheduleDetailService.CreateDetailsForItemAsync(itemId, details);

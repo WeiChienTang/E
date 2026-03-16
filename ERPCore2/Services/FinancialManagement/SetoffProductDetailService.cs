@@ -207,43 +207,11 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var results = new List<UnsettledDetailDto>();
 
-                // 1. 查詢未結清的銷貨訂單明細（包含稅率計算所需欄位）
-                var salesOrderRawData = await context.SalesOrderDetails
-                    .Include(d => d.SalesOrder)
-                    .Include(d => d.Product)
-                    .Where(d => d.SalesOrder.CustomerId == customerId && !d.IsSettled)
-                    .Select(d => new
-                    {
-                        d.Id,
-                        d.SalesOrder.Code,
-                        d.ProductId,
-                        ProductName = d.Product.Name,
-                        ProductCode = d.Product.Code ?? string.Empty,
-                        d.SubtotalAmount,
-                        d.TaxRate,
-                        d.SalesOrder.TaxCalculationMethod,
-                        d.TotalReceivedAmount,
-                        d.SalesOrder.OrderDate
-                    })
-                    .ToListAsync();
+                // 注意：沖款只針對真實發生交易的單據，銷貨訂單（SalesOrder）尚未出貨
+                // 應收帳款未成立，故不列入沖款選項。
+                // 有效來源：SalesDelivery（出貨）、SalesReturn（退回）
 
-                var salesOrderDetails = salesOrderRawData.Select(d => new UnsettledDetailDto
-                {
-                    SourceDetailType = SetoffDetailType.SalesOrderDetail,
-                    SourceDetailId = d.Id,
-                    SourceDocumentNumber = d.Code ?? string.Empty,
-                    ProductId = d.ProductId,
-                    ProductName = d.ProductName!,
-                    ProductCode = d.ProductCode,
-                    TotalAmount = CalculateTaxInclusiveAmount(d.SubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
-                    PaidAmount = d.TotalReceivedAmount,
-                    DocumentDate = d.OrderDate,
-                    IsReturn = false
-                }).ToList();
-
-                results.AddRange(salesOrderDetails);
-
-                // 2. 查詢未結清的銷貨退回明細（包含稅率計算所需欄位）
+                // 1. 查詢未結清的銷貨退回明細（包含稅率計算所需欄位）
                 var salesReturnRawData = await context.SalesReturnDetails
                     .Include(d => d.SalesReturn)
                     .Include(d => d.Product)
@@ -315,24 +283,41 @@ namespace ERPCore2.Services
 
                 results.AddRange(salesDeliveryDetails);
 
-                // 4. 查詢每筆明細的歷史累計沖款和折讓金額（從 SetoffProductDetail 表）
-                foreach (var detail in results)
+                // 4. 批次查詢歷史累計沖款和折讓金額（修正 Bug-6：原實作為 N+1，每筆明細兩次 DB 查詢）
+                // 改為一次批次查詢全部相關 SetoffProductDetail，在記憶體中 GroupBy 加總
+                if (results.Any())
                 {
-                    var historicalSetoff = await context.SetoffProductDetails
-                        .Where(d => d.SourceDetailId == detail.SourceDetailId 
-                                 && d.SourceDetailType == detail.SourceDetailType)
-                        .SumAsync(d => d.CurrentSetoffAmount);
+                    var returnIds   = salesReturnDetails.Select(d => d.SourceDetailId).ToList();
+                    var deliveryIds = salesDeliveryDetails.Select(d => d.SourceDetailId).ToList();
 
-                    var historicalAllowance = await context.SetoffProductDetails
-                        .Where(d => d.SourceDetailId == detail.SourceDetailId 
-                                 && d.SourceDetailType == detail.SourceDetailType)
-                        .SumAsync(d => d.CurrentAllowanceAmount);
+                    var setoffSums = await context.SetoffProductDetails
+                        .Where(d =>
+                            (d.SourceDetailType == SetoffDetailType.SalesReturnDetail   && returnIds.Contains(d.SourceDetailId)) ||
+                            (d.SourceDetailType == SetoffDetailType.SalesDeliveryDetail && deliveryIds.Contains(d.SourceDetailId)))
+                        .GroupBy(d => new { d.SourceDetailId, d.SourceDetailType })
+                        .Select(g => new
+                        {
+                            g.Key.SourceDetailId,
+                            g.Key.SourceDetailType,
+                            TotalSetoff    = g.Sum(d => d.CurrentSetoffAmount),
+                            TotalAllowance = g.Sum(d => d.CurrentAllowanceAmount)
+                        })
+                        .ToListAsync();
 
-                    detail.TotalHistoricalSetoffAmount = historicalSetoff;
-                    detail.TotalHistoricalAllowanceAmount = historicalAllowance;
+                    var setoffLookup = setoffSums.ToDictionary(
+                        x => (x.SourceDetailId, x.SourceDetailType));
+
+                    foreach (var detail in results)
+                    {
+                        if (setoffLookup.TryGetValue((detail.SourceDetailId, detail.SourceDetailType), out var sums))
+                        {
+                            detail.TotalHistoricalSetoffAmount   = sums.TotalSetoff;
+                            detail.TotalHistoricalAllowanceAmount = sums.TotalAllowance;
+                        }
+                    }
                 }
 
-                // 4. 過濾掉應收金額為 0 或未沖款餘額為 0 的明細
+                // 5. 過濾掉應收金額為 0 或未沖款餘額為 0 的明細
                 results = results
                     .Where(r => r.TotalAmount != 0 && r.RemainingAmount != 0)
                     .ToList();
@@ -433,21 +418,38 @@ namespace ERPCore2.Services
 
                 results.AddRange(purchaseReturnDetails);
 
-                // 3. 查詢每筆明細的歷史累計沖款和折讓金額（從 SetoffProductDetail 表）
-                foreach (var detail in results)
+                // 3. 批次查詢歷史累計沖款和折讓金額（修正 Bug-6：原實作為 N+1，每筆明細兩次 DB 查詢）
+                // 改為一次批次查詢全部相關 SetoffProductDetail，在記憶體中 GroupBy 加總
+                if (results.Any())
                 {
-                    var historicalSetoff = await context.SetoffProductDetails
-                        .Where(d => d.SourceDetailId == detail.SourceDetailId 
-                                 && d.SourceDetailType == detail.SourceDetailType)
-                        .SumAsync(d => d.CurrentSetoffAmount);
+                    var receivingIds = purchaseReceivingDetails.Select(d => d.SourceDetailId).ToList();
+                    var returnIds    = purchaseReturnDetails.Select(d => d.SourceDetailId).ToList();
 
-                    var historicalAllowance = await context.SetoffProductDetails
-                        .Where(d => d.SourceDetailId == detail.SourceDetailId 
-                                 && d.SourceDetailType == detail.SourceDetailType)
-                        .SumAsync(d => d.CurrentAllowanceAmount);
+                    var setoffSums = await context.SetoffProductDetails
+                        .Where(d =>
+                            (d.SourceDetailType == SetoffDetailType.PurchaseReceivingDetail && receivingIds.Contains(d.SourceDetailId)) ||
+                            (d.SourceDetailType == SetoffDetailType.PurchaseReturnDetail    && returnIds.Contains(d.SourceDetailId)))
+                        .GroupBy(d => new { d.SourceDetailId, d.SourceDetailType })
+                        .Select(g => new
+                        {
+                            g.Key.SourceDetailId,
+                            g.Key.SourceDetailType,
+                            TotalSetoff    = g.Sum(d => d.CurrentSetoffAmount),
+                            TotalAllowance = g.Sum(d => d.CurrentAllowanceAmount)
+                        })
+                        .ToListAsync();
 
-                    detail.TotalHistoricalSetoffAmount = historicalSetoff;
-                    detail.TotalHistoricalAllowanceAmount = historicalAllowance;
+                    var setoffLookup = setoffSums.ToDictionary(
+                        x => (x.SourceDetailId, x.SourceDetailType));
+
+                    foreach (var detail in results)
+                    {
+                        if (setoffLookup.TryGetValue((detail.SourceDetailId, detail.SourceDetailType), out var sums))
+                        {
+                            detail.TotalHistoricalSetoffAmount   = sums.TotalSetoff;
+                            detail.TotalHistoricalAllowanceAmount = sums.TotalAllowance;
+                        }
+                    }
                 }
 
                 // 4. 過濾掉應付金額為 0 或未沖款餘額為 0 的明細
@@ -761,6 +763,80 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        /// 在現有 context 內更新來源明細的累計沖款金額（不自行建立 context，不自行呼叫 SaveChangesAsync）
+        /// 供 CreateBatchWithValidationAsync 在同一交易內使用
+        /// </summary>
+        private async Task UpdateSourceDetailCacheInContextAsync(AppDbContext context, int sourceDetailId, SetoffDetailType sourceType)
+        {
+            var totalSetoff = await context.SetoffProductDetails
+                .Where(d => d.SourceDetailId == sourceDetailId && d.SourceDetailType == sourceType)
+                .SumAsync(d => d.CurrentSetoffAmount + d.CurrentAllowanceAmount);
+
+            switch (sourceType)
+            {
+                case SetoffDetailType.SalesOrderDetail:
+                    var salesDetail = await context.SalesOrderDetails
+                        .Include(d => d.SalesOrder)
+                        .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                    if (salesDetail != null)
+                    {
+                        salesDetail.TotalReceivedAmount = totalSetoff;
+                        salesDetail.IsSettled = salesDetail.TotalReceivedAmount >= CalculateTaxInclusiveAmount(
+                            salesDetail.SubtotalAmount, salesDetail.TaxRate, salesDetail.SalesOrder.TaxCalculationMethod);
+                    }
+                    break;
+
+                case SetoffDetailType.SalesReturnDetail:
+                    var salesReturnDetail = await context.SalesReturnDetails
+                        .Include(d => d.SalesReturn)
+                        .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                    if (salesReturnDetail != null)
+                    {
+                        salesReturnDetail.TotalPaidAmount = totalSetoff;
+                        salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= CalculateTaxInclusiveAmount(
+                            salesReturnDetail.ReturnSubtotalAmount, salesReturnDetail.TaxRate, salesReturnDetail.SalesReturn.TaxCalculationMethod);
+                    }
+                    break;
+
+                case SetoffDetailType.PurchaseReceivingDetail:
+                    var purchaseDetail = await context.PurchaseReceivingDetails
+                        .Include(d => d.PurchaseReceiving)
+                        .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                    if (purchaseDetail != null)
+                    {
+                        purchaseDetail.TotalPaidAmount = totalSetoff;
+                        purchaseDetail.IsSettled = purchaseDetail.TotalPaidAmount >= CalculateTaxInclusiveAmount(
+                            purchaseDetail.SubtotalAmount, purchaseDetail.TaxRate, purchaseDetail.PurchaseReceiving.TaxCalculationMethod);
+                    }
+                    break;
+
+                case SetoffDetailType.PurchaseReturnDetail:
+                    var purchaseReturnDetail = await context.PurchaseReturnDetails
+                        .Include(d => d.PurchaseReturn)
+                        .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                    if (purchaseReturnDetail != null)
+                    {
+                        purchaseReturnDetail.TotalReceivedAmount = totalSetoff;
+                        purchaseReturnDetail.IsSettled = purchaseReturnDetail.TotalReceivedAmount >= CalculateTaxInclusiveAmount(
+                            purchaseReturnDetail.ReturnSubtotalAmount, purchaseReturnDetail.TaxRate, purchaseReturnDetail.PurchaseReturn.TaxCalculationMethod);
+                    }
+                    break;
+
+                case SetoffDetailType.SalesDeliveryDetail:
+                    var salesDeliveryDetail = await context.SalesDeliveryDetails
+                        .Include(d => d.SalesDelivery)
+                        .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                    if (salesDeliveryDetail != null)
+                    {
+                        salesDeliveryDetail.TotalReceivedAmount = totalSetoff;
+                        salesDeliveryDetail.IsSettled = salesDeliveryDetail.TotalReceivedAmount >= CalculateTaxInclusiveAmount(
+                            salesDeliveryDetail.SubtotalAmount, salesDeliveryDetail.TaxRate, salesDeliveryDetail.SalesDelivery.TaxCalculationMethod);
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
         /// 批次建立沖銷商品明細（含驗證）
         /// </summary>
         public async Task<ServiceResult> CreateBatchWithValidationAsync(List<SetoffProductDetail> details)
@@ -771,6 +847,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Success(); // 編輯模式下未異動時，直接回傳成功
 
                 using var context = await _contextFactory.CreateDbContextAsync();
+                await using var transaction = await context.Database.BeginTransactionAsync();
 
                 // 區分新增與更新的明細
                 var detailsToAdd = new List<SetoffProductDetail>();
@@ -790,18 +867,52 @@ namespace ERPCore2.Services
                     }
                 }
 
-                // 驗證每筆明細
-                foreach (var detail in details)
-                {
-                    var validation = await ValidateSetoffAmountAsync(
-                        detail.SourceDetailId,
-                        detail.SourceDetailType,
-                        detail.CurrentSetoffAmount,
-                        detail.CurrentAllowanceAmount,
-                        detail.Id > 0 ? detail.Id : null); // 編輯模式時傳入明細ID以排除原本的沖銷金額
+                // 計算批次內各 SourceDetailId 的累計金額（防止同批次多筆合計超額）
+                var batchTotals = details
+                    .GroupBy(d => (d.SourceDetailId, d.SourceDetailType))
+                    .ToDictionary(
+                        g => g.Key,
+                        g => (
+                            Setoff: g.Sum(d => d.CurrentSetoffAmount),
+                            Allowance: g.Sum(d => d.CurrentAllowanceAmount)
+                        ));
 
-                    if (!validation.IsSuccess)
-                        return validation;
+                // 驗證每個 SourceDetail 的批次合計不超過可用餘額
+                foreach (var ((sourceDetailId, sourceType), totals) in batchTotals)
+                {
+                    // 編輯模式：找出同一來源下所有要更新的明細 ID，一併排除原始金額
+                    var existingIdsInBatch = details
+                        .Where(d => d.SourceDetailId == sourceDetailId
+                                 && d.SourceDetailType == sourceType
+                                 && d.Id > 0)
+                        .Select(d => (int?)d.Id)
+                        .ToList();
+
+                    // 使用第一個排除 ID（ValidateSetoffAmountAsync 只支援排除一筆）
+                    // 若批次內有多筆既有記錄，需逐筆驗證個別差值
+                    if (existingIdsInBatch.Count <= 1)
+                    {
+                        var validation = await ValidateSetoffAmountAsync(
+                            sourceDetailId, sourceType,
+                            totals.Setoff, totals.Allowance,
+                            existingIdsInBatch.FirstOrDefault());
+                        if (!validation.IsSuccess)
+                            return validation;
+                    }
+                    else
+                    {
+                        // 多筆既有記錄：逐筆驗證個別差值
+                        foreach (var detail in details.Where(d => d.SourceDetailId == sourceDetailId
+                                                               && d.SourceDetailType == sourceType))
+                        {
+                            var validation = await ValidateSetoffAmountAsync(
+                                detail.SourceDetailId, detail.SourceDetailType,
+                                detail.CurrentSetoffAmount, detail.CurrentAllowanceAmount,
+                                detail.Id > 0 ? detail.Id : null);
+                            if (!validation.IsSuccess)
+                                return validation;
+                        }
+                    }
                 }
 
                 // 處理新增的明細
@@ -856,18 +967,21 @@ namespace ERPCore2.Services
                 {
                     await context.SetoffProductDetails.AddRangeAsync(detailsToAdd);
                 }
-                
-                await context.SaveChangesAsync();
 
-                // 更新來源明細的累計金額
+                await context.SaveChangesAsync(); // 儲存明細（交易內）
+
+                // 更新來源明細的累計金額（在同一 context/交易內，避免跨 context 不一致）
                 var sourceDetails = details
                     .Select(d => new { d.SourceDetailId, d.SourceDetailType })
                     .Distinct();
-                    
+
                 foreach (var source in sourceDetails)
                 {
-                    await UpdateSourceDetailTotalAmountAsync(source.SourceDetailId, source.SourceDetailType);
+                    await UpdateSourceDetailCacheInContextAsync(context, source.SourceDetailId, source.SourceDetailType);
                 }
+
+                await context.SaveChangesAsync(); // 儲存來源明細快取更新（交易內）
+                await transaction.CommitAsync();
 
                 return ServiceResult.Success();
             }

@@ -903,7 +903,7 @@ namespace ERPCore2.Services
                 // 復原員工
                 employee.Status = EntityStatus.Active; // 復原時預設為啟用狀態
                 employee.FailedLoginAttempts = 0; // 重設失敗次數
-                employee.UpdatedAt = DateTime.Now;
+                employee.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -978,7 +978,7 @@ namespace ERPCore2.Services
                 // 復原員工並更新資料
                 employee.Status = EntityStatus.Active;
                 employee.FailedLoginAttempts = 0;
-                employee.UpdatedAt = DateTime.Now;
+                employee.UpdatedAt = DateTime.UtcNow;
                 
                 // 更新業務資料
                 employee.Code = updateData.Code;
@@ -1047,7 +1047,7 @@ namespace ERPCore2.Services
                 employee.Name = name.Trim();
                 employee.Mobile = string.IsNullOrWhiteSpace(mobile) ? null : mobile.Trim();
                 employee.Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
-                employee.UpdatedAt = DateTime.Now;
+                employee.UpdatedAt = DateTime.UtcNow;
 
                 if (!string.IsNullOrWhiteSpace(newPassword))
                 {

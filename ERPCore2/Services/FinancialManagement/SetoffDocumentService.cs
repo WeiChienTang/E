@@ -81,27 +81,24 @@ namespace ERPCore2.Services
                     return await GetAllAsync();
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var searchTermLower = searchTerm.ToLower();
 
-                var setoffDocuments = await context.SetoffDocuments
+                // 先載入全部沖款單（含公司資料）
+                var allDocuments = await context.SetoffDocuments
                     .Include(s => s.Company)
-                    .Where(s =>
-                        (s.Code != null && s.Code.ToLower().Contains(searchTermLower)) ||
-                        s.Company.CompanyName.ToLower().Contains(searchTermLower))
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.Code)
                     .ToListAsync();
 
-                // 載入關聯方名稱
-                await LoadRelatedPartyNamesAsync(context, setoffDocuments);
+                // 載入關聯方名稱（需先取出所有文件才能解析多型 FK）
+                await LoadRelatedPartyNamesAsync(context, allDocuments);
 
-                // 在記憶體中進一步篩選關聯方名稱
-                if (!string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    setoffDocuments = setoffDocuments
-                        .Where(s => s.RelatedPartyName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-                }
+                // 在記憶體中以 OR 方式搜尋：Code、公司名稱、關聯方名稱
+                var setoffDocuments = allDocuments
+                    .Where(s =>
+                        (s.Code != null && s.Code.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                        s.Company.CompanyName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        s.RelatedPartyName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
 
                 return setoffDocuments;
             }
@@ -125,6 +122,10 @@ namespace ERPCore2.Services
             try
             {
                 var errors = new List<string>();
+
+                // 已傳票化的沖款單不允許修改（修正 Bug-48）
+                if (entity.IsJournalized && entity.Id > 0)
+                    return ServiceResult.Failure("沖款單已傳票化，不可再修改");
 
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("沖款單號不能為空");
@@ -402,12 +403,35 @@ namespace ERPCore2.Services
                     .Include(d => d.SetoffProductDetails)
                     .Include(d => d.SetoffPayments)
                     .Include(d => d.Prepayments)
+                    .Include(d => d.PrepaymentUsages)
                     .FirstOrDefaultAsync(d => d.Id == id);
 
                 if (document == null)
                 {
                     await transaction.RollbackAsync();
                     return ServiceResult.Failure("找不到要刪除的沖款單");
+                }
+
+                // 已轉傳票的沖款單不可刪除，否則會留下孤兒傳票
+                if (document.IsJournalized)
+                {
+                    await transaction.RollbackAsync();
+                    return ServiceResult.Failure("此沖款單已轉傳票，無法刪除。請先沖銷對應傳票後再操作。");
+                }
+
+                // 檢查此沖款單建立的預收/預付款項是否已被其他沖款單使用
+                // 若有，級聯刪除會靜默刪除其他沖款單的使用記錄，造成資料不一致
+                if (document.Prepayments.Any())
+                {
+                    var prepaymentIds = document.Prepayments.Select(p => p.Id).ToList();
+                    var hasExternalUsage = await context.SetoffPrepaymentUsages
+                        .AnyAsync(pu => prepaymentIds.Contains(pu.SetoffPrepaymentId) && pu.SetoffDocumentId != id);
+
+                    if (hasExternalUsage)
+                    {
+                        await transaction.RollbackAsync();
+                        return ServiceResult.Failure("此沖款單的預收/預付款項已被其他沖款單使用，無法刪除。請先清除相關使用記錄後再操作。");
+                    }
                 }
 
                 // 檢查是否可以刪除
@@ -418,17 +442,52 @@ namespace ERPCore2.Services
                     return canDeleteResult;
                 }
 
-                // 🔄 【關鍵步驟】先回朔所有來源 Detail 的累計金額
-                
-                foreach (var detail in document.SetoffProductDetails)
+                // 🔄 【關鍵步驟 1】記錄受影響的來源明細（刪除前收集，刪除後重新計算）
+                var affectedSources = document.SetoffProductDetails
+                    .Select(d => (d.SourceDetailId, d.SourceDetailType))
+                    .Distinct()
+                    .ToList();
+
+                // 🔄 【關鍵步驟 2】若此沖款單使用了預收/預付款項，明確刪除 PrepaymentUsages
+                // 並重新計算各預收/預付款的已用金額（SetoffPrepaymentUsage.SetoffDocumentId 為 Restrict，不可自動級聯）
+                if (document.PrepaymentUsages.Any())
                 {
-                    await RollbackSourceDetailAmountAsync(context, detail);
+                    var affectedPrepaymentIds = document.PrepaymentUsages
+                        .Select(pu => pu.SetoffPrepaymentId)
+                        .Distinct()
+                        .ToList();
+
+                    context.SetoffPrepaymentUsages.RemoveRange(document.PrepaymentUsages);
+                    await context.SaveChangesAsync();
+
+                    foreach (var prepaymentId in affectedPrepaymentIds)
+                    {
+                        var totalUsed = await context.SetoffPrepaymentUsages
+                            .Where(u => u.SetoffPrepaymentId == prepaymentId)
+                            .SumAsync(u => u.UsedAmount);
+
+                        var prepayment = await context.SetoffPrepayments.FindAsync(prepaymentId);
+                        if (prepayment != null)
+                        {
+                            prepayment.UsedAmount = totalUsed;
+                            prepayment.UpdatedAt = DateTime.UtcNow;
+                        }
+                    }
+
+                    await context.SaveChangesAsync();
                 }
 
-                // 🗑️ 刪除沖款單（級聯刪除所有關聯明細）
+                // 🗑️ 刪除沖款單（級聯刪除所有 SetoffProductDetails）
                 context.SetoffDocuments.Remove(document);
+                await context.SaveChangesAsync(); // ProductDetails 已隨文件刪除
 
-                // 💾 儲存變更
+                // 🔄 【關鍵步驟 3】刪除後在同一交易中重新計算各來源明細的累計金額
+                // 從頭計算（CurrentSetoffAmount + CurrentAllowanceAmount），確保不依賴可能過期的 TotalSetoffAmount
+                foreach (var (sourceId, sourceType) in affectedSources)
+                {
+                    await RebuildSourceDetailCacheAsync(context, sourceId, sourceType);
+                }
+
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
                 return ServiceResult.Success();
@@ -444,6 +503,90 @@ namespace ERPCore2.Services
                 });
                 return ServiceResult.Failure($"刪除沖款單時發生錯誤: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 刪除後重新計算來源明細的累計金額（從現存 SetoffProductDetails 重新加總）
+        /// 用於取代逐筆 RollbackSourceDetailAmountAsync，避免 TotalSetoffAmount 過期快照導致的計算錯誤
+        /// IsSettled 使用含稅金額比較，與 SetoffProductDetailService.UpdateSourceDetailCacheInContextAsync 口徑一致
+        /// </summary>
+        private async Task RebuildSourceDetailCacheAsync(AppDbContext context, int sourceDetailId, SetoffDetailType sourceType)
+        {
+            var remaining = await context.SetoffProductDetails
+                .Where(d => d.SourceDetailId == sourceDetailId && d.SourceDetailType == sourceType)
+                .SumAsync(d => d.CurrentSetoffAmount + d.CurrentAllowanceAmount);
+
+            switch (sourceType)
+            {
+                case SetoffDetailType.PurchaseReceivingDetail:
+                    var pd = await context.PurchaseReceivingDetails
+                        .Include(d => d.PurchaseReceiving)
+                        .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                    if (pd != null)
+                    {
+                        pd.TotalPaidAmount = remaining;
+                        pd.IsSettled = remaining >= CalculateTaxInclusiveAmount(pd.SubtotalAmount, pd.TaxRate, pd.PurchaseReceiving.TaxCalculationMethod);
+                    }
+                    break;
+
+                case SetoffDetailType.SalesOrderDetail:
+                    var sod = await context.SalesOrderDetails
+                        .Include(d => d.SalesOrder)
+                        .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                    if (sod != null)
+                    {
+                        sod.TotalReceivedAmount = remaining;
+                        sod.IsSettled = remaining >= CalculateTaxInclusiveAmount(sod.SubtotalAmount, sod.TaxRate, sod.SalesOrder.TaxCalculationMethod);
+                    }
+                    break;
+
+                case SetoffDetailType.SalesDeliveryDetail:
+                    var sdd = await context.SalesDeliveryDetails
+                        .Include(d => d.SalesDelivery)
+                        .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                    if (sdd != null)
+                    {
+                        sdd.TotalReceivedAmount = remaining;
+                        sdd.IsSettled = remaining >= CalculateTaxInclusiveAmount(sdd.SubtotalAmount, sdd.TaxRate, sdd.SalesDelivery.TaxCalculationMethod);
+                    }
+                    break;
+
+                case SetoffDetailType.SalesReturnDetail:
+                    var srd = await context.SalesReturnDetails
+                        .Include(d => d.SalesReturn)
+                        .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                    if (srd != null)
+                    {
+                        srd.TotalPaidAmount = remaining;
+                        srd.IsSettled = remaining >= CalculateTaxInclusiveAmount(srd.ReturnSubtotalAmount, srd.TaxRate, srd.SalesReturn.TaxCalculationMethod);
+                    }
+                    break;
+
+                case SetoffDetailType.PurchaseReturnDetail:
+                    var prd = await context.PurchaseReturnDetails
+                        .Include(d => d.PurchaseReturn)
+                        .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                    if (prd != null)
+                    {
+                        prd.TotalReceivedAmount = remaining;
+                        prd.IsSettled = remaining >= CalculateTaxInclusiveAmount(prd.ReturnSubtotalAmount, prd.TaxRate, prd.PurchaseReturn.TaxCalculationMethod);
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 計算含稅金額（與 SetoffProductDetailService.CalculateTaxInclusiveAmount 邏輯相同）
+        /// TaxExclusive：subtotal × (1 + rate/100)；TaxInclusive / NoTax：subtotal（稅已包含）
+        /// </summary>
+        private static decimal CalculateTaxInclusiveAmount(decimal subtotal, decimal? taxRate, TaxCalculationMethod taxMethod)
+        {
+            var rate = taxRate ?? 0;
+            return taxMethod switch
+            {
+                TaxCalculationMethod.TaxExclusive => Math.Round(subtotal * (1 + rate / 100), 0),
+                _ => Math.Round(subtotal, 0)
+            };
         }
 
         /// <summary>
@@ -488,6 +631,16 @@ namespace ERPCore2.Services
                         {
                             salesDetail.TotalReceivedAmount = newTotalSetoff;
                             salesDetail.IsSettled = newTotalSetoff >= salesDetail.SubtotalAmount;
+                        }
+                        break;
+
+                    case SetoffDetailType.SalesDeliveryDetail:
+                        var salesDeliveryDetail = await context.SalesDeliveryDetails
+                            .FindAsync(detailToDelete.SourceDetailId);
+                        if (salesDeliveryDetail != null)
+                        {
+                            salesDeliveryDetail.TotalReceivedAmount = newTotalSetoff;
+                            salesDeliveryDetail.IsSettled = newTotalSetoff >= salesDeliveryDetail.SubtotalAmount;
                         }
                         break;
 
@@ -567,57 +720,81 @@ namespace ERPCore2.Services
             switch (type)
             {
                 case SetoffDetailType.PurchaseReceivingDetail:
-                    var purchaseDetails = await context.PurchaseReceivingDetails.ToListAsync();
+                    var purchaseDetails = await context.PurchaseReceivingDetails
+                        .Include(d => d.PurchaseReceiving)
+                        .ToListAsync();
                     foreach (var detail in purchaseDetails)
                     {
                         var total = await context.SetoffProductDetails
                             .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
-                            .SumAsync(spd => spd.TotalSetoffAmount);
-                        
+                            .SumAsync(spd => spd.CurrentSetoffAmount + spd.CurrentAllowanceAmount);
+
                         detail.TotalPaidAmount = total;
-                        detail.IsSettled = total >= detail.SubtotalAmount;
+                        detail.IsSettled = total >= CalculateTaxInclusiveAmount(detail.SubtotalAmount, detail.TaxRate, detail.PurchaseReceiving.TaxCalculationMethod);
                         count++;
                     }
                     break;
 
                 case SetoffDetailType.SalesOrderDetail:
-                    var salesDetails = await context.SalesOrderDetails.ToListAsync();
+                    var salesDetails = await context.SalesOrderDetails
+                        .Include(d => d.SalesOrder)
+                        .ToListAsync();
                     foreach (var detail in salesDetails)
                     {
                         var total = await context.SetoffProductDetails
                             .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
-                            .SumAsync(spd => spd.TotalSetoffAmount);
-                        
+                            .SumAsync(spd => spd.CurrentSetoffAmount + spd.CurrentAllowanceAmount);
+
                         detail.TotalReceivedAmount = total;
-                        detail.IsSettled = total >= detail.SubtotalAmount;
+                        detail.IsSettled = total >= CalculateTaxInclusiveAmount(detail.SubtotalAmount, detail.TaxRate, detail.SalesOrder.TaxCalculationMethod);
+                        count++;
+                    }
+                    break;
+
+                case SetoffDetailType.SalesDeliveryDetail:
+                    var salesDeliveryDetails = await context.SalesDeliveryDetails
+                        .Include(d => d.SalesDelivery)
+                        .ToListAsync();
+                    foreach (var detail in salesDeliveryDetails)
+                    {
+                        var total = await context.SetoffProductDetails
+                            .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
+                            .SumAsync(spd => spd.CurrentSetoffAmount + spd.CurrentAllowanceAmount);
+
+                        detail.TotalReceivedAmount = total;
+                        detail.IsSettled = total >= CalculateTaxInclusiveAmount(detail.SubtotalAmount, detail.TaxRate, detail.SalesDelivery.TaxCalculationMethod);
                         count++;
                     }
                     break;
 
                 case SetoffDetailType.SalesReturnDetail:
-                    var salesReturnDetails = await context.SalesReturnDetails.ToListAsync();
+                    var salesReturnDetails = await context.SalesReturnDetails
+                        .Include(d => d.SalesReturn)
+                        .ToListAsync();
                     foreach (var detail in salesReturnDetails)
                     {
                         var total = await context.SetoffProductDetails
                             .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
-                            .SumAsync(spd => spd.TotalSetoffAmount);
-                        
+                            .SumAsync(spd => spd.CurrentSetoffAmount + spd.CurrentAllowanceAmount);
+
                         detail.TotalPaidAmount = total;
-                        detail.IsSettled = total >= detail.ReturnSubtotalAmount;
+                        detail.IsSettled = total >= CalculateTaxInclusiveAmount(detail.ReturnSubtotalAmount, detail.TaxRate, detail.SalesReturn.TaxCalculationMethod);
                         count++;
                     }
                     break;
 
                 case SetoffDetailType.PurchaseReturnDetail:
-                    var purchaseReturnDetails = await context.PurchaseReturnDetails.ToListAsync();
+                    var purchaseReturnDetails = await context.PurchaseReturnDetails
+                        .Include(d => d.PurchaseReturn)
+                        .ToListAsync();
                     foreach (var detail in purchaseReturnDetails)
                     {
                         var total = await context.SetoffProductDetails
                             .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
-                            .SumAsync(spd => spd.TotalSetoffAmount);
-                        
+                            .SumAsync(spd => spd.CurrentSetoffAmount + spd.CurrentAllowanceAmount);
+
                         detail.TotalReceivedAmount = total;
-                        detail.IsSettled = total >= detail.ReturnSubtotalAmount;
+                        detail.IsSettled = total >= CalculateTaxInclusiveAmount(detail.ReturnSubtotalAmount, detail.TaxRate, detail.PurchaseReturn.TaxCalculationMethod);
                         count++;
                     }
                     break;

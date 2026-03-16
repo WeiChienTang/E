@@ -169,7 +169,7 @@ namespace ERPCore2.Services
                 
                 if (detail.Id == 0)
                 {
-                    detail.CreatedAt = DateTime.Now;
+                    detail.CreatedAt = DateTime.UtcNow;
                     context.SalesOrderCompositionDetails.Add(detail);
                     addCount++;
                 }
@@ -183,11 +183,11 @@ namespace ERPCore2.Services
                     {
                         // 更新已追蹤的實體
                         context.Entry(tracked).CurrentValues.SetValues(detail);
-                        tracked.UpdatedAt = DateTime.Now;
+                        tracked.UpdatedAt = DateTime.UtcNow;
                     }
                     else
                     {
-                        detail.UpdatedAt = DateTime.Now;
+                        detail.UpdatedAt = DateTime.UtcNow;
                         context.SalesOrderCompositionDetails.Update(detail);
                     }
                     updateCount++;

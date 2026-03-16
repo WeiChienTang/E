@@ -64,7 +64,7 @@ namespace ERPCore2.Services
                     {
                         existing.IsEnabled = module.IsEnabled;
                         existing.UpdatedBy = updatedBy;
-                        existing.UpdatedAt = DateTime.Now;
+                        existing.UpdatedAt = DateTime.UtcNow;
                     }
                 }
 

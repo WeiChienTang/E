@@ -254,7 +254,7 @@ namespace ERPCore2.Services
 
                 stockTaking.TakingStatus = StockTakingStatusEnum.InProgress;
                 stockTaking.StartTime = DateTime.Now;
-                stockTaking.UpdatedAt = DateTime.Now;
+                stockTaking.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -295,7 +295,7 @@ namespace ERPCore2.Services
                 stockTaking.CompletedItems = completedItems;
                 stockTaking.DifferenceItems = differenceItems;
                 stockTaking.DifferenceAmount = differenceAmount;
-                stockTaking.UpdatedAt = DateTime.Now;
+                stockTaking.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -325,8 +325,8 @@ namespace ERPCore2.Services
 
                 stockTaking.TakingStatus = StockTakingStatusEnum.Approved;
                 stockTaking.ApprovedBy = approvedBy;
-                stockTaking.ApprovedAt = DateTime.Now;
-                stockTaking.UpdatedAt = DateTime.Now;
+                stockTaking.ApprovedAt = DateTime.UtcNow;
+                stockTaking.UpdatedAt = DateTime.UtcNow;
 
                 if (!string.IsNullOrEmpty(remarks))
                 {
@@ -361,7 +361,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("已審核的盤點無法取消");
 
                 stockTaking.TakingStatus = StockTakingStatusEnum.Cancelled;
-                stockTaking.UpdatedAt = DateTime.Now;
+                stockTaking.UpdatedAt = DateTime.UtcNow;
 
                 if (!string.IsNullOrEmpty(reason))
                 {
@@ -604,7 +604,7 @@ namespace ERPCore2.Services
                 detail.TakingTime = DateTime.Now;
                 detail.TakingPersonnel = personnel;
                 detail.DetailRemarks = remarks;
-                detail.UpdatedAt = DateTime.Now;
+                detail.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -634,7 +634,7 @@ namespace ERPCore2.Services
                         detail.TakingTime = DateTime.Now;
                         detail.TakingPersonnel = update.Personnel;
                         detail.DetailRemarks = update.Remarks;
-                        detail.UpdatedAt = DateTime.Now;
+                        detail.UpdatedAt = DateTime.UtcNow;
                     }
                 }
 
@@ -745,7 +745,7 @@ namespace ERPCore2.Services
                     {
                         stockTaking.IsAdjustmentGenerated = true;
                     }
-                    stockTaking.UpdatedAt = DateTime.Now;
+                    stockTaking.UpdatedAt = DateTime.UtcNow;
 
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
@@ -1016,7 +1016,7 @@ namespace ERPCore2.Services
 
                 // 執行軟刪除
                 entity.Status = EntityStatus.Deleted;
-                entity.UpdatedAt = DateTime.Now;
+                entity.UpdatedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
 
                 return ServiceResult.Success();

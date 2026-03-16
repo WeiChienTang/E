@@ -1429,19 +1429,32 @@
                 .Where(detail => detail.ProductId > 0 && detail.WarehouseId > 0)
                 .ToList();
 
+            // 修正 Bug-63（進貨版）：儲存前先記錄 DB 中舊有明細的 PurchaseOrderDetailId，
+            // 以便儲存後也能對「來源已變更」的舊 PurchaseOrderDetail 進行重算。
+            var oldPurchaseOrderDetailIds = new HashSet<int>();
+            if (validDetails.Any(d => d.Id > 0))
+            {
+                var existingDbDetails = await PurchaseReceivingDetailService.GetByPurchaseReceivingIdAsync(purchaseReceiving.Id);
+                foreach (var dbDetail in existingDbDetails)
+                {
+                    if (dbDetail.PurchaseOrderDetailId.HasValue && dbDetail.PurchaseOrderDetailId.Value > 0)
+                        oldPurchaseOrderDetailIds.Add(dbDetail.PurchaseOrderDetailId.Value);
+                }
+            }
+
             if (validDetails.Any())
             {
                 // 更新明細資訊 - 使用獨立的服務調用，避免嵌套交易
                 foreach (var detail in validDetails)
                 {
                     detail.PurchaseReceivingId = purchaseReceiving.Id;
-                    
+
                     // 同步主檔的批號到明細
                     if (!string.IsNullOrWhiteSpace(purchaseReceiving.BatchNumber))
                     {
                         detail.BatchNumber = purchaseReceiving.BatchNumber;
                     }
-                    
+
                     if (detail.Id == 0)
                     {
                         // 新記錄 - 使用基本的 Create 方法
@@ -1468,9 +1481,9 @@
 
             // 更新主檔的總金額和稅額（使用明細稅額加總算法）
             purchaseReceiving.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
-            
+
             // 【新式算法】每筆明細分別計算稅額，再加總（支援不同商品不同稅率）
-            purchaseReceiving.PurchaseReceivingTaxAmount = purchaseReceivingDetails.Sum(d => 
+            purchaseReceiving.PurchaseReceivingTaxAmount = purchaseReceivingDetails.Sum(d =>
             {
                 // 使用明細的稅率，若無則使用系統預設值
                 var detailTaxRate = d.TaxRate ?? currentTaxRate;
@@ -1478,7 +1491,7 @@
                 var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
                 return Math.Round(detailTaxAmount, 2);
             });
-            
+
             if (purchaseReceiving.TotalAmount > 0)
             {
                 var updateResult = await PurchaseReceivingService.UpdateAsync(purchaseReceiving);
@@ -1488,15 +1501,18 @@
                 }
             }
 
-            // 更新相關採購單明細的已進貨量（僅處理有採購單的明細）
-            if (validDetails.Any())
+            // 更新相關採購單明細的已進貨量
+            // 合併新明細的 PurchaseOrderDetailId 與儲存前的舊 PurchaseOrderDetailId，
+            // 確保來源變更時舊的 PurchaseOrderDetail.ReceivedQuantity 也能被重算（Bug-63 修正）。
             {
-                var uniquePurchaseOrderDetailIds = validDetails
+                var newPurchaseOrderDetailIds = validDetails
                     .Where(d => d.PurchaseOrderDetailId.HasValue && d.PurchaseOrderDetailId.Value > 0)
                     .Select(d => d.PurchaseOrderDetailId!.Value)
-                    .Distinct();
+                    .ToHashSet();
 
-                foreach (var purchaseOrderDetailId in uniquePurchaseOrderDetailIds)
+                var allPurchaseOrderDetailIdsToRecalculate = newPurchaseOrderDetailIds.Union(oldPurchaseOrderDetailIds);
+
+                foreach (var purchaseOrderDetailId in allPurchaseOrderDetailIdsToRecalculate)
                 {
                     var recalculateResult = await PurchaseOrderDetailService.RecalculateReceivedQuantityAsync(purchaseOrderDetailId);
                     if (!recalculateResult.IsSuccess)

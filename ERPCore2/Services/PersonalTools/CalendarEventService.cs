@@ -91,8 +91,8 @@ namespace ERPCore2.Services.PersonalTools
                     Color = color,
                     EventType = CalendarEventType.Personal,
                     ReminderMinutes = reminderMinutes,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 context.CalendarEvents.Add(calEvent);
@@ -135,7 +135,7 @@ namespace ERPCore2.Services.PersonalTools
                 calEvent.EventTime = time;
                 calEvent.Color = color;
                 calEvent.ReminderMinutes = reminderMinutes;
-                calEvent.UpdatedAt = DateTime.Now;
+                calEvent.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult<CalendarEvent>.Success(calEvent);

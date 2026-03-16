@@ -10,7 +10,7 @@ using ERPCore2.Components.Shared.Statistics;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 商品欄位配置
+    /// 品項欄位配置
     /// </summary>
     public class ProductFieldConfiguration : BaseFieldConfiguration<Product>
     {
@@ -45,8 +45,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Product>
                         {
                             PropertyName = nameof(Product.Code),
-                            DisplayName = Dn("Field.ProductCode", "商品編號"),
-                            FilterPlaceholder = Fp("Field.ProductCode", "輸入商品編號搜尋"),
+                            DisplayName = Dn("Field.ProductCode", "品項編號"),
+                            FilterPlaceholder = Fp("Field.ProductCode", "輸入品項編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Product.Code), p => p.Code)
@@ -57,8 +57,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Product>
                         {
                             PropertyName = nameof(Product.Name),
-                            DisplayName = Dn("Field.ProductName", "商品名稱"),
-                            FilterPlaceholder = Fp("Field.ProductName", "輸入商品名稱搜尋"),
+                            DisplayName = Dn("Field.ProductName", "品項名稱"),
+                            FilterPlaceholder = Fp("Field.ProductName", "輸入品項名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Product.Name), p => p.Name)
@@ -100,7 +100,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "ProductCategory.Name", // 表格顯示用
                             FilterPropertyName = nameof(Product.ProductCategoryId), // 篩選器用
-                            DisplayName = Dn("Field.CategoryName", "商品分類"),
+                            DisplayName = Dn("Field.CategoryName", "品項分類"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
                             Options = _productCategories.Select(pc => new SelectOption
@@ -155,7 +155,7 @@ namespace ERPCore2.FieldConfiguration
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "商品欄位配置初始化失敗");
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "品項欄位配置初始化失敗");
                 });
 
                 // 通知使用者
@@ -163,7 +163,7 @@ namespace ERPCore2.FieldConfiguration
                 {
                     _ = Task.Run(async () =>
                     {
-                        await _notificationService.ShowErrorAsync("商品欄位配置初始化失敗，已使用預設配置");
+                        await _notificationService.ShowErrorAsync("品項欄位配置初始化失敗，已使用預設配置");
                     });
                 }
                 

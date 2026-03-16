@@ -444,10 +444,10 @@
     <value>顧客レポート</value>
   </data>
   <data name="Nav.ProductGroup" xml:space="preserve">
-    <value>商品</value>
+    <value>品目</value>
   </data>
   <data name="Nav.Products" xml:space="preserve">
-    <value>商品</value>
+    <value>品目</value>
   </data>
   <data name="Nav.ProductCategories" xml:space="preserve">
     <value>分類</value>
@@ -468,7 +468,7 @@
     <value>生産スケジュール</value>
   </data>
   <data name="Nav.ProductReportIndex" xml:space="preserve">
-    <value>商品レポート</value>
+    <value>品目レポート</value>
   </data>
   <data name="Nav.InventoryGroup" xml:space="preserve">
     <value>在庫</value>
@@ -723,8 +723,8 @@
   <data name="Entity.CustomerComplaint" xml:space="preserve"><value>クレーム</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>仕入先訪問記録</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>仕入先</value></data>
-  <data name="Entity.Product" xml:space="preserve"><value>商品</value></data>
-  <data name="Entity.ProductCategory" xml:space="preserve"><value>商品カテゴリ</value></data>
+  <data name="Entity.Product" xml:space="preserve"><value>品目</value></data>
+  <data name="Entity.ProductCategory" xml:space="preserve"><value>品目カテゴリ</value></data>
   <data name="Entity.ProductComposition" xml:space="preserve"><value>部品表</value></data>
   <data name="Entity.BOM" xml:space="preserve"><value>部品表</value></data>
   <data name="Entity.CompositionCategory" xml:space="preserve"><value>部品表カテゴリ</value></data>
@@ -885,6 +885,7 @@
   <data name="Column.SalesReturnQuantity" xml:space="preserve"><value>返品数量</value></data>
   <data name="Column.MaterialCodeName" xml:space="preserve"><value>材料コード/名称</value></data>
   <!-- ===== Employee Field keys ===== -->
+  <data name="Field.Employee" xml:space="preserve"><value>従業員</value></data>
   <data name="Field.EmployeeCode" xml:space="preserve"><value>社員番号</value></data>
   <data name="Field.FullName" xml:space="preserve"><value>氏名</value></data>
   <data name="Field.Gender" xml:space="preserve"><value>性別</value></data>
@@ -936,6 +937,7 @@
   <data name="Column.AssignDate" xml:space="preserve"><value>貸出日</value></data>
   <data name="Column.ReturnDate" xml:space="preserve"><value>返却日</value></data>
   <!-- ===== Employee Tab keys ===== -->
+  <data name="Tab.SalaryConfig" xml:space="preserve"><value>給与設定</value></data>
   <data name="Tab.EmployeeData" xml:space="preserve"><value>社員情報</value></data>
   <data name="Tab.VehicleInfo" xml:space="preserve"><value>車両情報</value></data>
   <data name="Tab.PersonalTools" xml:space="preserve"><value>個人工具</value></data>
@@ -1110,8 +1112,8 @@
   <data name="Field.CompositionCreator" xml:space="preserve"><value>組成作成者</value></data>
   <data name="Field.CompositionType" xml:space="preserve"><value>組成タイプ</value></data>
   <data name="Field.ForSale" xml:space="preserve"><value>販売可能</value></data>
-  <data name="Field.ProductCode" xml:space="preserve"><value>商品コード</value></data>
-  <data name="Field.ProductName" xml:space="preserve"><value>商品名</value></data>
+  <data name="Field.ProductCode" xml:space="preserve"><value>品目コード</value></data>
+  <data name="Field.ProductName" xml:space="preserve"><value>品目名</value></data>
   <data name="Field.ProductionUnit" xml:space="preserve"><value>生産単位</value></data>
   <data name="Field.PurchaseUnit" xml:space="preserve"><value>基本単位</value></data>
   <data name="Field.ScheduleCode" xml:space="preserve"><value>スケジュールコード</value></data>
@@ -1346,6 +1348,12 @@
   <data name="Payroll.CalculatedAt" xml:space="preserve"><value>計算日時</value></data>
   <data name="Payroll.CalculatedBy" xml:space="preserve"><value>計算者</value></data>
   <data name="Payroll.NoPayrollRecords" xml:space="preserve"><value>給与記録がありません</value></data>
+  <data name="Payroll.FixedAllowances" xml:space="preserve"><value>固定月払手当項目</value></data>
+  <data name="Payroll.NoAllowances" xml:space="preserve"><value>手当が設定されていません。「追加」をクリックして追加してください。</value></data>
+  <data name="Payroll.AllowanceItem" xml:space="preserve"><value>手当項目</value></data>
+  <data name="Payroll.MonthlyAmount" xml:space="preserve"><value>月額</value></data>
+  <data name="Payroll.SelectItem" xml:space="preserve"><value>項目を選択</value></data>
+  <data name="Payroll.AllowanceHint" xml:space="preserve"><value>「手当・補助」タイプの項目のみ設定できます。食事手当月3,000以内・交通手当月3,000以内は非課税です。</value></data>
   <!-- ===== Payroll Phase 2 Rate Table keys ===== -->
   <data name="Nav.MinimumWage" xml:space="preserve"><value>最低賃金</value></data>
   <data name="Nav.InsuranceRate" xml:space="preserve"><value>保険料率設定</value></data>
@@ -1376,6 +1384,13 @@
   <data name="Field.InsuredAmount" xml:space="preserve"><value>標準報酬月額（健保）</value></data>
   <data name="Payroll.AddMinimumWage" xml:space="preserve"><value>最低賃金を追加</value></data>
   <data name="Payroll.EditMinimumWage" xml:space="preserve"><value>最低賃金を編集</value></data>
+  <data name="Payroll.NoMinimumWageRecords" xml:space="preserve"><value>最低賃金の記録はありません</value></data>
+  <data name="Payroll.SyncFromGovernment" xml:space="preserve"><value>政府から読み込む</value></data>
+  <data name="Payroll.SyncSuccess" xml:space="preserve"><value>{0} 件の最低賃金データをインポートしました</value></data>
+  <data name="Payroll.SyncAlreadyUpToDate" xml:space="preserve"><value>データは最新です</value></data>
+  <data name="Payroll.MinimumWageNote" xml:space="preserve"><value>出典：労働部オープンデータ。最新年度が未収録の場合は手動で追加してください。</value></data>
+  <data name="Payroll.ClickSyncHint" xml:space="preserve"><value>「政府から読み込む」をクリックして過去の最低賃金をインポート</value></data>
+  <data name="Payroll.MonthlyOrHourlyRequired" xml:space="preserve"><value>月給または時給のいずれかを入力してください</value></data>
   <data name="Payroll.AddInsuranceRate" xml:space="preserve"><value>保険料率を追加</value></data>
   <data name="Payroll.EditInsuranceRate" xml:space="preserve"><value>保険料率を編集</value></data>
   <data name="Payroll.LaborInsuranceRates" xml:space="preserve"><value>労働保険料率</value></data>
@@ -1765,8 +1780,8 @@
   <data name="Label.MarginLeft" xml:space="preserve"><value>左</value></data>
   <data name="Label.MarginRight" xml:space="preserve"><value>右</value></data>
 
-  <!-- ===== Document Management (文書管理) ===== -->
-  <data name="Nav.DocumentGroup" xml:space="preserve"><value>文書管理</value></data>
+  <!-- ===== Document Management (文書留存) ===== -->
+  <data name="Nav.DocumentGroup" xml:space="preserve"><value>文書留存</value></data>
   <data name="Nav.Documents" xml:space="preserve"><value>文書一覧</value></data>
   <data name="Nav.DocumentCategories" xml:space="preserve"><value>文書分類</value></data>
   <data name="Entity.Document" xml:space="preserve"><value>文書</value></data>
@@ -2014,6 +2029,8 @@
   <data name="Modal.CreatedBy" xml:space="preserve"><value>作成者：</value></data>
   <data name="Modal.UpdatedAt" xml:space="preserve"><value>最終更新日時：</value></data>
   <data name="Modal.UpdatedBy" xml:space="preserve"><value>最終更新者：</value></data>
+  <data name="Modal.ShowAuditInfo" xml:space="preserve"><value>監査情報を表示</value></data>
+  <data name="Modal.HideAuditInfo" xml:space="preserve"><value>監査情報を非表示</value></data>
   <data name="Modal.DefaultTitle" xml:space="preserve"><value>ウィンドウ</value></data>
   <data name="Modal.DefaultLoading" xml:space="preserve"><value>読み込み中...</value></data>
 
@@ -3147,8 +3164,8 @@
   <data name="Page.ProductCategorySubtitle" xml:space="preserve"><value>すべての商品タイプデータと階層構造を管理する</value></data>
   <data name="Page.ProductCompositionTitle" xml:space="preserve"><value>部品表</value></data>
   <data name="Page.ProductCompositionSubtitle" xml:space="preserve"><value>商品の製造レシピとコンポーネントを管理する</value></data>
-  <data name="Page.ProductTitle" xml:space="preserve"><value>商品管理</value></data>
-  <data name="Page.ProductSubtitle" xml:space="preserve"><value>すべての商品データと在庫情報を管理する</value></data>
+  <data name="Page.ProductTitle" xml:space="preserve"><value>品目管理</value></data>
+  <data name="Page.ProductSubtitle" xml:space="preserve"><value>すべての品目データと在庫情報を管理する</value></data>
   <data name="Page.ProductionScheduleTitle" xml:space="preserve"><value>生産スケジュール管理</value></data>
   <data name="Page.ProductionScheduleSubtitle" xml:space="preserve"><value>生産スケジュール計画と実行を管理する</value></data>
   <data name="Page.SizeTitle" xml:space="preserve"><value>サイズ管理</value></data>
@@ -3236,7 +3253,7 @@
   <data name="SubAccount.CreateProduct" xml:space="preserve"><value>商品補充</value></data>
   <data name="SubAccount.CreateCustomerTitle" xml:space="preserve"><value>すべての既存顧客のサブ勘定科目を補充作成</value></data>
   <data name="SubAccount.CreateSupplierTitle" xml:space="preserve"><value>すべての既存仕入先のサブ勘定科目を補充作成</value></data>
-  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>すべての既存商品のサブ勘定科目を補充作成</value></data>
+  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>すべての既存品目のサブ勘定科目を補充作成</value></data>
   <data name="SubAccount.CreateResult" xml:space="preserve"><value>{0}サブ勘定科目補充完了：{1} 件作成、{2} 件スキップ</value></data>
   <data name="SubAccount.CreateResultWithErrors" xml:space="preserve"><value>{0}サブ勘定科目補充完了：{1} 件作成、{2} 件スキップ、{3} 件エラー（{4}{5}）</value></data>
   <data name="SubAccount.CreateError" xml:space="preserve"><value>{0}サブ勘定科目の一括補充中にエラーが発生しました：{1}</value></data>

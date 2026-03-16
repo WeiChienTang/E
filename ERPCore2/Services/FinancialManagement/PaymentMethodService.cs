@@ -242,12 +242,12 @@ namespace ERPCore2.Services
                 foreach (var pm in allPaymentMethods)
                 {
                     pm.IsDefault = false;
-                    pm.UpdatedAt = DateTime.Now;
+                    pm.UpdatedAt = DateTime.UtcNow;
                 }
 
                 // 設定新的預設付款方式
                 targetPaymentMethod.IsDefault = true;
-                targetPaymentMethod.UpdatedAt = DateTime.Now;
+                targetPaymentMethod.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();

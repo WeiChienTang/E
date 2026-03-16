@@ -148,7 +148,7 @@ namespace ERPCore2.Services
                     SortOrder = maxSortOrder + 1,
                     IconClass = "bi bi-grid-fill",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 context.EmployeeDashboardPanels.Add(panel);
@@ -199,7 +199,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到該面板");
 
                 panel.Title = title;
-                panel.UpdatedAt = DateTime.Now;
+                panel.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
 
@@ -240,7 +240,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到該面板");
 
                 panel.IconClass = iconClass;
-                panel.UpdatedAt = DateTime.Now;
+                panel.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
 
@@ -307,7 +307,7 @@ namespace ERPCore2.Services
                     if (panel != null)
                     {
                         panel.SortOrder = i;
-                        panel.UpdatedAt = DateTime.Now;
+                        panel.UpdatedAt = DateTime.UtcNow;
                     }
                 }
 
@@ -478,7 +478,7 @@ namespace ERPCore2.Services
                         SortOrder = sortOrder,
                         IsVisible = true,
                         Status = EntityStatus.Active,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTime.UtcNow
                     });
                 }
 
@@ -547,7 +547,7 @@ namespace ERPCore2.Services
                     if (config != null)
                     {
                         config.SortOrder = (i + 1) * 10;
-                        config.UpdatedAt = DateTime.Now;
+                        config.UpdatedAt = DateTime.UtcNow;
                     }
                 }
 
@@ -593,7 +593,7 @@ namespace ERPCore2.Services
                         SortOrder = panelDef.SortOrder,
                         IconClass = panelDef.IconClass,
                         Status = EntityStatus.Active,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTime.UtcNow
                     };
 
                     context.EmployeeDashboardPanels.Add(panel);
@@ -634,7 +634,7 @@ namespace ERPCore2.Services
                             SortOrder = sortOrder,
                             IsVisible = true,
                             Status = EntityStatus.Active,
-                            CreatedAt = DateTime.Now
+                            CreatedAt = DateTime.UtcNow
                         };
 
                         context.EmployeeDashboardConfigs.Add(config);
@@ -727,7 +727,7 @@ namespace ERPCore2.Services
                         SortOrder = sortOrder,
                         IsVisible = true,
                         Status = EntityStatus.Active,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTime.UtcNow
                     });
                 }
 

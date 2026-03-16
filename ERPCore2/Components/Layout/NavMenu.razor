@@ -27,7 +27,7 @@
     </div>
 
     @* 手機版半透明遮罩（點擊可關閉抽屜） *@
-    <label for="nav-toggle" class="nav-backdrop"></label>
+    <div class="nav-backdrop" @onclick="HandleBackdropClick"></div>
 
     <div class="nav-scrollable">
         @* 使用者資訊區 - 固定在頂部 *@
@@ -152,6 +152,11 @@
         isUserMenuOpen = false;
         await TriggerActionAsync("OpenPersonalPreference");
         // 手機模式下收合導航選單
+        await JSRuntime.InvokeVoidAsync("navMenuMobile.hideNavMenu");
+    }
+
+    private async Task HandleBackdropClick()
+    {
         await JSRuntime.InvokeVoidAsync("navMenuMobile.hideNavMenu");
     }
 

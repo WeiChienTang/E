@@ -444,10 +444,10 @@
     <value>Mga Ulat ng Customer</value>
   </data>
   <data name="Nav.ProductGroup" xml:space="preserve">
-    <value>Mga Produkto</value>
+    <value>Mga Item</value>
   </data>
   <data name="Nav.Products" xml:space="preserve">
-    <value>Mga Produkto</value>
+    <value>Mga Item</value>
   </data>
   <data name="Nav.ProductCategories" xml:space="preserve">
     <value>Mga Kategorya</value>
@@ -468,7 +468,7 @@
     <value>Mga Iskedyul ng Produksyon</value>
   </data>
   <data name="Nav.ProductReportIndex" xml:space="preserve">
-    <value>Mga Ulat ng Produkto</value>
+    <value>Mga Ulat ng Item</value>
   </data>
   <data name="Nav.InventoryGroup" xml:space="preserve">
     <value>Imbentaryo</value>
@@ -723,8 +723,8 @@
   <data name="Entity.CustomerComplaint" xml:space="preserve"><value>Reklamo ng Kliyente</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>Pagbisita sa Supplier</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>Supplier</value></data>
-  <data name="Entity.Product" xml:space="preserve"><value>Produkto</value></data>
-  <data name="Entity.ProductCategory" xml:space="preserve"><value>Kategorya ng Produkto</value></data>
+  <data name="Entity.Product" xml:space="preserve"><value>Item</value></data>
+  <data name="Entity.ProductCategory" xml:space="preserve"><value>Kategorya ng Item</value></data>
   <data name="Entity.ProductComposition" xml:space="preserve"><value>Bill of Materials</value></data>
   <data name="Entity.BOM" xml:space="preserve"><value>BOM</value></data>
   <data name="Entity.CompositionCategory" xml:space="preserve"><value>Kategorya ng BOM</value></data>
@@ -885,6 +885,7 @@
   <data name="Column.SalesReturnQuantity" xml:space="preserve"><value>Return Qty</value></data>
   <data name="Column.MaterialCodeName" xml:space="preserve"><value>Material Code/Name</value></data>
   <!-- ===== Employee Field keys ===== -->
+  <data name="Field.Employee" xml:space="preserve"><value>Empleyado</value></data>
   <data name="Field.EmployeeCode" xml:space="preserve"><value>Employee Code</value></data>
   <data name="Field.FullName" xml:space="preserve"><value>Buong Pangalan</value></data>
   <data name="Field.Gender" xml:space="preserve"><value>Kasarian</value></data>
@@ -936,6 +937,7 @@
   <data name="Column.AssignDate" xml:space="preserve"><value>Petsa ng Pagtatalaga</value></data>
   <data name="Column.ReturnDate" xml:space="preserve"><value>Petsa ng Pagbabalik</value></data>
   <!-- ===== Employee Tab keys ===== -->
+  <data name="Tab.SalaryConfig" xml:space="preserve"><value>Mga Setting ng Sahod</value></data>
   <data name="Tab.EmployeeData" xml:space="preserve"><value>Impormasyon ng Empleyado</value></data>
   <data name="Tab.VehicleInfo" xml:space="preserve"><value>Impormasyon ng Sasakyan</value></data>
   <data name="Tab.PersonalTools" xml:space="preserve"><value>Personal na Kagamitan</value></data>
@@ -1110,8 +1112,8 @@
   <data name="Field.CompositionCreator" xml:space="preserve"><value>Lumikha ng Komposisyon</value></data>
   <data name="Field.CompositionType" xml:space="preserve"><value>Uri ng Komposisyon</value></data>
   <data name="Field.ForSale" xml:space="preserve"><value>Para sa Pagbebenta</value></data>
-  <data name="Field.ProductCode" xml:space="preserve"><value>Kodigo ng Produkto</value></data>
-  <data name="Field.ProductName" xml:space="preserve"><value>Pangalan ng Produkto</value></data>
+  <data name="Field.ProductCode" xml:space="preserve"><value>Kodigo ng Item</value></data>
+  <data name="Field.ProductName" xml:space="preserve"><value>Pangalan ng Item</value></data>
   <data name="Field.ProductionUnit" xml:space="preserve"><value>Yunit ng Produksyon</value></data>
   <data name="Field.PurchaseUnit" xml:space="preserve"><value>Base Unit</value></data>
   <data name="Field.ScheduleCode" xml:space="preserve"><value>Kodigo ng Iskedyul</value></data>
@@ -1346,6 +1348,12 @@
   <data name="Payroll.CalculatedAt" xml:space="preserve"><value>Oras ng Kalkulasyon</value></data>
   <data name="Payroll.CalculatedBy" xml:space="preserve"><value>Kinalkula ni</value></data>
   <data name="Payroll.NoPayrollRecords" xml:space="preserve"><value>Walang rekord ng payroll</value></data>
+  <data name="Payroll.FixedAllowances" xml:space="preserve"><value>Mga Nakapirming Buwanang Allowance</value></data>
+  <data name="Payroll.NoAllowances" xml:space="preserve"><value>Walang nakatakdang allowance. I-click ang Idagdag para magdagdag.</value></data>
+  <data name="Payroll.AllowanceItem" xml:space="preserve"><value>Aytem ng Allowance</value></data>
+  <data name="Payroll.MonthlyAmount" xml:space="preserve"><value>Buwanang Halaga</value></data>
+  <data name="Payroll.SelectItem" xml:space="preserve"><value>Pumili ng Aytem</value></data>
+  <data name="Payroll.AllowanceHint" xml:space="preserve"><value>Mga aytem na uri ng Allowance lamang ang maaaring itakda dito. Meal allowance hanggang 3,000/buwan ay walang buwis; transport allowance hanggang 3,000/buwan ay walang buwis.</value></data>
   <!-- ===== Payroll Phase 2 Rate Table keys ===== -->
   <data name="Nav.MinimumWage" xml:space="preserve"><value>Minimum na Sahod</value></data>
   <data name="Nav.InsuranceRate" xml:space="preserve"><value>Mga Rate ng Insurance</value></data>
@@ -1376,6 +1384,13 @@
   <data name="Field.InsuredAmount" xml:space="preserve"><value>Insured na Halaga</value></data>
   <data name="Payroll.AddMinimumWage" xml:space="preserve"><value>Magdagdag ng Minimum na Sahod</value></data>
   <data name="Payroll.EditMinimumWage" xml:space="preserve"><value>I-edit ang Minimum na Sahod</value></data>
+  <data name="Payroll.NoMinimumWageRecords" xml:space="preserve"><value>Walang mga rekord ng minimum na sahod</value></data>
+  <data name="Payroll.SyncFromGovernment" xml:space="preserve"><value>I-load mula sa Gobyerno</value></data>
+  <data name="Payroll.SyncSuccess" xml:space="preserve"><value>Matagumpay na na-import ang {0} rekord ng minimum na sahod</value></data>
+  <data name="Payroll.SyncAlreadyUpToDate" xml:space="preserve"><value>Ang data ay updated na</value></data>
+  <data name="Payroll.MinimumWageNote" xml:space="preserve"><value>Pinagmulan: Ministry of Labor open data. Kung hindi pa available ang pinakabagong taon, idagdag nang mano-mano.</value></data>
+  <data name="Payroll.ClickSyncHint" xml:space="preserve"><value>I-click ang "I-load mula sa Gobyerno" para mag-import ng historical na minimum na sahod</value></data>
+  <data name="Payroll.MonthlyOrHourlyRequired" xml:space="preserve"><value>Kailangan ng monthly o hourly na sahod</value></data>
   <data name="Payroll.AddInsuranceRate" xml:space="preserve"><value>Magdagdag ng Insurance Rate</value></data>
   <data name="Payroll.EditInsuranceRate" xml:space="preserve"><value>I-edit ang Insurance Rate</value></data>
   <data name="Payroll.LaborInsuranceRates" xml:space="preserve"><value>Mga Rate ng Labor Insurance</value></data>
@@ -2014,6 +2029,8 @@
   <data name="Modal.CreatedBy" xml:space="preserve"><value>Nilikha ni:</value></data>
   <data name="Modal.UpdatedAt" xml:space="preserve"><value>Huling na-update noong:</value></data>
   <data name="Modal.UpdatedBy" xml:space="preserve"><value>Huling binago ni:</value></data>
+  <data name="Modal.ShowAuditInfo" xml:space="preserve"><value>Ipakita ang Audit Info</value></data>
+  <data name="Modal.HideAuditInfo" xml:space="preserve"><value>Itago ang Audit Info</value></data>
   <data name="Modal.DefaultTitle" xml:space="preserve"><value>Window</value></data>
   <data name="Modal.DefaultLoading" xml:space="preserve"><value>Naglo-load...</value></data>
 
@@ -3147,8 +3164,8 @@
   <data name="Page.ProductCategorySubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng uri ng produkto at istruktura ng hierarchy</value></data>
   <data name="Page.ProductCompositionTitle" xml:space="preserve"><value>Bill of Materials</value></data>
   <data name="Page.ProductCompositionSubtitle" xml:space="preserve"><value>Pamahalaan ang recipe at mga bahagi ng produkto</value></data>
-  <data name="Page.ProductTitle" xml:space="preserve"><value>Pagpapanatili ng Produkto</value></data>
-  <data name="Page.ProductSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng produkto at impormasyon ng imbentaryo</value></data>
+  <data name="Page.ProductTitle" xml:space="preserve"><value>Pagpapanatili ng Item</value></data>
+  <data name="Page.ProductSubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng data ng item at impormasyon ng imbentaryo</value></data>
   <data name="Page.ProductionScheduleTitle" xml:space="preserve"><value>Pamamahala ng Schedule ng Produksyon</value></data>
   <data name="Page.ProductionScheduleSubtitle" xml:space="preserve"><value>Pamahalaan ang plano at pagpapatupad ng schedule ng produksyon</value></data>
   <data name="Page.SizeTitle" xml:space="preserve"><value>Pagpapanatili ng Sukat</value></data>
@@ -3236,7 +3253,7 @@
   <data name="SubAccount.CreateProduct" xml:space="preserve"><value>Lumikha para sa Produkto</value></data>
   <data name="SubAccount.CreateCustomerTitle" xml:space="preserve"><value>Lumikha ng sub-account para sa lahat ng kasalukuyang customer</value></data>
   <data name="SubAccount.CreateSupplierTitle" xml:space="preserve"><value>Lumikha ng sub-account para sa lahat ng kasalukuyang supplier</value></data>
-  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>Lumikha ng sub-account para sa lahat ng kasalukuyang produkto</value></data>
+  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>Lumikha ng sub-account para sa lahat ng kasalukuyang item</value></data>
   <data name="SubAccount.CreateResult" xml:space="preserve"><value>Natapos ang paglikha ng {0} sub-account: {1} nilikha, {2} nilaktawan</value></data>
   <data name="SubAccount.CreateResultWithErrors" xml:space="preserve"><value>Natapos ang paglikha ng {0} sub-account: {1} nilikha, {2} nilaktawan, {3} may error ({4}{5})</value></data>
   <data name="SubAccount.CreateError" xml:space="preserve"><value>Nagkaroon ng error sa batch na paglikha ng {0} sub-account: {1}</value></data>

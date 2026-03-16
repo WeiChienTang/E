@@ -242,7 +242,7 @@ namespace ERPCore2.Services
 
                 order.TotalAmount = totalAmount;
                 order.SalesTaxAmount = taxAmount;
-                order.UpdatedAt = DateTime.Now;
+                order.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -503,7 +503,7 @@ namespace ERPCore2.Services
                                     if (quotationDetail.ConvertedQuantity < 0)
                                         quotationDetail.ConvertedQuantity = 0;
                                     
-                                    quotationDetail.UpdatedAt = DateTime.Now;
+                                    quotationDetail.UpdatedAt = DateTime.UtcNow;
                                     
                                     // 記錄相關的報價單ID
                                     relatedQuotationIds.Add(quotationDetail.QuotationId);
@@ -1101,9 +1101,9 @@ namespace ERPCore2.Services
 
                 entity.IsApproved = true;
                 entity.ApprovedBy = approvedBy;
-                entity.ApprovedAt = DateTime.Now;
+                entity.ApprovedAt = DateTime.UtcNow;
                 entity.RejectReason = null;
-                entity.UpdatedAt = DateTime.Now;
+                entity.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -1124,9 +1124,9 @@ namespace ERPCore2.Services
 
             entity.IsApproved = false;
             entity.ApprovedBy = rejectedBy;
-            entity.ApprovedAt = DateTime.Now;
+            entity.ApprovedAt = DateTime.UtcNow;
             entity.RejectReason = reason;
-            entity.UpdatedAt = DateTime.Now;
+            entity.UpdatedAt = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
             return ServiceResult.Success();

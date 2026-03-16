@@ -980,11 +980,11 @@
                 if (detail.Id == 0)
                 {
                     detail.Status = EntityStatus.Active;
-                    detail.CreatedAt = DateTime.Now;
+                    detail.CreatedAt = DateTime.UtcNow;
                 }
                 else
                 {
-                    detail.UpdatedAt = DateTime.Now;
+                    detail.UpdatedAt = DateTime.UtcNow;
                 }
             }
 

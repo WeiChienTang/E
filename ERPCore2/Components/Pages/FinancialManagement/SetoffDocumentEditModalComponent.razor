@@ -96,7 +96,7 @@
     
     // 商品明細相關
     private List<SetoffProductDetail> setoffProductDetails = new();
-    private bool IsReadOnly => false; // 可根據權限或狀態控制
+    private bool IsReadOnly => editModalComponent?.Entity?.IsJournalized == true; // 已傳票化的沖款單為唯讀
     private SetoffProductTable? setoffProductDetailManager;
     
     // 收款記錄相關

@@ -263,6 +263,20 @@ namespace ERPCore2.Services
                 if (entity.AccountLevel < 1 || entity.AccountLevel > 4)
                     errors.Add("科目層級必須介於 1 至 4 之間");
 
+                // 防止自我參照（科目不可設定自身為上層科目）
+                if (entity.Id > 0 && entity.ParentId.HasValue && entity.ParentId.Value == entity.Id)
+                    errors.Add("科目不可設定自身為上層科目");
+
+                // 子科目層級必須大於父科目層級
+                if (entity.ParentId.HasValue && entity.ParentId.Value != entity.Id)
+                {
+                    using var parentCtx = await _contextFactory.CreateDbContextAsync();
+                    var parent = await parentCtx.AccountItems.AsNoTracking()
+                        .FirstOrDefaultAsync(a => a.Id == entity.ParentId.Value);
+                    if (parent != null && entity.AccountLevel <= parent.AccountLevel)
+                        errors.Add($"子科目層級（{entity.AccountLevel}）必須大於上層科目層級（{parent.AccountLevel}）");
+                }
+
                 if (!string.IsNullOrWhiteSpace(entity.Code) &&
                     await IsAccountItemCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("科目代碼已存在");

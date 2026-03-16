@@ -113,6 +113,10 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
+                // 已傳票化的銷貨退回單不允許修改（修正 Bug-49）
+                if (entity.IsJournalized && entity.Id > 0)
+                    return ServiceResult.Failure("銷貨退回單已傳票化，不可再修改");
+
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("退回單號不能為空");
 
@@ -673,12 +677,39 @@ namespace ERPCore2.Services
                         var existing = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
                         if (existing != null)
                         {
-                            var oldQuantity = existing.ReturnQuantity;
-                            var quantityDiff = detail.ReturnQuantity - oldQuantity;
+                            // 修正 Bug-61：檢查出貨明細來源是否已變更
+                            bool deliveryDetailChanged = existing.SalesDeliveryDetailId != detail.SalesDeliveryDetailId;
 
-                            if (Math.Abs(quantityDiff) > 0.001m) // 有數量變更
+                            if (deliveryDetailChanged)
                             {
-                                quantityChanges.Add((detail, quantityDiff));
+                                // 出貨明細來源變更：必須先對舊來源回退，再對新來源累加，
+                                // 否則舊 SalesDeliveryDetail.TotalReturnedQuantity 永遠不會被減回。
+                                if (existing.ReturnQuantity > 0 && existing.SalesDeliveryDetailId.HasValue)
+                                {
+                                    // 建立代表舊來源的臨時記錄，用於回退 TotalReturnedQuantity
+                                    var originalDetail = new SalesReturnDetail
+                                    {
+                                        Id = existing.Id,
+                                        ProductId = existing.ProductId,
+                                        SalesDeliveryDetailId = existing.SalesDeliveryDetailId,
+                                        ReturnQuantity = existing.ReturnQuantity
+                                    };
+                                    quantityChanges.Add((originalDetail, -existing.ReturnQuantity));
+                                }
+
+                                if (detail.ReturnQuantity > 0)
+                                {
+                                    quantityChanges.Add((detail, detail.ReturnQuantity));
+                                }
+                            }
+                            else
+                            {
+                                // 出貨明細來源不變，只計算數量差異
+                                var quantityDiff = detail.ReturnQuantity - existing.ReturnQuantity;
+                                if (Math.Abs(quantityDiff) > 0.001m)
+                                {
+                                    quantityChanges.Add((detail, quantityDiff));
+                                }
                             }
 
                             updatedDetailsToUpdate.Add((existing, detail));
@@ -856,48 +887,51 @@ namespace ERPCore2.Services
 
                         foreach (var detail in eligibleDetails)
                         {
-                            // 從關聯的銷貨出貨明細取得倉庫ID
-                            int? warehouseId = null;
-                            if (detail.SalesDeliveryDetailId.HasValue && detail.SalesDeliveryDetail != null)
+                            // 執行庫存減少（撤銷退貨時增加的庫存）- 僅在已核准時才回滾庫存
+                            // 未核准的退回單從未更新庫存（ShouldUpdateInventory 在核准前為 false），不需回滾
+                            if (entity.IsApproved)
                             {
-                                warehouseId = detail.SalesDeliveryDetail.WarehouseId;
+                                int? warehouseId = null;
+                                int? locationId = null;
+                                if (detail.SalesDeliveryDetailId.HasValue && detail.SalesDeliveryDetail != null)
+                                {
+                                    warehouseId = detail.SalesDeliveryDetail.WarehouseId;
+                                    locationId = detail.SalesDeliveryDetail.WarehouseLocationId;
+                                }
+
+                                if (warehouseId.HasValue)
+                                {
+                                    var reduceResult = await _inventoryStockService.ReduceStockAsync(
+                                        detail.ProductId,
+                                        warehouseId.Value,
+                                        detail.ReturnQuantity,
+                                        InventoryTransactionTypeEnum.SalesReturn,
+                                        entity.Code ?? string.Empty,
+                                        locationId,
+                                        $"刪除銷貨退回單回滾庫存 - {entity.Code}",
+                                        sourceDocumentType: InventorySourceDocumentTypes.SalesReturn,
+                                        sourceDocumentId: entity.Id,
+                                        operationType: InventoryOperationTypeEnum.Delete
+                                    );
+
+                                    if (!reduceResult.IsSuccess)
+                                    {
+                                        await transaction.RollbackAsync();
+                                        return ServiceResult.Failure($"庫存回滾失敗：{reduceResult.ErrorMessage}");
+                                    }
+                                }
                             }
 
-                            if (!warehouseId.HasValue)
-                            {
-                                continue;
-                            }
-                            
-                            // 執行庫存減少（撤銷退貨時增加的庫存）
-                            var reduceResult = await _inventoryStockService.ReduceStockAsync(
-                                detail.ProductId,
-                                warehouseId.Value,
-                                (int)Math.Ceiling(detail.ReturnQuantity), // 轉為整數，向上取整
-                                InventoryTransactionTypeEnum.SalesReturn,
-                                entity.Code ?? string.Empty,  // 使用原始單號
-                                null, // 倉庫位置ID (銷貨退回通常不指定特定位置)
-                                $"刪除銷貨退回單回滾庫存 - {entity.Code}",
-                                sourceDocumentType: InventorySourceDocumentTypes.SalesReturn,
-                                sourceDocumentId: entity.Id,
-                                operationType: InventoryOperationTypeEnum.Delete  // 標記為刪除操作
-                            );
-                            
-                            if (!reduceResult.IsSuccess)
-                            {
-                                await transaction.RollbackAsync();
-                                return ServiceResult.Failure($"庫存回滾失敗：{reduceResult.ErrorMessage}");
-                            }
-                            
-                            // 🔥 回退銷貨明細的累計退貨數量
+                            // 🔥 回退銷貨明細的累計退貨數量（無論是否核准，儲存時已增加，刪除時應回退）
                             if (detail.SalesDeliveryDetailId.HasValue)
                             {
                                 var deliveryDetail = await context.SalesDeliveryDetails
                                     .FirstOrDefaultAsync(dd => dd.Id == detail.SalesDeliveryDetailId.Value);
-                                
+
                                 if (deliveryDetail != null)
                                 {
                                     deliveryDetail.TotalReturnedQuantity -= detail.ReturnQuantity;
-                                    
+
                                     // 確保不會變成負數
                                     if (deliveryDetail.TotalReturnedQuantity < 0)
                                     {
@@ -1039,7 +1073,7 @@ namespace ERPCore2.Services
                             currentInventory[key] = (detail.ProductId, warehouseId, locationId, 0);
                         }
                         var oldQty = currentInventory[key].CurrentQuantity;
-                        var newQty = oldQty + (int)detail.ReturnQuantity;
+                        var newQty = oldQty + detail.ReturnQuantity;
                         currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId, 
                                                currentInventory[key].LocationId, newQty);
                     }
@@ -1202,7 +1236,7 @@ namespace ERPCore2.Services
                                 var addStockResult = await _inventoryStockService.AddStockAsync(
                                     detail.ProductId,
                                     warehouseId.Value,
-                                    (int)detail.ReturnQuantity,
+                                    detail.ReturnQuantity,
                                     InventoryTransactionTypeEnum.SalesReturn,
                                     salesReturn.Code ?? string.Empty,
                                     null,  // 退回不需要成本
@@ -1304,9 +1338,9 @@ namespace ERPCore2.Services
 
                 entity.IsApproved = true;
                 entity.ApprovedBy = approvedBy;
-                entity.ApprovedAt = DateTime.Now;
+                entity.ApprovedAt = DateTime.UtcNow;
                 entity.RejectReason = null;
-                entity.UpdatedAt = DateTime.Now;
+                entity.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -1327,9 +1361,9 @@ namespace ERPCore2.Services
 
             entity.IsApproved = false;
             entity.ApprovedBy = rejectedBy;
-            entity.ApprovedAt = DateTime.Now;
+            entity.ApprovedAt = DateTime.UtcNow;
             entity.RejectReason = reason;
-            entity.UpdatedAt = DateTime.Now;
+            entity.UpdatedAt = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
             return ServiceResult.Success();

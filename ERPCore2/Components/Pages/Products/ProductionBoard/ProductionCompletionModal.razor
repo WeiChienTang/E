@@ -396,7 +396,7 @@
                 WarehouseLocationId = targetWarehouseLocationId,
                 CompletedByEmployeeId = operatorEmployeeId,
                 Status = EntityStatus.Active,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
             var completionResult = await ProductionScheduleCompletionService.CreateAsync(completion);
