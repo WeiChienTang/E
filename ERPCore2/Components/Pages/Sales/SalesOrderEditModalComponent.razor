@@ -1768,7 +1768,7 @@
                     );
                 }
                 
-                await SalesOrderDetailService.PermanentDeleteAsync(detailToDelete.Id);
+                await SalesOrderDetailService.DeleteAsync(detailToDelete.Id);
             }
         }
         catch (Exception ex)

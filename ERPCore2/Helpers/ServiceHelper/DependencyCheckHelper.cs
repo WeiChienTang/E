@@ -151,13 +151,53 @@ namespace ERPCore2.Helpers
                 // 檢查採購訂單
                 var purchaseOrderCount = await context.PurchaseOrders
                     .CountAsync(po => po.SupplierId == supplierId);
-                    
+
                 if (purchaseOrderCount > 0)
                 {
                     result.CanDelete = false;
                     result.DependentEntities.Add($"採購訂單({purchaseOrderCount}筆)");
-                }                
-                
+                }
+
+                // 檢查進貨單
+                var purchaseReceivingCount = await context.PurchaseReceivings
+                    .CountAsync(pr => pr.SupplierId == supplierId);
+
+                if (purchaseReceivingCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"進貨單({purchaseReceivingCount}筆)");
+                }
+
+                // 檢查採購退回單
+                var purchaseReturnCount = await context.PurchaseReturns
+                    .CountAsync(pr => pr.SupplierId == supplierId);
+
+                if (purchaseReturnCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"採購退回單({purchaseReturnCount}筆)");
+                }
+
+                // 檢查沖帳單
+                var setoffDocumentCount = await context.SetoffDocuments
+                    .CountAsync(sd => sd.SupplierId == supplierId);
+
+                if (setoffDocumentCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"沖帳單({setoffDocumentCount}筆)");
+                }
+
+                // 檢查預付款
+                var setoffPrepaymentCount = await context.SetoffPrepayments
+                    .CountAsync(sp => sp.SupplierId == supplierId);
+
+                if (setoffPrepaymentCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"預付款({setoffPrepaymentCount}筆)");
+                }
+
                 return result;
             }
             catch (Exception)
@@ -183,13 +223,63 @@ namespace ERPCore2.Helpers
                 // 檢查銷貨訂單
                 var salesOrderCount = await context.SalesOrders
                     .CountAsync(so => so.CustomerId == customerId);
-                    
+
                 if (salesOrderCount > 0)
                 {
                     result.CanDelete = false;
                     result.DependentEntities.Add($"銷貨訂單({salesOrderCount}筆)");
                 }
-                
+
+                // 檢查報價單
+                var quotationCount = await context.Quotations
+                    .CountAsync(q => q.CustomerId == customerId);
+
+                if (quotationCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"報價單({quotationCount}筆)");
+                }
+
+                // 檢查銷貨出貨單
+                var salesDeliveryCount = await context.SalesDeliveries
+                    .CountAsync(sd => sd.CustomerId == customerId);
+
+                if (salesDeliveryCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"銷貨出貨單({salesDeliveryCount}筆)");
+                }
+
+                // 檢查銷貨退回單
+                var salesReturnCount = await context.SalesReturns
+                    .CountAsync(sr => sr.CustomerId == customerId);
+
+                if (salesReturnCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"銷貨退回單({salesReturnCount}筆)");
+                }
+
+                // 檢查沖帳單
+                var setoffDocumentCount = await context.SetoffDocuments
+                    .CountAsync(sd => sd.CustomerId == customerId);
+
+                if (setoffDocumentCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"沖帳單({setoffDocumentCount}筆)");
+                }
+
+                // 檢查預付款
+                var setoffPrepaymentCount = await context.SetoffPrepayments
+                    .CountAsync(sp => sp.CustomerId == customerId);
+
+                if (setoffPrepaymentCount > 0)
+                {
+                    result.CanDelete = false;
+                    result.DependentEntities.Add($"預付款({setoffPrepaymentCount}筆)");
+                }
+
                 return result;
             }
             catch (Exception)

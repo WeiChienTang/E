@@ -1,10 +1,13 @@
 ﻿using ERPCore2.Data.Context;
 using ERPCore2.Services;
+using ERPCore2.Services.Customers;
 using ERPCore2.Services.Import;
 using ERPCore2.Services.Export;
 using ERPCore2.Services.Reports;
 using ERPCore2.Services.Reports.Configuration;
 using ERPCore2.Services.Reports.Interfaces;
+using ERPCore2.Services.Suppliers;
+using ERPCore2.Services.Systems;
 using ERPCore2.Helpers;
 using ERPCore2.Helpers.Common;
 using Microsoft.EntityFrameworkCore;
@@ -63,6 +66,7 @@ namespace ERPCore2.Data
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<ICustomerVisitService, CustomerVisitService>();
             services.AddScoped<ICustomerComplaintService, CustomerComplaintService>();
+            services.AddScoped<ICustomerBankAccountService, CustomerBankAccountService>();
 
             // 員工工具配給服務
             services.AddScoped<IEmployeeToolService, EmployeeToolService>();
@@ -99,6 +103,7 @@ namespace ERPCore2.Data
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();
             services.AddScoped<ISupplierVisitService, SupplierVisitService>();
+            services.AddScoped<ISupplierBankAccountService, SupplierBankAccountService>();
 
             // 品項相關服務
             services.AddScoped<IProductService, ProductService>();
@@ -184,6 +189,9 @@ namespace ERPCore2.Data
             services.AddScoped<IScaleTypeService, ScaleTypeService>();
             services.AddScoped<IScaleRecordService, ScaleRecordService>();
 
+            // RS-232C 串列埠服務（Singleton：實體串列埠連線需跨 Circuit 持久化）
+            services.AddSingleton<ISerialPortService, SerialPortService>();
+
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IEmployeePreferenceService, EmployeePreferenceService>();
@@ -217,6 +225,7 @@ namespace ERPCore2.Data
             
             // 公司設定服務
             services.AddScoped<ICompanyService, CompanyService>();
+            services.AddScoped<ICompanyBankAccountService, CompanyBankAccountService>();
 
             // 公司模組管理服務（控制各功能模組的啟用狀態）
             services.AddScoped<ICompanyModuleService, CompanyModuleService>();

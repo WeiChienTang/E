@@ -1,5 +1,8 @@
 ﻿using ERPCore2.Data.Entities;
+using ERPCore2.Data.Entities.Customers;
 using ERPCore2.Data.Entities.Payroll;
+using ERPCore2.Data.Entities.Suppliers;
+using ERPCore2.Data.Entities.Systems;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -137,6 +140,9 @@ namespace ERPCore2.Data.Context
       public DbSet<WithholdingTaxTable> WithholdingTaxTables { get; set; }
       public DbSet<InsuranceRate> InsuranceRates { get; set; }
       public DbSet<MonthlyAttendanceSummary> MonthlyAttendanceSummaries { get; set; }
+      public DbSet<CustomerBankAccount> CustomerBankAccounts { get; set; }
+      public DbSet<SupplierBankAccount> SupplierBankAccounts { get; set; }
+      public DbSet<CompanyBankAccount> CompanyBankAccounts { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1536,6 +1542,51 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(e => e.Employee)
                               .WithMany()
                               .HasForeignKey(e => e.EmployeeId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  // 客戶銀行帳號
+                  modelBuilder.Entity<CustomerBankAccount>(entity =>
+                  {
+                        entity.HasIndex(e => e.CustomerId);
+                        entity.HasIndex(e => e.BankId);
+                        entity.HasOne(e => e.Customer)
+                              .WithMany(c => c.CustomerBankAccounts)
+                              .HasForeignKey(e => e.CustomerId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                        entity.HasOne(e => e.Bank)
+                              .WithMany(b => b.CustomerBankAccounts)
+                              .HasForeignKey(e => e.BankId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  // 廠商銀行帳號
+                  modelBuilder.Entity<SupplierBankAccount>(entity =>
+                  {
+                        entity.HasIndex(e => e.SupplierId);
+                        entity.HasIndex(e => e.BankId);
+                        entity.HasOne(e => e.Supplier)
+                              .WithMany(s => s.SupplierBankAccounts)
+                              .HasForeignKey(e => e.SupplierId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                        entity.HasOne(e => e.Bank)
+                              .WithMany(b => b.SupplierBankAccounts)
+                              .HasForeignKey(e => e.BankId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  // 公司銀行帳號
+                  modelBuilder.Entity<CompanyBankAccount>(entity =>
+                  {
+                        entity.HasIndex(e => e.CompanyId);
+                        entity.HasIndex(e => e.BankId);
+                        entity.HasOne(e => e.Company)
+                              .WithMany()
+                              .HasForeignKey(e => e.CompanyId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                        entity.HasOne(e => e.Bank)
+                              .WithMany(b => b.CompanyBankAccounts)
+                              .HasForeignKey(e => e.BankId)
                               .OnDelete(DeleteBehavior.Restrict);
                   });
 

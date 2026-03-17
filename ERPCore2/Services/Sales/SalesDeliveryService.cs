@@ -786,6 +786,7 @@ namespace ERPCore2.Services
             using var context = await _contextFactory.CreateDbContextAsync();
             var entity = await context.SalesDeliveries.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return ServiceResult.Failure("找不到銷貨出貨單");
+            if (!string.IsNullOrEmpty(entity.RejectReason)) return ServiceResult.Failure("銷貨出貨單已經駁回，無需重複駁回");
 
             entity.IsApproved = false;
             entity.ApprovedBy = rejectedBy;

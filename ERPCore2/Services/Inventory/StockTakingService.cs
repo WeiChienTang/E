@@ -996,42 +996,8 @@ namespace ERPCore2.Services
         /// 軟刪除盤點單
         /// 如果已執行庫存調整，會自動回滾庫存
         /// </summary>
-        public override async Task<ServiceResult> DeleteAsync(int id)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                
-                var entity = await context.StockTakings
-                    .Include(st => st.StockTakingDetails)
-                    .FirstOrDefaultAsync(st => st.Id == id);
-                    
-                if (entity == null)
-                    return ServiceResult.Failure("找不到要刪除的盤點單");
-
-                // 如果已執行庫存調整，需要先回滾庫存
-                if (entity.IsAdjustmentGenerated)
-                {
-                    var rollbackResult = await RollbackStockAdjustmentAsync(entity);
-                    if (!rollbackResult.IsSuccess)
-                        return rollbackResult;
-                }
-
-                // 執行軟刪除
-                entity.Status = EntityStatus.Deleted;
-                entity.UpdatedAt = DateTime.UtcNow;
-                await context.SaveChangesAsync();
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new { 
-                    StockTakingId = id 
-                });
-                return ServiceResult.Failure($"刪除盤點單時發生錯誤: {ex.Message}");
-            }
-        }
+        public override Task<ServiceResult> DeleteAsync(int id)
+            => PermanentDeleteAsync(id);
 
         /// <summary>
         /// 永久刪除盤點單

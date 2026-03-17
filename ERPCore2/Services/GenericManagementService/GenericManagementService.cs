@@ -248,11 +248,9 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 刪除資料（硬刪除）
-        /// 不要再調用此方法，已經不再使用軟除 2025/09/24
         /// </summary>
         public virtual async Task<ServiceResult> DeleteAsync(int id)
         {
-            // 直接調用永久刪除方法，不再使用軟刪除
             return await PermanentDeleteAsync(id);
         }
 

@@ -1188,7 +1188,7 @@
                 {
                     foreach (var detailId in deletedDetailIds)
                     {
-                        var result = await PurchaseReceivingDetailService.PermanentDeleteAsync(detailId);
+                        var result = await PurchaseReceivingDetailService.DeleteAsync(detailId);
                         if (!result.IsSuccess)
                         {
                             await NotificationService.ShowErrorAsync($"刪除明細ID {detailId} 失敗: {result.ErrorMessage}");

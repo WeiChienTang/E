@@ -127,6 +127,7 @@
 
     // Tab 元件參考（透過 @ref 呼叫公開方法）
     private CustomerVehicleTab? vehicleTab;
+    private CustomerBankAccountTab? bankAccountTab;
     private CustomerVisitTab? visitTab;
     private CustomerComplaintTab? complaintTab;
     private CustomerTransactionTab? transactionTab;
@@ -139,6 +140,11 @@
     private RenderFragment CreateVehicleTabContent() => __builder =>
     {
         <CustomerVehicleTab @ref="vehicleTab" CustomerId="@CustomerId" />
+    };
+
+    private RenderFragment CreateBankAccountTabContent() => __builder =>
+    {
+        <CustomerBankAccountTab @ref="bankAccountTab" CustomerId="@CustomerId" />
     };
 
     private RenderFragment CreateAccountingTabContent() => __builder =>
@@ -219,6 +225,7 @@
             if (loadedEntityId > 0)
             {
                 if (vehicleTab != null)       await vehicleTab.LoadAsync(loadedEntityId);
+                if (bankAccountTab != null)   await bankAccountTab.LoadAsync(loadedEntityId);
                 if (visitTab != null)         await visitTab.LoadAsync(loadedEntityId);
                 if (complaintTab != null)     await complaintTab.LoadAsync(loadedEntityId);
                 if (transactionTab != null)   await transactionTab.LoadAsync(loadedEntityId);
@@ -229,6 +236,7 @@
             else
             {
                 vehicleTab?.Clear();
+                bankAccountTab?.Clear();
                 visitTab?.Clear();
                 complaintTab?.Clear();
                 transactionTab?.Clear();
@@ -265,6 +273,7 @@
             if (!CustomerId.HasValue)
             {
                 vehicleTab?.Clear();
+                bankAccountTab?.Clear();
                 visitTab?.Clear();
                 complaintTab?.Clear();
                 transactionTab?.Clear();
@@ -590,26 +599,6 @@
                     MaxLength = 200,
                     HelpText = "發票或帳單郵寄地址（若與聯絡地址相同可留空）"
                 },
-                new()
-                {
-                    PropertyName = nameof(Customer.BankAccount),
-                    Label = L["Field.BankAccount"],
-                    FieldType = FormFieldType.Text,
-                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankAccount"]],
-                    IsRequired = false,
-                    MaxLength = 50,
-                    HelpText = "客戶銀行帳號（退款或轉帳時使用）"
-                },
-                new()
-                {
-                    PropertyName = nameof(Customer.BankName),
-                    Label = L["Field.BankName"],
-                    FieldType = FormFieldType.Text,
-                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankName"]],
-                    IsRequired = false,
-                    MaxLength = 100,
-                    HelpText = "客戶銀行名稱（含分行）"
-                },
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(Customer.CompanyContactPhone),
@@ -665,8 +654,6 @@
                     c => c.CurrentBalance,
                     c => c.CreditRating,
                     c => c.DefaultDiscountRate,
-                    c => c.BankName,
-                    c => c.BankAccount,
                     c => c.BillingAddress)
                 .AddToSection(FormSectionNames.OtherInfo,
                     c => c.EmployeeId,
@@ -681,6 +668,8 @@
 
             if (isAccountingEnabled)
                 builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent(), nameof(GenericAccountingTabComponent));
+
+            builder = builder.GroupIntoCustomTab(L["Tab.BankAccounts"].ToString(), "bi-bank", CreateBankAccountTabContent(), nameof(CustomerBankAccountTab));
 
             var layout = builder
                 .GroupIntoCustomTab(L["Tab.CustomerProducts"].ToString(), "bi-box-seam", CreateProductTabContent(), nameof(CustomerProductTab))

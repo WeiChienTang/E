@@ -99,7 +99,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
                 var genericService = Service as IGenericManagementService<TEntity>;
                 if (genericService != null)
                 {
-                    var deleteResult = await genericService.PermanentDeleteAsync(Entity.Id);
+                    var deleteResult = await genericService.DeleteAsync(Entity.Id);
                     if (deleteResult.IsSuccess)
                     {
                         deleteSuccess = true;

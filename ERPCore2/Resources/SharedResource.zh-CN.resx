@@ -721,8 +721,11 @@
   <data name="Entity.Customer" xml:space="preserve"><value>客户</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>拜访记录</value></data>
   <data name="Entity.CustomerComplaint" xml:space="preserve"><value>客诉</value></data>
+  <data name="Entity.CustomerBankAccount" xml:space="preserve"><value>客户银行账号</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>供应商拜访记录</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>供应商</value></data>
+  <data name="Entity.SupplierBankAccount" xml:space="preserve"><value>供应商银行账号</value></data>
+  <data name="Entity.CompanyBankAccount" xml:space="preserve"><value>公司银行账号</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>品项</value></data>
   <data name="Entity.ProductCategory" xml:space="preserve"><value>品项类型</value></data>
   <data name="Entity.ProductComposition" xml:space="preserve"><value>物料清单</value></data>
@@ -964,6 +967,14 @@
   <data name="Message.NoRoleAssigned" xml:space="preserve"><value>此员工尚未分配角色，无法显示权限。</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>例：通过、优秀、不合格</value></data>
+  <!-- ===== Bank Account Button/Message/Label/Hint keys ===== -->
+  <data name="Button.AddBankAccount" xml:space="preserve"><value>新增银行账号</value></data>
+  <data name="Button.SetPrimary" xml:space="preserve"><value>设为主要</value></data>
+  <data name="Label.Primary" xml:space="preserve"><value>主要</value></data>
+  <data name="Message.NoBankAccounts" xml:space="preserve"><value>暂无银行账号资料</value></data>
+  <data name="Hint.OnePrimaryPerCustomer" xml:space="preserve"><value>同一客户仅能有一个主要账户</value></data>
+  <data name="Hint.OnePrimaryPerSupplier" xml:space="preserve"><value>同一供应商仅能有一个主要账户</value></data>
+  <data name="Hint.OnePrimaryPerCompany" xml:space="preserve"><value>同一公司仅能有一个主要账户</value></data>
   <!-- ===== Vehicle Button/Message keys ===== -->
   <data name="Button.AddVehicle" xml:space="preserve"><value>增车</value></data>
   <data name="Button.SelectVehicle" xml:space="preserve"><value>选车</value></data>
@@ -1517,6 +1528,7 @@
   <data name="Tab.VisitRecords" xml:space="preserve"><value>拜访记录</value></data>
   <data name="Tab.ComplaintRecords" xml:space="preserve"><value>投诉记录</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>交易记录</value></data>
+  <data name="Tab.BankAccounts" xml:space="preserve"><value>银行账号</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>名片</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>公司资料</value></data>
   <data name="Tab.CompanyLogo" xml:space="preserve"><value>公司 Logo</value></data>

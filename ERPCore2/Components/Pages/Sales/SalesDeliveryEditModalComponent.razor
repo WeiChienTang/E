@@ -1123,7 +1123,7 @@
                     await SalesDeliveryDetailService.DeleteAsync(detailId);
 
                     // 修正 Bug-60：刪除出貨明細後必須立即回寫銷貨訂單明細的已出貨數量。
-                    // DeleteAsync 為軟刪除，不觸發 PermanentDeleteAsync 內的重算邏輯；
+                    // DeleteAsync 呼叫 PermanentDeleteAsync（庫存回滾），但不觸發 DeliveredQuantity 重算；
                     // 而 SaveSalesDeliveryDetailsAsync 只對「剩餘」明細的 SalesOrderDetailId 進行重算，
                     // 若被刪除明細的 SalesOrderDetailId 沒有其他剩餘明細，則永遠不會被重算，
                     // 導致 SalesOrderDetail.DeliveredQuantity 殘留過高的舊值。

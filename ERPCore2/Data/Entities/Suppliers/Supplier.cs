@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ERPCore2.Data.Entities.Suppliers;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
 
@@ -94,17 +95,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "帳單地址")]
         public string? BillingAddress { get; set; }
 
-        [MaxLength(50, ErrorMessage = "銀行帳號不可超過50個字元")]
-        [Display(Name = "銀行帳號")]
-        public string? BankAccount { get; set; }
-
-        [MaxLength(100, ErrorMessage = "銀行名稱不可超過100個字元")]
-        [Display(Name = "銀行名稱")]
-        public string? BankName { get; set; }
-
         // 聯絡資訊請使用 IContactService 取得 (OwnerType = "Supplier", OwnerId = this.Id)
         // 地址資訊請使用 IAddressService 取得
-        
+        // 銀行帳號請使用 ISupplierBankAccountService 取得
+
         // Navigation Properties
         /// <summary>
         /// 供應品項列表（品項-供應商綁定）
@@ -120,5 +114,10 @@ namespace ERPCore2.Data.Entities
         /// 拜訪紀錄列表
         /// </summary>
         public ICollection<SupplierVisit> SupplierVisits { get; set; } = new List<SupplierVisit>();
+
+        /// <summary>
+        /// 銀行帳號列表
+        /// </summary>
+        public ICollection<SupplierBankAccount> SupplierBankAccounts { get; set; } = new List<SupplierBankAccount>();
     }
 }

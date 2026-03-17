@@ -1357,6 +1357,7 @@ namespace ERPCore2.Services
             using var context = await _contextFactory.CreateDbContextAsync();
             var entity = await context.PurchaseReturns.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return ServiceResult.Failure("找不到採購退回單");
+            if (!string.IsNullOrEmpty(entity.RejectReason)) return ServiceResult.Failure("採購退回單已經駁回，無需重複駁回");
 
             entity.IsApproved = false;
             entity.ApprovedBy = rejectedBy;

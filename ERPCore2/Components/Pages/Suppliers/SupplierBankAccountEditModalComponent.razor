@@ -1,0 +1,158 @@
+@* 廠商銀行帳號編輯組件 *@
+@inject ISupplierBankAccountService BankAccountService
+@inject IBankService BankService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="SupplierBankAccount"
+                          TService="ISupplierBankAccountService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@BankAccountId"
+                          Service="@BankAccountService"
+                          EntityName="@L["Entity.SupplierBankAccount"]"
+                          EntityNamePlural="@L["Entity.SupplierBankAccount"]"
+                          ModalTitle="@(BankAccountId.HasValue ? L["Message.EditTitle", L["Entity.SupplierBankAccount"]].ToString() : L["Message.CreateTitle", L["Entity.SupplierBankAccount"]].ToString())"
+                          Size="GenericEditModalComponent<SupplierBankAccount, ISupplierBankAccountService>.ModalSize.Default"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(BankAccountId.HasValue ? L["Message.UpdateSuccess", L["Entity.SupplierBankAccount"]].ToString() : L["Message.CreateSuccess", L["Entity.SupplierBankAccount"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.SupplierBankAccount"]]"
+                          RequiredPermission="@PermissionRegistry.Supplier.Read"
+                          OnEntitySaved="@OnSaved"
+                          OnCancel="@OnCancel"
+                          ComponentName="SupplierBankAccountEditModalComponent" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? BankAccountId { get; set; }
+    [Parameter] public EventCallback<SupplierBankAccount> OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public int? PrefilledSupplierId { get; set; }
+
+    private GenericEditModalComponent<SupplierBankAccount, ISupplierBankAccountService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    private List<Bank> availableBanks = new();
+
+    private Task<SupplierBankAccount?> LoadData()
+    {
+        var prefilled = new Dictionary<string, object?>();
+        if (PrefilledSupplierId.HasValue)
+            prefilled[nameof(SupplierBankAccount.SupplierId)] = PrefilledSupplierId.Value;
+
+        return EditDataLoaderHelper.LoadOrCreateAsync<SupplierBankAccount, ISupplierBankAccountService>(
+            BankAccountId, BankAccountService, NotificationService, L["Entity.SupplierBankAccount"].ToString(), string.Empty,
+            prefilled.Count > 0 ? prefilled : null,
+            b => b.IsPrimary = true);
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            availableBanks = await BankService.GetAllAsync();
+            InitializeFormFields();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType());
+            await NotificationService.ShowErrorAsync(L["Message.LoadFailed", L["Field.Bank"]].ToString());
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+            InitializeFormFields();
+    }
+
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(SupplierBankAccount.BankId),
+                    Label = L["Field.Bank"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = availableBanks.Select(b => new SelectOption
+                    {
+                        Value = b.Id.ToString(),
+                        Text = b.BankName
+                    }).Prepend(new SelectOption { Value = "", Text = $"-- {L["Label.NotSet"]} --" }).ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(SupplierBankAccount.BranchCode),
+                    Label = L["Field.BranchCode"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BranchCode"]],
+                    MaxLength = 10
+                },
+                new()
+                {
+                    PropertyName = nameof(SupplierBankAccount.BranchName),
+                    Label = L["Field.BranchName"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BranchName"]],
+                    MaxLength = 50
+                },
+                new()
+                {
+                    PropertyName = nameof(SupplierBankAccount.AccountNumber),
+                    Label = L["Field.AccountNumber"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.AccountNumber"]],
+                    IsRequired = true,
+                    MaxLength = 30,
+                    AutoCompleteAttribute = "off"
+                },
+                new()
+                {
+                    PropertyName = nameof(SupplierBankAccount.AccountName),
+                    Label = L["Field.BankAccountHolder"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.BankAccountHolder"]],
+                    IsRequired = true,
+                    MaxLength = 50
+                },
+                new()
+                {
+                    PropertyName = nameof(SupplierBankAccount.IsPrimary),
+                    Label = L["Field.IsPrimary"],
+                    FieldType = FormFieldType.Checkbox,
+                    HelpText = L["Hint.OnePrimaryPerSupplier"].ToString()
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<SupplierBankAccount>()
+            };
+
+            formSections = FormSectionHelper<SupplierBankAccount>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    b => b.BankId,
+                    b => b.BranchCode,
+                    b => b.BranchName,
+                    b => b.AccountNumber,
+                    b => b.AccountName,
+                    b => b.IsPrimary)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    b => b.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化銀行帳號表單欄位時發生錯誤");
+        }
+    }
+}

@@ -464,7 +464,10 @@ namespace ERPCore2.Services
                     
                     if (order == null)
                         return ServiceResult.Failure("找不到採購訂單");
-                    
+
+                    if (!string.IsNullOrEmpty(order.RejectReason))
+                        return ServiceResult.Failure("採購訂單已經駁回，無需重複駁回");
+
                     // 注釋：已移除 ReceivedAmount 欄位，如需檢查進貨狀況，請透過 GetStatisticsAsync 方法
 
                     // 重置審核狀態
@@ -892,7 +895,7 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _purchaseOrderDetailService.PermanentDeleteAsync(detailId);
+                return await _purchaseOrderDetailService.DeleteAsync(detailId);
             }
             catch (Exception ex)
             {

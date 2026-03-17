@@ -12,6 +12,8 @@
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
+@inject ISerialPortService SerialPortService
+@implements IDisposable
 
 <GenericEditModalComponent TEntity="ScaleRecord"
                           TService="IScaleRecordService"
@@ -49,7 +51,28 @@
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           OnFieldChanged="@HandleFieldChangedAsync"
-                          ComponentName="ScaleRecordEditModalComponent" />
+                          ComponentName="ScaleRecordEditModalComponent">
+    <CustomActionButtons>
+        <GenericButtonComponent Text="參數設定"
+                              Variant="ButtonVariant.Purple"
+                              IconClass="bi-gear"
+                              OnClick="@(() => _showSerialPortSettings = true)"
+                              Title="RS-232C 串列埠參數設定" />
+        <GenericButtonComponent Text="@(_isReading ? "停止讀取" : "讀取")"
+                              Variant="@(_isReading ? ButtonVariant.Red : ButtonVariant.Green)"
+                              IconClass="@(_isReading ? "bi-stop-circle" : "bi-broadcast")"
+                              OnClick="HandleToggleReading"
+                              IsDisabled="@(!SerialPortService.IsOpen && !_isReading)"
+                              Title="@(!SerialPortService.IsOpen ? "請先在參數設定中連線串列埠" : (_isReading ? "停止讀取磅秤數據" : "開始讀取磅秤數據"))" />
+        @if (_isReading)
+        {
+            <span class="badge bg-warning text-dark ms-1 d-flex align-items-center">
+                <span class="spinner-grow spinner-grow-sm me-1"></span>
+                讀取中... @(_lastStableWeight.HasValue ? $"穩定值: {_lastStableWeight.Value} kg" : "等待穩定...")
+            </span>
+        }
+    </CustomActionButtons>
+</GenericEditModalComponent>
 
 @* 磅秤類型編輯 Modal *@
 <ScaleTypeEditModalComponent @ref="scaleTypeEditModal"
@@ -58,6 +81,10 @@
                              ScaleTypeId="@scaleTypeModalManager.SelectedEntityId"
                              OnScaleTypeSaved="@scaleTypeModalManager.OnSavedAsync"
                              OnCancel="@scaleTypeModalManager.HandleModalCancelAsync" />
+
+@* 串列埠參數設定 Modal *@
+<ScaleSerialPortSettingsModalComponent IsVisible="@_showSerialPortSettings"
+                                       IsVisibleChanged="@(v => _showSerialPortSettings = v)" />
 
 @* 客戶編輯 Modal *@
 <CustomerEditModalComponent @ref="customerEditModal"
@@ -108,6 +135,11 @@
 
     // 追蹤是否為新增（儲存後判斷要呼叫 Confirm 還是 UpdateByDifference）
     private bool _isNewRecord = false;
+
+    // ===== 串列埠讀取狀態 =====
+    private bool _showSerialPortSettings = false;
+    private bool _isReading = false;
+    private decimal? _lastStableWeight = null;
 
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
@@ -481,5 +513,85 @@
             customerModalManager,
             nameof(ScaleRecord.CustomerId)
         );
+    }
+
+    // ===== 串列埠讀取磅秤數據 =====
+
+    /// <summary>
+    /// 切換讀取狀態：開始/停止監聽串列埠數據
+    /// 當收到穩定狀態 (ST) 的重量資料時，自動帶入「總重量」欄位
+    /// </summary>
+    private async Task HandleToggleReading()
+    {
+        if (_isReading)
+        {
+            // 停止讀取
+            SerialPortService.DataReceived -= OnScaleDataReceived;
+            _isReading = false;
+            await NotificationService.ShowInfoAsync("已停止讀取磅秤數據");
+        }
+        else
+        {
+            if (!SerialPortService.IsOpen)
+            {
+                await NotificationService.ShowWarningAsync("請先在『參數設定』中連線串列埠");
+                return;
+            }
+
+            // 開始讀取
+            _lastStableWeight = null;
+            SerialPortService.DataReceived += OnScaleDataReceived;
+            _isReading = true;
+            await NotificationService.ShowInfoAsync("開始讀取磅秤數據，等待穩定重量...");
+        }
+    }
+
+    /// <summary>
+    /// 串列埠數據接收事件處理
+    /// 當磅秤回傳穩定狀態 (ST) 時，自動將重量帶入 TotalWeight 欄位
+    /// </summary>
+    private async void OnScaleDataReceived(object? sender, ScaleDataReceivedEventArgs e)
+    {
+        if (!e.IsValid) return;
+
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                if (e.IsStable && editModalComponent?.Entity != null)
+                {
+                    // 穩定狀態：自動帶入重量並停止讀取
+                    _lastStableWeight = e.WeightValue;
+                    editModalComponent.Entity.TotalWeight = e.WeightValue;
+
+                    // 停止讀取
+                    SerialPortService.DataReceived -= OnScaleDataReceived;
+                    _isReading = false;
+
+                    await NotificationService.ShowSuccessAsync($"已讀取穩定重量：{e.WeightValue} {e.Unit}");
+                    StateHasChanged();
+                }
+                else if (!e.IsStable)
+                {
+                    // 不穩定狀態：更新顯示但不帶入
+                    _lastStableWeight = null;
+                    StateHasChanged();
+                }
+                else if (e.IsOverload)
+                {
+                    await NotificationService.ShowWarningAsync("磅秤過載 (OL)，請檢查秤台");
+                }
+            });
+        }
+        catch (Exception)
+        {
+            // 組件可能已被釋放，忽略錯誤
+        }
+    }
+
+    public void Dispose()
+    {
+        // 確保組件釋放時取消事件訂閱（不關閉串列埠，因為其他組件可能還在使用）
+        SerialPortService.DataReceived -= OnScaleDataReceived;
     }
 }

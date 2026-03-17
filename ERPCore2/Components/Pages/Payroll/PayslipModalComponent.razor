@@ -3,157 +3,150 @@
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
-@if (IsVisible)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <!-- 標題列 -->
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-file-earmark-person me-2"></i>@L["Payroll.PayslipTitle"]
-                    </h5>
-                    <button type="button" class="btn-close" @onclick="Close"></button>
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="@L["Payroll.PayslipTitle"]"
+                    Icon="bi bi-file-earmark-person"
+                    Size="BaseModalComponent.ModalSize.Large"
+                    ShowCloseButton="true"
+                    CloseOnBackdropClick="true"
+                    CloseOnEscape="true"
+                    ShowFooter="true"
+                    OnClose="@ResetState"
+                    DebugComponentName="PayslipModalComponent">
+
+    <BodyContent>
+        @if (isLoading)
+        {
+            <div class="text-center py-4">
+                <span class="spinner-border me-2"></span>@L["Label.Loading"]
+            </div>
+        }
+        else if (record == null)
+        {
+            <div class="alert alert-warning">@L["Message.NoData"]</div>
+        }
+        else
+        {
+            <!-- 員工基本資訊 -->
+            <div class="row mb-3 pb-3 border-bottom">
+                <div class="col-6">
+                    <div class="mb-1"><span class="text-muted me-2">@L["Field.Employee"]：</span><strong>@record.Employee?.Name</strong></div>
+                    <div class="mb-1"><span class="text-muted me-2">@L["Field.EmployeeCode"]：</span>@record.Employee?.Code</div>
+                    <div class="mb-1"><span class="text-muted me-2">@L["Field.Department"]：</span>@(record.Employee?.Department?.Name ?? "—")</div>
                 </div>
-
-                <div class="modal-body">
-                    @if (isLoading)
-                    {
-                        <div class="text-center py-4">
-                            <span class="spinner-border me-2"></span>@L["Label.Loading"]
-                        </div>
-                    }
-                    else if (record == null)
-                    {
-                        <div class="alert alert-warning">@L["Message.NoData"]</div>
-                    }
-                    else
-                    {
-                        <!-- 員工基本資訊 -->
-                        <div class="row mb-3 pb-3 border-bottom">
-                            <div class="col-6">
-                                <div class="mb-1"><span class="text-muted me-2">@L["Field.Employee"]：</span><strong>@record.Employee?.Name</strong></div>
-                                <div class="mb-1"><span class="text-muted me-2">@L["Field.EmployeeCode"]：</span>@record.Employee?.Code</div>
-                                <div class="mb-1"><span class="text-muted me-2">@L["Field.Department"]：</span>@(record.Employee?.Department?.Name ?? "—")</div>
-                            </div>
-                            <div class="col-6 text-end">
-                                <div class="mb-1">@L["Payroll.PayslipPeriod"]：<strong>@record.Period?.Year 年 @record.Period?.Month 月</strong></div>
-                                <div class="mb-1">@L["Payroll.AttendanceDays"]：@record.ActualWorkDays / @record.ScheduledWorkDays 天</div>
-                                <div>
-                                    <span class="badge @(record.RecordStatus == PayrollRecordStatus.Confirmed ? "bg-success" : "bg-warning text-dark")">
-                                        @(record.RecordStatus == PayrollRecordStatus.Confirmed ? L["Payroll.RecordConfirmed"].ToString() : L["Payroll.RecordDraft"].ToString())
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 收入與扣除 -->
-                        <div class="row">
-                            <!-- 收入 -->
-                            <div class="col-md-6">
-                                <h6 class="fw-bold text-success mb-2">
-                                    <i class="bi bi-plus-circle me-1"></i>@L["Payroll.IncomeItems"]
-                                </h6>
-                                <table class="table table-sm mb-3">
-                                    <tbody>
-                                        @foreach (var d in record.Details.Where(d => d.Amount > 0).OrderBy(d => d.Item?.SortOrder))
-                                        {
-                                            <tr>
-                                                <td>
-                                                    @(d.Item?.Name ?? "—")
-                                                    @if (!string.IsNullOrEmpty(d.Remark))
-                                                    {
-                                                        <br/><small class="text-muted">@d.Remark</small>
-                                                    }
-                                                </td>
-                                                <td class="text-end fw-semibold">@d.Amount.ToString("N0")</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                    <tfoot class="table-light">
-                                        <tr class="fw-bold">
-                                            <td>@L["Payroll.GrossIncome"]</td>
-                                            <td class="text-end text-success">@record.GrossIncome.ToString("N0")</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            <!-- 扣除 -->
-                            <div class="col-md-6">
-                                <h6 class="fw-bold text-danger mb-2">
-                                    <i class="bi bi-dash-circle me-1"></i>@L["Payroll.DeductionItems"]
-                                </h6>
-                                <table class="table table-sm mb-3">
-                                    <tbody>
-                                        @foreach (var d in record.Details.Where(d => d.Amount < 0).OrderBy(d => d.Item?.SortOrder))
-                                        {
-                                            <tr>
-                                                <td>
-                                                    @(d.Item?.Name ?? "—")
-                                                    @if (!string.IsNullOrEmpty(d.Remark))
-                                                    {
-                                                        <br/><small class="text-muted">@d.Remark</small>
-                                                    }
-                                                </td>
-                                                <td class="text-end fw-semibold text-danger">@Math.Abs(d.Amount).ToString("N0")</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                    <tfoot class="table-light">
-                                        <tr class="fw-bold">
-                                            <td>@L["Payroll.TotalDeduction"]</td>
-                                            <td class="text-end text-danger">@record.TotalDeduction.ToString("N0")</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- 實發薪資 -->
-                        <div class="alert alert-success d-flex justify-content-between align-items-center mb-3">
-                            <span class="fs-5 fw-bold">@L["Payroll.NetPay"]</span>
-                            <span class="fs-4 fw-bold">@record.NetPay.ToString("N0")</span>
-                        </div>
-
-                        <!-- 投保快照（可展開） -->
-                        <details class="mb-2">
-                            <summary class="text-muted small" style="cursor:pointer">@L["Payroll.InsuranceSnapshot"]</summary>
-                            <div class="row mt-2 small border rounded p-2">
-                                <div class="col-6">
-                                    <div>@L["Field.LaborInsuredSalary"]：@record.LaborInsuranceSalary.ToString("N0")</div>
-                                    <div>@L["Payroll.EmployerLaborInsurance"]：@record.EmployerLaborInsurance.ToString("N0")</div>
-                                    <div>@L["Payroll.TaxableIncome"]：@record.TaxableIncome.ToString("N0")</div>
-                                </div>
-                                <div class="col-6">
-                                    <div>@L["Field.HealthInsuredAmount"]：@record.HealthInsuranceAmount.ToString("N0")</div>
-                                    <div>@L["Payroll.EmployerHealthInsurance"]：@record.EmployerHealthInsurance.ToString("N0")</div>
-                                    <div>@L["Payroll.EmployerRetirement"]：@record.EmployerRetirement.ToString("N0")</div>
-                                </div>
-                            </div>
-                        </details>
-
-                        <!-- 計算資訊 -->
-                        @if (record.CalculatedAt.HasValue)
-                        {
-                            <div class="text-muted small mt-2">
-                                @L["Payroll.CalculatedAt"]：@record.CalculatedAt.Value.ToString("yyyy/MM/dd HH:mm")
-                                @if (!string.IsNullOrEmpty(record.CalculatedBy))
-                                {
-                                    <span class="ms-3">@L["Payroll.CalculatedBy"]：@record.CalculatedBy</span>
-                                }
-                            </div>
-                        }
-                    }
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="Close">@L["Button.Close"]</button>
+                <div class="col-6 text-end">
+                    <div class="mb-1">@L["Payroll.PayslipPeriod"]：<strong>@record.Period?.Year 年 @record.Period?.Month 月</strong></div>
+                    <div class="mb-1">@L["Payroll.AttendanceDays"]：@record.ActualWorkDays / @record.ScheduledWorkDays 天</div>
+                    <div>
+                        <span class="badge @(record.RecordStatus == PayrollRecordStatus.Confirmed ? "bg-success" : "bg-warning text-dark")">
+                            @(record.RecordStatus == PayrollRecordStatus.Confirmed ? L["Payroll.RecordConfirmed"].ToString() : L["Payroll.RecordDraft"].ToString())
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-}
+
+            <!-- 收入與扣除 -->
+            <div class="row">
+                <!-- 收入 -->
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-success mb-2">
+                        <i class="bi bi-plus-circle me-1"></i>@L["Payroll.IncomeItems"]
+                    </h6>
+                    <table class="table table-sm mb-3">
+                        <tbody>
+                            @foreach (var d in record.Details.Where(d => d.Amount > 0).OrderBy(d => d.Item?.SortOrder))
+                            {
+                                <tr>
+                                    <td>
+                                        @(d.Item?.Name ?? "—")
+                                        @if (!string.IsNullOrEmpty(d.Remark))
+                                        {
+                                            <br/><small class="text-muted">@d.Remark</small>
+                                        }
+                                    </td>
+                                    <td class="text-end fw-semibold">@d.Amount.ToString("N0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td>@L["Payroll.GrossIncome"]</td>
+                                <td class="text-end text-success">@record.GrossIncome.ToString("N0")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- 扣除 -->
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-danger mb-2">
+                        <i class="bi bi-dash-circle me-1"></i>@L["Payroll.DeductionItems"]
+                    </h6>
+                    <table class="table table-sm mb-3">
+                        <tbody>
+                            @foreach (var d in record.Details.Where(d => d.Amount < 0).OrderBy(d => d.Item?.SortOrder))
+                            {
+                                <tr>
+                                    <td>
+                                        @(d.Item?.Name ?? "—")
+                                        @if (!string.IsNullOrEmpty(d.Remark))
+                                        {
+                                            <br/><small class="text-muted">@d.Remark</small>
+                                        }
+                                    </td>
+                                    <td class="text-end fw-semibold text-danger">@Math.Abs(d.Amount).ToString("N0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td>@L["Payroll.TotalDeduction"]</td>
+                                <td class="text-end text-danger">@record.TotalDeduction.ToString("N0")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 實發薪資 -->
+            <div class="alert alert-success d-flex justify-content-between align-items-center mb-3">
+                <span class="fs-5 fw-bold">@L["Payroll.NetPay"]</span>
+                <span class="fs-4 fw-bold">@record.NetPay.ToString("N0")</span>
+            </div>
+
+            <!-- 投保快照（可展開） -->
+            <details class="mb-2">
+                <summary class="text-muted small" style="cursor:pointer">@L["Payroll.InsuranceSnapshot"]</summary>
+                <div class="row mt-2 small border rounded p-2">
+                    <div class="col-6">
+                        <div>@L["Field.LaborInsuredSalary"]：@record.LaborInsuranceSalary.ToString("N0")</div>
+                        <div>@L["Payroll.EmployerLaborInsurance"]：@record.EmployerLaborInsurance.ToString("N0")</div>
+                        <div>@L["Payroll.TaxableIncome"]：@record.TaxableIncome.ToString("N0")</div>
+                    </div>
+                    <div class="col-6">
+                        <div>@L["Field.HealthInsuredAmount"]：@record.HealthInsuranceAmount.ToString("N0")</div>
+                        <div>@L["Payroll.EmployerHealthInsurance"]：@record.EmployerHealthInsurance.ToString("N0")</div>
+                        <div>@L["Payroll.EmployerRetirement"]：@record.EmployerRetirement.ToString("N0")</div>
+                    </div>
+                </div>
+            </details>
+
+            <!-- 計算資訊 -->
+            @if (record.CalculatedAt.HasValue)
+            {
+                <div class="text-muted small mt-2">
+                    @L["Payroll.CalculatedAt"]：@record.CalculatedAt.Value.ToString("yyyy/MM/dd HH:mm")
+                    @if (!string.IsNullOrEmpty(record.CalculatedBy))
+                    {
+                        <span class="ms-3">@L["Payroll.CalculatedBy"]：@record.CalculatedBy</span>
+                    }
+                </div>
+            }
+        }
+    </BodyContent>
+
+</BaseModalComponent>
 
 @code {
     [Parameter] public int RecordId { get; set; }
@@ -185,10 +178,15 @@
         }
     }
 
-    private async Task Close()
+    private async Task CloseAsync()
+    {
+        ResetState();
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private void ResetState()
     {
         record = null;
         loadedRecordId = 0;
-        await IsVisibleChanged.InvokeAsync(false);
     }
 }

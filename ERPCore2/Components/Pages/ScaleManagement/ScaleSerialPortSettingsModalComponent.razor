@@ -1,0 +1,227 @@
+@* 磅秤 RS-232C 串列埠參數設定 Modal *@
+@inject ISerialPortService SerialPortService
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@HandleVisibilityChanged"
+                   Title="RS-232C 串列埠參數設定"
+                   Icon="bi-usb-plug"
+                   Size="BaseModalComponent.ModalSize.Default"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="true"
+                   ShowCloseButton="true"
+                   ShowFooter="false">
+    <HeaderButtons>
+        <GenericButtonComponent Text="@(SerialPortService.IsOpen ? "中斷連線" : "連線")"
+                              Variant="@(SerialPortService.IsOpen ? ButtonVariant.Red : ButtonVariant.Green)"
+                              IconClass="@(SerialPortService.IsOpen ? "bi-plug" : "bi-plug-fill")"
+                              OnClick="HandleToggleConnection" />
+    </HeaderButtons>
+    <BodyContent>
+        <div class="p-3">
+            @* 連線狀態提示 *@
+            @if (SerialPortService.IsOpen)
+            {
+                <div class="alert alert-success py-2 mb-3">
+                    <i class="bi-check-circle-fill me-2"></i>
+                    已連線至 <strong>@SerialPortService.CurrentSettings.PortName</strong>
+                    （@SerialPortService.CurrentSettings.BaudRate, 
+                      @GetParityDisplay(SerialPortService.CurrentSettings.Parity), 
+                      @SerialPortService.CurrentSettings.DataBits, 
+                      @SerialPortService.CurrentSettings.StopBits）
+                </div>
+            }
+
+            @* 串列埠選擇 *@
+            <div class="mb-3">
+                <label class="form-label fw-semibold">串列埠 (COM Port)</label>
+                <div class="d-flex gap-2">
+                    <select class="form-select" @bind="_selectedPortName" disabled="@SerialPortService.IsOpen">
+                        @if (_availablePorts.Length == 0)
+                        {
+                            <option value="">-- 未偵測到可用串列埠 --</option>
+                        }
+                        @foreach (var port in _availablePorts)
+                        {
+                            <option value="@port">@port</option>
+                        }
+                    </select>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="RefreshPorts" title="重新偵測串列埠"
+                            disabled="@SerialPortService.IsOpen">
+                        <i class="bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+
+            @* 鮑率 *@
+            <div class="mb-3">
+                <label class="form-label fw-semibold">速率 (Baudrate)</label>
+                <select class="form-select" @bind="_baudRate" disabled="@SerialPortService.IsOpen">
+                    <option value="1200">1200</option>
+                    <option value="2400">2400</option>
+                    <option value="4800">4800</option>
+                    <option value="9600">9600</option>
+                    <option value="19200">19200</option>
+                    <option value="38400">38400</option>
+                    <option value="57600">57600</option>
+                </select>
+                <div class="form-text">LT-100 預設值為 2400</div>
+            </div>
+
+            @* 同位檢查 *@
+            <div class="mb-3">
+                <label class="form-label fw-semibold">同位檢查 (Parity)</label>
+                <select class="form-select" @bind="_parity" disabled="@SerialPortService.IsOpen">
+                    <option value="Even">Even (偶同位)</option>
+                    <option value="Odd">Odd (奇同位)</option>
+                    <option value="None">None (無)</option>
+                </select>
+                <div class="form-text">LT-100 預設值為 Even (E.7.1 中的 E)</div>
+            </div>
+
+            @* 資料位元 *@
+            <div class="mb-3">
+                <label class="form-label fw-semibold">資料位元 (Data Bits)</label>
+                <select class="form-select" @bind="_dataBits" disabled="@SerialPortService.IsOpen">
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                </select>
+                <div class="form-text">LT-100 預設值為 7 (E.7.1 中的 7)</div>
+            </div>
+
+            @* 停止位元 *@
+            <div class="mb-3">
+                <label class="form-label fw-semibold">停止位元 (Stop Bits)</label>
+                <select class="form-select" @bind="_stopBits" disabled="@SerialPortService.IsOpen">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+                <div class="form-text">LT-100 預設值為 1 (E.7.1 中的 1)</div>
+            </div>
+
+            @* 常用預設組合快捷 *@
+            <div class="mb-2">
+                <label class="form-label fw-semibold">常用預設組合</label>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-outline-primary btn-sm" @onclick="@(() => ApplyPreset(2400, "Even", 7, 1))"
+                            disabled="@SerialPortService.IsOpen">
+                        E.7.1 / 2400 (LT-100 預設)
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => ApplyPreset(9600, "None", 8, 1))"
+                            disabled="@SerialPortService.IsOpen">
+                        N.8.1 / 9600
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => ApplyPreset(2400, "Odd", 7, 1))"
+                            disabled="@SerialPortService.IsOpen">
+                        O.7.1 / 2400
+                    </button>
+                </div>
+            </div>
+        </div>
+    </BodyContent>
+</BaseModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // 參數欄位
+    private string _selectedPortName = "COM1";
+    private int _baudRate = 2400;
+    private string _parity = "Even";
+    private int _dataBits = 7;
+    private int _stopBits = 1;
+    private string[] _availablePorts = [];
+
+    protected override void OnInitialized()
+    {
+        RefreshPorts();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            RefreshPorts();
+
+            // 若已連線，將目前設定值載入
+            if (SerialPortService.IsOpen)
+            {
+                var s = SerialPortService.CurrentSettings;
+                _selectedPortName = s.PortName;
+                _baudRate = s.BaudRate;
+                _parity = s.Parity;
+                _dataBits = s.DataBits;
+                _stopBits = s.StopBits;
+            }
+        }
+    }
+
+    private void RefreshPorts()
+    {
+        _availablePorts = SerialPortService.GetAvailablePortNames();
+        if (_availablePorts.Length > 0 && !_availablePorts.Contains(_selectedPortName))
+        {
+            _selectedPortName = _availablePorts[0];
+        }
+    }
+
+    private async Task HandleToggleConnection()
+    {
+        try
+        {
+            if (SerialPortService.IsOpen)
+            {
+                SerialPortService.Close();
+                await NotificationService.ShowSuccessAsync("串列埠已中斷連線");
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(_selectedPortName))
+                {
+                    await NotificationService.ShowWarningAsync("請選擇串列埠");
+                    return;
+                }
+
+                var settings = new SerialPortSettings
+                {
+                    PortName = _selectedPortName,
+                    BaudRate = _baudRate,
+                    Parity = _parity,
+                    DataBits = _dataBits,
+                    StopBits = _stopBits
+                };
+
+                SerialPortService.Open(settings);
+                await NotificationService.ShowSuccessAsync($"已連線至 {_selectedPortName}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"連線操作失敗：{ex.Message}");
+        }
+    }
+
+    private void ApplyPreset(int baudRate, string parity, int dataBits, int stopBits)
+    {
+        _baudRate = baudRate;
+        _parity = parity;
+        _dataBits = dataBits;
+        _stopBits = stopBits;
+    }
+
+    private static string GetParityDisplay(string parity) => parity switch
+    {
+        "Even" => "E",
+        "Odd" => "O",
+        "None" => "N",
+        _ => parity
+    };
+
+    private async Task HandleVisibilityChanged(bool visible)
+    {
+        IsVisible = visible;
+        await IsVisibleChanged.InvokeAsync(visible);
+    }
+}

@@ -62,7 +62,9 @@ namespace ERPCore2.Services.Payroll
         {
             try
             {
-                await _periodService.EnsurePeriodExistsAsync(model.Year, model.Month, createdBy);
+                var periodResult = await _periodService.EnsurePeriodExistsAsync(model.Year, model.Month, createdBy);
+                if (!periodResult.IsSuccess)
+                    return ServiceResult<MonthlyAttendanceSummary>.Failure(periodResult.ErrorMessage ?? "無法建立薪資週期");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
 
@@ -145,7 +147,9 @@ namespace ERPCore2.Services.Payroll
         {
             try
             {
-                await _periodService.EnsurePeriodExistsAsync(year, month, createdBy);
+                var periodResult = await _periodService.EnsurePeriodExistsAsync(year, month, createdBy);
+                if (!periodResult.IsSuccess)
+                    return ServiceResult.Failure(periodResult.ErrorMessage ?? "無法建立薪資週期");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
 

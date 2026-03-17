@@ -67,19 +67,18 @@
         @* ===== 薪資單表格 ===== *@
         @if (selectedPeriod != null)
         {
-            <PayrollEmployeeTableComponent RowViewModels="@rowViewModels"
-                                          ColumnDefinitions="@columnDefinitions"
-                                          IsLoading="@isLoading"
-                                          CanCalculate="@canCalculate"
-                                          CanConfirm="@canConfirm"
-                                          CanReadAmount="@canReadAmount"
-                                          CanViewPayslip="@canViewPayslip"
-                                          SelectedPeriod="@selectedPeriod"
-                                          CalculatingEmployeeId="@calculatingEmployeeId"
-                                          OnCalculateOne="@CalculateOneAsync"
-                                          OnConfirmRecord="@ConfirmRecordAsync"
-                                          OnUnconfirmRecord="@UnconfirmRecordAsync"
-                                          OnShowPayslip="@ShowPayslip" />
+            <PayrollEmployeeTable RowViewModels="@rowViewModels"
+                                  IsLoading="@isLoading"
+                                  CanCalculate="@canCalculate"
+                                  CanConfirm="@canConfirm"
+                                  CanReadAmount="@canReadAmount"
+                                  CanViewPayslip="@canViewPayslip"
+                                  SelectedPeriod="@selectedPeriod"
+                                  CalculatingEmployeeId="@calculatingEmployeeId"
+                                  OnCalculateOne="@CalculateOneAsync"
+                                  OnConfirmRecord="@ConfirmRecordAsync"
+                                  OnUnconfirmRecord="@UnconfirmRecordAsync"
+                                  OnShowPayslip="@ShowPayslip" />
         }
     </BodyContent>
 
@@ -104,8 +103,7 @@
     private List<PayrollPeriod> periods = new();
     private PayrollPeriod? selectedPeriod;
     private int? selectedPeriodId;
-    private List<PayrollRowViewModel> rowViewModels = new();
-    private List<InteractiveColumnDefinition> columnDefinitions = new();
+    private List<PayrollEmployeeTable.RowViewModel> rowViewModels = new();
 
     // ── 狀態 ──────────────────────────────────────────────────────
     private bool _lastVisible = false;
@@ -134,7 +132,6 @@
             canConfirm    = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Confirm);
             canReadAmount = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.ReadAmount);
             canViewPayslip = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Payslip);
-            columnDefinitions = BuildColumns();
         }
         catch (Exception ex)
         {
@@ -199,7 +196,7 @@
             var employees = empResult.IsSuccess ? (empResult.Data ?? new()) : new();
             var records = await CalculationService.GetByPeriodAsync(selectedPeriod.Id);
 
-            rowViewModels = employees.Select(emp => new PayrollRowViewModel
+            rowViewModels = employees.Select(emp => new PayrollEmployeeTable.RowViewModel
             {
                 Employee = emp,
                 Record = records.FirstOrDefault(r => r.EmployeeId == emp.Id)
@@ -266,7 +263,7 @@
             {
                 var idx = rowViewModels.FindIndex(r => r.Employee.Id == employeeId);
                 if (idx >= 0)
-                    rowViewModels[idx] = new PayrollRowViewModel { Employee = rowViewModels[idx].Employee, Record = result.Data };
+                    rowViewModels[idx] = new PayrollEmployeeTable.RowViewModel { Employee = rowViewModels[idx].Employee, Record = result.Data };
             }
             else
                 await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "試算失敗");
@@ -325,130 +322,6 @@
     {
         payslipRecordId = recordId;
         showPayslip = true;
-    }
-
-    // ── 欄位定義 ─────────────────────────────────────────────────
-
-    private List<InteractiveColumnDefinition> BuildColumns()
-    {
-        var cols = new List<InteractiveColumnDefinition>
-        {
-            new InteractiveColumnDefinition
-            {
-                Title = L["Field.Employee"].ToString(),
-                ColumnType = InteractiveColumnType.Display,
-                PropertyName = "Employee",
-                DisplayFormatter = obj =>
-                {
-                    var r = (PayrollRowViewModel)obj;
-                    var name = System.Web.HttpUtility.HtmlEncode(r.Employee.Name ?? "");
-                    var code = System.Web.HttpUtility.HtmlEncode(r.Employee.Code ?? "");
-                    return string.IsNullOrEmpty(code) ? name : $"{code} · {name}";
-                },
-                Width = "20%"
-            },
-            new InteractiveColumnDefinition
-            {
-                Title = L["Field.Department"].ToString(),
-                ColumnType = InteractiveColumnType.Display,
-                PropertyName = "Employee.Department",
-                DisplayFormatter = obj =>
-                {
-                    var r = (PayrollRowViewModel)obj;
-                    return System.Web.HttpUtility.HtmlEncode(r.Employee.Department?.Name ?? "—");
-                },
-                Width = "15%",
-                HideOnMobile = true
-            },
-            new InteractiveColumnDefinition
-            {
-                Title = L["Payroll.AttendanceDays"].ToString(),
-                ColumnType = InteractiveColumnType.Display,
-                PropertyName = "Record",
-                DisplayFormatter = obj =>
-                {
-                    var r = (PayrollRowViewModel)obj;
-                    return r.Record != null ? $"{r.Record.ActualWorkDays}/{r.Record.ScheduledWorkDays}" : "—";
-                },
-                Width = "10%",
-                HeaderCssClass = "text-center",
-                CellCssClass = "text-center",
-                HideOnMobile = true
-            }
-        };
-
-        if (canReadAmount)
-        {
-            cols.Add(new InteractiveColumnDefinition
-            {
-                Title = L["Payroll.GrossIncome"].ToString(),
-                ColumnType = InteractiveColumnType.Display,
-                PropertyName = "Record",
-                DisplayFormatter = obj => ((PayrollRowViewModel)obj).Record?.GrossIncome.ToString("N0") ?? "—",
-                Width = "12%",
-                HeaderCssClass = "text-end",
-                CellCssClass = "text-end",
-                HideOnMobile = true
-            });
-            cols.Add(new InteractiveColumnDefinition
-            {
-                Title = L["Payroll.TotalDeduction"].ToString(),
-                ColumnType = InteractiveColumnType.Display,
-                PropertyName = "Record",
-                DisplayFormatter = obj => ((PayrollRowViewModel)obj).Record?.TotalDeduction.ToString("N0") ?? "—",
-                Width = "12%",
-                HeaderCssClass = "text-end",
-                CellCssClass = "text-end",
-                HideOnMobile = true
-            });
-            cols.Add(new InteractiveColumnDefinition
-            {
-                Title = L["Payroll.NetPay"].ToString(),
-                ColumnType = InteractiveColumnType.Display,
-                PropertyName = "Record",
-                DisplayFormatter = obj => ((PayrollRowViewModel)obj).Record?.NetPay.ToString("N0") ?? "—",
-                Width = "12%",
-                HeaderCssClass = "text-end",
-                CellCssClass = "text-end"
-            });
-        }
-
-        // 狀態欄（Custom Builder）
-        cols.Add(new InteractiveColumnDefinition
-        {
-            Title = L["Field.PeriodStatus"].ToString(),
-            ColumnType = InteractiveColumnType.Custom,
-            PropertyName = "Record",
-            CustomTemplate = obj => builder =>
-            {
-                var r = (PayrollRowViewModel)obj;
-                string cssClass, text;
-                if (r.Record == null)
-                {
-                    cssClass = "badge bg-secondary";
-                    text = L["Payroll.NotCalculated"].ToString();
-                }
-                else if (r.Record.RecordStatus == PayrollRecordStatus.Draft)
-                {
-                    cssClass = "badge bg-warning text-dark";
-                    text = L["Payroll.RecordDraft"].ToString();
-                }
-                else
-                {
-                    cssClass = "badge bg-success";
-                    text = L["Payroll.RecordConfirmed"].ToString();
-                }
-                builder.OpenElement(0, "span");
-                builder.AddAttribute(1, "class", cssClass);
-                builder.AddContent(2, text);
-                builder.CloseElement();
-            },
-            Width = "10%",
-            HeaderCssClass = "text-center",
-            CellCssClass = "text-center"
-        });
-
-        return cols;
     }
 
     // ── 輔助方法 ─────────────────────────────────────────────────

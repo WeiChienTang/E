@@ -721,8 +721,11 @@
   <data name="Entity.Customer" xml:space="preserve"><value>得意先</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>訪問記録</value></data>
   <data name="Entity.CustomerComplaint" xml:space="preserve"><value>クレーム</value></data>
+  <data name="Entity.CustomerBankAccount" xml:space="preserve"><value>取引先銀行口座</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>仕入先訪問記録</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>仕入先</value></data>
+  <data name="Entity.SupplierBankAccount" xml:space="preserve"><value>仕入先銀行口座</value></data>
+  <data name="Entity.CompanyBankAccount" xml:space="preserve"><value>会社銀行口座</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>品目</value></data>
   <data name="Entity.ProductCategory" xml:space="preserve"><value>品目カテゴリ</value></data>
   <data name="Entity.ProductComposition" xml:space="preserve"><value>部品表</value></data>
@@ -964,6 +967,14 @@
   <data name="Message.NoRoleAssigned" xml:space="preserve"><value>この従業員に役割が割り当てられていません。権限を表示できません。</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>例：合格、優秀、不合格</value></data>
+  <!-- ===== Bank Account Button/Message/Label/Hint keys ===== -->
+  <data name="Button.AddBankAccount" xml:space="preserve"><value>銀行口座追加</value></data>
+  <data name="Button.SetPrimary" xml:space="preserve"><value>主要に設定</value></data>
+  <data name="Label.Primary" xml:space="preserve"><value>主要</value></data>
+  <data name="Message.NoBankAccounts" xml:space="preserve"><value>銀行口座データがありません</value></data>
+  <data name="Hint.OnePrimaryPerCustomer" xml:space="preserve"><value>取引先ごとに主要口座は1つのみ</value></data>
+  <data name="Hint.OnePrimaryPerSupplier" xml:space="preserve"><value>仕入先ごとに主要口座は1つのみ</value></data>
+  <data name="Hint.OnePrimaryPerCompany" xml:space="preserve"><value>会社ごとに主要口座は1つのみ</value></data>
   <!-- ===== Vehicle Button/Message keys ===== -->
   <data name="Button.AddVehicle" xml:space="preserve"><value>車両追加</value></data>
   <data name="Button.SelectVehicle" xml:space="preserve"><value>車両選択</value></data>
@@ -1517,6 +1528,7 @@
   <data name="Tab.VisitRecords" xml:space="preserve"><value>訪問記録</value></data>
   <data name="Tab.ComplaintRecords" xml:space="preserve"><value>クレーム記録</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>取引記録</value></data>
+  <data name="Tab.BankAccounts" xml:space="preserve"><value>銀行口座</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>名刺</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>会社情報</value></data>
   <data name="Tab.CompanyLogo" xml:space="preserve"><value>会社ロゴ</value></data>

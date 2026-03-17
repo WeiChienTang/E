@@ -1,10 +1,13 @@
 using System.ComponentModel.DataAnnotations;
+using ERPCore2.Data.Entities.Customers;
+using ERPCore2.Data.Entities.Suppliers;
+using ERPCore2.Data.Entities.Systems;
 using ERPCore2.Models.Enums;
 
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 銀行別 - 管理銀行基本資料
+    /// 銀行別 - 管理銀行基本資料（公司、客戶、廠商的往來銀行）
     /// </summary>
     public class Bank : BaseEntity
     {
@@ -32,5 +35,10 @@ namespace ERPCore2.Data.Entities
         [MaxLength(20, ErrorMessage = "SWIFT編號不可超過20個字元")]
         [Display(Name = "SWIFT編號")]
         public string? SwiftCode { get; set; }
+
+        // Navigation Properties
+        public ICollection<CustomerBankAccount> CustomerBankAccounts { get; set; } = new List<CustomerBankAccount>();
+        public ICollection<SupplierBankAccount> SupplierBankAccounts { get; set; } = new List<SupplierBankAccount>();
+        public ICollection<CompanyBankAccount> CompanyBankAccounts { get; set; } = new List<CompanyBankAccount>();
     }
 }

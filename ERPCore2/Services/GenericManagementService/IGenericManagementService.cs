@@ -42,14 +42,8 @@ namespace ERPCore2.Services
         
         /// <summary>
         /// 刪除資料（硬刪除）
-        /// 不要再調用此方法，已經不再使用軟除 2025/09/24
         /// </summary>
         Task<ServiceResult> DeleteAsync(int id);
-        
-        /// <summary>
-        /// 永久刪除資料（硬刪除）
-        /// </summary>
-        Task<ServiceResult> PermanentDeleteAsync(int id);
         
         #endregion
 

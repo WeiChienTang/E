@@ -721,8 +721,11 @@
   <data name="Entity.Customer" xml:space="preserve"><value>Customer</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>Customer Visit</value></data>
   <data name="Entity.CustomerComplaint" xml:space="preserve"><value>Complaint</value></data>
+  <data name="Entity.CustomerBankAccount" xml:space="preserve"><value>Customer Bank Account</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>Supplier Visit</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Entity.SupplierBankAccount" xml:space="preserve"><value>Supplier Bank Account</value></data>
+  <data name="Entity.CompanyBankAccount" xml:space="preserve"><value>Company Bank Account</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>Item</value></data>
   <data name="Entity.ProductCategory" xml:space="preserve"><value>Item Category</value></data>
   <data name="Entity.ProductComposition" xml:space="preserve"><value>Bill of Materials</value></data>
@@ -964,6 +967,14 @@
   <data name="Message.NoRoleAssigned" xml:space="preserve"><value>No role has been assigned to this employee. Permissions cannot be displayed.</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>e.g.: Pass, Excellent, Fail</value></data>
+  <!-- ===== Bank Account Button/Message/Label/Hint keys ===== -->
+  <data name="Button.AddBankAccount" xml:space="preserve"><value>Add Bank Account</value></data>
+  <data name="Button.SetPrimary" xml:space="preserve"><value>Set as Primary</value></data>
+  <data name="Label.Primary" xml:space="preserve"><value>Primary</value></data>
+  <data name="Message.NoBankAccounts" xml:space="preserve"><value>No bank accounts found</value></data>
+  <data name="Hint.OnePrimaryPerCustomer" xml:space="preserve"><value>Only one primary account allowed per customer</value></data>
+  <data name="Hint.OnePrimaryPerSupplier" xml:space="preserve"><value>Only one primary account allowed per supplier</value></data>
+  <data name="Hint.OnePrimaryPerCompany" xml:space="preserve"><value>Only one primary account allowed per company</value></data>
   <!-- ===== Vehicle Button/Message keys ===== -->
   <data name="Button.AddVehicle" xml:space="preserve"><value>Add Vehicle</value></data>
   <data name="Button.SelectVehicle" xml:space="preserve"><value>Select Vehicle</value></data>
@@ -1517,6 +1528,7 @@
   <data name="Tab.VisitRecords" xml:space="preserve"><value>Visit Records</value></data>
   <data name="Tab.ComplaintRecords" xml:space="preserve"><value>Complaints</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>Transaction Records</value></data>
+  <data name="Tab.BankAccounts" xml:space="preserve"><value>Bank Accounts</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>Business Cards</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>Company Data</value></data>
   <data name="Tab.CompanyLogo" xml:space="preserve"><value>Company Logo</value></data>

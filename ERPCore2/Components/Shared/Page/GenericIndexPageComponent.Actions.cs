@@ -45,8 +45,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
             }
             else
             {
-                // 透過介面直接呼叫 PermanentDeleteAsync（內部已包含 CanDeleteAsync 檢查）
-                var result = await Service.PermanentDeleteAsync(entity.Id);
+                var result = await Service.DeleteAsync(entity.Id);
                 if (!result.IsSuccess)
                 {
                     await NotificationService.ShowErrorAsync(string.Format(L["Message.EntityDeleteFailed"], result.ErrorMessage));
@@ -89,7 +88,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
                 }
                 else
                 {
-                    var result = await Service.PermanentDeleteAsync(entity.Id);
+                    var result = await Service.DeleteAsync(entity.Id);
                     deleteSuccess = result.IsSuccess;
                     if (!result.IsSuccess)
                         failMessages.Add(result.ErrorMessage ?? "");

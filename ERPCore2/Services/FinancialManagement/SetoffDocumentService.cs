@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // SetoffDetailType.SalesOrderDetail — 保留舊資料向下相容處理
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;

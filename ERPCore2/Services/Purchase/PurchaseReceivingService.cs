@@ -265,118 +265,11 @@ namespace ERPCore2.Services
             }
         }
 
-        /// <summary>
-        /// 覆寫刪除方法 - 刪除主檔時同步回退庫存
-        /// 功能：刪除採購進貨單時，自動回退已進貨的庫存數量
-        /// 處理流程：
-        /// 1. 驗證進貨單存在性
-        /// 2. 對每個明細進行庫存回退操作
-        /// 3. 執行原本的軟刪除（主檔 + EF級聯刪除明細）
-        /// 4. 使用資料庫交易確保資料一致性
-        /// 5. 任何步驟失敗時回滾所有變更
-        /// </summary>
-        /// <param name="id">要刪除的進貨單ID</param>
-        /// <returns>刪除結果，包含成功狀態及錯誤訊息</returns>
-        public override async Task<ServiceResult> DeleteAsync(int id)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                using var transaction = await context.Database.BeginTransactionAsync();
-                
-                try
-                {
-                    // 1. 獲取進貨單及明細資料（在刪除前）
-                    var purchaseReceiving = await GetByIdAsync(id);
-                    if (purchaseReceiving == null)
-                        return ServiceResult.Failure("找不到要刪除的進貨單");
-
-                    // 2. 檢查是否有庫存服務可用
-                    if (_inventoryStockService != null)
-                    {
-                        var eligibleDetails = purchaseReceiving.PurchaseReceivingDetails?.Where(d => d.ReceivedQuantity > 0).ToList() ?? new List<PurchaseReceivingDetail>();
-                        
-                        // 🔑 關鍵：檢查是否已經有 Delete 操作的交易記錄（避免重複扣減）
-                        var existingDelDetails = await context.InventoryTransactionDetails
-                            .Include(td => td.InventoryTransaction)
-                            .Where(td => td.InventoryTransaction != null && 
-                                        td.InventoryTransaction.TransactionNumber == purchaseReceiving.Code &&
-                                        td.OperationType == InventoryOperationTypeEnum.Delete)
-                            .Select(td => new { td.ProductId, td.SourceDetailId })
-                            .ToListAsync();
-                        
-                        // 3. 對每個明細進行庫存回退
-                        foreach (var detail in eligibleDetails)
-                        {
-                            // 檢查此明細是否已經被處理過（有對應的刪除記錄）
-                            var alreadyProcessed = existingDelDetails.Any(d => 
-                                d.ProductId == detail.ProductId && 
-                                (d.SourceDetailId == detail.Id || d.SourceDetailId == null));
-                            
-                            if (alreadyProcessed)
-                            {
-                                continue;
-                            }
-                            
-                            var reduceResult = await _inventoryStockService.ReduceStockAsync(
-                                detail.ProductId,
-                                detail.WarehouseId,
-                                detail.ReceivedQuantity,
-                                InventoryTransactionTypeEnum.Return,
-                                purchaseReceiving.Code ?? string.Empty,  // 使用原始單號
-                                detail.WarehouseLocationId,
-                                $"刪除採購進貨單 - {purchaseReceiving.Code}",
-                                sourceDocumentType: InventorySourceDocumentTypes.PurchaseReceiving,
-                                sourceDocumentId: purchaseReceiving.Id,
-                                operationType: InventoryOperationTypeEnum.Delete  // 標記為刪除操作
-                            );
-                            
-                            if (!reduceResult.IsSuccess)
-                            {
-                                await transaction.RollbackAsync();
-                                return ServiceResult.Failure($"庫存回退失敗：{reduceResult.ErrorMessage}");
-                            }
-                        }
-                    }
-
-                    // 4. 執行原本的軟刪除（主檔 + EF級聯刪除明細）
-                    
-                    var entity = await context.PurchaseReceivings
-                        .FirstOrDefaultAsync(x => x.Id == id);
-                        
-                    if (entity == null)
-                    {
-                        await transaction.RollbackAsync();
-                        return ServiceResult.Failure("找不到要刪除的資料");
-                    }
-
-                    entity.UpdatedAt = DateTime.UtcNow;
-
-                    await context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-                    
-                    return ServiceResult.Success();
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new { 
-                    Method = nameof(DeleteAsync),
-                    ServiceType = GetType().Name,
-                    Id = id 
-                });
-                return ServiceResult.Failure("刪除進貨單過程發生錯誤");
-            }
-        }
+        public override Task<ServiceResult> DeleteAsync(int id)
+            => PermanentDeleteAsync(id);
 
         /// <summary>
         /// 永久刪除進貨驗收單（含庫存回滾）
-        /// 這是UI實際調用的刪除方法
         /// </summary>
         public override async Task<ServiceResult> PermanentDeleteAsync(int id)
         {
@@ -1459,6 +1352,7 @@ namespace ERPCore2.Services
             using var context = await _contextFactory.CreateDbContextAsync();
             var entity = await context.PurchaseReceivings.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return ServiceResult.Failure("找不到進貨單");
+            if (!string.IsNullOrEmpty(entity.RejectReason)) return ServiceResult.Failure("進貨單已經駁回，無需重複駁回");
 
             entity.IsApproved = false;
             entity.ApprovedBy = rejectedBy;

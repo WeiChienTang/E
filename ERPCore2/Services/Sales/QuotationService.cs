@@ -358,6 +358,7 @@ namespace ERPCore2.Services
             using var context = await _contextFactory.CreateDbContextAsync();
             var entity = await context.Quotations.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return ServiceResult.Failure("找不到報價單");
+            if (!string.IsNullOrEmpty(entity.RejectReason)) return ServiceResult.Failure("報價單已經駁回，無需重複駁回");
 
             entity.IsApproved = false;
             entity.ApprovedBy = rejectedBy;

@@ -604,7 +604,7 @@ namespace ERPCore2.Services.Import
         {
             // CreatedAt = DateTime.UtcNow
             var createdAt = entityType.GetProperty("CreatedAt");
-            createdAt?.SetValue(entity, DateTime.Now);
+            createdAt?.SetValue(entity, DateTime.UtcNow);
 
             // CreatedBy = 當前用戶
             var createdBy = entityType.GetProperty("CreatedBy");

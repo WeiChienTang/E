@@ -112,7 +112,7 @@ namespace ERPCore2.Services.Reports
                 }
 
                 // 期前進貨（用於計算期初餘額）
-                var earlyDate = new DateTime(2000, 1, 1);
+                var earlyDate = DateTime.MinValue;
                 var preReceivings = await _purchaseReceivingService.GetByDateRangeAsync(earlyDate, startDate.AddDays(-1));
 
                 if (criteria.ExcludeCancelled)

@@ -142,7 +142,10 @@
       "Bash(sed -i 's/\"\"商品資料\"\", \"\"商品目錄\"\"/\"\"品項資料\"\", \"\"品項目錄\"\"/g; s/\"\"商品编码\"\"/\"\"品项编码\"\"/g' Data/Navigation/NavigationConfig.cs)",
       "Bash(sed -i 's/\"\"商品類型\"\", \"\"商品分類\"\"/\"\"品項類型\"\", \"\"品項分類\"\"/g; s/\"\"商品类型\"\"/\"\"品项类型\"\"/g' Data/Navigation/NavigationConfig.cs)",
       "Bash(sed -i 's/\"\"商品合成\"\"/\"\"品項合成\"\"/g' Data/Navigation/NavigationConfig.cs)",
-      "Bash(sed -i 's/\"\"商品報表\"\"/\"\"品項報表\"\"/g; s/\"\"商品报表\"\"/\"\"品项报表\"\"/g' Data/Navigation/NavigationConfig.cs)"
+      "Bash(sed -i 's/\"\"商品報表\"\"/\"\"品項報表\"\"/g; s/\"\"商品报表\"\"/\"\"品项报表\"\"/g' Data/Navigation/NavigationConfig.cs)",
+      "Bash(dotnet-ildasm c:/Users/cses3/source/repos/ERPCore2/ERPCore2/bin/Debug/net9.0/ERPCore2.dll)",
+      "Bash(dotnet msbuild:*)",
+      "Bash(\"C:/Program Files/dotnet/sdk/9.0.300/MSBuild.dll\" ERPCore2.csproj /t:CoreCompile /p:Configuration=Debug)"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

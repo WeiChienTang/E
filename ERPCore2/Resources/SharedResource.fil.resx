@@ -721,8 +721,11 @@
   <data name="Entity.Customer" xml:space="preserve"><value>Kliyente</value></data>
   <data name="Entity.CustomerVisit" xml:space="preserve"><value>Pagbisita sa Kliyente</value></data>
   <data name="Entity.CustomerComplaint" xml:space="preserve"><value>Reklamo ng Kliyente</value></data>
+  <data name="Entity.CustomerBankAccount" xml:space="preserve"><value>Bank Account ng Kliyente</value></data>
   <data name="Entity.SupplierVisit" xml:space="preserve"><value>Pagbisita sa Supplier</value></data>
   <data name="Entity.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Entity.SupplierBankAccount" xml:space="preserve"><value>Bank Account ng Supplier</value></data>
+  <data name="Entity.CompanyBankAccount" xml:space="preserve"><value>Bank Account ng Kumpanya</value></data>
   <data name="Entity.Product" xml:space="preserve"><value>Item</value></data>
   <data name="Entity.ProductCategory" xml:space="preserve"><value>Kategorya ng Item</value></data>
   <data name="Entity.ProductComposition" xml:space="preserve"><value>Bill of Materials</value></data>
@@ -964,6 +967,14 @@
   <data name="Message.NoRoleAssigned" xml:space="preserve"><value>Walang papel na itinalaga sa empleyadong ito. Hindi maipakita ang mga pahintulot.</value></data>
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>hal.: Pumasa, Mahusay, Bumagsak</value></data>
+  <!-- ===== Bank Account Button/Message/Label/Hint keys ===== -->
+  <data name="Button.AddBankAccount" xml:space="preserve"><value>Magdagdag ng Bank Account</value></data>
+  <data name="Button.SetPrimary" xml:space="preserve"><value>Itakda bilang Pangunahin</value></data>
+  <data name="Label.Primary" xml:space="preserve"><value>Pangunahin</value></data>
+  <data name="Message.NoBankAccounts" xml:space="preserve"><value>Walang bank account</value></data>
+  <data name="Hint.OnePrimaryPerCustomer" xml:space="preserve"><value>Isang pangunahing account lamang bawat kliyente</value></data>
+  <data name="Hint.OnePrimaryPerSupplier" xml:space="preserve"><value>Isang pangunahing account lamang bawat supplier</value></data>
+  <data name="Hint.OnePrimaryPerCompany" xml:space="preserve"><value>Isang pangunahing account lamang bawat kumpanya</value></data>
   <!-- ===== Vehicle Button/Message keys ===== -->
   <data name="Button.AddVehicle" xml:space="preserve"><value>Magdagdag ng Sasakyan</value></data>
   <data name="Button.SelectVehicle" xml:space="preserve"><value>Pumili ng Sasakyan</value></data>
@@ -1517,6 +1528,7 @@
   <data name="Tab.VisitRecords" xml:space="preserve"><value>Mga Talaan ng Pagbisita</value></data>
   <data name="Tab.ComplaintRecords" xml:space="preserve"><value>Mga Reklamo</value></data>
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>Mga Talaan ng Transaksyon</value></data>
+  <data name="Tab.BankAccounts" xml:space="preserve"><value>Mga Bank Account</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>Mga Business Card</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>Data ng Kumpanya</value></data>
   <data name="Tab.CompanyLogo" xml:space="preserve"><value>Logo ng Kumpanya</value></data>
