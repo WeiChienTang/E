@@ -100,7 +100,7 @@ namespace ERPCore2.Data
             services.AddScoped<ISupplierService, SupplierService>();
             services.AddScoped<ISupplierVisitService, SupplierVisitService>();
 
-            // 商品相關服務
+            // 品項相關服務
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IProductCategoryService, ProductCategoryService>();
             services.AddScoped<IProductSupplierService, ProductSupplierService>();
@@ -108,7 +108,7 @@ namespace ERPCore2.Data
             services.AddScoped<IProductPhotoService, ProductPhotoService>();
             services.AddScoped<ISizeService, SizeService>();
             
-            // 商品價格服務
+            // 品項價格服務
             services.AddScoped<ISupplierPricingService, SupplierPricingService>();
             
             // 推薦服務
@@ -164,7 +164,7 @@ namespace ERPCore2.Data
             services.AddScoped<IMaterialService, MaterialService>();
             services.AddScoped<ICompositionCategoryService, CompositionCategoryService>();
             
-            // 商品合成（BOM）服務
+            // 品項合成（BOM）服務
             services.AddScoped<IProductCompositionService, ProductCompositionService>();
             services.AddScoped<IProductCompositionDetailService, ProductCompositionDetailService>();
             
@@ -181,8 +181,8 @@ namespace ERPCore2.Data
             services.AddScoped<IVehicleMaintenanceService, VehicleMaintenanceService>();
 
             // 磅秤管理服務
-            services.AddScoped<IWasteTypeService, WasteTypeService>();
-            services.AddScoped<IWasteRecordService, WasteRecordService>();
+            services.AddScoped<IScaleTypeService, ScaleTypeService>();
+            services.AddScoped<IScaleRecordService, ScaleRecordService>();
 
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();
@@ -243,7 +243,7 @@ namespace ERPCore2.Data
             if (OperatingSystem.IsWindowsVersionAtLeast(6, 1))
             {
                 services.AddScoped<ERPCore2.Services.Reports.Interfaces.IFormattedPrintService, FormattedPrintService>();
-                // 商品條碼報表服務（使用 System.Drawing，僅 Windows 平台）
+                // 品項條碼報表服務（使用 System.Drawing，僅 Windows 平台）
                 services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductBarcodeReportService, ProductBarcodeReportService>();
             }
             // Excel 匯出服務（跨平台）
@@ -266,9 +266,9 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IQuotationReportService, QuotationReportService>();
             // 沖款單報表服務（應收沖款單 FN003 / 應付沖款單 FN004）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISetoffDocumentReportService, SetoffDocumentReportService>();
-            // 商品清單表報表服務（PD001）
+            // 品項清單表報表服務（PD001）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductListReportService, ProductListReportService>();
-            // 商品詳細資料報表服務（PD005）
+            // 品項詳細資料報表服務（PD005）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductDetailReportService, ProductDetailReportService>();
             // 物料清單報表服務（PD002）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IBOMReportService, BOMReportService>();
@@ -308,7 +308,7 @@ namespace ERPCore2.Data
             // 廠商詳細資料報表服務（AP005）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierDetailReportService, SupplierDetailReportService>();
             // 磅秤紀錄報表服務（WL001）
-            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IWasteRecordReportService, WasteRecordReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IScaleRecordReportService, ScaleRecordReportService>();
             // 會計科目表報表服務（FN005）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IAccountItemListReportService, AccountItemListReportService>();
             // 會計報表服務（FN006~FN011）

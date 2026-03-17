@@ -12,7 +12,7 @@ public static class PurchaseChartDefinitions
         definitions.Add(new ChartDefinition
         {
             ChartId            = ChartIds.PurchaseTopProductByAmount,
-            Title              = "依商品採購金額排行 Top 10",
+            Title              = "依品項採購金額排行 Top 10",
             Category           = ChartCategory.Purchase,
             SortOrder          = 1,
             DefaultSeriesType  = SeriesType.Bar,

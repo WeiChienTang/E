@@ -14,7 +14,7 @@ public class PurchaseChartService : IPurchaseChartService
         _factory = factory;
     }
 
-    /// <summary>依商品統計進貨金額排行 Top N（PurchaseReceivingDetails，含稅計算）</summary>
+    /// <summary>依品項統計進貨金額排行 Top N（PurchaseReceivingDetails，含稅計算）</summary>
     public async Task<List<ChartDataItem>> GetTopProductsByReceivingAmountAsync(int top = 10)
     {
         using var context = await _factory.CreateDbContextAsync();
@@ -27,7 +27,7 @@ public class PurchaseChartService : IPurchaseChartService
             join p in context.Products on d.ProductId equals p.Id
             select new
             {
-                ProductName = p.Name ?? "未知商品",
+                ProductName = p.Name ?? "未知品項",
                 Amount = d.UnitPrice * d.ReceivedQuantity,
                 TaxRate = d.TaxRate ?? 0m
             }

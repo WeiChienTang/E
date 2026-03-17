@@ -3,22 +3,22 @@ using ERPCore2.Models.Reports;
 namespace ERPCore2.Models.Barcode
 {
     /// <summary>
-    /// 商品條碼批次列印條件
+    /// 品項條碼批次列印條件
     /// </summary>
     public class ProductBarcodePrintCriteria
     {
         /// <summary>
-        /// 商品ID列表（空列表表示列印所有商品）
+        /// 品項ID列表（空列表表示列印所有品項）
         /// </summary>
         public List<int> ProductIds { get; set; } = new();
 
         /// <summary>
-        /// 商品分類ID列表（可用於篩選特定分類的商品）
+        /// 品項分類ID列表（可用於篩選特定分類的品項）
         /// </summary>
         public List<int> CategoryIds { get; set; } = new();
 
         /// <summary>
-        /// 是否只列印有條碼的商品
+        /// 是否只列印有條碼的品項
         /// </summary>
         public bool OnlyWithBarcode { get; set; } = true;
 
@@ -33,17 +33,17 @@ namespace ERPCore2.Models.Barcode
         public int BarcodesPerPage { get; set; } = 20;
 
         /// <summary>
-        /// 是否顯示商品名稱
+        /// 是否顯示品項名稱
         /// </summary>
         public bool ShowProductName { get; set; } = true;
 
         /// <summary>
-        /// 是否顯示商品編號
+        /// 是否顯示品項編號
         /// </summary>
         public bool ShowProductCode { get; set; } = true;
 
         /// <summary>
-        /// 每個商品的列印數量字典 (ProductId -> PrintQuantity)
+        /// 每個品項的列印數量字典 (ProductId -> PrintQuantity)
         /// </summary>
         public Dictionary<int, int> PrintQuantities { get; set; } = new();
 
@@ -69,11 +69,11 @@ namespace ERPCore2.Models.Barcode
             {
                 if (kvp.Value <= 0)
                 {
-                    errors.Add($"商品ID {kvp.Key} 的列印數量必須大於0");
+                    errors.Add($"品項ID {kvp.Key} 的列印數量必須大於0");
                 }
                 if (kvp.Value > 100)
                 {
-                    errors.Add($"商品ID {kvp.Key} 的列印數量不能超過100");
+                    errors.Add($"品項ID {kvp.Key} 的列印數量不能超過100");
                 }
             }
 
@@ -93,11 +93,11 @@ namespace ERPCore2.Models.Barcode
 
             if (ProductIds.Any())
             {
-                summary.Add($"選擇 {ProductIds.Count} 個商品");
+                summary.Add($"選擇 {ProductIds.Count} 個品項");
             }
             else
             {
-                summary.Add("所有商品");
+                summary.Add("所有品項");
             }
 
             if (CategoryIds.Any())

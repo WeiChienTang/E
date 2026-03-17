@@ -7,35 +7,35 @@ using ERPCore2.Services;
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
 /// <summary>
-/// 商品條碼批次列印篩選條件
+/// 品項條碼批次列印篩選條件
 /// 實作 IReportFilterCriteria 介面，整合至統一報表架構
 /// </summary>
 public class ProductBarcodeBatchPrintCriteria : IReportFilterCriteria
 {
     /// <summary>
-    /// 商品 ID 清單（空表示所有商品）
+    /// 品項 ID 清單（空表示所有品項）
     /// </summary>
     [FilterFK(typeof(IProductService),
         Group = FilterGroup.Basic,
-        Label = "指定商品",
-        Placeholder = "搜尋商品...",
-        EmptyMessage = "未選擇商品",
+        Label = "指定品項",
+        Placeholder = "搜尋品項...",
+        EmptyMessage = "未選擇品項",
         Order = 1)]
     public List<int> ProductIds { get; set; } = new();
 
     /// <summary>
-    /// 商品分類 ID 清單（可用於篩選特定分類的商品）
+    /// 品項分類 ID 清單（可用於篩選特定分類的品項）
     /// </summary>
     [FilterFK(typeof(IProductCategoryService),
         Group = FilterGroup.Basic,
-        Label = "商品分類",
-        Placeholder = "搜尋商品分類...",
+        Label = "品項分類",
+        Placeholder = "搜尋品項分類...",
         EmptyMessage = "未選擇分類",
         Order = 2)]
     public List<int> CategoryIds { get; set; } = new();
 
     /// <summary>
-    /// 是否只列印有條碼的商品
+    /// 是否只列印有條碼的品項
     /// </summary>
     public bool OnlyWithBarcode { get; set; } = true;
 
@@ -50,27 +50,27 @@ public class ProductBarcodeBatchPrintCriteria : IReportFilterCriteria
     public int BarcodesPerPage { get; set; } = 24;
 
     /// <summary>
-    /// 是否顯示商品名稱
+    /// 是否顯示品項名稱
     /// </summary>
     public bool ShowProductName { get; set; } = true;
 
     /// <summary>
-    /// 是否顯示商品編號
+    /// 是否顯示品項編號
     /// </summary>
     public bool ShowProductCode { get; set; } = true;
 
     /// <summary>
-    /// 每個商品的列印數量字典 (ProductId -> PrintQuantity)
+    /// 每個品項的列印數量字典 (ProductId -> PrintQuantity)
     /// </summary>
     public Dictionary<int, int> PrintQuantities { get; set; } = new();
 
     /// <summary>
-    /// 商品編號關鍵字（模糊搜尋）
+    /// 品項編號關鍵字（模糊搜尋）
     /// </summary>
     public string? ProductCodeKeyword { get; set; }
 
     /// <summary>
-    /// 商品名稱關鍵字（模糊搜尋）
+    /// 品項名稱關鍵字（模糊搜尋）
     /// </summary>
     public string? ProductNameKeyword { get; set; }
 
@@ -101,22 +101,22 @@ public class ProductBarcodeBatchPrintCriteria : IReportFilterCriteria
         {
             if (kvp.Value <= 0)
             {
-                errorMessage = $"商品ID {kvp.Key} 的列印數量必須大於0";
+                errorMessage = $"品項ID {kvp.Key} 的列印數量必須大於0";
                 return false;
             }
             if (kvp.Value > 100)
             {
-                errorMessage = $"商品ID {kvp.Key} 的列印數量不能超過100";
+                errorMessage = $"品項ID {kvp.Key} 的列印數量不能超過100";
                 return false;
             }
         }
 
-        // 必須選擇至少一個商品
+        // 必須選擇至少一個品項
         if (!ProductIds.Any() && !CategoryIds.Any() &&
             string.IsNullOrWhiteSpace(ProductCodeKeyword) &&
             string.IsNullOrWhiteSpace(ProductNameKeyword))
         {
-            errorMessage = "請選擇至少一個商品或設定篩選條件";
+            errorMessage = "請選擇至少一個品項或設定篩選條件";
             return false;
         }
 
@@ -171,7 +171,7 @@ public class ProductBarcodeBatchPrintCriteria : IReportFilterCriteria
 
         if (ProductIds.Any())
         {
-            summary.Add($"選擇 {ProductIds.Count} 個商品");
+            summary.Add($"選擇 {ProductIds.Count} 個品項");
         }
         else if (CategoryIds.Any())
         {
@@ -179,7 +179,7 @@ public class ProductBarcodeBatchPrintCriteria : IReportFilterCriteria
         }
         else
         {
-            summary.Add("全部商品");
+            summary.Add("全部品項");
         }
 
         var totalQuantity = PrintQuantities.Values.Sum();

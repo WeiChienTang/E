@@ -79,7 +79,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     
                 },
 
-                // 商品相關的額外單位
+                // 品項相關的額外單位
                 new Unit
                 {
                     Code = "PC",

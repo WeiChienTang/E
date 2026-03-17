@@ -18,9 +18,9 @@ namespace ERPCore2.Data.Entities
         public int SalesOrderDetailId { get; set; }
         
         /// <summary>
-        /// 組成商品 ID
+        /// 組成品項 ID
         /// </summary>
-        [Display(Name = "組成商品")]
+        [Display(Name = "組成品項")]
         [ForeignKey(nameof(ComponentProduct))]
         public int ComponentProductId { get; set; }
         

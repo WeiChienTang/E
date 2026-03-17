@@ -134,7 +134,7 @@ var document = new FormattedDocument()
              .ShowBorder(true)
              .ShowHeaderBackground(true);
         
-        table.AddRow("1", "測試商品A", "10", "100.00", "1,000.00");
+        table.AddRow("1", "測試品項A", "10", "100.00", "1,000.00");
     })
     
     // 簽名區

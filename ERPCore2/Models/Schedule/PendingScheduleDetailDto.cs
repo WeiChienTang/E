@@ -1,7 +1,7 @@
 namespace ERPCore2.Models.Schedule
 {
     /// <summary>
-    /// 待排程明細 DTO - 用於明細選擇表格（以商品為核心顯示）
+    /// 待排程明細 DTO - 用於明細選擇表格（以品項為核心顯示）
     /// </summary>
     public class PendingScheduleDetailDto
     {
@@ -41,17 +41,17 @@ namespace ERPCore2.Models.Schedule
         public string CustomerName { get; set; } = string.Empty;
         
         /// <summary>
-        /// 商品 ID
+        /// 品項 ID
         /// </summary>
         public int ProductId { get; set; }
         
         /// <summary>
-        /// 商品編號
+        /// 品項編號
         /// </summary>
         public string ProductCode { get; set; } = string.Empty;
         
         /// <summary>
-        /// 商品名稱
+        /// 品項名稱
         /// </summary>
         public string ProductName { get; set; } = string.Empty;
         

@@ -16,13 +16,13 @@ namespace ERPCore2.Models.Schedule
         /// <summary>所屬批次編號（PS-YYYYMMDD）</summary>
         public string ProductionScheduleCode { get; set; } = string.Empty;
 
-        /// <summary>商品 ID</summary>
+        /// <summary>品項 ID</summary>
         public int ProductId { get; set; }
 
-        /// <summary>商品編號</summary>
+        /// <summary>品項編號</summary>
         public string ProductCode { get; set; } = string.Empty;
 
-        /// <summary>商品名稱</summary>
+        /// <summary>品項名稱</summary>
         public string ProductName { get; set; } = string.Empty;
 
         /// <summary>排程數量</summary>
@@ -89,13 +89,13 @@ namespace ERPCore2.Models.Schedule
         /// <summary>客戶名稱（顯示用）</summary>
         public string CustomerName { get; set; } = string.Empty;
 
-        /// <summary>商品 ID</summary>
+        /// <summary>品項 ID</summary>
         public int ProductId { get; set; }
 
-        /// <summary>商品編號</summary>
+        /// <summary>品項編號</summary>
         public string ProductCode { get; set; } = string.Empty;
 
-        /// <summary>商品名稱</summary>
+        /// <summary>品項名稱</summary>
         public string ProductName { get; set; } = string.Empty;
 
         /// <summary>訂單數量</summary>

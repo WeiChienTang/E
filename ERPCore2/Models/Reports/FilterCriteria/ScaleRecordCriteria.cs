@@ -1,4 +1,4 @@
-﻿using ERPCore2.Data.Entities;
+using ERPCore2.Data.Entities;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
 using ERPCore2.Services;
@@ -8,16 +8,16 @@ namespace ERPCore2.Models.Reports.FilterCriteria;
 /// <summary>
 /// 磅秤紀錄報表篩選條件（WL001）
 /// </summary>
-public class WasteRecordCriteria : IReportFilterCriteria
+public class ScaleRecordCriteria : IReportFilterCriteria
 {
     /// <summary>磅秤類型 ID 清單（空表示全部）</summary>
-    [FilterFK(typeof(IWasteTypeService),
+    [FilterFK(typeof(IScaleTypeService),
         Group = FilterGroup.Basic,
         Label = "磅秤類型",
         Placeholder = "搜尋磅秤類型...",
         EmptyMessage = "未選擇（查詢全部）",
         Order = 1)]
-    public List<int> WasteTypeIds { get; set; } = new();
+    public List<int> ScaleTypeIds { get; set; } = new();
 
     /// <summary>車輛 ID 清單（空表示全部）</summary>
     [FilterFK(typeof(IVehicleService),
@@ -82,7 +82,7 @@ public class WasteRecordCriteria : IReportFilterCriteria
     {
         return new Dictionary<string, object?>
         {
-            ["wasteTypeIds"] = WasteTypeIds.Any() ? WasteTypeIds : null,
+            ["scaleTypeIds"] = ScaleTypeIds.Any() ? ScaleTypeIds : null,
             ["vehicleIds"] = VehicleIds.Any() ? VehicleIds : null,
             ["customerIds"] = CustomerIds.Any() ? CustomerIds : null,
             ["warehouseIds"] = WarehouseIds.Any() ? WarehouseIds : null,
@@ -103,8 +103,8 @@ public class WasteRecordCriteria : IReportFilterCriteria
         if (EndDate.HasValue)
             summary.Add($"結束：{EndDate:yyyy/MM/dd}");
 
-        if (WasteTypeIds.Any())
-            summary.Add($"磅秤類型：{WasteTypeIds.Count} 個");
+        if (ScaleTypeIds.Any())
+            summary.Add($"磅秤類型：{ScaleTypeIds.Count} 個");
 
         if (VehicleIds.Any())
             summary.Add($"車輛：{VehicleIds.Count} 台");

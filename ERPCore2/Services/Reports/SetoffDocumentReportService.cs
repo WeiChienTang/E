@@ -71,7 +71,7 @@ namespace ERPCore2.Services.Reports
                 throw new ArgumentException($"找不到沖款單 ID: {setoffDocumentId}");
             }
 
-            // 載入沖銷商品明細
+            // 載入沖銷品項明細
             var productDetails = await _setoffProductDetailService.GetBySetoffDocumentIdAsync(setoffDocumentId);
 
             // 載入收款/付款記錄
@@ -95,7 +95,7 @@ namespace ERPCore2.Services.Reports
             // 載入公司資訊
             var company = await _companyService.GetPrimaryCompanyAsync();
 
-            // 載入商品字典
+            // 載入品項字典
             var allProducts = await _productService.GetAllAsync();
             var productDict = allProducts.ToDictionary(p => p.Id, p => p);
 
@@ -348,7 +348,7 @@ namespace ERPCore2.Services.Reports
                 header.AddSpacing(3);
             });
 
-            // === 沖銷商品明細表格（主要內容）===
+            // === 沖銷品項明細表格（主要內容）===
             if (productDetails.Any())
             {
                 doc.AddTable(table =>

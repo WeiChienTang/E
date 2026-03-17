@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 商品-客戶關聯表
-    /// 維護商品與客戶之間的銷售關係（客戶專屬售價、料號等）
+    /// 品項-客戶關聯表
+    /// 維護品項與客戶之間的銷售關係（客戶專屬售價、料號等）
     /// </summary>
     [Index(nameof(ProductId), nameof(CustomerId), IsUnique = true, Name = "UX_ProductCustomer_ProductId_CustomerId")]
     [Index(nameof(ProductId), nameof(IsPreferred), nameof(Priority), Name = "IX_ProductCustomer_ProductId_IsPreferred_Priority")]
@@ -15,8 +15,8 @@ namespace ERPCore2.Data.Entities
     {
         // ===== 關聯欄位 =====
 
-        [Display(Name = "商品")]
-        [Required(ErrorMessage = "商品為必填")]
+        [Display(Name = "品項")]
+        [Required(ErrorMessage = "品項為必填")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 
@@ -37,7 +37,7 @@ namespace ERPCore2.Data.Entities
         // ===== 銷售資訊 =====
 
         /// <summary>
-        /// 客戶專屬售價（優先於商品標準售價）
+        /// 客戶專屬售價（優先於品項標準售價）
         /// </summary>
         [Display(Name = "客戶售價")]
         [Column(TypeName = "decimal(18,2)")]

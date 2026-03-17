@@ -11,7 +11,7 @@ namespace ERPCore2.Models.Reports.FilterCriteria;
 public class BOMReportCriteria : IReportFilterCriteria
 {
     /// <summary>
-    /// 成品（父商品）ID 清單（空表示所有成品）
+    /// 成品（父品項）ID 清單（空表示所有成品）
     /// </summary>
     [FilterFK(typeof(IProductCompositionService),
         Group = FilterGroup.Basic,

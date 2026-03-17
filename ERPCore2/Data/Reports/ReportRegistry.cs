@@ -191,7 +191,7 @@ public static class ReportRegistry
                 Id = ReportIds.PurchaseOrder,
                 Name = "採購單",
                 NameKey = "Report.PurchaseOrder",
-                Description = "列印採購訂單（含廠商資訊、商品明細、金額統計）",
+                Description = "列印採購訂單（含廠商資訊、品項明細、金額統計）",
                 DescriptionKey = "Report.PurchaseOrderDesc",
                 IconClass = "bi bi-cart-plus",
                 Category = ReportCategory.Purchase,
@@ -238,7 +238,7 @@ public static class ReportRegistry
                 Id = ReportIds.Quotation,
                 Name = "報價單",
                 NameKey = "Report.Quotation",
-                Description = "列印報價單（含客戶資訊、商品明細、金額統計）",
+                Description = "列印報價單（含客戶資訊、品項明細、金額統計）",
                 DescriptionKey = "Report.QuotationDesc",
                 IconClass = "bi bi-file-earmark-text",
                 Category = ReportCategory.Sales,
@@ -253,7 +253,7 @@ public static class ReportRegistry
                 Id = ReportIds.SalesOrder,
                 Name = "銷貨訂單",
                 NameKey = "Report.SalesOrder",
-                Description = "列印銷貨訂單（含客戶資訊、商品明細、金額統計）",
+                Description = "列印銷貨訂單（含客戶資訊、品項明細、金額統計）",
                 DescriptionKey = "Report.SalesOrderDesc",
                 IconClass = "bi bi-receipt",
                 Category = ReportCategory.Sales,
@@ -268,7 +268,7 @@ public static class ReportRegistry
                 Id = ReportIds.SalesDelivery,
                 Name = "出貨單",
                 NameKey = "Report.SalesDelivery",
-                Description = "列印出貨單（含客戶資訊、商品明細、金額統計）",
+                Description = "列印出貨單（含客戶資訊、品項明細、金額統計）",
                 DescriptionKey = "Report.SalesDeliveryDesc",
                 IconClass = "bi bi-truck",
                 Category = ReportCategory.Sales,
@@ -294,13 +294,13 @@ public static class ReportRegistry
                 IsEnabled = true
             },
 
-            // ==================== 商品報表 ====================
+            // ==================== 品項報表 ====================
             new ReportDefinition
             {
                 Id = ReportIds.ProductList,
-                Name = "商品清單表",
+                Name = "品項清單表",
                 NameKey = "Report.ProductList",
-                Description = "列印商品基本資料清單（含品號、品名、規格、條碼、分類、單位）",
+                Description = "列印品項基本資料清單（含品號、品名、規格、條碼、分類、單位）",
                 DescriptionKey = "Report.ProductListDesc",
                 IconClass = "bi bi-box-seam",
                 Category = ReportCategory.Product,
@@ -313,9 +313,9 @@ public static class ReportRegistry
             new ReportDefinition
             {
                 Id = ReportIds.ProductDetail,
-                Name = "商品詳細資料",
+                Name = "品項詳細資料",
                 NameKey = "Report.ProductDetail",
-                Description = "列印商品完整詳細資料，含規格、條碼、分類、單位、採購類型、成本定價等，每項商品各佔一區塊",
+                Description = "列印品項完整詳細資料，含規格、條碼、分類、單位、採購類型、成本定價等，每項品項各佔一區塊",
                 DescriptionKey = "Report.ProductDetailDesc",
                 IconClass = "bi bi-box-fill",
                 Category = ReportCategory.Product,
@@ -328,9 +328,9 @@ public static class ReportRegistry
             new ReportDefinition
             {
                 Id = ReportIds.ProductBarcode,
-                Name = "商品條碼",
+                Name = "品項條碼",
                 NameKey = "Report.ProductBarcode",
-                Description = "列印商品條碼",
+                Description = "列印品項條碼",
                 DescriptionKey = "Report.ProductBarcodeDesc",
                 IconClass = "bi bi-upc-scan",
                 Category = ReportCategory.Product,
@@ -345,7 +345,7 @@ public static class ReportRegistry
                 Id = ReportIds.BOMReport,
                 Name = "物料清單報表",
                 NameKey = "Report.BOMReport",
-                Description = "列印商品BOM物料清單，依配方分組顯示組件品號、品名、數量、單位、成本",
+                Description = "列印品項BOM物料清單，依配方分組顯示組件品號、品名、數量、單位、成本",
                 DescriptionKey = "Report.BOMReportDesc",
                 IconClass = "bi bi-diagram-3",
                 Category = ReportCategory.Product,
@@ -408,7 +408,7 @@ public static class ReportRegistry
                 Id = ReportIds.InventoryStatus,
                 Name = "庫存現況表",
                 NameKey = "Report.InventoryStatus",
-                Description = "查詢各倉庫商品庫存現況，含現有庫存、預留庫存、可用庫存及庫存金額",
+                Description = "查詢各倉庫品項庫存現況，含現有庫存、預留庫存、可用庫存及庫存金額",
                 DescriptionKey = "Report.InventoryStatusDesc",
                 IconClass = "bi bi-clipboard-data",
                 Category = ReportCategory.Inventory,
@@ -438,7 +438,7 @@ public static class ReportRegistry
                 Id = ReportIds.InventoryCount,
                 Name = "盤點差異表",
                 NameKey = "Report.InventoryCount",
-                Description = "依盤點單分組顯示各商品系統庫存、實盤數量及差異金額，支援僅差異項目篩選",
+                Description = "依盤點單分組顯示各品項系統庫存、實盤數量及差異金額，支援僅差異項目篩選",
                 DescriptionKey = "Report.InventoryCountDesc",
                 IconClass = "bi bi-card-checklist",
                 Category = ReportCategory.Inventory,
@@ -516,16 +516,16 @@ public static class ReportRegistry
             // ==================== 磅秤紀錄報表 ====================
             new ReportDefinition
             {
-                Id = ReportIds.WasteRecord,
+                Id = ReportIds.ScaleRecord,
                 Name = "磅秤紀錄表",
-                NameKey = "Report.WasteRecord",
+                NameKey = "Report.ScaleRecord",
                 Description = "列印磅秤紀錄清單，依磅秤類型分組，含車牌號碼、客戶、入庫倉庫、重量及費用明細",
-                DescriptionKey = "Report.WasteRecordDesc",
+                DescriptionKey = "Report.ScaleRecordDesc",
                 IconClass = "bi bi-recycle",
-                Category = ReportCategory.Waste,
-                ModuleKey = "WasteManagement",
-                RequiredPermission = PermissionRegistry.WasteRecord.Read,
-                ActionId = "OpenWasteRecordReport",
+                Category = ReportCategory.Scale,
+                ModuleKey = "ScaleManagement",
+                RequiredPermission = PermissionRegistry.ScaleRecord.Read,
+                ActionId = "OpenScaleRecordReport",
                 SortOrder = 1,
                 IsEnabled = true
             },
@@ -738,7 +738,7 @@ public static class ReportRegistry
     }
     
     /// <summary>
-    /// 取得商品相關報表
+    /// 取得品項相關報表
     /// </summary>
     public static List<ReportDefinition> GetProductReports()
     {
@@ -764,9 +764,9 @@ public static class ReportRegistry
     /// <summary>
     /// 取得磅秤紀錄相關報表
     /// </summary>
-    public static List<ReportDefinition> GetWasteReports()
+    public static List<ReportDefinition> GetScaleReports()
     {
-        return GetReportsByCategory(ReportCategory.Waste);
+        return GetReportsByCategory(ReportCategory.Scale);
     }
 
     /// <summary>

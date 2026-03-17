@@ -855,7 +855,7 @@ namespace ERPCore2.Services.Reports
                     return column.ValueGenerator(detail!);
                 }
                 
-                // 商品名稱特殊處理（從 ProductDict 查詢）
+                // 品項名稱特殊處理（從 ProductDict 查詢）
                 if (column.PropertyName == nameof(PurchaseOrderDetail.ProductId) && 
                     detail is PurchaseOrderDetail orderDetail && 
                     additionalData.ContainsKey("ProductDict"))
@@ -865,7 +865,7 @@ namespace ERPCore2.Services.Reports
                     {
                         return productDict[orderDetail.ProductId].Name!;
                     }
-                    return $"商品ID: {orderDetail.ProductId}";
+                    return $"品項ID: {orderDetail.ProductId}";
                 }
                 
                 var value = GetPropertyValue(detail!, column.PropertyName);

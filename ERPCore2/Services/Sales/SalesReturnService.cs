@@ -192,12 +192,12 @@ namespace ERPCore2.Services
                 // 3. 檢查每個明細是否被鎖定
                 foreach (var detail in entity.SalesReturnDetails)
                 {
-                    var productName = detail.Product?.Name ?? $"商品ID:{detail.ProductId}";
+                    var productName = detail.Product?.Name ?? $"品項ID:{detail.ProductId}";
                     
                     // 檢查是否有沖款記錄（TotalPaidAmount > 0 表示已有沖款）
                     if (detail.TotalPaidAmount > 0)
                     {
-                        var errorMsg = $"無法刪除此銷貨退回單，因為商品「{productName}」已有沖款記錄（已沖款 {detail.TotalPaidAmount:N2} 元）";
+                        var errorMsg = $"無法刪除此銷貨退回單，因為品項「{productName}」已有沖款記錄（已沖款 {detail.TotalPaidAmount:N2} 元）";
                         return ServiceResult.Failure(errorMsg);
                     }
                 }
@@ -732,9 +732,13 @@ namespace ERPCore2.Services
                 var detailsToDelete = existingDetails.Where(ed => !existingDetailsToKeep.Contains(ed.Id)).ToList();
                 foreach (var detail in detailsToDelete)
                 {
-                    detail.UpdatedAt = DateTime.UtcNow;
                     // 被刪除的明細，數量差異是負的原數量
                     quantityChanges.Add((detail, -detail.ReturnQuantity));
+                }
+
+                if (detailsToDelete.Any())
+                {
+                    context.SalesReturnDetails.RemoveRange(detailsToDelete);
                 }
 
                 // 執行資料庫更新
@@ -1100,13 +1104,21 @@ namespace ERPCore2.Services
                             var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
                             var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
                             var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
-                            
+
                             // 跳過沒有指定倉庫的明細
                             if (!warehouseId.HasValue)
                                 continue;
-                            
+
                             if (adjustmentNeeded > 0)
                             {
+                                // 查詢當前平均成本，供 COGS 沖回分錄使用（JournalizeSalesReturnAsync 從 TotalAmount 讀取）
+                                var stockDetail = await context.InventoryStockDetails
+                                    .Include(d => d.InventoryStock)
+                                    .FirstOrDefaultAsync(d => d.InventoryStock.ProductId == productId &&
+                                                              d.WarehouseId == warehouseId.Value &&
+                                                              d.WarehouseLocationId == locationId);
+                                var returnUnitCost = stockDetail?.AverageCost;
+
                                 // 需要增加更多庫存（退貨數量增加）
                                 var addResult = await _inventoryStockService.AddStockAsync(
                                     productId,
@@ -1114,7 +1126,7 @@ namespace ERPCore2.Services
                                     adjustmentNeeded,
                                     InventoryTransactionTypeEnum.SalesReturn,
                                     currentReturn.Code ?? string.Empty,  // 使用原始單號
-                                    null,  // 退貨不需要成本
+                                    returnUnitCost,  // 退回入庫成本（供轉傳票時 COGS 沖回使用）
                                     locationId,
                                     $"銷貨退回編輯調增 - {currentReturn.Code}",
                                     null, null, null, // batchNumber, batchDate, expiryDate

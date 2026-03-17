@@ -125,7 +125,7 @@ namespace ERPCore2.Services
                     errors.Add("採購訂單不能為空");
 
                 if (entity.ProductId <= 0)
-                    errors.Add("商品不能為空");
+                    errors.Add("品項不能為空");
 
                 if (entity.OrderQuantity <= 0)
                     errors.Add("訂購數量必須大於 0");
@@ -139,15 +139,15 @@ namespace ERPCore2.Services
                 if (entity.ReceivedQuantity > entity.OrderQuantity)
                     errors.Add("已進貨數量不能大於訂購數量");
 
-                // 注釋：允許同一商品在同一採購訂單中多次出現
-                // 檢查商品在同一採購訂單中是否重複 (已停用 - 允許同一商品多次輸入)
+                // 注釋：允許同一品項在同一採購訂單中多次出現
+                // 檢查品項在同一採購訂單中是否重複 (已停用 - 允許同一品項多次輸入)
                 /*
                 if (await IsProductExistsInOrderAsync(
                     entity.PurchaseOrderId, 
                     entity.ProductId, 
                     entity.Id == 0 ? null : entity.Id))
                 {
-                    errors.Add("該商品在此採購訂單中已存在");
+                    errors.Add("該品項在此採購訂單中已存在");
                 }
                 */
 
@@ -218,9 +218,9 @@ namespace ERPCore2.Services
                 // 3. 檢查是否已有入庫記錄
                 if (loadedEntity.ReceivedQuantity > 0)
                 {
-                    var productName = loadedEntity.Product?.Name ?? "未知商品";
+                    var productName = loadedEntity.Product?.Name ?? "未知品項";
                     return ServiceResult.Failure(
-                        $"無法刪除此明細，因為商品「{productName}」已有入庫記錄（已入庫 {loadedEntity.ReceivedQuantity} 個）"
+                        $"無法刪除此明細，因為品項「{productName}」已有入庫記錄（已入庫 {loadedEntity.ReceivedQuantity} 個）"
                     );
                 }
 
@@ -269,7 +269,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據商品ID取得所有採購訂單明細
+        /// 根據品項ID取得所有採購訂單明細
         /// </summary>
         public async Task<List<PurchaseOrderDetail>> GetByProductIdAsync(int productId)
         {
@@ -578,7 +578,7 @@ namespace ERPCore2.Services
         #region 驗證方法
 
         /// <summary>
-        /// 檢查商品在指定採購訂單中是否已存在
+        /// 檢查品項在指定採購訂單中是否已存在
         /// </summary>
         public async Task<bool> IsProductExistsInOrderAsync(int purchaseOrderId, int productId, int? excludeId = null)
         {

@@ -192,7 +192,7 @@ new NavigationItem
 | `/error-logs` | `PermissionRegistry.System.Admin` |
 | `/role-permission-management` | `PermissionRegistry.System.Admin` |
 
-一般業務頁面（客戶、商品、採購⋯）由 `PagePermissionCheck` 處理，
+一般業務頁面（客戶、品項、採購⋯）由 `PagePermissionCheck` 處理，
 不在 Middleware 設定，避免設定分散、難以維護。
 
 ---

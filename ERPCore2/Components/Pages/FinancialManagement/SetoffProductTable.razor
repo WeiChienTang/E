@@ -1,4 +1,4 @@
-@* 沖銷商品明細管理組件 - 支援應收/應付雙模式 *@
+@* 沖銷品項明細管理組件 - 支援應收/應付雙模式 *@
 
 @inject ISetoffProductDetailService SetoffProductDetailService
 @inject IProductService ProductService
@@ -254,7 +254,7 @@ else
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入商品資料失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入品項資料失敗：{ex.Message}");
             Products = new List<Product>();
         }
     }
@@ -335,7 +335,7 @@ else
         }
         else
         {
-            // 編輯模式但沒有任何已儲存的商品明細：顯示空列表
+            // 編輯模式但沒有任何已儲存的品項明細：顯示空列表
             SetoffItems = new List<SetoffProductDetailItem>();
         }
     }
@@ -559,7 +559,7 @@ else
             new()
             {
                 Title = L["Column.ProductCodeName"],
-                Tooltip = "顯示商品的編號與名稱",
+                Tooltip = "顯示品項的編號與名稱",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "200px",
@@ -1059,7 +1059,7 @@ else
     /// </summary>
     /// <param name="purchaseReceivingId">進貨單ID</param>
     /// <remarks>
-    /// 此方法會載入指定進貨單的所有未結清商品明細，並預設填入本次沖款金額。
+    /// 此方法會載入指定進貨單的所有未結清品項明細，並預設填入本次沖款金額。
     /// 主要用於從 PurchaseReceivingEditModalComponent 呼叫。
     /// </remarks>
     public async Task LoadDetailsFromPurchaseReceiving(int purchaseReceivingId)
@@ -1082,7 +1082,7 @@ else
             }
             var purchaseReceivingCode = purchaseReceiving.Code;
             
-            // 確保已載入商品資料
+            // 確保已載入品項資料
             if (!Products.Any())
             {
                 await LoadProductsAsync();
@@ -1163,7 +1163,7 @@ else
             }
             var purchaseReturnCode = purchaseReturn.Code;
             
-            // 確保已載入商品資料
+            // 確保已載入品項資料
             if (!Products.Any())
             {
                 await LoadProductsAsync();
@@ -1240,7 +1240,7 @@ else
             }
             var salesDeliveryCode = salesDelivery.Code;
             
-            // 確保已載入商品資料
+            // 確保已載入品項資料
             if (!Products.Any())
             {
                 await LoadProductsAsync();
@@ -1317,7 +1317,7 @@ else
             }
             var salesReturnCode = salesReturn.Code;
             
-            // 確保已載入商品資料
+            // 確保已載入品項資料
             if (!Products.Any())
             {
                 await LoadProductsAsync();

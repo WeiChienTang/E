@@ -87,7 +87,7 @@ protected override List<PurchaseOrderDetail> ConvertItemsToDetails()
 ## 🟡 虛方法（子類別可選擇性覆寫）
 
 ```csharp
-// SelectedSupplierId 改變時（如重新載入廠商已知商品目錄）
+// SelectedSupplierId 改變時（如重新載入廠商已知品項目錄）
 protected virtual Task OnCounterpartyChangedAsync() => Task.CompletedTask;
 
 // 資料載入完成後的額外操作（如檢查歷史採購記錄）

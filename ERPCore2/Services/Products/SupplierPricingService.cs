@@ -77,7 +77,7 @@ namespace ERPCore2.Services
 
                 // 基本驗證
                 if (entity.ProductId <= 0)
-                    errors.Add("商品為必填欄位");
+                    errors.Add("品項為必填欄位");
 
                 if (entity.SupplierId <= 0)
                     errors.Add("供應商為必填欄位");
@@ -100,14 +100,14 @@ namespace ERPCore2.Services
                 if (entity.ExpiryDate.HasValue && entity.ExpiryDate <= entity.EffectiveDate)
                     errors.Add("失效日期必須大於生效日期");
 
-                // 檢查商品是否存在
+                // 檢查品項是否存在
                 if (entity.ProductId > 0)
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var productExists = await context.Products
                         .AnyAsync(p => p.Id == entity.ProductId);
                     if (!productExists)
-                        errors.Add("指定的商品不存在");
+                        errors.Add("指定的品項不存在");
                 }
 
                 // 檢查供應商是否存在
@@ -120,12 +120,12 @@ namespace ERPCore2.Services
                         errors.Add("指定的供應商不存在");
                 }
 
-                // 檢查供應商商品編號是否重複
+                // 檢查供應商品項編號是否重複
                 if (!string.IsNullOrWhiteSpace(entity.SupplierProductCode) && entity.SupplierId > 0)
                 {
                     var isCodeExists = await IsSupplierProductCodeExistsAsync(entity.SupplierId, entity.SupplierProductCode, entity.Id == 0 ? null : entity.Id);
                     if (isCodeExists)
-                        errors.Add("供應商商品編號已存在");
+                        errors.Add("供應商品項編號已存在");
                 }
 
                 if (errors.Any())
@@ -190,7 +190,7 @@ namespace ERPCore2.Services
         #region 專屬業務方法
 
         /// <summary>
-        /// 根據商品ID取得供應商定價
+        /// 根據品項ID取得供應商定價
         /// </summary>
         public async Task<List<SupplierPricing>> GetByProductIdAsync(int productId)
         {
@@ -242,7 +242,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據商品ID和供應商ID取得定價
+        /// 根據品項ID和供應商ID取得定價
         /// </summary>
         public async Task<List<SupplierPricing>> GetByProductIdAndSupplierIdAsync(int productId, int supplierId)
         {
@@ -300,7 +300,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查供應商商品編號是否已存在
+        /// 檢查供應商品項編號是否已存在
         /// </summary>
         public async Task<bool> IsSupplierProductCodeExistsAsync(int supplierId, string supplierProductCode, int? excludeId = null)
         {
@@ -333,7 +333,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據供應商商品編號查詢
+        /// 根據供應商品項編號查詢
         /// </summary>
         public async Task<List<SupplierPricing>> GetBySupplierProductCodeAsync(int supplierId, string supplierProductCode)
         {

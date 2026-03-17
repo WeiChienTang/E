@@ -137,7 +137,7 @@ public int? ConfirmedByEmployeeId { get; set; }
 領料單確認（IsConfirmed = true）
   └─ 批次轉傳票
        ├─ 借：在製品 / 製造費用 (視用途) = 領用成本（TotalCost 加總）
-       └─ 貸：原料存貨 (1221) 或 商品存貨 (1231) = 領用成本
+       └─ 貸：原料存貨 (1221) 或 品項存貨 (1231) = 領用成本
 ```
 
 ### 領用用途分類（需新增欄位）
@@ -241,7 +241,7 @@ public DateTime? JournalizedAt { get; set; }
 
 `JournalEntryBatchPage.razor` 新增第八個 Section：
 - 標題：**生產完工**
-- 顯示欄位：生產單號、完工日期、商品名稱、完工數量、成本金額
+- 顯示欄位：生產單號、完工日期、品項名稱、完工數量、成本金額
 
 ---
 

@@ -8,7 +8,7 @@ namespace ERPCore2.Components.Shared.RelatedDocument.Config;
 public class DocumentSectionConfig
 {
     /// <summary>
-    /// 區塊標題（例如：「商品物料清單」）
+    /// 區塊標題（例如：「品項物料清單」）
     /// </summary>
     public string Title { get; init; } = "";
     
@@ -51,7 +51,7 @@ public class DocumentSectionConfig
         {
             RelatedDocumentType.ProductComposition => new()
             {
-                Title = "商品物料清單",
+                Title = "品項物料清單",
                 Icon = "diagram-3",
                 TextColor = "purple",
                 BadgeColor = "purple",

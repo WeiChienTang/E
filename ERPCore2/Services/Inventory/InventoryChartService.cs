@@ -25,7 +25,7 @@ public class InventoryChartService : IInventoryChartService
             join p in context.Products on s.ProductId equals p.Id
             select new
             {
-                ProductName = p.Name ?? "未知商品",
+                ProductName = p.Name ?? "未知品項",
                 s.WeightedAverageCost,
                 s.TotalCurrentStock
             }
@@ -55,7 +55,7 @@ public class InventoryChartService : IInventoryChartService
             join p in context.Products on s.ProductId equals p.Id
             select new
             {
-                ProductName = p.Name ?? "未知商品",
+                ProductName = p.Name ?? "未知品項",
                 s.TotalCurrentStock
             }
         ).ToListAsync();
@@ -101,7 +101,7 @@ public class InventoryChartService : IInventoryChartService
             .ToList();
     }
 
-    /// <summary>低於安全庫存商品（CurrentStock < MinStockLevel，且 MinStockLevel 有設定）</summary>
+    /// <summary>低於安全庫存品項（CurrentStock < MinStockLevel，且 MinStockLevel 有設定）</summary>
     public async Task<List<ChartDataItem>> GetLowStockProductsAsync()
     {
         using var context = await _factory.CreateDbContextAsync();
@@ -115,7 +115,7 @@ public class InventoryChartService : IInventoryChartService
             join p in context.Products on s.ProductId equals p.Id
             select new
             {
-                ProductName  = p.Name ?? "未知商品",
+                ProductName  = p.Name ?? "未知品項",
                 d.CurrentStock,
                 MinStockLevel = d.MinStockLevel!.Value
             }
@@ -232,7 +232,7 @@ public class InventoryChartService : IInventoryChartService
             select new
             {
                 s.Id,
-                ProductName = p.Name ?? "未知商品",
+                ProductName = p.Name ?? "未知品項",
                 ProductCode = p.Code ?? "",
                 d.CurrentStock,
                 d.AverageCost
@@ -262,7 +262,7 @@ public class InventoryChartService : IInventoryChartService
             select new
             {
                 s.Id,
-                ProductName   = p.Name ?? "未知商品",
+                ProductName   = p.Name ?? "未知品項",
                 d.CurrentStock,
                 MinStockLevel = d.MinStockLevel!.Value
             }

@@ -48,7 +48,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Code = "TMPL-001",
                     TemplateCode = "PurchaseOrder",
                     TemplateName = "採購單訊息範本",
-                    HeaderText = "{supplierName}您好，\n\n我們希望與貴公司採購以下商品：",
+                    HeaderText = "{supplierName}您好，\n\n我們希望與貴公司採購以下品項：",
                     FooterText = "如有任何問題，請與我們聯繫，感謝您。\n\n{companyName}",
                     DetailFormatJson = JsonSerializer.Serialize(defaultDetailConfig),
                     IsActive = true,

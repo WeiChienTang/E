@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品分類服務實作 - 繼承 GenericManagementService
+    /// 品項分類服務實作 - 繼承 GenericManagementService
     /// </summary>
     public class ProductCategoryService : GenericManagementService<ProductCategory>, IProductCategoryService
     {
@@ -142,7 +142,7 @@ namespace ERPCore2.Services
                 var canDelete = await CanDeleteCategoryAsync(entity.Id);
                 return canDelete 
                     ? ServiceResult.Success() 
-                    : ServiceResult.Failure("無法刪除此商品分類，因為有商品或子分類正在使用此分類");
+                    : ServiceResult.Failure("無法刪除此品項分類，因為有品項或子分類正在使用此分類");
             }
             catch (Exception ex)
             {
@@ -273,7 +273,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                // 檢查是否有商品使用此分類
+                // 檢查是否有品項使用此分類
                 var hasProducts = await context.Products
                     .AnyAsync(p => p.ProductCategoryId == categoryId);
 

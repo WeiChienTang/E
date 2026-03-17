@@ -9,7 +9,7 @@ namespace ERPCore2.Services
 {
     /// <summary>
     /// 供應商推薦服務實作
-    /// 混合商品-供應商綁定資料與採購歷史資料，提供智能推薦
+    /// 混合品項-供應商綁定資料與採購歷史資料，提供智能推薦
     /// </summary>
     public class SupplierRecommendationService : ISupplierRecommendationService
     {
@@ -25,7 +25,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得商品的供應商推薦清單（混合綁定資料與歷史資料）
+        /// 取得品項的供應商推薦清單（混合綁定資料與歷史資料）
         /// </summary>
         public async Task<List<SupplierRecommendation>> GetRecommendedSuppliersAsync(int productId)
         {
@@ -147,7 +147,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得指定商品和供應商的最近採購資訊
+        /// 取得指定品項和供應商的最近採購資訊
         /// </summary>
         public async Task<(decimal Price, DateTime PurchaseDate)?> GetLastPurchasePriceAsync(int supplierId, int productId)
         {

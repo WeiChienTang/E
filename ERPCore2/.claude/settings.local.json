@@ -130,7 +130,19 @@
       "Bash(head -10 grep -n \"\\(int\\)detail\\\\.\" \"c:/Users/cses3/source/repos/ERPCore2/ERPCore2/Services/Sales/SalesDeliveryService.cs\" grep -n \"\\(int\\)detail\\\\.\" \"c:/Users/cses3/source/repos/ERPCore2/ERPCore2/Services/Sales/SalesReturnService.cs\")",
       "Bash(head -10 grep -n \"IsReadOnly\\\\|IsJournalized\" \"c:/Users/cses3/source/repos/ERPCore2/ERPCore2/Components/Pages/Sales/SalesDeliveryEditModalComponent.razor\")",
       "Bash(for f:*)",
-      "Bash(do echo:*)"
+      "Bash(do echo:*)",
+      "Bash(git -C \"C:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\" diff -- ERPCore2/Components/Layout/NavMenu.razor)",
+      "Bash(git -C \"C:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\" status --short)",
+      "Bash(git -C \"C:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\" diff -- Services/FinancialManagement/JournalEntryAutoGenerationService.cs)",
+      "Bash(sed -i 's/Name = \"\"商品\"\"/Name = \"\"品項\"\"/g' Data/Navigation/NavigationConfig.cs)",
+      "Bash(sed -i 's/QuickActionName = \"\"新增商品類型\"\"/QuickActionName = \"\"新增品項類型\"\"/g; s/QuickActionName = \"\"新增商品\"\"/QuickActionName = \"\"新增品項\"\"/g' Data/Navigation/NavigationConfig.cs)",
+      "Bash(sed -i 's/管理商品類型分類/管理品項類型分類/g; s/管理商品計量單位/管理品項計量單位/g; s/管理商品尺寸規格/管理品項尺寸規格/g; s/管理商品的配方和組件結構/管理品項的配方和組件結構/g' Data/Navigation/NavigationConfig.cs)",
+      "Bash(sed -i 's/商品報表集/品項報表集/g; s/查看和列印所有商品相關報表/查看和列印所有品項相關報表/g' Data/Navigation/NavigationConfig.cs)",
+      "Bash(sed -i 's/\"\"商品\"\", \"\"product\"\"/\"\"品項\"\", \"\"product\"\"/g' Data/Navigation/NavigationConfig.cs)",
+      "Bash(sed -i 's/\"\"商品資料\"\", \"\"商品目錄\"\"/\"\"品項資料\"\", \"\"品項目錄\"\"/g; s/\"\"商品编码\"\"/\"\"品项编码\"\"/g' Data/Navigation/NavigationConfig.cs)",
+      "Bash(sed -i 's/\"\"商品類型\"\", \"\"商品分類\"\"/\"\"品項類型\"\", \"\"品項分類\"\"/g; s/\"\"商品类型\"\"/\"\"品项类型\"\"/g' Data/Navigation/NavigationConfig.cs)",
+      "Bash(sed -i 's/\"\"商品合成\"\"/\"\"品項合成\"\"/g' Data/Navigation/NavigationConfig.cs)",
+      "Bash(sed -i 's/\"\"商品報表\"\"/\"\"品項報表\"\"/g; s/\"\"商品报表\"\"/\"\"品项报表\"\"/g' Data/Navigation/NavigationConfig.cs)"
     ],
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",

@@ -26,7 +26,7 @@ namespace ERPCore2.Models.Enums
         SalesOrder,
         
         /// <summary>
-        /// 商品物料清單（BOM 配方）
+        /// 品項物料清單（BOM 配方）
         /// </summary>
         ProductComposition,
         
@@ -41,7 +41,7 @@ namespace ERPCore2.Models.Enums
         ProductionSchedule,
         
         /// <summary>
-        /// 供應商推薦（低庫存商品的供應商建議）
+        /// 供應商推薦（低庫存品項的供應商建議）
         /// </summary>
         SupplierRecommendation,
         

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 商品照片實體 - 儲存商品的多張照片資訊
+    /// 品項照片實體 - 儲存品項的多張照片資訊
     /// </summary>
     public class ProductPhoto : BaseEntity
     {

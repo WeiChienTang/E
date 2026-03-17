@@ -216,12 +216,12 @@ private Task<(List<SalesReturnReason> Items, int TotalCount)> ServerLoadDataAsyn
 | 客戶 | `CustomerService`、`CustomerVisitService` |
 | 廠商 | `SupplierService` |
 | 員工 | `EmployeeService`、`DepartmentService`、`EmployeePositionService`、`RoleService`、`PermissionManagementService` |
-| 商品 | `ProductService`、`ProductCategoryService`、`UnitService`、`SizeService` |
+| 品項 | `ProductService`、`ProductCategoryService`、`UnitService`、`SizeService` |
 | 生產 | `MaterialService`、`ProductCompositionService`、`CompositionCategoryService` |
 | 倉庫 | `InventoryStockService`、`InventoryTransactionService`、`StockTakingService`、`MaterialIssueService`、`WarehouseService`、`WarehouseLocationService` |
 | 車輛 | `VehicleService`、`VehicleMaintenanceService`、`VehicleTypeService` |
 | 文件 | `DocumentService`、`DocumentCategoryService` |
-| 廢棄物 | `WasteRecordService`、`WasteTypeService` |
+| 磅秤 | `WasteRecordService`、`WasteTypeService` |
 | 薪資 | `EmployeeSalaryService`、`EmployeeBankAccountService`、`PayrollPeriodService`、`PayrollItemService` |
 | 系統 | `CompanyService`、`PrinterConfigurationService`、`PaperSettingService`、`ReportPrintConfigurationService`、`ErrorLogService` |
 
@@ -251,10 +251,10 @@ private Task<(List<SalesReturnReason> Items, int TotalCount)> ServerLoadDataAsyn
 | `EmployeePositionIndex.razor` | 員工 | ✓ | 無 |
 | `RoleIndex.razor` | 員工 | | 無 |
 | `PermissionIndex.razor` | 員工 | | 無 |
-| `ProductIndex.razor` | 商品 | ✓ | Include ProductCategory、Unit、ProductionUnit、Size |
-| `ProductCategoryIndex.razor` | 商品 | ✓ | 無 |
-| `UnitIndex.razor` | 商品 | ✓ | 無 |
-| `SizeIndex.razor` | 商品 | ✓ | 無 |
+| `ProductIndex.razor` | 品項 | ✓ | Include ProductCategory、Unit、ProductionUnit、Size |
+| `ProductCategoryIndex.razor` | 品項 | ✓ | 無 |
+| `UnitIndex.razor` | 品項 | ✓ | 無 |
+| `SizeIndex.razor` | 品項 | ✓ | 無 |
 | `MaterialIndex.razor` | 生產 | | 無 |
 | `ProductCompositionIndex.razor` | 生產 | ✓ | Include ParentProduct、CompositionCategory |
 | `CompositionCategoryIndex.razor` | 生產 | ✓ | 無 |
@@ -269,8 +269,8 @@ private Task<(List<SalesReturnReason> Items, int TotalCount)> ServerLoadDataAsyn
 | `VehicleTypeIndex.razor` | 車輛 | ✓ | 無 |
 | `DocumentIndex.razor` | 文件 | ✓ | Include DocumentCategory |
 | `DocumentCategoryIndex.razor` | 文件 | ✓ | 無 |
-| `WasteRecordIndex.razor` | 廢棄物 | ✓ | Include WasteType |
-| `WasteTypeIndex.razor` | 廢棄物 | ✓ | 無 |
+| `WasteRecordIndex.razor` | 磅秤 | ✓ | Include WasteType |
+| `WasteTypeIndex.razor` | 磅秤 | ✓ | 無 |
 | `BankIndex.razor` | 財務 | ✓ | 無 |
 | `CurrencyIndex.razor` | 財務 | ✓ | 無 |
 | `PaymentMethodIndex.razor` | 財務 | ✓ | 無 |

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品-客戶關聯服務實作
+    /// 品項-客戶關聯服務實作
     /// </summary>
     public class ProductCustomerService : GenericManagementService<ProductCustomer>, IProductCustomerService
     {
@@ -39,7 +39,7 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 if (entity.ProductId <= 0)
-                    errors.Add("商品為必填欄位");
+                    errors.Add("品項為必填欄位");
 
                 if (entity.CustomerId <= 0)
                     errors.Add("客戶為必填欄位");
@@ -48,7 +48,7 @@ namespace ERPCore2.Services
                 {
                     var isDuplicate = await IsBindingExistsAsync(entity.ProductId, entity.CustomerId, entity.Id);
                     if (isDuplicate)
-                        errors.Add("此商品與客戶的綁定已存在");
+                        errors.Add("此品項與客戶的綁定已存在");
                 }
 
                 if (entity.Priority < 1 || entity.Priority > 999)
@@ -65,7 +65,7 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger,
                     new { EntityId = entity.Id, ProductId = entity.ProductId, CustomerId = entity.CustomerId });
-                return ServiceResult.Failure($"驗證商品-客戶綁定時發生錯誤: {ex.Message}");
+                return ServiceResult.Failure($"驗證品項-客戶綁定時發生錯誤: {ex.Message}");
             }
         }
 

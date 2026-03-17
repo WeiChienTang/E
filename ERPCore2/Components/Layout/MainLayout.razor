@@ -342,7 +342,7 @@
         actionRegistry.Register("OpenInventoryReportIndex", OpenInventoryReportIndex);
         actionRegistry.Register("OpenHRReportIndex", OpenHRReportIndex);
         actionRegistry.Register("OpenVehicleReportIndex", OpenVehicleReportIndex);
-        actionRegistry.Register("OpenWasteReportIndex", OpenWasteReportIndex);
+        actionRegistry.Register("OpenScaleReportIndex", OpenScaleReportIndex);
         // actionRegistry.Register("OpenAnotherModal", OpenAnotherModal);
     }
 
@@ -779,7 +779,7 @@
     public void OpenSupplierReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Supplier);
 
     /// <summary>
-    /// 開啟商品報表中心 Modal（保留供 JSInvokable 使用）
+    /// 開啟品項報表中心 Modal（保留供 JSInvokable 使用）
     /// </summary>
     [JSInvokable]
     public void OpenProductReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Product);
@@ -830,7 +830,7 @@
     /// 開啟磅秤報表中心 Modal（保留供 JSInvokable 使用）
     /// </summary>
     [JSInvokable]
-    public void OpenWasteReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Waste);
+    public void OpenScaleReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Scale);
 
     /// <summary>
     /// 處理報表中心選擇的報表

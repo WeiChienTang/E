@@ -4,12 +4,12 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 沖銷商品明細服務介面
+    /// 沖銷品項明細服務介面
     /// </summary>
     public interface ISetoffProductDetailService : IGenericManagementService<SetoffProductDetail>
     {
         /// <summary>
-        /// 根據沖款單ID取得商品明細
+        /// 根據沖款單ID取得品項明細
         /// </summary>
         Task<List<SetoffProductDetail>> GetBySetoffDocumentIdAsync(int setoffDocumentId);
 
@@ -45,7 +45,7 @@ namespace ERPCore2.Services
             SetoffDetailType sourceType);
 
         /// <summary>
-        /// 批次建立沖銷商品明細
+        /// 批次建立沖銷品項明細
         /// </summary>
         Task<ServiceResult> CreateBatchWithValidationAsync(List<SetoffProductDetail> details);
 
@@ -66,7 +66,7 @@ namespace ERPCore2.Services
     }
 
     /// <summary>
-    /// 未結清明細 DTO - 用於顯示可沖銷的商品明細
+    /// 未結清明細 DTO - 用於顯示可沖銷的品項明細
     /// </summary>
     public class UnsettledDetailDto
     {
@@ -79,13 +79,13 @@ namespace ERPCore2.Services
         /// <summary>來源單號</summary>
         public string SourceDocumentNumber { get; set; } = string.Empty;
 
-        /// <summary>商品ID</summary>
+        /// <summary>品項ID</summary>
         public int ProductId { get; set; }
 
-        /// <summary>商品名稱</summary>
+        /// <summary>品項名稱</summary>
         public string ProductName { get; set; } = string.Empty;
 
-        /// <summary>商品編號</summary>
+        /// <summary>品項編號</summary>
         public string ProductCode { get; set; } = string.Empty;
 
         /// <summary>應收/應付金額（小計金額）</summary>

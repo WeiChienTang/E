@@ -176,7 +176,7 @@ MainLayout.razor
 | # | 項目 | 說明 |
 |---|------|------|
 | 1 | **卡片優先度拖曳排序** | 同一天內的卡片排序目前固定為 `Priority` 數值，無法透過 UI 調整。考慮加入同欄卡片間的拖曳排序，儲存 Priority 值。 |
-| 2 | **月視圖 / 過濾條件** | 目前只有週視圖。若訂單量大，可考慮加入按客戶或商品篩選，或切換月視圖。 |
+| 2 | **月視圖 / 過濾條件** | 目前只有週視圖。若訂單量大，可考慮加入按客戶或品項篩選，或切換月視圖。 |
 | 3 | **深色模式 CSS** | `ProductionBoardWeekView.razor.css` 等 CSS 檔使用了部分 hardcoded 顏色（如卡片背景、狀態色條）。需補充 `[data-bs-theme=dark]` 覆寫，與系統深色模式整合。 |
 | 4 | **i18n 多語系** | 看板內所有文字（卡片狀態、按鈕、提示文字）目前均為中文硬碼。後續若有多語系需求，需注入 `IStringLocalizer<SharedResource>` 並補充 resx key。 |
 
@@ -231,7 +231,7 @@ MainLayout.razor
 **UX 流程**：
 1. 工具列新增「批次完工」按鈕（只在本週有 `InProgress` 項目時才啟用）
 2. 開啟新 Modal（`ProductionBoardBatchCompleteModal.razor`）
-3. Modal 列出當週所有 `InProgress` 項目（商品名、排程量、已完成量、剩餘量）
+3. Modal 列出當週所有 `InProgress` 項目（品項名、排程量、已完成量、剩餘量）
 4. 每列右側有數量輸入欄，預設值 = 剩餘量（`ScheduledQuantity - CompletedQuantity`）；可勾選/取消
 5. 點擊「確認入庫」→ 逐一呼叫 `ScheduleItemService.CompleteProductionAsync(id, qty)`（qty ≤ 0 跳過）
 6. 若某項完成量 ≥ 排程量，自動升格為 `Completed`（與單張卡片邏輯一致）
@@ -279,7 +279,7 @@ MainLayout.razor
 **UX 流程**：
 1. 點擊某天的「+」按鈕
 2. 開啟新 Modal（`ProductionBoardManualAddModal.razor`），標題顯示目標日期
-3. 使用者輸入：商品（可搜尋）、排程數量
+3. 使用者輸入：品項（可搜尋）、排程數量
 4. 確認後：
    - `GetOrCreateDailyBatchAsync(targetDate)` 取得每日批次
    - 建立 `ProductionScheduleItem`（`SalesOrderDetailId = null`，不回寫訂單數量）
@@ -291,7 +291,7 @@ MainLayout.razor
 - 新建：`ProductionBoardManualAddModal.razor`
   - 參數：`IsVisible`、`IsVisibleChanged`、`TargetDate`（`DateTime`）、`OnAdded`（`EventCallback`）
   - 注入：`IProductService`、`INotificationService`
-  - 商品選擇使用搜尋輸入 + 清單（確認 `SearchableDropdownComponent` 是否可直接套用）
+  - 品項選擇使用搜尋輸入 + 清單（確認 `SearchableDropdownComponent` 是否可直接套用）
 - 修改：`ProductionBoardDayColumn.razor`
   - 新增 `OnAddClick`（`EventCallback<DateTime>`）
   - day-header 右側加「+」按鈕，點擊觸發 `OnAddClick.InvokeAsync(Date)`

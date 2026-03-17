@@ -25,7 +25,7 @@ namespace ERPCore2.Services
         #region 基本查詢
 
         /// <summary>
-        /// 根據商品ID查詢異動記錄（透過明細查詢）
+        /// 根據品項ID查詢異動記錄（透過明細查詢）
         /// </summary>
         public async Task<List<InventoryTransaction>> GetByProductIdAsync(int productId)
         {
@@ -234,7 +234,7 @@ namespace ERPCore2.Services
         #region 統計查詢
 
         /// <summary>
-        /// 取得商品總入庫量（透過明細彙總）
+        /// 取得品項總入庫量（透過明細彙總）
         /// </summary>
         public async Task<decimal> GetTotalInboundByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null)
         {
@@ -261,7 +261,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得商品總出庫量（透過明細彙總）
+        /// 取得品項總出庫量（透過明細彙總）
         /// </summary>
         public async Task<decimal> GetTotalOutboundByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null)
         {
@@ -350,7 +350,7 @@ namespace ERPCore2.Services
         #region 庫存流水追蹤
 
         /// <summary>
-        /// 取得商品的異動歷史（透過明細查詢）
+        /// 取得品項的異動歷史（透過明細查詢）
         /// </summary>
         public async Task<List<InventoryTransactionDetail>> GetProductMovementHistoryDetailsAsync(int productId, int? warehouseId = null)
         {
@@ -379,7 +379,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得商品的異動歷史（主檔層級）
+        /// 取得品項的異動歷史（主檔層級）
         /// </summary>
         public async Task<List<InventoryTransaction>> GetProductMovementHistoryAsync(int productId, int? warehouseId = null)
         {
@@ -412,7 +412,7 @@ namespace ERPCore2.Services
         /// 🔑 簡化設計：同一單據只會有一筆主檔，透過 OperationType 區分操作類型
         /// </summary>
         /// <param name="baseTransactionNumber">基礎交易編號</param>
-        /// <param name="productId">商品ID（可選，用於過濾特定商品的異動）</param>
+        /// <param name="productId">品項ID（可選，用於過濾特定品項的異動）</param>
         /// <returns>包含原始交易和所有調整記錄的 RelatedDocumentInfo 列表</returns>
         public async Task<List<ERPCore2.Models.Documents.RelatedDocumentInfo>> GetRelatedTransactionsAsync(string baseTransactionNumber, int? productId = null)
         {
@@ -441,7 +441,7 @@ namespace ERPCore2.Services
                 
                 var documents = new List<ERPCore2.Models.Documents.RelatedDocumentInfo>();
                 
-                // 如果有指定商品ID，只處理包含該商品的明細
+                // 如果有指定品項ID，只處理包含該品項的明細
                 var relevantDetails = productId.HasValue
                     ? transaction.Details?.Where(d => d.ProductId == productId.Value).ToList()
                     : transaction.Details?.ToList();
@@ -460,7 +460,7 @@ namespace ERPCore2.Services
                     var netAmount = group.Sum(d => d.Amount);
                     var latestTime = group.Max(d => d.OperationTime);
                     
-                    // 取得商品名稱（如果有過濾特定商品）
+                    // 取得品項名稱（如果有過濾特定品項）
                     var productName = productId.HasValue
                         ? group.FirstOrDefault()?.Product?.Name
                         : null;

@@ -7,12 +7,12 @@ namespace ERPCore2.Models.Configuration
     public class DetailFormatConfig
     {
         /// <summary>
-        /// 是否顯示商品編號
+        /// 是否顯示品項編號
         /// </summary>
         public bool ShowProductCode { get; set; } = false;
 
         /// <summary>
-        /// 是否顯示商品名稱
+        /// 是否顯示品項名稱
         /// </summary>
         public bool ShowProductName { get; set; } = true;
 

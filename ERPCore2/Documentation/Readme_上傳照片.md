@@ -83,12 +83,12 @@ void Clear()                            // 清除（新增模式時呼叫）
 
 ### 資料表：ProductPhotos
 
-商品照片，每張商品可有多張。
+品項照片，每張品項可有多張。
 
 | 欄位 | 型別 | 說明 |
 |------|------|------|
 | `Id` | `int` PK | 自動遞增 |
-| `ProductId` | `int` NOT NULL FK → Products | 商品 ID（Cascade Delete） |
+| `ProductId` | `int` NOT NULL FK → Products | 品項 ID（Cascade Delete） |
 | `PhotoPath` | `nvarchar(500)` NOT NULL | 相對路徑 |
 | `OriginalFileName` | `nvarchar(255)` | 原始檔名 |
 | `Caption` | `nvarchar(100)` | 圖說（失焦自動儲存） |
@@ -99,7 +99,7 @@ void Clear()                            // 清除（新增模式時呼叫）
 
 | 方法 | 說明 |
 |------|------|
-| `GetByProductAsync(int productId)` | 取得指定商品的照片列表 |
+| `GetByProductAsync(int productId)` | 取得指定品項的照片列表 |
 | 繼承自 `IGenericManagementService` | `CreateAsync`, `UpdateAsync`, `DeleteAsync` 等 |
 
 #### 子目錄
@@ -130,7 +130,7 @@ void Clear()             // 清除（新增模式時呼叫）
 | 方法 | 用途 | 大小限制 |
 |------|------|----------|
 | `UploadCompanyLogoAsync(file, companyId, env, oldPath?)` | 公司 Logo | 500 KB |
-| `UploadImageAsync(file, subFolder, env, oldPath?)` | 一般圖片（名片、員工照、商品照） | 2 MB |
+| `UploadImageAsync(file, subFolder, env, oldPath?)` | 一般圖片（名片、員工照、品項照） | 2 MB |
 | `DeleteFile(relativePath, env)` | 刪除實體檔案 | — |
 
 支援格式：`.jpg`, `.jpeg`, `.png`, `.gif`, `.svg`

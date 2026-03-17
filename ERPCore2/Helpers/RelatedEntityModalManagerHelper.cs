@@ -102,7 +102,7 @@ public class StandardModalManagerConfig<TEntity, TRelatedEntity, TMainService>
     public required INotificationService NotificationService { get; set; }
 
     /// <summary>
-    /// 實體顯示名稱（如 "商品"、"客戶"）
+    /// 實體顯示名稱（如 "品項"、"客戶"）
     /// </summary>
     public required string EntityDisplayName { get; set; }
 

@@ -22,12 +22,12 @@ public class InventoryStatusCriteria : IReportFilterCriteria
     public List<int> WarehouseIds { get; set; } = new();
 
     /// <summary>
-    /// 商品分類 ID 清單（空表示所有分類）
+    /// 品項分類 ID 清單（空表示所有分類）
     /// </summary>
     [FilterFK(typeof(IProductCategoryService),
         Group = FilterGroup.Basic,
-        Label = "商品分類",
-        Placeholder = "搜尋商品分類...",
+        Label = "品項分類",
+        Placeholder = "搜尋品項分類...",
         EmptyMessage = "未選擇分類（查詢全部分類）",
         Order = 2)]
     public List<int> CategoryIds { get; set; } = new();
@@ -39,7 +39,7 @@ public class InventoryStatusCriteria : IReportFilterCriteria
     public string? Keyword { get; set; }
 
     /// <summary>
-    /// 是否包含零庫存商品
+    /// 是否包含零庫存品項
     /// </summary>
     [FilterToggle(Group = FilterGroup.Quick, Label = "顯示條件", CheckboxLabel = "包含零庫存", DefaultValue = false, Order = 2)]
     public bool IncludeZeroStock { get; set; } = false;

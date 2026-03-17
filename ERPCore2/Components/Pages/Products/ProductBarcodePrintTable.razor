@@ -1,5 +1,5 @@
 @*
-    商品條碼列印表格元件
+    品項條碼列印表格元件
     專門用於條碼列印功能的表格顯示
 *@
 @using ERPCore2.Models
@@ -58,7 +58,7 @@
     {
         columnDefinitions = new List<InteractiveColumnDefinition>
         {
-            // 商品編號
+            // 品項編號
             new InteractiveColumnDefinition
             {
                 Title = L["Column.ProductCode"],
@@ -67,7 +67,7 @@
                 Width = "150px"
             },
 
-            // 商品名稱
+            // 品項名稱
             new InteractiveColumnDefinition
             {
                 Title = L["Column.ProductName"],

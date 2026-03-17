@@ -32,7 +32,7 @@
 |------|------|------|
 | `IsVisible` | `bool` | Modal 是否顯示 |
 | `IsVisibleChanged` | `EventCallback<bool>` | 顯示狀態變更事件 |
-| `ProductName` | `string` | 顯示於標題的商品名稱 |
+| `ProductName` | `string` | 顯示於標題的品項名稱 |
 | `RelatedDocuments` | `List<RelatedDocumentInfo>?` | 相關單據資料清單（null 時顯示載入中） |
 | `IsLoading` | `bool` | 載入狀態 |
 | `OnDocumentClick` | `EventCallback<RelatedDocumentInfo>` | 點擊單據列觸發 |
@@ -88,7 +88,7 @@
 
 | 枚舉值 | 說明 | 圖示 | 顏色 |
 |--------|------|------|------|
-| `ProductComposition` | 商品物料清單 (BOM) | `diagram-3` | purple |
+| `ProductComposition` | 品項物料清單 (BOM) | `diagram-3` | purple |
 | `SalesOrder` | 銷貨訂單 | `cart-check` | primary |
 | `ReceivingDocument` | 入庫記錄 | `box-seam` | info |
 | `ReturnDocument` | 退貨記錄 | `arrow-return-left` | warning |

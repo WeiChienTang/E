@@ -40,7 +40,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "RR001",
                     Name = "品質不良",
-                    Remarks = "商品品質不符合標準或有瑕疵",
+                    Remarks = "品項品質不符合標準或有瑕疵",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt1
                 },
@@ -48,7 +48,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "RR002",
                     Name = "規格不符",
-                    Remarks = "商品規格與訂單要求不符",
+                    Remarks = "品項規格與訂單要求不符",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt2
                 },
@@ -71,8 +71,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new EntitySalesReturnReason
                 {
                     Code = "RR005",
-                    Name = "過期商品",
-                    Remarks = "商品已過有效期限",
+                    Name = "過期品項",
+                    Remarks = "品項已過有效期限",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt5
                 },

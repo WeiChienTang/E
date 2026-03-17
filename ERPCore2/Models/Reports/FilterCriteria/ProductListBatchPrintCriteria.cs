@@ -6,17 +6,17 @@ using ERPCore2.Services;
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
 /// <summary>
-/// 商品資料表批次列印篩選條件
+/// 品項資料表批次列印篩選條件
 /// </summary>
 public class ProductListBatchPrintCriteria : IReportFilterCriteria
 {
     /// <summary>
-    /// 商品分類 ID 清單（空表示所有分類）
+    /// 品項分類 ID 清單（空表示所有分類）
     /// </summary>
     [FilterFK(typeof(IProductCategoryService),
         Group = FilterGroup.Basic,
-        Label = "商品分類",
-        Placeholder = "搜尋商品分類...",
+        Label = "品項分類",
+        Placeholder = "搜尋品項分類...",
         EmptyMessage = "未選擇分類（列印全部分類）",
         Order = 1)]
     public List<int> CategoryIds { get; set; } = new();
@@ -28,7 +28,7 @@ public class ProductListBatchPrintCriteria : IReportFilterCriteria
     public string? Keyword { get; set; }
 
     /// <summary>
-    /// 是否僅顯示啟用商品
+    /// 是否僅顯示啟用品項
     /// </summary>
     [FilterToggle(Group = FilterGroup.Quick, Label = "顯示條件", CheckboxLabel = "僅啟用", DefaultValue = true, Order = 2)]
     public bool ActiveOnly { get; set; } = true;
@@ -70,6 +70,6 @@ public class ProductListBatchPrintCriteria : IReportFilterCriteria
         if (ActiveOnly)
             summary.Add("僅啟用");
 
-        return summary.Any() ? string.Join(" | ", summary) : "全部商品";
+        return summary.Any() ? string.Join(" | ", summary) : "全部品項";
     }
 }

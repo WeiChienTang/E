@@ -1,4 +1,4 @@
-@* 廠商供應商品 Tab - 自包含元件，主組件透過 @ref 協調 *@
+@* 廠商供應品項 Tab - 自包含元件，主組件透過 @ref 協調 *@
 @inject IProductSupplierService ProductSupplierService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -85,7 +85,7 @@ else
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入供應商品時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入供應品項時發生錯誤：{ex.Message}");
             _productSuppliers = new();
         }
         finally

@@ -316,7 +316,7 @@
                 new() { Text = "全盤", Value = ((int)StockTakingTypeEnum.Full).ToString() },
                 new() { Text = "循環盤點", Value = ((int)StockTakingTypeEnum.Cycle).ToString() },
                 new() { Text = "抽樣盤點", Value = ((int)StockTakingTypeEnum.Sample).ToString() },
-                new() { Text = "特定商品盤點", Value = ((int)StockTakingTypeEnum.Specific).ToString() },
+                new() { Text = "特定品項盤點", Value = ((int)StockTakingTypeEnum.Specific).ToString() },
                 new() { Text = "特定位置盤點", Value = ((int)StockTakingTypeEnum.Location).ToString() }
             };
 
@@ -416,22 +416,22 @@
                         new LabelHelpItem
                         {
                             Title = "全盤",
-                            Description = "盤點倉庫或庫位內所有商品，適合年度盤點或定期全面清查"
+                            Description = "盤點倉庫或庫位內所有品項，適合年度盤點或定期全面清查"
                         },
                         new LabelHelpItem
                         {
                             Title = "循環盤點",
-                            Description = "按照計畫輪流盤點不同商品類別，維持日常庫存準確性"
+                            Description = "按照計畫輪流盤點不同品項類別，維持日常庫存準確性"
                         },
                         new LabelHelpItem
                         {
                             Title = "抽樣盤點",
-                            Description = "隨機抽取部分商品進行盤點，快速評估整體庫存準確度"
+                            Description = "隨機抽取部分品項進行盤點，快速評估整體庫存準確度"
                         },
                         new LabelHelpItem
                         {
-                            Title = "特定商品盤點",
-                            Description = "針對高價值或異常商品進行重點盤點"
+                            Title = "特定品項盤點",
+                            Description = "針對高價值或異常品項進行重點盤點"
                         },
                         new LabelHelpItem
                         {
@@ -470,7 +470,7 @@
                     Label = L["Field.StockTakingItems"],
                     FieldType = FormFieldType.Number,
                     IsReadOnly = true,
-                    HelpText = "盤點清單中的商品總項目數"
+                    HelpText = "盤點清單中的品項總項目數"
                 },
                 new FormFieldDefinition
                 {
@@ -478,7 +478,7 @@
                     Label = L["Field.CountedQuantity"],
                     FieldType = FormFieldType.Number,
                     IsReadOnly = true,
-                    HelpText = "已完成盤點的商品項目數"
+                    HelpText = "已完成盤點的品項項目數"
                 },
                 new FormFieldDefinition
                 {
@@ -486,7 +486,7 @@
                     Label = L["Field.DifferenceQuantity"],
                     FieldType = FormFieldType.Number,
                     IsReadOnly = true,
-                    HelpText = "存在數量差異的商品項目數"
+                    HelpText = "存在數量差異的品項項目數"
                 },
                 new FormFieldDefinition
                 {
@@ -694,7 +694,7 @@
             // 驗證至少有一筆明細
             if (!stockTakingDetails.Any())
             {
-                await NotificationService.ShowErrorAsync("請至少新增一筆盤點商品");
+                await NotificationService.ShowErrorAsync("請至少新增一筆盤點品項");
                 return false;
             }
 
@@ -703,7 +703,7 @@
 
             if (invalidDetails.Any())
             {
-                await NotificationService.ShowErrorAsync("存在無效的明細資料，請檢查商品是否已選擇");
+                await NotificationService.ShowErrorAsync("存在無效的明細資料，請檢查品項是否已選擇");
                 return false;
             }
 

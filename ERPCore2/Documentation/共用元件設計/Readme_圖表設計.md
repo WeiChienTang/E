@@ -137,7 +137,7 @@
 
 ### 1. `@using ApexCharts` 禁止放入 `_Imports.razor`
 
-`ApexCharts` 套件內含 `Size` 型別，與 `ERPCore2.Data.Entities.Size`（商品尺寸）同名，全域引入會導致商品相關頁面編譯錯誤。`@using ApexCharts` 只放在 `GenericChartModalComponent.razor` 頂端，模組包裝器不需再加。
+`ApexCharts` 套件內含 `Size` 型別，與 `ERPCore2.Data.Entities.Size`（品項尺寸）同名，全域引入會導致品項相關頁面編譯錯誤。`@using ApexCharts` 只放在 `GenericChartModalComponent.razor` 頂端，模組包裝器不需再加。
 
 ### 2. Options 與 Callback 必須使用穩定物件參考
 

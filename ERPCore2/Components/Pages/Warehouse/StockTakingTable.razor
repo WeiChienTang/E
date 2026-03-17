@@ -43,7 +43,7 @@ else
             <div class="card-footer">
                 <div class="table-action-bar">
                     <div class="btn-group-left">
-                        <GenericButtonComponent Text="載入倉庫商品"
+                        <GenericButtonComponent Text="載入倉庫品項"
                                               Variant="ButtonVariant.DarkBlue"
                                               OnClick="LoadWarehouseProducts"
                                               IsDisabled="@(!SelectedWarehouseId.HasValue || SelectedWarehouseId.Value <= 0 || HasAdjustedItems())"
@@ -74,10 +74,10 @@ else
     private int? _previousWarehouseId = null;
     private int? _previousWarehouseLocationId = null;
     private bool _isInitialized = false;
-    private bool _isLoadingProducts = false; // 標記是否正在載入可用商品
+    private bool _isLoadingProducts = false; // 標記是否正在載入可用品項
     private int _previousProductsCount = 0; // 追蹤上次 Products 參數的數量，避免重複載入
     
-    // 倉庫可用商品清單（根據選定倉庫和庫位過濾後的商品）
+    // 倉庫可用品項清單（根據選定倉庫和庫位過濾後的品項）
     private List<Product> _availableProducts = new();
 
     // ===== 生命週期方法 =====
@@ -102,7 +102,7 @@ else
         // 防止重複載入：如果正在載入中，直接返回
         if (_isLoadingProducts) return;
 
-        // 倉庫或庫位變更時重新載入可用商品
+        // 倉庫或庫位變更時重新載入可用品項
         var warehouseChanged = _previousWarehouseId != SelectedWarehouseId;
         var locationChanged = _previousWarehouseLocationId != SelectedWarehouseLocationId;
         
@@ -153,7 +153,7 @@ else
     }
     
     /// <summary>
-    /// 載入倉庫可用商品清單（根據選定倉庫和庫位過濾）
+    /// 載入倉庫可用品項清單（根據選定倉庫和庫位過濾）
     /// </summary>
     private async Task LoadAvailableProductsAsync()
     {
@@ -169,7 +169,7 @@ else
         
         try
         {
-            // 取得該倉庫有庫存的商品
+            // 取得該倉庫有庫存的品項
             var inventoryStocks = await InventoryStockService.GetByWarehouseIdAsync(SelectedWarehouseId.Value);
             
             if (!inventoryStocks.Any())
@@ -183,12 +183,12 @@ else
             
             foreach (var stock in inventoryStocks)
             {
-                // 取得該商品在選定倉庫的明細
+                // 取得該品項在選定倉庫的明細
                 var warehouseDetails = stock.InventoryStockDetails?
                     .Where(d => d.WarehouseId == SelectedWarehouseId.Value && d.CurrentStock > 0)
                     .ToList();
                 
-                // 如果有指定庫位，只篩選該庫位的商品
+                // 如果有指定庫位，只篩選該庫位的品項
                 if (SelectedWarehouseLocationId.HasValue)
                 {
                     warehouseDetails = warehouseDetails?
@@ -207,7 +207,7 @@ else
                 }
             }
             
-            // 從 Products 參數中篩選出有庫存的商品
+            // 從 Products 參數中篩選出有庫存的品項
             _availableProducts = (Products ?? new List<Product>()).Where(p => productIds.Contains(p.Id)).ToList();
         }
         catch (Exception ex)
@@ -233,7 +233,7 @@ else
 
         if (!validItems.Any())
         {
-            errors.Add("請至少新增一筆盤點商品");
+            errors.Add("請至少新增一筆盤點品項");
         }
 
         if (errors.Any())
@@ -285,7 +285,7 @@ else
                 ExistingDetailEntity = detail
             };
             
-            // 載入該商品可用的庫位資訊
+            // 載入該品項可用的庫位資訊
             if (item.SelectedProductId.HasValue && SelectedWarehouseId.HasValue)
             {
                 try
@@ -315,7 +315,7 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位
+        // 品項選擇欄位
         columns.Add(new()
         {
             Title = L["Column.ProductCodeName"],
@@ -324,8 +324,8 @@ else
             TriggerEmptyRowOnFilled = true,
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "250px",
-            Tooltip = "搜尋並選擇要盤點的商品",
-            Placeholder = "請輸入商品編號或名稱",
+            Tooltip = "搜尋並選擇要盤點的品項",
+            Placeholder = "請輸入品項編號或名稱",
             SearchValuePropertyName = nameof(StockTakingDetailItem.ProductSearchValue),
             FilteredItemsPropertyName = nameof(StockTakingDetailItem.FilteredProducts),
             ShowDropdownPropertyName = nameof(StockTakingDetailItem.ShowProductDropdown),
@@ -338,7 +338,7 @@ else
             IsDisabledFunc = item =>
             {
                 var detailItem = (StockTakingDetailItem)item;
-                // 已執行庫存調整的項目不允許修改商品
+                // 已執行庫存調整的項目不允許修改品項
                 return IsReadOnly || detailItem.IsAdjusted;
             },
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
@@ -364,7 +364,7 @@ else
                     await LoadAvailableProductsAsync();
                 }
                 
-                // 使用倉庫可用商品清單
+                // 使用倉庫可用品項清單
                 detailItem.FilteredProducts = (_availableProducts ?? new List<Product>()).Take(20).ToList();
                 detailItem.ShowProductDropdown = true;
                 detailItem.ProductSelectedIndex = -1;
@@ -403,19 +403,19 @@ else
                 var isLockedByMaster = SelectedWarehouseLocationId.HasValue;
                 var isDisabled = IsReadOnly || detailItem.IsAdjusted || isLockedByMaster;
                 
-                // 判斷是否已載入商品的庫位資訊（商品已選擇且有任一庫位資訊）
+                // 判斷是否已載入品項的庫位資訊（品項已選擇且有任一庫位資訊）
                 var hasProductLocationInfo = detailItem.SelectedProduct != null && 
                     (detailItem.AvailableLocationsForProduct.Any() || detailItem.HasStockWithoutLocation);
                 
-                // 根據商品實際有庫存的庫位來顯示選項
-                // 如果尚未選擇商品或未載入庫位資訊，則顯示該倉庫的所有庫位
+                // 根據品項實際有庫存的庫位來顯示選項
+                // 如果尚未選擇品項或未載入庫位資訊，則顯示該倉庫的所有庫位
                 var locations = hasProductLocationInfo
                     ? detailItem.AvailableLocationsForProduct
                     : GetAvailableLocations();
                 
                 // 判斷是否顯示「無指定」選項
-                var showNoLocationOption = detailItem.SelectedProduct == null || // 尚未選擇商品
-                                          detailItem.HasStockWithoutLocation ||  // 商品在「無指定庫位」有庫存
+                var showNoLocationOption = detailItem.SelectedProduct == null || // 尚未選擇品項
+                                          detailItem.HasStockWithoutLocation ||  // 品項在「無指定庫位」有庫存
                                           !hasProductLocationInfo;               // 尚未載入庫位資訊
 
                 // 如果被主表鎖定，顯示唯讀樣式
@@ -513,7 +513,7 @@ else
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             CellCssClass = "text-end",
-            Tooltip = "商品的單位成本（用於計算盤盈盤虧）",
+            Tooltip = "品項的單位成本（用於計算盤盈盤虧）",
             MinValue = 0,
             IsDisabledFunc = item => 
             {
@@ -617,7 +617,7 @@ else
     {
         item.ProductSearchValue = searchValue ?? string.Empty;
 
-        // 使用倉庫可用商品清單（確保有預設空清單避免 null 錯誤）
+        // 使用倉庫可用品項清單（確保有預設空清單避免 null 錯誤）
         var availableList = _availableProducts ?? new List<Product>();
         
         if (string.IsNullOrWhiteSpace(searchValue))
@@ -671,7 +671,7 @@ else
 
         try
         {
-            // 取得該商品在指定倉庫的庫存資訊（不指定庫位，取得所有庫位的資訊）
+            // 取得該品項在指定倉庫的庫存資訊（不指定庫位，取得所有庫位的資訊）
             var inventoryStock = await InventoryStockService.GetByProductWarehouseAsync(
                 item.SelectedProductId.Value, 
                 SelectedWarehouseId.Value,
@@ -679,7 +679,7 @@ else
 
             if (inventoryStock != null)
             {
-                // 載入該商品在此倉庫可用的庫位
+                // 載入該品項在此倉庫可用的庫位
                 await LoadAvailableLocationsForProduct(item, inventoryStock);
                 
                 // 根據選擇的庫位取得對應的庫存數量
@@ -729,14 +729,14 @@ else
     }
     
     /// <summary>
-    /// 載入該商品在此倉庫可用的庫位清單
+    /// 載入該品項在此倉庫可用的庫位清單
     /// </summary>
     private Task LoadAvailableLocationsForProduct(StockTakingDetailItem item, InventoryStock inventoryStock)
     {
         var availableLocationIds = new HashSet<int>();
         var hasStockWithoutLocation = false;
         
-        // 遍歷該商品在此倉庫的所有庫存明細
+        // 遍歷該品項在此倉庫的所有庫存明細
         var warehouseDetails = inventoryStock.InventoryStockDetails?
             .Where(d => d.WarehouseId == SelectedWarehouseId!.Value && d.CurrentStock > 0)
             .ToList();
@@ -824,33 +824,33 @@ else
 
         try
         {
-            // 取得倉庫中的所有庫存商品
+            // 取得倉庫中的所有庫存品項
             var inventoryStocks = await InventoryStockService.GetByWarehouseIdAsync(SelectedWarehouseId.Value);
 
             if (!inventoryStocks.Any())
             {
-                await NotificationService.ShowWarningAsync("該倉庫目前沒有庫存商品");
+                await NotificationService.ShowWarningAsync("該倉庫目前沒有庫存品項");
                 return;
             }
 
             _dataLoadCompleted = false;
 
-            // 保留已有明細（包含已調整和未調整的），只新增尚未存在的商品
+            // 保留已有明細（包含已調整和未調整的），只新增尚未存在的品項
             var existingItems = DetailItems.Where(x => x.SelectedProduct != null).ToList();
             var newItems = new List<StockTakingDetailItem>();
 
-            // 遍歷每個商品的庫存明細（按倉庫+庫位細分）
+            // 遍歷每個品項的庫存明細（按倉庫+庫位細分）
             foreach (var stock in inventoryStocks)
             {
                 var product = Products.FirstOrDefault(p => p.Id == stock.ProductId);
                 if (product == null) continue;
 
-                // 取得該商品在指定倉庫的明細
+                // 取得該品項在指定倉庫的明細
                 var warehouseDetails = stock.InventoryStockDetails?
                     .Where(d => d.WarehouseId == SelectedWarehouseId.Value && d.CurrentStock > 0)
                     .ToList();
 
-                // 如果主表有指定庫位，只篩選該庫位的商品
+                // 如果主表有指定庫位，只篩選該庫位的品項
                 if (SelectedWarehouseLocationId.HasValue)
                 {
                     warehouseDetails = warehouseDetails?
@@ -898,19 +898,19 @@ else
                 }
             }
 
-            // 將新商品加入已有明細後方
+            // 將新品項加入已有明細後方
             DetailItems.AddRange(newItems);
 
             _dataLoadCompleted = true;
             await NotifyDetailsChanged();
             StateHasChanged();
 
-            await NotificationService.ShowSuccessAsync($"已帶入 {newItems.Count} 筆庫存商品（保留原有 {existingItems.Count} 筆）");
+            await NotificationService.ShowSuccessAsync($"已帶入 {newItems.Count} 筆庫存品項（保留原有 {existingItems.Count} 筆）");
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehouseProducts), GetType());
-            await NotificationService.ShowErrorAsync("載入倉庫商品失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫品項失敗");
         }
     }
 
@@ -985,7 +985,7 @@ else
     private bool HasAdjustedItems() => DetailItems.Any(x => x.IsAdjusted);
     
     /// <summary>
-    /// 取得「載入倉庫商品」按鈕的 Title 提示
+    /// 取得「載入倉庫品項」按鈕的 Title 提示
     /// </summary>
     private string GetLoadButtonTitle()
     {
@@ -993,7 +993,7 @@ else
             return "請先選擇倉庫";
         if (HasAdjustedItems())
             return "已有明細完成庫存調整，無法重新載入";
-        return "從選定倉庫載入所有商品庫存";
+        return "從選定倉庫載入所有品項庫存";
     }
 
     private int GetValidItemCount() => DetailItems.Count(x => x.SelectedProduct != null);
@@ -1004,32 +1004,32 @@ else
 
     private string GetEmptyMessage()
     {
-        // 如果正在載入可用商品，顯示載入中訊息
+        // 如果正在載入可用品項，顯示載入中訊息
         if (_isLoadingProducts)
         {
-            return "正在載入倉庫商品資料...";
+            return "正在載入倉庫品項資料...";
         }
         
-        // 檢查倉庫是否有商品
+        // 檢查倉庫是否有品項
         var hasProducts = HasWarehouseProducts();
         
         if (!hasProducts)
         {
             if (SelectedWarehouseLocationId.HasValue)
             {
-                return "此倉庫的指定庫位目前沒有庫存商品";
+                return "此倉庫的指定庫位目前沒有庫存品項";
             }
             else
             {
-                return "此倉庫目前沒有庫存商品";
+                return "此倉庫目前沒有庫存品項";
             }
         }
         
-        return "請在商品欄位搜尋選擇商品，或使用下方「帶入倉庫商品」按鈕批次載入";
+        return "請在品項欄位搜尋選擇品項，或使用下方「帶入倉庫品項」按鈕批次載入";
     }
     
     /// <summary>
-    /// 檢查倉庫是否有商品可供盤點
+    /// 檢查倉庫是否有品項可供盤點
     /// </summary>
     private bool HasWarehouseProducts()
     {
@@ -1058,7 +1058,7 @@ else
 
     public class StockTakingDetailItem
     {
-        // 商品選擇相關
+        // 品項選擇相關
         public int? SelectedProductId { get; set; }
         public Product? SelectedProduct { get; set; }
         public string ProductSearchValue { get; set; } = string.Empty;
@@ -1070,12 +1070,12 @@ else
         public int? SelectedWarehouseLocationId { get; set; }
         
         /// <summary>
-        /// 該商品可用的庫位清單（根據實際庫存過濾）
+        /// 該品項可用的庫位清單（根據實際庫存過濾）
         /// </summary>
         public List<WarehouseLocation> AvailableLocationsForProduct { get; set; } = new();
         
         /// <summary>
-        /// 該商品是否在「無指定庫位」有庫存
+        /// 該品項是否在「無指定庫位」有庫存
         /// </summary>
         public bool HasStockWithoutLocation { get; set; } = false;
 

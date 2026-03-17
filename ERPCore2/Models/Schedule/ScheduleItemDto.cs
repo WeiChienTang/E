@@ -28,17 +28,17 @@ namespace ERPCore2.Models.Schedule
         public string SalesOrderCode { get; set; } = string.Empty;
         
         /// <summary>
-        /// 商品 ID
+        /// 品項 ID
         /// </summary>
         public int ProductId { get; set; }
         
         /// <summary>
-        /// 商品編號（顯示用）
+        /// 品項編號（顯示用）
         /// </summary>
         public string ProductCode { get; set; } = string.Empty;
         
         /// <summary>
-        /// 商品名稱（顯示用）
+        /// 品項名稱（顯示用）
         /// </summary>
         public string ProductName { get; set; } = string.Empty;
         
@@ -100,7 +100,7 @@ namespace ERPCore2.Models.Schedule
         // ===== 領料狀態（從 ProductionScheduleDetail 計算）=====
 
         /// <summary>
-        /// 是否有 BOM（此商品有對應的物料清單）
+        /// 是否有 BOM（此品項有對應的物料清單）
         /// </summary>
         public bool HasBom { get; set; } = false;
 

@@ -83,7 +83,7 @@ public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem
     // ===== 虛方法（子類別可選擇性覆寫）=====
 
     /// <summary>
-    /// 當 SelectedSupplierId 改變時執行（如重新載入廠商已知商品目錄）。
+    /// 當 SelectedSupplierId 改變時執行（如重新載入廠商已知品項目錄）。
     /// 在 InvokeLoadWithCompletionAsync() 之前呼叫。
     /// </summary>
     protected virtual Task OnCounterpartyChangedAsync() => Task.CompletedTask;

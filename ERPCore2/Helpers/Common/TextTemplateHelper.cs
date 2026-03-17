@@ -104,8 +104,8 @@ namespace ERPCore2.Helpers
         /// <summary>
         /// 格式化採購單明細行
         /// </summary>
-        /// <param name="productCode">商品編號</param>
-        /// <param name="productName">商品名稱</param>
+        /// <param name="productCode">品項編號</param>
+        /// <param name="productName">品項名稱</param>
         /// <param name="quantity">數量</param>
         /// <param name="unit">單位</param>
         /// <param name="unitPrice">單價</param>
@@ -130,13 +130,13 @@ namespace ERPCore2.Helpers
             // 序號
             parts.Add($"{index}.");
 
-            // 商品編號
+            // 品項編號
             if (config.ShowProductCode && !string.IsNullOrWhiteSpace(productCode))
             {
                 parts.Add($"[{productCode}]");
             }
 
-            // 商品名稱
+            // 品項名稱
             if (config.ShowProductName && !string.IsNullOrWhiteSpace(productName))
             {
                 parts.Add(productName);

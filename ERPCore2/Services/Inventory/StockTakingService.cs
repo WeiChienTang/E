@@ -360,6 +360,9 @@ namespace ERPCore2.Services
                 if (stockTaking.TakingStatus == StockTakingStatusEnum.Approved)
                     return ServiceResult.Failure("已審核的盤點無法取消");
 
+                if (stockTaking.IsAdjustmentGenerated)
+                    return ServiceResult.Failure("此盤點已產生庫存調整，無法直接取消。若需撤銷，請刪除此盤點單（系統將自動回滾庫存）。");
+
                 stockTaking.TakingStatus = StockTakingStatusEnum.Cancelled;
                 stockTaking.UpdatedAt = DateTime.UtcNow;
 
@@ -1131,7 +1134,7 @@ namespace ERPCore2.Services
 
                     if (!result.IsSuccess)
                     {
-                        return ServiceResult.Failure($"回滾庫存失敗（商品ID: {detail.ProductId}）：{result.ErrorMessage}");
+                        return ServiceResult.Failure($"回滾庫存失敗（品項ID: {detail.ProductId}）：{result.ErrorMessage}");
                     }
 
                     rollbackCount++;
@@ -1193,12 +1196,12 @@ namespace ERPCore2.Services
                     break;
 
                 case StockTakingTypeEnum.Cycle:
-                    // 循環盤點可以加入特定邏輯，例如庫存週轉率高的商品
+                    // 循環盤點可以加入特定邏輯，例如庫存週轉率高的品項
                     query = query.Where(i => i.CurrentStock > 0);
                     break;
 
                 case StockTakingTypeEnum.Sample:
-                    // 抽樣盤點，可以隨機選擇部分商品
+                    // 抽樣盤點，可以隨機選擇部分品項
                     query = query.OrderBy(i => Guid.NewGuid()).Take(100);
                     break;
 

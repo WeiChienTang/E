@@ -73,10 +73,10 @@ namespace ERPCore2.Services
                     errors.Add("銷貨訂單為必填");
                 }
 
-                // 驗證商品
+                // 驗證品項
                 if (entity.ProductId <= 0)
                 {
-                    errors.Add("商品為必填");
+                    errors.Add("品項為必填");
                 }
 
                 // 驗證訂單數量
@@ -97,7 +97,7 @@ namespace ERPCore2.Services
                     errors.Add("折扣比例必須介於0-100之間");
                 }
 
-                // 檢查商品在同一訂單中是否重複
+                // 檢查品項在同一訂單中是否重複
                 if (entity.SalesOrderId > 0 && entity.ProductId > 0)
                 {
                     var isDuplicate = await IsProductExistsInOrderAsync(
@@ -107,7 +107,7 @@ namespace ERPCore2.Services
                     
                     if (isDuplicate)
                     {
-                        errors.Add("該商品在此訂單中已存在");
+                        errors.Add("該品項在此訂單中已存在");
                     }
                 }
 
@@ -196,7 +196,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據商品ID取得銷貨訂單明細
+        /// 根據品項ID取得銷貨訂單明細
         /// </summary>
         public async Task<List<SalesOrderDetail>> GetByProductIdAsync(int productId)
         {
@@ -265,7 +265,7 @@ namespace ERPCore2.Services
                 
                 foreach (var detail in details)
                 {
-                    // 只處理有效的明細（已選擇商品的）
+                    // 只處理有效的明細（已選擇品項的）
                     if (detail.ProductId > 0)
                     {
                         // SubtotalAmount 現在是計算屬性，由 OrderQuantity * UnitPrice 自動計算
@@ -322,7 +322,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查商品在訂單中是否已存在
+        /// 檢查品項在訂單中是否已存在
         /// </summary>
         public async Task<bool> IsProductExistsInOrderAsync(int salesOrderId, int productId, int? excludeDetailId = null)
         {

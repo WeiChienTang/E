@@ -261,7 +261,7 @@ namespace ERPCore2.Services.Reports
                 results = results.Where(c => c.Status == EntityStatus.Active).ToList();
             }
 
-            // 篩選成品（父商品）
+            // 篩選成品（父品項）
             if (criteria.ParentProductIds.Any())
             {
                 results = results.Where(c =>

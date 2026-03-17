@@ -49,14 +49,14 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 從商品物料清單複製 BOM 資料到銷貨訂單（使用最新的配方）
+        /// 從品項物料清單複製 BOM 資料到銷貨訂單（使用最新的配方）
         /// </summary>
         public async Task<List<SalesOrderCompositionDetail>> CopyFromProductCompositionAsync(
             int salesOrderDetailId, int productId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             
-            // 取得商品的物料清單資料
+            // 取得品項的物料清單資料
             var productCompositions = await context.ProductCompositionDetails
                 .Include(p => p.ComponentProduct)
                     .ThenInclude(cp => cp.ProductionUnit)
@@ -67,7 +67,7 @@ namespace ERPCore2.Services
                     .FirstOrDefault())
                 .ToListAsync();
 
-            // 轉換為銷貨訂單組成明細（使用組件商品的製程單位）
+            // 轉換為銷貨訂單組成明細（使用組件品項的製程單位）
             return productCompositions.Select(pc => new SalesOrderCompositionDetail
             {
                 SalesOrderDetailId = salesOrderDetailId,
@@ -82,14 +82,14 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 從指定的商品配方複製 BOM 資料到銷貨訂單（直接複製配方明細，不遞迴展開）
+        /// 從指定的品項配方複製 BOM 資料到銷貨訂單（直接複製配方明細，不遞迴展開）
         /// </summary>
         public async Task<List<SalesOrderCompositionDetail>> CopyFromCompositionAsync(
             int salesOrderDetailId, int compositionId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            // 查詢指定的商品配方
+            // 查詢指定的品項配方
             var productComposition = await context.ProductCompositions
                 .Include(x => x.CompositionDetails)
                     .ThenInclude(d => d.ComponentProduct)
@@ -106,7 +106,7 @@ namespace ERPCore2.Services
                 return new List<SalesOrderCompositionDetail>();
             }
 
-            // 直接複製組合明細（使用組件商品的製程單位）
+            // 直接複製組合明細（使用組件品項的製程單位）
             var result = new List<SalesOrderCompositionDetail>();
 
             foreach (var detail in productComposition.CompositionDetails)
@@ -248,7 +248,7 @@ namespace ERPCore2.Services
 
             if (entity.ComponentProductId <= 0)
             {
-                return ServiceResult.Failure("組件商品ID無效");
+                return ServiceResult.Failure("組件品項ID無效");
             }
 
             if (entity.Quantity <= 0)

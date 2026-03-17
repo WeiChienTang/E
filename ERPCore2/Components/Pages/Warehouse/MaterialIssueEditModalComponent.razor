@@ -473,7 +473,7 @@
                     var invalidDetails = materialIssueDetails.Where(d =>
                         d.ProductId <= 0 || d.WarehouseId <= 0 || d.IssueQuantity <= 0).ToList();
                     if (invalidDetails.Any())
-                        validationErrors.Add("存在無效的明細資料，請檢查商品、倉庫和數量是否都已填寫");
+                        validationErrors.Add("存在無效的明細資料，請檢查品項、倉庫和數量是否都已填寫");
                 }
 
                 if (validationErrors.Any())
@@ -570,7 +570,7 @@
 
             if (invalidDetails.Any())
             {
-                await NotificationService.ShowErrorAsync("存在無效的明細資料，請檢查商品、倉庫和數量是否都已填寫");
+                await NotificationService.ShowErrorAsync("存在無效的明細資料，請檢查品項、倉庫和數量是否都已填寫");
                 return false;
             }
 

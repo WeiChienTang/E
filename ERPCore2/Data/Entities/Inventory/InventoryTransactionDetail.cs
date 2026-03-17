@@ -6,7 +6,7 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 庫存異動明細實體 - 記錄單筆商品的異動詳情
+    /// 庫存異動明細實體 - 記錄單筆品項的異動詳情
     /// </summary>
     [Index(nameof(InventoryTransactionId))]
     [Index(nameof(ProductId))]
@@ -19,8 +19,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(InventoryTransaction))]
         public int InventoryTransactionId { get; set; }
         
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
+        [Required(ErrorMessage = "品項為必填")]
+        [Display(Name = "品項")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
         

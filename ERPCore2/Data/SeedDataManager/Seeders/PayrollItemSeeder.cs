@@ -16,12 +16,14 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
         public async Task SeedAsync(AppDbContext context)
         {
-            bool hasData = await context.PayrollItems.AnyAsync();
-            if (hasData) return;
-
             var now = DateTime.Now;
 
-            var items = new List<PayrollItem>
+            // 取得現有項目代碼，逐一檢查並補齊缺少的項目（支援既有資料庫新增項目）
+            var existingCodes = await context.PayrollItems
+                .Select(i => i.Code)
+                .ToHashSetAsync();
+
+            var allItems = new List<PayrollItem>
             {
                 // ===== 收入項目 =====
                 new PayrollItem
@@ -210,6 +212,20 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new PayrollItem
                 {
+                    Code = "SICK",
+                    Name = "病假扣款",
+                    ItemType = PayrollItemType.Deduction,
+                    Category = PayrollItemCategory.Other,
+                    IsTaxable = false,
+                    IsInsuranceBasis = false,
+                    IsRetirementBasis = false,
+                    IsSystemItem = true,
+                    SortOrder = 21,
+                    Status = EntityStatus.Active,
+                    CreatedAt = now
+                },
+                new PayrollItem
+                {
                     Code = "LATE",
                     Name = "遲到扣款",
                     ItemType = PayrollItemType.Deduction,
@@ -218,7 +234,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     IsInsuranceBasis = false,
                     IsRetirementBasis = false,
                     IsSystemItem = false,
-                    SortOrder = 21,
+                    SortOrder = 22,
                     Status = EntityStatus.Active,
                     CreatedAt = now
                 },
@@ -252,8 +268,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 }
             };
 
-            await context.PayrollItems.AddRangeAsync(items);
-            await context.SaveChangesAsync();
+            var itemsToAdd = allItems.Where(i => !existingCodes.Contains(i.Code)).ToList();
+            if (itemsToAdd.Any())
+            {
+                await context.PayrollItems.AddRangeAsync(itemsToAdd);
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

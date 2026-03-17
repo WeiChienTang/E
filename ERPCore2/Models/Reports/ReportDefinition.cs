@@ -90,7 +90,7 @@ namespace ERPCore2.Models.Reports
         public const string Purchase = "Purchase";
         public const string HR = "HR";
         public const string Vehicle = "Vehicle";
-        public const string Waste = "Waste";
+        public const string Scale = "Scale";
     public const string Accounting = "Accounting";
     }
 }

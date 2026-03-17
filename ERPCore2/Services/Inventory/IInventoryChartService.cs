@@ -13,7 +13,7 @@ public interface IInventoryChartService
     /// <summary>依倉庫統計庫存金額分布</summary>
     Task<List<ChartDataItem>> GetStockValueByWarehouseAsync();
 
-    /// <summary>低於安全庫存的商品清單（CurrentStock < MinStockLevel）</summary>
+    /// <summary>低於安全庫存的品項清單（CurrentStock < MinStockLevel）</summary>
     Task<List<ChartDataItem>> GetLowStockProductsAsync();
 
     /// <summary>近 30 天庫存異動類型分布</summary>

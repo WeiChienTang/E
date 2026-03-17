@@ -4,7 +4,7 @@ using ERPCore2.Models.Reports.FilterCriteria;
 namespace ERPCore2.Services.Reports.Interfaces
 {
     /// <summary>
-    /// 商品條碼報表服務介面
+    /// 品項條碼報表服務介面
     /// </summary>
     public interface IProductBarcodeReportService
     {

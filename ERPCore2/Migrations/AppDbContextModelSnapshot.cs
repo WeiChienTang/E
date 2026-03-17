@@ -6740,6 +6740,157 @@ namespace ERPCore2.Migrations
                     b.ToTable("SalesTargets");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.ScaleRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("DisposalFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("NetAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("PurchaseFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("RecordDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("ScaleTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("TotalWeight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("VehicleId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WarehouseLocationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
+                    b.HasIndex("ScaleTypeId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.HasIndex("WarehouseLocationId");
+
+                    b.HasIndex("CustomerId", "RecordDate");
+
+                    b.HasIndex("VehicleId", "RecordDate");
+
+                    b.ToTable("ScaleRecords");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.ScaleType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ScaleTypes");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.SetoffDocument", b =>
                 {
                     b.Property<int>("Id")
@@ -8491,157 +8642,6 @@ namespace ERPCore2.Migrations
                     b.ToTable("WarehouseLocations");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.WasteRecord", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("CustomerId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("DisposalFee")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("IsDraft")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal?>("NetAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("PurchaseFee")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("Quantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("RecordDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("TotalWeight")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("VehicleId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("WarehouseId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("WarehouseLocationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("WasteTypeId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
-
-                    b.HasIndex("WarehouseId");
-
-                    b.HasIndex("WarehouseLocationId");
-
-                    b.HasIndex("WasteTypeId");
-
-                    b.HasIndex("CustomerId", "RecordDate");
-
-                    b.HasIndex("VehicleId", "RecordDate");
-
-                    b.ToTable("WasteRecords");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.WasteType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<bool>("IsDraft")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int?>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Unit")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("WasteTypes");
-                });
-
             modelBuilder.Entity("ERPCore2.Data.Entities.Weather", b =>
                 {
                     b.Property<int>("Id")
@@ -10139,6 +10139,51 @@ namespace ERPCore2.Migrations
                     b.Navigation("Salesperson");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.ScaleRecord", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ERPCore2.Data.Entities.ScaleType", "ScaleType")
+                        .WithMany("ScaleRecords")
+                        .HasForeignKey("ScaleTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ERPCore2.Data.Entities.Vehicle", "Vehicle")
+                        .WithMany()
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId");
+
+                    b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "WarehouseLocation")
+                        .WithMany()
+                        .HasForeignKey("WarehouseLocationId");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("ScaleType");
+
+                    b.Navigation("Vehicle");
+
+                    b.Navigation("Warehouse");
+
+                    b.Navigation("WarehouseLocation");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.ScaleType", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.SetoffDocument", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Company", "Company")
@@ -10435,51 +10480,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("Warehouse");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.WasteRecord", b =>
-                {
-                    b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ERPCore2.Data.Entities.Vehicle", "Vehicle")
-                        .WithMany()
-                        .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
-                        .WithMany()
-                        .HasForeignKey("WarehouseId");
-
-                    b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "WarehouseLocation")
-                        .WithMany()
-                        .HasForeignKey("WarehouseLocationId");
-
-                    b.HasOne("ERPCore2.Data.Entities.WasteType", "WasteType")
-                        .WithMany("WasteRecords")
-                        .HasForeignKey("WasteTypeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("Vehicle");
-
-                    b.Navigation("Warehouse");
-
-                    b.Navigation("WarehouseLocation");
-
-                    b.Navigation("WasteType");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.WasteType", b =>
-                {
-                    b.HasOne("ERPCore2.Data.Entities.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("ERPCore2.Data.Entities.AccountItem", b =>
                 {
                     b.Navigation("Children");
@@ -10703,6 +10703,11 @@ namespace ERPCore2.Migrations
                     b.Navigation("SalesReturns");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.ScaleType", b =>
+                {
+                    b.Navigation("ScaleRecords");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.SetoffDocument", b =>
                 {
                     b.Navigation("PrepaymentUsages");
@@ -10762,11 +10767,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("InventoryStockDetails");
 
                     b.Navigation("WarehouseLocations");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.WasteType", b =>
-                {
-                    b.Navigation("WasteRecords");
                 });
 #pragma warning restore 612, 618
         }

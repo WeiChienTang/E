@@ -74,7 +74,7 @@ namespace ERPCore2.Services
                     errors.Add("生產排程項目為必填");
 
                 if (entity.ComponentProductId <= 0)
-                    errors.Add("組件商品為必填");
+                    errors.Add("組件品項為必填");
 
                 if (entity.RequiredQuantity <= 0)
                     errors.Add("需求數量必須大於0");
@@ -96,12 +96,12 @@ namespace ERPCore2.Services
                 if (!itemExists)
                     errors.Add("生產排程項目不存在");
 
-                // 檢查商品是否存在
+                // 檢查品項是否存在
                 var productExists = await context.Products
                     .AnyAsync(p => p.Id == entity.ComponentProductId);
 
                 if (!productExists)
-                    errors.Add("組件商品不存在");
+                    errors.Add("組件品項不存在");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

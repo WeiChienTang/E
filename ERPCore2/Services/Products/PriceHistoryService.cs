@@ -78,7 +78,7 @@ namespace ERPCore2.Services
 
                 // 基本驗證
                 if (entity.ProductId <= 0)
-                    errors.Add("商品為必填欄位");
+                    errors.Add("品項為必填欄位");
 
                 if (entity.OldPrice < 0)
                     errors.Add("原價格不能為負數");
@@ -95,14 +95,14 @@ namespace ERPCore2.Services
                 if (entity.ChangeDate > DateTime.Now)
                     errors.Add("變更日期不能大於目前時間");
 
-                // 檢查商品是否存在
+                // 檢查品項是否存在
                 if (entity.ProductId > 0)
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var productExists = await context.Products
                         .AnyAsync(p => p.Id == entity.ProductId);
                     if (!productExists)
-                        errors.Add("指定的商品不存在");
+                        errors.Add("指定的品項不存在");
                 }
 
                 // 檢查關聯客戶是否存在
@@ -188,7 +188,7 @@ namespace ERPCore2.Services
         #region 專屬業務方法
 
         /// <summary>
-        /// 根據商品ID取得價格歷史
+        /// 根據品項ID取得價格歷史
         /// </summary>
         public async Task<List<PriceHistory>> GetByProductIdAsync(int productId)
         {
@@ -215,7 +215,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據商品ID和價格類型取得價格歷史
+        /// 根據品項ID和價格類型取得價格歷史
         /// </summary>
         public async Task<List<PriceHistory>> GetByProductIdAndPriceTypeAsync(int productId, PriceType priceType)
         {
@@ -298,7 +298,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得商品的最新價格歷史記錄
+        /// 取得品項的最新價格歷史記錄
         /// </summary>
         public async Task<PriceHistory?> GetLatestByProductIdAndPriceTypeAsync(int productId, PriceType priceType)
         {

@@ -1,4 +1,4 @@
-﻿using ERPCore2.Data.Context;
+using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -10,33 +10,33 @@ namespace ERPCore2.Services
     /// <summary>
     /// 磅秤類型服務實作
     /// </summary>
-    public class WasteTypeService : GenericManagementService<WasteType>, IWasteTypeService
+    public class ScaleTypeService : GenericManagementService<ScaleType>, IScaleTypeService
     {
-        public WasteTypeService(
+        public ScaleTypeService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<WasteType>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ScaleType>> logger) : base(contextFactory, logger)
         {
         }
 
-        public WasteTypeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public ScaleTypeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
         #region 覆寫基底方法
 
-        protected override IQueryable<WasteType> BuildGetAllQuery(AppDbContext context)
+        protected override IQueryable<ScaleType> BuildGetAllQuery(AppDbContext context)
         {
-            return context.WasteTypes
-                .OrderBy(wt => wt.Name);
+            return context.ScaleTypes
+                .OrderBy(st => st.Name);
         }
 
-        public override async Task<WasteType?> GetByIdAsync(int id)
+        public override async Task<ScaleType?> GetByIdAsync(int id)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WasteTypes
-                    .FirstOrDefaultAsync(wt => wt.Id == id);
+                return await context.ScaleTypes
+                    .FirstOrDefaultAsync(st => st.Id == id);
             }
             catch (Exception ex)
             {
@@ -45,7 +45,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<WasteType>> SearchAsync(string searchTerm)
+        public override async Task<List<ScaleType>> SearchAsync(string searchTerm)
         {
             try
             {
@@ -55,11 +55,11 @@ namespace ERPCore2.Services
                 var lowerSearchTerm = searchTerm.ToLower();
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WasteTypes
-                    .Where(wt => (wt.Code != null && wt.Code.ToLower().Contains(lowerSearchTerm)) ||
-                                 wt.Name.ToLower().Contains(lowerSearchTerm) ||
-                                 (wt.Description != null && wt.Description.ToLower().Contains(lowerSearchTerm)))
-                    .OrderBy(wt => wt.Name)
+                return await context.ScaleTypes
+                    .Where(st => (st.Code != null && st.Code.ToLower().Contains(lowerSearchTerm)) ||
+                                 st.Name.ToLower().Contains(lowerSearchTerm) ||
+                                 (st.Description != null && st.Description.ToLower().Contains(lowerSearchTerm)))
+                    .OrderBy(st => st.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -69,7 +69,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<ServiceResult> ValidateAsync(WasteType entity)
+        public override async Task<ServiceResult> ValidateAsync(ScaleType entity)
         {
             try
             {
@@ -81,7 +81,7 @@ namespace ERPCore2.Services
                 }
                 else
                 {
-                    if (await IsWasteTypeCodeExistsAsync(entity.Code, entity.Id))
+                    if (await IsScaleTypeCodeExistsAsync(entity.Code, entity.Id))
                         errors.Add("磅秤類型編號已存在");
                 }
 
@@ -106,12 +106,12 @@ namespace ERPCore2.Services
             }
         }
 
-        protected override async Task<ServiceResult> CanDeleteAsync(WasteType entity)
+        protected override async Task<ServiceResult> CanDeleteAsync(ScaleType entity)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var hasRecords = await context.WasteRecords.AnyAsync(wr => wr.WasteTypeId == entity.Id);
+                var hasRecords = await context.ScaleRecords.AnyAsync(sr => sr.ScaleTypeId == entity.Id);
                 if (hasRecords)
                     return ServiceResult.Failure("此磅秤類型已有磅秤紀錄使用，無法刪除");
 
@@ -119,28 +119,28 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { WasteTypeId = entity.Id });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { ScaleTypeId = entity.Id });
                 return ServiceResult.Failure("檢查磅秤類型刪除條件時發生錯誤");
             }
         }
 
         #endregion
 
-        public async Task<(List<WasteType> Items, int TotalCount)> GetPagedWithFiltersAsync(
-            Func<IQueryable<WasteType>, IQueryable<WasteType>>? filterFunc,
+        public async Task<(List<ScaleType> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ScaleType>, IQueryable<ScaleType>>? filterFunc,
             int pageNumber,
             int pageSize)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                IQueryable<WasteType> query = context.WasteTypes;
+                IQueryable<ScaleType> query = context.ScaleTypes;
 
                 if (filterFunc != null) query = filterFunc(query);
 
                 var totalCount = await query.CountAsync();
                 var items = await query
-                    .OrderBy(wt => wt.Name)
+                    .OrderBy(st => st.Name)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
@@ -155,13 +155,13 @@ namespace ERPCore2.Services
                     PageNumber = pageNumber,
                     PageSize = pageSize
                 });
-                return (new List<WasteType>(), 0);
+                return (new List<ScaleType>(), 0);
             }
         }
 
         #region 業務特定查詢方法
 
-        public async Task<WasteType?> GetByCodeAsync(string code)
+        public async Task<ScaleType?> GetByCodeAsync(string code)
         {
             try
             {
@@ -169,8 +169,8 @@ namespace ERPCore2.Services
                     return null;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WasteTypes
-                    .FirstOrDefaultAsync(wt => wt.Code == code);
+                return await context.ScaleTypes
+                    .FirstOrDefaultAsync(st => st.Code == code);
             }
             catch (Exception ex)
             {
@@ -179,7 +179,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<bool> IsWasteTypeCodeExistsAsync(string code, int? excludeId = null)
+        public async Task<bool> IsScaleTypeCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
@@ -187,16 +187,16 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.WasteTypes.Where(wt => wt.Code == code);
+                var query = context.ScaleTypes.Where(st => st.Code == code);
 
                 if (excludeId.HasValue)
-                    query = query.Where(wt => wt.Id != excludeId.Value);
+                    query = query.Where(st => st.Id != excludeId.Value);
 
                 return await query.AnyAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsWasteTypeCodeExistsAsync), GetType(), _logger, new { Code = code, ExcludeId = excludeId });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsScaleTypeCodeExistsAsync), GetType(), _logger, new { Code = code, ExcludeId = excludeId });
                 return false;
             }
         }
@@ -209,10 +209,10 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.WasteTypes.Where(wt => wt.Name == name);
+                var query = context.ScaleTypes.Where(st => st.Name == name);
 
                 if (excludeId.HasValue)
-                    query = query.Where(wt => wt.Id != excludeId.Value);
+                    query = query.Where(st => st.Id != excludeId.Value);
 
                 return await query.AnyAsync();
             }
@@ -223,19 +223,19 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<WasteType>> GetActiveWasteTypesAsync()
+        public async Task<List<ScaleType>> GetActiveScaleTypesAsync()
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WasteTypes
-                    .Where(wt => wt.Status == EntityStatus.Active)
-                    .OrderBy(wt => wt.Name)
+                return await context.ScaleTypes
+                    .Where(st => st.Status == EntityStatus.Active)
+                    .OrderBy(st => st.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveWasteTypesAsync), GetType(), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveScaleTypesAsync), GetType(), _logger);
                 throw;
             }
         }

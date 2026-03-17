@@ -170,7 +170,7 @@
     private bool isDetailDataReady = false;
     
     // ===== 明細載入狀態 =====
-    private bool shouldAutoLoadReturnable = false;  // 標記是否需要自動載入可退回商品
+    private bool shouldAutoLoadReturnable = false;  // 標記是否需要自動載入可退回品項
     private bool isDataLoaded = false;  // 資料載入狀態標記
 
     // ===== 生命週期 =====
@@ -480,7 +480,7 @@
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品。此欄位不會儲存。",
+                    HelpText = "選擇特定品項進行篩選，或留空顯示所有品項。此欄位不會儲存。",
                     IsReadOnly = true, // 預設停用，等待廠商選取後由 UpdateFilterFieldsState 更新
                     IsFilterOnly = true
                 },
@@ -627,7 +627,7 @@
                 tabDefinitions[0].ExtraContent = CreateReturnDetailManagerContent();
             }
             
-            // 關鍵：如果實體已經載入且有廠商ID，立即更新商品和進貨單選項
+            // 關鍵：如果實體已經載入且有廠商ID，立即更新品項和進貨單選項
             if (editModalComponent?.Entity?.SupplierId > 0)
             {
                 await UpdateFilterProductOptions(editModalComponent.Entity.SupplierId);
@@ -748,9 +748,9 @@
     };
 
     /// <summary>
-    /// 取得商品篩選選項 - 根據選擇的廠商篩選
-    /// 只顯示該廠商有入庫記錄的商品（從 PurchaseReceivingDetail 中提取）
-    /// 並且只顯示「外購」類型的商品
+    /// 取得品項篩選選項 - 根據選擇的廠商篩選
+    /// 只顯示該廠商有入庫記錄的品項（從 PurchaseReceivingDetail 中提取）
+    /// 並且只顯示「外購」類型的品項
     /// </summary>
     private async Task<List<SelectOption>> GetFilterProductOptions()
     {
@@ -758,7 +758,7 @@
         {
             var options = new List<SelectOption>();
             
-            // 如果沒有選擇廠商，顯示全部商品
+            // 如果沒有選擇廠商，顯示全部品項
             if (editModalComponent?.Entity?.SupplierId == null || editModalComponent.Entity.SupplierId <= 0)
             {
                 options.AddRange(products
@@ -770,13 +770,13 @@
             }
             else
             {
-                // 如果有選擇廠商，只顯示該廠商有入庫記錄的商品
+                // 如果有選擇廠商，只顯示該廠商有入庫記錄的品項
                 // 取得該廠商的所有進貨單
                 var supplierReceivings = purchaseReceivings
                     .Where(pr => pr.SupplierId == editModalComponent.Entity.SupplierId)
                     .ToList();
                 
-                // 從進貨單明細中提取已入庫的商品ID（去重）
+                // 從進貨單明細中提取已入庫的品項ID（去重）
                 var productIds = new HashSet<int>();
                 foreach (var receiving in supplierReceivings)
                 {
@@ -789,7 +789,7 @@
                     }
                 }
                 
-                // 根據商品ID從 products 列表中找出對應的商品
+                // 根據品項ID從 products 列表中找出對應的品項
                 var supplierProducts = products
                     .Where(p => productIds.Contains(p.Id))
                     .OrderBy(p => p.Code)
@@ -806,7 +806,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入商品選項時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入品項選項時發生錯誤：{ex.Message}");
             return new List<SelectOption>();
         }
     }
@@ -844,8 +844,8 @@
     }
 
     /// <summary>
-    /// 更新商品篩選的 AutoComplete 資料集合 - 當廠商變更時調用
-    /// 只顯示該廠商有入庫記錄的商品（從 PurchaseReceivingDetail 中提取）
+    /// 更新品項篩選的 AutoComplete 資料集合 - 當廠商變更時調用
+    /// 只顯示該廠商有入庫記錄的品項（從 PurchaseReceivingDetail 中提取）
     /// </summary>
     private async Task UpdateFilterProductOptions(int? supplierId = null)
     {
@@ -863,7 +863,7 @@
                     .Where(pr => pr.SupplierId == supplierId.Value)
                     .ToList();
                 
-                // 從進貨單明細中提取已入庫的商品ID（去重）
+                // 從進貨單明細中提取已入庫的品項ID（去重）
                 var productIds = new HashSet<int>();
                 foreach (var receiving in supplierReceivings)
                 {
@@ -876,7 +876,7 @@
                     }
                 }
                 
-                // 根據商品ID從 products 列表中找出對應的商品
+                // 根據品項ID從 products 列表中找出對應的品項
                 filteredProducts = products
                     .Where(p => productIds.Contains(p.Id))
                     .OrderBy(p => p.Code)
@@ -884,7 +884,7 @@
             }
             else
             {
-                // 如果沒有選擇廠商，顯示全部商品
+                // 如果沒有選擇廠商，顯示全部品項
                 filteredProducts = products.ToList();
             }
             
@@ -894,12 +894,12 @@
                 autoCompleteConfig.Collections["FilterProductId"] = filteredProducts;
             }
             
-            // 清空目前的商品篩選選擇
+            // 清空目前的品項篩選選擇
             filterProductId = null;
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"更新商品篩選選項時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"更新品項篩選選項時發生錯誤：{ex.Message}");
         }
     }
 
@@ -1090,7 +1090,7 @@
                 // 廠商變更時清除進貨單篩選
                 filterPurchaseReceivingId = null;
 
-                // 更新商品和進貨單篩選選項
+                // 更新品項和進貨單篩選選項
                 await UpdateFilterProductOptions(supplierId);
                 await UpdateFilterPurchaseReceivingOptions(supplierId);
 
@@ -1104,7 +1104,7 @@
                 StateHasChanged();
             }
             
-            // 當商品篩選變更時，更新篩選狀態並觸發重新渲染
+            // 當品項篩選變更時，更新篩選狀態並觸發重新渲染
             if (fieldChange.PropertyName == "FilterProductId")
             {
                 if (fieldChange.Value != null && 

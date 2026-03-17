@@ -14,7 +14,7 @@ namespace ERPCore2.Services
         Task<List<SalesOrderDetail>> GetBySalesOrderIdAsync(int salesOrderId);
 
         /// <summary>
-        /// 根據商品ID取得銷貨訂單明細
+        /// 根據品項ID取得銷貨訂單明細
         /// </summary>
         Task<List<SalesOrderDetail>> GetByProductIdAsync(int productId);
 
@@ -34,7 +34,7 @@ namespace ERPCore2.Services
         Task<ServiceResult> DeleteBySalesOrderIdAsync(int salesOrderId);
 
         /// <summary>
-        /// 檢查商品在訂單中是否已存在
+        /// 檢查品項在訂單中是否已存在
         /// </summary>
         Task<bool> IsProductExistsInOrderAsync(int salesOrderId, int productId, int? excludeDetailId = null);
 

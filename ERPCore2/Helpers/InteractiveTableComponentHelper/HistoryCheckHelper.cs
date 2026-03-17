@@ -4,7 +4,7 @@ namespace ERPCore2.Helpers;
 
 /// <summary>
 /// 歷史記錄檢查 Helper - 統一歷史記錄查詢和載入邏輯
-/// 用於智能下單功能（從歷史記錄載入商品資訊）
+/// 用於智能下單功能（從歷史記錄載入品項資訊）
 /// </summary>
 public static class HistoryCheckHelper
 {

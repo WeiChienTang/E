@@ -9,7 +9,7 @@ using ERPCore2.Components.Shared.Statistics;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 商品合成欄位配置
+    /// 品項合成欄位配置
     /// </summary>
     public class ProductCompositionFieldConfiguration : BaseFieldConfiguration<ProductComposition>
     {
@@ -63,7 +63,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "ParentProduct.Name",
                             FilterPropertyName = nameof(ProductComposition.ParentProductId),
-                            DisplayName = Dn("Field.Product", "商品"),
+                            DisplayName = Dn("Field.Product", "品項"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             Options = _products.Select(p => new SelectOption 
@@ -172,7 +172,7 @@ namespace ERPCore2.FieldConfiguration
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化商品合成欄位配置失敗");
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化品項合成欄位配置失敗");
                 });
 
                 // 通知使用者
@@ -180,7 +180,7 @@ namespace ERPCore2.FieldConfiguration
                 {
                     _ = Task.Run(async () =>
                     {
-                        await _notificationService.ShowErrorAsync("初始化商品合成欄位配置時發生錯誤，已使用預設配置");
+                        await _notificationService.ShowErrorAsync("初始化品項合成欄位配置時發生錯誤，已使用預設配置");
                     });
                 }
 

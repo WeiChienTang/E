@@ -1,4 +1,4 @@
-@* 供應商商品綁定管理組件 - 使用 InteractiveTableComponent *@
+@* 供應商品項綁定管理組件 - 使用 InteractiveTableComponent *@
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
@@ -46,25 +46,25 @@
     [Parameter] public List<Product> AvailableProducts { get; set; } = new();
     [Parameter] public int SupplierId { get; set; }
     [Parameter] public bool DataLoadCompleted { get; set; } = true;
-    [Parameter] public string EmptyMessage { get; set; } = "尚未設定供應商品";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未設定供應品項";
     [Parameter] public EventCallback<ProductSupplier> OnItemDeleted { get; set; }
     
     // ===== GenericInteractiveTableComponent 參考 =====
     private GenericInteractiveTableComponent<ProductSupplier>? tableComponent;
     
     /// <summary>
-    /// 計算屬性：是否有供應商品項目
+    /// 計算屬性：是否有供應品項項目
     /// </summary>
     private bool HasProductItems => Items.Any(item => item.Product != null);
 
     /// <summary>
-    /// 建立供應商品管理的欄位定義
+    /// 建立供應品項管理的欄位定義
     /// </summary>
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
     {
         return new List<InteractiveColumnDefinition>
         {
-            // 商品選擇（必填，SearchableSelect）
+            // 品項選擇（必填，SearchableSelect）
             new InteractiveColumnDefinition
             {
                 Title = L["Column.Product"],
@@ -72,7 +72,7 @@
                 EmptyCheckPropertyName = nameof(ProductSupplier.Product),  //  修正：檢查物件屬性（null = 空行）
                 ColumnType = InteractiveColumnType.SearchableSelect,
                 Width = "300px",
-                Placeholder = "請輸入商品編號或名稱",
+                Placeholder = "請輸入品項編號或名稱",
                 TriggerEmptyRowOnFilled = true,
                 SearchValuePropertyName = nameof(ProductSupplier.SearchText),
                 FilteredItemsPropertyName = "FilteredProducts",
@@ -118,7 +118,7 @@
                 ColumnType = InteractiveColumnType.Input,
                 Width = "150px",
                 Placeholder = "供應商料號",
-                Tooltip = "供應商自己的商品編號"
+                Tooltip = "供應商自己的品項編號"
             },
             
             // 備註
@@ -154,7 +154,7 @@
     }
 
     /// <summary>
-    /// 商品搜尋輸入變更事件
+    /// 品項搜尋輸入變更事件
     /// </summary>
     private void OnProductSearchChanged(ProductSupplier productSupplier, string? searchValue)
     {
@@ -181,13 +181,13 @@
     }
 
     /// <summary>
-    /// 商品選擇事件
+    /// 品項選擇事件
     /// </summary>
     private async Task OnProductSelected(ProductSupplier productSupplier, Product? selectedProduct)
     {
         if (selectedProduct == null) return;
 
-        // 檢查是否已存在相同商品
+        // 檢查是否已存在相同品項
         var existingBinding = Items.FirstOrDefault(ps => 
             ps != productSupplier && 
             ps.ProductId == selectedProduct.Id);
@@ -212,13 +212,13 @@
     }
 
     /// <summary>
-    /// 商品輸入框獲得焦點
+    /// 品項輸入框獲得焦點
     /// </summary>
     private void OnProductFocus(ProductSupplier productSupplier)
     {
         if (productSupplier.ProductId > 0)
         {
-            // 已選擇商品時，顯示所有商品供重新選擇
+            // 已選擇品項時，顯示所有品項供重新選擇
             productSupplier.FilteredProducts = AvailableProducts.Take(20).ToList();
             productSupplier.ShowProductDropdown = true;
         }
@@ -226,7 +226,7 @@
     }
 
     /// <summary>
-    /// 商品輸入框失去焦點
+    /// 品項輸入框失去焦點
     /// </summary>
     private void OnProductBlur(ProductSupplier productSupplier)
     {
@@ -239,7 +239,7 @@
     }
 
     /// <summary>
-    /// 刪除供應商品綁定
+    /// 刪除供應品項綁定
     /// </summary>
     private async Task HandleDeleteItem(ProductSupplier item)
     {
@@ -250,7 +250,7 @@
     }
     
     /// <summary>
-    /// 清空所有供應商品明細
+    /// 清空所有供應品項明細
     /// </summary>
     private async Task ClearAllDetails()
     {

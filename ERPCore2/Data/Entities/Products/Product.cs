@@ -6,13 +6,13 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 商品實體 - 定義商品基本資訊
+    /// 品項實體 - 定義品項基本資訊
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     public class Product : BaseEntity
     {
-        [MaxLength(100, ErrorMessage = "商品名稱不可超過100個字元")]
-        [Display(Name = "商品名稱")]
+        [MaxLength(100, ErrorMessage = "品項名稱不可超過100個字元")]
+        [Display(Name = "品項名稱")]
         public string? Name { get; set; }
 
         [MaxLength(50, ErrorMessage = "條碼編號不可超過50個字元")]
@@ -29,7 +29,7 @@ namespace ERPCore2.Data.Entities
         public int? ProductionUnitId { get; set; }
 
         /// <summary>
-        /// 製程單位換算率：1 基本單位（商品單位）= N 製程單位
+        /// 製程單位換算率：1 基本單位（品項單位）= N 製程單位
         /// 例如：基本單位為「包」、製程單位為「公斤」，1 包 = 30 公斤，則此值為 30
         /// </summary>
         [Display(Name = "製程單位換算率")]
@@ -41,7 +41,7 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Size))]
         public int? SizeId { get; set; }
 
-        [Display(Name = "商品分類")]
+        [Display(Name = "品項分類")]
         [ForeignKey(nameof(ProductCategory))]
         public int? ProductCategoryId { get; set; }
 
@@ -68,22 +68,22 @@ namespace ERPCore2.Data.Entities
 
         // Product Composition (BOM) Navigation Properties
         /// <summary>
-        /// 此商品作為成品的所有 BOM 配方
+        /// 此品項作為成品的所有 BOM 配方
         /// </summary>
         public ICollection<ProductComposition> ProductCompositions { get; set; } = new List<ProductComposition>();
 
         /// <summary>
-        /// 此商品作為組件被使用在哪些 BOM 中
+        /// 此品項作為組件被使用在哪些 BOM 中
         /// </summary>
         public ICollection<ProductCompositionDetail> ComponentInCompositions { get; set; } = new List<ProductCompositionDetail>();
 
         /// <summary>
-        /// 供應商關聯列表（商品-供應商綁定）
+        /// 供應商關聯列表（品項-供應商綁定）
         /// </summary>
         public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
 
         /// <summary>
-        /// 客戶關聯列表（商品-客戶銷售條件）
+        /// 客戶關聯列表（品項-客戶銷售條件）
         /// </summary>
         public ICollection<ProductCustomer> ProductCustomers { get; set; } = new List<ProductCustomer>();
     }

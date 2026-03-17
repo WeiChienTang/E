@@ -87,7 +87,7 @@ new ReportDefinition
 {
     Id = "PO005",                              // 報表 ID（須唯一）
     Name = "採購分析報表",
-    Description = "依廠商、商品分析採購統計",
+    Description = "依廠商、品項分析採購統計",
     IconClass = "bi bi-graph-up",
     Category = ReportCategory.Purchase,
     RequiredPermission = "PurchaseOrder.Read",

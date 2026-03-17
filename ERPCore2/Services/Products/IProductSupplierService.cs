@@ -3,37 +3,37 @@ using ERPCore2.Data.Entities;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品-供應商關聯服務介面
+    /// 品項-供應商關聯服務介面
     /// </summary>
     public interface IProductSupplierService : IGenericManagementService<ProductSupplier>
     {
         #region 查詢方法
         
         /// <summary>
-        /// 依商品ID取得所有綁定的供應商
+        /// 依品項ID取得所有綁定的供應商
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <returns>供應商綁定列表</returns>
         Task<List<ProductSupplier>> GetByProductIdAsync(int productId);
         
         /// <summary>
-        /// 依供應商ID取得所有綁定的商品
+        /// 依供應商ID取得所有綁定的品項
         /// </summary>
         /// <param name="supplierId">供應商ID</param>
-        /// <returns>商品綁定列表</returns>
+        /// <returns>品項綁定列表</returns>
         Task<List<ProductSupplier>> GetBySupplierIdAsync(int supplierId);
         
         /// <summary>
-        /// 取得指定商品的常用供應商列表（依優先順序排序）
+        /// 取得指定品項的常用供應商列表（依優先順序排序）
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <returns>常用供應商列表</returns>
         Task<List<ProductSupplier>> GetPreferredSuppliersByProductIdAsync(int productId);
         
         /// <summary>
-        /// 檢查商品-供應商綁定是否存在
+        /// 檢查品項-供應商綁定是否存在
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <param name="supplierId">供應商ID</param>
         /// <param name="excludeId">排除的ID（用於編輯時檢查）</param>
         /// <returns>是否存在</returns>
@@ -44,7 +44,7 @@ namespace ERPCore2.Services
         #region 批次操作
         
         /// <summary>
-        /// 從採購歷史自動建立供應商-商品綁定
+        /// 從採購歷史自動建立供應商-品項綁定
         /// </summary>
         /// <param name="supplierId">供應商ID</param>
         /// <returns>匯入的綁定數量</returns>
@@ -64,7 +64,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 更新指定綁定的最近採購價格和日期
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <param name="supplierId">供應商ID</param>
         /// <param name="price">價格</param>
         /// <param name="date">日期</param>

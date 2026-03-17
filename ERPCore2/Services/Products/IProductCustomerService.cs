@@ -3,29 +3,29 @@ using ERPCore2.Data.Entities;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品-客戶關聯服務介面
+    /// 品項-客戶關聯服務介面
     /// </summary>
     public interface IProductCustomerService : IGenericManagementService<ProductCustomer>
     {
         #region 查詢方法
 
         /// <summary>
-        /// 依商品ID取得所有綁定的客戶
+        /// 依品項ID取得所有綁定的客戶
         /// </summary>
         Task<List<ProductCustomer>> GetByProductIdAsync(int productId);
 
         /// <summary>
-        /// 依客戶ID取得所有綁定的商品
+        /// 依客戶ID取得所有綁定的品項
         /// </summary>
         Task<List<ProductCustomer>> GetByCustomerIdAsync(int customerId);
 
         /// <summary>
-        /// 取得指定商品的常用客戶列表（依優先順序排序）
+        /// 取得指定品項的常用客戶列表（依優先順序排序）
         /// </summary>
         Task<List<ProductCustomer>> GetPreferredCustomersByProductIdAsync(int productId);
 
         /// <summary>
-        /// 檢查商品-客戶綁定是否存在
+        /// 檢查品項-客戶綁定是否存在
         /// </summary>
         Task<bool> IsBindingExistsAsync(int productId, int customerId, int? excludeId = null);
 

@@ -5,7 +5,7 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 單位實體 - 定義商品計量單位
+    /// 單位實體 - 定義品項計量單位
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     public class Unit : BaseEntity

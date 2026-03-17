@@ -187,7 +187,7 @@ else
 
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "報價明細";
-    [Parameter] public string EmptyMessage { get; set; } = "尚未新增報價商品";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增報價品項";
 
     // ===== 相關單據開啟事件 =====
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
@@ -215,7 +215,7 @@ else
     private bool isCustomCompositionMode = false;
     private List<ProductComposition> availableCompositions = new();
     private Dictionary<int, List<QuotationCompositionDetail>> compositionDetailsCache = new();
-    private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
+    private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的品項 ID
 
     // 暫存配方選擇狀態（Key: ExistingDetailEntity.Id，跨 Items.Clear() 重新載入後仍保留）
     private Dictionary<int, (int? SelectedCompositionId, bool IsCustomComposition, List<QuotationCompositionDetail>? CustomDetails)> _pendingCompositionState = new();
@@ -332,16 +332,16 @@ else
     }
     
     /// <summary>
-    /// 載入有 BOM 組成的商品列表（用於快取檢查）
+    /// 載入有 BOM 組成的品項列表（用於快取檢查）
     /// </summary>
     private async Task LoadProductCompositionsAsync()
     {
         try
         {
-            // 從 Products 參數中取得所有商品 ID
+            // 從 Products 參數中取得所有品項 ID
             var productIds = Products.Where(p => p.Id > 0).Select(p => p.Id).ToList();
             
-            // 檢查每個商品是否有 ProductComposition
+            // 檢查每個品項是否有 ProductComposition
             foreach (var productId in productIds)
             {
                 var compositions = await ProductCompositionService.GetCompositionsByProductIdAsync(productId);
@@ -354,7 +354,7 @@ else
         catch (Exception ex)
         {
             // 載入失敗不影響主要功能，只是 BOM 按鈕可能不顯示
-            Console.WriteLine($"載入商品組成資料失敗：{ex.Message}");
+            Console.WriteLine($"載入品項組成資料失敗：{ex.Message}");
             productsWithComposition.Clear();
         }
     }
@@ -371,17 +371,17 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位 - 觸發欄位（第一個欄位預設為觸發欄位）
+        // 品項選擇欄位 - 觸發欄位（第一個欄位預設為觸發欄位）
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = L["Column.ProductCodeName"],
             PropertyName = "ProductSearchValue",
             EmptyCheckPropertyName = "SelectedProduct",  // 檢查 SelectedProduct 物件
-            TriggerEmptyRowOnFilled = true,  // 選擇商品後自動新增空行
+            TriggerEmptyRowOnFilled = true,  // 選擇品項後自動新增空行
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "300px",
-            Tooltip = "搜尋並選擇商品（輸入編號或名稱）。已轉銷貨的商品將無法變更",
-            Placeholder = "請輸入商品編號或名稱",
+            Tooltip = "搜尋並選擇品項（輸入編號或名稱）。已轉銷貨的品項將無法變更",
+            Placeholder = "請輸入品項編號或名稱",
             SearchValuePropertyName = nameof(QuotationItem.ProductSearchValue),
             FilteredItemsPropertyName = nameof(QuotationItem.FilteredProducts),
             ShowDropdownPropertyName = nameof(QuotationItem.ShowProductDropdown),
@@ -400,7 +400,7 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 return !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) 
-                    ? "此商品已轉銷貨，無法修改商品選擇" : null;
+                    ? "此品項已轉銷貨，無法修改品項選擇" : null;
             },
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
             {
@@ -434,7 +434,7 @@ else
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = L["Entity.Unit"],
-            Tooltip = "商品的製程單位（由商品設定決定）",
+            Tooltip = "品項的製程單位（由品項設定決定）",
             PropertyName = "ProductionUnitName",
             ColumnType = InteractiveColumnType.Display,
             Width = "80px",
@@ -463,7 +463,7 @@ else
                 var quotationItem = (QuotationItem)item;
                 var isEmptyRow = quotationItem.SelectedProduct == null;
                 if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
-                    return "此商品已轉銷貨，無法修改數量";
+                    return "此品項已轉銷貨，無法修改數量";
                 return "輸入數量";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
@@ -494,7 +494,7 @@ else
                 var quotationItem = (QuotationItem)item;
                 var isEmptyRow = quotationItem.SelectedProduct == null;
                 if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
-                    return "此商品已轉銷貨，無法修改單價";
+                    return "此品項已轉銷貨，無法修改單價";
                 return "輸入報價單價";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
@@ -526,7 +526,7 @@ else
                 var quotationItem = (QuotationItem)item;
                 var isEmptyRow = quotationItem.SelectedProduct == null;
                 if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
-                    return "此商品已轉銷貨，無法修改折扣";
+                    return "此品項已轉銷貨，無法修改折扣";
                 return "輸入折扣百分比";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
@@ -558,7 +558,7 @@ else
                 var quotationItem = (QuotationItem)item;
                 if (IsTaxCalculationMethodNoTax) return "主檔已選擇免稅，此欄位已停用";
                 if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true))
-                    return "此商品已轉銷貨，無法修改稅率";
+                    return "此品項已轉銷貨，無法修改稅率";
                 return "輸入稅率百分比（例如：5 代表 5%）";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
@@ -593,7 +593,7 @@ else
             ColumnType = InteractiveColumnType.Input,
             Width = "200px",
             Placeholder = "規格說明",
-            Tooltip = "商品的規格說明，可自行修改",
+            Tooltip = "品項的規格說明，可自行修改",
             IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
@@ -603,8 +603,8 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true))
-                    return "此商品已轉銷貨，無法修改規格說明";
-                return "商品的規格說明，可自行修改";
+                    return "此品項已轉銷貨，無法修改規格說明";
+                return "品項的規格說明，可自行修改";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
@@ -656,7 +656,7 @@ else
         var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
         
         <div class="d-flex gap-1">
-            @* BOM 編輯按鈕（如果商品有 BOM 組成） *@
+            @* BOM 編輯按鈕（如果品項有 BOM 組成） *@
             @if (hasComposition && !isEmptyRow)
             {
                 <GenericButtonComponent Variant="ButtonVariant.Blue"
@@ -733,7 +733,7 @@ else
             return;
         }
 
-        selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
+        selectedProductName = item.SelectedProduct?.Name ?? "未知品項";
         
         showRelatedDocumentsModal = true;
         isLoadingRelatedDocuments = true;
@@ -779,11 +779,11 @@ else
     // ===== BOM 組合編輯相關方法 =====
     
     /// <summary>
-    /// 檢查商品是否有 BOM 組成
+    /// 檢查品項是否有 BOM 組成
     /// </summary>
     private bool HasProductComposition(int productId)
     {
-        // 從快取中檢查該商品是否有 ProductComposition
+        // 從快取中檢查該品項是否有 ProductComposition
         return productsWithComposition.Contains(productId);
     }
     
@@ -911,10 +911,10 @@ else
 
     // ===== 事件處理方法 =====
 
-    // ===== 商品 SearchableSelect 事件處理 =====
+    // ===== 品項 SearchableSelect 事件處理 =====
     
     /// <summary>
-    /// 商品輸入框獲得焦點
+    /// 品項輸入框獲得焦點
     /// </summary>
     private void OnProductFocus(QuotationItem item)
     {
@@ -927,7 +927,7 @@ else
     }
     
     /// <summary>
-    /// 商品輸入框失去焦點
+    /// 品項輸入框失去焦點
     /// </summary>
     private void OnProductBlur(QuotationItem item)
     {
@@ -939,7 +939,7 @@ else
     }
     
     /// <summary>
-    /// 商品搜尋輸入變更事件（SearchableSelect）
+    /// 品項搜尋輸入變更事件（SearchableSelect）
     /// </summary>
     private void OnProductSearchChanged(QuotationItem item, string? searchValue)
     {
@@ -954,7 +954,7 @@ else
         }
         else
         {
-            // 篩選符合的商品（編號或名稱包含搜尋字串）
+            // 篩選符合的品項（編號或名稱包含搜尋字串）
             item.FilteredProducts = availableProducts
                 .Where(p => (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
                            (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
@@ -968,7 +968,7 @@ else
     }
     
     /// <summary>
-    /// 商品選擇事件（SearchableSelect）
+    /// 品項選擇事件（SearchableSelect）
     /// </summary>
     private async Task OnProductSelected(QuotationItem item, Product? selectedProduct)
     {
@@ -977,7 +977,7 @@ else
             item.SelectedProduct = selectedProduct;
             item.ProductSearchValue = $"[{selectedProduct.Code}] {selectedProduct.Name}";
             
-            // 自動設定預設單位（如果商品有預設單位）
+            // 自動設定預設單位（如果品項有預設單位）
             if (selectedProduct.Unit != null)
             {
                 item.SelectedUnit = selectedProduct.Unit;
@@ -986,7 +986,7 @@ else
             // 自動帶入規格說明
             item.Specification = selectedProduct.Specification ?? string.Empty;
             
-            // 自動帶入稅率（商品稅率 > 系統預設值）
+            // 自動帶入稅率（品項稅率 > 系統預設值）
             if (selectedProduct.TaxRate.HasValue)
             {
                 item.TaxRate = selectedProduct.TaxRate.Value;
@@ -1154,17 +1154,17 @@ else
     }
     
     /// <summary>
-    /// 取得商品的製程單位名稱
+    /// 取得品項的製程單位名稱
     /// </summary>
     private string GetProductionUnitName(QuotationItem item)
     {
-        // 如果沒有選擇商品，回傳空字串
+        // 如果沒有選擇品項，回傳空字串
         if (item.SelectedProduct == null)
         {
             return string.Empty;
         }
         
-        // 優先使用製程單位，若無則使用商品單位
+        // 優先使用製程單位，若無則使用品項單位
         var productionUnitId = item.SelectedProduct.ProductionUnitId ?? item.SelectedProduct.UnitId;
         
         if (productionUnitId <= 0)
@@ -1305,15 +1305,15 @@ else
         
         if (nonEmptyItems.Count == 0)
         {
-            errors.Add("至少需要一個報價商品");
+            errors.Add("至少需要一個報價品項");
         }
         else
         {
-            // 檢查是否有選擇商品
+            // 檢查是否有選擇品項
             var itemsWithoutProduct = nonEmptyItems.Where(item => item.SelectedProduct == null).ToList();
             if (itemsWithoutProduct.Any())
             {
-                errors.Add("所有明細都必須選擇商品");
+                errors.Add("所有明細都必須選擇品項");
             }
             
             // 數量和單價可以為 0，不需要驗證
@@ -1421,7 +1421,7 @@ else
         if (_hasUndeletableDetails)
             return "部分明細已轉單，無法使用智能下單";
         
-        return "載入該客戶上次報價的商品明細";
+        return "載入該客戶上次報價的品項明細";
     }
     
     /// <summary>
@@ -1498,11 +1498,11 @@ else
     }
 
     /// <summary>
-    /// 取得可用商品列表（只顯示可販售且為自製類型的商品）
+    /// 取得可用品項列表（只顯示可販售且為自製類型的品項）
     /// </summary>
     private List<Product> GetAvailableProducts()
     {
-        // 報價單不需要檢查客戶，只要商品可販售即可
+        // 報價單不需要檢查客戶，只要品項可販售即可
         var filtered = Products
             .Where(p => p.ProductCategory != null &&
                        p.ProductCategory.IsSaleable)
@@ -1527,7 +1527,7 @@ else
             // 獲取系統預設稅率（在迴圈外取得，避免重複呼叫）
             var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
 
-            // 載入上次報價的所有商品明細
+            // 載入上次報價的所有品項明細
             foreach (var detail in lastQuotationDetails)
             {
                 var item = new QuotationItem
@@ -1556,7 +1556,7 @@ else
             StateHasChanged();
             
             await NotificationService.ShowSuccessAsync(
-                $"已成功載入上次報價的 {lastQuotationDetails.Count} 項商品明細"
+                $"已成功載入上次報價的 {lastQuotationDetails.Count} 項品項明細"
             );
         }
         catch (Exception ex)

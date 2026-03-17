@@ -6,7 +6,7 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 生產排程項目 - 記錄要生產的商品項目（以產品為單位）
+    /// 生產排程項目 - 記錄要生產的品項項目（以產品為單位）
     /// 每個銷售訂單明細轉排程會產生一筆 ProductionScheduleItem
     /// </summary>
     [Index(nameof(ProductionScheduleId), nameof(ProductId))]
@@ -93,10 +93,10 @@ namespace ERPCore2.Data.Entities
         public int ProductionScheduleId { get; set; }
         
         /// <summary>
-        /// 商品 ID - 要生產的商品
+        /// 品項 ID - 要生產的品項
         /// </summary>
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
+        [Required(ErrorMessage = "品項為必填")]
+        [Display(Name = "品項")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
         
@@ -129,7 +129,7 @@ namespace ERPCore2.Data.Entities
         public ProductionSchedule ProductionSchedule { get; set; } = null!;
         
         /// <summary>
-        /// 商品
+        /// 品項
         /// </summary>
         public Product Product { get; set; } = null!;
         

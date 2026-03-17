@@ -419,9 +419,9 @@ namespace ERPCore2.Services
                 {
                     if (detail.ConvertedQuantity > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知商品";
+                        var productName = detail.Product?.Name ?? "未知品項";
                         return ServiceResult.Failure(
-                            $"無法刪除此報價單，因為商品「{productName}」已有銷貨記錄（已轉銷貨 {detail.ConvertedQuantity} 個）"
+                            $"無法刪除此報價單，因為品項「{productName}」已有銷貨記錄（已轉銷貨 {detail.ConvertedQuantity} 個）"
                         );
                     }
                 }

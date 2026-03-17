@@ -166,7 +166,7 @@
     </BodyContent>
 </BaseModalComponent>
 
-@* 商品批量選擇器 *@
+@* 品項批量選擇器 *@
 <ProductPickerModal IsVisible="@_showProductPicker"
                    AvailableProducts="@GetPickerAvailableProducts()"
                    AvailableCategories="@_availableCategories"
@@ -254,7 +254,7 @@
 
         try
         {
-            // 載入可用的商品、單位、商品類別
+            // 載入可用的品項、單位、品項類別
             availableProducts = await ProductService.GetAllAsync();
             availableUnits = await UnitService.GetAllAsync();
             _availableCategories = await ProductCategoryService.GetAllAsync();
@@ -297,7 +297,7 @@
                 return;
             }
 
-            // Fallback：從商品預設 BOM 複製
+            // Fallback：從品項預設 BOM 複製
             if (ProductId.HasValue && DetailId.HasValue)
             {
                 var defaultCompositions = await ProductCompositionService.GetCompositionsByProductIdAsync(ProductId.Value);
@@ -429,7 +429,7 @@ private string GetModalTitle()
     private void OpenProductPicker() => _showProductPicker = true;
 
     /// <summary>
-    /// 取得批量選擇器的可用商品（排除主商品本身）
+    /// 取得批量選擇器的可用品項（排除主品項本身）
     /// </summary>
     private List<Product> GetPickerAvailableProducts()
     {
@@ -438,7 +438,7 @@ private string GetModalTitle()
     }
 
     /// <summary>
-    /// 取得已加入的商品 ID 集合（用於選擇器標示「已加入」）
+    /// 取得已加入的品項 ID 集合（用於選擇器標示「已加入」）
     /// </summary>
     private HashSet<int> GetAlreadyAddedProductIds()
     {
@@ -453,7 +453,7 @@ private string GetModalTitle()
     }
 
     /// <summary>
-    /// 批量選擇器確認：將選取的商品建立為 TCompositionDetail 加入表格
+    /// 批量選擇器確認：將選取的品項建立為 TCompositionDetail 加入表格
     /// </summary>
     private async Task HandleProductsSelected(List<Product> selectedProducts)
     {
@@ -505,7 +505,7 @@ private string GetModalTitle()
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 組件商品
+        // 組件品項
         columns.Add(new InteractiveColumnDefinition
         {
             Title = L["Column.ComponentItem"].ToString(),
@@ -559,7 +559,7 @@ private string GetModalTitle()
             ExcludeFromEmptyCheck = true
         });
 
-        // 單位（唯讀顯示，跟隨組件商品的預設單位）
+        // 單位（唯讀顯示，跟隨組件品項的預設單位）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = L["Label.Unit"].ToString(),

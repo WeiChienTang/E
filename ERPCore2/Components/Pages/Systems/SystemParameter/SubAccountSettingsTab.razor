@@ -115,7 +115,7 @@
                 LabelHelpItems = new List<LabelHelpItem>
                 {
                     new() { Title = "流水號", Description = "依序產生三位流水號，例：1191.001、1191.002。簡潔整齊，適合大量客戶/廠商。" },
-                    new() { Title = "實體編碼", Description = "使用客戶/廠商/商品的代碼作為後綴，例：1191.C0001。一眼可辨認對應實體，適合代碼有意義的場景。" }
+                    new() { Title = "實體編碼", Description = "使用客戶/廠商/品項的代碼作為後綴，例：1191.C0001。一眼可辨認對應實體，適合代碼有意義的場景。" }
                 }
             },
             // ===== 統制科目代碼（客戶）=====
@@ -128,7 +128,7 @@
             new FormFieldDefinition { PropertyName = "SupplierNoteSubAccountParentCode",    Label = L["Field.SupplierNoteAccount"],      FieldType = FormFieldType.Text, Placeholder = "預設：2131", MaxLength = 20 },
             new FormFieldDefinition { PropertyName = "SupplierReturnSubAccountParentCode",  Label = L["Field.SupplierReturnAccount"],    FieldType = FormFieldType.Text, Placeholder = "預設：5111", MaxLength = 20 },
             new FormFieldDefinition { PropertyName = "SupplierAdvanceSubAccountParentCode", Label = L["Field.SupplierAdvanceAccount"],   FieldType = FormFieldType.Text, Placeholder = "預設：1161", MaxLength = 20 },
-            // ===== 統制科目代碼（商品）=====
+            // ===== 統制科目代碼（品項）=====
             new FormFieldDefinition { PropertyName = "ProductSubAccountParentCode",         Label = L["Field.ProductInventoryAccount"],  FieldType = FormFieldType.Text, Placeholder = "預設：1231", MaxLength = 20 }
         };
 

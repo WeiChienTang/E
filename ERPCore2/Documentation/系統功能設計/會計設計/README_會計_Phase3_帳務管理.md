@@ -52,7 +52,7 @@ Phase 3 新增三項帳務管理核心功能：**應收/應付帳齡分析**、*
 **計算邏輯（決策：方法一，主檔層級）：**
 
 方法一（採用）：以**銷貨出貨單（SalesDelivery）為計算主體**
-- 每張 SalesDelivery 為一個應收款單位（非逐行商品明細）
+- 每張 SalesDelivery 為一個應收款單位（非逐行品項明細）
 - 帳齡天數基準 = 交貨日（`DeliveryDate`）+ `Customer.PaymentDays`（需新增，見下方說明）
 - **未收金額 = `(SalesDelivery.TotalAmount + SalesDelivery.TaxAmount)` - `SUM(SetoffProductDetail.CurrentSetoffAmount WHERE SourceDetailType 關聯至此 SalesDelivery)`**
 

@@ -288,7 +288,7 @@ namespace ERPCore2.FieldConfiguration
                 new SelectOption { Text = "全盤", Value = ((int)StockTakingTypeEnum.Full).ToString() },
                 new SelectOption { Text = "循環盤點", Value = ((int)StockTakingTypeEnum.Cycle).ToString() },
                 new SelectOption { Text = "抽樣盤點", Value = ((int)StockTakingTypeEnum.Sample).ToString() },
-                new SelectOption { Text = "特定商品盤點", Value = ((int)StockTakingTypeEnum.Specific).ToString() },
+                new SelectOption { Text = "特定品項盤點", Value = ((int)StockTakingTypeEnum.Specific).ToString() },
                 new SelectOption { Text = "特定位置盤點", Value = ((int)StockTakingTypeEnum.Location).ToString() }
             };
         }
@@ -313,7 +313,7 @@ namespace ERPCore2.FieldConfiguration
                 StockTakingTypeEnum.Full => "全盤",
                 StockTakingTypeEnum.Cycle => "循環盤點",
                 StockTakingTypeEnum.Sample => "抽樣盤點",
-                StockTakingTypeEnum.Specific => "特定商品盤點",
+                StockTakingTypeEnum.Specific => "特定品項盤點",
                 StockTakingTypeEnum.Location => "特定位置盤點",
                 _ => takingType.ToString()
             };

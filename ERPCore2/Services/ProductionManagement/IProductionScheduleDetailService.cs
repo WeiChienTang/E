@@ -15,7 +15,7 @@ namespace ERPCore2.Services
         Task<List<ProductionScheduleDetail>> GetByScheduleItemIdAsync(int scheduleItemId);
 
         /// <summary>
-        /// 根據組件商品ID取得明細列表
+        /// 根據組件品項ID取得明細列表
         /// </summary>
         Task<List<ProductionScheduleDetail>> GetByComponentProductIdAsync(int productId);
 

@@ -376,56 +376,56 @@ public static class FilterTemplateRegistry
             }
         });
 
-        // ==================== 商品報表 ====================
+        // ==================== 品項報表 ====================
 
-        // 商品條碼標籤
+        // 品項條碼標籤
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.ProductBarcode,
             FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ProductBarcodeBatchFilterTemplate",
             CriteriaType = typeof(ProductBarcodeBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductBarcodeReportService),
-            PreviewTitle = "商品條碼標籤預覽",
-            FilterTitle = "商品條碼列印篩選條件",
+            PreviewTitle = "品項條碼標籤預覽",
+            FilterTitle = "品項條碼列印篩選條件",
             IconClass = "bi-upc-scan",
             GetDocumentName = criteria =>
             {
                 var c = (ProductBarcodeBatchPrintCriteria)criteria;
                 var count = c.ProductIds.Count;
                 var total = c.PrintQuantities.Values.Sum();
-                return $"商品條碼-{count}品項-{total}張-{DateTime.Now:yyyyMMddHHmm}";
+                return $"品項條碼-{count}品項-{total}張-{DateTime.Now:yyyyMMddHHmm}";
             }
         });
 
-        // ==================== 商品報表（清單式）====================
+        // ==================== 品項報表（清單式）====================
 
-        // PD001 - 商品清單表（報表集進入時顯示篩選，清單式報表）
+        // PD001 - 品項清單表（報表集進入時顯示篩選，清單式報表）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.ProductList,
             FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(ProductListBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductListReportService),
-            PreviewTitle = "商品清單表預覽",
-            FilterTitle = "商品清單表篩選條件",
+            PreviewTitle = "品項清單表預覽",
+            FilterTitle = "品項清單表篩選條件",
             IconClass = "bi-box-seam",
             GetDocumentName = criteria =>
             {
-                return $"商品清單表-{DateTime.Now:yyyyMMddHHmm}";
+                return $"品項清單表-{DateTime.Now:yyyyMMddHHmm}";
             }
         });
 
-        // PD005 - 商品詳細資料（詳細式報表，每項商品各佔一區塊）
+        // PD005 - 品項詳細資料（詳細式報表，每項品項各佔一區塊）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.ProductDetail,
             FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(ProductListBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductDetailReportService),
-            PreviewTitle = "商品詳細資料預覽",
-            FilterTitle = "商品詳細資料篩選條件",
+            PreviewTitle = "品項詳細資料預覽",
+            FilterTitle = "品項詳細資料篩選條件",
             IconClass = "bi-box-fill",
-            GetDocumentName = criteria => $"商品詳細資料-{DateTime.Now:yyyyMMddHHmm}"
+            GetDocumentName = criteria => $"品項詳細資料-{DateTime.Now:yyyyMMddHHmm}"
         });
 
         // PD002 - 物料清單報表（依配方分組顯示組件明細）
@@ -506,7 +506,7 @@ public static class FilterTemplateRegistry
 
         // ==================== 庫存報表 ====================
 
-        // 庫存現況表（依倉庫分組顯示各商品庫存數量及金額）
+        // 庫存現況表（依倉庫分組顯示各品項庫存數量及金額）
         RegisterConfig(new ReportFilterConfig
         {
             ReportId = ReportIds.InventoryStatus,
@@ -619,16 +619,16 @@ public static class FilterTemplateRegistry
         // WL001 - 磅秤紀錄表（依磅秤類型分組，含費用統計）
         RegisterConfig(new ReportFilterConfig
         {
-            ReportId = ReportIds.WasteRecord,
+            ReportId = ReportIds.ScaleRecord,
             FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
-            CriteriaType = typeof(WasteRecordCriteria),
-            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IWasteRecordReportService),
+            CriteriaType = typeof(ScaleRecordCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IScaleRecordReportService),
             PreviewTitle = "磅秤紀錄表預覽",
             FilterTitle = "磅秤紀錄表篩選條件",
             IconClass = "bi-recycle",
             GetDocumentName = criteria =>
             {
-                var c = (WasteRecordCriteria)criteria;
+                var c = (ScaleRecordCriteria)criteria;
                 var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
                     ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");

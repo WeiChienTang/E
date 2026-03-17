@@ -1,22 +1,22 @@
 namespace ERPCore2.Models.Barcode
 {
     /// <summary>
-    /// 商品條碼列印項目模型
+    /// 品項條碼列印項目模型
     /// </summary>
     public class ProductBarcodeItem
     {
         /// <summary>
-        /// 商品ID
+        /// 品項ID
         /// </summary>
         public int ProductId { get; set; }
         
         /// <summary>
-        /// 商品編號
+        /// 品項編號
         /// </summary>
         public string Code { get; set; } = string.Empty;
         
         /// <summary>
-        /// 商品名稱
+        /// 品項名稱
         /// </summary>
         public string Name { get; set; } = string.Empty;
         

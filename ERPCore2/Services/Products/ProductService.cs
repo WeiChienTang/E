@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品服務實作 - 繼承 GenericManagementService
+    /// 品項服務實作 - 繼承 GenericManagementService
     /// </summary>
     public class ProductService : GenericManagementService<Product>, IProductService
     {
@@ -118,21 +118,21 @@ namespace ERPCore2.Services
                 // 驗證必填欄位
                 if (string.IsNullOrWhiteSpace(entity.Code))
                 {
-                    errors.Add("商品編號為必填欄位");
+                    errors.Add("品項編號為必填欄位");
                 }
                 else
                 {
-                    // 檢查商品編號唯一性
+                    // 檢查品項編號唯一性
                     var isDuplicate = await IsProductCodeExistsAsync(entity.Code, entity.Id);
                     if (isDuplicate)
                     {
-                        errors.Add("商品編號已存在");
+                        errors.Add("品項編號已存在");
                     }
                 }
 
                 if (string.IsNullOrWhiteSpace(entity.Name))
                 {
-                    errors.Add("商品名稱為必填欄位");
+                    errors.Add("品項名稱為必填欄位");
                 }
 
                 if (string.IsNullOrWhiteSpace(entity.Barcode))
@@ -151,12 +151,12 @@ namespace ERPCore2.Services
                 
                 if (!entity.ProductCategoryId.HasValue || entity.ProductCategoryId <= 0)
                 {
-                    errors.Add("商品類別為必填欄位");
+                    errors.Add("品項類別為必填欄位");
                 }
                 
                 if (entity.UnitId <= 0)
                 {
-                    errors.Add("商品單位為必填欄位");
+                    errors.Add("品項單位為必填欄位");
                 }
 
                 // 驗證稅率範圍（0-100）
@@ -172,7 +172,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity.Id, ProductCode = entity.Code });
-                return ServiceResult.Failure($"驗證商品時發生錯誤: {ex.Message}");
+                return ServiceResult.Failure($"驗證品項時發生錯誤: {ex.Message}");
             }
         }
 
@@ -484,12 +484,12 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _logger);
-                return ServiceResult<Product>.Failure($"更新商品時發生錯誤: {ex.Message}");
+                return ServiceResult<Product>.Failure($"更新品項時發生錯誤: {ex.Message}");
             }
         }
         
         /// <summary>
-        /// 覆寫基底類別的 CanDeleteAsync 方法，實作商品特定的刪除檢查
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作品項特定的刪除檢查
         /// </summary>
         protected override async Task<ServiceResult> CanDeleteAsync(Product entity)
         {
@@ -498,7 +498,7 @@ namespace ERPCore2.Services
                 var dependencyCheck = await DependencyCheckHelper.CheckProductDependenciesAsync(_contextFactory, entity.Id);
                 if (!dependencyCheck.CanDelete)
                 {
-                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("商品"));
+                    return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("品項"));
                 }
                 
                 return ServiceResult.Success();
@@ -510,7 +510,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     ProductId = entity.Id 
                 });
-                return ServiceResult.Failure("檢查商品刪除條件時發生錯誤");
+                return ServiceResult.Failure("檢查品項刪除條件時發生錯誤");
             }
         }
 

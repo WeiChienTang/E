@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +8,7 @@ namespace ERPCore2.Data.Entities
     /// 磅秤類型主檔
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
-    public class WasteType : BaseEntity
+    public class ScaleType : BaseEntity
     {
         [Required(ErrorMessage = "磅秤類型名稱為必填")]
         [MaxLength(100, ErrorMessage = "磅秤類型名稱不可超過100個字元")]
@@ -25,14 +25,14 @@ namespace ERPCore2.Data.Entities
 
         // ===== 外鍵關聯 =====
 
-        /// <summary>關聯的商品（用於入庫追蹤，可選）</summary>
-        [Display(Name = "關聯商品")]
+        /// <summary>關聯的品項（用於入庫追蹤，可選）</summary>
+        [Display(Name = "關聯品項")]
         [ForeignKey(nameof(Product))]
         public int? ProductId { get; set; }
 
         public Product? Product { get; set; }
 
         // Navigation Properties
-        public ICollection<WasteRecord> WasteRecords { get; set; } = new List<WasteRecord>();
+        public ICollection<ScaleRecord> ScaleRecords { get; set; } = new List<ScaleRecord>();
     }
 }

@@ -3,7 +3,7 @@ using ERPCore2.Data.Entities;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品照片服務介面
+    /// 品項照片服務介面
     /// </summary>
     public interface IProductPhotoService : IGenericManagementService<ProductPhoto>
     {

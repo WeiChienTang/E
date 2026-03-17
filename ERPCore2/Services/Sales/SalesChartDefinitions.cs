@@ -12,7 +12,7 @@ public static class SalesChartDefinitions
         definitions.Add(new ChartDefinition
         {
             ChartId            = ChartIds.SalesTopProductByAmount,
-            Title              = "依商品銷售金額排行 Top 10",
+            Title              = "依品項銷售金額排行 Top 10",
             Category           = ChartCategory.Sales,
             SortOrder          = 1,
             DefaultSeriesType  = SeriesType.Bar,

@@ -73,7 +73,7 @@ public static class SystemParameterDefaults
     /// <summary>預設：不自動建立廠商子科目</summary>
     public const bool DefaultAutoCreateSupplierSubAccount = false;
 
-    /// <summary>預設：不自動建立商品子科目</summary>
+    /// <summary>預設：不自動建立品項子科目</summary>
     public const bool DefaultAutoCreateProductSubAccount = false;
 
     /// <summary>預設應收帳款統制科目代碼</summary>
@@ -100,7 +100,7 @@ public static class SystemParameterDefaults
     /// <summary>預設預付款項統制科目代碼</summary>
     public const string DefaultSupplierAdvanceSubAccountParentCode = "1161";
 
-    /// <summary>預設商品存貨統制科目代碼</summary>
+    /// <summary>預設品項存貨統制科目代碼</summary>
     public const string DefaultProductSubAccountParentCode = "1231";
 
     /// <summary>預設子科目代碼格式：流水號</summary>

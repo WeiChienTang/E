@@ -83,7 +83,7 @@ namespace ERPCore2.Services
                     errors.Add("生產排程主檔為必填");
 
                 if (entity.ProductId <= 0)
-                    errors.Add("商品為必填");
+                    errors.Add("品項為必填");
 
                 if (entity.ScheduledQuantity <= 0)
                     errors.Add("排程數量必須大於0");
@@ -102,12 +102,12 @@ namespace ERPCore2.Services
                 if (!scheduleExists)
                     errors.Add("生產排程不存在");
 
-                // 檢查商品是否存在
+                // 檢查品項是否存在
                 var productExists = await context.Products
                     .AnyAsync(p => p.Id == entity.ProductId);
 
                 if (!productExists)
-                    errors.Add("商品不存在");
+                    errors.Add("品項不存在");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

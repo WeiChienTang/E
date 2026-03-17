@@ -13,8 +13,8 @@ namespace ERPCore2.Data.Entities
     public class PriceHistory : BaseEntity
     {
         // 基本資訊
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
+        [Required(ErrorMessage = "品項為必填")]
+        [Display(Name = "品項")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 

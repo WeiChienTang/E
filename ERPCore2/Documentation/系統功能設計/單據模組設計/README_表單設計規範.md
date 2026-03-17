@@ -33,7 +33,7 @@ _detailsDataVersion++;
 
 ### 明細元件：`XxxTable.razor`
 
-職責：管理商品明細列表、業務規則、欄位定義。
+職責：管理品項明細列表、業務規則、欄位定義。
 
 **對外事件：**
 
@@ -63,7 +63,7 @@ shouldLock = (isApprovalEnabled && IsApproved == true)
 **鎖定時的行為：**
 - 所有主表單欄位（單號、廠商/客戶、公司、日期、稅別、備註）→ `IsReadOnly = true`
 - 對象欄位的 ActionButtons（新增/編輯按鈕）→ 回傳空列表
-- Table 欄位：商品、數量、單價、稅率 → `IsDisabledFunc` 依 `DetailLockHelper` 判斷
+- Table 欄位：品項、數量、單價、稅率 → `IsDisabledFunc` 依 `DetailLockHelper` 判斷
 - Table 欄位：狀態欄（完成進貨等）、備註 → **鎖定後仍可編輯**
 
 **警告訊息（`FormHeaderContent`）：**
@@ -155,7 +155,7 @@ public string ApprovedByDisplayName =>
 - 儲存成功後啟用上述按鈕
 
 部分模組支援從其他頁面帶入預填資料（`ShowAddModalWithPrefilledData`）：
-- 預填對象 ID、商品 ID、建議單價
+- 預填對象 ID、品項 ID、建議單價
 - `LoadXxxData()` 讀取預填值並建立第一筆明細
 
 ---

@@ -1,10 +1,10 @@
-﻿@* 可重用的磅秤紀錄編輯組件 *@
+@* 可重用的磅秤紀錄編輯組件 *@
 @using ERPCore2.Models.Reports
 @using ERPCore2.Services.Reports
 @using ERPCore2.Services.Reports.Interfaces
-@inject IWasteRecordService WasteRecordService
-@inject IWasteRecordReportService WasteRecordReportService
-@inject IWasteTypeService WasteTypeService
+@inject IScaleRecordService ScaleRecordService
+@inject IScaleRecordReportService ScaleRecordReportService
+@inject IScaleTypeService ScaleTypeService
 @inject IVehicleService VehicleService
 @inject ICustomerService CustomerService
 @inject IWarehouseService WarehouseService
@@ -13,17 +13,17 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="WasteRecord"
-                          TService="IWasteRecordService"
+<GenericEditModalComponent TEntity="ScaleRecord"
+                          TService="IScaleRecordService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
-                          @bind-Id="@WasteRecordId"
-                          Service="@WasteRecordService"
+                          @bind-Id="@ScaleRecordId"
+                          Service="@ScaleRecordService"
                           EntityName="@L["Entity.WasteRecord"]"
                           EntityNamePlural="@L["Entity.WasteRecord"]"
-                          ModalTitle="@(WasteRecordId.HasValue ? L["Message.EditTitle", L["Entity.WasteRecord"]].ToString() : L["Message.CreateTitle", L["Entity.WasteRecord"]].ToString())"
-                          Size="GenericEditModalComponent<WasteRecord, IWasteRecordService>.ModalSize.Desktop"
+                          ModalTitle="@(ScaleRecordId.HasValue ? L["Message.EditTitle", L["Entity.WasteRecord"]].ToString() : L["Message.CreateTitle", L["Entity.WasteRecord"]].ToString())"
+                          Size="GenericEditModalComponent<ScaleRecord, IScaleRecordService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
@@ -32,32 +32,32 @@
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@modalManagers?.AsDictionary()"
-                          DataLoader="@LoadWasteRecordData"
+                          DataLoader="@LoadScaleRecordData"
                           UseGenericSave="true"
                           ShowDraftButton="true"
                           DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.WasteRecord"]]"
-                          SaveSuccessMessage="@(WasteRecordId.HasValue ? L["Message.UpdateSuccess", L["Entity.WasteRecord"]].ToString() : L["Message.CreateSuccess", L["Entity.WasteRecord"]].ToString())"
+                          SaveSuccessMessage="@(ScaleRecordId.HasValue ? L["Message.UpdateSuccess", L["Entity.WasteRecord"]].ToString() : L["Message.CreateSuccess", L["Entity.WasteRecord"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WasteRecord"]]"
                           ShowPrintButton="true"
                           PrintButtonText="@L["Button.Print"]"
-                          ReportService="@WasteRecordReportService"
-                          ReportId="@ReportIds.WasteRecord"
+                          ReportService="@ScaleRecordReportService"
+                          ReportId="@ReportIds.ScaleRecord"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.WasteRecord"]]"
                           GetReportDocumentName="@(e => $"磅秤紀錄-{e.Code}")"
-                          RequiredPermission="@PermissionRegistry.WasteRecord.Read"
-                          OnEntitySaved="@HandleWasteRecordSavedAsync"
+                          RequiredPermission="@PermissionRegistry.ScaleRecord.Read"
+                          OnEntitySaved="@HandleScaleRecordSavedAsync"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           OnFieldChanged="@HandleFieldChangedAsync"
-                          ComponentName="WasteRecordEditModalComponent" />
+                          ComponentName="ScaleRecordEditModalComponent" />
 
 @* 磅秤類型編輯 Modal *@
-<WasteTypeEditModalComponent @ref="wasteTypeEditModal"
-                             IsVisible="@wasteTypeModalManager.IsModalVisible"
-                             IsVisibleChanged="@wasteTypeModalManager.HandleModalVisibilityChangedAsync"
-                             WasteTypeId="@wasteTypeModalManager.SelectedEntityId"
-                             OnWasteTypeSaved="@wasteTypeModalManager.OnSavedAsync"
-                             OnCancel="@wasteTypeModalManager.HandleModalCancelAsync" />
+<ScaleTypeEditModalComponent @ref="scaleTypeEditModal"
+                             IsVisible="@scaleTypeModalManager.IsModalVisible"
+                             IsVisibleChanged="@scaleTypeModalManager.HandleModalVisibilityChangedAsync"
+                             ScaleTypeId="@scaleTypeModalManager.SelectedEntityId"
+                             OnScaleTypeSaved="@scaleTypeModalManager.OnSavedAsync"
+                             OnCancel="@scaleTypeModalManager.HandleModalCancelAsync" />
 
 @* 客戶編輯 Modal *@
 <CustomerEditModalComponent @ref="customerEditModal"
@@ -71,13 +71,13 @@
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    [Parameter] public int? WasteRecordId { get; set; }
-    [Parameter] public EventCallback<WasteRecord> OnWasteRecordSaved { get; set; }
+    [Parameter] public int? ScaleRecordId { get; set; }
+    [Parameter] public EventCallback<ScaleRecord> OnScaleRecordSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
     // ===== 內部狀態 =====
-    private GenericEditModalComponent<WasteRecord, IWasteRecordService>? editModalComponent;
+    private GenericEditModalComponent<ScaleRecord, IScaleRecordService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
 
@@ -85,7 +85,7 @@
     private AutoCompleteConfig? autoCompleteConfig;
 
     // 選項資料
-    private List<WasteType> availableWasteTypes = new();
+    private List<ScaleType> availableScaleTypes = new();
     private List<Vehicle> availableVehicles = new();
     private List<Customer> availableCustomers = new();
     private List<Warehouse> availableWarehouses = new();
@@ -96,8 +96,8 @@
     private ModalManagerCollection? modalManagers;
 
     // 磅秤類型編輯 Modal
-    private WasteTypeEditModalComponent? wasteTypeEditModal;
-    private RelatedEntityModalManager<WasteType> wasteTypeModalManager = default!;
+    private ScaleTypeEditModalComponent? scaleTypeEditModal;
+    private RelatedEntityModalManager<ScaleType> scaleTypeModalManager = default!;
 
     // 客戶編輯 Modal
     private CustomerEditModalComponent? customerEditModal;
@@ -132,11 +132,11 @@
     {
         if (editModalComponent?.Entity == null) return;
 
-        if (fieldChange.PropertyName == nameof(WasteRecord.VehicleId))
+        if (fieldChange.PropertyName == nameof(ScaleRecord.VehicleId))
             await HandleVehicleChangedAsync();
-        else if (fieldChange.PropertyName == nameof(WasteRecord.CustomerId))
+        else if (fieldChange.PropertyName == nameof(ScaleRecord.CustomerId))
             await HandleCustomerChangedAsync();
-        else if (fieldChange.PropertyName == nameof(WasteRecord.WarehouseId))
+        else if (fieldChange.PropertyName == nameof(ScaleRecord.WarehouseId))
             await HandleWarehouseChangedAsync();
     }
 
@@ -153,7 +153,7 @@
         if (customer == null) return;
 
         await editModalComponent.SetAutoCompleteFieldValueAsync(
-            nameof(WasteRecord.CustomerId),
+            nameof(ScaleRecord.CustomerId),
             vehicle.CustomerId.Value.ToString(),
             customer.CompanyName ?? "");
     }
@@ -172,7 +172,7 @@
 
         var vehicle = customerVehicles[0];
         await editModalComponent.SetAutoCompleteFieldValueAsync(
-            nameof(WasteRecord.VehicleId),
+            nameof(ScaleRecord.VehicleId),
             vehicle.Id.ToString(),
             vehicle.LicensePlate);
     }
@@ -188,7 +188,7 @@
 
         // 清空已選庫位（傳入空字串讓 ConvertValue 正確轉為 null，避免設成 0 違反 FK 約束）
         await editModalComponent.SetAutoCompleteFieldValueAsync(
-            nameof(WasteRecord.WarehouseLocationId), "", "");
+            nameof(ScaleRecord.WarehouseLocationId), "", "");
 
         // 重建 AutoComplete（更新庫位清單）與表單欄位（更新 IsReadOnly 狀態）
         RebuildAutoCompleteConfig();
@@ -200,18 +200,18 @@
     {
         try
         {
-            modalManagers = ModalManagerInitHelper.CreateBuilder<WasteRecord, IWasteRecordService>(
+            modalManagers = ModalManagerInitHelper.CreateBuilder<ScaleRecord, IScaleRecordService>(
                     () => editModalComponent,
                     NotificationService,
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
-                .AddManager<WasteType>(nameof(WasteRecord.WasteTypeId), "磅秤類型")
-                .AddManager<Customer>(nameof(WasteRecord.CustomerId), "客戶")
+                .AddManager<ScaleType>(nameof(ScaleRecord.ScaleTypeId), "磅秤類型")
+                .AddManager<Customer>(nameof(ScaleRecord.CustomerId), "客戶")
                 .Build();
 
-            wasteTypeModalManager = modalManagers.Get<WasteType>(nameof(WasteRecord.WasteTypeId));
-            customerModalManager = modalManagers.Get<Customer>(nameof(WasteRecord.CustomerId));
+            scaleTypeModalManager = modalManagers.Get<ScaleType>(nameof(ScaleRecord.ScaleTypeId));
+            customerModalManager = modalManagers.Get<Customer>(nameof(ScaleRecord.CustomerId));
         }
         catch (Exception)
         {
@@ -224,7 +224,7 @@
         if (IsVisible && !isDataLoaded)
         {
             // 在資料載入前記錄是否為新增
-            _isNewRecord = !WasteRecordId.HasValue;
+            _isNewRecord = !ScaleRecordId.HasValue;
 
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
@@ -236,15 +236,15 @@
         }
     }
 
-    private async Task<WasteRecord?> LoadWasteRecordData()
+    private async Task<ScaleRecord?> LoadScaleRecordData()
     {
         try
         {
-            if (!WasteRecordId.HasValue)
+            if (!ScaleRecordId.HasValue)
             {
-                var newRecord = new WasteRecord
+                var newRecord = new ScaleRecord
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<WasteRecord, IWasteRecordService>(WasteRecordService, "WR"),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<ScaleRecord, IScaleRecordService>(ScaleRecordService, "WR"),
                     RecordDate = DateTime.Today,
                     Status = EntityStatus.Active
                 };
@@ -254,7 +254,7 @@
                 return newRecord;
             }
 
-            return await WasteRecordService.GetByIdAsync(WasteRecordId.Value);
+            return await ScaleRecordService.GetByIdAsync(ScaleRecordId.Value);
         }
         catch (Exception ex)
         {
@@ -274,7 +274,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(WasteRecord.Code),
+                    PropertyName = nameof(ScaleRecord.Code),
                     Label = L["Field.WasteRecordCode"],
                     FieldType = FormFieldType.Text,
                     Placeholder = L["Placeholder.AutoGenerated"],
@@ -284,7 +284,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(WasteRecord.RecordDate),
+                    PropertyName = nameof(ScaleRecord.RecordDate),
                     Label = L["Field.RecordDate"],
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
@@ -292,7 +292,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(WasteRecord.VehicleId),
+                    PropertyName = nameof(ScaleRecord.VehicleId),
                     Label = L["Field.LicensePlate"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.LicensePlate"]],
@@ -302,18 +302,18 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(WasteRecord.WasteTypeId),
+                    PropertyName = nameof(ScaleRecord.ScaleTypeId),
                     Label = L["Entity.WasteType"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.WasteType"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "此次送來的磅秤類型",
-                    ActionButtons = await GetWasteTypeActionButtonsAsync()
+                    ActionButtons = await GetScaleTypeActionButtonsAsync()
                 },
                 new()
                 {
-                    PropertyName = nameof(WasteRecord.CustomerId),
+                    PropertyName = nameof(ScaleRecord.CustomerId),
                     Label = L["Entity.Customer"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Customer"]],
@@ -324,7 +324,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(WasteRecord.WarehouseId),
+                    PropertyName = nameof(ScaleRecord.WarehouseId),
                     Label = L["Field.InboundWarehouse"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Warehouse"]],
@@ -334,7 +334,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(WasteRecord.WarehouseLocationId),
+                    PropertyName = nameof(ScaleRecord.WarehouseLocationId),
                     Label = L["Field.InboundLocation"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = locationIsReadOnly ? L["Placeholder.SelectWarehouseFirst"].ToString() : L["Placeholder.PleaseInputOrSelect", L["Entity.WarehouseLocation"]].ToString(),
@@ -343,18 +343,9 @@
                     MinSearchLength = 0,
                     HelpText = "倉庫內的具體庫位（選填，需先選擇倉庫）"
                 },
-                /*new()
-                {
-                    PropertyName = nameof(WasteRecord.Quantity),
-                    Label = "數量",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入數量",
-                    IsRequired = false,
-                    HelpText = "磅秤的數量（依磅秤類型的計量單位）"
-                },*/
                 new()
                 {
-                    PropertyName = nameof(WasteRecord.TotalWeight),
+                    PropertyName = nameof(ScaleRecord.TotalWeight),
                     Label = L["Field.TotalWeight"],
                     FieldType = FormFieldType.Number,
                     Placeholder = L["Placeholder.PleaseInput", L["Field.TotalWeight"]],
@@ -363,7 +354,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(WasteRecord.DisposalFee),
+                    PropertyName = nameof(ScaleRecord.DisposalFee),
                     Label = L["Field.DisposalFee"],
                     FieldType = FormFieldType.Number,
                     Placeholder = L["Placeholder.PleaseInput", L["Field.DisposalFee"]],
@@ -372,43 +363,34 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(WasteRecord.PurchaseFee),
+                    PropertyName = nameof(ScaleRecord.PurchaseFee),
                     Label = L["Field.PurchaseFee"],
                     FieldType = FormFieldType.Number,
                     Placeholder = L["Placeholder.PleaseInput", L["Field.PurchaseFee"]],
                     IsRequired = false,
                     HelpText = "客戶/廠商向我們收取的磅秤採購費用"
                 },
-                /*new()
-                {
-                    PropertyName = nameof(WasteRecord.NetAmount),
-                    Label = "淨額",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入淨額",
-                    IsRequired = false,
-                    HelpText = "淨額 = 處理費 - 採購費"
-                },*/
 
-                FormFieldConfigurationHelper.CreateRemarksField<WasteRecord>()
+                FormFieldConfigurationHelper.CreateRemarksField<ScaleRecord>()
             };
 
-            formSections = FormSectionHelper<WasteRecord>.Create()
+            formSections = FormSectionHelper<ScaleRecord>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
-                    wr => wr.Code,
-                    wr => wr.RecordDate,
-                    wr => wr.VehicleId,
-                    wr => wr.CustomerId,
-                    wr => wr.WasteTypeId,
-                    wr => wr.Quantity,
-                    wr => wr.TotalWeight,
-                    wr => wr.WarehouseId,
-                    wr => wr.WarehouseLocationId)
+                    sr => sr.Code,
+                    sr => sr.RecordDate,
+                    sr => sr.VehicleId,
+                    sr => sr.CustomerId,
+                    sr => sr.ScaleTypeId,
+                    sr => sr.Quantity,
+                    sr => sr.TotalWeight,
+                    sr => sr.WarehouseId,
+                    sr => sr.WarehouseLocationId)
                 .AddToSection(L["Section.FeeInfo"],
-                    wr => wr.DisposalFee,
-                    wr => wr.PurchaseFee,
-                    wr => wr.NetAmount)
+                    sr => sr.DisposalFee,
+                    sr => sr.PurchaseFee,
+                    sr => sr.NetAmount)
                 .AddToSection(FormSectionNames.AdditionalInfo,
-                    wr => wr.Remarks)
+                    sr => sr.Remarks)
                 .Build();
         }
         catch (Exception)
@@ -421,7 +403,7 @@
     {
         try
         {
-            availableWasteTypes = await WasteTypeService.GetAllAsync();
+            availableScaleTypes = await ScaleTypeService.GetAllAsync();
             availableVehicles = await VehicleService.GetAllAsync();
             availableCustomers = await CustomerService.GetAllAsync();
             availableWarehouses = await WarehouseService.GetAllAsync();
@@ -438,7 +420,7 @@
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("載入磅秤紀錄編輯相關資料時發生錯誤");
-            availableWasteTypes = new List<WasteType>();
+            availableScaleTypes = new List<ScaleType>();
             availableVehicles = new List<Vehicle>();
             availableCustomers = new List<Customer>();
             availableWarehouses = new List<Warehouse>();
@@ -449,25 +431,25 @@
 
     private void RebuildAutoCompleteConfig()
     {
-        autoCompleteConfig = new AutoCompleteConfigBuilder<WasteRecord>()
-            .AddField(nameof(WasteRecord.VehicleId), "LicensePlate", availableVehicles)
-            .AddField(nameof(WasteRecord.WasteTypeId), "Name", availableWasteTypes)
-            .AddField(nameof(WasteRecord.CustomerId), "CompanyName", availableCustomers)
-            .AddField(nameof(WasteRecord.WarehouseId), "Name", availableWarehouses)
-            .AddField(nameof(WasteRecord.WarehouseLocationId), "Name", filteredWarehouseLocations)
+        autoCompleteConfig = new AutoCompleteConfigBuilder<ScaleRecord>()
+            .AddField(nameof(ScaleRecord.VehicleId), "LicensePlate", availableVehicles)
+            .AddField(nameof(ScaleRecord.ScaleTypeId), "Name", availableScaleTypes)
+            .AddField(nameof(ScaleRecord.CustomerId), "CompanyName", availableCustomers)
+            .AddField(nameof(ScaleRecord.WarehouseId), "Name", availableWarehouses)
+            .AddField(nameof(ScaleRecord.WarehouseLocationId), "Name", filteredWarehouseLocations)
             .Build();
     }
 
     // 儲存成功後：呼叫入庫方法，再轉給父組件
-    private async Task HandleWasteRecordSavedAsync(WasteRecord savedRecord)
+    private async Task HandleScaleRecordSavedAsync(ScaleRecord savedRecord)
     {
         try
         {
             ServiceResult inventoryResult;
             if (_isNewRecord)
-                inventoryResult = await WasteRecordService.ConfirmWasteReceiptAsync(savedRecord.Id);
+                inventoryResult = await ScaleRecordService.ConfirmScaleReceiptAsync(savedRecord.Id);
             else
-                inventoryResult = await WasteRecordService.ReverseAndRepostWasteInventoryAsync(savedRecord.Id);
+                inventoryResult = await ScaleRecordService.ReverseAndRepostScaleInventoryAsync(savedRecord.Id);
 
             // 首次儲存後記錄已存在，後續在同一 Modal Session 內再儲存時應執行 ReverseAndRepost
             _isNewRecord = false;
@@ -480,15 +462,15 @@
             await NotificationService.ShowWarningAsync($"記錄已儲存，但庫存更新時發生錯誤：{ex.Message}");
         }
 
-        await OnWasteRecordSaved.InvokeAsync(savedRecord);
+        await OnScaleRecordSaved.InvokeAsync(savedRecord);
     }
 
-    private async Task<List<FieldActionButton>> GetWasteTypeActionButtonsAsync()
+    private async Task<List<FieldActionButton>> GetScaleTypeActionButtonsAsync()
     {
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent,
-            wasteTypeModalManager,
-            nameof(WasteRecord.WasteTypeId)
+            scaleTypeModalManager,
+            nameof(ScaleRecord.ScaleTypeId)
         );
     }
 
@@ -497,7 +479,7 @@
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent,
             customerModalManager,
-            nameof(WasteRecord.CustomerId)
+            nameof(ScaleRecord.CustomerId)
         );
     }
 }

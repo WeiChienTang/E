@@ -13,7 +13,7 @@ namespace ERPCore2.Services
         #region 基本查詢
 
         /// <summary>
-        /// 根據商品ID查詢異動記錄（透過明細查詢）
+        /// 根據品項ID查詢異動記錄（透過明細查詢）
         /// </summary>
         Task<List<InventoryTransaction>> GetByProductIdAsync(int productId);
         
@@ -23,7 +23,7 @@ namespace ERPCore2.Services
         Task<List<InventoryTransaction>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
         
         /// <summary>
-        /// 根據商品和日期範圍查詢異動記錄（透過明細查詢）
+        /// 根據品項和日期範圍查詢異動記錄（透過明細查詢）
         /// </summary>
         Task<List<InventoryTransaction>> GetByProductAndDateRangeAsync(int productId, DateTime startDate, DateTime endDate);
         Task<List<InventoryTransaction>> GetByWarehouseAndDateRangeAsync(int warehouseId, DateTime startDate, DateTime endDate);
@@ -43,12 +43,12 @@ namespace ERPCore2.Services
         #region 統計查詢
 
         /// <summary>
-        /// 取得商品總入庫量（透過明細彙總）
+        /// 取得品項總入庫量（透過明細彙總）
         /// </summary>
         Task<decimal> GetTotalInboundByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null);
         
         /// <summary>
-        /// 取得商品總出庫量（透過明細彙總）
+        /// 取得品項總出庫量（透過明細彙總）
         /// </summary>
         Task<decimal> GetTotalOutboundByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null);
         
@@ -83,12 +83,12 @@ namespace ERPCore2.Services
         #region 庫存流水追蹤
 
         /// <summary>
-        /// 取得商品的異動歷史（主檔層級）
+        /// 取得品項的異動歷史（主檔層級）
         /// </summary>
         Task<List<InventoryTransaction>> GetProductMovementHistoryAsync(int productId, int? warehouseId = null);
         
         /// <summary>
-        /// 取得商品的異動歷史明細
+        /// 取得品項的異動歷史明細
         /// </summary>
         Task<List<InventoryTransactionDetail>> GetProductMovementHistoryDetailsAsync(int productId, int? warehouseId = null);
 
@@ -98,7 +98,7 @@ namespace ERPCore2.Services
         /// 🔑 簡化設計：同一單據只會有一筆主檔，透過 OperationType 區分操作類型
         /// </summary>
         /// <param name="baseTransactionNumber">基礎交易編號</param>
-        /// <param name="productId">商品ID（可選，用於過濾特定商品的異動）</param>
+        /// <param name="productId">品項ID（可選，用於過濾特定品項的異動）</param>
         /// <returns>包含原始交易和所有調整記錄的 RelatedDocumentInfo 列表</returns>
         Task<List<ERPCore2.Models.Documents.RelatedDocumentInfo>> GetRelatedTransactionsAsync(string baseTransactionNumber, int? productId = null);
 

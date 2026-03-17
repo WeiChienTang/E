@@ -1,6 +1,6 @@
 @*
     庫存檢視 Modal 組件
-    用於顯示低庫存或庫存過多的商品清單（唯讀）
+    用於顯示低庫存或庫存過多的品項清單（唯讀）
 *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
@@ -146,7 +146,7 @@
                 DetailId = d.Id,
                 Code = d.InventoryStock?.Product?.Code ?? "未知編號",
                 ProductId = d.InventoryStock?.ProductId ?? 0,
-                ProductName = d.InventoryStock?.Product?.Name ?? "未知商品",
+                ProductName = d.InventoryStock?.Product?.Name ?? "未知品項",
                 WarehouseName = d.Warehouse?.Name ?? "未知倉庫",
                 WarehouseLocationName = d.WarehouseLocation?.Name ?? "未指定",
                 CurrentStock = d.CurrentStock,
@@ -395,7 +395,7 @@
     }
 
     /// <summary>
-    /// 處理供應商點擊（開啟採購單並預填供應商和商品）
+    /// 處理供應商點擊（開啟採購單並預填供應商和品項）
     /// </summary>
     private async Task HandleSupplierClick(RelatedDocument document)
     {

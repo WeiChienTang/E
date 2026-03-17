@@ -42,7 +42,7 @@ public DateTime? JournalizedAt { get; set; }
 |------|------|---------|
 | AccountReceivableCode | 1191 | 應收帳款 |
 | AccountPayableCode | 2171 | 應付帳款 |
-| InventoryCode | 1231 | 商品存貨 |
+| InventoryCode | 1231 | 品項存貨 |
 | SalesRevenueCode | 4111 | 銷貨收入 |
 | CostOfGoodsSoldCode | 5111 | 銷貨成本 |
 | InputVatCode | 1268 | 進項稅額 |
@@ -59,13 +59,13 @@ public DateTime? JournalizedAt { get; set; }
 
 ```
 進貨入庫：
-  借：商品存貨 (1231)  = TotalAmount
+  借：品項存貨 (1231)  = TotalAmount
   借：進項稅額 (1268)  = TaxAmount
     貸：應付帳款 (2171) = TotalAmountIncludingTax
 
 進貨退回：
   借：應付帳款 (2171)  = TotalReturnAmountWithTax
-    貸：商品存貨 (1231) = TotalReturnAmount
+    貸：品項存貨 (1231) = TotalReturnAmount
     貸：進項稅額 (1268) = ReturnTaxAmount
 
 銷貨出貨：
@@ -73,13 +73,13 @@ public DateTime? JournalizedAt { get; set; }
     貸：銷貨收入 (4111) = TotalAmount
     貸：銷項稅額 (2204) = TaxAmount
   借：銷貨成本 (5111)  = COGS（移動加權均價 × 出庫量）
-    貸：商品存貨 (1231) = COGS
+    貸：品項存貨 (1231) = COGS
 
 銷貨退回：
   借：銷貨收入 (4111)  = TotalReturnAmount
   借：銷項稅額 (2204)  = ReturnTaxAmount
     貸：應收帳款 (1191) = TotalReturnAmountWithTax
-  借：商品存貨 (1231)  = COGS 沖回
+  借：品項存貨 (1231)  = COGS 沖回
     貸：銷貨成本 (5111) = COGS 沖回
 
 應收沖款（IsAccountsReceivable = true）：
@@ -116,7 +116,7 @@ public DateTime? JournalizedAt { get; set; }
 
 涵蓋文件類型：進貨入庫、進貨退回、銷貨出貨、銷貨退回、沖款單、銷貨折讓、進貨折讓。
 
-> 商品子科目（`1231.*`）本版未整合進 COGS 傳票（一張出貨單含多商品，拆分複雜）。
+> 品項子科目（`1231.*`）本版未整合進 COGS 傳票（一張出貨單含多品項，拆分複雜）。
 
 ---
 

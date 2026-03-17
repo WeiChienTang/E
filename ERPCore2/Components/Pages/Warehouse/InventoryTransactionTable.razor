@@ -116,7 +116,7 @@
     {
         var columns = new List<InteractiveColumnDefinition>
         {
-            // 商品編號
+            // 品項編號
             new()
             {
                 Title = L["Column.ProductCode"].ToString(),
@@ -125,7 +125,7 @@
                 Width = "120px",
                 IsReadOnly = true
             },
-            // 商品名稱
+            // 品項名稱
             new()
             {
                 Title = L["Column.ProductName"].ToString(),
@@ -249,7 +249,7 @@
     /// </summary>
     private RenderFragment<TransactionDetailItem> GetCustomActionsTemplate => item => __builder =>
     {
-        // 顯示查看此商品異動歷史的按鈕
+        // 顯示查看此品項異動歷史的按鈕
         <GenericButtonComponent Variant="ButtonVariant.Blue"
                                IconClass="bi bi-clock-history text-white"
                                Size="ButtonSize.Large"
@@ -260,7 +260,7 @@
     };
     
     /// <summary>
-    /// 顯示特定商品的異動歷史
+    /// 顯示特定品項的異動歷史
     /// </summary>
     private void ShowProductTransactionHistory(TransactionDetailItem item)
     {

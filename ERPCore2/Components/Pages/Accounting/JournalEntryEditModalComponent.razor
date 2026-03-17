@@ -292,8 +292,8 @@
                                   IsLoading="@(isSaving && saveAction == "post")" />
         }
 
-        @* 沖銷按鈕（已過帳且未沖銷才顯示） *@
-        if (entity.JournalEntryStatus == JournalEntryStatus.Posted && !entity.IsReversed)
+        @* 沖銷按鈕（已過帳且未沖銷且非沖銷傳票才顯示） *@
+        if (entity.JournalEntryStatus == JournalEntryStatus.Posted && !entity.IsReversed && entity.EntryType != JournalEntryType.Reversing)
         {
             <GenericButtonComponent Text="沖銷"
                                   Variant="ButtonVariant.Green"

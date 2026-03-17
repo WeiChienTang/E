@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品-供應商關聯服務實作
+    /// 品項-供應商關聯服務實作
     /// </summary>
     public class ProductSupplierService : GenericManagementService<ProductSupplier>, IProductSupplierService
     {
@@ -66,7 +66,7 @@ namespace ERPCore2.Services
                 // 驗證必填欄位
                 if (entity.ProductId <= 0)
                 {
-                    errors.Add("商品為必填欄位");
+                    errors.Add("品項為必填欄位");
                 }
 
                 if (entity.SupplierId <= 0)
@@ -80,7 +80,7 @@ namespace ERPCore2.Services
                     var isDuplicate = await IsBindingExistsAsync(entity.ProductId, entity.SupplierId, entity.Id);
                     if (isDuplicate)
                     {
-                        errors.Add("此商品與供應商的綁定已存在");
+                        errors.Add("此品項與供應商的綁定已存在");
                     }
                 }
 
@@ -104,7 +104,7 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, 
                     new { EntityId = entity.Id, ProductId = entity.ProductId, SupplierId = entity.SupplierId });
-                return ServiceResult.Failure($"驗證商品-供應商綁定時發生錯誤: {ex.Message}");
+                return ServiceResult.Failure($"驗證品項-供應商綁定時發生錯誤: {ex.Message}");
             }
         }
 
@@ -141,7 +141,7 @@ namespace ERPCore2.Services
         #region 查詢方法
 
         /// <summary>
-        /// 依商品ID取得所有綁定的供應商
+        /// 依品項ID取得所有綁定的供應商
         /// </summary>
         public async Task<List<ProductSupplier>> GetByProductIdAsync(int productId)
         {
@@ -166,7 +166,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 依供應商ID取得所有綁定的商品
+        /// 依供應商ID取得所有綁定的品項
         /// </summary>
         public async Task<List<ProductSupplier>> GetBySupplierIdAsync(int supplierId)
         {
@@ -191,7 +191,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得指定商品的常用供應商列表（依優先順序排序）
+        /// 取得指定品項的常用供應商列表（依優先順序排序）
         /// </summary>
         public async Task<List<ProductSupplier>> GetPreferredSuppliersByProductIdAsync(int productId)
         {
@@ -215,7 +215,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查商品-供應商綁定是否存在
+        /// 檢查品項-供應商綁定是否存在
         /// </summary>
         public async Task<bool> IsBindingExistsAsync(int productId, int supplierId, int? excludeId = null)
         {
@@ -246,7 +246,7 @@ namespace ERPCore2.Services
         #region 批次操作
 
         /// <summary>
-        /// 從採購歷史自動建立供應商-商品綁定
+        /// 從採購歷史自動建立供應商-品項綁定
         /// </summary>
         public async Task<int> ImportFromPurchaseHistoryAsync(int supplierId)
         {
@@ -254,7 +254,7 @@ namespace ERPCore2.Services
 
             try
             {
-                // 查詢該供應商的所有採購記錄（含商品、價格、日期）
+                // 查詢該供應商的所有採購記錄（含品項、價格、日期）
                 var purchaseData = await context.PurchaseOrders
                     .Where(po => po.SupplierId == supplierId && po.Status == EntityStatus.Active)
                     .SelectMany(po => po.PurchaseOrderDetails.Select(pod => new
@@ -279,7 +279,7 @@ namespace ERPCore2.Services
                     .Select(ps => ps.ProductId)
                     .ToListAsync();
 
-                // 篩選出尚未綁定的商品
+                // 篩選出尚未綁定的品項
                 var newBindings = purchaseData
                     .Where(pd => !existingBindings.Contains(pd.ProductId))
                     .Select(pd => new ProductSupplier

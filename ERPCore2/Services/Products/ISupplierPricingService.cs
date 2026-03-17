@@ -8,7 +8,7 @@ namespace ERPCore2.Services
     public interface ISupplierPricingService : IGenericManagementService<SupplierPricing>
     {
         /// <summary>
-        /// 根據商品ID取得供應商定價
+        /// 根據品項ID取得供應商定價
         /// </summary>
         Task<List<SupplierPricing>> GetByProductIdAsync(int productId);
 
@@ -18,7 +18,7 @@ namespace ERPCore2.Services
         Task<List<SupplierPricing>> GetBySupplierIdAsync(int supplierId);
 
         /// <summary>
-        /// 根據商品ID和供應商ID取得定價
+        /// 根據品項ID和供應商ID取得定價
         /// </summary>
         Task<List<SupplierPricing>> GetByProductIdAndSupplierIdAsync(int productId, int supplierId);
 
@@ -28,12 +28,12 @@ namespace ERPCore2.Services
         Task<List<SupplierPricing>> GetEffectivePricingAsync(int productId, DateTime? asOfDate = null);
 
         /// <summary>
-        /// 檢查供應商商品編號是否已存在
+        /// 檢查供應商品項編號是否已存在
         /// </summary>
         Task<bool> IsSupplierProductCodeExistsAsync(int supplierId, string supplierProductCode, int? excludeId = null);
 
         /// <summary>
-        /// 根據供應商商品編號查詢
+        /// 根據供應商品項編號查詢
         /// </summary>
         Task<List<SupplierPricing>> GetBySupplierProductCodeAsync(int supplierId, string supplierProductCode);
 

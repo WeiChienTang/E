@@ -107,8 +107,8 @@ namespace ERPCore2.Data.Context
       public DbSet<VehicleType> VehicleTypes { get; set; }
       public DbSet<Vehicle> Vehicles { get; set; }
       public DbSet<VehicleMaintenance> VehicleMaintenances { get; set; }
-      public DbSet<WasteType> WasteTypes { get; set; }
-      public DbSet<WasteRecord> WasteRecords { get; set; }
+      public DbSet<ScaleType> ScaleTypes { get; set; }
+      public DbSet<ScaleRecord> ScaleRecords { get; set; }
       public DbSet<AccountItem> AccountItems { get; set; }
       public DbSet<JournalEntry> JournalEntries { get; set; }
       public DbSet<JournalEntryLine> JournalEntryLines { get; set; }
@@ -209,7 +209,7 @@ namespace ERPCore2.Data.Context
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
                   
-                  // 商品相關
+                  // 品項相關
                   modelBuilder.Entity<Product>(entity =>
                   {
                         // 欄位對應                        
@@ -232,7 +232,7 @@ namespace ERPCore2.Data.Context
                         
                   });
                   
-                  // 商品-供應商關聯表
+                  // 品項-供應商關聯表
                   modelBuilder.Entity<ProductSupplier>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
@@ -250,11 +250,11 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.SupplierId)
                               .HasDatabaseName("IX_ProductSupplier_SupplierId");
                         
-                        // 商品關聯
+                        // 品項關聯
                         entity.HasOne(ps => ps.Product)
                               .WithMany(p => p.ProductSuppliers)
                               .HasForeignKey(ps => ps.ProductId)
-                              .OnDelete(DeleteBehavior.Cascade);  // 刪除商品時同時刪除綁定
+                              .OnDelete(DeleteBehavior.Cascade);  // 刪除品項時同時刪除綁定
                         
                         // 供應商關聯
                         entity.HasOne(ps => ps.Supplier)
@@ -294,7 +294,7 @@ namespace ERPCore2.Data.Context
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         
-                        // 商品關聯
+                        // 品項關聯
                         entity.HasOne(invStock => invStock.Product)
                         .WithMany(p => p.InventoryStocks)
                         .HasForeignKey(invStock => invStock.ProductId)
@@ -359,7 +359,7 @@ namespace ERPCore2.Data.Context
                   // 庫存異動明細關聯
                   modelBuilder.Entity<InventoryTransactionDetail>(entity =>
                   {
-                        // 商品關聯
+                        // 品項關聯
                         entity.HasOne(d => d.Product)
                         .WithMany()
                         .HasForeignKey(d => d.ProductId)
@@ -740,7 +740,7 @@ namespace ERPCore2.Data.Context
                   {
                         entity.HasKey(qcd => qcd.Id);
                         
-                        // 複合唯一索引：同一報價明細中，同一組成商品只能出現一次
+                        // 複合唯一索引：同一報價明細中，同一組成品項只能出現一次
                         entity.HasIndex(e => new { e.QuotationDetailId, e.ComponentProductId })
                               .IsUnique();
 
@@ -782,7 +782,7 @@ namespace ERPCore2.Data.Context
                   {
                         entity.HasKey(socd => socd.Id);
                         
-                        // 複合唯一索引：同一銷貨訂單明細中，同一組成商品只能出現一次
+                        // 複合唯一索引：同一銷貨訂單明細中，同一組成品項只能出現一次
                         entity.HasIndex(e => new { e.SalesOrderDetailId, e.ComponentProductId })
                               .IsUnique();
 
@@ -868,7 +868,7 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.PaymentMethodId);
                   });
 
-                  // 統一沖款商品明細配置
+                  // 統一沖款品項明細配置
                   modelBuilder.Entity<SetoffProductDetail>(entity =>
                   {
                         entity.HasKey(spd => spd.Id);
@@ -879,7 +879,7 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(spd => spd.SetoffDocumentId)
                               .OnDelete(DeleteBehavior.Cascade);
 
-                        // 商品關聯
+                        // 品項關聯
                         entity.HasOne(spd => spd.Product)
                               .WithMany()
                               .HasForeignKey(spd => spd.ProductId)
@@ -1324,7 +1324,7 @@ namespace ERPCore2.Data.Context
                   });
 
                   // 磅秤管理相關
-                  modelBuilder.Entity<WasteType>(entity =>
+                  modelBuilder.Entity<ScaleType>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
@@ -1350,7 +1350,7 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.ParentId);
                         entity.HasIndex(e => e.IsDetailAccount);
 
-                        // 子科目實體連結（SetNull：刪除客戶/廠商/商品時，子科目保留但連結清空）
+                        // 子科目實體連結（SetNull：刪除客戶/廠商/品項時，子科目保留但連結清空）
                         entity.HasOne(a => a.LinkedCustomer)
                               .WithMany()
                               .HasForeignKey(a => a.LinkedCustomerId)
@@ -1372,26 +1372,26 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(a => a.LinkedProductId).HasFilter("[LinkedProductId] IS NOT NULL");
                   });
 
-                  modelBuilder.Entity<WasteRecord>(entity =>
+                  modelBuilder.Entity<ScaleRecord>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                         // 車輛關聯
-                        entity.HasOne(wr => wr.Vehicle)
+                        entity.HasOne(sr => sr.Vehicle)
                               .WithMany()
-                              .HasForeignKey(wr => wr.VehicleId)
+                              .HasForeignKey(sr => sr.VehicleId)
                               .OnDelete(DeleteBehavior.Restrict);
 
                         // 磅秤類型關聯
-                        entity.HasOne(wr => wr.WasteType)
-                              .WithMany(wt => wt.WasteRecords)
-                              .HasForeignKey(wr => wr.WasteTypeId)
+                        entity.HasOne(sr => sr.ScaleType)
+                              .WithMany(st => st.ScaleRecords)
+                              .HasForeignKey(sr => sr.ScaleTypeId)
                               .OnDelete(DeleteBehavior.Restrict);
 
                         // 客戶關聯（Optional）
-                        entity.HasOne(wr => wr.Customer)
+                        entity.HasOne(sr => sr.Customer)
                               .WithMany()
-                              .HasForeignKey(wr => wr.CustomerId)
+                              .HasForeignKey(sr => sr.CustomerId)
                               .OnDelete(DeleteBehavior.SetNull);
                   });
 

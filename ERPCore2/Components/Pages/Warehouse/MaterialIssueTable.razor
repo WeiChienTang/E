@@ -21,13 +21,13 @@
                     </label>
                     <input type="text" 
                            class="form-control form-control" 
-                           placeholder="請掃描或輸入商品條碼，按 Enter 新增..."
+                           placeholder="請掃描或輸入品項條碼，按 Enter 新增..."
                            @bind="barcodeInput"
                            @bind:event="oninput"
                            @onkeydown="HandleBarcodeKeyDown"
                            @ref="barcodeInputElement"
                            disabled="@IsReadOnly" />
-                    <small class="text-muted">掃描條碼後按 Enter 自動新增商品，或直接在下方表格手動輸入</small>
+                    <small class="text-muted">掃描條碼後按 Enter 自動新增品項，或直接在下方表格手動輸入</small>
                 </div>
             </div>
         </div>
@@ -43,7 +43,7 @@
                                      ColumnDefinitions="@GetColumnDefinitions()"
                                      IsReadOnly="@IsReadOnly"
                                      ShowRowNumbers="true"
-                                     EmptyMessage="尚未新增商品"
+                                     EmptyMessage="尚未新增品項"
                                      ShowBuiltInActions="true"
                                      ShowBuiltInDeleteButton="false"
                                      ActionsColumnWidth="80px"
@@ -184,7 +184,7 @@
                     ProductionScheduleDetailId = detail.ProductionScheduleDetailId
                 };
 
-                // 載入該商品的可用倉庫位置清單
+                // 載入該品項的可用倉庫位置清單
                 if (item.ProductId.HasValue)
                 {
                     item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(item.ProductId.Value);
@@ -237,7 +237,7 @@
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品欄位 - 使用 SearchableSelect
+        // 品項欄位 - 使用 SearchableSelect
         columns.Add(new()
         {
             Title = L["Entity.Product"],
@@ -246,8 +246,8 @@
             TriggerEmptyRowOnFilled = true,
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "250px",
-            Tooltip = "搜尋並選擇商品",
-            Placeholder = "請輸入商品編號或名稱",
+            Tooltip = "搜尋並選擇品項",
+            Placeholder = "請輸入品項編號或名稱",
             SearchValuePropertyName = nameof(DetailItem.ProductSearchValue),
             FilteredItemsPropertyName = nameof(DetailItem.FilteredProducts),
             ShowDropdownPropertyName = nameof(DetailItem.ShowProductDropdown),
@@ -381,7 +381,7 @@
             
             if (product == null)
             {
-                await NotificationService.ShowWarningAsync($"找不到條碼 {barcodeInput} 的商品");
+                await NotificationService.ShowWarningAsync($"找不到條碼 {barcodeInput} 的品項");
                 barcodeInput = string.Empty;
                 return;
             }
@@ -389,7 +389,7 @@
             // 檢查是否已存在
             if (DetailItems.Any(item => item.ProductId == product.Id))
             {
-                await NotificationService.ShowWarningAsync($"商品 {product.Name} 已存在明細中");
+                await NotificationService.ShowWarningAsync($"品項 {product.Name} 已存在明細中");
                 barcodeInput = string.Empty;
                 return;
             }
@@ -413,7 +413,7 @@
             DetailItems.Add(newItem);
             
             await SyncToDetails();
-            await NotificationService.ShowSuccessAsync($"已新增商品: {product.Name}");
+            await NotificationService.ShowSuccessAsync($"已新增品項: {product.Name}");
             
             barcodeInput = string.Empty;
             await barcodeInputElement.FocusAsync();
@@ -462,7 +462,7 @@
         item.ShowProductDropdown = false;
         item.UnitCost = 0m; // Product 實體中沒有 Cost 屬性,預設為 0
         
-        // 載入該商品的可用倉庫位置清單
+        // 載入該品項的可用倉庫位置清單
         item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(product.Id);
 
         // 重置選擇後嘗試自動選取
@@ -613,7 +613,7 @@
         
         foreach (var item in DetailItems)
         {
-            // 只有在有商品ID、有效倉庫ID（>0）、且領貨數量大於0時才加入
+            // 只有在有品項ID、有效倉庫ID（>0）、且領貨數量大於0時才加入
             if (item.ProductId.HasValue && item.WarehouseId.HasValue && item.WarehouseId.Value > 0 && item.IssueQuantity > 0)
             {
                 Details.Add(new MaterialIssueDetail

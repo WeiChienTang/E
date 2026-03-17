@@ -260,6 +260,9 @@ namespace ERPCore2.Services
                 if (original.IsReversed)
                     return (false, "此傳票已被沖銷過", null);
 
+                if (original.EntryType == JournalEntryType.Reversing)
+                    return (false, "沖銷傳票本身不能再被沖銷", null);
+
                 // 建立沖銷傳票（借貸對調）
                 // 沖銷傳票不繼承 SourceDocumentType/Id/Code，避免與原傳票索引衝突，
                 // 且沖銷傳票本身不代表一張業務單據

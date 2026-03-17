@@ -6,8 +6,8 @@ namespace ERPCore2.Data.Entities
 {
     /// <summary>
     /// 報價單組合明細檔 - 儲存報價單專屬的 BOM 組成資料
-    /// 當報價單明細的商品有 BOM 組成時，可以複製並客製化其組成內容
-    /// 這些資料不會影響原始的商品物料清單（ProductCompositionDetail）
+    /// 當報價單明細的品項有 BOM 組成時，可以複製並客製化其組成內容
+    /// 這些資料不會影響原始的品項物料清單（ProductCompositionDetail）
     /// </summary>
     [Index(nameof(QuotationDetailId), nameof(ComponentProductId), IsUnique = true)]
     [Index(nameof(ComponentProductId))]
@@ -19,8 +19,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(QuotationDetail))]
         public int QuotationDetailId { get; set; }
 
-        [Required(ErrorMessage = "組件商品為必填")]
-        [Display(Name = "組件商品")]
+        [Required(ErrorMessage = "組件品項為必填")]
+        [Display(Name = "組件品項")]
         [ForeignKey(nameof(ComponentProduct))]
         public int ComponentProductId { get; set; }
 
@@ -46,7 +46,7 @@ namespace ERPCore2.Data.Entities
         public QuotationDetail QuotationDetail { get; set; } = null!;
 
         /// <summary>
-        /// 組件商品
+        /// 組件品項
         /// </summary>
         public Product ComponentProduct { get; set; } = null!;
 

@@ -228,7 +228,7 @@ if (hasCodeSettings || isSuperAdmin)
 | `SalesOrder` | 銷貨單 | `SO` | `{Prefix}-{Year:yy}{Month:MM}{Seq:3}` |
 | `SalesReturn` | 銷貨退貨單 | `SRT` | `{Prefix}-{Year:yy}{Month:MM}{Seq:3}` |
 | `InventoryTransfer` | 庫存調撥單 | `IT` | `{Prefix}-{Year:yy}{Month:MM}{Seq:3}` |
-| `WasteRecord` | 廢棄記錄 | `WR` | `{Prefix}-{Year:yy}{Month:MM}{Seq:3}` |
+| `WasteRecord` | 磅秤記錄 | `WR` | `{Prefix}-{Year:yy}{Month:MM}{Seq:3}` |
 
 ---
 

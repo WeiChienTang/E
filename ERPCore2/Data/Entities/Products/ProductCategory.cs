@@ -6,7 +6,7 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 商品分類實體 - 定義商品的分類資訊，支援階層結構
+    /// 品項分類實體 - 定義品項的分類資訊，支援階層結構
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     public class ProductCategory : BaseEntity

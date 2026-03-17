@@ -10,12 +10,12 @@ namespace ERPCore2.Services
     /// <summary>
     /// 批次轉傳票服務實作
     /// 分錄規則（含稅；稅額為零時省略稅額行；COGS 為零時省略成本行）：
-    ///   進貨入庫：借 商品存貨(1231) + 進項稅額(1268) / 貸 應付帳款(2171)
-    ///   進貨退回：借 應付帳款(2171) / 貸 商品存貨(1231) + 進項稅額(1268)
+    ///   進貨入庫：借 品項存貨(1231) + 進項稅額(1268) / 貸 應付帳款(2171)
+    ///   進貨退回：借 應付帳款(2171) / 貸 品項存貨(1231) + 進項稅額(1268)
     ///   銷貨出貨：借 應收帳款(1191) / 貸 銷貨收入(4111) + 銷項稅額(2204)
-    ///             借 銷貨成本(5111) / 貸 商品存貨(1231)             ← COGS（移動加權平均）
+    ///             借 銷貨成本(5111) / 貸 品項存貨(1231)             ← COGS（移動加權平均）
     ///   銷貨退回：借 銷貨收入(4111) + 銷項稅額(2204) / 貸 應收帳款(1191)
-    ///             借 商品存貨(1231) / 貸 銷貨成本(5111)             ← COGS 沖回
+    ///             借 品項存貨(1231) / 貸 銷貨成本(5111)             ← COGS 沖回
     /// </summary>
     public class JournalEntryAutoGenerationService : IJournalEntryAutoGenerationService
     {
@@ -29,7 +29,7 @@ namespace ERPCore2.Services
         // 標準科目代碼常數（來自商業會計項目表 112 年度種子資料）
         private const string AccountReceivableCode = "1191"; // 應收帳款
         private const string AccountPayableCode    = "2171"; // 應付帳款
-        private const string InventoryCode         = "1231"; // 商品存貨
+        private const string InventoryCode         = "1231"; // 品項存貨
         private const string SalesRevenueCode      = "4111"; // 銷貨收入
         private const string InputVatCode          = "1268"; // 進項稅額
         private const string OutputVatCode         = "2204"; // 銷項稅額
@@ -65,7 +65,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PurchaseReceivings
                     .Include(pr => pr.Supplier)
-                    .Where(pr => !pr.IsJournalized);
+                    .Where(pr => !pr.IsJournalized && pr.IsApproved);
 
                 if (from.HasValue)
                     query = query.Where(pr => pr.ReceiptDate >= from.Value.Date);
@@ -88,7 +88,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PurchaseReturns
                     .Include(pr => pr.Supplier)
-                    .Where(pr => !pr.IsJournalized);
+                    .Where(pr => !pr.IsJournalized && pr.IsApproved);
 
                 if (from.HasValue)
                     query = query.Where(pr => pr.ReturnDate >= from.Value.Date);
@@ -111,7 +111,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.SalesDeliveries
                     .Include(sd => sd.Customer)
-                    .Where(sd => !sd.IsJournalized);
+                    .Where(sd => !sd.IsJournalized && sd.IsApproved);
 
                 if (from.HasValue)
                     query = query.Where(sd => sd.DeliveryDate >= from.Value.Date);
@@ -134,7 +134,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Where(sr => !sr.IsJournalized);
+                    .Where(sr => !sr.IsJournalized && sr.IsApproved);
 
                 if (from.HasValue)
                     query = query.Where(sr => sr.ReturnDate >= from.Value.Date);
@@ -177,7 +177,7 @@ namespace ERPCore2.Services
                 var inputVat  = await _accountItemService.GetByCodeAsync(InputVatCode);
 
                 if (inventory == null || payable == null)
-                    return (false, "找不到必要的會計科目（商品存貨或應付帳款），請確認種子資料已正確載入");
+                    return (false, "找不到必要的會計科目（品項存貨或應付帳款），請確認種子資料已正確載入");
 
                 var lines = new List<JournalEntryLine>
                 {
@@ -187,7 +187,7 @@ namespace ERPCore2.Services
                         AccountItemId = inventory.Id,
                         Direction = AccountDirection.Debit,
                         Amount = doc.TotalAmount,
-                        LineDescription = "商品存貨"
+                        LineDescription = "品項存貨"
                     }
                 };
 
@@ -262,9 +262,9 @@ namespace ERPCore2.Services
                 var inputVat  = await _accountItemService.GetByCodeAsync(InputVatCode);
 
                 if (inventory == null || payable == null)
-                    return (false, "找不到必要的會計科目（商品存貨或應付帳款），請確認種子資料已正確載入");
+                    return (false, "找不到必要的會計科目（品項存貨或應付帳款），請確認種子資料已正確載入");
 
-                // 借：應付帳款 / 貸：商品存貨 + 進項稅額（沖回）
+                // 借：應付帳款 / 貸：品項存貨 + 進項稅額（沖回）
                 var lines = new List<JournalEntryLine>
                 {
                     new JournalEntryLine
@@ -281,7 +281,7 @@ namespace ERPCore2.Services
                         AccountItemId = inventory.Id,
                         Direction = AccountDirection.Credit,
                         Amount = doc.TotalReturnAmount,
-                        LineDescription = "商品存貨退回"
+                        LineDescription = "品項存貨退回"
                     }
                 };
 
@@ -381,14 +381,14 @@ namespace ERPCore2.Services
                     });
                 }
 
-                // 銷貨成本分錄（COGS）：借 銷貨成本(5111) / 貸 商品存貨(1231)
+                // 銷貨成本分錄（COGS）：借 銷貨成本(5111) / 貸 品項存貨(1231)
                 // 金額來源：InventoryTransaction.TotalAmount（ReduceStockAsync 寫入的出庫成本 = 出庫量 × 移動加權均價）
                 var cogsAmount = await context.InventoryTransactions
                     .Where(t => t.SourceDocumentType == "SalesDelivery" && t.SourceDocumentId == id)
                     .SumAsync(t => t.TotalAmount);
 
                 if (cogsAmount == 0)
-                    _logger.LogWarning("銷貨出貨 {Id}（{Code}）找不到對應的庫存異動記錄，COGS 分錄未加入傳票。若商品需計成本，請確認出庫流程是否正常執行。",
+                    _logger.LogWarning("銷貨出貨 {Id}（{Code}）找不到對應的庫存異動記錄，COGS 分錄未加入傳票。若品項需計成本，請確認出庫流程是否正常執行。",
                         id, doc.Code);
 
                 if (cogsAmount > 0)
@@ -412,7 +412,7 @@ namespace ERPCore2.Services
                             AccountItemId = inventory.Id,
                             Direction = AccountDirection.Credit,
                             Amount = cogsAmount,
-                            LineDescription = "商品存貨－銷貨出倉"
+                            LineDescription = "品項存貨－銷貨出倉"
                         });
                     }
                 }
@@ -502,14 +502,14 @@ namespace ERPCore2.Services
                     LineDescription = $"應收帳款沖回－{doc.Customer?.CompanyName ?? doc.CustomerId?.ToString() ?? ""}"
                 });
 
-                // 銷貨退回成本沖回：借 商品存貨(1231) / 貸 銷貨成本(5111)
+                // 銷貨退回成本沖回：借 品項存貨(1231) / 貸 銷貨成本(5111)
                 // 金額來源：InventoryTransaction.TotalAmount（AddStockAsync 寫入的退回入庫成本）
                 var returnCogsAmount = await context.InventoryTransactions
                     .Where(t => t.SourceDocumentType == "SalesReturn" && t.SourceDocumentId == id)
                     .SumAsync(t => t.TotalAmount);
 
                 if (returnCogsAmount == 0)
-                    _logger.LogWarning("銷貨退回 {Id}（{Code}）找不到對應的庫存異動記錄，COGS 沖回分錄未加入傳票。若商品需計成本，請確認退回入庫流程是否正常執行。",
+                    _logger.LogWarning("銷貨退回 {Id}（{Code}）找不到對應的庫存異動記錄，COGS 沖回分錄未加入傳票。若品項需計成本，請確認退回入庫流程是否正常執行。",
                         id, doc.Code);
 
                 if (returnCogsAmount > 0)
@@ -525,7 +525,7 @@ namespace ERPCore2.Services
                             AccountItemId = inventory.Id,
                             Direction = AccountDirection.Debit,
                             Amount = returnCogsAmount,
-                            LineDescription = "商品存貨－退回入庫"
+                            LineDescription = "品項存貨－退回入庫"
                         });
                         lines.Add(new JournalEntryLine
                         {

@@ -1,4 +1,4 @@
-﻿using ERPCore2.Data.Entities;
+using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -15,20 +15,20 @@ namespace ERPCore2.Services.Reports
     /// 磅秤紀錄報表服務實作（WL001）
     /// 支援單筆列印（EditModal）和清單式批次列印（篩選條件）
     /// </summary>
-    public class WasteRecordReportService : IWasteRecordReportService
+    public class ScaleRecordReportService : IScaleRecordReportService
     {
-        private readonly IWasteRecordService _wasteRecordService;
+        private readonly IScaleRecordService _scaleRecordService;
         private readonly ICompanyService _companyService;
         private readonly IFormattedPrintService _formattedPrintService;
-        private readonly ILogger<WasteRecordReportService>? _logger;
+        private readonly ILogger<ScaleRecordReportService>? _logger;
 
-        public WasteRecordReportService(
-            IWasteRecordService wasteRecordService,
+        public ScaleRecordReportService(
+            IScaleRecordService scaleRecordService,
             ICompanyService companyService,
             IFormattedPrintService formattedPrintService,
-            ILogger<WasteRecordReportService>? logger = null)
+            ILogger<ScaleRecordReportService>? logger = null)
         {
-            _wasteRecordService = wasteRecordService;
+            _scaleRecordService = scaleRecordService;
             _companyService = companyService;
             _formattedPrintService = formattedPrintService;
             _logger = logger;
@@ -39,23 +39,23 @@ namespace ERPCore2.Services.Reports
         /// <summary>
         /// 生成單一磅秤紀錄報表
         /// </summary>
-        public async Task<FormattedDocument> GenerateReportAsync(int wasteRecordId)
+        public async Task<FormattedDocument> GenerateReportAsync(int scaleRecordId)
         {
-            var record = await _wasteRecordService.GetByIdAsync(wasteRecordId);
+            var record = await _scaleRecordService.GetByIdAsync(scaleRecordId);
             if (record == null)
-                throw new ArgumentException($"找不到磅秤紀錄 ID: {wasteRecordId}");
+                throw new ArgumentException($"找不到磅秤紀錄 ID: {scaleRecordId}");
 
             var company = await _companyService.GetPrimaryCompanyAsync();
-            return BuildWasteRecordDocument(new List<WasteRecord> { record }, company, null);
+            return BuildScaleRecordDocument(new List<ScaleRecord> { record }, company, null);
         }
 
         /// <summary>
         /// 將報表渲染為圖片（預設紙張）
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<List<byte[]>> RenderToImagesAsync(int wasteRecordId)
+        public async Task<List<byte[]>> RenderToImagesAsync(int scaleRecordId)
         {
-            var document = await GenerateReportAsync(wasteRecordId);
+            var document = await GenerateReportAsync(scaleRecordId);
             return _formattedPrintService.RenderToImages(document);
         }
 
@@ -63,9 +63,9 @@ namespace ERPCore2.Services.Reports
         /// 將報表渲染為圖片（指定紙張）
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<List<byte[]>> RenderToImagesAsync(int wasteRecordId, PaperSetting paperSetting)
+        public async Task<List<byte[]>> RenderToImagesAsync(int scaleRecordId, PaperSetting paperSetting)
         {
-            var document = await GenerateReportAsync(wasteRecordId);
+            var document = await GenerateReportAsync(scaleRecordId);
             return _formattedPrintService.RenderToImages(document, paperSetting);
         }
 
@@ -73,16 +73,16 @@ namespace ERPCore2.Services.Reports
         /// 直接列印單筆磅秤紀錄
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<ServiceResult> DirectPrintAsync(int wasteRecordId, string reportId, int copies = 1)
+        public async Task<ServiceResult> DirectPrintAsync(int scaleRecordId, string reportId, int copies = 1)
         {
             try
             {
-                var document = await GenerateReportAsync(wasteRecordId);
+                var document = await GenerateReportAsync(scaleRecordId);
                 return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "列印磅秤紀錄 {Id} 時發生錯誤", wasteRecordId);
+                _logger?.LogError(ex, "列印磅秤紀錄 {Id} 時發生錯誤", scaleRecordId);
                 return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
             }
         }
@@ -101,7 +101,7 @@ namespace ERPCore2.Services.Reports
                     return ServiceResult.Failure($"無符合條件的磅秤紀錄\n篩選條件：{criteria.GetSummary()}");
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
-                var document = BuildWasteRecordDocument(records, company, null);
+                var document = BuildScaleRecordDocument(records, company, null);
                 return await _formattedPrintService.PrintByReportIdAsync(document, reportId, 1);
             }
             catch (Exception ex)
@@ -126,7 +126,7 @@ namespace ERPCore2.Services.Reports
                     return BatchPreviewResult.Failure($"無符合條件的磅秤紀錄\n篩選條件：{criteria.GetSummary()}");
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
-                var document = BuildWasteRecordDocument(records, company, criteria.PaperSetting);
+                var document = BuildScaleRecordDocument(records, company, criteria.PaperSetting);
                 var images = criteria.PaperSetting != null
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
@@ -142,13 +142,13 @@ namespace ERPCore2.Services.Reports
 
         #endregion
 
-        #region WasteRecordCriteria 批次報表
+        #region ScaleRecordCriteria 批次報表
 
         /// <summary>
         /// 以磅秤紀錄篩選條件批次渲染報表為圖片
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<BatchPreviewResult> RenderBatchToImagesAsync(WasteRecordCriteria criteria)
+        public async Task<BatchPreviewResult> RenderBatchToImagesAsync(ScaleRecordCriteria criteria)
         {
             try
             {
@@ -159,7 +159,7 @@ namespace ERPCore2.Services.Reports
                     return BatchPreviewResult.Failure($"無符合條件的磅秤紀錄\n篩選條件：{criteria.GetSummary()}");
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
-                var document = BuildWasteRecordDocument(records, company, criteria.PaperSetting);
+                var document = BuildScaleRecordDocument(records, company, criteria.PaperSetting);
                 var images = criteria.PaperSetting != null
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
@@ -168,7 +168,7 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "批次渲染磅秤紀錄報表（WasteRecordCriteria）時發生錯誤");
+                _logger?.LogError(ex, "批次渲染磅秤紀錄報表（ScaleRecordCriteria）時發生錯誤");
                 return BatchPreviewResult.Failure($"產生預覽時發生錯誤: {ex.Message}");
             }
         }
@@ -178,9 +178,9 @@ namespace ERPCore2.Services.Reports
         #region 私有方法 - 查詢資料
 
         /// <summary>根據 BatchPrintCriteria 查詢磅秤紀錄</summary>
-        private async Task<List<WasteRecord>> GetRecordsByCriteriaAsync(BatchPrintCriteria criteria)
+        private async Task<List<ScaleRecord>> GetRecordsByCriteriaAsync(BatchPrintCriteria criteria)
         {
-            var results = await _wasteRecordService.GetAllAsync();
+            var results = await _scaleRecordService.GetAllAsync();
 
             if (!criteria.IncludeCancelled)
                 results = results.Where(r => r.Status == EntityStatus.Active).ToList();
@@ -199,19 +199,19 @@ namespace ERPCore2.Services.Reports
                     (r.Vehicle != null && r.Vehicle.LicensePlate.Contains(kw, StringComparison.OrdinalIgnoreCase))).ToList();
             }
 
-            return results.OrderBy(r => r.WasteType?.Name).ThenBy(r => r.RecordDate).ToList();
+            return results.OrderBy(r => r.ScaleType?.Name).ThenBy(r => r.RecordDate).ToList();
         }
 
-        /// <summary>根據 WasteRecordCriteria 查詢磅秤紀錄</summary>
-        private async Task<List<WasteRecord>> GetRecordsByTypedCriteriaAsync(WasteRecordCriteria criteria)
+        /// <summary>根據 ScaleRecordCriteria 查詢磅秤紀錄</summary>
+        private async Task<List<ScaleRecord>> GetRecordsByTypedCriteriaAsync(ScaleRecordCriteria criteria)
         {
-            var results = await _wasteRecordService.GetAllAsync();
+            var results = await _scaleRecordService.GetAllAsync();
 
             if (criteria.ActiveOnly)
                 results = results.Where(r => r.Status == EntityStatus.Active).ToList();
 
-            if (criteria.WasteTypeIds.Any())
-                results = results.Where(r => r.WasteTypeId.HasValue && criteria.WasteTypeIds.Contains(r.WasteTypeId.Value)).ToList();
+            if (criteria.ScaleTypeIds.Any())
+                results = results.Where(r => r.ScaleTypeId.HasValue && criteria.ScaleTypeIds.Contains(r.ScaleTypeId.Value)).ToList();
 
             if (criteria.VehicleIds.Any())
                 results = results.Where(r => r.VehicleId.HasValue && criteria.VehicleIds.Contains(r.VehicleId.Value)).ToList();
@@ -237,7 +237,7 @@ namespace ERPCore2.Services.Reports
                     (r.Vehicle != null && r.Vehicle.LicensePlate.Contains(kw, StringComparison.OrdinalIgnoreCase))).ToList();
             }
 
-            return results.OrderBy(r => r.WasteType?.Name).ThenBy(r => r.RecordDate).ToList();
+            return results.OrderBy(r => r.ScaleType?.Name).ThenBy(r => r.RecordDate).ToList();
         }
 
         #endregion
@@ -247,8 +247,8 @@ namespace ERPCore2.Services.Reports
         /// <summary>
         /// 建構磅秤紀錄報表（清單式：依磅秤類型分組）
         /// </summary>
-        private FormattedDocument BuildWasteRecordDocument(
-            List<WasteRecord> records,
+        private FormattedDocument BuildScaleRecordDocument(
+            List<ScaleRecord> records,
             Company? company,
             PaperSetting? paperSetting)
         {
@@ -263,7 +263,7 @@ namespace ERPCore2.Services.Reports
                     centerLines: new List<(string, float, bool)>
                     {
                         (company?.CompanyName ?? "公司名稱", 14f, true),
-                        ("廢 料 記 錄 表", 16f, true)
+                        ("磅 秤 紀 錄 表", 16f, true)
                     },
                     rightLines: new List<string>
                     {
@@ -278,7 +278,7 @@ namespace ERPCore2.Services.Reports
 
             // === 依磅秤類型分組顯示 ===
             var typeGroups = records
-                .GroupBy(r => r.WasteType?.Name ?? "未分類")
+                .GroupBy(r => r.ScaleType?.Name ?? "未分類")
                 .OrderBy(g => g.Key);
 
             foreach (var group in typeGroups)

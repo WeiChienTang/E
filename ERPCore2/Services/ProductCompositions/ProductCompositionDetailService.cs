@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品合成明細服務實作 - 繼承 GenericManagementService
+    /// 品項合成明細服務實作 - 繼承 GenericManagementService
     /// </summary>
     public class ProductCompositionDetailService : GenericManagementService<ProductCompositionDetail>, IProductCompositionDetailService
     {
@@ -215,10 +215,10 @@ namespace ERPCore2.Services
 
                 // 基本驗證
                 if (entity.ProductCompositionId <= 0)
-                    errors.Add("請選擇商品合成主檔");
+                    errors.Add("請選擇品項合成主檔");
 
                 if (entity.ComponentProductId <= 0)
-                    errors.Add("請選擇組件商品");
+                    errors.Add("請選擇組件品項");
 
                 if (entity.Quantity <= 0)
                     errors.Add("所需數量必須大於 0");
@@ -249,7 +249,7 @@ namespace ERPCore2.Services
                     CompositionId = entity.ProductCompositionId,
                     ComponentProductId = entity.ComponentProductId
                 });
-                return ServiceResult.Failure($"驗證商品合成明細時發生錯誤: {ex.Message}");
+                return ServiceResult.Failure($"驗證品項合成明細時發生錯誤: {ex.Message}");
             }
         }
 

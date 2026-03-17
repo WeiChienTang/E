@@ -15,9 +15,9 @@ namespace ERPCore2.Services
         Task<List<PurchaseOrderDetail>> GetByPurchaseOrderIdAsync(int purchaseOrderId);
 
         /// <summary>
-        /// 根據商品ID取得所有採購訂單明細
+        /// 根據品項ID取得所有採購訂單明細
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <returns>採購訂單明細清單</returns>
         Task<List<PurchaseOrderDetail>> GetByProductIdAsync(int productId);
 
@@ -39,7 +39,7 @@ namespace ERPCore2.Services
         /// 獲取廠商最近一次完整的採購訂單明細（智能下單用）
         /// </summary>
         /// <param name="supplierId">供應商ID</param>
-        /// <returns>最近一次採購的商品明細清單</returns>
+        /// <returns>最近一次採購的品項明細清單</returns>
         Task<List<PurchaseOrderDetail>> GetLastCompletePurchaseAsync(int supplierId);
 
         /// <summary>
@@ -74,10 +74,10 @@ namespace ERPCore2.Services
         Task<ServiceResult> BatchUpdateReceivedQuantityAsync(List<(int DetailId, int ReceivedQuantity, decimal ReceivedAmount)> updates);
 
         /// <summary>
-        /// 檢查商品在指定採購訂單中是否已存在
+        /// 檢查品項在指定採購訂單中是否已存在
         /// </summary>
         /// <param name="purchaseOrderId">採購訂單ID</param>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <param name="excludeId">排除的明細ID（編輯時使用）</param>
         /// <returns>是否已存在</returns>
         Task<bool> IsProductExistsInOrderAsync(int purchaseOrderId, int productId, int? excludeId = null);

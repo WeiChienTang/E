@@ -130,7 +130,7 @@ namespace ERPCore2.Models.Enums
         [Description("抽樣盤點")]
         Sample = 3,
         
-        [Description("特定商品盤點")]
+        [Description("特定品項盤點")]
         Specific = 4,
         
         [Description("特定位置盤點")]

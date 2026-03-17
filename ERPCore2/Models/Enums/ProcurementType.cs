@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace ERPCore2.Models.Enums
 {
     /// <summary>
-    /// 商品採購/製造類型
+    /// 品項採購/製造類型
     /// </summary>
     public enum ProcurementType
     {

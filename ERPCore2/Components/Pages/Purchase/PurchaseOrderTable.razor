@@ -1,4 +1,4 @@
-@* 採購單商品管理組件 - 繼承 BaseDetailTableComponent，只保留採購特有邏輯 *@
+@* 採購單品項管理組件 - 繼承 BaseDetailTableComponent，只保留採購特有邏輯 *@
 @inherits BaseDetailTableComponent<PurchaseOrder, PurchaseOrderDetail, PurchaseOrderTable.ProductItem>
 
 @using ERPCore2.Models.Enums
@@ -79,7 +79,7 @@ else
     [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
 
-    // ===== 廠商已知商品（供應商品目錄）=====
+    // ===== 廠商已知品項（供應品項目錄）=====
     private HashSet<int> _supplierKnownProductIds = new();
 
     // ===== 智能下單 =====
@@ -187,7 +187,7 @@ else
     // ===== BaseDetailTableComponent 虛方法覆寫 =====
 
     /// <summary>
-    /// 廠商切換時：重新載入該廠商的已知商品目錄（★ 標示用）
+    /// 廠商切換時：重新載入該廠商的已知品項目錄（★ 標示用）
     /// </summary>
     protected override async Task OnCounterpartyChangedAsync()
     {
@@ -244,7 +244,7 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位 - 觸發欄位
+        // 品項選擇欄位 - 觸發欄位
         columns.Add(new()
         {
             Title = L["Column.ProductCodeName"],
@@ -565,7 +565,7 @@ else
         await RemoveItemAsync(index);
     }
 
-    // ===== 商品選擇事件處理 =====
+    // ===== 品項選擇事件處理 =====
 
     private void OnProductSearchChanged(ProductItem item, string? searchValue)
     {

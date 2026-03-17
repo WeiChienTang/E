@@ -54,7 +54,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 從商品物料清單複製 BOM 到報價單明細（使用最新的配方）
+        /// 從品項物料清單複製 BOM 到報價單明細（使用最新的配方）
         /// </summary>
         public async Task<List<QuotationCompositionDetail>> CopyFromProductCompositionAsync(int quotationDetailId, int productId)
         {
@@ -62,7 +62,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 查詢該商品的商品物料清單（優先取用最新的一筆）
+                // 查詢該品項的品項物料清單（優先取用最新的一筆）
                 var productComposition = await context.ProductCompositions
                     .Include(x => x.CompositionDetails)
                         .ThenInclude(d => d.ComponentProduct)
@@ -78,7 +78,7 @@ namespace ERPCore2.Services
                     return new List<QuotationCompositionDetail>();
                 }
 
-                // 複製組合明細（使用組件商品的製程單位）
+                // 複製組合明細（使用組件品項的製程單位）
                 var quotationCompositionDetails = new List<QuotationCompositionDetail>();
 
                 foreach (var detail in productComposition.CompositionDetails)
@@ -104,7 +104,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 從指定的商品配方複製 BOM 到報價單明細
+        /// 從指定的品項配方複製 BOM 到報價單明細
         /// </summary>
         public async Task<List<QuotationCompositionDetail>> CopyFromCompositionAsync(int quotationDetailId, int compositionId)
         {
@@ -112,7 +112,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 查詢指定的商品配方
+                // 查詢指定的品項配方
                 var productComposition = await context.ProductCompositions
                     .Include(x => x.CompositionDetails)
                         .ThenInclude(d => d.ComponentProduct)
@@ -126,7 +126,7 @@ namespace ERPCore2.Services
                     return new List<QuotationCompositionDetail>();
                 }
 
-                // 複製組合明細（使用組件商品的製程單位）
+                // 複製組合明細（使用組件品項的製程單位）
                 var quotationCompositionDetails = new List<QuotationCompositionDetail>();
 
                 foreach (var detail in productComposition.CompositionDetails)
@@ -279,7 +279,7 @@ namespace ERPCore2.Services
 
             if (entity.ComponentProductId <= 0)
             {
-                return ServiceResult.Failure("組件商品ID無效");
+                return ServiceResult.Failure("組件品項ID無效");
             }
 
             if (entity.Quantity <= 0)

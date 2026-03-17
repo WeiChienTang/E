@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 庫存主檔實體 - 記錄商品的總庫存資訊（主檔）
+    /// 庫存主檔實體 - 記錄品項的總庫存資訊（主檔）
     /// </summary>
     [Index(nameof(ProductId), IsUnique = true)]
     public class InventoryStock : BaseEntity
@@ -63,7 +63,7 @@ namespace ERPCore2.Data.Entities
             .Max(d => d.LastTransactionDate);
         
         // Foreign Keys
-        [Display(Name = "商品")]
+        [Display(Name = "品項")]
         [ForeignKey(nameof(Product))]
         public int? ProductId { get; set; }
 

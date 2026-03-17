@@ -1,4 +1,4 @@
-@* 庫存異動關聯查看組件 - 顯示特定商品的原始交易和所有調整記錄 *@
+@* 庫存異動關聯查看組件 - 顯示特定品項的原始交易和所有調整記錄 *@
 
 @using ERPCore2.Models
 @using ERPCore2.Helpers
@@ -28,7 +28,7 @@
         }
         else
         {
-            @* 商品資訊提示 *@
+            @* 品項資訊提示 *@
             @if (!string.IsNullOrEmpty(ProductName))
             {
                 <div class="alert alert-light border d-flex align-items-center mb-3 py-2">
@@ -106,12 +106,12 @@
     [Parameter] public string? TransactionNumber { get; set; }
     
     /// <summary>
-    /// 商品ID（用於過濾特定商品的異動）
+    /// 品項ID（用於過濾特定品項的異動）
     /// </summary>
     [Parameter] public int? ProductId { get; set; }
     
     /// <summary>
-    /// 商品名稱（顯示用）
+    /// 品項名稱（顯示用）
     /// </summary>
     [Parameter] public string? ProductName { get; set; }
     

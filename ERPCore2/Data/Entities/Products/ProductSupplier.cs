@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 商品-供應商關聯表
-    /// 維護商品與供應商之間的採購關係
+    /// 品項-供應商關聯表
+    /// 維護品項與供應商之間的採購關係
     /// </summary>
     [Index(nameof(ProductId), nameof(SupplierId), IsUnique = true, Name = "UX_ProductSupplier_ProductId_SupplierId")]
     [Index(nameof(ProductId), nameof(IsPreferred), nameof(Priority), Name = "IX_ProductSupplier_ProductId_IsPreferred_Priority")]
@@ -16,10 +16,10 @@ namespace ERPCore2.Data.Entities
         // ===== 關聯欄位 =====
         
         /// <summary>
-        /// 商品ID
+        /// 品項ID
         /// </summary>
-        [Display(Name = "商品")]
-        [Required(ErrorMessage = "商品為必填")]
+        [Display(Name = "品項")]
+        [Required(ErrorMessage = "品項為必填")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
         
@@ -65,7 +65,7 @@ namespace ERPCore2.Data.Entities
         public DateTime? LastPurchaseDate { get; set; }
         
         /// <summary>
-        /// 供應商料號（供應商自己的商品編號，方便採購時對應）
+        /// 供應商料號（供應商自己的品項編號，方便採購時對應）
         /// </summary>
         [Display(Name = "供應商料號")]
         [MaxLength(50, ErrorMessage = "供應商料號不可超過50個字元")]
@@ -87,7 +87,7 @@ namespace ERPCore2.Data.Entities
         // ===== 導航屬性 =====
         
         /// <summary>
-        /// 關聯的商品
+        /// 關聯的品項
         /// </summary>
         public virtual Product? Product { get; set; }
         
@@ -105,19 +105,19 @@ namespace ERPCore2.Data.Entities
         public string? SearchText { get; set; }
         
         /// <summary>
-        /// 篩選後的商品清單（用於 SearchableSelect 下拉選單）
+        /// 篩選後的品項清單（用於 SearchableSelect 下拉選單）
         /// </summary>
         [NotMapped]
         public List<Product> FilteredProducts { get; set; } = new();
         
         /// <summary>
-        /// 是否顯示商品下拉選單（用於 SearchableSelect）
+        /// 是否顯示品項下拉選單（用於 SearchableSelect）
         /// </summary>
         [NotMapped]
         public bool ShowProductDropdown { get; set; }
         
         /// <summary>
-        /// 商品下拉選單的選中索引（用於 SearchableSelect 鍵盤導航）
+        /// 品項下拉選單的選中索引（用於 SearchableSelect 鍵盤導航）
         /// </summary>
         [NotMapped]
         public int ProductSelectedIndex { get; set; } = -1;

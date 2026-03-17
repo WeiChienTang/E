@@ -4,7 +4,7 @@ namespace ERPCore2.Services
 {
     /// <summary>
     /// 子科目自動產生服務介面
-    /// 負責在統制科目下自動建立與客戶/廠商/商品對應的明細子科目
+    /// 負責在統制科目下自動建立與客戶/廠商/品項對應的明細子科目
     /// 代碼格式：{上層科目代碼}.{流水號3位}（例如 1191.001）
     /// </summary>
     public interface ISubAccountService
@@ -17,7 +17,7 @@ namespace ERPCore2.Services
         /// <summary>取得廠商對應的應付帳款子科目（若不存在則回傳 null）</summary>
         Task<AccountItem?> GetSubAccountForSupplierAsync(int supplierId);
 
-        /// <summary>取得商品對應的存貨子科目（若不存在則回傳 null）</summary>
+        /// <summary>取得品項對應的存貨子科目（若不存在則回傳 null）</summary>
         Task<AccountItem?> GetSubAccountForProductAsync(int productId);
 
         /// <summary>取得客戶所有連結子科目（含四種類型），供會計資訊 Tab 顯示用</summary>
@@ -41,7 +41,7 @@ namespace ERPCore2.Services
         Task<AccountItem?> GetOrCreateSupplierSubAccountAsync(int supplierId, string createdBy);
 
         /// <summary>
-        /// 取得或建立商品子科目。
+        /// 取得或建立品項子科目。
         /// 若系統參數未啟用 AutoCreateProductSubAccount，回傳 null。
         /// </summary>
         Task<AccountItem?> GetOrCreateProductSubAccountAsync(int productId, string createdBy);
@@ -54,7 +54,7 @@ namespace ERPCore2.Services
         /// <summary>為所有現有 Active 廠商補建子科目（已有子科目者略過）</summary>
         Task<(int Created, int Skipped, List<string> Errors)> BatchCreateForAllSuppliersAsync(string createdBy);
 
-        /// <summary>為所有現有 Active 商品補建子科目（已有子科目者略過）</summary>
+        /// <summary>為所有現有 Active 品項補建子科目（已有子科目者略過）</summary>
         Task<(int Created, int Skipped, List<string> Errors)> BatchCreateForAllProductsAsync(string createdBy);
     }
 }

@@ -29,12 +29,12 @@ namespace ERPCore2.Services
         Task<List<SalesReturn>> GetPendingSalesReturnsAsync(DateTime? from = null, DateTime? to = null);
 
         /// <summary>
-        /// 將指定進貨入庫單轉為傳票（借：商品存貨+進項稅額 / 貸：應付帳款）
+        /// 將指定進貨入庫單轉為傳票（借：品項存貨+進項稅額 / 貸：應付帳款）
         /// </summary>
         Task<(bool Success, string ErrorMessage)> JournalizePurchaseReceivingAsync(int id, string createdBy);
 
         /// <summary>
-        /// 將指定進貨退回單轉為傳票（借：應付帳款 / 貸：商品存貨+進項稅額）
+        /// 將指定進貨退回單轉為傳票（借：應付帳款 / 貸：品項存貨+進項稅額）
         /// </summary>
         Task<(bool Success, string ErrorMessage)> JournalizePurchaseReturnAsync(int id, string createdBy);
 

@@ -239,14 +239,14 @@ public static class PermissionRegistry
         public const string Read = "StockTaking.Read";
     }
 
-    public static class WasteRecord
+    public static class ScaleRecord
     {
-        public const string Read = "WasteRecord.Read";
+        public const string Read = "ScaleRecord.Read";
     }
 
-    public static class WasteType
+    public static class ScaleType
     {
-        public const string Read = "WasteType.Read";
+        public const string Read = "ScaleType.Read";
     }
 
     public static class SetoffDocument
@@ -391,7 +391,7 @@ public static class PermissionRegistry
         new(Document.Manage,        "管理文件",        PermissionLevel.Sensitive, "上傳、編輯、刪除文件及管理檔案分類", "Nav.DocumentGroup"),
 
         // ===== 敏感權限：會計 =====
-        new(AccountItem.SubAccountBatchCreate, "批次補建子科目", PermissionLevel.Sensitive, "批次補建客戶、廠商、商品子科目（高影響操作）", "Nav.AccountingGroup"),
+        new(AccountItem.SubAccountBatchCreate, "批次補建子科目", PermissionLevel.Sensitive, "批次補建客戶、廠商、品項子科目（高影響操作）", "Nav.AccountingGroup"),
 
         // ===== 一般權限：系統 =====
         new(PaperSetting.Read,              "檢視紙張設定",     PermissionLevel.Normal, "檢視紙張設定基本資料與相關資訊",   "Nav.SystemGroup"),
@@ -416,15 +416,15 @@ public static class PermissionRegistry
         new(Supplier.Read,      "檢視供應商",   PermissionLevel.Normal, "檢視供應商基本資料與相關資訊", "Nav.SupplierGroup"),
         new(Supplier.ChartRead, "檢視廠商圖表", PermissionLevel.Normal, "檢視廠商統計分析圖表（主管層級）", "Nav.SupplierGroup"),
 
-        // ===== 一般權限：商品 =====
-        new(Product.Read,               "檢視商品",         PermissionLevel.Normal, "檢視商品基本資料與規格",         "Nav.ProductGroup"),
-        new(ProductCategory.Read,       "檢視商品分類",     PermissionLevel.Normal, "檢視商品分類階層與設定",         "Nav.ProductGroup"),
-        new(ProductComposition.Read,    "檢視商品合成",     PermissionLevel.Normal, "檢視商品合成（BOM）結構與明細", "Nav.ProductGroup"),
-        new(CompositionCategory.Read,   "檢視物料清單類型", PermissionLevel.Normal, "檢視商品物料清單的類型分類",     "Nav.ProductGroup"),
+        // ===== 一般權限：品項 =====
+        new(Product.Read,               "檢視品項",         PermissionLevel.Normal, "檢視品項基本資料與規格",         "Nav.ProductGroup"),
+        new(ProductCategory.Read,       "檢視品項分類",     PermissionLevel.Normal, "檢視品項分類階層與設定",         "Nav.ProductGroup"),
+        new(ProductComposition.Read,    "檢視品項合成",     PermissionLevel.Normal, "檢視品項合成（BOM）結構與明細", "Nav.ProductGroup"),
+        new(CompositionCategory.Read,   "檢視物料清單類型", PermissionLevel.Normal, "檢視品項物料清單的類型分類",     "Nav.ProductGroup"),
         new(ProductionSchedule.Read,    "檢視生產排程",     PermissionLevel.Normal, "檢視生產排程的詳細資料",         "Nav.ProductGroup"),
-        new(ProductPricing.Read,        "檢視商品定價",     PermissionLevel.Normal, "檢視商品價格設定與價格表",       "Nav.ProductGroup"),
+        new(ProductPricing.Read,        "檢視品項定價",     PermissionLevel.Normal, "檢視品項價格設定與價格表",       "Nav.ProductGroup"),
         new(MasterData.Read,            "檢視基礎資料",     PermissionLevel.Normal, "檢視系統基礎資料維護功能",       "Nav.ProductGroup"),
-        new(Material.Read,              "檢視材質",         PermissionLevel.Normal, "檢視商品材質分類與屬性",         "Nav.ProductGroup"),
+        new(Material.Read,              "檢視材質",         PermissionLevel.Normal, "檢視品項材質分類與屬性",         "Nav.ProductGroup"),
         new(Weather.Read,               "檢視天氣",         PermissionLevel.Normal, "檢視天氣相關基礎資料",           "Nav.ProductGroup"),
         new(Color.Read,                 "檢視顏色",         PermissionLevel.Normal, "檢視顏色分類與色彩設定",         "Nav.ProductGroup"),
         new(Size.Read,                  "檢視尺寸",         PermissionLevel.Normal, "檢視尺寸規格與大小設定",         "Nav.ProductGroup"),
@@ -448,8 +448,8 @@ public static class PermissionRegistry
         new(StockTaking.Read,           "檢視盤點",         PermissionLevel.Normal, "檢視庫存盤點作業與結果",         "Nav.InventoryGroup"),
 
         // ===== 一般權限：磅秤紀錄 =====
-        new(WasteRecord.Read,   "檢視磅秤紀錄", PermissionLevel.Normal, "檢視磅秤紀錄基本資料與相關資訊", "Nav.WasteGroup"),
-        new(WasteType.Read,     "檢視磅秤類型", PermissionLevel.Normal, "檢視磅秤類型基本資料與相關資訊", "Nav.WasteGroup"),
+        new(ScaleRecord.Read,   "檢視磅秤紀錄", PermissionLevel.Normal, "檢視磅秤紀錄基本資料與相關資訊", "Nav.WasteGroup"),
+        new(ScaleType.Read,     "檢視磅秤類型", PermissionLevel.Normal, "檢視磅秤類型基本資料與相關資訊", "Nav.WasteGroup"),
 
         // ===== 一般權限：財務 =====
         new(SetoffDocument.Read,"檢視沖款單",   PermissionLevel.Normal, "檢視客戶應收帳款與交易紀錄",     "Nav.FinanceGroup"),

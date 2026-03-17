@@ -4,7 +4,7 @@ namespace ERPCore2.Services.Purchase;
 
 public interface IPurchaseChartService
 {
-    /// <summary>依商品統計進貨金額排行 Top N（含稅）</summary>
+    /// <summary>依品項統計進貨金額排行 Top N（含稅）</summary>
     Task<List<ChartDataItem>> GetTopProductsByReceivingAmountAsync(int top = 10);
 
     /// <summary>取得近 N 個月每月進貨金額趨勢（含稅）</summary>

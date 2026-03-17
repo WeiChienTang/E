@@ -1,21 +1,20 @@
-﻿@* 可重用的磅秤類型編輯組件 - 可在任何頁面中嵌入 *@
-@inject IWasteTypeService WasteTypeService
+@* 可重用的磅秤類型編輯組件 - 可在任何頁面中嵌入 *@
+@inject IScaleTypeService ScaleTypeService
 @inject IProductService ProductService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
-@inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="WasteType"
-                          TService="IWasteTypeService"
+<GenericEditModalComponent TEntity="ScaleType"
+                          TService="IScaleTypeService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
-                          @bind-Id="@WasteTypeId"
-                          Service="@WasteTypeService"
+                          @bind-Id="@ScaleTypeId"
+                          Service="@ScaleTypeService"
                           EntityName="@L["Entity.WasteType"]"
                           EntityNamePlural="@L["Entity.WasteType"]"
-                          ModalTitle="@(WasteTypeId.HasValue ? L["Message.EditTitle", L["Entity.WasteType"]].ToString() : L["Message.CreateTitle", L["Entity.WasteType"]].ToString())"
-                          Size="GenericEditModalComponent<WasteType, IWasteTypeService>.ModalSize.Desktop"
+                          ModalTitle="@(ScaleTypeId.HasValue ? L["Message.EditTitle", L["Entity.WasteType"]].ToString() : L["Message.CreateTitle", L["Entity.WasteType"]].ToString())"
+                          Size="GenericEditModalComponent<ScaleType, IScaleTypeService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
@@ -23,26 +22,26 @@
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
-                          DataLoader="@LoadWasteTypeData"
+                          DataLoader="@LoadScaleTypeData"
                           UseGenericSave="true"
                           ShowDraftButton="true"
                           DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.WasteType"]]"
-                          SaveSuccessMessage="@(WasteTypeId.HasValue ? L["Message.UpdateSuccess", L["Entity.WasteType"]].ToString() : L["Message.CreateSuccess", L["Entity.WasteType"]].ToString())"
+                          SaveSuccessMessage="@(ScaleTypeId.HasValue ? L["Message.UpdateSuccess", L["Entity.WasteType"]].ToString() : L["Message.CreateSuccess", L["Entity.WasteType"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WasteType"]]"
-                          RequiredPermission="@PermissionRegistry.WasteType.Read"
-                          OnEntitySaved="@OnWasteTypeSaved"
+                          RequiredPermission="@PermissionRegistry.ScaleType.Read"
+                          OnEntitySaved="@OnScaleTypeSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="WasteTypeEditModalComponent" />
+                          ComponentName="ScaleTypeEditModalComponent" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    [Parameter] public int? WasteTypeId { get; set; }
-    [Parameter] public EventCallback<WasteType> OnWasteTypeSaved { get; set; }
+    [Parameter] public int? ScaleTypeId { get; set; }
+    [Parameter] public EventCallback<ScaleType> OnScaleTypeSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
-    private GenericEditModalComponent<WasteType, IWasteTypeService>? editModalComponent;
+    private GenericEditModalComponent<ScaleType, IScaleTypeService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
 
@@ -71,8 +70,8 @@
         {
             availableProducts = await ProductService.GetAllAsync();
 
-            autoCompleteConfig = new AutoCompleteConfigBuilder<WasteType>()
-                .AddField(nameof(WasteType.ProductId), "Name", availableProducts)
+            autoCompleteConfig = new AutoCompleteConfigBuilder<ScaleType>()
+                .AddField(nameof(ScaleType.ProductId), "Name", availableProducts)
                 .Build();
         }
         catch (Exception)
@@ -82,10 +81,10 @@
         }
     }
 
-    private Task<WasteType?> LoadWasteTypeData()
-        => EditDataLoaderHelper.LoadOrCreateAsync<WasteType, IWasteTypeService>(
-            WasteTypeId, WasteTypeService, NotificationService, "磅秤類型", "WT", PrefilledValues,
-            wt => wt.Name = string.Empty);
+    private Task<ScaleType?> LoadScaleTypeData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<ScaleType, IScaleTypeService>(
+            ScaleTypeId, ScaleTypeService, NotificationService, "磅秤類型", "WT", PrefilledValues,
+            st => st.Name = string.Empty);
 
     private void InitializeFormFields()
     {
@@ -93,7 +92,7 @@
         {
             new()
             {
-                PropertyName = nameof(WasteType.Code),
+                PropertyName = nameof(ScaleType.Code),
                 Label = L["Field.WasteTypeCode"],
                 FieldType = FormFieldType.Text,
                 Placeholder = L["Placeholder.PleaseInput", L["Field.WasteTypeCode"]],
@@ -103,7 +102,7 @@
             },
             new()
             {
-                PropertyName = nameof(WasteType.Name),
+                PropertyName = nameof(ScaleType.Name),
                 Label = L["Field.WasteTypeName"],
                 FieldType = FormFieldType.Text,
                 Placeholder = L["Placeholder.PleaseInput", L["Field.WasteTypeName"]],
@@ -111,30 +110,19 @@
                 MaxLength = 100,
                 HelpText = "磅秤類型的顯示名稱，最多100個字元"
             },
-            // 單位有Unit主表，這裡不需要使用單位欄位
-            /* new()
-            {
-                PropertyName = nameof(WasteType.Unit),
-                Label = "計量單位",
-                FieldType = FormFieldType.Text,
-                Placeholder = "例如：公斤、公噸、桶",
-                IsRequired = false,
-                MaxLength = 20,
-                HelpText = "此磅秤類型的計量單位"
-            },*/
             new()
             {
-                PropertyName = nameof(WasteType.ProductId),
+                PropertyName = nameof(ScaleType.ProductId),
                 Label = L["Field.RelatedProduct"],
                 FieldType = FormFieldType.AutoComplete,
                 Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.RelatedProduct"]],
                 IsRequired = false,
                 MinSearchLength = 0,
-                HelpText = "選填。選擇後，儲存磅秤紀錄時會自動將磅秤數量入庫至此商品"
+                HelpText = "選填。選擇後，儲存磅秤紀錄時會自動將磅秤數量入庫至此品項"
             },
             new()
             {
-                PropertyName = nameof(WasteType.Description),
+                PropertyName = nameof(ScaleType.Description),
                 Label = L["Field.Description"],
                 FieldType = FormFieldType.TextArea,
                 Placeholder = L["Placeholder.PleaseInput", L["Field.Description"]],
@@ -143,18 +131,18 @@
                 HelpText = "磅秤類型的詳細說明，最多200個字元"
             },
 
-            FormFieldConfigurationHelper.CreateRemarksField<WasteType>()
+            FormFieldConfigurationHelper.CreateRemarksField<ScaleType>()
         };
 
-        formSections = FormSectionHelper<WasteType>.Create()
+        formSections = FormSectionHelper<ScaleType>.Create()
             .AddToSection(FormSectionNames.BasicInfo,
-                wt => wt.Code,
-                wt => wt.Name,
-                wt => wt.Unit,
-                wt => wt.ProductId)
+                st => st.Code,
+                st => st.Name,
+                st => st.Unit,
+                st => st.ProductId)
             .AddToSection(FormSectionNames.AdditionalInfo,
-                wt => wt.Description,
-                wt => wt.Remarks)
+                st => st.Description,
+                st => st.Remarks)
             .Build();
     }
 }

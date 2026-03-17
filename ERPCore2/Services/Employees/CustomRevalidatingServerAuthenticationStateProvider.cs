@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using System.Security.Claims;
 using ERPCore2.Helpers;
+using ERPCore2.Models.Enums;
 
 namespace ERPCore2.Services
 {    /// <summary>
@@ -39,9 +40,9 @@ namespace ERPCore2.Services
                 using var scope = _scopeFactory.CreateScope();
                 var employeeService = scope.ServiceProvider.GetRequiredService<IEmployeeService>();
 
-                // 驗證員工是否仍然存在
+                // 驗證員工是否仍然存在且為啟用狀態
                 var employee = await employeeService.GetByIdAsync(userId);
-                if (employee == null)
+                if (employee == null || employee.Status != EntityStatus.Active)
                     return false;
 
                 return true;

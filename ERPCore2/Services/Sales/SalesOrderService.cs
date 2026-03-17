@@ -307,7 +307,7 @@ namespace ERPCore2.Services
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var product = await context.Products.FindAsync(detail.ProductId);
-                    var productName = $"{product?.Code ?? "N/A"} - {product?.Name ?? "未知商品"}";
+                    var productName = $"{product?.Code ?? "N/A"} - {product?.Name ?? "未知品項"}";
                     
                     // 1. 檢查是否選擇倉庫
                     if (!detail.WarehouseId.HasValue)
@@ -363,7 +363,7 @@ namespace ERPCore2.Services
                 if (!baseResult.IsSuccess)
                     return baseResult;
 
-                // 2. 載入訂單明細（含商品資訊）
+                // 2. 載入訂單明細（含品項資訊）
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var orderWithDetails = await context.SalesOrders
                     .Include(so => so.SalesOrderDetails)
@@ -381,17 +381,17 @@ namespace ERPCore2.Services
                     // 檢查 1：出貨記錄檢查（新增）
                     if (detail.DeliveredQuantity > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知商品";
+                        var productName = detail.Product?.Name ?? "未知品項";
                         return ServiceResult.Failure(
-                            $"無法刪除此銷貨訂單，因為商品「{productName}」已有出貨記錄（已出貨 {detail.DeliveredQuantity} 個）");
+                            $"無法刪除此銷貨訂單，因為品項「{productName}」已有出貨記錄（已出貨 {detail.DeliveredQuantity} 個）");
                     }
                     
                     // 檢查 2：生產排程檢查（新增）
                     if (detail.ScheduledQuantity > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知商品";
+                        var productName = detail.Product?.Name ?? "未知品項";
                         return ServiceResult.Failure(
-                            $"無法刪除此銷貨訂單，因為商品「{productName}」已有生產排程（已排程 {detail.ScheduledQuantity} 個）");
+                            $"無法刪除此銷貨訂單，因為品項「{productName}」已有生產排程（已排程 {detail.ScheduledQuantity} 個）");
                     }
 
                     // TODO: 退貨現在從出貨單產生，不直接從訂單
@@ -402,18 +402,18 @@ namespace ERPCore2.Services
                     //     if (returnDetails != null && returnDetails.Any())
                     //     {
                     //         var totalReturnQuantity = returnDetails.Sum(rd => rd.ReturnQuantity);
-                    //         var productName = detail.Product?.Name ?? "未知商品";
+                    //         var productName = detail.Product?.Name ?? "未知品項";
                     //         return ServiceResult.Failure(
-                    //             $"無法刪除此銷貨訂單，因為商品「{productName}」已有退貨記錄（已退貨 {totalReturnQuantity} 個）");
+                    //             $"無法刪除此銷貨訂單，因為品項「{productName}」已有退貨記錄（已退貨 {totalReturnQuantity} 個）");
                     //     }
                     // }
 
                     // 檢查 4：收款記錄檢查
                     if (detail.TotalReceivedAmount > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知商品";
+                        var productName = detail.Product?.Name ?? "未知品項";
                         return ServiceResult.Failure(
-                            $"無法刪除此銷貨訂單，因為商品「{productName}」已有收款記錄（已收款 {detail.TotalReceivedAmount:N2} 元）");
+                            $"無法刪除此銷貨訂單，因為品項「{productName}」已有收款記錄（已收款 {detail.TotalReceivedAmount:N2} 元）");
                     }
                 }
 

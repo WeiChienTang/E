@@ -131,7 +131,7 @@
     <BodyContent>
         @if (Item != null)
         {
-            @* 商品與訂單資訊 *@
+            @* 品項與訂單資訊 *@
             @if (!string.IsNullOrEmpty(Item.ProductCode))
             {
                 <div class="mb-3 text-muted">
@@ -511,7 +511,7 @@
     {
         warehouses = await WarehouseService.GetAllAsync();
 
-        // 預填上次同商品入庫位置
+        // 預填上次同品項入庫位置
         if (Item != null)
         {
             var (wId, lId) = await ScheduleItemService.GetLastCompletionWarehouseAsync(Item.ProductId);

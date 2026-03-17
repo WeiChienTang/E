@@ -81,11 +81,11 @@ public class ReportCategoryConfig
                 Title = "車輛報表集",
                 Icon = "bi-truck-front-fill"
             },
-            [ReportCategory.Waste] = new ReportCategoryConfig
+            [ReportCategory.Scale] = new ReportCategoryConfig
             {
-                Category = ReportCategory.Waste,
+                Category = ReportCategory.Scale,
                 Title = "磅秤紀錄報表集",
-                Icon = "bi-trash"
+                Icon = "bi-speedometer2"
             },
             [ReportCategory.Accounting] = new ReportCategoryConfig
             {

@@ -7,7 +7,7 @@
 
 ## 概述
 
-客戶、廠商、商品建立時，在對應統制科目下自動建立明細子科目，批次轉傳票改用子科目（fallback 統制科目）。系統參數可控制是否啟用、統制科目代碼、及代碼產生格式。
+客戶、廠商、品項建立時，在對應統制科目下自動建立明細子科目，批次轉傳票改用子科目（fallback 統制科目）。系統參數可控制是否啟用、統制科目代碼、及代碼產生格式。
 
 ---
 
@@ -16,7 +16,7 @@
 | 模式 | 說明 | 範例 |
 |------|------|------|
 | Sequential（流水號） | 三位補零流水號，依建立順序遞增 | `1191.001`、`1191.002` |
-| EntityCode（實體編碼） | 使用客戶/廠商/商品的 Code 欄位作後綴（點號過濾） | `1191.C0001` |
+| EntityCode（實體編碼） | 使用客戶/廠商/品項的 Code 欄位作後綴（點號過濾） | `1191.C0001` |
 
 > **選用建議：** 流水號適合大量客戶/廠商，一眼看不出對應實體；實體編碼適合代碼有意義的場景，可從代碼直接辨認對應實體。
 
@@ -27,7 +27,7 @@
 | 欄位 | 值 | 說明 |
 |------|----|------|
 | `Name` | 繼承上層科目名稱（如 `應收帳款`） | 讓子科目出現在試算表時仍可辨認科目性質 |
-| `Description` | 連結實體名稱（公司名或商品名） | 供人工查核時辨認對應實體 |
+| `Description` | 連結實體名稱（公司名或品項名） | 供人工查核時辨認對應實體 |
 
 ---
 
@@ -43,10 +43,10 @@
 |------|------|--------|------|
 | AutoCreateCustomerSubAccount | bool | false | 自動建立客戶子科目 |
 | AutoCreateSupplierSubAccount | bool | false | 自動建立廠商子科目 |
-| AutoCreateProductSubAccount | bool | false | 自動建立商品子科目 |
+| AutoCreateProductSubAccount | bool | false | 自動建立品項子科目 |
 | CustomerSubAccountParentCode | string (Max 20) | 1191 | 應收帳款統制科目代碼（可依公司科目表調整） |
 | SupplierSubAccountParentCode | string (Max 20) | 2171 | 應付帳款統制科目代碼（可依公司科目表調整） |
-| ProductSubAccountParentCode | string (Max 20) | 1231 | 商品存貨統制科目代碼（可依公司科目表調整） |
+| ProductSubAccountParentCode | string (Max 20) | 1231 | 品項存貨統制科目代碼（可依公司科目表調整） |
 | SubAccountCodeFormat | SubAccountCodeFormat | Sequential | 子科目代碼格式（0=流水號；1=實體編碼） |
 
 > **預設值說明：** 統制科目代碼採用台灣「商業會計項目表 112 年度」對應代碼，各公司科目表可能不同，因此保留可編輯。
@@ -61,13 +61,13 @@
 |------|------|
 | `GetSubAccountForCustomerAsync(int)` | 查詢客戶子科目（不建立） |
 | `GetSubAccountForSupplierAsync(int)` | 查詢廠商子科目（不建立） |
-| `GetSubAccountForProductAsync(int)` | 查詢商品子科目（不建立） |
+| `GetSubAccountForProductAsync(int)` | 查詢品項子科目（不建立） |
 | `GetOrCreateCustomerSubAccountAsync(int, string)` | 取得或建立客戶子科目（需系統參數啟用） |
 | `GetOrCreateSupplierSubAccountAsync(int, string)` | 取得或建立廠商子科目（需系統參數啟用） |
-| `GetOrCreateProductSubAccountAsync(int, string)` | 取得或建立商品子科目（需系統參數啟用） |
+| `GetOrCreateProductSubAccountAsync(int, string)` | 取得或建立品項子科目（需系統參數啟用） |
 | `BatchCreateForAllCustomersAsync(string)` | 批次補建所有現有 Active 客戶子科目 |
 | `BatchCreateForAllSuppliersAsync(string)` | 批次補建所有現有 Active 廠商子科目 |
-| `BatchCreateForAllProductsAsync(string)` | 批次補建所有現有 Active 商品子科目 |
+| `BatchCreateForAllProductsAsync(string)` | 批次補建所有現有 Active 品項子科目 |
 
 ### GetOrCreate 執行流程
 
@@ -75,7 +75,7 @@
 2. 讀取 SystemParameter；若功能未啟用（`AutoCreateXxxSubAccount = false`）→ 回傳 null
 3. 查詢統制科目（依 `XxxSubAccountParentCode`）；找不到 → log warning + 回傳 null
 4. `GenerateSubAccountCodeAsync`：依 `SubAccountCodeFormat` 產生代碼
-5. 建立子科目：`Name = parent.Name`、`Description = 公司名/商品名`
+5. 建立子科目：`Name = parent.Name`、`Description = 公司名/品項名`
 6. 直接寫 DB（繞過 AccountItemService，避免觸發唯一代碼競爭）
 
 ---
@@ -97,7 +97,7 @@
 
 涵蓋文件類型：進貨入庫、進貨退回、銷貨出貨、銷貨退回、沖款單、銷貨折讓、進貨折讓。
 
-> 商品子科目（`1231.*`）本版未整合進 COGS 傳票（一張出貨單含多商品，拆分複雜）。
+> 品項子科目（`1231.*`）本版未整合進 COGS 傳票（一張出貨單含多品項，拆分複雜）。
 
 ---
 
@@ -106,9 +106,9 @@
 **檔案：** `Components/Pages/Systems/SystemParameterSettingsModal.razor`
 
 新增「子科目設定」頁籤：
-- **自動產生設定**：三個開關（客戶/廠商/商品）+ 代碼格式下拉（含 LabelHelpItems 說明）
-- **統制科目代碼**：三個文字欄位（應收/應付/商品存貨）
-- **批次補建**：三個按鈕（補建客戶/廠商/商品），含執行結果顯示，關閉 Modal 時自動清除結果
+- **自動產生設定**：三個開關（客戶/廠商/品項）+ 代碼格式下拉（含 LabelHelpItems 說明）
+- **統制科目代碼**：三個文字欄位（應收/應付/品項存貨）
+- **批次補建**：三個按鈕（補建客戶/廠商/品項），含執行結果顯示，關閉 Modal 時自動清除結果
 
 ---
 

@@ -75,7 +75,7 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
     /// <summary>
     /// 重新整理相依組件的回調函式（在實體儲存成功後執行）
     /// 用於通知其他組件重新載入與該實體相關的資料
-    /// 例如：編輯廠商後，通知商品管理器重新載入該廠商的商品
+    /// 例如：編輯廠商後，通知品項管理器重新載入該廠商的品項
     /// </summary>
     public Func<TRelatedEntity, Task>? RefreshDependentComponentsCallback { get; set; }
     

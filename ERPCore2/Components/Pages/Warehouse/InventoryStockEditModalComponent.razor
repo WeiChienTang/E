@@ -167,7 +167,7 @@
         {
             isDetailDataReady = false;
             
-            // 載入商品列表
+            // 載入品項列表
             availableProducts = await ProductService.GetAllAsync();
 
             // 載入單位列表（用於顯示換算資訊）
@@ -268,7 +268,7 @@
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
                     IsRequired = true,
                     MinSearchLength = 0,
-                    HelpText = "輸入商品名稱進行搜尋，或直接選擇",
+                    HelpText = "輸入品項名稱進行搜尋，或直接選擇",
                 },
                 
                 new FormFieldDefinition()
@@ -329,7 +329,7 @@
     }
 
     /// <summary>
-    /// 根據商品 ID 取得採購/製程單位換算資訊
+    /// 根據品項 ID 取得採購/製程單位換算資訊
     /// </summary>
     private (string PurchaseUnit, string ProductionUnit, string ConversionInfo, decimal? ConversionRate) GetProductUnitInfo(int productId)
     {
@@ -351,7 +351,7 @@
     }
 
     /// <summary>
-    /// 取得目前選定商品的採購單位名稱（傳入明細表格用）
+    /// 取得目前選定品項的採購單位名稱（傳入明細表格用）
     /// </summary>
     private string GetCurrentPurchaseUnitName()
     {
@@ -361,7 +361,7 @@
     }
 
     /// <summary>
-    /// 取得目前選定商品的製程單位名稱（傳入明細表格用）
+    /// 取得目前選定品項的製程單位名稱（傳入明細表格用）
     /// </summary>
     private string GetCurrentProductionUnitName()
     {
@@ -372,7 +372,7 @@
     }
 
     /// <summary>
-    /// 取得目前選定商品的單位換算率（傳入明細表格用）
+    /// 取得目前選定品項的單位換算率（傳入明細表格用）
     /// </summary>
     private decimal? GetCurrentConversionRate()
     {
@@ -419,7 +419,7 @@
                               IsDataAvailable="@(availableWarehouses != null && availableWarehouses.Any())"
                               DataUnavailableMessage="無可用的倉庫資料，請聯繫系統管理員"
                               IsPreconditionMet="@(editModalComponent?.Entity?.ProductId > 0)"
-                              PreconditionMessage="請先選擇商品後再進行庫存明細管理">
+                              PreconditionMessage="請先選擇品項後再進行庫存明細管理">
             <InventoryStockTable @ref="inventoryStockDetailManager"
                                  @key="@(editModalComponent?.Entity?.Id ?? 0)"
                                  TMainEntity="InventoryStock"
@@ -469,7 +469,7 @@
     public Task ShowAddModal() => editModalComponent!.ShowAddModal();
     public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
     /// <summary>
-    /// 開啟新增庫存 Modal 並預填商品
+    /// 開啟新增庫存 Modal 並預填品項
     /// 注意：倉庫資訊現在存儲在 InventoryStockDetails 中，不再屬於主檔
     /// </summary>
     public async Task ShowAddModalWithPrefilledData(int productId)

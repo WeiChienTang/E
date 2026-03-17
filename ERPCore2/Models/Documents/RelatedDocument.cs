@@ -100,7 +100,7 @@ namespace ERPCore2.Models.Documents
             RelatedDocumentType.SetoffDocument => "沖款單",
             RelatedDocumentType.ReceivingDocument => "入庫單",
             RelatedDocumentType.SalesOrder => "銷貨訂單",
-            RelatedDocumentType.ProductComposition => "商品物料清單",
+            RelatedDocumentType.ProductComposition => "品項物料清單",
             RelatedDocumentType.DeliveryDocument => "銷貨單",
             RelatedDocumentType.ProductionSchedule => "生產排程",
             RelatedDocumentType.SupplierRecommendation => "供應商推薦",

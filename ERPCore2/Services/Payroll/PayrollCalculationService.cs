@@ -435,7 +435,7 @@ namespace ERPCore2.Services.Payroll
             if (record.SickLeaveDays > 0)
             {
                 decimal sickDeduct = Math.Round(record.SickLeaveDays * dailyRate * 0.5m, 0);
-                AddDetail(details, items, "LATE", record.SickLeaveDays, dailyRate * 0.5m, -sickDeduct,
+                AddDetail(details, items, "SICK", record.SickLeaveDays, dailyRate * 0.5m, -sickDeduct,
                     $"病假 {record.SickLeaveDays}天 × 日薪半薪 = -{sickDeduct:N0}");
             }
 
@@ -535,13 +535,14 @@ namespace ERPCore2.Services.Payroll
             AppDbContext context, int employeeId, PayrollPeriod period)
         {
             int adYear = period.Year + 1911;
-            var periodDate = new DateOnly(adYear, period.Month, 1);
+            var periodStart = new DateOnly(adYear, period.Month, 1);
+            var periodEnd = new DateOnly(adYear, period.Month, DateTime.DaysInMonth(adYear, period.Month));
 
             return await context.EmployeeSalaries
                 .Include(s => s.AllowanceItems).ThenInclude(i => i.PayrollItem)
                 .Where(s => s.EmployeeId == employeeId
-                         && s.EffectiveDate <= periodDate
-                         && (s.ExpiryDate == null || s.ExpiryDate >= periodDate)
+                         && s.EffectiveDate <= periodEnd        // 月內任一天設定都算生效
+                         && (s.ExpiryDate == null || s.ExpiryDate >= periodStart)
                          && s.Status == EntityStatus.Active)
                 .OrderByDescending(s => s.EffectiveDate)
                 .FirstOrDefaultAsync();

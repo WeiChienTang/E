@@ -12,7 +12,7 @@ using System.Runtime.Versioning;
 namespace ERPCore2.Services.Reports
 {
     /// <summary>
-    /// 商品資料表報表服務實作 - 使用 FormattedDocument 進行圖形化渲染
+    /// 品項資料表報表服務實作 - 使用 FormattedDocument 進行圖形化渲染
     /// 支援單品列印和清單式批次列印
     /// </summary>
     public class ProductListReportService : IProductListReportService
@@ -37,14 +37,14 @@ namespace ERPCore2.Services.Reports
         #region 報表生成
 
         /// <summary>
-        /// 生成單一商品資料報表（與批次列印使用相同格式）
+        /// 生成單一品項資料報表（與批次列印使用相同格式）
         /// </summary>
         public async Task<FormattedDocument> GenerateReportAsync(int productId)
         {
             var product = await _productService.GetByIdAsync(productId);
             if (product == null)
             {
-                throw new ArgumentException($"找不到商品 ID: {productId}");
+                throw new ArgumentException($"找不到品項 ID: {productId}");
             }
 
             var company = await _companyService.GetPrimaryCompanyAsync();
@@ -53,7 +53,7 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
-        /// 直接列印商品資料
+        /// 直接列印品項資料
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
         public async Task<ServiceResult> DirectPrintAsync(int productId, string reportId, int copies = 1)
@@ -65,7 +65,7 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "列印商品資料 {ProductId} 時發生錯誤", productId);
+                _logger?.LogError(ex, "列印品項資料 {ProductId} 時發生錯誤", productId);
                 return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
             }
         }
@@ -102,7 +102,7 @@ namespace ERPCore2.Services.Reports
 
                 if (!products.Any())
                 {
-                    return ServiceResult.Failure($"無符合條件的商品\n篩選條件：{criteria.GetSummary()}");
+                    return ServiceResult.Failure($"無符合條件的品項\n篩選條件：{criteria.GetSummary()}");
                 }
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
@@ -111,7 +111,7 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "批次列印商品資料表時發生錯誤");
+                _logger?.LogError(ex, "批次列印品項資料表時發生錯誤");
                 return ServiceResult.Failure($"批次列印時發生錯誤: {ex.Message}");
             }
         }
@@ -129,7 +129,7 @@ namespace ERPCore2.Services.Reports
 
                 if (!products.Any())
                 {
-                    return BatchPreviewResult.Failure($"無符合條件的商品\n篩選條件：{criteria.GetSummary()}");
+                    return BatchPreviewResult.Failure($"無符合條件的品項\n篩選條件：{criteria.GetSummary()}");
                 }
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
@@ -142,14 +142,14 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "批次渲染商品資料表時發生錯誤");
+                _logger?.LogError(ex, "批次渲染品項資料表時發生錯誤");
                 return BatchPreviewResult.Failure($"產生預覽時發生錯誤: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 批次渲染商品清單報表為圖片（使用 ProductListBatchPrintCriteria）
-        /// 清單式報表：將所有商品以表格形式呈現在同一份報表
+        /// 批次渲染品項清單報表為圖片（使用 ProductListBatchPrintCriteria）
+        /// 清單式報表：將所有品項以表格形式呈現在同一份報表
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
         public async Task<BatchPreviewResult> RenderBatchToImagesAsync(ProductListBatchPrintCriteria criteria)
@@ -161,7 +161,7 @@ namespace ERPCore2.Services.Reports
 
                 if (!products.Any())
                 {
-                    return BatchPreviewResult.Failure($"無符合條件的商品\n篩選條件：{criteria.GetSummary()}");
+                    return BatchPreviewResult.Failure($"無符合條件的品項\n篩選條件：{criteria.GetSummary()}");
                 }
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
@@ -174,7 +174,7 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "批次渲染商品資料表時發生錯誤");
+                _logger?.LogError(ex, "批次渲染品項資料表時發生錯誤");
                 return BatchPreviewResult.Failure($"產生預覽時發生錯誤: {ex.Message}");
             }
         }
@@ -184,7 +184,7 @@ namespace ERPCore2.Services.Reports
         #region 私有方法 - 查詢資料
 
         /// <summary>
-        /// 根據 BatchPrintCriteria 查詢商品
+        /// 根據 BatchPrintCriteria 查詢品項
         /// </summary>
         private async Task<List<Product>> GetProductsByCriteriaAsync(BatchPrintCriteria criteria)
         {
@@ -225,7 +225,7 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
-        /// 根據 ProductListBatchPrintCriteria 查詢商品
+        /// 根據 ProductListBatchPrintCriteria 查詢品項
         /// </summary>
         private async Task<List<Product>> GetProductsByTypedCriteriaAsync(ProductListBatchPrintCriteria criteria)
         {
@@ -267,7 +267,7 @@ namespace ERPCore2.Services.Reports
         #region 私有方法 - 建構報表文件
 
         /// <summary>
-        /// 建構商品清單報表（清單式：多筆商品在同一份報表）
+        /// 建構品項清單報表（清單式：多筆品項在同一份報表）
         /// </summary>
         private FormattedDocument BuildProductListDocument(
             List<Product> products,
@@ -275,7 +275,7 @@ namespace ERPCore2.Services.Reports
             PaperSetting? paperSetting)
         {
             var doc = new FormattedDocument()
-                .SetDocumentName($"商品資料表-{DateTime.Now:yyyyMMdd}")
+                .SetDocumentName($"品項資料表-{DateTime.Now:yyyyMMdd}")
                 .SetMargins(0.8f, 0.3f, 0.8f, 0.3f);
 
             // === 頁首區 ===
@@ -298,7 +298,7 @@ namespace ERPCore2.Services.Reports
                 header.AddSpacing(5);
             });
 
-            // === 商品資料表格 ===
+            // === 品項資料表格 ===
             doc.AddTable(table =>
             {
                 table.AddColumn("項次", 0.35f, Models.Reports.TextAlignment.Center)
@@ -336,7 +336,7 @@ namespace ERPCore2.Services.Reports
 
                 var summaryLines = new List<string>
                 {
-                    $"商品總數：{products.Count} 筆"
+                    $"品項總數：{products.Count} 筆"
                 };
 
                 // 按分類統計

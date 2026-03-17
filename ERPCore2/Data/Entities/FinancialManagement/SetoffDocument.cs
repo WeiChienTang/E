@@ -117,7 +117,7 @@ namespace ERPCore2.Data.Entities
         public ICollection<SetoffPayment> SetoffPayments { get; set; } = new List<SetoffPayment>();
 
         /// <summary>
-        /// 關聯的商品明細
+        /// 關聯的品項明細
         /// </summary>
         public ICollection<SetoffProductDetail> SetoffProductDetails { get; set; } = new List<SetoffProductDetail>();
 

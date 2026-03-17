@@ -6,7 +6,7 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 沖銷商品明細實體 - 記錄商品層級的沖銷金額與折讓
+    /// 沖銷品項明細實體 - 記錄品項層級的沖銷金額與折讓
     /// 支援部分沖銷，一筆來源明細可分多次完成沖銷
     /// </summary>
     [Index(nameof(SetoffDocumentId))]
@@ -19,8 +19,8 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "沖銷單據")]
         public int SetoffDocumentId { get; set; }
 
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
+        [Required(ErrorMessage = "品項為必填")]
+        [Display(Name = "品項")]
         public int ProductId { get; set; }
 
         // ===== 來源明細關聯（使用 Enum + Id）=====

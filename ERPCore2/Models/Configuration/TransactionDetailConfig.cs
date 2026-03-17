@@ -11,7 +11,7 @@ namespace ERPCore2.Models.Configuration
         public string Title { get; set; } = "明細";
         
         /// <summary>新增按鈕文字</summary>
-        public string AddButtonText { get; set; } = "新增商品";
+        public string AddButtonText { get; set; } = "新增品項";
         
         /// <summary>圖標CSS類別</summary>
         public string IconClass { get; set; } = "fas fa-list";
@@ -29,7 +29,7 @@ namespace ERPCore2.Models.Configuration
         public string StockColumnTitle { get; set; } = "庫存";
         
         /// <summary>空狀態訊息</summary>
-        public string EmptyStateMessage { get; set; } = "商品";
+        public string EmptyStateMessage { get; set; } = "品項";
         
         /// <summary>是否顯示預期日期欄位</summary>
         public bool ShowExpectedDateColumn { get; set; } = true;
@@ -59,7 +59,7 @@ namespace ERPCore2.Models.Configuration
                     QuantityColumnTitle = "訂購數量",
                     ExpectedDateColumnTitle = "預計到貨",
                     StockColumnTitle = "庫存",
-                    EmptyStateMessage = "採購商品",
+                    EmptyStateMessage = "採購品項",
                     ShowExpectedDateColumn = true,
                     ShowRemarksColumn = false,
                     InventoryImpact = InventoryImpactType.Increase
@@ -71,7 +71,7 @@ namespace ERPCore2.Models.Configuration
                     QuantityColumnTitle = "退貨數量",
                     ExpectedDateColumnTitle = "預計退貨日",
                     StockColumnTitle = "庫存",
-                    EmptyStateMessage = "退貨商品",
+                    EmptyStateMessage = "退貨品項",
                     ShowExpectedDateColumn = true,
                     ShowRemarksColumn = true,
                     InventoryImpact = InventoryImpactType.Decrease
@@ -83,7 +83,7 @@ namespace ERPCore2.Models.Configuration
                     QuantityColumnTitle = "銷售數量",
                     ExpectedDateColumnTitle = "預計出貨",
                     StockColumnTitle = "可用庫存",
-                    EmptyStateMessage = "銷售商品",
+                    EmptyStateMessage = "銷售品項",
                     ShowExpectedDateColumn = true,
                     ShowRemarksColumn = false,
                     InventoryImpact = InventoryImpactType.Decrease
@@ -95,7 +95,7 @@ namespace ERPCore2.Models.Configuration
                     QuantityColumnTitle = "退貨數量",
                     ExpectedDateColumnTitle = "預計收貨日",
                     StockColumnTitle = "庫存",
-                    EmptyStateMessage = "退貨商品",
+                    EmptyStateMessage = "退貨品項",
                     ShowExpectedDateColumn = true,
                     ShowRemarksColumn = true,
                     InventoryImpact = InventoryImpactType.Increase
@@ -107,7 +107,7 @@ namespace ERPCore2.Models.Configuration
                     QuantityColumnTitle = "調整數量",
                     ExpectedDateColumnTitle = "調整日期",
                     StockColumnTitle = "當前庫存",
-                    EmptyStateMessage = "調整商品",
+                    EmptyStateMessage = "調整品項",
                     ShowExpectedDateColumn = false,
                     ShowRemarksColumn = true,
                     InventoryImpact = InventoryImpactType.None

@@ -34,12 +34,12 @@ public class CustomerSalesAnalysisCriteria : IReportFilterCriteria
     public List<int> EmployeeIds { get; set; } = new();
 
     /// <summary>
-    /// 商品分類 ID 清單（空表示所有分類）
+    /// 品項分類 ID 清單（空表示所有分類）
     /// </summary>
     [FilterFK(typeof(IProductCategoryService),
         Group = FilterGroup.Basic,
-        Label = "商品分類",
-        Placeholder = "搜尋商品分類...",
+        Label = "品項分類",
+        Placeholder = "搜尋品項分類...",
         EmptyMessage = "未選擇分類（查詢全部）",
         Order = 3)]
     public List<int> CategoryIds { get; set; } = new();

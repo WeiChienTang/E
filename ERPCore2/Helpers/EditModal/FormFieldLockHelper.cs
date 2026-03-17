@@ -216,7 +216,7 @@ public static class FormFieldLockHelper
             "ExpectedDeliveryDate", // 預定出貨日期
             "PaymentTerms",         // 付款條件
             "DeliveryTerms",        // 交貨條件
-            "FilterProductId",          // 篩選商品
+            "FilterProductId",          // 篩選品項
             "FilterSalesOrderId",       // 篩選銷售單
             "FilterPurchaseOrderId",    // 篩選採購單
             "FilterPurchaseReceivingId",// 篩選進貨單

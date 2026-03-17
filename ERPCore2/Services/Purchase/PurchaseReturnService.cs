@@ -698,7 +698,7 @@ namespace ERPCore2.Services
                         return ServiceResult<PurchaseReturn>.Failure($"儲存明細失敗：{detailResult.ErrorMessage}");
                     }
 
-                    // 更新庫存邏輯 - 處理退貨的庫存變更（包含商品變更和數量變更）
+                    // 更新庫存邏輯 - 處理退貨的庫存變更（包含品項變更和數量變更）
                     // 審核守衛：由呼叫端決定是否更新庫存（人工審核模式下，核准前不更新庫存）
                     if (updateInventory && _inventoryStockService != null)
                     {
@@ -738,7 +738,7 @@ namespace ERPCore2.Services
                             if (quantityDiff > 0)
                             {
                                 // 退貨數量增加，需要減少庫存
-                                operationDescription = $"採購退貨增量 - {savedEntity.Code} (商品ID: {detail.ProductId})";
+                                operationDescription = $"採購退貨增量 - {savedEntity.Code} (品項ID: {detail.ProductId})";
                                 stockResult = await _inventoryStockService.ReduceStockAsync(
                                     detail.ProductId,
                                     warehouseId.Value,
@@ -756,7 +756,7 @@ namespace ERPCore2.Services
                             else
                             {
                                 // 退貨數量減少，需要增加庫存 (撤銷部分退貨)
-                                operationDescription = $"採購退貨撤銷 - {savedEntity.Code} (商品ID: {detail.ProductId})";
+                                operationDescription = $"採購退貨撤銷 - {savedEntity.Code} (品項ID: {detail.ProductId})";
                                 stockResult = await _inventoryStockService.AddStockAsync(
                                     detail.ProductId,
                                     warehouseId.Value,
@@ -834,24 +834,24 @@ namespace ERPCore2.Services
 
                     if (detail.Id > 0)
                     {
-                        // 更新現有明細 - 檢查商品變更和數量變更
+                        // 更新現有明細 - 檢查品項變更和數量變更
                         var existingDetail = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
                         if (existingDetail != null)
                         {
-                            // 檢查是否有商品變更（關鍵修正點）
+                            // 檢查是否有品項變更（關鍵修正點）
                             bool productChanged = existingDetail.ProductId != detail.ProductId || 
                                                  existingDetail.PurchaseReceivingDetailId != detail.PurchaseReceivingDetailId;
                             
                             if (productChanged)
                             {
-                                // 商品變更：需要完整的庫存回滾和重新扣減
-                                // 1. 創建原商品的庫存回滾記錄（使用原始資料）
+                                // 品項變更：需要完整的庫存回滾和重新扣減
+                                // 1. 創建原品項的庫存回滾記錄（使用原始資料）
                                 if (existingDetail.ReturnQuantity > 0)
                                 {
                                     var originalProductDetail = new PurchaseReturnDetail
                                     {
                                         Id = existingDetail.Id,
-                                        ProductId = existingDetail.ProductId, // 保持原商品ID
+                                        ProductId = existingDetail.ProductId, // 保持原品項ID
                                         PurchaseReceivingDetailId = existingDetail.PurchaseReceivingDetailId, // 保持原進貨明細ID
                                         WarehouseLocationId = existingDetail.WarehouseLocationId,
                                         ReturnQuantity = existingDetail.ReturnQuantity,
@@ -861,7 +861,7 @@ namespace ERPCore2.Services
                                     quantityChanges.Add((originalProductDetail, -existingDetail.ReturnQuantity));
                                 }
                                 
-                                // 2. 扣減新商品的庫存（減少新的退回數量）
+                                // 2. 扣減新品項的庫存（減少新的退回數量）
                                 if (detail.ReturnQuantity > 0)
                                 {
                                     quantityChanges.Add((detail, detail.ReturnQuantity));
@@ -1023,9 +1023,9 @@ namespace ERPCore2.Services
                     // 檢查收款記錄
                     if (detail.TotalReceivedAmount > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知商品";
+                        var productName = detail.Product?.Name ?? "未知品項";
                         return ServiceResult.Failure(
-                            $"無法刪除此退貨單，因為商品「{productName}」已有收款記錄（已收款 {detail.TotalReceivedAmount:N0} 元）"
+                            $"無法刪除此退貨單，因為品項「{productName}」已有收款記錄（已收款 {detail.TotalReceivedAmount:N0} 元）"
                         );
                     }
                 }
@@ -1175,7 +1175,7 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 確認採購退回單並更新庫存（首次新增時使用）
-        /// 功能：執行退回確認流程，將退回數量從庫存扣除（因為商品退還給供應商）
+        /// 功能：執行退回確認流程，將退回數量從庫存扣除（因為品項退還給供應商）
         /// 處理流程：
         /// 1. 驗證退回單存在性
         /// 2. 對每個明細進行庫存扣減操作
@@ -1203,7 +1203,7 @@ namespace ERPCore2.Services
                     if (purchaseReturn == null)
                         return ServiceResult.Failure("找不到指定的退回單");
                     
-                    // 更新庫存 - 退回會減少庫存（商品退還給供應商）
+                    // 更新庫存 - 退回會減少庫存（品項退還給供應商）
                     foreach (var detail in purchaseReturn.PurchaseReturnDetails)
                     {
                         if (detail.ReturnQuantity > 0)

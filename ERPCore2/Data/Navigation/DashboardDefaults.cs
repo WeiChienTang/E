@@ -32,7 +32,7 @@ public static class DashboardDefaults
                 "/employees",           // 員工管理
                 "/customers",           // 客戶管理
                 "/suppliers",           // 廠商管理
-                "/products",            // 商品管理
+                "/products",            // 品項管理
                 "/inventoryStocks",     // 庫存查詢
                 "/purchase/orders",     // 採購單管理
                 "/salesOrders",         // 訂單管理

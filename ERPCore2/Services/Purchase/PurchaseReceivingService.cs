@@ -88,7 +88,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得所有採購進貨單資料
         /// 功能：載入所有未刪除的進貨單，包含完整的關聯資料
-        /// 關聯資料：採購訂單、供應商、進貨明細、商品、倉庫等
+        /// 關聯資料：採購訂單、供應商、進貨明細、品項、倉庫等
         /// 排序：依進貨日期降序，再依進貨單號升序
         /// </summary>
         /// <returns>採購進貨單列表</returns>
@@ -111,7 +111,7 @@ namespace ERPCore2.Services
         /// 關聯資料：
         /// - 採購訂單及其供應商
         /// - 直接關聯的供應商
-        /// - 進貨明細及其商品、單位
+        /// - 進貨明細及其品項、單位
         /// - 採購訂單明細及相關資料
         /// - 倉庫和倉庫位置
         /// </summary>
@@ -579,9 +579,9 @@ namespace ERPCore2.Services
 
                         if (returnedQty > 0)
                         {
-                            var productName = detail.Product?.Name ?? "未知商品";
+                            var productName = detail.Product?.Name ?? "未知品項";
                             return ServiceResult.Failure(
-                                $"無法刪除此進貨單，因為商品「{productName}」已有退貨記錄（已退貨 {returnedQty} 個）"
+                                $"無法刪除此進貨單，因為品項「{productName}」已有退貨記錄（已退貨 {returnedQty} 個）"
                             );
                         }
                     }
@@ -589,9 +589,9 @@ namespace ERPCore2.Services
                     // 3.2 檢查沖款記錄
                     if (detail.TotalPaidAmount > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知商品";
+                        var productName = detail.Product?.Name ?? "未知品項";
                         return ServiceResult.Failure(
-                            $"無法刪除此進貨單，因為商品「{productName}」已有沖款記錄（已沖款 {detail.TotalPaidAmount:N0} 元）"
+                            $"無法刪除此進貨單，因為品項「{productName}」已有沖款記錄（已沖款 {detail.TotalPaidAmount:N0} 元）"
                         );
                     }
                 }
@@ -971,7 +971,7 @@ namespace ERPCore2.Services
         /// 
         /// 修復問題：
         /// - 重複累加：每次編輯基於所有交易記錄的淨值進行計算
-        /// - 商品替換：舊商品自動減庫存，新商品自動加庫存
+        /// - 品項替換：舊品項自動減庫存，新品項自動加庫存
         /// - 數量變更：精確計算差異，避免錯誤累加
         /// </summary>
         /// <param name="id">進貨單ID</param>
@@ -1215,15 +1215,15 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得指定商品的最後進貨位置資訊
-        /// 功能：查詢商品最近一次的進貨倉庫和位置
+        /// 取得指定品項的最後進貨位置資訊
+        /// 功能：查詢品項最近一次的進貨倉庫和位置
         /// 用途：
         /// - 為新進貨提供預設倉庫位置建議
-        /// - 保持商品進貨位置的一致性
+        /// - 保持品項進貨位置的一致性
         /// - 優化倉庫管理效率
         /// 查詢邏輯：依進貨日期和建立時間降序，取得最新記錄
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <returns>倉庫ID和倉庫位置ID的元組，無歷史記錄時回傳(null, null)</returns>
         public async Task<(int? WarehouseId, int? WarehouseLocationId)> GetLastReceivingLocationAsync(int productId)
         {
@@ -1263,7 +1263,7 @@ namespace ERPCore2.Services
         /// 3. 已有進貨數量的明細
         /// 4. 進貨數量大於已退貨數量（部分或完全未退貨）
         /// 用途：供應商退貨作業的資料來源
-        /// 排序：依進貨日期、進貨單號、商品編號排序
+        /// 排序：依進貨日期、進貨單號、品項編號排序
         /// </summary>
         /// <param name="supplierId">供應商ID</param>
         /// <returns>可退貨的進貨明細清單</returns>

@@ -1,47 +1,47 @@
-﻿@page "/waste-records"
-@inject IWasteRecordService WasteRecordService
+@page "/scale-records"
+@inject IScaleRecordService ScaleRecordService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
-@inject IWasteRecordReportService WasteRecordReportService
+@inject IScaleRecordReportService ScaleRecordReportService
 @rendermode InteractiveServer
 
-<GenericIndexPageComponent TEntity="WasteRecord"
-                          TService="IWasteRecordService"
-                          Service="@WasteRecordService"
-                          EntityBasePath="/waste-records"
+<GenericIndexPageComponent TEntity="ScaleRecord"
+                          TService="IScaleRecordService"
+                          Service="@ScaleRecordService"
+                          EntityBasePath="/scale-records"
                           PageTitle="@L["Page.WasteRecordTitle"]"
                           PageSubtitle="@L["Page.WasteRecordSubtitle"]"
                           EntityName="@L["Entity.WasteRecord"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          ServerDataLoader="@ServerLoadWasteRecordsAsync"
-                          GetEntityDisplayName="@(wr => wr.Code ?? $"磅秤紀錄#{wr.Id}")"
-                          RequiredPermission="@PermissionRegistry.WasteRecord.Read"
-                          RequiredModule="WasteManagement"
+                          ServerDataLoader="@ServerLoadScaleRecordsAsync"
+                          GetEntityDisplayName="@(sr => sr.Code ?? $"磅秤紀錄#{sr.Id}")"
+                          RequiredPermission="@PermissionRegistry.ScaleRecord.Read"
+                          RequiredModule="ScaleManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           ShowDraftTab="true"
-                          DebugPageName="WasteRecordIndex"
-                          RowPrintService="@WasteRecordReportService"
-                          RowPrintReportId="@ReportIds.WasteRecord"
+                          DebugPageName="ScaleRecordIndex"
+                          RowPrintService="@ScaleRecordReportService"
+                          RowPrintReportId="@ReportIds.ScaleRecord"
                           @ref="indexComponent" />
 
-<WasteRecordEditModalComponent IsVisible="@showEditModal"
+<ScaleRecordEditModalComponent IsVisible="@showEditModal"
                                IsVisibleChanged="@((bool visible) => showEditModal = visible)"
-                               WasteRecordId="@editingWasteRecordId"
-                               OnWasteRecordSaved="@modalHandler.OnEntitySavedAsync"
+                               ScaleRecordId="@editingScaleRecordId"
+                               OnScaleRecordSaved="@modalHandler.OnEntitySavedAsync"
                                OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
-    private GenericIndexPageComponent<WasteRecord, IWasteRecordService> indexComponent = default!;
+    private GenericIndexPageComponent<ScaleRecord, IScaleRecordService> indexComponent = default!;
 
     private bool showEditModal = false;
-    private int? editingWasteRecordId = null;
+    private int? editingScaleRecordId = null;
 
-    private ModalHandler<WasteRecord, GenericIndexPageComponent<WasteRecord, IWasteRecordService>> modalHandler = default!;
+    private ModalHandler<ScaleRecord, GenericIndexPageComponent<ScaleRecord, IScaleRecordService>> modalHandler = default!;
 
-    private WasteRecordFieldConfiguration fieldConfiguration = default!;
+    private ScaleRecordFieldConfiguration fieldConfiguration = default!;
 
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
@@ -51,8 +51,8 @@
     {
         try
         {
-            modalHandler = ModalHelper.CreateModalHandler<WasteRecord, GenericIndexPageComponent<WasteRecord, IWasteRecordService>>(
-                id => editingWasteRecordId = id,
+            modalHandler = ModalHelper.CreateModalHandler<ScaleRecord, GenericIndexPageComponent<ScaleRecord, IScaleRecordService>>(
+                id => editingScaleRecordId = id,
                 visible => showEditModal = visible,
                 () => indexComponent,
                 StateHasChanged,
@@ -60,7 +60,7 @@
 
             await InitializeBreadcrumbsAsync();
 
-            fieldConfiguration = new WasteRecordFieldConfiguration(NotificationService);
+            fieldConfiguration = new ScaleRecordFieldConfiguration(NotificationService);
             fieldConfiguration.SetLocalizer(L);
 
             filterDefinitions = fieldConfiguration.BuildFilters();
@@ -77,15 +77,15 @@
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("磅秤管理", "磅秤紀錄", "#", NotificationService, GetType());
 
     // 伺服器端分頁載入
-    private Task<(List<WasteRecord> Items, int TotalCount)> ServerLoadWasteRecordsAsync(
+    private Task<(List<ScaleRecord> Items, int TotalCount)> ServerLoadScaleRecordsAsync(
         SearchFilterModel filter, int page, int pageSize)
     {
-        return WasteRecordService.GetPagedWithFiltersAsync(
+        return ScaleRecordService.GetPagedWithFiltersAsync(
             q =>
             {
-                q = q.Where(wr => wr.IsDraft == (filter.ShowDrafts ?? false));
+                q = q.Where(sr => sr.IsDraft == (filter.ShowDrafts ?? false));
                 if (fieldConfiguration != null)
-                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadWasteRecordsAsync), GetType());
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadScaleRecordsAsync), GetType());
                 return q;
             },
             page, pageSize);

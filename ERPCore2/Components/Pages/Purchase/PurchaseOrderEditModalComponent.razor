@@ -249,7 +249,7 @@
                     newOrder.SupplierId = prefilledSupplierId.Value;
                 }
                 
-                // 如果有預填的商品 ID，直接添加明細（在 LoadPurchaseOrderData 中處理，確保 UI 渲染時就有資料）
+                // 如果有預填的品項 ID，直接添加明細（在 LoadPurchaseOrderData 中處理，確保 UI 渲染時就有資料）
                 if (prefilledProductId.HasValue && prefilledProductId.Value > 0)
                 {
                     var product = availableProducts.FirstOrDefault(p => p.Id == prefilledProductId.Value);
@@ -320,7 +320,7 @@
     {
         try
         {
-            // 載入廠商、公司、商品資料（用於 AutoComplete）
+            // 載入廠商、公司、品項資料（用於 AutoComplete）
             availableSuppliers = await SupplierService.GetAllAsync();
             availableCompanies = await CompanyService.GetAllAsync();
             availableProducts = await ProductService.GetAllAsync();
@@ -570,7 +570,7 @@
     // ===== AutoComplete 配置方法 =====
 
     /// <summary>
-    /// 創建商品管理器內容的 RenderFragment
+    /// 創建品項管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateProductManagerContent() => __builder =>
     {
@@ -578,7 +578,7 @@
         {
             @if (editModalComponent?.Entity != null)
             {
-                // 檢查是否有可用的商品資料
+                // 檢查是否有可用的品項資料
                 @if (availableProducts != null && availableProducts.Any())
                 {
                     // 修正：使用 CSS 隱藏而非條件卸載，避免元件重建
@@ -611,7 +611,7 @@
                 {
                     <div class="alert alert-warning text-center" role="alert">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        無可用的商品資料，請聯繫系統管理員
+                        無可用的品項資料，請聯繫系統管理員
                     </div>
                 }
             }
@@ -847,7 +847,7 @@
     {
         try
         {
-            // 檢查是否有有效的明細（至少選擇了商品）
+            // 檢查是否有有效的明細（至少選擇了品項）
             var validDetails = purchaseOrderDetails.Where(d => d.ProductId > 0).ToList();
             
             if (!validDetails.Any())
@@ -947,7 +947,7 @@
             // 儲存明細
             await SavePurchaseOrderDetails(result.Data.Id);
 
-            // 自動同步供應商商品目錄（方案C：從採購歷史自動維護）
+            // 自動同步供應商品項目錄（方案C：從採購歷史自動維護）
             if (purchaseOrder.SupplierId.HasValue && purchaseOrder.SupplierId.Value > 0)
                 await SyncProductSuppliersAsync(purchaseOrder.SupplierId.Value, purchaseOrder.OrderDate);
 
@@ -1023,12 +1023,12 @@
         }
     }
     
-    // ===== 供應商商品目錄自動同步（方案C）=====
+    // ===== 供應商品項目錄自動同步（方案C）=====
 
     /// <summary>
-    /// 儲存採購單後，自動將本次採購的商品同步至廠商供應目錄
-    /// - 若商品已在目錄中：更新最近採購價格與日期
-    /// - 若商品不在目錄中：自動新增綁定記錄
+    /// 儲存採購單後，自動將本次採購的品項同步至廠商供應目錄
+    /// - 若品項已在目錄中：更新最近採購價格與日期
+    /// - 若品項不在目錄中：自動新增綁定記錄
     /// 為非關鍵操作，失敗時只顯示警告，不影響採購單儲存結果
     /// </summary>
     private async Task SyncProductSuppliersAsync(int supplierId, DateTime orderDate)
@@ -1064,7 +1064,7 @@
         }
         catch (Exception ex)
         {
-            _ = NotificationService.ShowWarningAsync($"同步供應商品目錄時發生非嚴重錯誤：{ex.Message}");
+            _ = NotificationService.ShowWarningAsync($"同步供應品項目錄時發生非嚴重錯誤：{ex.Message}");
         }
     }
 
@@ -1383,7 +1383,7 @@
     // ===== 公開方法（供外部調用） =====
     
     /// <summary>
-    /// 開啟新增採購單 Modal 並預填供應商和商品資訊
+    /// 開啟新增採購單 Modal 並預填供應商和品項資訊
     /// 採用與「轉單」相同的設計模式：在 LoadPurchaseOrderData 中就設定好資料
     /// </summary>
     public async Task ShowAddModalWithPrefilledData(int supplierId, int productId, decimal? suggestedUnitPrice = null)

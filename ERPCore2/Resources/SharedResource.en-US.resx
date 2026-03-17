@@ -688,7 +688,7 @@
   <data name="Report.VehicleMaintenance" xml:space="preserve"><value>Vehicle Maintenance</value></data>
   <data name="Report.EmployeeRoster" xml:space="preserve"><value>Employee Roster</value></data>
   <data name="Report.EmployeeDetail" xml:space="preserve"><value>Employee Detail</value></data>
-  <data name="Report.WasteRecord" xml:space="preserve"><value>Scale Record</value></data>
+  <data name="Report.ScaleRecord" xml:space="preserve"><value>Scale Record</value></data>
   <data name="Report.AccountsReceivableSetoff" xml:space="preserve"><value>A/R Setoff</value></data>
   <data name="Report.AccountsPayableSetoff" xml:space="preserve"><value>A/P Setoff</value></data>
   <data name="Report.AccountItemList" xml:space="preserve"><value>Chart of Accounts</value></data>
@@ -1172,9 +1172,9 @@
   <data name="Field.RecordDate" xml:space="preserve"><value>Record Date</value></data>
   <data name="Field.RelatedProduct" xml:space="preserve"><value>Related Product</value></data>
   <data name="Field.TotalWeight" xml:space="preserve"><value>Total Weight</value></data>
-  <data name="Field.WasteRecordCode" xml:space="preserve"><value>Waste Record Code</value></data>
-  <data name="Field.WasteTypeCode" xml:space="preserve"><value>Waste Type Code</value></data>
-  <data name="Field.WasteTypeName" xml:space="preserve"><value>Waste Type Name</value></data>
+  <data name="Field.WasteRecordCode" xml:space="preserve"><value>Scale Record Code</value></data>
+  <data name="Field.WasteTypeCode" xml:space="preserve"><value>Scale Type Code</value></data>
+  <data name="Field.WasteTypeName" xml:space="preserve"><value>Scale Type Name</value></data>
   <!-- ===== Field - Paper/Printer keys ===== -->
   <data name="Field.Paper" xml:space="preserve"><value>Paper</value></data>
   <data name="Field.PaperBottomMargin" xml:space="preserve"><value>Bottom Margin</value></data>
@@ -1891,7 +1891,7 @@
   <data name="Report.VehicleMaintenanceDesc" xml:space="preserve"><value>Print vehicle maintenance records including maintenance type, date, mileage, cost, and service shop details</value></data>
   <data name="Report.EmployeeRosterDesc" xml:space="preserve"><value>Print employee basic data list including employee code, name, department, position, hire date, and employment status</value></data>
   <data name="Report.EmployeeDetailDesc" xml:space="preserve"><value>Print complete employee details including contact info, emergency contacts, and employment information, one block per employee</value></data>
-  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>Print scale record list grouped by scale type, including plate number, customer, warehouse, weight, and cost details</value></data>
+  <data name="Report.ScaleRecordDesc" xml:space="preserve"><value>Print scale record list grouped by scale type, including plate number, customer, warehouse, weight, and cost details</value></data>
   <data name="Report.AccountsReceivableSetoffDesc" xml:space="preserve"><value>Print accounts receivable setoff document including customer info, offset details, and payment records</value></data>
   <data name="Report.AccountsPayableSetoffDesc" xml:space="preserve"><value>Print accounts payable setoff document including supplier info, offset details, and payment records</value></data>
   <data name="Report.AccountItemListDesc" xml:space="preserve"><value>Print standard chart of accounts grouped by account type, showing account code, name, level, and debit/credit direction</value></data>

@@ -9,12 +9,12 @@ namespace ERPCore2.Services
     public interface IPriceHistoryService : IGenericManagementService<PriceHistory>
     {
         /// <summary>
-        /// 根據商品ID取得價格歷史
+        /// 根據品項ID取得價格歷史
         /// </summary>
         Task<List<PriceHistory>> GetByProductIdAsync(int productId);
 
         /// <summary>
-        /// 根據商品ID和價格類型取得價格歷史
+        /// 根據品項ID和價格類型取得價格歷史
         /// </summary>
         Task<List<PriceHistory>> GetByProductIdAndPriceTypeAsync(int productId, PriceType priceType);
 
@@ -29,7 +29,7 @@ namespace ERPCore2.Services
         Task<List<PriceHistory>> GetByChangedByUserIdAsync(int userId);
 
         /// <summary>
-        /// 取得商品的最新價格歷史記錄
+        /// 取得品項的最新價格歷史記錄
         /// </summary>
         Task<PriceHistory?> GetLatestByProductIdAndPriceTypeAsync(int productId, PriceType priceType);
 

@@ -1,4 +1,4 @@
-﻿using ERPCore2.Components.Shared.UI.Form;
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -12,167 +12,167 @@ namespace ERPCore2.FieldConfiguration
     /// <summary>
     /// 磅秤紀錄欄位配置
     /// </summary>
-    public class WasteRecordFieldConfiguration : BaseFieldConfiguration<WasteRecord>
+    public class ScaleRecordFieldConfiguration : BaseFieldConfiguration<ScaleRecord>
     {
         private readonly INotificationService? _notificationService;
 
-        public WasteRecordFieldConfiguration(INotificationService? notificationService = null)
+        public ScaleRecordFieldConfiguration(INotificationService? notificationService = null)
         {
             _notificationService = notificationService;
         }
 
-        public override Dictionary<string, FieldDefinition<WasteRecord>> GetFieldDefinitions()
+        public override Dictionary<string, FieldDefinition<ScaleRecord>> GetFieldDefinitions()
         {
             try
             {
-                return new Dictionary<string, FieldDefinition<WasteRecord>>
+                return new Dictionary<string, FieldDefinition<ScaleRecord>>
                 {
                     {
-                        nameof(WasteRecord.Code),
-                        new FieldDefinition<WasteRecord>
+                        nameof(ScaleRecord.Code),
+                        new FieldDefinition<ScaleRecord>
                         {
-                            PropertyName = nameof(WasteRecord.Code),
+                            PropertyName = nameof(ScaleRecord.Code),
                             DisplayName = Dn("Field.WasteRecordCode", "磅秤紀錄單號"),
                             FilterPlaceholder = Fp("Field.WasteRecordCode", "輸入單號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(WasteRecord.Code), wr => wr.Code, allowNull: true)
+                                model, query, nameof(ScaleRecord.Code), sr => sr.Code, allowNull: true)
                         }
                     },
                     {
-                        nameof(WasteRecord.RecordDate),
-                        new FieldDefinition<WasteRecord>
+                        nameof(ScaleRecord.RecordDate),
+                        new FieldDefinition<ScaleRecord>
                         {
-                            PropertyName = nameof(WasteRecord.RecordDate),
+                            PropertyName = nameof(ScaleRecord.RecordDate),
                             DisplayName = Dn("Field.RecordDate", "記錄日期"),
                             FilterPlaceholder = Fp("Field.RecordDate", "選擇日期範圍"),
                             TableOrder = 2,
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
-                                model, query, nameof(WasteRecord.RecordDate), wr => wr.RecordDate)
+                                model, query, nameof(ScaleRecord.RecordDate), sr => sr.RecordDate)
                         }
                     },
                     {
-                        nameof(WasteRecord.VehicleId),
-                        new FieldDefinition<WasteRecord>
+                        nameof(ScaleRecord.VehicleId),
+                        new FieldDefinition<ScaleRecord>
                         {
                             PropertyName = "Vehicle.LicensePlate",
-                            FilterPropertyName = nameof(WasteRecord.VehicleId),
+                            FilterPropertyName = nameof(ScaleRecord.VehicleId),
                             DisplayName = Dn("Field.Vehicle", "車輛"),
                             FilterPlaceholder = Fp("Field.Vehicle", "輸入車牌搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(WasteRecord.VehicleId), wr => wr.VehicleId)
+                                model, query, nameof(ScaleRecord.VehicleId), sr => sr.VehicleId)
                         }
                     },
                     {
-                        nameof(WasteRecord.WasteTypeId),
-                        new FieldDefinition<WasteRecord>
+                        nameof(ScaleRecord.ScaleTypeId),
+                        new FieldDefinition<ScaleRecord>
                         {
-                            PropertyName = "WasteType.Name",
-                            FilterPropertyName = nameof(WasteRecord.WasteTypeId),
+                            PropertyName = "ScaleType.Name",
+                            FilterPropertyName = nameof(ScaleRecord.ScaleTypeId),
                             DisplayName = Dn("Field.WasteType", "磅秤類型"),
                             FilterPlaceholder = Fp("Field.WasteType", "選擇磅秤類型"),
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(WasteRecord.WasteTypeId), wr => wr.WasteTypeId)
+                                model, query, nameof(ScaleRecord.ScaleTypeId), sr => sr.ScaleTypeId)
                         }
                     },
                     {
-                        nameof(WasteRecord.CustomerId),
-                        new FieldDefinition<WasteRecord>
+                        nameof(ScaleRecord.CustomerId),
+                        new FieldDefinition<ScaleRecord>
                         {
                             PropertyName = "Customer.CompanyName",
-                            FilterPropertyName = nameof(WasteRecord.CustomerId),
+                            FilterPropertyName = nameof(ScaleRecord.CustomerId),
                             DisplayName = Dn("Field.Customer", "客戶"),
                             FilterPlaceholder = Fp("Field.Customer", "輸入客戶搜尋"),
                             TableOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(WasteRecord.CustomerId), wr => wr.CustomerId)
+                                model, query, nameof(ScaleRecord.CustomerId), sr => sr.CustomerId)
                         }
                     },
                     {
-                        nameof(WasteRecord.WarehouseId),
-                        new FieldDefinition<WasteRecord>
+                        nameof(ScaleRecord.WarehouseId),
+                        new FieldDefinition<ScaleRecord>
                         {
                             PropertyName = "Warehouse.Name",
-                            FilterPropertyName = nameof(WasteRecord.WarehouseId),
+                            FilterPropertyName = nameof(ScaleRecord.WarehouseId),
                             DisplayName = Dn("Field.InboundWarehouse", "入庫倉庫"),
                             FilterPlaceholder = Fp("Field.InboundWarehouse", "輸入倉庫搜尋"),
                             TableOrder = 6,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(WasteRecord.WarehouseId), wr => wr.WarehouseId)
+                                model, query, nameof(ScaleRecord.WarehouseId), sr => sr.WarehouseId)
                         }
                     },
                     {
-                        nameof(WasteRecord.TotalWeight),
-                        new FieldDefinition<WasteRecord>
+                        nameof(ScaleRecord.TotalWeight),
+                        new FieldDefinition<ScaleRecord>
                         {
-                            PropertyName = nameof(WasteRecord.TotalWeight),
+                            PropertyName = nameof(ScaleRecord.TotalWeight),
                             DisplayName = Dn("Field.TotalWeight", "總重量"),
                             TableOrder = 7,
                             ColumnType = ColumnDataType.Number,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
-                                if (value is WasteRecord wr)
+                                if (value is ScaleRecord sr)
                                 {
-                                    builder.AddContent(0, NumberFormatHelper.FormatSmart(wr.TotalWeight));
+                                    builder.AddContent(0, NumberFormatHelper.FormatSmart(sr.TotalWeight));
                                 }
                             }
                         }
                     },
                     {
-                        nameof(WasteRecord.DisposalFee),
-                        new FieldDefinition<WasteRecord>
+                        nameof(ScaleRecord.DisposalFee),
+                        new FieldDefinition<ScaleRecord>
                         {
-                            PropertyName = nameof(WasteRecord.DisposalFee),
+                            PropertyName = nameof(ScaleRecord.DisposalFee),
                             DisplayName = Dn("Field.DisposalFee", "處理費"),
                             TableOrder = 8,
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
-                                if (value is WasteRecord wr)
+                                if (value is ScaleRecord sr)
                                 {
-                                    builder.AddContent(0, wr.DisposalFee.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(wr.DisposalFee)}" : "");
+                                    builder.AddContent(0, sr.DisposalFee.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(sr.DisposalFee)}" : "");
                                 }
                             }
                         }
                     },
                     {
-                        nameof(WasteRecord.PurchaseFee),
-                        new FieldDefinition<WasteRecord>
+                        nameof(ScaleRecord.PurchaseFee),
+                        new FieldDefinition<ScaleRecord>
                         {
-                            PropertyName = nameof(WasteRecord.PurchaseFee),
+                            PropertyName = nameof(ScaleRecord.PurchaseFee),
                             DisplayName = Dn("Field.PurchaseFee", "採購費"),
                             TableOrder = 9,
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
-                                if (value is WasteRecord wr)
+                                if (value is ScaleRecord sr)
                                 {
-                                    builder.AddContent(0, wr.PurchaseFee.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(wr.PurchaseFee)}" : "");
+                                    builder.AddContent(0, sr.PurchaseFee.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(sr.PurchaseFee)}" : "");
                                 }
                             }
                         }
                     },
                     {
-                        nameof(WasteRecord.NetAmount),
-                        new FieldDefinition<WasteRecord>
+                        nameof(ScaleRecord.NetAmount),
+                        new FieldDefinition<ScaleRecord>
                         {
-                            PropertyName = nameof(WasteRecord.NetAmount),
+                            PropertyName = nameof(ScaleRecord.NetAmount),
                             DisplayName = Dn("Field.NetAmount", "淨額"),
                             TableOrder = 10,
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
-                                if (value is WasteRecord wr)
+                                if (value is ScaleRecord sr)
                                 {
-                                    builder.AddContent(0, wr.NetAmount.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(wr.NetAmount)}" : "");
+                                    builder.AddContent(0, sr.NetAmount.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(sr.NetAmount)}" : "");
                                 }
                             }
                         }
@@ -194,7 +194,7 @@ namespace ERPCore2.FieldConfiguration
                     });
                 }
 
-                return new Dictionary<string, FieldDefinition<WasteRecord>>();
+                return new Dictionary<string, FieldDefinition<ScaleRecord>>();
             }
         }
     }

@@ -18,11 +18,11 @@ public interface IBarcodeGeneratorService
     byte[] GenerateBarcode(string barcodeValue, BarcodeSize size, bool showText = true);
     
     /// <summary>
-    /// 生成帶有商品資訊的條碼圖片
+    /// 生成帶有品項資訊的條碼圖片
     /// </summary>
     /// <param name="barcodeValue">條碼值</param>
-    /// <param name="productCode">商品編號（可選）</param>
-    /// <param name="productName">商品名稱（可選）</param>
+    /// <param name="productCode">品項編號（可選）</param>
+    /// <param name="productName">品項名稱（可選）</param>
     /// <param name="size">條碼尺寸</param>
     /// <returns>PNG 圖片位元組陣列</returns>
     byte[] GenerateBarcodeWithInfo(

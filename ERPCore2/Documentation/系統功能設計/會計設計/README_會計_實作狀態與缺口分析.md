@@ -163,7 +163,7 @@
 - **無正式用途分類欄位**（Remarks 為自由文字）
 
 **⚠️ 成本來源待確認：**
-`MaterialIssueDetail.UnitCost` 為 nullable，需確認領料確認時是否自動填入商品當下的移動均價（`Product.AverageCost`）。
+`MaterialIssueDetail.UnitCost` 為 nullable，需確認領料確認時是否自動填入品項當下的移動均價（`Product.AverageCost`）。
 若未自動填入，傳票金額將為 null，建立時需有警告機制。
 
 **⚠️ 缺少確認狀態（新發現缺口）：**
@@ -252,7 +252,7 @@ public enum MaterialIssuePurpose
 - **無帳齡區間分析報表**（0-30 / 31-60 / 61-90 / 91-120 / 120+ 天分組）
 
 **計算設計決策（已確認）：**
-- 帳齡計算單位：**SalesDelivery 主檔**（非逐行商品明細）
+- 帳齡計算單位：**SalesDelivery 主檔**（非逐行品項明細）
 - **未收金額：`(SalesDelivery.TotalAmount + SalesDelivery.TaxAmount) - SUM(SetoffProductDetail.CurrentSetoffAmount WHERE 關聯此單據)`**
   - 必須用含稅金額（TotalAmount + TaxAmount），因為傳票 AR 借方 = `TotalAmountWithTax`
   - `SetoffProductDetail` 也使用含稅（`CalculateTaxInclusiveAmount`），口徑一致
@@ -1177,7 +1177,7 @@ SumAsync(spd => spd.TotalSetoffAmount)
 **現行問題（修正前）：** 兩個方法計算 `IsSettled` 時直接用 `SubtotalAmount`（含稅前）比較，而 `SetoffProductDetailService.UpdateSourceDetailCacheInContextAsync`（建立/更新沖款時呼叫）正確使用 `CalculateTaxInclusiveAmount(subtotal, taxRate, parentDoc.TaxCalculationMethod)`（含稅後）。
 
 **典型情境（5% 外加稅）：**
-- 商品 `SubtotalAmount = 10,000`，含稅 `10,500`
+- 品項 `SubtotalAmount = 10,000`，含稅 `10,500`
 - 建立沖款時：`IsSettled = totalReceived >= 10,500` ← 正確
 - 刪除沖款後 RebuildSourceDetailCacheAsync：`IsSettled = remaining >= 10,000` ← 錯誤（偏低 500 即結清）
 - 管理員觸發 RebuildCacheAsync（呼叫 RebuildCacheByTypeAsync）：`IsSettled = total >= 10,000` ← 同樣錯誤
@@ -1209,7 +1209,7 @@ private static decimal CalculateTaxInclusiveAmount(decimal subtotal, decimal? ta
 **現行問題（修正前）：**
 
 UI 驗證的平衡公式：`TotalCollectionAmount + PrepaymentSetoffAmount = CurrentSetoffAmount + TotalAllowanceAmount + CurrentPrepaymentAmount`
-（其中 `TotalCollectionAmount = 現金 + TotalAllowanceAmount`，折讓從付款記錄與商品明細兩側同時記錄）
+（其中 `TotalCollectionAmount = 現金 + TotalAllowanceAmount`，折讓從付款記錄與品項明細兩側同時記錄）
 
 應收沖款分錄（原始）：
 - 借方：銀行存款 `TotalCollectionAmount`（含折讓！）+ 銷貨折讓 `TotalAllowanceAmount` + 預收貨款沖回 `PrepaymentSetoffAmount`
@@ -1346,7 +1346,7 @@ if (entity.ReceivedAmount == 0 && entity.AllowanceAmount == 0)
 - `Components/Pages/FinancialManagement/SetoffDocumentEditModalComponent.razor` → line 99
 - `Services/FinancialManagement/SetoffDocumentService.cs` → `ValidateAsync`
 
-**現行問題：** `private bool IsReadOnly => false;` 硬寫為 `false`，此屬性被傳遞至三個子表格（SetoffProductTable、SetoffPaymentTable、SetoffPrepaymentTable），導致即使沖款單已傳票化（`IsJournalized = true`），使用者仍可透過 UI 新增、修改、刪除商品明細、收款記錄及預收付款項，破壞已產生傳票的會計憑證完整性。`SetoffDocumentService.ValidateAsync` 也未對 `IsJournalized` 單據加以攔截。
+**現行問題：** `private bool IsReadOnly => false;` 硬寫為 `false`，此屬性被傳遞至三個子表格（SetoffProductTable、SetoffPaymentTable、SetoffPrepaymentTable），導致即使沖款單已傳票化（`IsJournalized = true`），使用者仍可透過 UI 新增、修改、刪除品項明細、收款記錄及預收付款項，破壞已產生傳票的會計憑證完整性。`SetoffDocumentService.ValidateAsync` 也未對 `IsJournalized` 單據加以攔截。
 
 **修正：**
 1. `SetoffDocumentEditModalComponent.razor` line 99：

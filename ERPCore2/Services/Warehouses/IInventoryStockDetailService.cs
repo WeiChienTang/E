@@ -24,7 +24,7 @@ namespace ERPCore2.Services
         Task<List<InventoryStockDetail>> GetByWarehouseLocationIdAsync(int warehouseLocationId);
         
         /// <summary>
-        /// 取得特定商品在特定倉庫位置的明細
+        /// 取得特定品項在特定倉庫位置的明細
         /// </summary>
         Task<InventoryStockDetail?> GetByInventoryWarehouseLocationAsync(int inventoryStockId, int warehouseId, int? warehouseLocationId = null);
         

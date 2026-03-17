@@ -1,4 +1,4 @@
-@* 商品批量選擇器 Modal - 提供篩選+點擊選取，批量加入材料清單 *@
+@* 品項批量選擇器 Modal - 提供篩選+點擊選取，批量加入材料清單 *@
 @inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
@@ -236,7 +236,7 @@
     // ===== 事件處理 =====
     private void HandleSelectionChanged(HashSet<Product> selectedItems)
     {
-        // 排除已加入的商品（點擊已加入商品不應加入選取）
+        // 排除已加入的品項（點擊已加入品項不應加入選取）
         selectedItems.RemoveWhere(p => AlreadyAddedProductIds.Contains(p.Id));
         _selectedItems = selectedItems;
         StateHasChanged();

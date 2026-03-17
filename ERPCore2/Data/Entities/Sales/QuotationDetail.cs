@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 報價單明細實體 - 記錄報價單的商品明細
+    /// 報價單明細實體 - 記錄報價單的品項明細
     /// </summary>
     [Index(nameof(QuotationId), nameof(ProductId))]
     public class QuotationDetail : BaseEntity
@@ -34,7 +34,7 @@ namespace ERPCore2.Data.Entities
         public decimal? TaxRate { get; set; }
 
         /// <summary>
-        /// 規格說明 - 從商品帶入後可自行修改
+        /// 規格說明 - 從品項帶入後可自行修改
         /// 新增明細時自動複製 Product.Specification，之後獨立運作
         /// </summary>
         [Display(Name = "規格說明")]
@@ -62,8 +62,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Quotation))]
         public int QuotationId { get; set; }
 
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
+        [Required(ErrorMessage = "品項為必填")]
+        [Display(Name = "品項")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 

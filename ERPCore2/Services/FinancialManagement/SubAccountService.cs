@@ -183,12 +183,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "建立商品子科目時發生錯誤（ProductId={ProductId}）", productId);
+                _logger?.LogError(ex, "建立品項子科目時發生錯誤（ProductId={ProductId}）", productId);
                 return null;
             }
         }
 
-        /// <summary>商品子科目建立核心邏輯（不檢查 AutoCreate 開關，供批次補建直接呼叫）</summary>
+        /// <summary>品項子科目建立核心邏輯（不檢查 AutoCreate 開關，供批次補建直接呼叫）</summary>
         private async Task<AccountItem?> CreateProductSubAccountCoreAsync(AppDbContext context, int productId, string createdBy, Data.Entities.SystemParameter param)
         {
             var parentCode = param.ProductSubAccountParentCode;
@@ -196,14 +196,14 @@ namespace ERPCore2.Services
                 .FirstOrDefaultAsync(a => a.Code == parentCode);
             if (parent == null)
             {
-                _logger?.LogWarning("找不到商品子科目統制科目（{Code}），跳過建立", parentCode);
+                _logger?.LogWarning("找不到品項子科目統制科目（{Code}），跳過建立", parentCode);
                 return null;
             }
 
             var product = await context.Products.FindAsync(productId);
             if (product == null) return null;
 
-            var productName = product.Name ?? $"商品{productId}";
+            var productName = product.Name ?? $"品項{productId}";
             var code = await GenerateSubAccountCodeAsync(context, parent, param.SubAccountCodeFormat, product.Code);
             var subAccount = BuildSubAccount(code, $"{parent.Name} - {productName}", parent, createdBy);
             subAccount.Description = productName;
@@ -212,7 +212,7 @@ namespace ERPCore2.Services
             context.AccountItems.Add(subAccount);
             await context.SaveChangesAsync();
 
-            _logger?.LogInformation("已建立商品子科目 {Code} 對應商品 {ProductId}", code, productId);
+            _logger?.LogInformation("已建立品項子科目 {Code} 對應品項 {ProductId}", code, productId);
             return subAccount;
         }
 
@@ -365,13 +365,13 @@ namespace ERPCore2.Services
                     }
                     catch (Exception ex)
                     {
-                        errors.Add($"商品 {id}：{ex.Message}");
+                        errors.Add($"品項 {id}：{ex.Message}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                errors.Add($"批次補建商品子科目發生錯誤：{ex.Message}");
+                errors.Add($"批次補建品項子科目發生錯誤：{ex.Message}");
             }
 
             return (created, skipped, errors);

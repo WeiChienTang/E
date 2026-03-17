@@ -88,7 +88,7 @@
                                OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 }
 
-@* 商品編輯 Modal *@
+@* 品項編輯 Modal *@
 @if (productModalManager != null)
 {
     <ProductEditModalComponent @ref="productEditModal"
@@ -179,7 +179,7 @@
     
     // ===== 明細載入狀態 =====
     private bool isDetailDataReady = false;  // 標記明細相關資料是否已完整載入（包括退貨數量）
-    private bool shouldAutoLoadUnreceived = false;  // 標記是否需要自動載入未入庫商品
+    private bool shouldAutoLoadUnreceived = false;  // 標記是否需要自動載入未入庫品項
     
     // ===== Modal 管理器 =====
     private SupplierEditModalComponent? supplierEditModal;
@@ -228,7 +228,7 @@
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
                 .AddManager<Supplier>(nameof(PurchaseReceiving.SupplierId), "廠商")
-                .AddManager<Product>("FilterProductId", "商品")
+                .AddManager<Product>("FilterProductId", "品項")
                 .Build();
             supplierModalManager = modalManagers.Get<Supplier>(nameof(PurchaseReceiving.SupplierId));
             productModalManager = modalManagers.Get<Product>("FilterProductId");
@@ -505,7 +505,7 @@
                     }
                 }
                 
-                // 如果有預填的廠商ID，更新採購單選項和商品篩選選項
+                // 如果有預填的廠商ID，更新採購單選項和品項篩選選項
                 if (newReceiving.SupplierId > 0)
                 {
                     await UpdatePurchaseOrderOptions(newReceiving.SupplierId);
@@ -535,7 +535,7 @@
                 //  標記明細資料已準備就緒（包括退貨數量等資訊）
                 isDetailDataReady = true;
                 
-                // 如果有廠商ID，更新採購單選項和商品篩選選項
+                // 如果有廠商ID，更新採購單選項和品項篩選選項
                 if (purchaseReceiving.SupplierId > 0)
                 {
                     await UpdatePurchaseOrderOptions(purchaseReceiving.SupplierId);
@@ -688,7 +688,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入商品資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入品項資料時發生錯誤：{ex.Message}");
             products = new List<Product>();
         }
     }
@@ -862,7 +862,7 @@
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品（僅外購類型）。此欄位不會儲存。",
+                    HelpText = "選擇特定品項進行篩選，或留空顯示所有品項（僅外購類型）。此欄位不會儲存。",
                     IsReadOnly = true, // 預設停用，等待廠商選取後由 UpdateFilterFieldsState 更新
                     IsFilterOnly = true
                 },
@@ -1003,8 +1003,8 @@
     }
 
     /// <summary>
-    /// 更新商品篩選的 AutoComplete 資料集合
-    /// 進貨時顯示所有外購類型商品（不根據廠商篩選，因為可以向任何廠商採購任何外購商品）
+    /// 更新品項篩選的 AutoComplete 資料集合
+    /// 進貨時顯示所有外購類型品項（不根據廠商篩選，因為可以向任何廠商採購任何外購品項）
     /// </summary>
     private async Task UpdateFilterProductOptions(int? supplierId = null)
     {
@@ -1013,8 +1013,8 @@
             if (autoCompleteConfig?.Collections == null)
                 return;
             
-            // 進貨時始終顯示所有外購商品，不限制廠商
-            // 原因：一個外購商品可能向多個廠商採購，不應該限制選擇
+            // 進貨時始終顯示所有外購品項，不限制廠商
+            // 原因：一個外購品項可能向多個廠商採購，不應該限制選擇
             List<Product> filteredProducts = products;
             
             // 更新 AutoComplete 的資料集合
@@ -1023,12 +1023,12 @@
                 autoCompleteConfig.Collections["FilterProductId"] = filteredProducts;
             }
             
-            // 清空目前的商品篩選選擇
+            // 清空目前的品項篩選選擇
             filterProductId = null;
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"更新商品篩選選項時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"更新品項篩選選項時發生錯誤：{ex.Message}");
         }
     }
 
@@ -1310,7 +1310,7 @@
                     
                     await UpdatePurchaseOrderOptions(supplierId);
 
-                    // 更新商品篩選的選項清單
+                    // 更新品項篩選的選項清單
                     await UpdateFilterProductOptions(supplierId);
 
                     // 廠商變更時更新篩選欄位停用狀態
@@ -1340,7 +1340,7 @@
                     filterPurchaseOrderId = null;
                 needsRerender = true;
             }
-            // 當商品篩選變更時，更新篩選狀態並觸發重新渲染
+            // 當品項篩選變更時，更新篩選狀態並觸發重新渲染
             else if (fieldChange.PropertyName == "FilterProductId")
             {
                 if (fieldChange.Value != null &&
@@ -1403,7 +1403,7 @@
     /// <summary>
     /// AfterSave 回調方法 - 在主檔儲存後處理明細並使用差異比較更新庫存
     /// 處理流程：
-    /// 1. 儲存有效的明細資料（有選擇商品和倉庫的記錄）
+    /// 1. 儲存有效的明細資料（有選擇品項和倉庫的記錄）
     /// 2. 更新主檔總金額
     /// 3. 使用新的 UpdateInventoryByDifferenceAsync 方法進行庫存差異更新
     /// 4. 差異更新邏輯：
@@ -1412,7 +1412,7 @@
     ///    - 新增：直接增加庫存
     ///    - 修改：調整庫存差異（增加或減少）
     ///    - 刪除：回退庫存
-    ///    - 商品替換：從原商品減去庫存，向新商品增加庫存
+    ///    - 品項替換：從原品項減去庫存，向新品項增加庫存
     /// </summary>
     private async Task SavePurchaseReceivingDetailsAsync(PurchaseReceiving purchaseReceiving)
     {
@@ -1424,7 +1424,7 @@
                 return;
             }
 
-            // 過濾有效的明細（有選擇商品和倉庫的）
+            // 過濾有效的明細（有選擇品項和倉庫的）
             var validDetails = purchaseReceivingDetails
                 .Where(detail => detail.ProductId > 0 && detail.WarehouseId > 0)
                 .ToList();
@@ -1482,7 +1482,7 @@
             // 更新主檔的總金額和稅額（使用明細稅額加總算法）
             purchaseReceiving.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
 
-            // 【新式算法】每筆明細分別計算稅額，再加總（支援不同商品不同稅率）
+            // 【新式算法】每筆明細分別計算稅額，再加總（支援不同品項不同稅率）
             purchaseReceiving.PurchaseReceivingTaxAmount = purchaseReceivingDetails.Sum(d =>
             {
                 // 使用明細的稅率，若無則使用系統預設值
@@ -1522,7 +1522,7 @@
                 }
             }
 
-            // 使用差異比較進行庫存更新 - 避免重複累加和商品替換問題
+            // 使用差異比較進行庫存更新 - 避免重複累加和品項替換問題
             // 審核守衛：人工審核模式下，需核准後才更新庫存；自動審核模式下，儲存即更新
             if (validDetails.Any() && ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, purchaseReceiving.IsApproved))
             {

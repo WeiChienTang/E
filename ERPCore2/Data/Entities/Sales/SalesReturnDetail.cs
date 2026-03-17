@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 銷貨退回明細實體 - 記錄銷貨退回的商品明細
+    /// 銷貨退回明細實體 - 記錄銷貨退回的品項明細
     /// </summary>
     [Index(nameof(SalesReturnId), nameof(ProductId))]
     public class SalesReturnDetail : BaseEntity
@@ -47,8 +47,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(SalesReturn))]
         public int SalesReturnId { get; set; }
 
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
+        [Required(ErrorMessage = "品項為必填")]
+        [Display(Name = "品項")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 

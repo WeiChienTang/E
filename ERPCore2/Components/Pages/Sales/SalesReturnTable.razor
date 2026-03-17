@@ -1,4 +1,4 @@
-@* 銷售退貨商品明細管理元件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
+@* 銷售退貨品項明細管理元件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Models.Enums
@@ -21,7 +21,7 @@
         <div class="card-body text-center py-5">
             <div class="customer-warning">
                 <i class="fas fa-user fa-2x mb-3 text-muted"></i>
-                <p class="text-muted">選擇客戶後即可查看該客戶可退貨的商品</p>
+                <p class="text-muted">選擇客戶後即可查看該客戶可退貨的品項</p>
             </div>
         </div>
     </div>
@@ -132,8 +132,8 @@ else
     [Parameter] public string Title { get; set; } = "退貨明細";
     [Parameter] public string Subtitle { get; set; } = "";
     [Parameter] public string Icon { get; set; } = "undo";
-    [Parameter] public string ItemDisplayName { get; set; } = "商品";
-    [Parameter] public string EmptyMessage { get; set; } = "尚未新增退貨商品";
+    [Parameter] public string ItemDisplayName { get; set; } = "品項";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增退貨品項";
 
     // ===== 稅別參數 =====
     [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
@@ -417,7 +417,7 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 出貨明細選擇欄位 - 使用 SearchableSelect 類型（只顯示有銷貨的商品）
+        // 出貨明細選擇欄位 - 使用 SearchableSelect 類型（只顯示有銷貨的品項）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = L["Column.ProductCodeName"],
@@ -426,8 +426,8 @@ else
             TriggerEmptyRowOnFilled = true,  //  選擇後自動新增空行
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "300px",
-            Tooltip = "搜尋並選擇要退貨的銷售商品。已有沖款記錄的商品將無法變更",
-            Placeholder = "請輸入出貨單號或商品編號/名稱",
+            Tooltip = "搜尋並選擇要退貨的銷售品項。已有沖款記錄的品項將無法變更",
+            Placeholder = "請輸入出貨單號或品項編號/名稱",
             SearchValuePropertyName = nameof(ReturnItem.DeliveryDetailSearchValue),
             FilteredItemsPropertyName = nameof(ReturnItem.FilteredDeliveryDetails),
             ShowDropdownPropertyName = nameof(ReturnItem.ShowDropdown),
@@ -449,7 +449,7 @@ else
                 var hasPaymentRecord = HasPaymentRecord(returnItem);
                 if (!hasPaymentRecord) return null;
                 
-                return $"此商品已有沖款記錄（已沖款 {GetPaidAmount(returnItem):N0} 元），無法修改商品選擇";
+                return $"此品項已有沖款記錄（已沖款 {GetPaidAmount(returnItem):N0} 元），無法修改品項選擇";
             },
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async (tuple) =>
             {
@@ -503,7 +503,7 @@ else
             PropertyName = nameof(ReturnItem.ReturnQuantity),
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
-            Tooltip = "要退回的商品數量。已有沖款記錄的商品將無法修改數量",
+            Tooltip = "要退回的品項數量。已有沖款記錄的品項將無法修改數量",
             IsDisabledFunc = item =>
             {
                 var returnItem = (ReturnItem)item;
@@ -515,7 +515,7 @@ else
                 var hasPaymentRecord = HasPaymentRecord(returnItem);
                 if (!hasPaymentRecord) return null;
                 
-                return $"此商品已有沖款記錄（已沖款 {GetPaidAmount(returnItem):N0} 元），無法修改退貨數量";
+                return $"此品項已有沖款記錄（已沖款 {GetPaidAmount(returnItem):N0} 元），無法修改退貨數量";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
@@ -531,7 +531,7 @@ else
             PropertyName = nameof(ReturnItem.OriginalUnitPrice),
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
-            Tooltip = "商品的原始銷售單價（唯讀）",
+            Tooltip = "品項的原始銷售單價（唯讀）",
             IsReadOnly = true
         });
 
@@ -575,7 +575,7 @@ else
                 var hasPaymentRecord = HasPaymentRecord(returnItem);
                 if (!hasPaymentRecord) return null;
                 
-                return $"此商品已有沖款記錄（已沖款 {GetPaidAmount(returnItem):N0} 元），無法修改稅率";
+                return $"此品項已有沖款記錄（已沖款 {GetPaidAmount(returnItem):N0} 元），無法修改稅率";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
@@ -697,8 +697,8 @@ else
             return;
         }
 
-        // 設定商品名稱
-        selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
+        // 設定品項名稱
+        selectedProductName = item.SelectedProduct?.Name ?? "未知品項";
 
         // 顯示 Modal 並開始載入
         showRelatedDocumentsModal = true;
@@ -798,7 +798,7 @@ else
             filteredDetails = filteredDetails.Where(od => od.SalesDeliveryId == EffectiveSalesDeliveryId.Value);
         }
         
-        // 根據商品篩選
+        // 根據品項篩選
         if (EffectiveFilterProductId.HasValue && EffectiveFilterProductId.Value > 0)
         {
             filteredDetails = filteredDetails.Where(od => od.ProductId == EffectiveFilterProductId.Value);
@@ -832,18 +832,18 @@ else
             conditions.Add($"• 銷貨單：{deliveryCode ?? $"ID {EffectiveSalesDeliveryId.Value}"}");
         }
         
-        // 商品條件（選填）
+        // 品項條件（選填）
         if (EffectiveFilterProductId.HasValue && EffectiveFilterProductId.Value > 0)
         {
             var product = Products.FirstOrDefault(p => p.Id == EffectiveFilterProductId.Value);
             var productDisplay = product != null 
                 ? $"{product.Code} {product.Name}".Trim() 
                 : $"ID {EffectiveFilterProductId.Value}";
-            conditions.Add($"• 商品：{productDisplay}");
+            conditions.Add($"• 品項：{productDisplay}");
         }
         
         // 預設條件說明
-        conditions.Add("• 商品需有可退貨數量");
+        conditions.Add("• 品項需有可退貨數量");
         
         return string.Join("\n", conditions);
     }
@@ -855,7 +855,7 @@ else
     /// <summary>
     /// 格式化出貨明細顯示文字（用於下拉選單 - 兩行顯示）
     /// 第一行：出貨單號 + 可退數量（小字藍色）
-    /// 第二行：商品編號 商品名稱
+    /// 第二行：品項編號 品項名稱
     /// </summary>
     private string FormatDeliveryDetailDropdownText(SalesDeliveryDetail detail)
     {
@@ -869,7 +869,7 @@ else
             ? $"{product.Code} {product.Name}"
             : (!string.IsNullOrEmpty(product.Code) ? product.Code : product.Name ?? "");
         
-        // 兩行顯示：出貨單號在上（小字藍色），商品資訊在下
+        // 兩行顯示：出貨單號在上（小字藍色），品項資訊在下
         return $"<div style='line-height: 1.3;'>" +
                $"<small class='text-primary'>出貨: {deliveryCode} (可退: {availableQty:G29})</small><br/>" +
                $"<span>{productDisplay}</span></div>";
@@ -896,7 +896,7 @@ else
     // ===== 出貨明細選擇事件處理（SearchableSelect）=====
 
     /// <summary>
-    /// 出貨明細搜尋輸入事件（只顯示有銷貨的商品）
+    /// 出貨明細搜尋輸入事件（只顯示有銷貨的品項）
     /// </summary>
     private Task OnDeliveryDetailSearch(ReturnItem item, string? searchValue)
     {
@@ -908,7 +908,7 @@ else
         {
             var searchLower = searchValue.ToLower();
             
-            // 搜尋：出貨單號、商品編號、商品名稱
+            // 搜尋：出貨單號、品項編號、品項名稱
             var filteredDetails = availableDetails.Where(detail =>
             {
                 var deliveryCode = detail.SalesDelivery?.Code?.ToLower() ?? "";
@@ -1002,7 +1002,7 @@ else
         if (!CanDeleteItem(returnItem, out string reason))
         {
             await NotificationService.ShowWarningAsync(
-                "此商品已有沖款記錄，無法修改退貨數量", 
+                "此品項已有沖款記錄，無法修改退貨數量", 
                 "操作限制"
             );
             return;
@@ -1122,13 +1122,13 @@ else
                 _loadConditions.Add("出貨單：全部可退貨出貨單");
             }
             
-            // 條件3：商品篩選（如有選擇）
+            // 條件3：品項篩選（如有選擇）
             if (EffectiveFilterProductId.HasValue && EffectiveFilterProductId.Value > 0)
             {
                 var productName = !string.IsNullOrWhiteSpace(FilterProductName)
                     ? FilterProductName
-                    : $"商品 ID: {EffectiveFilterProductId.Value}";
-                _loadConditions.Add($"商品篩選：{productName}");
+                    : $"品項 ID: {EffectiveFilterProductId.Value}";
+                _loadConditions.Add($"品項篩選：{productName}");
             }
             
             // 計算符合條件的明細數量
@@ -1154,7 +1154,7 @@ else
     }
 
     /// <summary>
-    /// 執行載入所有可退貨商品 - 使用者確認後執行
+    /// 執行載入所有可退貨品項 - 使用者確認後執行
     /// </summary>
     private async Task ExecuteLoadAllReturnableItems()
     {
@@ -1184,7 +1184,7 @@ else
                 if (Items.Any(item => item.SelectedDeliveryDetail?.Id == deliveryDetail.Id))
                     continue;
                 
-                // 取得稅率（優先順序：銷貨出貨明細稅率 > 商品稅率 > 系統預設稅率）
+                // 取得稅率（優先順序：銷貨出貨明細稅率 > 品項稅率 > 系統預設稅率）
                 var taxRate = deliveryDetail.TaxRate ?? deliveryDetail.Product?.TaxRate ?? defaultTaxRate;
                 
                 var newItem = new ReturnItem
@@ -1205,17 +1205,17 @@ else
             }
             
             await NotifyDetailsChanged();
-            await NotificationService.ShowSuccessAsync($"已載入 {addedCount} 筆可退貨商品");
+            await NotificationService.ShowSuccessAsync($"已載入 {addedCount} 筆可退貨品項");
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入可退貨商品時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入可退貨品項時發生錯誤：{ex.Message}");
         }
     }
 
     /// <summary>
-    /// 載入所有可退貨商品的主要方法（公開方法，供父組件調用）
+    /// 載入所有可退貨品項的主要方法（公開方法，供父組件調用）
     /// </summary>
     public async Task LoadAllReturnableItems()
     {
@@ -1274,7 +1274,7 @@ else
 
     private SalesReturnDetail? ConvertToEntity(ReturnItem item)
     {
-        // 只要選擇了商品就轉換，即使 ReturnQuantity 為 0（用於計算）
+        // 只要選擇了品項就轉換，即使 ReturnQuantity 為 0（用於計算）
         if (item.SelectedDeliveryDetail == null || item.SelectedProduct == null)
         {
             return null;
@@ -1484,12 +1484,12 @@ else
                 
                 if (item.ReturnQuantity > item.AvailableQuantity)
                 {
-                    errors.Add($"商品 {item.SelectedProduct?.Code} 的退貨數量超過可退數量");
+                    errors.Add($"品項 {item.SelectedProduct?.Code} 的退貨數量超過可退數量");
                 }
                 
                 if (item.OriginalUnitPrice < 0)
                 {
-                    errors.Add($"商品 {item.SelectedProduct?.Code} 的原始單價不可為負數");
+                    errors.Add($"品項 {item.SelectedProduct?.Code} 的原始單價不可為負數");
                 }
             }
             
@@ -1540,7 +1540,7 @@ else
         public int AvailableQuantity => OriginalQuantity - AlreadyReturnedQuantity;
         
         /// <summary>
-        /// 取得顯示用的商品名稱（包含出貨單號）
+        /// 取得顯示用的品項名稱（包含出貨單號）
         /// </summary>
         public string DisplayName => 
             SelectedProduct != null 

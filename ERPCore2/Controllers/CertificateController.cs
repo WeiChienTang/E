@@ -1,4 +1,5 @@
 using ERPCore2.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
@@ -24,6 +25,7 @@ namespace ERPCore2.Controllers
         /// <summary>
         /// 一鍵產生自簽憑證（限管理員使用）
         /// </summary>
+        [Authorize]
         [HttpPost("/api/certificate/generate")]
         public async Task<IActionResult> GenerateCertificate()
         {

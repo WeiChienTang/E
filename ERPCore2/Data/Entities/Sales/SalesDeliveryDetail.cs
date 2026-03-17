@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 銷貨/出貨單明細實體 - 記錄實際出貨的商品明細
-    /// 職責: 記錄出貨商品、數量、價格,並關聯來源訂單明細
+    /// 銷貨/出貨單明細實體 - 記錄實際出貨的品項明細
+    /// 職責: 記錄出貨品項、數量、價格,並關聯來源訂單明細
     /// </summary>
     [Index(nameof(SalesDeliveryId), nameof(ProductId))]
     [Index(nameof(SalesOrderDetailId))]
@@ -61,8 +61,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(SalesOrderDetail))]
         public int? SalesOrderDetailId { get; set; }
 
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
+        [Required(ErrorMessage = "品項為必填")]
+        [Display(Name = "品項")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 

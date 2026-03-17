@@ -126,7 +126,7 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 if (!entity.ProductId.HasValue || entity.ProductId.Value <= 0)
-                    errors.Add("必須選擇商品");
+                    errors.Add("必須選擇品項");
 
                 // 新結構：驗證明細（如果有）
                 if (entity.InventoryStockDetails != null && entity.InventoryStockDetails.Any())
@@ -144,13 +144,13 @@ namespace ERPCore2.Services
                     }
                 }
 
-                // 檢查是否已存在相同的庫存記錄（一個商品只能有一筆主檔）
+                // 檢查是否已存在相同的庫存記錄（一個品項只能有一筆主檔）
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var existing = await context.InventoryStocks
                     .FirstOrDefaultAsync(i => i.ProductId == entity.ProductId && i.Id != entity.Id);
 
                 if (existing != null)
-                    errors.Add("該商品已有庫存主檔記錄");
+                    errors.Add("該品項已有庫存主檔記錄");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
@@ -612,9 +612,9 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得商品在指定倉庫和位置的庫存明細（含詳細資訊）
+        /// 取得品項在指定倉庫和位置的庫存明細（含詳細資訊）
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <param name="warehouseId">倉庫ID</param>
         /// <param name="locationId">庫位ID（可選）</param>
         /// <returns>庫存明細</returns>
@@ -652,9 +652,9 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得商品在指定倉庫內所有位置的總可用庫存
+        /// 取得品項在指定倉庫內所有位置的總可用庫存
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <param name="warehouseId">倉庫ID</param>
         /// <returns>總可用庫存數量</returns>
         public async Task<decimal> GetTotalAvailableStockByWarehouseAsync(int productId, int warehouseId)
@@ -663,7 +663,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 取得該商品的庫存主檔
+                // 取得該品項的庫存主檔
                 var stock = await context.InventoryStocks
                     .Include(i => i.InventoryStockDetails)
                     .Where(i => i.ProductId == productId)
@@ -870,7 +870,7 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    // 1. 取得或建立庫存主檔（依商品）
+                    // 1. 取得或建立庫存主檔（依品項）
                     var stock = await context.InventoryStocks
                         .Include(s => s.InventoryStockDetails)
                         .FirstOrDefaultAsync(i => i.ProductId == productId);
@@ -1101,7 +1101,7 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    // 1. 取得庫存主檔（包含商品資訊以便除錯）
+                    // 1. 取得庫存主檔（包含品項資訊以便除錯）
                     var stock = await context.InventoryStocks
                         .Include(s => s.InventoryStockDetails)
                         .Include(s => s.Product)
@@ -1112,10 +1112,10 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure("找不到庫存記錄");
                     }
                     
-                    // 取得商品資訊用於除錯顯示
+                    // 取得品項資訊用於除錯顯示
                     var productInfo = stock.Product != null 
                         ? $"{stock.Product.Code} {stock.Product.Name}" 
-                        : $"商品ID:{productId}";
+                        : $"品項ID:{productId}";
 
                     // 2. 取得指定倉庫/庫位的明細
                     // 🔧 修正：精確匹配庫位ID，包括 null 的情況
@@ -1424,7 +1424,7 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 取得該商品在指定倉庫的所有批號庫存，按批次日期排序 (FIFO)
+                // 取得該品項在指定倉庫的所有批號庫存，按批次日期排序 (FIFO)
                 var batchDetails = await GetBatchDetailsByProductAndWarehouseAsync(productId, warehouseId, locationId);
 
                 var totalAvailable = batchDetails.Sum(b => b.AvailableStock);
@@ -1500,7 +1500,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得商品在指定倉庫的批號明細清單（新版：使用 InventoryStockDetail）
+        /// 取得品項在指定倉庫的批號明細清單（新版：使用 InventoryStockDetail）
         /// </summary>
         private async Task<List<InventoryStockDetail>> GetBatchDetailsByProductAndWarehouseAsync(
             int productId, int warehouseId, int? locationId = null)
@@ -1529,7 +1529,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得商品在指定倉庫的批號庫存清單（舊版：保留向後兼容）
+        /// 取得品項在指定倉庫的批號庫存清單（舊版：保留向後兼容）
         /// </summary>
         [Obsolete("請使用 GetBatchDetailsByProductAndWarehouseAsync")]
         private Task<List<InventoryStock>> GetBatchStocksByProductAndWarehouseAsync(
@@ -1733,7 +1733,7 @@ namespace ERPCore2.Services
                     .Include(i => i.InventoryStockDetails)
                     .ToListAsync();
 
-                // 總商品數量
+                // 總品項數量
                 var totalProducts = allStocks.Select(i => i.ProductId).Distinct().Count();
 
                 // 總庫存價值（使用明細計算）
@@ -1747,7 +1747,7 @@ namespace ERPCore2.Services
                     .SelectMany(i => i.InventoryStockDetails ?? Enumerable.Empty<InventoryStockDetail>())
                     .Count(d => d.MinStockLevel.HasValue && d.CurrentStock <= d.MinStockLevel.Value);
 
-                // 零庫存商品數量
+                // 零庫存品項數量
                 var zeroStockCount = allStocks
                     .Where(i => i.TotalCurrentStock == 0)
                     .Count();
@@ -1775,7 +1775,7 @@ namespace ERPCore2.Services
                                                                d.LastTransactionDate.Value <= DateTime.Now.AddDays(-30)))
                     .Count();
 
-                // 預留庫存過高的商品數量（預留庫存佔總庫存比例 > 50%）
+                // 預留庫存過高的品項數量（預留庫存佔總庫存比例 > 50%）
                 var highReservedStockCount = allStocks
                     .Where(i => i.TotalCurrentStock > 0 &&
                                i.TotalReservedStock > 0 &&
@@ -2312,7 +2312,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得商品的可用倉庫位置清單（只顯示有庫存的倉庫和庫位）
+        /// 取得品項的可用倉庫位置清單（只顯示有庫存的倉庫和庫位）
         /// </summary>
         public async Task<List<InventoryStockDetail>> GetAvailableWarehouseLocationsByProductAsync(int productId)
         {

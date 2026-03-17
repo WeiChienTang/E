@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 沖銷商品明細服務實作
+    /// 沖銷品項明細服務實作
     /// </summary>
     public class SetoffProductDetailService : GenericManagementService<SetoffProductDetail>, ISetoffProductDetailService
     {
@@ -63,7 +63,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id
                 });
-                return ServiceResult<SetoffProductDetail>.Failure($"新增沖銷商品明細時發生錯誤: {ex.Message}");
+                return ServiceResult<SetoffProductDetail>.Failure($"新增沖銷品項明細時發生錯誤: {ex.Message}");
             }
         }
 
@@ -112,7 +112,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id
                 });
-                return ServiceResult<SetoffProductDetail>.Failure($"更新沖銷商品明細時發生錯誤: {ex.Message}");
+                return ServiceResult<SetoffProductDetail>.Failure($"更新沖銷品項明細時發生錯誤: {ex.Message}");
             }
         }
 
@@ -153,7 +153,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據沖款單ID取得商品明細
+        /// 根據沖款單ID取得品項明細
         /// </summary>
         public async Task<List<SetoffProductDetail>> GetBySetoffDocumentIdAsync(int setoffDocumentId)
         {
@@ -837,7 +837,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 批次建立沖銷商品明細（含驗證）
+        /// 批次建立沖銷品項明細（含驗證）
         /// </summary>
         public async Task<ServiceResult> CreateBatchWithValidationAsync(List<SetoffProductDetail> details)
         {
@@ -1183,7 +1183,7 @@ namespace ERPCore2.Services
                     errors.Add("沖款單據為必填");
 
                 if (entity.ProductId <= 0)
-                    errors.Add("商品為必填");
+                    errors.Add("品項為必填");
 
                 if (entity.SourceDetailId <= 0)
                     errors.Add("來源明細ID為必填");

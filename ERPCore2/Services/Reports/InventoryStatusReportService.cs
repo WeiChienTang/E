@@ -13,7 +13,7 @@ namespace ERPCore2.Services.Reports
 {
     /// <summary>
     /// 庫存現況表報表服務實作
-    /// 依倉庫分組顯示各商品庫存數量、預留、可用及金額
+    /// 依倉庫分組顯示各品項庫存數量、預留、可用及金額
     /// </summary>
     public class InventoryStatusReportService : IInventoryStatusReportService
     {
@@ -226,7 +226,7 @@ namespace ERPCore2.Services.Reports
                     .ToList();
             }
 
-            // 篩選商品分類
+            // 篩選品項分類
             if (criteria.CategoryIds.Any())
             {
                 allDetails = allDetails

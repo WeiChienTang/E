@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Helpers.EditModal;
@@ -17,7 +17,7 @@ namespace ERPCore2.Data.Entities
         DateFieldName = nameof(RecordDate),
         SequenceDigits = 4
     )]
-    public class WasteRecord : BaseEntity
+    public class ScaleRecord : BaseEntity
     {
         // ===== 基本資訊 =====
 
@@ -60,9 +60,9 @@ namespace ERPCore2.Data.Entities
         public Vehicle? Vehicle { get; set; }
 
         [Display(Name = "磅秤類型")]
-        [ForeignKey(nameof(WasteType))]
-        public int? WasteTypeId { get; set; }
-        public WasteType? WasteType { get; set; }
+        [ForeignKey(nameof(ScaleType))]
+        public int? ScaleTypeId { get; set; }
+        public ScaleType? ScaleType { get; set; }
 
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]

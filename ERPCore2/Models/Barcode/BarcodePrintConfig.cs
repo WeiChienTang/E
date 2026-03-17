@@ -16,12 +16,12 @@ namespace ERPCore2.Models.Barcode
         public BarcodeSize BarcodeSize { get; set; } = BarcodeSize.Medium;
         
         /// <summary>
-        /// 是否顯示商品名稱
+        /// 是否顯示品項名稱
         /// </summary>
         public bool ShowProductName { get; set; } = true;
         
         /// <summary>
-        /// 是否顯示商品編號
+        /// 是否顯示品項編號
         /// </summary>
         public bool ShowProductCode { get; set; } = true;
         

@@ -587,7 +587,7 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 if (reservation.ProductId <= 0)
-                    errors.Add("商品ID不能為空");
+                    errors.Add("品項ID不能為空");
 
                 if (reservation.WarehouseId <= 0)
                     errors.Add("倉庫ID不能為空");
@@ -609,10 +609,10 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 檢查商品是否存在
+                // 檢查品項是否存在
                 var productExists = await context.Products.AnyAsync(p => p.Id == reservation.ProductId);
                 if (!productExists)
-                    errors.Add("指定的商品不存在");
+                    errors.Add("指定的品項不存在");
 
                 // 檢查倉庫是否存在
                 var warehouseExists = await context.Warehouses.AnyAsync(w => w.Id == reservation.WarehouseId);

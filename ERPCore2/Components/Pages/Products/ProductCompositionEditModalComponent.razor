@@ -1,4 +1,4 @@
-﻿@* 可重用的商品合成編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的品項合成編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
 @inject IProductCompositionService ProductCompositionService
@@ -85,9 +85,9 @@ ShowPrintButton="true"
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
     
-    // 商品列表（分為主檔用和明細用）
-    private List<Product> availableParentProducts = new();    // 主檔商品選項（只顯示自製商品）
-    private List<Product> availableComponentProducts = new(); // 明細材料選項（顯示所有商品）
+    // 品項列表（分為主檔用和明細用）
+    private List<Product> availableParentProducts = new();    // 主檔品項選項（只顯示自製品項）
+    private List<Product> availableComponentProducts = new(); // 明細材料選項（顯示所有品項）
     private List<Unit> availableUnits = new();
     private List<Customer> availableCustomers = new();
     private List<Employee> availableEmployees = new();
@@ -126,7 +126,7 @@ ShowPrintButton="true"
         }
         catch (Exception)
         {
-            await NotificationService.ShowErrorAsync("初始化商品物料清單編輯組件時發生錯誤");
+            await NotificationService.ShowErrorAsync("初始化品項物料清單編輯組件時發生錯誤");
         }
     }
     
@@ -153,13 +153,13 @@ ShowPrintButton="true"
         {
             isDetailDataReady = false;
             
-            // 載入所有商品列表（只查詢一次資料庫）
+            // 載入所有品項列表（只查詢一次資料庫）
             var allProducts = await ProductService.GetAllAsync();
             
-            // 主檔商品選項：顯示所有商品
+            // 主檔品項選項：顯示所有品項
             availableParentProducts = allProducts.ToList();
 
-            // 明細材料選項：顯示所有商品（但會在 Table 中排除主檔商品）
+            // 明細材料選項：顯示所有品項（但會在 Table 中排除主檔品項）
             availableComponentProducts = allProducts.ToList();
             
             // 載入可選擇的單位列表
@@ -204,7 +204,7 @@ ShowPrintButton="true"
     }
     
     /// <summary>
-    /// 載入商品合成明細資料
+    /// 載入品項合成明細資料
     /// </summary>
     private async Task LoadCompositionDetailsAsync()
     {
@@ -221,7 +221,7 @@ ShowPrintButton="true"
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入商品合成明細時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入品項合成明細時發生錯誤：{ex.Message}");
             compositionDetails = new List<ProductCompositionDetail>();
         }
     }
@@ -232,7 +232,7 @@ ShowPrintButton="true"
         {
             if (!CompositionId.HasValue)
             {
-                // 新增模式：建立新的商品物料清單實體並生成編號
+                // 新增模式：建立新的品項物料清單實體並生成編號
                 var newComposition = new ProductComposition
                 {
                     Status = EntityStatus.Active
@@ -252,7 +252,7 @@ ShowPrintButton="true"
 
             if (composition == null)
             {
-                // 如果找不到商品物料清單，建立新的預設實體
+                // 如果找不到品項物料清單，建立新的預設實體
                 return new ProductComposition
                 {
                     Status = EntityStatus.Active
@@ -267,7 +267,7 @@ ShowPrintButton="true"
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入商品物料清單資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入品項物料清單資料時發生錯誤：{ex.Message}");
             
             // 設定安全的預設值，確保程式不會崩潰
             return new ProductComposition
@@ -335,7 +335,7 @@ ShowPrintButton="true"
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
                     IsRequired = true,
                     MinSearchLength = 0,
-                    HelpText = "此物料清單所屬的商品（建立後無法變更）"
+                    HelpText = "此物料清單所屬的品項（建立後無法變更）"
                 },
                 new()
                 {
@@ -345,7 +345,7 @@ ShowPrintButton="true"
                     Placeholder = L["Placeholder.PleaseSelect", L["Field.CompositionType"]],
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇組合該商品的清單類型"
+                    HelpText = "選擇組合該品項的清單類型"
                 },
                 new()
                 {
@@ -376,7 +376,7 @@ ShowPrintButton="true"
                     FieldType = FormFieldType.Text,
                     Placeholder = L["Placeholder.PleaseInput", L["Field.Spec"]],
                     IsRequired = false,
-                    HelpText = "商品物料清單的規格說明",
+                    HelpText = "品項物料清單的規格說明",
                     ContainerCssClass = "col-6"
                 },
 
@@ -424,9 +424,9 @@ ShowPrintButton="true"
         <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
                               IsDetailDataReady="@isDetailDataReady"
                               IsDataAvailable="@(availableComponentProducts != null && availableComponentProducts.Any() && availableUnits != null && availableUnits.Any())"
-                              DataUnavailableMessage="無可用的商品或單位資料，請聯繫系統管理員"
+                              DataUnavailableMessage="無可用的品項或單位資料，請聯繫系統管理員"
                               IsPreconditionMet="@(editModalComponent?.Entity?.ParentProductId > 0)"
-                              PreconditionMessage="請先選擇商品後再進行材料清單管理">
+                              PreconditionMessage="請先選擇品項後再進行材料清單管理">
             <ProductCompositionTable @ref="detailManager"
                                      @key="@(editModalComponent?.Entity?.Id ?? 0)"
                                      ExistingDetails="@compositionDetails"
@@ -461,7 +461,7 @@ ShowPrintButton="true"
         {
             if (composition == null)
             {
-                await NotificationService.ShowErrorAsync("沒有要儲存的商品物料清單資料");
+                await NotificationService.ShowErrorAsync("沒有要儲存的品項物料清單資料");
                 return false;
             }
             
@@ -508,7 +508,7 @@ ShowPrintButton="true"
                 }
                 else
                 {
-                    await NotificationService.ShowErrorAsync($"更新商品物料清單主檔失敗：{updateResult.ErrorMessage}");
+                    await NotificationService.ShowErrorAsync($"更新品項物料清單主檔失敗：{updateResult.ErrorMessage}");
                     return false;
                 }
             }
@@ -522,14 +522,14 @@ ShowPrintButton="true"
                 }
                 else
                 {
-                    await NotificationService.ShowErrorAsync($"新增商品物料清單主檔失敗：{createResult.ErrorMessage}");
+                    await NotificationService.ShowErrorAsync($"新增品項物料清單主檔失敗：{createResult.ErrorMessage}");
                     return false;
                 }
             }
             
             if (savedComposition == null)
             {
-                await NotificationService.ShowErrorAsync("儲存商品物料清單主檔失敗");
+                await NotificationService.ShowErrorAsync("儲存品項物料清單主檔失敗");
                 return false;
             }
             
@@ -597,7 +597,7 @@ ShowPrintButton="true"
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存商品物料清單時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"儲存品項物料清單時發生錯誤：{ex.Message}");
             return false;
         }
     }

@@ -94,7 +94,7 @@
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
     
-    // 商品明細相關
+    // 品項明細相關
     private List<SetoffProductDetail> setoffProductDetails = new();
     private bool IsReadOnly => editModalComponent?.Entity?.IsJournalized == true; // 已傳票化的沖款單為唯讀
     private SetoffProductTable? setoffProductDetailManager;
@@ -120,7 +120,7 @@
     
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時，重新載入對應的三個明細資料（商品明細、收款記錄、預收付款項）
+    /// 當上下筆切換時，重新載入對應的三個明細資料（品項明細、收款記錄、預收付款項）
     /// </summary>
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
@@ -130,12 +130,12 @@
     }
     
     /// <summary>
-    /// 載入沖款單的三個明細資料（商品明細、收款記錄、預收付款項）
+    /// 載入沖款單的三個明細資料（品項明細、收款記錄、預收付款項）
     /// 用於上下筆切換時重新載入明細
     /// </summary>
     private async Task LoadSetoffDocumentDetails(int setoffDocumentId)
     {
-        // 1. 載入商品明細
+        // 1. 載入品項明細
         setoffProductDetails = await SetoffProductDetailService.GetBySetoffDocumentIdAsync(setoffDocumentId);
         
         // 2. 載入收款記錄
@@ -234,7 +234,7 @@
             
             if (!hasProductDetails && !hasPaymentDetails && !hasPrepaymentDetails)
             {
-                await NotificationService.ShowErrorAsync("商品明細、收款記錄和預收付款項不可都為空白。");
+                await NotificationService.ShowErrorAsync("品項明細、收款記錄和預收付款項不可都為空白。");
                 return false;
             }
 
@@ -267,7 +267,7 @@
             
             // ===== 驗證 entity 欄位的邏輯關係 =====
             // 正確做法：只驗證 entity 的欄位值是否符合業務邏輯公式
-            // 不去核對各個子元件（商品明細、收款記錄、預收付款項）的明細數字
+            // 不去核對各個子元件（品項明細、收款記錄、預收付款項）的明細數字
             // 因為所有數字都已經由 Handler 方法計算並反映在 entity 的欄位上
             
             // 驗證：本期已收 + 預收沖款 = 本期沖銷 + 本期折讓 + 本期預收
@@ -377,7 +377,7 @@
             }
             
             
-            // ===== 驗證商品明細的本次沖款是否超過未結清餘額 =====
+            // ===== 驗證品項明細的本次沖款是否超過未結清餘額 =====
             // 使用 Service 層的統一驗證邏輯，避免邏輯重複
             if (hasProductSetoff && SetoffProductDetailService != null && setoffProductDetails != null)
             {
@@ -400,7 +400,7 @@
                         
                         if (!validation.IsSuccess)
                         {
-                            await NotificationService.ShowErrorAsync($"商品明細驗證失敗：{validation.ErrorMessage}");
+                            await NotificationService.ShowErrorAsync($"品項明細驗證失敗：{validation.ErrorMessage}");
                             return false;
                         }
                     }
@@ -430,7 +430,7 @@
                 return;
             }
 
-            // 儲存商品明細（過濾掉本次沖款和折讓都為 0 的項目）
+            // 儲存品項明細（過濾掉本次沖款和折讓都為 0 的項目）
             var validDetails = setoffProductDetails
                 .Where(d => d.CurrentSetoffAmount > 0 || d.CurrentAllowanceAmount > 0)
                 .ToList();
@@ -446,7 +446,7 @@
                 var detailResult = await SetoffProductDetailService.CreateBatchWithValidationAsync(validDetails);
                 if (!detailResult.IsSuccess)
                 {
-                    await NotificationService.ShowErrorAsync($"商品明細儲存失敗：{detailResult.ErrorMessage}");
+                    await NotificationService.ShowErrorAsync($"品項明細儲存失敗：{detailResult.ErrorMessage}");
                     return;
                 }
             }
@@ -626,7 +626,7 @@
         }
     }
     /// <summary>
-    /// 處理商品明細變更事件，更新沖款單的各項金額欄位
+    /// 處理品項明細變更事件，更新沖款單的各項金額欄位
     /// </summary>
     /// <remarks>
     /// 欄位說明：
@@ -819,7 +819,7 @@
                     }
                 }
                 
-                // 新增模式：清空商品明細、收款記錄和預收付款項
+                // 新增模式：清空品項明細、收款記錄和預收付款項
                 setoffProductDetails = new List<SetoffProductDetail>();
                 setoffPayments = new List<SetoffPayment>();
                 setoffPrepayments = new List<SetoffPrepayment>(); 
@@ -829,7 +829,7 @@
                 // 編輯模式
                 setoffDocument = await SetoffDocumentService.GetByIdAsync(SetoffDocumentId.Value);
                 
-                // 載入商品明細
+                // 載入品項明細
                 setoffProductDetails = await SetoffProductDetailService.GetBySetoffDocumentIdAsync(SetoffDocumentId.Value);
                 
                 // 載入收款記錄
@@ -1333,14 +1333,14 @@
     }
 
     /// <summary>
-    /// 創建沖銷商品明細管理器內容的 RenderFragment
+    /// 創建沖銷品項明細管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateSetoffProductDetailManagerContent() => __builder =>
     {
         <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
                               EntityLoadingVariant="DetailSectionWrapper.LoadingVariant.Silent"
                               IsPreconditionMet="@(editModalComponent?.Entity?.RelatedPartyId > 0)"
-                              PreconditionMessage="@($"請先選擇{(editModalComponent?.Entity?.SetoffType == SetoffType.AccountsReceivable ? "客戶" : "廠商")}以載入商品明細")">
+                              PreconditionMessage="@($"請先選擇{(editModalComponent?.Entity?.SetoffType == SetoffType.AccountsReceivable ? "客戶" : "廠商")}以載入品項明細")">
             <SetoffProductTable @ref="setoffProductDetailManager"
                                 SetoffDocumentId="@SetoffDocumentId"
                                 SetoffType="@editModalComponent!.Entity.SetoffType"

@@ -105,9 +105,9 @@ namespace ERPCore2.Data.Entities
         public Supplier? LinkedSupplier { get; set; }
 
         /// <summary>
-        /// 連結商品（存貨子科目使用）
+        /// 連結品項（存貨子科目使用）
         /// </summary>
-        [Display(Name = "連結商品")]
+        [Display(Name = "連結品項")]
         public int? LinkedProductId { get; set; }
         public Product? LinkedProduct { get; set; }
 

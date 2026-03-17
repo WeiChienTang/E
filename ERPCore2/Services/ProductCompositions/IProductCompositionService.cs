@@ -3,29 +3,29 @@ using ERPCore2.Data.Entities;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品合成服務介面 - 管理 BOM 主檔
+    /// 品項合成服務介面 - 管理 BOM 主檔
     /// </summary>
     public interface IProductCompositionService : IGenericManagementService<ProductComposition>
     {
         /// <summary>
-        /// 檢查商品合成編號是否已存在
+        /// 檢查品項合成編號是否已存在
         /// </summary>
-        /// <param name="code">商品合成編號</param>
-        /// <param name="excludeId">排除的商品合成ID</param>
+        /// <param name="code">品項合成編號</param>
+        /// <param name="excludeId">排除的品項合成ID</param>
         /// <returns>是否已存在</returns>
         Task<bool> IsProductCompositionCodeExistsAsync(string code, int? excludeId = null);
 
     /// <summary>
-    /// 取得指定商品的所有配方（用於相關單據查詢）
+    /// 取得指定品項的所有配方（用於相關單據查詢）
     /// </summary>
-    /// <param name="productId">商品 ID</param>
+    /// <param name="productId">品項 ID</param>
     /// <returns>配方列表</returns>
     Task<List<ProductComposition>> GetByProductIdAsync(int productId);
     
     /// <summary>
-    /// 取得指定商品的所有配方
+    /// 取得指定品項的所有配方
     /// </summary>
-    /// <param name="productId">商品 ID</param>
+    /// <param name="productId">品項 ID</param>
     /// <returns>配方列表</returns>
     Task<List<ProductComposition>> GetCompositionsByProductIdAsync(int productId);        /// <summary>
         /// 計算配方總成本

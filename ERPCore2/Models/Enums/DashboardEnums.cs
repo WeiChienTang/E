@@ -16,7 +16,7 @@ namespace ERPCore2.Models.Enums
         [Display(Name = "客戶關係管理")]
         CustomerRelation = 3,
 
-        [Display(Name = "商品管理")]
+        [Display(Name = "品項管理")]
         ProductManagement = 4,
 
         [Display(Name = "庫存管理")]

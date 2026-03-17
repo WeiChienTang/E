@@ -55,7 +55,7 @@ namespace ERPCore2.Services
         /// 直接調整庫存的單位成本（不產生數量異動記錄）
         /// 用於編輯進貨單時只修改價格而數量不變的情況
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <param name="warehouseId">倉庫ID</param>
         /// <param name="oldQuantity">原數量（用於成本重算）</param>
         /// <param name="oldUnitCost">原單價</param>
@@ -92,7 +92,7 @@ namespace ERPCore2.Services
         Task<List<InventoryStockDetail>> GetLowStockDetailsAsync();
         Task<List<InventoryStockDetail>> GetOverStockDetailsAsync();
         
-        // 取得商品的可用倉庫位置清單
+        // 取得品項的可用倉庫位置清單
         Task<List<InventoryStockDetail>> GetAvailableWarehouseLocationsByProductAsync(int productId);
 
         #region 伺服器端分頁

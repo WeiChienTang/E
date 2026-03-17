@@ -127,7 +127,7 @@ namespace ERPCore2.Services
                 if (entity.ReservedStock > entity.CurrentStock)
                     errors.Add("預留庫存不能超過現有庫存");
 
-                // 檢查唯一性（同一商品在同一倉庫的同一庫位只能有一筆）
+                // 檢查唯一性（同一品項在同一倉庫的同一庫位只能有一筆）
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var existingDetail = await context.InventoryStockDetails
                     .FirstOrDefaultAsync(d => 
@@ -137,7 +137,7 @@ namespace ERPCore2.Services
                         d.Id != entity.Id);
 
                 if (existingDetail != null)
-                    errors.Add("該商品在此倉庫位置已有庫存明細記錄");
+                    errors.Add("該品項在此倉庫位置已有庫存明細記錄");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

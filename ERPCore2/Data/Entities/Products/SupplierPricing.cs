@@ -13,8 +13,8 @@ namespace ERPCore2.Data.Entities
     public class SupplierPricing : BaseEntity
     {
         // 基本資訊
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
+        [Required(ErrorMessage = "品項為必填")]
+        [Display(Name = "品項")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 
@@ -33,8 +33,8 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "貨幣")]
         public string Currency { get; set; } = "TWD";
 
-        [MaxLength(50, ErrorMessage = "供應商商品編號不可超過50個字元")]
-        [Display(Name = "供應商商品編號")]
+        [MaxLength(50, ErrorMessage = "供應商品項編號不可超過50個字元")]
+        [Display(Name = "供應商品項編號")]
         public string? SupplierProductCode { get; set; }
 
         // 採購條件

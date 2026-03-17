@@ -6,7 +6,7 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 採購訂單明細實體 - 記錄採購訂單商品明細
+    /// 採購訂單明細實體 - 記錄採購訂單品項明細
     /// </summary>
     [Index(nameof(PurchaseOrderId), nameof(ProductId))]
     [Index(nameof(ProductId))]
@@ -17,8 +17,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(PurchaseOrder))]
         public int PurchaseOrderId { get; set; }
 
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
+        [Required(ErrorMessage = "品項為必填")]
+        [Display(Name = "品項")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 

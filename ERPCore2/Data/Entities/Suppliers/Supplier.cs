@@ -107,7 +107,7 @@ namespace ERPCore2.Data.Entities
         
         // Navigation Properties
         /// <summary>
-        /// 供應商品列表（商品-供應商綁定）
+        /// 供應品項列表（品項-供應商綁定）
         /// </summary>
         public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
 

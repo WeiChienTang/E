@@ -1,4 +1,4 @@
-﻿using ERPCore2.Data.Context;
+using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models.Enums;
@@ -10,23 +10,23 @@ namespace ERPCore2.Services
     /// <summary>
     /// 磅秤紀錄服務實作
     /// </summary>
-    public class WasteRecordService : GenericManagementService<WasteRecord>, IWasteRecordService
+    public class ScaleRecordService : GenericManagementService<ScaleRecord>, IScaleRecordService
     {
         private readonly IInventoryStockService? _inventoryStockService;
 
-        public WasteRecordService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public ScaleRecordService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
-        public WasteRecordService(
+        public ScaleRecordService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<WasteRecord>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ScaleRecord>> logger) : base(contextFactory, logger)
         {
         }
 
-        public WasteRecordService(
+        public ScaleRecordService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<WasteRecord>> logger,
+            ILogger<GenericManagementService<ScaleRecord>> logger,
             IInventoryStockService inventoryStockService) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
@@ -34,31 +34,31 @@ namespace ERPCore2.Services
 
         #region 覆寫基底方法
 
-        protected override IQueryable<WasteRecord> BuildGetAllQuery(AppDbContext context)
+        protected override IQueryable<ScaleRecord> BuildGetAllQuery(AppDbContext context)
         {
-            return context.WasteRecords
-                .Include(wr => wr.Vehicle)
-                .Include(wr => wr.WasteType)
-                .Include(wr => wr.Customer)
-                .Include(wr => wr.Warehouse)
-                .Include(wr => wr.WarehouseLocation)
-                .OrderByDescending(wr => wr.RecordDate)
-                .ThenByDescending(wr => wr.Id);
+            return context.ScaleRecords
+                .Include(sr => sr.Vehicle)
+                .Include(sr => sr.ScaleType)
+                .Include(sr => sr.Customer)
+                .Include(sr => sr.Warehouse)
+                .Include(sr => sr.WarehouseLocation)
+                .OrderByDescending(sr => sr.RecordDate)
+                .ThenByDescending(sr => sr.Id);
         }
 
-        public override async Task<WasteRecord?> GetByIdAsync(int id)
+        public override async Task<ScaleRecord?> GetByIdAsync(int id)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WasteRecords
-                    .Include(wr => wr.Vehicle)
-                    .Include(wr => wr.WasteType)
-                        .ThenInclude(wt => wt!.Product)
-                    .Include(wr => wr.Customer)
-                    .Include(wr => wr.Warehouse)
-                    .Include(wr => wr.WarehouseLocation)
-                    .FirstOrDefaultAsync(wr => wr.Id == id);
+                return await context.ScaleRecords
+                    .Include(sr => sr.Vehicle)
+                    .Include(sr => sr.ScaleType)
+                        .ThenInclude(st => st!.Product)
+                    .Include(sr => sr.Customer)
+                    .Include(sr => sr.Warehouse)
+                    .Include(sr => sr.WarehouseLocation)
+                    .FirstOrDefaultAsync(sr => sr.Id == id);
             }
             catch (Exception ex)
             {
@@ -67,7 +67,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<WasteRecord>> SearchAsync(string searchTerm)
+        public override async Task<List<ScaleRecord>> SearchAsync(string searchTerm)
         {
             try
             {
@@ -77,20 +77,20 @@ namespace ERPCore2.Services
                 var lowerSearchTerm = searchTerm.ToLower();
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WasteRecords
-                    .Include(wr => wr.Vehicle)
-                    .Include(wr => wr.WasteType)
-                    .Include(wr => wr.Customer)
-                    .Include(wr => wr.Warehouse)
-                    .Include(wr => wr.WarehouseLocation)
-                    .Where(wr => (wr.Code != null && wr.Code.ToLower().Contains(lowerSearchTerm)) ||
-                                 (wr.Vehicle != null && wr.Vehicle.LicensePlate.ToLower().Contains(lowerSearchTerm)) ||
-                                 (wr.WasteType != null && wr.WasteType.Name.ToLower().Contains(lowerSearchTerm)) ||
-                                 (wr.Warehouse != null && wr.Warehouse.Name.ToLower().Contains(lowerSearchTerm)) ||
-                                 (wr.Customer != null && wr.Customer.CompanyName != null &&
-                                  wr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)))
-                    .OrderByDescending(wr => wr.RecordDate)
-                    .ThenByDescending(wr => wr.Id)
+                return await context.ScaleRecords
+                    .Include(sr => sr.Vehicle)
+                    .Include(sr => sr.ScaleType)
+                    .Include(sr => sr.Customer)
+                    .Include(sr => sr.Warehouse)
+                    .Include(sr => sr.WarehouseLocation)
+                    .Where(sr => (sr.Code != null && sr.Code.ToLower().Contains(lowerSearchTerm)) ||
+                                 (sr.Vehicle != null && sr.Vehicle.LicensePlate.ToLower().Contains(lowerSearchTerm)) ||
+                                 (sr.ScaleType != null && sr.ScaleType.Name.ToLower().Contains(lowerSearchTerm)) ||
+                                 (sr.Warehouse != null && sr.Warehouse.Name.ToLower().Contains(lowerSearchTerm)) ||
+                                 (sr.Customer != null && sr.Customer.CompanyName != null &&
+                                  sr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)))
+                    .OrderByDescending(sr => sr.RecordDate)
+                    .ThenByDescending(sr => sr.Id)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -100,7 +100,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<ServiceResult> ValidateAsync(WasteRecord entity)
+        public override async Task<ServiceResult> ValidateAsync(ScaleRecord entity)
         {
             try
             {
@@ -109,7 +109,7 @@ namespace ERPCore2.Services
                 if (!entity.VehicleId.HasValue || entity.VehicleId.Value <= 0)
                     errors.Add("車輛為必填欄位");
 
-                if (!entity.WasteTypeId.HasValue || entity.WasteTypeId.Value <= 0)
+                if (!entity.ScaleTypeId.HasValue || entity.ScaleTypeId.Value <= 0)
                     errors.Add("磅秤類型為必填欄位");
 
                 if (!entity.WarehouseId.HasValue || entity.WarehouseId.Value <= 0)
@@ -159,7 +159,7 @@ namespace ERPCore2.Services
 
         #region 業務特定查詢方法
 
-        public async Task<bool> IsWasteRecordCodeExistsAsync(string code, int? excludeId = null)
+        public async Task<bool> IsScaleRecordCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
@@ -167,34 +167,34 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.WasteRecords.Where(wr => wr.Code == code);
+                var query = context.ScaleRecords.Where(sr => sr.Code == code);
 
                 if (excludeId.HasValue)
-                    query = query.Where(wr => wr.Id != excludeId.Value);
+                    query = query.Where(sr => sr.Id != excludeId.Value);
 
                 return await query.AnyAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsWasteRecordCodeExistsAsync), GetType(), _logger, new { Code = code, ExcludeId = excludeId });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsScaleRecordCodeExistsAsync), GetType(), _logger, new { Code = code, ExcludeId = excludeId });
                 return false;
             }
         }
 
-        public async Task<List<WasteRecord>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+        public async Task<List<ScaleRecord>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WasteRecords
-                    .Include(wr => wr.Vehicle)
-                    .Include(wr => wr.WasteType)
-                    .Include(wr => wr.Customer)
-                    .Include(wr => wr.Warehouse)
-                    .Include(wr => wr.WarehouseLocation)
-                    .Where(wr => wr.RecordDate >= startDate && wr.RecordDate <= endDate)
-                    .OrderByDescending(wr => wr.RecordDate)
-                    .ThenByDescending(wr => wr.Id)
+                return await context.ScaleRecords
+                    .Include(sr => sr.Vehicle)
+                    .Include(sr => sr.ScaleType)
+                    .Include(sr => sr.Customer)
+                    .Include(sr => sr.Warehouse)
+                    .Include(sr => sr.WarehouseLocation)
+                    .Where(sr => sr.RecordDate >= startDate && sr.RecordDate <= endDate)
+                    .OrderByDescending(sr => sr.RecordDate)
+                    .ThenByDescending(sr => sr.Id)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -204,20 +204,20 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<WasteRecord>> GetByVehicleAsync(int vehicleId)
+        public async Task<List<ScaleRecord>> GetByVehicleAsync(int vehicleId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WasteRecords
-                    .Include(wr => wr.Vehicle)
-                    .Include(wr => wr.WasteType)
-                    .Include(wr => wr.Customer)
-                    .Include(wr => wr.Warehouse)
-                    .Include(wr => wr.WarehouseLocation)
-                    .Where(wr => wr.VehicleId == vehicleId)
-                    .OrderByDescending(wr => wr.RecordDate)
-                    .ThenByDescending(wr => wr.Id)
+                return await context.ScaleRecords
+                    .Include(sr => sr.Vehicle)
+                    .Include(sr => sr.ScaleType)
+                    .Include(sr => sr.Customer)
+                    .Include(sr => sr.Warehouse)
+                    .Include(sr => sr.WarehouseLocation)
+                    .Where(sr => sr.VehicleId == vehicleId)
+                    .OrderByDescending(sr => sr.RecordDate)
+                    .ThenByDescending(sr => sr.Id)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -227,20 +227,20 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<WasteRecord>> GetByCustomerAsync(int customerId)
+        public async Task<List<ScaleRecord>> GetByCustomerAsync(int customerId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.WasteRecords
-                    .Include(wr => wr.Vehicle)
-                    .Include(wr => wr.WasteType)
-                    .Include(wr => wr.Customer)
-                    .Include(wr => wr.Warehouse)
-                    .Include(wr => wr.WarehouseLocation)
-                    .Where(wr => wr.CustomerId == customerId)
-                    .OrderByDescending(wr => wr.RecordDate)
-                    .ThenByDescending(wr => wr.Id)
+                return await context.ScaleRecords
+                    .Include(sr => sr.Vehicle)
+                    .Include(sr => sr.ScaleType)
+                    .Include(sr => sr.Customer)
+                    .Include(sr => sr.Warehouse)
+                    .Include(sr => sr.WarehouseLocation)
+                    .Where(sr => sr.CustomerId == customerId)
+                    .OrderByDescending(sr => sr.RecordDate)
+                    .ThenByDescending(sr => sr.Id)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -256,9 +256,9 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 新增磅秤紀錄後確認入庫
-        /// 若磅秤類型沒有關聯商品，則跳過入庫（不視為錯誤）
+        /// 若磅秤類型沒有關聯品項，則跳過入庫（不視為錯誤）
         /// </summary>
-        public async Task<ServiceResult> ConfirmWasteReceiptAsync(int id)
+        public async Task<ServiceResult> ConfirmScaleReceiptAsync(int id)
         {
             try
             {
@@ -267,40 +267,40 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                var wasteRecord = await context.WasteRecords
-                    .Include(wr => wr.WasteType)
-                    .FirstOrDefaultAsync(wr => wr.Id == id);
+                var scaleRecord = await context.ScaleRecords
+                    .Include(sr => sr.ScaleType)
+                    .FirstOrDefaultAsync(sr => sr.Id == id);
 
-                if (wasteRecord == null)
+                if (scaleRecord == null)
                     return ServiceResult.Failure("找不到指定的磅秤紀錄");
 
-                // 若磅秤類型無關聯商品，跳過入庫
-                if (wasteRecord.WasteType == null || !wasteRecord.WasteType.ProductId.HasValue)
+                // 若磅秤類型無關聯品項，跳過入庫
+                if (scaleRecord.ScaleType == null || !scaleRecord.ScaleType.ProductId.HasValue)
                     return ServiceResult.Success();
 
-                var quantity = wasteRecord.TotalWeight ?? 0;
+                var quantity = scaleRecord.TotalWeight ?? 0;
                 if (quantity <= 0)
                     return ServiceResult.Success();
 
                 return await _inventoryStockService.AddStockAsync(
-                    wasteRecord.WasteType.ProductId.Value,
-                    wasteRecord.WarehouseId!.Value,
+                    scaleRecord.ScaleType.ProductId.Value,
+                    scaleRecord.WarehouseId!.Value,
                     quantity,
                     InventoryTransactionTypeEnum.WasteReceiving,
-                    wasteRecord.Code ?? string.Empty,
+                    scaleRecord.Code ?? string.Empty,
                     null,
-                    wasteRecord.WarehouseLocationId,
-                    $"磅秤紀錄收料 - {wasteRecord.Code ?? string.Empty}",
+                    scaleRecord.WarehouseLocationId,
+                    $"磅秤紀錄收料 - {scaleRecord.Code ?? string.Empty}",
                     null,
-                    wasteRecord.RecordDate,
+                    scaleRecord.RecordDate,
                     null,
-                    sourceDocumentType: InventorySourceDocumentTypes.WasteRecord,
-                    sourceDocumentId: wasteRecord.Id
+                    sourceDocumentType: InventorySourceDocumentTypes.ScaleRecord,
+                    sourceDocumentId: scaleRecord.Id
                 );
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ConfirmWasteReceiptAsync), GetType(), _logger, new { Id = id });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ConfirmScaleReceiptAsync), GetType(), _logger, new { Id = id });
                 return ServiceResult.Failure("磅秤紀錄收料確認過程發生錯誤");
             }
         }
@@ -309,19 +309,19 @@ namespace ERPCore2.Services
         /// 編輯磅秤紀錄後先逆轉舊庫存，再以當前數值重新入庫（Void and Repost）
         /// 此方式確保倉庫或庫位變更時，舊倉庫庫存正確移除，新倉庫庫存正確新增
         /// </summary>
-        public async Task<ServiceResult> ReverseAndRepostWasteInventoryAsync(int id)
+        public async Task<ServiceResult> ReverseAndRepostScaleInventoryAsync(int id)
         {
             try
             {
-                var reverseResult = await ReverseWasteInventoryAsync(id);
+                var reverseResult = await ReverseScaleInventoryAsync(id);
                 if (!reverseResult.IsSuccess)
                     return reverseResult;
 
-                return await ConfirmWasteReceiptAsync(id);
+                return await ConfirmScaleReceiptAsync(id);
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReverseAndRepostWasteInventoryAsync), GetType(), _logger, new { Id = id });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReverseAndRepostScaleInventoryAsync), GetType(), _logger, new { Id = id });
                 return ServiceResult.Failure("磅秤紀錄庫存更新過程發生錯誤");
             }
         }
@@ -330,28 +330,28 @@ namespace ERPCore2.Services
         /// 逆轉此磅秤紀錄的所有庫存影響
         /// 查詢歷史異動明細的 signed 淨值，對有淨正值的倉庫/庫位執行 ReduceStock
         /// </summary>
-        private async Task<ServiceResult> ReverseWasteInventoryAsync(int id)
+        private async Task<ServiceResult> ReverseScaleInventoryAsync(int id)
         {
             if (_inventoryStockService == null)
                 return ServiceResult.Failure("庫存服務未初始化");
 
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            var wasteRecord = await context.WasteRecords
-                .Include(wr => wr.WasteType)
-                .FirstOrDefaultAsync(wr => wr.Id == id);
+            var scaleRecord = await context.ScaleRecords
+                .Include(sr => sr.ScaleType)
+                .FirstOrDefaultAsync(sr => sr.Id == id);
 
-            if (wasteRecord == null)
+            if (scaleRecord == null)
                 return ServiceResult.Failure("找不到指定的磅秤紀錄");
 
-            if (wasteRecord.WasteType == null || !wasteRecord.WasteType.ProductId.HasValue)
+            if (scaleRecord.ScaleType == null || !scaleRecord.ScaleType.ProductId.HasValue)
                 return ServiceResult.Success();
 
             // 查詢此磅秤紀錄的所有庫存異動明細（含 Delete 操作，用於計算正確淨值）
             var allDetails = await context.InventoryTransactionDetails
                 .Include(d => d.InventoryTransaction)
                 .Include(d => d.InventoryStockDetail)
-                .Where(d => d.InventoryTransaction.SourceDocumentType == InventorySourceDocumentTypes.WasteRecord &&
+                .Where(d => d.InventoryTransaction.SourceDocumentType == InventorySourceDocumentTypes.ScaleRecord &&
                             d.InventoryTransaction.SourceDocumentId == id)
                 .ToListAsync();
 
@@ -360,9 +360,6 @@ namespace ERPCore2.Services
 
             // 以 signed quantity 加總計算每個（倉庫, 庫位）的淨庫存貢獻
             // AddStock 存正數、ReduceStock 存負數，加總後 > 0 表示目前有淨入庫需要逆轉
-            // 使用 InventoryStockDetail.WarehouseId 而非 InventoryTransaction.WarehouseId，
-            // 因為 GetOrCreateTransactionAsync 會重用同一 Transaction（含原始倉庫），
-            // 但 InventoryStockDetail 才記錄實際入庫倉庫
             var groups = allDetails
                 .GroupBy(d => new
                 {
@@ -387,10 +384,10 @@ namespace ERPCore2.Services
                     group.WarehouseId,
                     group.NetQuantity,
                     InventoryTransactionTypeEnum.WasteReceiving,
-                    wasteRecord.Code ?? string.Empty,
+                    scaleRecord.Code ?? string.Empty,
                     group.LocationId,
-                    $"磅秤紀錄逆轉 - {wasteRecord.Code ?? string.Empty}",
-                    sourceDocumentType: InventorySourceDocumentTypes.WasteRecord,
+                    $"磅秤紀錄逆轉 - {scaleRecord.Code ?? string.Empty}",
+                    sourceDocumentType: InventorySourceDocumentTypes.ScaleRecord,
                     sourceDocumentId: id,
                     operationType: InventoryOperationTypeEnum.Delete
                 );
@@ -415,7 +412,7 @@ namespace ERPCore2.Services
             {
                 if (_inventoryStockService != null)
                 {
-                    var reverseResult = await ReverseWasteInventoryAsync(id);
+                    var reverseResult = await ReverseScaleInventoryAsync(id);
                     if (!reverseResult.IsSuccess)
                         return ServiceResult.Failure($"刪除失敗，無法逆轉庫存：{reverseResult.ErrorMessage}");
                 }
@@ -433,26 +430,26 @@ namespace ERPCore2.Services
 
         #region 伺服器端分頁
 
-        public async Task<(List<WasteRecord> Items, int TotalCount)> GetPagedWithFiltersAsync(
-            Func<IQueryable<WasteRecord>, IQueryable<WasteRecord>>? filterFunc,
+        public async Task<(List<ScaleRecord> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ScaleRecord>, IQueryable<ScaleRecord>>? filterFunc,
             int pageNumber,
             int pageSize)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                IQueryable<WasteRecord> query = context.WasteRecords.Include(wr => wr.WasteType);
+                IQueryable<ScaleRecord> query = context.ScaleRecords.Include(sr => sr.ScaleType);
                 if (filterFunc != null) query = filterFunc(query);
                 var totalCount = await query.CountAsync();
                 var items = await query
-                    .OrderByDescending(wr => wr.RecordDate).ThenByDescending(wr => wr.Id)
+                    .OrderByDescending(sr => sr.RecordDate).ThenByDescending(sr => sr.Id)
                     .Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
                 return (items, totalCount);
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
-                return (new List<WasteRecord>(), 0);
+                return (new List<ScaleRecord>(), 0);
             }
         }
 

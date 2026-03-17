@@ -147,7 +147,7 @@ Components/
 │   ├── TextSearchFilterComponent.razor    # 文字搜尋
 │   └── FilterTemplates/
 │       ├── DynamicFilterTemplate.razor              # 通用動態篩選模板（所有報表共用）
-│       └── ProductBarcodeBatchFilterTemplate.razor  # 商品條碼專用模板（含列印數量設定）
+│       └── ProductBarcodeBatchFilterTemplate.razor  # 品項條碼專用模板（含列印數量設定）
 └── Pages/
     ├── Reports/
     │   └── GenericReportIndexPage.razor    # 報表中心
@@ -222,7 +222,7 @@ Components/
 | 廠商（AP） | 3 | AP002、AP004、AP005 | ✅ 完成 |
 | 銷售（SO） | 4 | SO001、SO002、SO004、SO005 | ✅ 完成 |
 | 採購（PO） | 3 | PO001–PO003 | ✅ 完成 |
-| 商品（PD） | 5 | PD001–PD005 | ✅ 完成 |
+| 品項（PD） | 5 | PD001–PD005 | ✅ 完成 |
 | 庫存（IV） | 2 | IV002、IV003 | ✅ 完成 |
 | 車輛（VH） | 2 | VH001、VH002 | ✅ 完成 |
 | 財務（FN） | 3 | FN003、FN004、FN005 | ✅ 完成 |
@@ -350,7 +350,7 @@ RegisterConfig(new ReportFilterConfig
    - **PDF 匯出**：仍以 150 DPI 重新渲染後合併為 PDF
 5. **Excel 匯出跨平台**：`ExcelExportService` 使用 ClosedXML，支援所有平台
 6. **單一報表 ID 原則**：每個單據類型只有一個報表 ID，入口點決定流程
-7. **DynamicFilterTemplate 共用**：絕大多數報表共用單一 `DynamicFilterTemplate.razor`，篩選 UI 由 Criteria 屬性上的 `Filter*Attribute` 驅動，新增篩選欄位只需修改 Criteria 類別。唯一例外：PD003（商品條碼）使用 `ProductBarcodeBatchFilterTemplate`，因需要逐品項設定列印數量
+7. **DynamicFilterTemplate 共用**：絕大多數報表共用單一 `DynamicFilterTemplate.razor`，篩選 UI 由 Criteria 屬性上的 `Filter*Attribute` 驅動，新增篩選欄位只需修改 Criteria 類別。唯一例外：PD003（品項條碼）使用 `ProductBarcodeBatchFilterTemplate`，因需要逐品項設定列印數量
 
 ---
 

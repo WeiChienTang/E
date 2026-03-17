@@ -14,7 +14,7 @@ public class SalesChartService : ISalesChartService
         _factory = factory;
     }
 
-    /// <summary>依商品統計銷售金額排行 Top N（SalesDeliveryDetails，含稅計算）</summary>
+    /// <summary>依品項統計銷售金額排行 Top N（SalesDeliveryDetails，含稅計算）</summary>
     public async Task<List<ChartDataItem>> GetTopProductsBySalesAmountAsync(int top = 10)
     {
         using var context = await _factory.CreateDbContextAsync();
@@ -27,7 +27,7 @@ public class SalesChartService : ISalesChartService
             join p in context.Products on d.ProductId equals p.Id
             select new
             {
-                ProductName = p.Name ?? "未知商品",
+                ProductName = p.Name ?? "未知品項",
                 SubtotalAmount = d.SubtotalAmount,
                 TaxRate = d.TaxRate ?? 0m
             }

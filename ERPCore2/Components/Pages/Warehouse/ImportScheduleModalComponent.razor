@@ -124,7 +124,7 @@
     private List<Warehouse> warehouses = new();
     private List<WarehouseLocation> warehouseLocations = new();
     
-    // 各商品的庫存位置資料（Key: ProductId, Value: 該商品的庫存明細列表）
+    // 各品項的庫存位置資料（Key: ProductId, Value: 該品項的庫存明細列表）
     private Dictionary<int, List<InventoryStockDetail>> productStockDetails = new();
     
     // 追蹤上次的 IsVisible 狀態
@@ -167,10 +167,10 @@
                 .Where(x => !x.IsClosed)
                 .ToList();
             
-            // 取得所有需要的商品 ID
+            // 取得所有需要的品項 ID
             var productIds = allItems.Select(x => x.ProductId).Distinct().ToList();
             
-            // 查詢各商品的庫存位置資料
+            // 查詢各品項的庫存位置資料
             productStockDetails.Clear();
             foreach (var productId in productIds)
             {
@@ -201,7 +201,7 @@
                     // 設定預設本次完成數量為待完成數量
                     dto.ImportQuantity = dto.PendingQuantity;
                     
-                    // 設定預設值：選擇該商品庫存最多的位置
+                    // 設定預設值：選擇該品項庫存最多的位置
                     SetDefaultLocationKey(dto);
                     
                     return dto;
@@ -221,7 +221,7 @@
     }
     
     /// <summary>
-    /// 設定項目的預設倉庫位置 - 選擇該商品庫存最多的位置
+    /// 設定項目的預設倉庫位置 - 選擇該品項庫存最多的位置
     /// </summary>
     private void SetDefaultLocationKey(ImportScheduleItemDto dto)
     {
@@ -238,7 +238,7 @@
             return;
         }
         
-        // 找出該商品庫存最多的位置
+        // 找出該品項庫存最多的位置
         var maxStockDetail = stockDetails.OrderByDescending(d => d.CurrentStock).First();
         dto.WarehouseId = maxStockDetail.WarehouseId;
         dto.WarehouseLocationId = maxStockDetail.WarehouseLocationId;
@@ -415,7 +415,7 @@
             @{
                 var (stockOptions, otherOptions) = GetGroupedLocationOptions(item);
                 
-                // 此商品現有庫存位置（有數量的）
+                // 此品項現有庫存位置（有數量的）
                 if (stockOptions.Any())
                 {
                     <optgroup label="@($"📦 {L["Warehouse.StockLocations"]}")">
@@ -454,7 +454,7 @@
         var stockOptions = new List<LocationOption>();
         var otherOptions = new List<LocationOption>();
         
-        // 取得該商品的庫存明細
+        // 取得該品項的庫存明細
         var hasStockDetails = productStockDetails.TryGetValue(item.ProductId, out var stockDetails);
         var stockLookup = stockDetails?.ToDictionary(
             d => $"{d.WarehouseId}|{d.WarehouseLocationId?.ToString() ?? ""}",

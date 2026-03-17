@@ -268,7 +268,7 @@ namespace ERPCore2.Helpers.InteractiveTableComponentHelper
             if (checkReturn && HasReturnRecord(entity, returnedQuantities))
             {
                 var returnedQty = GetReturnedQuantity(entity, returnedQuantities);
-                reason = $"此商品已有退貨記錄（已退貨 {returnedQty} 個），無法刪除";
+                reason = $"此品項已有退貨記錄（已退貨 {returnedQty} 個），無法刪除";
                 return false;
             }
             
@@ -284,15 +284,15 @@ namespace ERPCore2.Helpers.InteractiveTableComponentHelper
                 
                 if (hasPaid && hasReceived)
                 {
-                    reason = $"此商品已有沖款記錄（金額 {amount:N0} 元），無法刪除";
+                    reason = $"此品項已有沖款記錄（金額 {amount:N0} 元），無法刪除";
                 }
                 else if (hasPaid)
                 {
-                    reason = $"此商品已有沖款記錄（已付款 {amount:N0} 元），無法刪除";
+                    reason = $"此品項已有沖款記錄（已付款 {amount:N0} 元），無法刪除";
                 }
                 else if (hasReceived)
                 {
-                    reason = $"此商品已有沖款記錄（已收款 {amount:N0} 元），無法刪除";
+                    reason = $"此品項已有沖款記錄（已收款 {amount:N0} 元），無法刪除";
                 }
                 
                 return false;
@@ -302,7 +302,7 @@ namespace ERPCore2.Helpers.InteractiveTableComponentHelper
             if (checkConversion && HasConversionRecord(entity))
             {
                 var convertedQty = GetConvertedQuantity(entity);
-                reason = $"此商品已轉單（已轉 {convertedQty} 個），無法刪除";
+                reason = $"此品項已轉單（已轉 {convertedQty} 個），無法刪除";
                 return false;
             }
             
@@ -310,7 +310,7 @@ namespace ERPCore2.Helpers.InteractiveTableComponentHelper
             if (checkReceiving && HasReceivingRecord(entity))
             {
                 var receivedQty = GetReceivedQuantity(entity);
-                reason = $"此商品已有進貨記錄（已入庫 {receivedQty} 個），無法刪除";
+                reason = $"此品項已有進貨記錄（已入庫 {receivedQty} 個），無法刪除";
                 return false;
             }
             
@@ -318,7 +318,7 @@ namespace ERPCore2.Helpers.InteractiveTableComponentHelper
             if (checkDelivery && HasDeliveryRecord(entity))
             {
                 var deliveredQty = GetDeliveredQuantity(entity);
-                reason = $"此商品已有出貨記錄（已出貨 {deliveredQty} 個），無法刪除";
+                reason = $"此品項已有出貨記錄（已出貨 {deliveredQty} 個），無法刪除";
                 return false;
             }
             
@@ -326,7 +326,7 @@ namespace ERPCore2.Helpers.InteractiveTableComponentHelper
             if (checkSchedule && HasScheduleRecord(entity))
             {
                 var scheduledQty = GetScheduledQuantity(entity);
-                reason = $"此商品已有排程記錄（已排程 {scheduledQty} 個），無法刪除";
+                reason = $"此品項已有排程記錄（已排程 {scheduledQty} 個），無法刪除";
                 return false;
             }
             

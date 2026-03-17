@@ -1,4 +1,4 @@
-﻿@* 可重用的商品編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的品項編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Helpers
 @using ERPCore2.Models
 @using ERPCore2.Services.Reports.Interfaces
@@ -42,7 +42,7 @@
                           ModalManagers="@modalManagers?.AsDictionary()"
                           DataLoader="@LoadProductData"
                           ShowDraftButton="true"
-                          DraftSuccessMessage="商品草稿已儲存，請記得補齊必填資料"
+                          DraftSuccessMessage="品項草稿已儲存，請記得補齊必填資料"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(ProductId.HasValue ? L["Message.UpdateSuccess", L["Entity.Product"]].ToString() : L["Message.CreateSuccess", L["Entity.Product"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Product"]]"
@@ -56,11 +56,11 @@
                           ReportService="@ProductDetailReportService"
                           ReportId="@ReportIds.ProductDetail"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Product"]]"
-                          GetReportDocumentName="@(e => $"商品-{e.Code}")"
+                          GetReportDocumentName="@(e => $"品項-{e.Code}")"
                           CustomActionButtons="@CustomActionButtons"
                           ComponentName="ProductEditModalComponent" />
 
-@* 商品類型編輯 Modal *@
+@* 品項類型編輯 Modal *@
 <ProductCategoryEditModalComponent @ref="productCategoryEditModal"
                                   IsVisible="@productCategoryModalManager.IsModalVisible"
                                   IsVisibleChanged="@productCategoryModalManager.HandleModalVisibilityChangedAsync"
@@ -87,7 +87,7 @@
                        OnSizeSaved="@sizeModalManager.OnSavedAsync"
                        OnCancel="@sizeModalManager.HandleModalCancelAsync" />
 
-@* 商品物料清單編輯 Modal *@
+@* 品項物料清單編輯 Modal *@
 <ProductCompositionEditModalComponent @ref="productCompositionEditModal"
                                      IsVisible="@productCompositionModalManager.IsModalVisible"
                                      IsVisibleChanged="@productCompositionModalManager.HandleModalVisibilityChangedAsync"
@@ -190,7 +190,7 @@
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
-                .AddManager<ProductCategory>(nameof(Product.ProductCategoryId), "商品類別")
+                .AddManager<ProductCategory>(nameof(Product.ProductCategoryId), "品項類別")
                 .AddManager<Unit>(nameof(Product.UnitId), "單位")
                 .AddManager<Size>(nameof(Product.SizeId), "尺寸")
                 .Build();
@@ -198,11 +198,11 @@
             unitModalManager = modalManagers.Get<Unit>(nameof(Product.UnitId));
             sizeModalManager = modalManagers.Get<Size>(nameof(Product.SizeId));
             
-            // 初始化商品物料清單 Modal 管理器（獨立初始化）
+            // 初始化品項物料清單 Modal 管理器（獨立初始化）
             productCompositionModalManager = new RelatedEntityModalManager<ProductComposition>
             {
                 NotificationService = NotificationService,
-                EntityDisplayName = "商品物料清單",
+                EntityDisplayName = "品項物料清單",
                 StateHasChangedCallback = StateHasChanged
             };
             
@@ -210,7 +210,7 @@
         }
         catch (Exception)
         {
-            await NotificationService.ShowErrorAsync("初始化商品編輯組件時發生錯誤");
+            await NotificationService.ShowErrorAsync("初始化品項編輯組件時發生錯誤");
         }
     }
     
@@ -307,7 +307,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入商品資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入品項資料時發生錯誤：{ex.Message}");
             return null;
         }
     }
@@ -316,7 +316,7 @@
     {
         try
         {
-            // 載入商品類型
+            // 載入品項類型
             var productCategories = await ProductService.GetProductCategoriesAsync();
             availableProductCategories = productCategories;
             productCategoryOptions = productCategories.Select(pc => new SelectOption
@@ -378,7 +378,7 @@
                 Placeholder = L["Placeholder.PleaseInput", L["Field.ProductCode"]],
                 IsRequired = true,
                 MaxLength = 50,
-                HelpText = "商品的唯一識別碼"
+                HelpText = "品項的唯一識別碼"
             },
             new FormFieldDefinition()
             {
@@ -388,7 +388,7 @@
                 Placeholder = L["Placeholder.PleaseInput", L["Field.Barcode"]],
                 IsRequired = true,
                 MaxLength = 50,
-                HelpText = "商品的條碼編號",
+                HelpText = "品項的條碼編號",
                 ActionButtons = await GetBarcodeActionButtonsAsync()
             },
             new()
@@ -399,7 +399,7 @@
                 Placeholder = L["Placeholder.PleaseInput", L["Field.ProductName"]],
                 IsRequired = true,
                 MaxLength = 100,
-                HelpText = "商品的完整名稱"
+                HelpText = "品項的完整名稱"
             },
 
             new()
@@ -432,7 +432,7 @@
                 Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.PurchaseUnit"]],
                 IsRequired = true,
                 MinSearchLength = 0,
-                HelpText = "商品的採購計量單位（例如：包、箱、公斤）",
+                HelpText = "品項的採購計量單位（例如：包、箱、公斤）",
                 ActionButtons = await GetUnitActionButtonsAsync()
             },
             new()
@@ -443,7 +443,7 @@
                 Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.ProductionUnit"]],
                 IsRequired = false,
                 MinSearchLength = 0,
-                HelpText = "生產製造或庫存使用的單位（若與商品單位相同則無需填寫，系統預設為商品單位）",
+                HelpText = "生產製造或庫存使用的單位（若與品項單位相同則無需填寫，系統預設為品項單位）",
                 ActionButtons = await GetProductionUnitActionButtonsAsync()
             },
             new FormFieldDefinition()
@@ -466,7 +466,7 @@
                 FieldType = FormFieldType.Number,
                 Placeholder = L["Placeholder.PleaseInput", L["Field.TaxRate"]],
                 IsRequired = true,
-                HelpText = "商品的稅率，介於0到100之間，預設值來自系統參數",
+                HelpText = "品項的稅率，介於0到100之間，預設值來自系統參數",
                 Min = 0,
                 Max = 100
             },
@@ -478,7 +478,7 @@
                 FieldType = FormFieldType.Number,
                 Placeholder = "請輸入成本",
                 IsRequired = false,
-                HelpText = "商品的成本（財務/成本核算用）",
+                HelpText = "品項的成本（財務/成本核算用）",
                 Min = 0
             },*/
             new()
@@ -489,7 +489,7 @@
                 Placeholder = L["Placeholder.PleaseInput", L["Field.Specification"]],
                 IsRequired = false,
                 MaxLength = 100,
-                HelpText = "商品的規格說明資訊"
+                HelpText = "品項的規格說明資訊"
             },
 
             FormFieldConfigurationHelper.CreateRemarksField<Product>()
@@ -534,7 +534,7 @@
     // ===== ActionButton 產生方法 =====
     
     /// <summary>
-    /// 產生商品類型操作按鈕 - 使用統一 Helper
+    /// 產生品項類型操作按鈕 - 使用統一 Helper
     /// </summary>
     private async Task<List<FieldActionButton>> GetProductCategoryActionButtonsAsync()
     {
@@ -582,7 +582,7 @@
     }
 
     /// <summary>
-    /// 產生條碼編號操作按鈕 - 同商品編號
+    /// 產生條碼編號操作按鈕 - 同品項編號
     /// </summary>
     private Task<List<FieldActionButton>> GetBarcodeActionButtonsAsync()
     {
@@ -593,7 +593,7 @@
                 Text = "複製",
                 Variant = "OutlinePrimary",
                 Size = "Small",
-                Title = "將商品編號複製到條碼編號",
+                Title = "將品項編號複製到條碼編號",
                 OnClick = async () => await CopyCodeToBarcode(),
                 IsDisabled = false
             }
@@ -603,7 +603,7 @@
     }
 
     /// <summary>
-    /// 將商品編號複製到條碼編號欄位
+    /// 將品項編號複製到條碼編號欄位
     /// </summary>
     private async Task CopyCodeToBarcode()
     {
@@ -611,31 +611,31 @@
         {
             if (editModalComponent?.Entity != null)
             {
-                // 複製商品編號到條碼編號
+                // 複製品項編號到條碼編號
                 editModalComponent.Entity.Barcode = editModalComponent.Entity.Code;
                 
                 // 通知 UI 更新
                 StateHasChanged();
                 
                 // 顯示成功訊息
-                await NotificationService.ShowSuccessAsync("已將商品編號複製到條碼編號");
+                await NotificationService.ShowSuccessAsync("已將品項編號複製到條碼編號");
             }
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"複製商品編號時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"複製品項編號時發生錯誤：{ex.Message}");
         }
     }
 
     // ===== Modal 事件包裝器方法 =====
     
     /// <summary>
-    /// 包裝商品物料清單儲存事件
+    /// 包裝品項物料清單儲存事件
     /// </summary>
     private async Task OnProductCompositionSavedWrapper(ProductComposition savedComposition)
     {
         // 物料清單儲存後，不需要自動選擇，只需重新載入清單
-        await NotificationService.ShowSuccessAsync("商品物料清單已儲存");
+        await NotificationService.ShowSuccessAsync("品項物料清單已儲存");
         
         // 📝 改進：無論清單是否開啟，都更新快取資料
         // 這樣下次開啟清單時會看到最新資料
@@ -666,7 +666,7 @@
                 await RefreshFormFieldsAfterEntityLoadAsync();
             }
             
-            // 使用統一 Helper 處理商品類型欄位變更
+            // 使用統一 Helper 處理品項類型欄位變更
             if (fieldChange.PropertyName == nameof(Product.ProductCategoryId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
@@ -729,7 +729,7 @@
                 <GenericButtonComponent
                     Text="查看清單"
                     OnClick="@ShowProductCompositions"
-                    Title="查看商品物料清單清單"
+                    Title="查看品項物料清單清單"
                     Variant="ButtonVariant.Blue"
                     Size="ButtonSize.Small">
                 </GenericButtonComponent>
@@ -738,7 +738,7 @@
                 <GenericButtonComponent
                     Text="新增清單"
                     OnClick="@HandleAddNewCompositionDirect"
-                    Title="直接新增商品物料清單"
+                    Title="直接新增品項物料清單"
                     Variant="ButtonVariant.DarkBlue"
                     Size="ButtonSize.Small">
                 </GenericButtonComponent>
@@ -747,20 +747,20 @@
     };
     
     /// <summary>
-    /// 顯示商品物料清單清單
+    /// 顯示品項物料清單清單
     /// </summary>
     private async Task ShowProductCompositions()
     {
-        //  關鍵檢查：商品必須先儲存
+        //  關鍵檢查：品項必須先儲存
         if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
         {
             await NotificationService.ShowWarningAsync(
-                "請先儲存商品後再建立物料清單", 
+                "請先儲存品項後再建立物料清單", 
                 "提示");
             return;
         }
         
-        selectedProductName = editModalComponent.Entity.Name ?? "未知商品";
+        selectedProductName = editModalComponent.Entity.Name ?? "未知品項";
         
         showRelatedDocumentsModal = true;
         isLoadingRelatedDocuments = true;
@@ -783,7 +783,7 @@
     }
     
     /// <summary>
-    /// 載入商品物料清單清單
+    /// 載入品項物料清單清單
     /// </summary>
     private async Task LoadProductCompositions()
     {
@@ -817,7 +817,7 @@
         if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
         {
             await NotificationService.ShowWarningAsync(
-                "請先儲存商品後再建立物料清單", 
+                "請先儲存品項後再建立物料清單", 
                 "提示");
             return;
         }
@@ -833,17 +833,17 @@
     }
     
     /// <summary>
-    /// 直接開啟新增物料清單 Modal（不經過清單，直接帶入商品）
+    /// 直接開啟新增物料清單 Modal（不經過清單，直接帶入品項）
     /// </summary>
     private async Task HandleAddNewCompositionDirect()
     {
         try
         {
-            //  關鍵檢查：商品必須先儲存
+            //  關鍵檢查：品項必須先儲存
             if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
             {
                 await NotificationService.ShowWarningAsync(
-                    "請先儲存商品後再建立物料清單", 
+                    "請先儲存品項後再建立物料清單", 
                     "提示");
                 return;
             }
@@ -852,7 +852,7 @@
             var newCode = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(
                 ProductCompositionService, "BOM");
             
-            //  核心：設定預填值，自動帶入商品
+            //  核心：設定預填值，自動帶入品項
             var prefilledValues = new Dictionary<string, object?>
             {
                 { nameof(ProductComposition.ParentProductId), editModalComponent.Entity.Id },

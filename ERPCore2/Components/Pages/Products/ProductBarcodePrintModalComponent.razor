@@ -1,6 +1,6 @@
 @*
-    商品條碼列印 Modal 組件
-    用於選擇商品並列印條碼
+    品項條碼列印 Modal 組件
+    用於選擇品項並列印條碼
 *@
 @using ERPCore2.Models
 @using ERPCore2.Data.Entities
@@ -51,7 +51,7 @@
         }
         else
         {
-            @* 商品列表表格 *@
+            @* 品項列表表格 *@
             <ProductBarcodePrintTable Items="@barcodeItems"
                                     SelectedItems="@selectedItems"
                                     OnSelectionChanged="@HandleSelectionChanged"
@@ -130,7 +130,7 @@
         // 檢測 Modal 是否從關閉變為開啟
         if (IsVisible && !_previousIsVisible)
         {
-            // Modal 開啟時，重新載入所有商品並清空選取
+            // Modal 開啟時，重新載入所有品項並清空選取
             await LoadAllProductsAsync();
             ClearSelection();
         }
@@ -141,7 +141,7 @@
     // ===== 初始化方法 =====
     
     /// <summary>
-    /// 從資料庫載入所有商品（不受 Index 篩選影響）
+    /// 從資料庫載入所有品項（不受 Index 篩選影響）
     /// </summary>
     private async Task LoadAllProductsAsync()
     {

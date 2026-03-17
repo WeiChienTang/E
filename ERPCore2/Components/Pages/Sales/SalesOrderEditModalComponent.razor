@@ -209,7 +209,7 @@
     private RelatedEntityModalManager<Employee> salespersonModalManager = default!;
     private RelatedEntityModalManager<Product> productModalManager = default!;
     
-    // 商品篩選
+    // 品項篩選
     private int? filterProductId = null;
     private int? filterQuotationId = null;
     
@@ -270,7 +270,7 @@
                 .AddManager<Company>(nameof(SalesOrder.CompanyId), "公司")
                 .AddManager<Employee>(nameof(SalesOrder.EmployeeId), "製表者")
                 .AddManager<Employee>(nameof(SalesOrder.SalespersonId), "業務員")
-                .AddManager<Product>("FilterProductId", "商品")
+                .AddManager<Product>("FilterProductId", "品項")
                 .Build();
 
             // 取得個別 Manager 供組件使用
@@ -533,7 +533,7 @@
                     Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品。此欄位不會儲存。",
+                    HelpText = "選擇特定品項進行篩選，或留空顯示所有品項。此欄位不會儲存。",
                     IsReadOnly = true, // 預設停用，等待客戶選取後由 UpdateFilterFieldsState 更新
                     IsFilterOnly = true
                 },
@@ -779,14 +779,14 @@
     // ===== AutoComplete 配置方法 =====
 
     /// <summary>
-    /// 創建商品管理器內容的 RenderFragment
+    /// 創建品項管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateProductManagerContent() => __builder =>
     {
         <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
                               IsDetailDataReady="@isDetailDataReady"
                               IsDataAvailable="@(products != null && products.Any() && units != null && units.Any())"
-                              DataUnavailableMessage="無可用的商品或單位資料，請聯繫系統管理員"
+                              DataUnavailableMessage="無可用的品項或單位資料，請聯繫系統管理員"
                               IsPreconditionMet="@(editModalComponent?.Entity?.CustomerId > 0)"
                               PreconditionMessage="請先選擇客戶後再進行銷售明細管理">
             <SalesOrderTable @ref="salesOrderDetailManager"
@@ -809,8 +809,8 @@
                              OnDetailsChanged="@HandleDetailsChanged"
                              OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                              OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                             ItemDisplayName="銷售商品"
-                             EmptyMessage="尚未新增銷售商品" />
+                             ItemDisplayName="銷售品項"
+                             EmptyMessage="尚未新增銷售品項" />
         </DetailSectionWrapper>
     };
 
@@ -997,10 +997,10 @@
                     filterQuotationId = null;
                 StateHasChanged();
             }
-            // 處理商品篩選變更
+            // 處理品項篩選變更
             else if (fieldChange.PropertyName == "FilterProductId")
             {
-                // 更新商品篩選狀態 - 處理 int 或 string 類型
+                // 更新品項篩選狀態 - 處理 int 或 string 類型
                 int? parsedProductId = null;
 
                 if (fieldChange.Value is int intValue && intValue > 0)
@@ -1600,7 +1600,7 @@
 
                     if (invalidPriceDetails.Any())
                     {
-                        editModalComponent!.PendingSaveError = "所有商品的單價不可為負數，請檢查並修正";
+                        editModalComponent!.PendingSaveError = "所有品項的單價不可為負數，請檢查並修正";
                         return false;
                     }
                 }
@@ -1662,7 +1662,7 @@
     {
         try
         {
-            // 只處理有效的明細（已選擇商品的）
+            // 只處理有效的明細（已選擇品項的）
             var validDetails = salesOrderDetails.Where(d => d.ProductId > 0).ToList();
 
             // 設定主檔ID和時間戳記
@@ -1866,7 +1866,7 @@
                             .OrderBy(d => d.Id)
                             .ToList();
                         
-                        // 找出這是第幾個新增的該商品明細
+                        // 找出這是第幾個新增的該品項明細
                         int newItemSequence = 0;
                         for (int idx = 0; idx <= salesItemIndex; idx++)
                         {

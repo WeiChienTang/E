@@ -16,7 +16,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5">
             <div class="supplier-warning">
-                <p class="text-muted">選擇廠商後即可查看該廠商的退回商品</p>
+                <p class="text-muted">選擇廠商後即可查看該廠商的退回品項</p>
             </div>
         </div>
     </div>
@@ -118,9 +118,9 @@ else
     [Parameter] public string Title { get; set; } = "退回明細";
     [Parameter] public string Subtitle { get; set; } = "";
     [Parameter] public string Icon { get; set; } = "undo";
-    [Parameter] public string ItemDisplayName { get; set; } = "商品";
+    [Parameter] public string ItemDisplayName { get; set; } = "品項";
     [Parameter] public string EmptyIcon { get; set; } = "box-open";
-    [Parameter] public string EmptyMessage { get; set; } = "尚未新增退回商品";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增退回品項";
 
     // ===== 稅別參數 =====
     [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
@@ -542,8 +542,8 @@ else
             TriggerEmptyRowOnFilled = true,
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "300px",
-            Tooltip = "搜尋並選擇要退回的進貨商品。已有沖款記錄的商品將無法變更",
-            Placeholder = "請輸入進貨單號或商品名稱",
+            Tooltip = "搜尋並選擇要退回的進貨品項。已有沖款記錄的品項將無法變更",
+            Placeholder = "請輸入進貨單號或品項名稱",
             SearchValuePropertyName = nameof(ReturnItem.ReceivingDetailSearchValue),
             FilteredItemsPropertyName = nameof(ReturnItem.FilteredReceivingDetails),
             ShowDropdownPropertyName = nameof(ReturnItem.ShowReceivingDetailDropdown),
@@ -564,7 +564,7 @@ else
                 var hasPaymentRecord = HasPaymentRecord(returnItem);
                 if (!hasPaymentRecord) return null;
                 
-                return $"此商品已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改商品選擇";
+                return $"此品項已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改品項選擇";
             },
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
             {
@@ -620,7 +620,7 @@ else
             PropertyName = nameof(ReturnItem.ReturnQuantity),
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
-            Tooltip = "要退回給廠商的商品數量。已收款的商品將無法修改數量",
+            Tooltip = "要退回給廠商的品項數量。已收款的品項將無法修改數量",
             CustomTemplate = item =>
             {
                 var returnItem = (ReturnItem)item;
@@ -633,7 +633,7 @@ else
                             ? returnItem.ReturnQuantity.ToString()
                             : $"{returnItem.ReturnQuantity} {unitName}";
                     var tooltip = isLocked
-                        ? $"此商品已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改退回數量"
+                        ? $"此品項已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改退回數量"
                         : null;
                     return @<span class="d-block text-end" title="@tooltip">@display</span>;
                 }
@@ -651,7 +651,7 @@ else
             PropertyName = nameof(ReturnItem.OriginalUnitPrice),
             ColumnType = InteractiveColumnType.Display,
             Width = "100px",
-            Tooltip = "商品的原始進貨單價（唯讀）",
+            Tooltip = "品項的原始進貨單價（唯讀）",
             SmartDecimalDisplay = true,  // 整數不顯示小數點，有小數才顯示
             TextAlign = "right",
             IsReadOnly = true
@@ -664,7 +664,7 @@ else
             PropertyName = nameof(ReturnItem.TaxRate),
             ColumnType = InteractiveColumnType.Number,
             Width = "80px",
-            Tooltip = "商品的稅率（0% ~ 100%），可手動調整。當主檔選擇免稅時此欄位將被禁用",
+            Tooltip = "品項的稅率（0% ~ 100%），可手動調整。當主檔選擇免稅時此欄位將被禁用",
             IsDisabledFunc = item =>
             {
                 var returnItem = (ReturnItem)item;
@@ -676,7 +676,7 @@ else
                 var returnItem = (ReturnItem)item;
                 if (IsTaxCalculationMethodNoTax) return "主檔已選擇免稅，此欄位已停用";
                 if (HasPaymentRecord(returnItem))
-                    return $"此商品已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改稅率";
+                    return $"此品項已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改稅率";
                 return null;
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
@@ -792,8 +792,8 @@ else
             return;
         }
 
-        // 設定商品名稱
-        selectedProductName = item.SelectedReceivingDetail?.Product?.Name ?? "未知商品";
+        // 設定品項名稱
+        selectedProductName = item.SelectedReceivingDetail?.Product?.Name ?? "未知品項";
 
         // 顯示 Modal 並開始載入
         showRelatedDocumentsModal = true;
@@ -847,7 +847,7 @@ else
                 // 載入該廠商的可退貨進貨明細
                 AvailableReceivingDetails = await PurchaseReceivingService.GetReturnableDetailsBySupplierAsync(EffectiveSupplierId.Value);
                 
-                // 從進貨明細中提取商品清單（向下相容）
+                // 從進貨明細中提取品項清單（向下相容）
                 AvailableProducts = AvailableReceivingDetails
                     .Where(rd => rd.Product != null)
                     .Select(rd => rd.Product!)
@@ -877,7 +877,7 @@ else
             filteredDetails = filteredDetails.Where(rd => rd.PurchaseReceivingId == EffectivePurchaseReceivingId.Value);
         }
         
-        // 根據商品篩選
+        // 根據品項篩選
         if (EffectiveFilterProductId.HasValue && EffectiveFilterProductId.Value > 0)
         {
             filteredDetails = filteredDetails.Where(rd => rd.ProductId == EffectiveFilterProductId.Value);
@@ -894,7 +894,7 @@ else
     /// <summary>
     /// 格式化進貨明細顯示文字（用於下拉選單 - 兩行顯示）
     /// 第一行：進貨單號 + 可退數量（小字藍色）
-    /// 第二行：商品編號 商品名稱
+    /// 第二行：品項編號 品項名稱
     /// </summary>
     private string FormatReceivingDetailDropdownText(PurchaseReceivingDetail detail)
     {
@@ -908,7 +908,7 @@ else
             ? $"{product.Code} {product.Name}"
             : (!string.IsNullOrEmpty(product.Code) ? product.Code : product.Name ?? "");
         
-        // 兩行顯示：進貨單號在上（小字藍色），商品資訊在下
+        // 兩行顯示：進貨單號在上（小字藍色），品項資訊在下
         return $"<div style='line-height: 1.3;'>" +
                $"<small class='text-primary'>進貨: {receiptNumber} (可退: {returnableQty:G29})</small><br/>" +
                $"<span>{productDisplay}</span></div>";
@@ -1030,7 +1030,7 @@ else
         returnItem.AlreadyReturnedQuantity = 0; // TODO: 需要實作計算已退回數量的邏輯
         returnItem.ReturnQuantity = 0;
         returnItem.OriginalUnitPrice = selectedDetail.UnitPrice;
-        // 設定稅率：進貨明細稅率 > 商品稅率 > 系統預設稅率
+        // 設定稅率：進貨明細稅率 > 品項稅率 > 系統預設稅率
         returnItem.TaxRate = selectedDetail.TaxRate ?? selectedDetail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
         returnItem.ShowReceivingDetailDropdown = false;
         returnItem.ReceivingDetailSelectedIndex = -1;
@@ -1150,13 +1150,13 @@ else
                 _loadConditions.Add("進貨單：全部可退回進貨單");
             }
             
-            // 條件3：商品篩選（如有選擇）
+            // 條件3：品項篩選（如有選擇）
             if (EffectiveFilterProductId.HasValue && EffectiveFilterProductId.Value > 0)
             {
                 var productName = !string.IsNullOrWhiteSpace(FilterProductName)
                     ? FilterProductName
-                    : $"商品 ID: {EffectiveFilterProductId.Value}";
-                _loadConditions.Add($"商品篩選：{productName}");
+                    : $"品項 ID: {EffectiveFilterProductId.Value}";
+                _loadConditions.Add($"品項篩選：{productName}");
             }
             
             // 計算符合條件的明細數量
@@ -1182,7 +1182,7 @@ else
     }
 
     /// <summary>
-    /// 執行載入所有可退回商品 - 使用者確認後執行
+    /// 執行載入所有可退回品項 - 使用者確認後執行
     /// </summary>
     private async Task ExecuteLoadAllReturnableItems()
     {
@@ -1209,7 +1209,7 @@ else
                 if (Items.Any(item => item.SelectedReceivingDetail?.Id == detail.Id))
                     continue;
                 
-                // 取得稅率（優先順序：進貨明細稅率 > 商品稅率 > 系統預設稅率）
+                // 取得稅率（優先順序：進貨明細稅率 > 品項稅率 > 系統預設稅率）
                 var taxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
                 
                 var newItem = new ReturnItem
@@ -1229,17 +1229,17 @@ else
             }
             
             await NotifyAllDetailsChangedAsync();
-            await NotificationService.ShowSuccessAsync($"已載入 {addedCount} 筆可退回商品");
+            await NotificationService.ShowSuccessAsync($"已載入 {addedCount} 筆可退回品項");
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入可退回商品時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入可退回品項時發生錯誤：{ex.Message}");
         }
     }
 
     /// <summary>
-    /// 載入所有可退回商品的主要方法（公開方法，供父組件調用）
+    /// 載入所有可退回品項的主要方法（公開方法，供父組件調用）
     /// </summary>
     public async Task LoadAllReturnableItems()
     {
@@ -1294,7 +1294,7 @@ else
             await OnReturnItemsChanged.InvokeAsync(Items);
         }
 
-        // 刷新空行和觸發 UI 更新，確保選擇商品後立即顯示
+        // 刷新空行和觸發 UI 更新，確保選擇品項後立即顯示
         tableComponent?.RefreshEmptyRow();
         StateHasChanged();
     }
@@ -1302,7 +1302,7 @@ else
     private PurchaseReturnDetail? ConvertToEntity(ReturnItem item)
     {
         // 修正：只檢查 SelectedReceivingDetail 和 SelectedProduct，不過濾 ReturnQuantity
-        // 這樣剛選擇的商品也會被保留
+        // 這樣剛選擇的品項也會被保留
         if (item.SelectedReceivingDetail == null || item.SelectedProduct == null)
         {
             return null;
@@ -1356,7 +1356,7 @@ else
                 var maxQuantity = item.OriginalQuantity - item.AlreadyReturnedQuantity;
                 if (item.ReturnQuantity > maxQuantity)
                 {
-                    await NotificationService.ShowErrorAsync($"商品 {item.SelectedProduct?.Name} 的退回數量 ({item.ReturnQuantity}) 超過可退回數量 ({maxQuantity})");
+                    await NotificationService.ShowErrorAsync($"品項 {item.SelectedProduct?.Name} 的退回數量 ({item.ReturnQuantity}) 超過可退回數量 ({maxQuantity})");
                     return false;
                 }
             }
@@ -1401,7 +1401,7 @@ else
         public int AvailableQuantity => OriginalQuantity - AlreadyReturnedQuantity;
         
         /// <summary>
-        /// 取得顯示用的商品名稱（包含進貨單號）
+        /// 取得顯示用的品項名稱（包含進貨單號）
         /// </summary>
         public string DisplayName => 
             SelectedReceivingDetail?.Product != null && !string.IsNullOrEmpty(SelectedReceivingDetail.PurchaseReceiving?.Code)

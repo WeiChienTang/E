@@ -15,9 +15,9 @@ namespace ERPCore2.Services
         Task<List<MaterialIssueDetail>> GetByMaterialIssueIdAsync(int materialIssueId);
 
         /// <summary>
-        /// 根據商品ID取得所有領貨明細
+        /// 根據品項ID取得所有領貨明細
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <returns>領貨明細清單</returns>
         Task<List<MaterialIssueDetail>> GetByProductIdAsync(int productId);
 
@@ -58,10 +58,10 @@ namespace ERPCore2.Services
             Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? externalTransaction = null);
 
         /// <summary>
-        /// 檢查商品在指定領貨單中是否已存在
+        /// 檢查品項在指定領貨單中是否已存在
         /// </summary>
         /// <param name="materialIssueId">領貨主檔ID</param>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <param name="warehouseId">倉庫ID</param>
         /// <param name="warehouseLocationId">庫位ID（可選）</param>
         /// <param name="excludeId">排除的明細ID（編輯時使用）</param>
@@ -71,7 +71,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 驗證領貨明細的庫存是否充足
         /// </summary>
-        /// <param name="productId">商品ID</param>
+        /// <param name="productId">品項ID</param>
         /// <param name="warehouseId">倉庫ID</param>
         /// <param name="warehouseLocationId">庫位ID（可選）</param>
         /// <param name="issueQuantity">領貨數量</param>

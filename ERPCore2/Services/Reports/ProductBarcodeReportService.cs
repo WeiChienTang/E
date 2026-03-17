@@ -12,7 +12,7 @@ using System.Runtime.Versioning;
 namespace ERPCore2.Services.Reports;
 
 /// <summary>
-/// 商品條碼報表服務實作
+/// 品項條碼報表服務實作
 /// 使用 FormattedDocument 架構，支援預覽、列印、Excel 匯出
 /// </summary>
 [SupportedOSPlatform("windows")]
@@ -53,12 +53,12 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
                 return BatchPreviewResult.Failure(errorMessage ?? "條件驗證失敗");
             }
 
-            // 載入商品資料
+            // 載入品項資料
             var products = await LoadProductsAsync(criteria);
 
             if (products == null || !products.Any())
             {
-                return BatchPreviewResult.Failure("無符合條件的商品條碼");
+                return BatchPreviewResult.Failure("無符合條件的品項條碼");
             }
 
             // 準備紙張設定
@@ -130,20 +130,20 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
     #region 私有方法
 
     /// <summary>
-    /// 載入商品資料
+    /// 載入品項資料
     /// </summary>
     private async Task<List<Product>> LoadProductsAsync(ProductBarcodeBatchPrintCriteria criteria)
     {
         var allProducts = await _productService.GetAllAsync();
         var query = allProducts.AsQueryable();
 
-        // 只列印有條碼的商品
+        // 只列印有條碼的品項
         if (criteria.OnlyWithBarcode)
         {
             query = query.Where(p => !string.IsNullOrWhiteSpace(p.Barcode));
         }
 
-        // 篩選特定商品
+        // 篩選特定品項
         if (criteria.ProductIds.Any())
         {
             query = query.Where(p => criteria.ProductIds.Contains(p.Id));
@@ -282,7 +282,7 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
         var previewImages = new List<byte[]>();
         var document = new FormattedDocument
         {
-            DocumentName = $"商品條碼列印-{DateTime.Now:yyyyMMdd}"
+            DocumentName = $"品項條碼列印-{DateTime.Now:yyyyMMdd}"
         };
 
         // 設定文件紙張尺寸
@@ -457,7 +457,7 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
 <body>
     <div class='success'>
         <h1>✅ 條碼已準備就緒</h1>
-        <p>共 {documentCount} 個商品，{pageCount} 頁</p>
+        <p>共 {documentCount} 個品項，{pageCount} 頁</p>
     </div>
 </body>
 </html>";

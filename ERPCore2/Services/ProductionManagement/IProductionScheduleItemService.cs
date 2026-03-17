@@ -16,7 +16,7 @@ namespace ERPCore2.Services
         Task<List<ProductionScheduleItem>> GetByScheduleIdAsync(int scheduleId);
 
         /// <summary>
-        /// 根據商品ID取得項目列表
+        /// 根據品項ID取得項目列表
         /// </summary>
         Task<List<ProductionScheduleItem>> GetByProductIdAsync(int productId);
 
@@ -95,7 +95,7 @@ namespace ERPCore2.Services
         Task<Dictionary<int, ProductionItemStatus>> GetAggregateStatusMapAsync(IEnumerable<int> salesOrderDetailIds);
 
         /// <summary>
-        /// 查詢同商品最近一次完工入庫的倉庫/庫位（用於預填）
+        /// 查詢同品項最近一次完工入庫的倉庫/庫位（用於預填）
         /// </summary>
         Task<(int? WarehouseId, int? LocationId)> GetLastCompletionWarehouseAsync(int productId);
 

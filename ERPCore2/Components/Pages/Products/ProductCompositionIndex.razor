@@ -30,7 +30,7 @@
                         RowPrintReportId="@ReportIds.BOMReport"
                         @ref="indexComponent"/>
 
-@* 商品物料清單編輯 Modal *@
+@* 品項物料清單編輯 Modal *@
 <ProductCompositionEditModalComponent IsVisible="@showEditModal"
                                      IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                      CompositionId="@editingCompositionId"
@@ -88,8 +88,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化商品物料清單頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化商品物料清單頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化品項物料清單頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化品項物料清單頁面失敗");
         }
     }
 
@@ -112,8 +112,8 @@
             page, pageSize);
     }
 
-    // 載入商品資料（用於篩選器）
-    private async Task LoadProductsAsync() => products = await DataLoaderHelper.LoadAsync(ProductService.GetAllAsync, "商品", NotificationService, GetType());
+    // 載入品項資料（用於篩選器）
+    private async Task LoadProductsAsync() => products = await DataLoaderHelper.LoadAsync(ProductService.GetAllAsync, "品項", NotificationService, GetType());
 
     // 載入物料清單類型資料（用於篩選器）
     private async Task LoadCompositionCategoriesAsync() => compositionCategories = await DataLoaderHelper.LoadAsync(CompositionCategoryService.GetAllAsync, "物料清單類型", NotificationService, GetType());

@@ -123,12 +123,12 @@
     </div>
 </div>
 
-@* 彙總列（含商品單位換算資訊）*@
+@* 彙總列（含品項單位換算資訊）*@
 @if (GetValidItemCount() > 0 || !string.IsNullOrEmpty(PurchaseUnitName))
 {
     <div class="d-flex flex-wrap gap-3 px-3 py-2 border-top small"
          style="background-color: var(--bg-secondary); color: var(--text-secondary);">
-        @* 商品單位換算資訊 *@
+        @* 品項單位換算資訊 *@
         @if (!string.IsNullOrEmpty(PurchaseUnitName))
         {
             <span>

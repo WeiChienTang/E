@@ -126,7 +126,7 @@ namespace ERPCore2.Services
                     errors.Add("領貨主檔不能為空");
 
                 if (entity.ProductId <= 0)
-                    errors.Add("商品不能為空");
+                    errors.Add("品項不能為空");
 
                 if (entity.WarehouseId <= 0)
                     errors.Add("倉庫不能為空");
@@ -147,7 +147,7 @@ namespace ERPCore2.Services
                 if (!isValid)
                     errors.Add(errorMessage);
 
-                // 檢查同一領貨單中同一商品+倉庫+庫位的組合是否重複
+                // 檢查同一領貨單中同一品項+倉庫+庫位的組合是否重複
                 if (await IsProductExistsInIssueAsync(
                     entity.MaterialIssueId, 
                     entity.ProductId, 
@@ -155,7 +155,7 @@ namespace ERPCore2.Services
                     entity.WarehouseLocationId,
                     entity.Id == 0 ? null : entity.Id))
                 {
-                    errors.Add("該商品在此領貨單的相同倉庫/庫位組合中已存在");
+                    errors.Add("該品項在此領貨單的相同倉庫/庫位組合中已存在");
                 }
 
                 if (errors.Any())
@@ -208,7 +208,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據商品ID取得所有領貨明細
+        /// 根據品項ID取得所有領貨明細
         /// </summary>
         public async Task<List<MaterialIssueDetail>> GetByProductIdAsync(int productId)
         {
@@ -434,7 +434,7 @@ namespace ERPCore2.Services
         #region 驗證方法
 
         /// <summary>
-        /// 檢查商品在指定領貨單中是否已存在
+        /// 檢查品項在指定領貨單中是否已存在
         /// </summary>
         public async Task<bool> IsProductExistsInIssueAsync(
             int materialIssueId, 
@@ -491,18 +491,18 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 先找到該商品的 InventoryStock
+                // 先找到該品項的 InventoryStock
                 var inventoryStock = await context.InventoryStocks
                     .FirstOrDefaultAsync(s => s.ProductId == productId && s.Status == EntityStatus.Active);
 
                 if (inventoryStock == null)
                 {
-                    // 查詢商品名稱以提供更友善的錯誤訊息
+                    // 查詢品項名稱以提供更友善的錯誤訊息
                     var product = await context.Products
                         .FirstOrDefaultAsync(p => p.Id == productId);
-                    var productName = product?.Name ?? "未知商品";
+                    var productName = product?.Name ?? "未知品項";
                     
-                    return (false, 0, $"商品「{productName}」尚未建立庫存記錄");
+                    return (false, 0, $"品項「{productName}」尚未建立庫存記錄");
                 }
 
                 // 查詢庫存明細
@@ -520,12 +520,12 @@ namespace ERPCore2.Services
 
                 if (stockDetail == null)
                 {
-                    // 查詢商品名稱以提供更友善的錯誤訊息
+                    // 查詢品項名稱以提供更友善的錯誤訊息
                     var product = await context.Products
                         .FirstOrDefaultAsync(p => p.Id == productId);
-                    var productName = product?.Name ?? "未知商品";
+                    var productName = product?.Name ?? "未知品項";
                     
-                    return (false, 0, $"商品「{productName}」在指定的倉庫/庫位沒有庫存記錄");
+                    return (false, 0, $"品項「{productName}」在指定的倉庫/庫位沒有庫存記錄");
                 }
 
                 // 計算可用數量（現有庫存 - 預留庫存）
@@ -535,10 +535,10 @@ namespace ERPCore2.Services
                 {
                     var product = await context.Products
                         .FirstOrDefaultAsync(p => p.Id == productId);
-                    var productName = product?.Name ?? "未知商品";
+                    var productName = product?.Name ?? "未知品項";
                     
                     return (false, availableQuantity, 
-                        $"商品「{productName}」庫存不足，可用數量：{availableQuantity}，需要數量：{issueQuantity}");
+                        $"品項「{productName}」庫存不足，可用數量：{availableQuantity}，需要數量：{issueQuantity}");
                 }
 
                 return (true, availableQuantity, string.Empty);

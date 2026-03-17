@@ -346,9 +346,9 @@ namespace ERPCore2.Services
                 if (targetRoleName == "管理員" || targetRoleName == "admin")
                     return ServiceResult.Failure("無法修改管理員角色的權限");
 
-                // 取得來源角色的權限
+                // 取得來源角色的有效權限（僅包含啟用中的權限，排除已停用的）
                 var sourcePermissionIds = sourceRole.RolePermissions
-                    .AsQueryable()
+                    .Where(rp => rp.Status == EntityStatus.Active)
                     .Select(rp => rp.PermissionId)
                     .ToList();
 

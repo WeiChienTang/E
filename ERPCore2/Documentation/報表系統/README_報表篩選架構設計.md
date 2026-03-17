@@ -426,13 +426,13 @@ new ReportDefinition
 | 採購 | PO001 | PurchaseOrderBatchPrintCriteria | 廠商、日期範圍、單號 |
 | 採購 | PO002 | PurchaseReceivingBatchPrintCriteria | 廠商、日期範圍、單號 |
 | 採購 | PO003 | PurchaseReturnBatchPrintCriteria | 廠商、日期範圍、單號 |
-| 商品 | PD001 | ProductListBatchPrintCriteria | 商品分類、關鍵字、僅啟用 |
-| 商品 | PD002 | BOMReportCriteria | 成品、關鍵字 |
-| 商品 | PD003 ★ | ProductBarcodeBatchPrintCriteria | 商品分類、關鍵字（專用模板） |
-| 商品 | PD004 | ProductionScheduleCriteria | 客戶、日期範圍、生產狀態 |
-| 商品 | PD005 | ProductListBatchPrintCriteria | 同 PD001 |
+| 品項 | PD001 | ProductListBatchPrintCriteria | 品項分類、關鍵字、僅啟用 |
+| 品項 | PD002 | BOMReportCriteria | 成品、關鍵字 |
+| 品項 | PD003 ★ | ProductBarcodeBatchPrintCriteria | 品項分類、關鍵字（專用模板） |
+| 品項 | PD004 | ProductionScheduleCriteria | 客戶、日期範圍、生產狀態 |
+| 品項 | PD005 | ProductListBatchPrintCriteria | 同 PD001 |
 | 庫存 | IV002 | StockTakingDifferenceCriteria | 倉庫、日期範圍、關鍵字 |
-| 庫存 | IV003 | InventoryStatusCriteria | 倉庫、商品分類、關鍵字 |
+| 庫存 | IV003 | InventoryStatusCriteria | 倉庫、品項分類、關鍵字 |
 | 車輛 | VH001 | VehicleListCriteria | 車型、關鍵字 |
 | 車輛 | VH002 | VehicleMaintenanceCriteria | 車輛、日期範圍、關鍵字 |
 | 財務 | FN003 | AccountsReceivableSetoffCriteria | 客戶、日期範圍、單號 |

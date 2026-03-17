@@ -377,7 +377,7 @@ namespace ERPCore2.Services
                 // 使用 DetailService 檢查是否有明細
                 var details = await _purchaseOrderDetailService.GetByPurchaseOrderIdAsync(orderId);
                 if (!details.Any())
-                    return ServiceResult.Failure("訂單必須包含至少一項商品");
+                    return ServiceResult.Failure("訂單必須包含至少一項品項");
                 
                 order.UpdatedAt = DateTime.UtcNow;
                 
@@ -416,7 +416,7 @@ namespace ERPCore2.Services
                     // 使用 DetailService 檢查是否有明細
                     var details = await _purchaseOrderDetailService.GetByPurchaseOrderIdAsync(orderId);
                     if (!details.Any())
-                        return ServiceResult.Failure("採購訂單沒有有效的商品明細，無法核准");
+                        return ServiceResult.Failure("採購訂單沒有有效的品項明細，無法核准");
 
                     // 更新採購訂單狀態
                     order.ApprovedBy = approvedBy;
@@ -642,9 +642,9 @@ namespace ERPCore2.Services
                 {
                     if (detail.ReceivedQuantity > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知商品";
+                        var productName = detail.Product?.Name ?? "未知品項";
                         return ServiceResult.Failure(
-                            $"無法刪除此採購單，因為商品「{productName}」已有入庫記錄（已入庫 {detail.ReceivedQuantity} 個）"
+                            $"無法刪除此採購單，因為品項「{productName}」已有入庫記錄（已入庫 {detail.ReceivedQuantity} 個）"
                         );
                     }
                 }

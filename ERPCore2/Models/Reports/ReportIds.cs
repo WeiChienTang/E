@@ -77,21 +77,21 @@ public static class ReportIds
     /// <summary>銷貨退回單</summary>
     public const string SalesReturn = "SO005";
     
-    // ==================== 商品報表 (PD) ====================
+    // ==================== 品項報表 (PD) ====================
     
-    /// <summary>商品清單表</summary>
+    /// <summary>品項清單表</summary>
     public const string ProductList = "PD001";
 
     /// <summary>物料清單報表</summary>
     public const string BOMReport = "PD002";
 
-    /// <summary>商品條碼標籤</summary>
+    /// <summary>品項條碼標籤</summary>
     public const string ProductBarcode = "PD003";
 
     /// <summary>生產排程表</summary>
     public const string ProductionSchedule = "PD004";
 
-    /// <summary>商品詳細資料報表</summary>
+    /// <summary>品項詳細資料報表</summary>
     public const string ProductDetail = "PD005";
 
     /// <summary>用料損耗退料記錄</summary>
@@ -164,8 +164,8 @@ public static class ReportIds
 
     // ==================== 磅秤紀錄報表 (WL) ====================
     /// <summary>磅秤紀錄報表</summary>
-    public const string WasteRecord = "WL001";
+    public const string ScaleRecord = "WL001";
 
     /// <summary>磅秤紀錄類別報表</summary>
-    public const string WasteCategory = "WL002";
+    public const string ScaleCategory = "WL002";
 }

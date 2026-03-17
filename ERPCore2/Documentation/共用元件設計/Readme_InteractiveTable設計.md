@@ -120,7 +120,7 @@ SearchableSelect 欄位的狀態（搜尋文字、過濾清單、下拉開關、
 | `SelectedIndexPropertyName` | row 物件上儲存鍵盤導航索引的屬性名稱 |
 | `ItemDisplayFormatter` | 下拉選單項目的顯示格式（例如 `[CODE] Name`） |
 
-`SearchableSelectHelper` 提供通用的搜尋過濾和商品選取邏輯，減少各頁面重複程式碼。
+`SearchableSelectHelper` 提供通用的搜尋過濾和品項選取邏輯，減少各頁面重複程式碼。
 
 ---
 

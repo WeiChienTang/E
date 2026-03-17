@@ -66,8 +66,8 @@ namespace ERPCore2.Models.Enums
         [Display(Name = "流水號（001, 002...）")]
         Sequential = 0,
 
-        [Description("實體編碼（客戶/廠商/商品代碼）")]
-        [Display(Name = "實體編碼（客戶/廠商/商品代碼）")]
+        [Description("實體編碼（客戶/廠商/品項代碼）")]
+        [Display(Name = "實體編碼（客戶/廠商/品項代碼）")]
         EntityCode = 1
     }
 

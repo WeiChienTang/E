@@ -1,44 +1,44 @@
-﻿@page "/waste-types"
-@inject IWasteTypeService WasteTypeService
+@page "/scale-types"
+@inject IScaleTypeService ScaleTypeService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 @rendermode InteractiveServer
 
-<GenericIndexPageComponent TEntity="WasteType"
-                          TService="IWasteTypeService"
-                          Service="@WasteTypeService"
-                          EntityBasePath="/waste-types"
+<GenericIndexPageComponent TEntity="ScaleType"
+                          TService="IScaleTypeService"
+                          Service="@ScaleTypeService"
+                          EntityBasePath="/scale-types"
                           PageTitle="@L["Page.WasteTypeTitle"]"
                           PageSubtitle="@L["Page.WasteTypeSubtitle"]"
                           EntityName="@L["Entity.WasteType"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
-                          ServerDataLoader="@ServerLoadWasteTypesAsync"
-                          GetEntityDisplayName="@(wt => wt.Name)"
-                          RequiredPermission="@PermissionRegistry.WasteType.Read"
-                          RequiredModule="WasteManagement"
+                          ServerDataLoader="@ServerLoadScaleTypesAsync"
+                          GetEntityDisplayName="@(st => st.Name)"
+                          RequiredPermission="@PermissionRegistry.ScaleType.Read"
+                          RequiredModule="ScaleManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           ShowDraftTab="true"
-                          DebugPageName="WasteTypeIndex"
+                          DebugPageName="ScaleTypeIndex"
                           @ref="indexComponent" />
 
-<WasteTypeEditModalComponent IsVisible="@showEditModal"
+<ScaleTypeEditModalComponent IsVisible="@showEditModal"
                              IsVisibleChanged="@((bool visible) => showEditModal = visible)"
-                             WasteTypeId="@editingWasteTypeId"
-                             OnWasteTypeSaved="@modalHandler.OnEntitySavedAsync"
+                             ScaleTypeId="@editingScaleTypeId"
+                             OnScaleTypeSaved="@modalHandler.OnEntitySavedAsync"
                              OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
-    private GenericIndexPageComponent<WasteType, IWasteTypeService> indexComponent = default!;
+    private GenericIndexPageComponent<ScaleType, IScaleTypeService> indexComponent = default!;
 
     private bool showEditModal = false;
-    private int? editingWasteTypeId = null;
+    private int? editingScaleTypeId = null;
 
-    private ModalHandler<WasteType, GenericIndexPageComponent<WasteType, IWasteTypeService>> modalHandler = default!;
+    private ModalHandler<ScaleType, GenericIndexPageComponent<ScaleType, IScaleTypeService>> modalHandler = default!;
 
-    private WasteTypeFieldConfiguration fieldConfiguration = default!;
+    private ScaleTypeFieldConfiguration fieldConfiguration = default!;
 
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
@@ -48,8 +48,8 @@
     {
         try
         {
-            modalHandler = ModalHelper.CreateModalHandler<WasteType, GenericIndexPageComponent<WasteType, IWasteTypeService>>(
-                id => editingWasteTypeId = id,
+            modalHandler = ModalHelper.CreateModalHandler<ScaleType, GenericIndexPageComponent<ScaleType, IScaleTypeService>>(
+                id => editingScaleTypeId = id,
                 visible => showEditModal = visible,
                 () => indexComponent,
                 StateHasChanged,
@@ -57,7 +57,7 @@
 
             await InitializeBreadcrumbsAsync();
 
-            fieldConfiguration = new WasteTypeFieldConfiguration(NotificationService);
+            fieldConfiguration = new ScaleTypeFieldConfiguration(NotificationService);
             fieldConfiguration.SetLocalizer(L);
 
             filterDefinitions = fieldConfiguration.BuildFilters();
@@ -73,15 +73,15 @@
     private async Task InitializeBreadcrumbsAsync() =>
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("磅秤管理", "磅秤類型維護", "#", NotificationService, GetType());
 
-    private Task<(List<WasteType> Items, int TotalCount)> ServerLoadWasteTypesAsync(
+    private Task<(List<ScaleType> Items, int TotalCount)> ServerLoadScaleTypesAsync(
         SearchFilterModel filter, int page, int pageSize)
     {
-        return WasteTypeService.GetPagedWithFiltersAsync(
+        return ScaleTypeService.GetPagedWithFiltersAsync(
             q =>
             {
                 q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
                 if (fieldConfiguration != null)
-                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadWasteTypesAsync), GetType());
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadScaleTypesAsync), GetType());
                 return q;
             },
             page, pageSize);

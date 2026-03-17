@@ -82,7 +82,7 @@ namespace ERPCore2.Data.Entities
         public SalesOrder? SalesOrder { get; set; }
 
         /// <summary>
-        /// 排程項目列表（要生產的商品）
+        /// 排程項目列表（要生產的品項）
         /// </summary>
         public ICollection<ProductionScheduleItem> ScheduleItems { get; set; } = new List<ProductionScheduleItem>();
     }

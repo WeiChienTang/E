@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品合成服務實作 - 繼承 GenericManagementService
+    /// 品項合成服務實作 - 繼承 GenericManagementService
     /// </summary>
     public class ProductCompositionService : GenericManagementService<ProductComposition>, IProductCompositionService
     {
@@ -144,7 +144,7 @@ namespace ERPCore2.Services
                     ParentProductId = entity.ParentProductId,
                     Code = entity.Code
                 });
-                return ServiceResult.Failure($"驗證商品物料清單時發生錯誤: {ex.Message}");
+                return ServiceResult.Failure($"驗證品項物料清單時發生錯誤: {ex.Message}");
             }
         }
 
@@ -181,7 +181,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得指定商品的所有物料清單（用於相關單據查詢）
+        /// 取得指定品項的所有物料清單（用於相關單據查詢）
         /// </summary>
         public async Task<List<ProductComposition>> GetByProductIdAsync(int productId)
         {

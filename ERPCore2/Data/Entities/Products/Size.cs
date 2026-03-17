@@ -5,7 +5,7 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 尺寸實體 - 定義商品尺寸規格
+    /// 尺寸實體 - 定義品項尺寸規格
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     public class Size : BaseEntity

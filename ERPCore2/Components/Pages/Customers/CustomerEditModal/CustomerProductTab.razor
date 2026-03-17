@@ -1,4 +1,4 @@
-@* 客戶銷售商品 Tab - 自包含元件，顯示此客戶的商品銷售記錄 *@
+@* 客戶銷售品項 Tab - 自包含元件，顯示此客戶的品項銷售記錄 *@
 @inject IProductCustomerService ProductCustomerService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -85,7 +85,7 @@ else
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入客戶商品時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入客戶品項時發生錯誤：{ex.Message}");
             _productCustomers = new();
         }
         finally

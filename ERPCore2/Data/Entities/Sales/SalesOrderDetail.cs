@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 銷貨訂單明細實體 - 記錄銷貨訂單的商品明細
+    /// 銷貨訂單明細實體 - 記錄銷貨訂單的品項明細
     /// </summary>
     [Index(nameof(SalesOrderId), nameof(ProductId))]
     public class SalesOrderDetail : BaseEntity
@@ -66,8 +66,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(QuotationDetail))]
         public int? QuotationDetailId { get; set; }
 
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
+        [Required(ErrorMessage = "品項為必填")]
+        [Display(Name = "品項")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 

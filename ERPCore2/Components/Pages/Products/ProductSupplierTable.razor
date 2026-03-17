@@ -1,4 +1,4 @@
-@* 商品廠商管理組件 - 管理商品的多個廠商資訊 - 使用 InteractiveTableComponent 統一UI *@
+@* 品項廠商管理組件 - 管理品項的多個廠商資訊 - 使用 InteractiveTableComponent 統一UI *@
 
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -88,7 +88,7 @@
     // ===== 建立空項目方法 =====
     
     /// <summary>
-    /// 創建空的商品廠商項目
+    /// 創建空的品項廠商項目
     /// </summary>
     private TProductSupplierEntity CreateEmptyItem()
     {
@@ -130,7 +130,7 @@
                 }
             },
             
-            // 廠商商品編號 - 文字輸入
+            // 廠商品項編號 - 文字輸入
             new()
             {
                 Title = L["Column.SupplierItemCode"],

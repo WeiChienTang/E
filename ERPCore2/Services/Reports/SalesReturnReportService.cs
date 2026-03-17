@@ -302,7 +302,7 @@ namespace ERPCore2.Services.Reports
                     var product = productDict.GetValueOrDefault(detail.ProductId);
                     var unit = product?.UnitId.HasValue == true ? unitDict.GetValueOrDefault(product.UnitId!.Value) : null;
                     
-                    // 組合商品名稱與規格說明
+                    // 組合品項名稱與規格說明
                     var productName = product?.Name ?? "";
                     var specification = product?.Specification ?? "";
                     var displayName = string.IsNullOrEmpty(specification) 

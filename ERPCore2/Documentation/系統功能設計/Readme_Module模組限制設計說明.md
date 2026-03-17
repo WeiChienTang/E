@@ -48,7 +48,7 @@ ERPCore2 採用**兩層存取控制**機制來限制頁面與功能的使用：
 | `Purchase` | 採購管理 |
 | `Sales` | 銷貨管理 |
 | `Vehicles` | 車輛管理 |
-| `WasteManagement` | 廢棄物管理 |
+| `WasteManagement` | 磅秤管理 |
 | `FinancialManagement` | 財務管理 |
 | `Accounting` | 會計管理 |
 | `ProductionManagement` | 生產管理 |

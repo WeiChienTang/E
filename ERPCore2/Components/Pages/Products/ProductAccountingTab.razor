@@ -1,4 +1,4 @@
-@* 商品會計資訊 Tab — 顯示存貨子科目，並可立即建立 *@
+@* 品項會計資訊 Tab — 顯示存貨子科目，並可立即建立 *@
 @inject ISubAccountService SubAccountService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
@@ -60,7 +60,7 @@ else
 }
 
 @code {
-    /// <summary>商品 ID（由父元件傳入，用於自動載入資料）</summary>
+    /// <summary>品項 ID（由父元件傳入，用於自動載入資料）</summary>
     [Parameter] public int? ProductId { get; set; }
 
     private int _productId;

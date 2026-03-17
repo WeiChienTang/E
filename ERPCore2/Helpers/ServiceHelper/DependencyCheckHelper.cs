@@ -203,7 +203,7 @@ namespace ERPCore2.Helpers
         }
         
         /// <summary>
-        /// 檢查商品是否可以刪除
+        /// 檢查品項是否可以刪除
         /// </summary>
         public static async Task<DependencyCheckResult> CheckProductDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int productId)
         {
@@ -249,7 +249,7 @@ namespace ERPCore2.Helpers
                 return new DependencyCheckResult 
                 { 
                     CanDelete = false, 
-                    ErrorMessage = "檢查商品依賴關係時發生錯誤" 
+                    ErrorMessage = "檢查品項依賴關係時發生錯誤" 
                 };
             }
         }
@@ -358,14 +358,14 @@ namespace ERPCore2.Helpers
                 using var context = await contextFactory.CreateDbContextAsync();
                 var result = new DependencyCheckResult { CanDelete = true };
                 
-                // 檢查商品
+                // 檢查品項
                 var productCount = await context.Products
                     .CountAsync(p => p.UnitId == unitId);
                     
                 if (productCount > 0)
                 {
                     result.CanDelete = false;
-                    result.DependentEntities.Add($"商品({productCount}筆)");
+                    result.DependentEntities.Add($"品項({productCount}筆)");
                 }
                 
                 // 檢查採購訂單明細
@@ -483,14 +483,14 @@ namespace ERPCore2.Helpers
                 using var context = await contextFactory.CreateDbContextAsync();
                 var result = new DependencyCheckResult { CanDelete = true };
 
-                // 檢查商品
+                // 檢查品項
                 var productCount = await context.Products
                     .CountAsync(p => p.SizeId == sizeId);
 
                 if (productCount > 0)
                 {
                     result.CanDelete = false;
-                    result.DependentEntities.Add($"商品({productCount}筆)");
+                    result.DependentEntities.Add($"品項({productCount}筆)");
                 }
 
                 return result;

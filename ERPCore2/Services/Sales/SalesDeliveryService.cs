@@ -544,7 +544,7 @@ namespace ERPCore2.Services
                         return canDeleteResult;
                     }
 
-                    // 3. 回補庫存（刪除出貨單 = 商品退回倉庫）- 僅在已核准時才回補
+                    // 3. 回補庫存（刪除出貨單 = 品項退回倉庫）- 僅在已核准時才回補
                     // 未核准的出貨單從未扣減庫存（ShouldUpdateInventory 在核准前為 false），不需回補
                     if (entity.IsApproved && entity.DeliveryDetails != null && entity.DeliveryDetails.Any())
                     {
@@ -666,11 +666,11 @@ namespace ERPCore2.Services
                     // 更新庫存 - 出貨會減少庫存
                     foreach (var detail in salesDelivery.DeliveryDetails)
                     {
-                        if (detail.DeliveryQuantity > 0)
+                        if (detail.DeliveryQuantity > 0 && detail.WarehouseId.HasValue)
                         {
                             var reduceStockResult = await _inventoryStockService.ReduceStockAsync(
                                 detail.ProductId,
-                                detail.WarehouseId ?? 0,
+                                detail.WarehouseId.Value,
                                 detail.DeliveryQuantity,
                                 InventoryTransactionTypeEnum.Sale,
                                 salesDelivery.Code ?? string.Empty,

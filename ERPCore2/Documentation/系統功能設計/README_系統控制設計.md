@@ -83,7 +83,7 @@ UI（使用者介面）
 | Employees | 人力管理 | employee_management |
 | Suppliers | 供應鏈管理 | supplier_management |
 | Customers | 客戶關係管理 | customer_management |
-| Products | 商品管理 | product_management |
+| Products | 品項管理 | product_management |
 | Warehouse | 庫存管理 | inventory_management |
 | Purchase | 採購管理 | purchase_management |
 | Sales | 銷售管理 | sales_management |

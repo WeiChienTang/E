@@ -99,9 +99,9 @@ namespace ERPCore2.Data.Entities
         public bool AutoCreateSupplierSubAccount { get; set; } = false;
 
         /// <summary>
-        /// 新增商品時自動建立存貨子科目
+        /// 新增品項時自動建立存貨子科目
         /// </summary>
-        [Display(Name = "自動建立商品子科目")]
+        [Display(Name = "自動建立品項子科目")]
         public bool AutoCreateProductSubAccount { get; set; } = false;
 
         /// <summary>
@@ -161,10 +161,10 @@ namespace ERPCore2.Data.Entities
         public string SupplierAdvanceSubAccountParentCode { get; set; } = "1161";
 
         /// <summary>
-        /// 商品存貨統制科目代碼（商品子科目的父層），預設 1231
+        /// 品項存貨統制科目代碼（品項子科目的父層），預設 1231
         /// </summary>
         [MaxLength(20)]
-        [Display(Name = "商品存貨統制科目代碼")]
+        [Display(Name = "品項存貨統制科目代碼")]
         public string ProductSubAccountParentCode { get; set; } = "1231";
 
         /// <summary>

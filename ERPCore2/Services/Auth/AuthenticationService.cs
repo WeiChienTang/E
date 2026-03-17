@@ -50,6 +50,12 @@ namespace ERPCore2.Services
                     return ServiceResult<Employee>.Failure("帳號或密碼錯誤");
                 }
 
+                // 檢查帳號狀態
+                if (employee.Status != EntityStatus.Active)
+                {
+                    return ServiceResult<Employee>.Failure("帳號已停用或不存在，請聯絡系統管理員");
+                }
+
                 // 檢查帳號是否為系統使用者
                 if (!employee.IsSystemUser)
                 {

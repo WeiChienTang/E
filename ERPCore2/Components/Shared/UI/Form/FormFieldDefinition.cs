@@ -445,7 +445,7 @@ public class LabelHelpItem
     public string Title { get; set; } = string.Empty;
     
     /// <summary>
-    /// 項目說明（如：對倉庫內所有商品進行完整盤點）
+    /// 項目說明（如：對倉庫內所有品項進行完整盤點）
     /// </summary>
     public string Description { get; set; } = string.Empty;
 }

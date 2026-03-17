@@ -142,7 +142,7 @@ namespace ERPCore2.Services
                     errors.Add("採購入庫單不能為空");
 
                 if (entity.ProductId <= 0)
-                    errors.Add("商品不能為空");
+                    errors.Add("品項不能為空");
 
                 if (entity.WarehouseId <= 0)
                     errors.Add("倉庫不能為空");
@@ -241,7 +241,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據商品ID取得所有入庫明細
+        /// 根據品項ID取得所有入庫明細
         /// </summary>
         public async Task<List<PurchaseReceivingDetail>> GetByProductIdAsync(int productId)
         {
@@ -428,7 +428,7 @@ namespace ERPCore2.Services
                     {
                         foreach (var detail in details)
                         {
-                            // 驗證必要欄位：檢查商品、倉庫和入庫數量
+                            // 驗證必要欄位：檢查品項、倉庫和入庫數量
                             // 注意：空白的入庫數量會被前端轉換為 0，這裡會被過濾掉
                             if (detail.ProductId <= 0 || detail.WarehouseId <= 0 || detail.ReceivedQuantity <= 0)
                                 continue;
@@ -523,7 +523,7 @@ namespace ERPCore2.Services
         #region 驗證方法
 
         /// <summary>
-        /// 檢查商品在指定採購入庫單中是否已存在
+        /// 檢查品項在指定採購入庫單中是否已存在
         /// </summary>
         public async Task<bool> IsProductExistsInReceivingAsync(int purchaseReceivingId, int productId, int purchaseOrderDetailId, int? excludeId = null)
         {
@@ -555,7 +555,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查商品在指定採購入庫單的特定倉庫位置是否已存在
+        /// 檢查品項在指定採購入庫單的特定倉庫位置是否已存在
         /// </summary>
         public async Task<bool> IsProductWarehouseLocationExistsInReceivingAsync(
             int purchaseReceivingId, 
@@ -707,7 +707,7 @@ namespace ERPCore2.Services
                 if (detail == null)
                     return new List<InventoryTransaction>();
 
-                // 根據入庫單號查詢相關的庫存異動記錄（透過明細的商品ID過濾）
+                // 根據入庫單號查詢相關的庫存異動記錄（透過明細的品項ID過濾）
                 return await context.InventoryTransactions
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
@@ -778,7 +778,7 @@ namespace ERPCore2.Services
                     .FirstOrDefaultAsync(pr => pr.Id == entity.PurchaseReceivingId);
                 if (_inventoryStockService != null && entity.ReceivedQuantity > 0 && (receivingHeader?.IsApproved ?? false))
                 {
-                    // 使用 ReduceStockAsync 扣減庫存（因為取消進貨，實際收到的商品應該從庫存中減少）
+                    // 使用 ReduceStockAsync 扣減庫存（因為取消進貨，實際收到的品項應該從庫存中減少）
                     var stockResult = await _inventoryStockService.ReduceStockAsync(
                         productId: entity.ProductId,
                         warehouseId: entity.WarehouseId,

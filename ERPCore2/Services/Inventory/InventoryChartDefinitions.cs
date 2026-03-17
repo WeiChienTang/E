@@ -47,7 +47,7 @@ public static class InventoryChartDefinitions
             DetailFetcher      = (sp, label) => sp.GetRequiredService<IInventoryChartService>().GetStockDetailsByWarehouseAsync(label),
             DetailColumns      = new()
             {
-                new() { Title = "商品名稱", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },
+                new() { Title = "品項名稱", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },
                 new() { Title = "庫存數量", PropertyName = "SubLabel", ColumnType = InteractiveColumnType.Display, Width = "120px", TextAlign = "right" }
             }
         });
@@ -55,7 +55,7 @@ public static class InventoryChartDefinitions
         definitions.Add(new ChartDefinition
         {
             ChartId            = ChartIds.InventoryLowStock,
-            Title              = "低庫存預警商品",
+            Title              = "低庫存預警品項",
             Category           = ChartCategory.Inventory,
             SortOrder          = 4,
             DefaultSeriesType  = SeriesType.Bar,
@@ -64,7 +64,7 @@ public static class InventoryChartDefinitions
             DetailFetcher      = (sp, label) => sp.GetRequiredService<IInventoryChartService>().GetLowStockDetailsAsync(label),
             DetailColumns      = new()
             {
-                new() { Title = "商品名稱",       PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },
+                new() { Title = "品項名稱",       PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },
                 new() { Title = "現有庫存 / 安全量", PropertyName = "SubLabel", ColumnType = InteractiveColumnType.Display, Width = "200px" }
             }
         });

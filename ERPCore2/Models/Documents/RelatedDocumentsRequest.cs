@@ -16,7 +16,7 @@ namespace ERPCore2.Models.Documents
         public int SourceDetailId { get; set; }
 
         /// <summary>
-        /// 商品名稱（用於顯示標題）
+        /// 品項名稱（用於顯示標題）
         /// </summary>
         public string ProductName { get; set; } = string.Empty;
     }

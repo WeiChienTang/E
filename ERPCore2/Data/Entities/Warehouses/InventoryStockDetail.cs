@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 庫存明細實體 - 記錄商品在各倉庫位置的具體庫存分佈
+    /// 庫存明細實體 - 記錄品項在各倉庫位置的具體庫存分佈
     /// </summary>
     [Index(nameof(InventoryStockId), nameof(WarehouseId), nameof(WarehouseLocationId), nameof(BatchNumber), IsUnique = true)]
     public class InventoryStockDetail : BaseEntity

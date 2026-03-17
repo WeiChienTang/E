@@ -13,7 +13,7 @@ namespace ERPCore2.Services.Reports
 {
     /// <summary>
     /// 庫存盤點差異表報表服務實作
-    /// 依盤點單分組顯示各商品的系統庫存、實盤數量及差異
+    /// 依盤點單分組顯示各品項的系統庫存、實盤數量及差異
     /// </summary>
     public class StockTakingDifferenceReportService : IStockTakingDifferenceReportService
     {

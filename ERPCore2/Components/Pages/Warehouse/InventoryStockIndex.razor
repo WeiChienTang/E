@@ -364,13 +364,13 @@
         try
         {
             var product = products.FirstOrDefault(p => p.Id == productId);
-            return product?.Name ?? $"商品-{productId}";
+            return product?.Name ?? $"品項-{productId}";
         }
         catch (Exception ex)
         {
             // 記錄錯誤但不顯示通知，因為這是輔助方法
-            _ = Task.Run(async () => await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetProductName), GetType(), additionalData: $"取得商品名稱失敗: ProductId={productId}"));
-            return $"商品-{productId}";
+            _ = Task.Run(async () => await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetProductName), GetType(), additionalData: $"取得品項名稱失敗: ProductId={productId}"));
+            return $"品項-{productId}";
         }
     }
 

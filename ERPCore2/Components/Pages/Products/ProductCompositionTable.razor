@@ -1,4 +1,4 @@
-@* 商品合成明細管理組件 - 繼承 BaseDetailTableComponent，統一架構 *@
+@* 品項合成明細管理組件 - 繼承 BaseDetailTableComponent，統一架構 *@
 @inherits BaseDetailTableComponent<ProductComposition, ProductCompositionDetail, ProductCompositionTable.CompositionItem>
 
 @inject INotificationService NotificationService
@@ -69,7 +69,7 @@
     {
         try
         {
-            // 商品類別只需載入一次，且父組件不提供，在此自行載入
+            // 品項類別只需載入一次，且父組件不提供，在此自行載入
             _availableCategories = await ProductCategoryService.GetAllAsync();
         }
         catch
@@ -177,7 +177,7 @@
     {
         return new List<InteractiveColumnDefinition>
         {
-            // 材料商品選擇欄位
+            // 材料品項選擇欄位
             new()
             {
                 Title = L["Column.MaterialCodeName"],
@@ -238,7 +238,7 @@
             new()
             {
                 Title = L["Column.RequiredQuantity"],
-                Tooltip = "輸入此材料所需的數量（單位由商品設定決定）",
+                Tooltip = "輸入此材料所需的數量（單位由品項設定決定）",
                 PropertyName = nameof(CompositionItem.Quantity),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "180px",

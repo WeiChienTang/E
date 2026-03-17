@@ -58,8 +58,8 @@ public class BarcodeGeneratorService : IBarcodeGeneratorService
     }
     
     /// <summary>
-    /// 生成帶有商品資訊的條碼圖片
-    /// 商品資訊（[編號] [名稱]）顯示在條碼下方一行
+    /// 生成帶有品項資訊的條碼圖片
+    /// 品項資訊（[編號] [名稱]）顯示在條碼下方一行
     /// </summary>
     public byte[] GenerateBarcodeWithInfo(
         string barcodeValue, 
@@ -81,7 +81,7 @@ public class BarcodeGeneratorService : IBarcodeGeneratorService
         float infoTextSize = textSize;
         float infoLineHeight = infoTextSize + 4f * dpiScale;
         
-        // 計算標籤區域高度（只有一行商品資訊）
+        // 計算標籤區域高度（只有一行品項資訊）
         bool hasProductInfo = !string.IsNullOrWhiteSpace(productCode) || !string.IsNullOrWhiteSpace(productName);
         int labelHeight = (int)(hasProductInfo ? infoLineHeight : 0) + (int)(4f * dpiScale);
         
@@ -134,12 +134,12 @@ public class BarcodeGeneratorService : IBarcodeGeneratorService
                 Typeface = typeface
             };
             
-            // 繪製標籤（商品資訊一行，顯示在條碼下方）
+            // 繪製標籤（品項資訊一行，顯示在條碼下方）
             if (hasProductInfo)
             {
                 float yOffset = barcodeOnlyHeight + infoLineHeight;
                 
-                // 商品資訊（[編號] [名稱]）
+                // 品項資訊（[編號] [名稱]）
                 string infoText = BuildProductInfoText(productCode, productName, width, infoTextPaint);
                 if (!string.IsNullOrWhiteSpace(infoText))
                 {
@@ -183,7 +183,7 @@ public class BarcodeGeneratorService : IBarcodeGeneratorService
     }
     
     /// <summary>
-    /// 建立商品資訊文字（[編號] [名稱] 格式），確保不超過條碼寬度
+    /// 建立品項資訊文字（[編號] [名稱] 格式），確保不超過條碼寬度
     /// </summary>
     private static string BuildProductInfoText(string? productCode, string? productName, int maxWidth, SKPaint paint)
     {

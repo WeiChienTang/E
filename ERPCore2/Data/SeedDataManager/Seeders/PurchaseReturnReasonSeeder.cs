@@ -40,7 +40,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PRR001",
                     Name = "品質不良",
-                    Remarks = "進貨商品品質不符合標準或有瑕疵",
+                    Remarks = "進貨品項品質不符合標準或有瑕疵",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt1
                 },
@@ -48,7 +48,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PRR002",
                     Name = "規格不符",
-                    Remarks = "商品規格與採購訂單要求不符",
+                    Remarks = "品項規格與採購訂單要求不符",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt2
                 },
@@ -64,15 +64,15 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PRR004",
                     Name = "供應商要求",
-                    Remarks = "供應商主動要求取回商品",
+                    Remarks = "供應商主動要求取回品項",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt4
                 },
                 new EntityPurchaseReturnReason
                 {
                     Code = "PRR005",
-                    Name = "過期商品",
-                    Remarks = "進貨商品已過有效期限",
+                    Name = "過期品項",
+                    Remarks = "進貨品項已過有效期限",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt5
                 },

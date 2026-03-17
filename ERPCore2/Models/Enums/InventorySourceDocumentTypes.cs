@@ -73,7 +73,7 @@
         /// <summary>
         /// 磅秤紀錄收料
         /// </summary>
-        public const string WasteRecord = "WasteRecord";
+        public const string ScaleRecord = "ScaleRecord";
         
         /// <summary>
         /// 取得來源類型的顯示名稱
@@ -95,7 +95,7 @@
                 ProductionConsumption => "生產投料",
                 ProductionCompletion => "生產完工",
                 Scrap => "報廢",
-                WasteRecord => "磅秤紀錄收料",
+                ScaleRecord => "磅秤紀錄收料",
                 _ => sourceType ?? "未知"
             };
         }

@@ -91,13 +91,13 @@ ProductionScheduleItem 確認的狀態機：
 
 ### 3.1 完工入庫倉庫選擇（Q1）
 
-**決策：** 使用者手動選擇倉庫與庫位，系統智慧預填上一次同商品的入庫位置。
+**決策：** 使用者手動選擇倉庫與庫位，系統智慧預填上一次同品項的入庫位置。
 
 **實作細節：**
-- 查詢 `ProductionScheduleCompletion`，JOIN `ProductionScheduleItem`（取 `ProductId`），找最後一筆 `ProductionScheduleItem.ProductId == 目前商品` 的記錄，取其 `WarehouseId` / `WarehouseLocationId` 作為預設值（`ProductionScheduleCompletion` 本身無 `ProductId` 欄位，需透過 join 取得）
+- 查詢 `ProductionScheduleCompletion`，JOIN `ProductionScheduleItem`（取 `ProductId`），找最後一筆 `ProductionScheduleItem.ProductId == 目前品項` 的記錄，取其 `WarehouseId` / `WarehouseLocationId` 作為預設值（`ProductionScheduleCompletion` 本身無 `ProductId` 欄位，需透過 join 取得）
 - 使用者確認或修改後送出
 - `ProductionBoardItemEditModal` 確認入庫區塊需新增倉庫/庫位選擇器
-- `ProductionBoardBatchCompleteModal` 批次完工時，每行各自預填（同商品上次位置），可逐一調整
+- `ProductionBoardBatchCompleteModal` 批次完工時，每行各自預填（同品項上次位置），可逐一調整
 
 **影響範圍：**
 - `ProductionBoardItemEditModal.razor` — 入庫區塊加倉庫/庫位下拉
@@ -111,7 +111,7 @@ ProductionScheduleItem 確認的狀態機：
 **觸發規則：**
 - **材料全部領齊**（`materialComplete == true` **且** `hasBom == true`）→ `HandleMaterialIssued` 完成後自動呼叫 `StartProductionAsync`，卡片自動變為 InProgress
 - **材料未齊但要強制開始**（BOM 未領完仍要生產）→ EditModal 顯示橘色警告 + 「強制開始生產」按鈕，使用者確認後呼叫 `StartProductionAsync`
-- **無 BOM 商品**（`hasBom == false`）→ 拖入看板後停在 WaitingMaterial，需手動點「開始生產」按鈕；`materialComplete` 對無 BOM 商品為 `true`，但**不觸發**自動升格，避免恢復舊的自動升格行為
+- **無 BOM 品項**（`hasBom == false`）→ 拖入看板後停在 WaitingMaterial，需手動點「開始生產」按鈕；`materialComplete` 對無 BOM 品項為 `true`，但**不觸發**自動升格，避免恢復舊的自動升格行為
 
 **EditModal WaitingMaterial 狀態的按鈕配置：**
 ```
@@ -121,7 +121,7 @@ ProductionScheduleItem 確認的狀態機：
 
 **目前問題（需修正）：**
 - `StartProductionAsync` 只允許 `Pending` 狀態，看板卡片是 `WaitingMaterial`，該方法是**死碼**
-- 無 BOM 商品拖入時，程式直接設成 InProgress，`ActualStartDate` 未設定（漏設）
+- 無 BOM 品項拖入時，程式直接設成 InProgress，`ActualStartDate` 未設定（漏設）
 
 **修正方向：**
 - `StartProductionAsync`：改為允許 `WaitingMaterial` 和 `Pending` 兩種狀態
@@ -168,7 +168,7 @@ ProductionScheduleItem 確認的狀態機：
 完工確認（最後一次入庫時）
   ├── Section 1：成品入庫
   │     ├── 本次入庫數量（唯讀：剩餘數量）
-  │     └── 入庫倉庫 / 庫位（預填：同商品上次完工位置）
+  │     └── 入庫倉庫 / 庫位（預填：同品項上次完工位置）
   │
   └── Section 2：用料結算（IssuedQuantity > 0 的組件才顯示）
         └── 每個 BOM 組件一行：
@@ -325,12 +325,12 @@ var productionUnitCost = item.ScheduledQuantity > 0
 **修改位置：**
 - `StartProductionAsync`：移除僅允許 `Pending` 的限制，改為允許 `WaitingMaterial` 和 `Pending`
 - `ProductionBoardItemEditModal.razor`：加入「開始生產」按鈕邏輯
-- 無 BOM 商品拖入看板時，不再自動升格為 InProgress（保持 WaitingMaterial）
+- 無 BOM 品項拖入看板時，不再自動升格為 InProgress（保持 WaitingMaterial）
 
 ### 4.6【中優先】完工入庫加倉庫/庫位欄位（對應§3.1）
 
 **修改位置：**
-- `ProductionBoardItemEditModal.razor`：確認入庫區塊加 Warehouse / WarehouseLocation 選擇器，預填上次同商品入庫位置
+- `ProductionBoardItemEditModal.razor`：確認入庫區塊加 Warehouse / WarehouseLocation 選擇器，預填上次同品項入庫位置
 - `ProductionBoardBatchCompleteModal.razor`：每行加倉庫欄，預填邏輯同上
 - 可新增 `GetLastCompletionWarehouseAsync(int productId)` service 方法
 
@@ -383,11 +383,11 @@ var productionUnitCost = item.ScheduledQuantity > 0
 
 **背景：** 結案後的卡片（`IsClosed = true`）從看板隱藏，需要有歷史頁面查詢。
 
-**待設計：** 獨立的歷史列表頁，可依日期、商品、客戶篩選，顯示已結案排程及其完工紀錄。
+**待設計：** 獨立的歷史列表頁，可依日期、品項、客戶篩選，顯示已結案排程及其完工紀錄。
 
-### 4.13【長期】多訂單同商品批次生產（Option B）
+### 4.13【長期】多訂單同品項批次生產（Option B）
 
-**業務邏輯：** 同一商品來自不同訂單時，全部合批一次生產；無重複商品依訂單優先順序生產。
+**業務邏輯：** 同一品項來自不同訂單時，全部合批一次生產；無重複品項依訂單優先順序生產。
 
 目前每筆 `SalesOrderDetail` 對應一張卡片，尚無合批問題。
 
@@ -395,7 +395,7 @@ var productionUnitCost = item.ScheduledQuantity > 0
 
 ```
 ProductionScheduleItem（合批卡片）
-  ├── ProductId（商品）
+  ├── ProductId（品項）
   ├── ScheduledQuantity（合計量）
   └── Sources
         ├── SalesOrderDetailId
@@ -510,7 +510,7 @@ public class MaterialSettlementDto
 | 欄位 | 說明 |
 |------|------|
 | `ProductionScheduleId` | 關聯每日批次主檔 |
-| `ProductId` | 生產商品 |
+| `ProductId` | 生產品項 |
 | `SalesOrderDetailId` | 來源訂單明細（nullable） |
 | `ScheduledQuantity` | 計畫生產數量（不可在看板隨意修改） |
 | `CompletedQuantity` | 已完工累計數量 |
@@ -597,7 +597,7 @@ public class MaterialSettlementDto
 | 2 | 前端移除重複的狀態升格邏輯（由 service 統一負責） | §5.4 |
 | 3 | 拖入看板一律保持 `WaitingMaterial`（移除無 BOM 自動升格） | §4.5 |
 | 4 | EditModal 加入「開始生產」按鈕（`WaitingMaterial` 狀態時顯示） | §4.5 |
-| 5 | 完工確認區塊加倉庫 / 庫位選擇器（預填上次同商品入庫位置） | §4.6 |
+| 5 | 完工確認區塊加倉庫 / 庫位選擇器（預填上次同品項入庫位置） | §4.6 |
 | 6 | Sidebar 灰化未審核訂單，鎖定拖曳功能 | §4.2 |
 | 7 | 最後一次完工時展開「用料結算」section（實際用量 / 退料 / 損耗） | §4.8 |
 | 8 | `ProductionBoardBatchCompleteModal` 每行加倉庫 / 庫位選擇器 | §4.6 |
@@ -619,7 +619,7 @@ public class MaterialSettlementDto
 
 | # | 項目 | 對應待辦 |
 |---|------|---------|
-| 1 | 多訂單同商品合批生產（`ProductionScheduleItemSource` 中介表） | §4.13 |
+| 1 | 多訂單同品項合批生產（`ProductionScheduleItemSource` 中介表） | §4.13 |
 
 ---
 

@@ -4,7 +4,7 @@ namespace ERPCore2.Services.Sales;
 
 public interface ISalesChartService
 {
-    /// <summary>依商品統計銷售金額排行 Top N（含稅）</summary>
+    /// <summary>依品項統計銷售金額排行 Top N（含稅）</summary>
     Task<List<ChartDataItem>> GetTopProductsBySalesAmountAsync(int top = 10);
 
     /// <summary>依業務員統計銷售業績排行 Top N（含稅）</summary>

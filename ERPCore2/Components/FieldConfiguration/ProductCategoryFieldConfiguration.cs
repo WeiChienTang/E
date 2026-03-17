@@ -11,7 +11,7 @@ using ERPCore2.Components.Shared.Statistics;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 商品分類欄位配置
+    /// 品項分類欄位配置
     /// </summary>
     public class ProductCategoryFieldConfiguration : BaseFieldConfiguration<ProductCategory>
     {
@@ -93,7 +93,7 @@ namespace ERPCore2.FieldConfiguration
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "商品分類欄位配置初始化失敗");
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "品項分類欄位配置初始化失敗");
                 });
 
                 // 通知使用者
@@ -101,7 +101,7 @@ namespace ERPCore2.FieldConfiguration
                 {
                     _ = Task.Run(async () =>
                     {
-                        await _notificationService.ShowErrorAsync("商品分類欄位配置初始化失敗，已使用預設配置");
+                        await _notificationService.ShowErrorAsync("品項分類欄位配置初始化失敗，已使用預設配置");
                     });
                 }
                 

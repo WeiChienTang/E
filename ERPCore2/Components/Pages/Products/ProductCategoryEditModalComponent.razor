@@ -1,4 +1,4 @@
-﻿@* 可重用的商品類型編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的品項類型編輯組件 - 可在任何頁面中嵌入 *@
 @inject IProductCategoryService ProductCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -19,7 +19,7 @@
                           FormSections="@formSections"
                           DataLoader="@LoadProductCategoryData"
                           ShowDraftButton="true"
-                          DraftSuccessMessage="商品類型草稿已儲存，請記得補齊必填資料"
+                          DraftSuccessMessage="品項類型草稿已儲存，請記得補齊必填資料"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(ProductCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.ProductCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.ProductCategory"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductCategory"]]"
@@ -45,7 +45,7 @@
     // ===== 必要方法 =====
     private Task<ProductCategory?> LoadProductCategoryData()
         => EditDataLoaderHelper.LoadOrCreateAsync<ProductCategory, IProductCategoryService>(
-            ProductCategoryId, ProductCategoryService, NotificationService, "商品類型", "PCAT", PrefilledValues);
+            ProductCategoryId, ProductCategoryService, NotificationService, "品項類型", "PCAT", PrefilledValues);
 
     protected override void OnParametersSet()
     {
@@ -67,7 +67,7 @@
                 Placeholder = L["Placeholder.PleaseInput", L["Field.CategoryCode"]],
                 IsRequired = false,
                 MaxLength = 50,
-                HelpText = "商品分類的唯一編號，新增時系統會自動產生，也可手動修改"
+                HelpText = "品項分類的唯一編號，新增時系統會自動產生，也可手動修改"
             },
             new()
             {
@@ -77,7 +77,7 @@
                 Placeholder = L["Placeholder.PleaseInput", L["Field.CategoryName"]],
                 IsRequired = true,
                 MaxLength = 50,
-                HelpText = "商品分類的名稱，用於區分不同的商品類型"
+                HelpText = "品項分類的名稱，用於區分不同的品項類型"
             },
             new FormFieldDefinition()
             {
@@ -85,7 +85,7 @@
                 Label = L["Field.ForSale"],
                 FieldType = FormFieldType.Checkbox,
                 IsRequired = false,
-                HelpText = "指示此商品分類下的商品是否可供銷售"
+                HelpText = "指示此品項分類下的品項是否可供銷售"
             },
 
             FormFieldConfigurationHelper.CreateRemarksField<ProductCategory>()

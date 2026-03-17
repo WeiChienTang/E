@@ -4,20 +4,20 @@ using ERPCore2.Services;
 namespace ERPCore2.Helpers;
 
 /// <summary>
-/// SearchableSelect Helper - 統一商品搜尋和選擇邏輯
+/// SearchableSelect Helper - 統一品項搜尋和選擇邏輯
 /// 用於 InteractiveTableComponent 的 SearchableSelect 欄位處理
 /// </summary>
 public static class SearchableSelectHelper
 {
     /// <summary>
-    /// 處理商品搜尋輸入（通用版本）
+    /// 處理品項搜尋輸入（通用版本）
     /// </summary>
     /// <typeparam name="TItem">項目類型</typeparam>
     /// <param name="item">當前項目</param>
     /// <param name="searchValue">搜尋值</param>
-    /// <param name="availableProducts">可選擇的商品清單</param>
+    /// <param name="availableProducts">可選擇的品項清單</param>
     /// <param name="setSearchValue">設定搜尋值的動作</param>
-    /// <param name="setFilteredProducts">設定過濾後商品的動作</param>
+    /// <param name="setFilteredProducts">設定過濾後品項的動作</param>
     /// <param name="setShowDropdown">設定是否顯示下拉選單的動作</param>
     /// <param name="setSelectedIndex">設定選中索引的動作</param>
     /// <param name="onStateChanged">狀態變更回呼（可選，通常是 StateHasChanged）</param>
@@ -36,7 +36,7 @@ public static class SearchableSelectHelper
         // 更新搜尋值
         setSearchValue(item, searchValue ?? string.Empty);
         
-        // 過濾商品清單
+        // 過濾品項清單
         var filtered = string.IsNullOrWhiteSpace(searchValue)
             ? availableProducts.Take(maxDisplayItems).ToList()
             : availableProducts
@@ -53,12 +53,12 @@ public static class SearchableSelectHelper
     }
     
     /// <summary>
-    /// 處理商品選擇（含稅率自動帶入）
+    /// 處理品項選擇（含稅率自動帶入）
     /// </summary>
     /// <typeparam name="TItem">項目類型</typeparam>
     /// <param name="item">當前項目</param>
-    /// <param name="selectedProduct">選中的商品</param>
-    /// <param name="setSelectedProduct">設定選中商品的動作</param>
+    /// <param name="selectedProduct">選中的品項</param>
+    /// <param name="setSelectedProduct">設定選中品項的動作</param>
     /// <param name="setSearchValue">設定搜尋值的動作</param>
     /// <param name="setTaxRate">設定稅率的動作</param>
     /// <param name="setShowDropdown">設定是否顯示下拉選單的動作</param>
@@ -101,12 +101,12 @@ public static class SearchableSelectHelper
     }
     
     /// <summary>
-    /// 處理商品選擇（簡化版，不帶入稅率）
+    /// 處理品項選擇（簡化版，不帶入稅率）
     /// </summary>
     /// <typeparam name="TItem">項目類型</typeparam>
     /// <param name="item">當前項目</param>
-    /// <param name="selectedProduct">選中的商品</param>
-    /// <param name="setSelectedProduct">設定選中商品的動作</param>
+    /// <param name="selectedProduct">選中的品項</param>
+    /// <param name="setSelectedProduct">設定選中品項的動作</param>
     /// <param name="setSearchValue">設定搜尋值的動作</param>
     /// <param name="setShowDropdown">設定是否顯示下拉選單的動作</param>
     /// <param name="onChanged">變更後的回呼函式（可選）</param>
@@ -141,9 +141,9 @@ public static class SearchableSelectHelper
     }
     
     /// <summary>
-    /// 格式化商品顯示文字
+    /// 格式化品項顯示文字
     /// </summary>
-    /// <param name="product">商品</param>
+    /// <param name="product">品項</param>
     /// <returns>格式化後的文字（格式：[編號] 名稱）</returns>
     public static string FormatProductDisplayText(Product? product)
     {
@@ -171,8 +171,8 @@ public static class SearchableSelectHelper
     /// <typeparam name="TItem">項目類型</typeparam>
     /// <param name="item">當前項目</param>
     /// <param name="searchValue">當前搜尋值</param>
-    /// <param name="availableProducts">可選擇的商品清單</param>
-    /// <param name="setFilteredProducts">設定過濾後商品的動作</param>
+    /// <param name="availableProducts">可選擇的品項清單</param>
+    /// <param name="setFilteredProducts">設定過濾後品項的動作</param>
     /// <param name="setShowDropdown">設定是否顯示下拉選單的動作</param>
     /// <param name="maxDisplayItems">最大顯示項目數（預設 20）</param>
     public static void HandleProductFocus<TItem>(
@@ -220,7 +220,7 @@ public static class SearchableSelectHelper
     /// <param name="item">當前項目</param>
     /// <param name="key">按下的按鍵</param>
     /// <param name="currentIndex">當前選中索引</param>
-    /// <param name="filteredProducts">過濾後的商品清單</param>
+    /// <param name="filteredProducts">過濾後的品項清單</param>
     /// <param name="setSelectedIndex">設定選中索引的動作</param>
     /// <param name="onEnter">按下 Enter 時的回呼函式（可選）</param>
     /// <returns>是否處理了按鍵事件</returns>

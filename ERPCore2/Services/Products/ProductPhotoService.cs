@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 商品照片服務實作
+    /// 品項照片服務實作
     /// </summary>
     public class ProductPhotoService : GenericManagementService<ProductPhoto>, IProductPhotoService
     {
@@ -33,7 +33,7 @@ namespace ERPCore2.Services
             try
             {
                 if (entity.ProductId <= 0)
-                    return ServiceResult.Failure("商品ID無效");
+                    return ServiceResult.Failure("品項ID無效");
 
                 if (string.IsNullOrWhiteSpace(entity.PhotoPath))
                     return ServiceResult.Failure("照片路徑不可為空");

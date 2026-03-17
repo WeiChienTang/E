@@ -1,7 +1,7 @@
 @* 
-    商品條碼批次列印篩選模板
-    實作 IFilterTemplateComponent 介面，提供商品條碼批次列印的篩選 UI
-    設計原則：緊湊式佈局，整合商品選擇表格與列印設定
+    品項條碼批次列印篩選模板
+    實作 IFilterTemplateComponent 介面，提供品項條碼批次列印的篩選 UI
+    設計原則：緊湊式佈局，整合品項選擇表格與列印設定
 *@
 
 @using ERPCore2.Models
@@ -15,7 +15,7 @@
 
 <FilterSectionGroup>
     <FilterSectionColumn Title="@L["Report.BarcodeSettings"]" Icon="bi bi-upc-scan">
-    @* 商品選擇表格 *@
+    @* 品項選擇表格 *@
     <div class="mb-3">
         <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end mb-2">
             <GenericButtonComponent Text="@L["Label.SelectAll"]"
@@ -195,7 +195,7 @@
         showProductName = true;
         showProductCode = true;
         
-        // 重置每個商品的列印數量為 1
+        // 重置每個品項的列印數量為 1
         foreach (var item in barcodeItems)
         {
             item.PrintQuantity = 1;

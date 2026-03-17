@@ -342,55 +342,55 @@ public static class NavigationConfig
                 }
             },
 
-            // ==================== 商品管理 ====================
+            // ==================== 品項管理 ====================
             new NavigationItem
             {
-                Name = "商品",
+                Name = "品項",
                 NameKey = "Nav.ProductGroup",
-                Description = "商品相關功能管理",
+                Description = "品項相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-box-seam-fill",
-                Category = "商品管理",
+                Category = "品項管理",
                 IsParent = true,
                 MenuKey = "product_management",
                 ModuleKey = "Products",
-                SearchKeywords = new List<string> { "商品", "product", "item", "产品", "物品", "商品管理", "品目", "アイテム" },
+                SearchKeywords = new List<string> { "品項", "product", "item", "产品", "物品", "品項管理", "品目", "アイテム" },
                 Children = new List<NavigationItem>
                 {
                     new NavigationItem
                     {
-                        Name = "商品",
+                        Name = "品項",
                         NameKey = "Nav.Products",
-                        Description = "管理商品資料和商品目錄",
+                        Description = "管理品項資料和品項目錄",
                         Route = "/products",
                         IconClass = "bi bi-caret-right-fill",
-                        Category = "商品管理",
+                        Category = "品項管理",
                         RequiredPermission = PermissionRegistry.Product.Read,
-                        SearchKeywords = new List<string> { "商品管理", "商品資料", "商品目錄", "品項", "條碼", "SKU", "商品编码", "産品管理", "品番", "barcode" },
+                        SearchKeywords = new List<string> { "品項管理", "品項資料", "品項目錄", "品項", "條碼", "SKU", "品项编码", "産品管理", "品番", "barcode" },
                         QuickActionId = "NewProduct",
-                        QuickActionName = "新增商品"
+                        QuickActionName = "新增品項"
                     },
                     new NavigationItem
                     {
                         Name = "類型",
                         NameKey = "Nav.ProductCategories",
-                        Description = "管理商品類型分類",
+                        Description = "管理品項類型分類",
                         Route = "/product-categories",
                         IconClass = "",
-                        Category = "商品管理",
+                        Category = "品項管理",
                         RequiredPermission = PermissionRegistry.ProductCategory.Read,
-                        SearchKeywords = new List<string> { "商品類型", "商品分類", "category", "商品类型", "産品分類", "品目カテゴリ" },
+                        SearchKeywords = new List<string> { "品項類型", "品項分類", "category", "品项类型", "産品分類", "品目カテゴリ" },
                         QuickActionId = "NewProductCategory",
-                        QuickActionName = "新增商品類型"
+                        QuickActionName = "新增品項類型"
                     },
                     new NavigationItem
                     {
                         Name = "單位",
                         NameKey = "Nav.Units",
-                        Description = "管理商品計量單位",
+                        Description = "管理品項計量單位",
                         Route = "/units",
                         IconClass = "",
-                        Category = "商品管理",
+                        Category = "品項管理",
                         RequiredPermission = PermissionRegistry.Unit.Read,
                         SearchKeywords = new List<string> { "單位", "計量單位", "unit", "单位", "计量单位", "UOM", "単位", "数量単位" },
                         QuickActionId = "NewUnit",
@@ -401,10 +401,10 @@ public static class NavigationConfig
                     {
                         Name = "尺寸",
                         NameKey = "Nav.Sizes",
-                        Description = "管理商品尺寸規格",
+                        Description = "管理品項尺寸規格",
                         Route = "/sizes",
                         IconClass = "",
-                        Category = "商品管理",
+                        Category = "品項管理",
                         RequiredPermission = PermissionRegistry.Size.Read,
                         SearchKeywords = new List<string> { "尺寸", "規格", "size", "尺码", "规格", "サイズ", "寸法", "spec" },
                         QuickActionId = "NewSize",
@@ -414,12 +414,12 @@ public static class NavigationConfig
                     {
                         Name = "物料清單",
                         NameKey = "Nav.ProductCompositions",
-                        Description = "管理商品的配方和組件結構",
+                        Description = "管理品項的配方和組件結構",
                         Route = "/product-compositions",
                         IconClass = "bi bi-caret-right-fill",
-                        Category = "商品管理",
+                        Category = "品項管理",
                         RequiredPermission = PermissionRegistry.ProductComposition.Read,
-                        SearchKeywords = new List<string> { "商品合成", "BOM", "物料清單", "Bill of Materials", "物料清单", "配方", "部品表", "構成部品", "配合表" },
+                        SearchKeywords = new List<string> { "品項合成", "BOM", "物料清單", "Bill of Materials", "物料清单", "配方", "部品表", "構成部品", "配合表" },
                         QuickActionId = "NewProductComposition",
                         QuickActionName = "新增物料清單"
                     },
@@ -430,7 +430,7 @@ public static class NavigationConfig
                         Description = "管理物料清單的類型分類",
                         Route = "/composition-categories",
                         IconClass = "",
-                        Category = "商品管理",
+                        Category = "品項管理",
                         RequiredPermission = PermissionRegistry.CompositionCategory.Read,
                         SearchKeywords = new List<string> { "物料清單類型", "BOM類型", "category", "物料类型", "部品表分類", "配方分類" },
                         QuickActionId = "NewCompositionCategory",
@@ -441,7 +441,7 @@ public static class NavigationConfig
                         description: "管理生產排程的詳細資料",
                         iconClass: "bi bi-kanban",
                         actionId: "OpenProductionScheduleBoard",
-                        category: "商品管理",
+                        category: "品項管理",
                         requiredPermission: PermissionRegistry.ProductionSchedule.Read,
                         searchKeywords: new List<string> { "生產排程", "排程管理", "production schedule", "生产排程", "生産計画", "製造スケジュール", "工単", "工作排程" },
                         nameKey: "Nav.ProductionSchedules"
@@ -453,13 +453,13 @@ public static class NavigationConfig
                     },
                     
                     NavigationActionHelper.CreateActionItem(
-                        name: "商品報表集",
-                        description: "查看和列印所有商品相關報表",
+                        name: "品項報表集",
+                        description: "查看和列印所有品項相關報表",
                         iconClass: "bi bi-printer-fill",
                         actionId: "OpenProductReportIndex",
-                        category: "商品管理",
+                        category: "品項管理",
                         requiredPermission: "Product.Read",
-                        searchKeywords: new List<string> { "商品報表", "商品報表集", "product report", "產品報表", "商品报表", "産品レポート" },
+                        searchKeywords: new List<string> { "品項報表", "品項報表集", "product report", "產品報表", "品项报表", "産品レポート" },
                         nameKey: "Nav.ProductReportIndex"
                     ),
                 }
@@ -922,9 +922,9 @@ public static class NavigationConfig
                 IconClass = "bi bi-truck-flatbed",
                 Category = "磅秤管理",
                 IsParent = true,
-                MenuKey = "waste_management",
-                ModuleKey = "WasteManagement",
-                SearchKeywords = new List<string> { "磅秤紀錄", "磅秤管理", "廢料", "廢棄物", "廢料管理", "waste", "scrap", "废料", "废弃物", "廃材", "スクラップ", "廢料回收" },
+                MenuKey = "scale_management",
+                ModuleKey = "ScaleManagement",
+                SearchKeywords = new List<string> { "磅秤紀錄", "磅秤管理", "磅秤", "waste", "scale", "weighing", "磅秤管理", "磅秤记录", "計量", "磅秤回收" },
                 Children = new List<NavigationItem>
                 {
                     new NavigationItem
@@ -932,12 +932,12 @@ public static class NavigationConfig
                         Name = "磅秤紀錄",
                         NameKey = "Nav.WasteRecords",
                         Description = "管理磅秤收料紀錄",
-                        Route = "/waste-records",
+                        Route = "/scale-records",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "磅秤管理",
-                        RequiredPermission = PermissionRegistry.WasteRecord.Read,
-                        SearchKeywords = new List<string> { "磅秤紀錄", "廢料記錄", "收料記錄", "waste record", "废料记录", "廃材記録", "收廢" },
-                        QuickActionId = "NewWasteRecord",
+                        RequiredPermission = PermissionRegistry.ScaleRecord.Read,
+                        SearchKeywords = new List<string> { "磅秤紀錄", "磅秤記錄", "收料記錄", "waste record", "scale record", "計量記録", "收磅" },
+                        QuickActionId = "NewScaleRecord",
                         QuickActionName = "新增磅秤紀錄"
                     },
                     new NavigationItem
@@ -945,12 +945,12 @@ public static class NavigationConfig
                         Name = "磅秤類型",
                         NameKey = "Nav.WasteTypes",
                         Description = "管理磅秤類型分類設定",
-                        Route = "/waste-types",
+                        Route = "/scale-types",
                         IconClass = "",
                         Category = "磅秤管理",
-                        RequiredPermission = PermissionRegistry.WasteType.Read,
-                        SearchKeywords = new List<string> { "磅秤類型", "廢料類型", "廢料分類", "waste type", "废料类型", "廃材分類" },
-                        QuickActionId = "NewWasteType",
+                        RequiredPermission = PermissionRegistry.ScaleType.Read,
+                        SearchKeywords = new List<string> { "磅秤類型", "磅秤分類", "scale type", "磅秤类型", "計量タイプ" },
+                        QuickActionId = "NewScaleType",
                         QuickActionName = "新增磅秤類型"
                     },
 
@@ -964,10 +964,10 @@ public static class NavigationConfig
                         name: "磅秤報表集",
                         description: "查看和列印所有磅秤相關報表",
                         iconClass: "bi bi-printer-fill",
-                        actionId: "OpenWasteReportIndex",
+                        actionId: "OpenScaleReportIndex",
                         category: "磅秤管理",
-                        requiredPermission: "WasteRecord.Read",
-                        searchKeywords: new List<string> { "磅秤報表", "磅秤報表集", "廢料報表", "waste report", "废料报表", "廃材レポート" },
+                        requiredPermission: "ScaleRecord.Read",
+                        searchKeywords: new List<string> { "磅秤報表", "磅秤報表集", "scale report", "磅秤报表", "計量レポート" },
                         nameKey: "Nav.WasteReportIndex"
                     ),
                 }
@@ -1485,7 +1485,7 @@ public static class NavigationConfig
             "人力資源管理" => "bi bi-person-badge-fill",
             "供應鏈管理" => "bi bi-building-gear",
             "客戶關係管理" => "bi bi-people-fill",
-            "商品管理" => "bi bi-box-seam-fill",
+            "品項管理" => "bi bi-box-seam-fill",
             "庫存管理" => "bi bi-boxes",
             "採購管理" => "bi bi-truck",
             "銷售管理" => "bi bi-cart-fill",

@@ -665,7 +665,7 @@
                 }
             }
 
-            // Fallback：使用商品預設 BOM（ProductComposition）
+            // Fallback：使用品項預設 BOM（ProductComposition）
             var compositions = await ProductCompositionService.GetCompositionsByProductIdAsync(productId);
             var composition  = compositions.FirstOrDefault();
             if (composition == null) return;

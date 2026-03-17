@@ -688,7 +688,7 @@
   <data name="Report.VehicleMaintenance" xml:space="preserve"><value>Pagpapanatili ng Sasakyan</value></data>
   <data name="Report.EmployeeRoster" xml:space="preserve"><value>Listahan ng Empleyado</value></data>
   <data name="Report.EmployeeDetail" xml:space="preserve"><value>Detalye ng Empleyado</value></data>
-  <data name="Report.WasteRecord" xml:space="preserve"><value>Talaan ng Timbangan</value></data>
+  <data name="Report.ScaleRecord" xml:space="preserve"><value>Talaan ng Timbangan</value></data>
   <data name="Report.AccountsReceivableSetoff" xml:space="preserve"><value>A/R Setoff</value></data>
   <data name="Report.AccountsPayableSetoff" xml:space="preserve"><value>A/P Setoff</value></data>
   <data name="Report.AccountItemList" xml:space="preserve"><value>Chart of Accounts</value></data>
@@ -1172,9 +1172,9 @@
   <data name="Field.RecordDate" xml:space="preserve"><value>Petsa ng Rekord</value></data>
   <data name="Field.RelatedProduct" xml:space="preserve"><value>Kaugnay na Produkto</value></data>
   <data name="Field.TotalWeight" xml:space="preserve"><value>Kabuuang Timbang</value></data>
-  <data name="Field.WasteRecordCode" xml:space="preserve"><value>Kodigo ng Rekord ng Basura</value></data>
-  <data name="Field.WasteTypeCode" xml:space="preserve"><value>Kodigo ng Uri ng Basura</value></data>
-  <data name="Field.WasteTypeName" xml:space="preserve"><value>Pangalan ng Uri ng Basura</value></data>
+  <data name="Field.WasteRecordCode" xml:space="preserve"><value>Kodigo ng Rekord ng Timbangan</value></data>
+  <data name="Field.WasteTypeCode" xml:space="preserve"><value>Kodigo ng Uri ng Timbangan</value></data>
+  <data name="Field.WasteTypeName" xml:space="preserve"><value>Pangalan ng Uri ng Timbangan</value></data>
   <!-- ===== Field - Paper/Printer keys ===== -->
   <data name="Field.Paper" xml:space="preserve"><value>Papel</value></data>
   <data name="Field.PaperBottomMargin" xml:space="preserve"><value>Ibabang Margin</value></data>
@@ -1891,7 +1891,7 @@
   <data name="Report.VehicleMaintenanceDesc" xml:space="preserve"><value>I-print ang mga rekord ng pagpapanatili ng sasakyan kasama ang uri ng pagpapanatili, petsa, kilometrahe, gastos, at detalye ng serbisyo</value></data>
   <data name="Report.EmployeeRosterDesc" xml:space="preserve"><value>I-print ang listahan ng pangunahing data ng empleyado kasama ang code, pangalan, departamento, posisyon, petsa ng pagkuha, at katayuan ng trabaho</value></data>
   <data name="Report.EmployeeDetailDesc" xml:space="preserve"><value>I-print ang kumpletong detalye ng empleyado kasama ang impormasyon sa pakikipag-ugnayan, emergency contacts, at impormasyon sa trabaho</value></data>
-  <data name="Report.WasteRecordDesc" xml:space="preserve"><value>I-print ang listahan ng rekord ng timbangan na nakagrupo ayon sa uri ng timbangan, kasama ang plate number, customer, bodega, timbang, at mga detalye ng gastos</value></data>
+  <data name="Report.ScaleRecordDesc" xml:space="preserve"><value>I-print ang listahan ng rekord ng timbangan na nakagrupo ayon sa uri ng timbangan, kasama ang plate number, customer, bodega, timbang, at mga detalye ng gastos</value></data>
   <data name="Report.AccountsReceivableSetoffDesc" xml:space="preserve"><value>I-print ang dokumento ng setoff ng accounts receivable kasama ang impormasyon ng customer, mga detalye ng offset, at mga rekord ng bayad</value></data>
   <data name="Report.AccountsPayableSetoffDesc" xml:space="preserve"><value>I-print ang dokumento ng setoff ng accounts payable kasama ang impormasyon ng supplier, mga detalye ng offset, at mga rekord ng bayad</value></data>
   <data name="Report.AccountItemListDesc" xml:space="preserve"><value>I-print ang standard chart of accounts na nakagrupo ayon sa uri ng account, nagpapakita ng code, pangalan, antas, at direksyon ng debit/credit</value></data>

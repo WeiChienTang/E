@@ -241,7 +241,7 @@ namespace ERPCore2.Services
                     errors.Add("必須指定採購退回記錄");
                 
                 if (entity.ProductId <= 0)
-                    errors.Add("必須選擇商品");
+                    errors.Add("必須選擇品項");
                 
                 if (entity.ReturnQuantity <= 0)
                     errors.Add("退回數量必須大於0");

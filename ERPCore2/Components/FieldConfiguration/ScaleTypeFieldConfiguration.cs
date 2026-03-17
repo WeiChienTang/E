@@ -1,4 +1,4 @@
-﻿using ERPCore2.Components.Shared.UI.Form;
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -12,68 +12,68 @@ namespace ERPCore2.FieldConfiguration
     /// <summary>
     /// 磅秤類型欄位配置
     /// </summary>
-    public class WasteTypeFieldConfiguration : BaseFieldConfiguration<WasteType>
+    public class ScaleTypeFieldConfiguration : BaseFieldConfiguration<ScaleType>
     {
         private readonly INotificationService? _notificationService;
 
-        public WasteTypeFieldConfiguration(INotificationService? notificationService = null)
+        public ScaleTypeFieldConfiguration(INotificationService? notificationService = null)
         {
             _notificationService = notificationService;
         }
 
-        public override Dictionary<string, FieldDefinition<WasteType>> GetFieldDefinitions()
+        public override Dictionary<string, FieldDefinition<ScaleType>> GetFieldDefinitions()
         {
             try
             {
-                return new Dictionary<string, FieldDefinition<WasteType>>
+                return new Dictionary<string, FieldDefinition<ScaleType>>
                 {
                     {
-                        nameof(WasteType.Code),
-                        new FieldDefinition<WasteType>
+                        nameof(ScaleType.Code),
+                        new FieldDefinition<ScaleType>
                         {
-                            PropertyName = nameof(WasteType.Code),
+                            PropertyName = nameof(ScaleType.Code),
                             DisplayName = Dn("Field.WasteTypeCode", "磅秤類型編號"),
                             FilterPlaceholder = Fp("Field.WasteTypeCode", "輸入編號搜尋"),
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(WasteType.Code), wt => wt.Code, allowNull: true)
+                                model, query, nameof(ScaleType.Code), st => st.Code, allowNull: true)
                         }
                     },
                     {
-                        nameof(WasteType.Name),
-                        new FieldDefinition<WasteType>
+                        nameof(ScaleType.Name),
+                        new FieldDefinition<ScaleType>
                         {
-                            PropertyName = nameof(WasteType.Name),
+                            PropertyName = nameof(ScaleType.Name),
                             DisplayName = Dn("Field.WasteTypeName", "磅秤類型名稱"),
                             FilterPlaceholder = Fp("Field.WasteTypeName", "輸入名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(WasteType.Name), wt => wt.Name)
+                                model, query, nameof(ScaleType.Name), st => st.Name)
                         }
                     },
                     {
-                        nameof(WasteType.Unit),
-                        new FieldDefinition<WasteType>
+                        nameof(ScaleType.Unit),
+                        new FieldDefinition<ScaleType>
                         {
-                            PropertyName = nameof(WasteType.Unit),
+                            PropertyName = nameof(ScaleType.Unit),
                             DisplayName = Dn("Field.MeasurementUnit", "計量單位"),
                             FilterPlaceholder = Fp("Field.MeasurementUnit", "輸入單位搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(WasteType.Unit), wt => wt.Unit, allowNull: true)
+                                model, query, nameof(ScaleType.Unit), st => st.Unit, allowNull: true)
                         }
                     },
                     {
-                        nameof(WasteType.Description),
-                        new FieldDefinition<WasteType>
+                        nameof(ScaleType.Description),
+                        new FieldDefinition<ScaleType>
                         {
-                            PropertyName = nameof(WasteType.Description),
+                            PropertyName = nameof(ScaleType.Description),
                             DisplayName = Dn("Field.Description", "描述"),
                             FilterPlaceholder = Fp("Field.Description", "輸入描述搜尋"),
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(WasteType.Description), wt => wt.Description, allowNull: true)
+                                model, query, nameof(ScaleType.Description), st => st.Description, allowNull: true)
                         }
                     }
                 };
@@ -93,7 +93,7 @@ namespace ERPCore2.FieldConfiguration
                     });
                 }
 
-                return new Dictionary<string, FieldDefinition<WasteType>>();
+                return new Dictionary<string, FieldDefinition<ScaleType>>();
             }
         }
     }
