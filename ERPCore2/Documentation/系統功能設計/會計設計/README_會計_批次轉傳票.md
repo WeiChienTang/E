@@ -1,7 +1,7 @@
 # 批次轉傳票設計
 
 ## 更新日期
-2026-02-25
+2026-03-17
 
 ---
 
@@ -55,7 +55,7 @@ public DateTime? JournalizedAt { get; set; }
 
 ### 分錄規則
 
-> 稅額=0 時省略稅額行；COGS=0 時省略成本行。
+> 稅額=0 時省略稅額行；**COGS 為必要分錄**，若找不到對應庫存異動（InventoryTransaction）則拒絕轉傳票並要求先完成出庫/入庫作業。
 
 ```
 進貨入庫：
@@ -133,8 +133,44 @@ public DateTime? JournalizedAt { get; set; }
 
 ---
 
+---
+
+## 4. 業務單據相關傳票顯示（P3-C）
+
+業務單據 EditModal 底部設有可折疊的「相關傳票」區塊，讓使用者在查看單據時可直接看到對應的傳票記錄（含沖銷傳票）。
+
+### 實作方式
+
+五個業務單據 EditModal 均已實作（2026-03-17 完成）：
+
+| EditModal | 來源單據類型 |
+|-----------|-------------|
+| `SalesDeliveryEditModalComponent.razor` | `"SalesDelivery"` |
+| `SalesReturnEditModalComponent.razor` | `"SalesReturn"` |
+| `PurchaseReceivingEditModalComponent.razor` | `"PurchaseReceiving"` |
+| `PurchaseReturnEditModalComponent.razor` | `"PurchaseReturn"` |
+| `SetoffDocumentEditModalComponent.razor` | `"SetoffDocument"` |
+
+### 技術架構
+
+1. **資料查詢**：`JournalEntryService.GetAllBySourceDocumentAsync(sourceType, sourceId)`（回傳含沖銷傳票的所有相關傳票）
+2. **UI 元件**：`RelatedDocumentsModalComponent`（折疊區塊）+ `JournalEntryDetailsTemplate.razor`（傳票展示模板）
+3. **互動**：點擊傳票可開啟 `JournalEntryEditModalComponent` 進行詳細查看
+
+### COGS 必要性驗證
+
+`JournalizeSalesDeliveryAsync` 和 `JournalizeSalesReturnAsync` 對 COGS 採硬性封鎖：
+
+- **銷貨出貨**：若 `InventoryTransaction` 找不到對應的出庫記錄（COGS = 0），**拒絕轉傳票**，提示先完成 `ReduceStockAsync`。
+- **銷貨退回**：若找不到對應的退回入庫記錄（成本沖回金額 = 0），**拒絕轉傳票**，提示先完成 `AddStockAsync`。
+
+這確保傳票借貸完整，避免損益計算失真。
+
+---
+
 ## 相關文件
 
 - [README_會計設計總綱.md](README_會計設計總綱.md)
 - [README_會計_傳票系統.md](README_會計_傳票系統.md)（傳票 Entity 與 Service）
 - [README_會計_子科目系統.md](README_會計_子科目系統.md)（子科目 fallback 邏輯）
+- [README_會計_會計期間管理.md](README_會計_會計期間管理.md)（轉傳票時 PostEntryAsync 的期間驗證）

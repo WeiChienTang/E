@@ -127,6 +127,7 @@
     private EmployeePermissionTab? permissionTab;
     private EmployeePayrollTab? payrollTab;
     private EmployeePhotoTab? photoTab;
+    private EmployeeBankAccountTab? bankAccountTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -160,6 +161,11 @@
         <EmployeePhotoTab @ref="photoTab"
                           EmployeeId="@EmployeeId"
                           InitialPhotoPath="@editModalComponent?.Entity?.PhotoPath" />
+    };
+
+    private RenderFragment CreateBankAccountTabContent() => __builder =>
+    {
+        <EmployeeBankAccountTab @ref="bankAccountTab" EmployeeId="@EmployeeId" />
     };
 
     // ===== 生命週期 =====
@@ -242,6 +248,7 @@
                 trainingTab?.Clear();
                 permissionTab?.Clear();
                 payrollTab?.Clear();
+                bankAccountTab?.Clear();
 
                 return new Employee
                 {
@@ -281,6 +288,7 @@
                 if (trainingTab != null) await trainingTab.LoadAsync(loadedEntityId);
                 if (permissionTab != null) await permissionTab.LoadAsync(loadedEntityId);
                 if (payrollTab != null) await payrollTab.LoadAsync(loadedEntityId);
+                if (bankAccountTab != null) await bankAccountTab.LoadAsync(loadedEntityId);
                 photoTab?.Load(loadedEntityId, editModalComponent?.Entity?.PhotoPath);
             }
             else
@@ -290,6 +298,7 @@
                 trainingTab?.Clear();
                 permissionTab?.Clear();
                 payrollTab?.Clear();
+                bankAccountTab?.Clear();
                 photoTab?.Clear();
             }
             StateHasChanged();
@@ -363,6 +372,7 @@
                 if (trainingTab != null) await trainingTab.LoadAsync(editModalComponent.Entity.Id);
                 if (permissionTab != null) await permissionTab.LoadAsync(editModalComponent.Entity.Id);
                 if (payrollTab != null) await payrollTab.LoadAsync(editModalComponent.Entity.Id);
+                if (bankAccountTab != null) await bankAccountTab.LoadAsync(editModalComponent.Entity.Id);
                 photoTab?.Load(editModalComponent.Entity.Id, editModalComponent.Entity.PhotoPath);
                 await OnEmployeeSaved.InvokeAsync(editModalComponent.Entity);
             }
@@ -474,7 +484,9 @@
             if (isPayrollEnabled && EmployeeId.HasValue)
                 builder = builder.GroupIntoCustomTab(L["Tab.Payroll"].ToString(), "bi-cash-coin", CreatePayrollTabContent(), nameof(EmployeePayrollTab));
 
-            builder = builder.GroupIntoCustomTab(L["Tab.EmployeePhoto"].ToString(), "bi-person-circle", CreatePhotoTabContent(), nameof(EmployeePhotoTab));
+            builder = builder
+                .GroupIntoCustomTab(L["Tab.BankAccounts"].ToString(), "bi-bank", CreateBankAccountTabContent(), nameof(EmployeeBankAccountTab))
+                .GroupIntoCustomTab(L["Tab.EmployeePhoto"].ToString(), "bi-person-circle", CreatePhotoTabContent(), nameof(EmployeePhotoTab));
 
             var layout = builder.BuildAll();
 

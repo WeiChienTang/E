@@ -53,6 +53,11 @@ namespace ERPCore2.Models.Enums
         /// <summary>
         /// 報價單（銷貨報價）
         /// </summary>
-        Quotation
+        Quotation,
+
+        /// <summary>
+        /// 會計傳票（由業務單據自動產生或手動建立的分錄）
+        /// </summary>
+        JournalEntry
     }
 }

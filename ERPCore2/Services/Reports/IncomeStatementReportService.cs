@@ -56,7 +56,9 @@ namespace ERPCore2.Services.Reports
                 if (!accountLines.Any())
                     return BatchPreviewResult.Failure($"無符合條件的傳票資料\n篩選條件：{criteria.GetSummary()}");
 
-                var company = await _companyService.GetPrimaryCompanyAsync();
+                var company = criteria.CompanyId.HasValue
+                    ? await _companyService.GetByIdAsync(criteria.CompanyId.Value)
+                    : await _companyService.GetPrimaryCompanyAsync();
                 var document = BuildIncomeStatementDocument(accountLines, company, criteria);
                 var images = criteria.PaperSetting != null
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
@@ -77,11 +79,16 @@ namespace ERPCore2.Services.Reports
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
+            // CompanyId 篩選（留空時自動使用主要公司）
+            var primaryCompany = await _companyService.GetPrimaryCompanyAsync();
+            var companyId = criteria.CompanyId ?? primaryCompany?.Id;
+
             var query = context.JournalEntryLines
                 .Include(l => l.AccountItem)
                 .Include(l => l.JournalEntry)
                 .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted
-                         && IncomeStatementTypes.Contains(l.AccountItem.AccountType));
+                         && IncomeStatementTypes.Contains(l.AccountItem.AccountType)
+                         && (!companyId.HasValue || l.JournalEntry.CompanyId == companyId.Value));
 
             if (criteria.StartDate.HasValue)
                 query = query.Where(l => l.JournalEntry.EntryDate >= criteria.StartDate.Value.Date);

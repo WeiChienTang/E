@@ -67,19 +67,6 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(ScaleRecord.ScaleTypeId),
-                        new FieldDefinition<ScaleRecord>
-                        {
-                            PropertyName = "ScaleType.Name",
-                            FilterPropertyName = nameof(ScaleRecord.ScaleTypeId),
-                            DisplayName = Dn("Field.WasteType", "磅秤類型"),
-                            FilterPlaceholder = Fp("Field.WasteType", "選擇磅秤類型"),
-                            TableOrder = 4,
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(ScaleRecord.ScaleTypeId), sr => sr.ScaleTypeId)
-                        }
-                    },
-                    {
                         nameof(ScaleRecord.CustomerId),
                         new FieldDefinition<ScaleRecord>
                         {
@@ -87,9 +74,70 @@ namespace ERPCore2.FieldConfiguration
                             FilterPropertyName = nameof(ScaleRecord.CustomerId),
                             DisplayName = Dn("Field.Customer", "客戶"),
                             FilterPlaceholder = Fp("Field.Customer", "輸入客戶搜尋"),
-                            TableOrder = 5,
+                            TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(ScaleRecord.CustomerId), sr => sr.CustomerId)
+                        }
+                    },
+                    {
+                        nameof(ScaleRecord.ProductId),
+                        new FieldDefinition<ScaleRecord>
+                        {
+                            PropertyName = "Product.Name",
+                            FilterPropertyName = nameof(ScaleRecord.ProductId),
+                            DisplayName = "品項",
+                            FilterPlaceholder = "輸入品項搜尋",
+                            TableOrder = 5,
+                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
+                                model, query, nameof(ScaleRecord.ProductId), sr => sr.ProductId)
+                        }
+                    },
+                    {
+                        nameof(ScaleRecord.EntryWeight),
+                        new FieldDefinition<ScaleRecord>
+                        {
+                            PropertyName = nameof(ScaleRecord.EntryWeight),
+                            DisplayName = "進場重量 (kg)",
+                            TableOrder = 6,
+                            ColumnType = ColumnDataType.Number,
+                            ShowInFilter = false,
+                            CustomTemplate = value => builder =>
+                            {
+                                if (value is ScaleRecord sr)
+                                    builder.AddContent(0, NumberFormatHelper.FormatSmart(sr.EntryWeight));
+                            }
+                        }
+                    },
+                    {
+                        nameof(ScaleRecord.ExitWeight),
+                        new FieldDefinition<ScaleRecord>
+                        {
+                            PropertyName = nameof(ScaleRecord.ExitWeight),
+                            DisplayName = "出場重量 (kg)",
+                            TableOrder = 7,
+                            ColumnType = ColumnDataType.Number,
+                            ShowInFilter = false,
+                            CustomTemplate = value => builder =>
+                            {
+                                if (value is ScaleRecord sr)
+                                    builder.AddContent(0, NumberFormatHelper.FormatSmart(sr.ExitWeight));
+                            }
+                        }
+                    },
+                    {
+                        nameof(ScaleRecord.NetWeight),
+                        new FieldDefinition<ScaleRecord>
+                        {
+                            PropertyName = nameof(ScaleRecord.NetWeight),
+                            DisplayName = "淨重 (kg)",
+                            TableOrder = 8,
+                            ColumnType = ColumnDataType.Number,
+                            ShowInFilter = false,
+                            CustomTemplate = value => builder =>
+                            {
+                                if (value is ScaleRecord sr)
+                                    builder.AddContent(0, NumberFormatHelper.FormatSmart(sr.NetWeight));
+                            }
                         }
                     },
                     {
@@ -100,27 +148,9 @@ namespace ERPCore2.FieldConfiguration
                             FilterPropertyName = nameof(ScaleRecord.WarehouseId),
                             DisplayName = Dn("Field.InboundWarehouse", "入庫倉庫"),
                             FilterPlaceholder = Fp("Field.InboundWarehouse", "輸入倉庫搜尋"),
-                            TableOrder = 6,
+                            TableOrder = 9,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(ScaleRecord.WarehouseId), sr => sr.WarehouseId)
-                        }
-                    },
-                    {
-                        nameof(ScaleRecord.TotalWeight),
-                        new FieldDefinition<ScaleRecord>
-                        {
-                            PropertyName = nameof(ScaleRecord.TotalWeight),
-                            DisplayName = Dn("Field.TotalWeight", "總重量"),
-                            TableOrder = 7,
-                            ColumnType = ColumnDataType.Number,
-                            ShowInFilter = false,
-                            CustomTemplate = value => builder =>
-                            {
-                                if (value is ScaleRecord sr)
-                                {
-                                    builder.AddContent(0, NumberFormatHelper.FormatSmart(sr.TotalWeight));
-                                }
-                            }
                         }
                     },
                     {
@@ -129,15 +159,13 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = nameof(ScaleRecord.DisposalFee),
                             DisplayName = Dn("Field.DisposalFee", "處理費"),
-                            TableOrder = 8,
+                            TableOrder = 10,
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
                                 if (value is ScaleRecord sr)
-                                {
                                     builder.AddContent(0, sr.DisposalFee.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(sr.DisposalFee)}" : "");
-                                }
                             }
                         }
                     },
@@ -147,15 +175,13 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = nameof(ScaleRecord.PurchaseFee),
                             DisplayName = Dn("Field.PurchaseFee", "採購費"),
-                            TableOrder = 9,
+                            TableOrder = 11,
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
                                 if (value is ScaleRecord sr)
-                                {
                                     builder.AddContent(0, sr.PurchaseFee.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(sr.PurchaseFee)}" : "");
-                                }
                             }
                         }
                     },
@@ -165,15 +191,13 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = nameof(ScaleRecord.NetAmount),
                             DisplayName = Dn("Field.NetAmount", "淨額"),
-                            TableOrder = 10,
+                            TableOrder = 12,
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
                                 if (value is ScaleRecord sr)
-                                {
                                     builder.AddContent(0, sr.NetAmount.HasValue ? $"NT$ {NumberFormatHelper.FormatSmart(sr.NetAmount)}" : "");
-                                }
                             }
                         }
                     }

@@ -84,12 +84,14 @@ namespace ERPCore2.Data
             services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 
             // 財務管理服務
+            services.AddScoped<IFiscalPeriodService, FiscalPeriodService>();
             services.AddScoped<ICurrencyService, CurrencyService>();
             services.AddScoped<IBankService, BankService>();
             services.AddScoped<IAccountItemService, AccountItemService>();
             services.AddScoped<IJournalEntryService, JournalEntryService>();
             services.AddScoped<ISubAccountService, SubAccountService>();
             services.AddScoped<IJournalEntryAutoGenerationService, JournalEntryAutoGenerationService>();
+            services.AddScoped<IFiscalYearClosingService, FiscalYearClosingService>();
             services.AddScoped<ISetoffDocumentService, SetoffDocumentService>();
             services.AddScoped<ISetoffProductDetailService, SetoffProductDetailService>();
             services.AddScoped<ISetoffPaymentService, SetoffPaymentService>();
@@ -186,7 +188,6 @@ namespace ERPCore2.Data
             services.AddScoped<IVehicleMaintenanceService, VehicleMaintenanceService>();
 
             // 磅秤管理服務
-            services.AddScoped<IScaleTypeService, ScaleTypeService>();
             services.AddScoped<IScaleRecordService, ScaleRecordService>();
 
             // RS-232C 串列埠服務（Singleton：實體串列埠連線需跨 Circuit 持久化）
@@ -289,6 +290,8 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerStatementReportService, CustomerStatementReportService>();
             // 廠商對帳單報表服務（AP002）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISupplierStatementReportService, SupplierStatementReportService>();
+            // 製令單報表服務（MO001）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IManufacturingOrderReportService, ManufacturingOrderReportService>();
             // 生產排程表報表服務（PD004）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductionScheduleReportService, ProductionScheduleReportService>();
             // 用料損耗退料記錄報表服務（PD006）

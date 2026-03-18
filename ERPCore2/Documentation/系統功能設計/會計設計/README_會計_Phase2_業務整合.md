@@ -297,5 +297,4 @@ JournalEntryBatchPage.razor
 
 - [README_會計設計總綱.md](README_會計設計總綱.md)
 - [README_會計_批次轉傳票.md](README_會計_批次轉傳票.md)
-- [README_會計_Phase1_基礎補強.md](README_會計_Phase1_基礎補強.md)
 - [README_會計_Phase3_帳務管理.md](README_會計_Phase3_帳務管理.md)

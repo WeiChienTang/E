@@ -1,6 +1,7 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Models.Reports.FilterAttributes;
+using ERPCore2.Services;
 
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
@@ -10,6 +11,16 @@ namespace ERPCore2.Models.Reports.FilterCriteria;
 /// </summary>
 public class TrialBalanceCriteria : IReportFilterCriteria
 {
+    /// <summary>
+    /// 公司篩選（多公司環境下必填；留空時僅查詢主要公司）
+    /// </summary>
+    [FilterFK(typeof(ICompanyService),
+        Group = FilterGroup.Basic,
+        Label = "公司",
+        EmptyMessage = "全部公司",
+        Order = 0)]
+    public int? CompanyId { get; set; }
+
     /// <summary>
     /// 日期範圍（本期發生額的起訖日）
     /// 累計餘額固定從最早傳票到 EndDate

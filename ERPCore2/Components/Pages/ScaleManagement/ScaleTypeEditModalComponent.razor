@@ -28,7 +28,7 @@
                           DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.WasteType"]]"
                           SaveSuccessMessage="@(ScaleTypeId.HasValue ? L["Message.UpdateSuccess", L["Entity.WasteType"]].ToString() : L["Message.CreateSuccess", L["Entity.WasteType"]].ToString())"
                           SaveFailureMessage="@L["Message.SaveFailure", L["Entity.WasteType"]]"
-                          RequiredPermission="@PermissionRegistry.ScaleType.Read"
+                          RequiredPermission="@PermissionRegistry.ScaleRecord.Read"
                           OnEntitySaved="@OnScaleTypeSaved"
                           OnCancel="@OnCancel"
                           ComponentName="ScaleTypeEditModalComponent" />

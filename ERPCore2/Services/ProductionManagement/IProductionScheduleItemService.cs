@@ -11,6 +11,19 @@ namespace ERPCore2.Services
     public interface IProductionScheduleItemService : IGenericManagementService<ProductionScheduleItem>
     {
         /// <summary>
+        /// 檢查製令單號是否已存在（供 EntityCodeGenerationHelper 使用）
+        /// </summary>
+        Task<bool> IsProductionScheduleItemCodeExistsAsync(string code, int? excludeId = null);
+
+        /// <summary>
+        /// 分頁查詢（含篩選）- 供製令單 Index 頁面使用
+        /// </summary>
+        Task<(List<ProductionScheduleItem> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ProductionScheduleItem>, IQueryable<ProductionScheduleItem>>? filterFunc,
+            int pageNumber,
+            int pageSize);
+
+        /// <summary>
         /// 根據排程主檔ID取得項目列表
         /// </summary>
         Task<List<ProductionScheduleItem>> GetByScheduleIdAsync(int scheduleId);

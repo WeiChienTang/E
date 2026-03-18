@@ -115,6 +115,7 @@ namespace ERPCore2.Data.Context
       public DbSet<AccountItem> AccountItems { get; set; }
       public DbSet<JournalEntry> JournalEntries { get; set; }
       public DbSet<JournalEntryLine> JournalEntryLines { get; set; }
+      public DbSet<FiscalPeriod> FiscalPeriods { get; set; }
       public DbSet<CompanyModule> CompanyModules { get; set; }
       public DbSet<DocumentCategory> DocumentCategories { get; set; }
       public DbSet<Document> Documents { get; set; }
@@ -1388,11 +1389,11 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(sr => sr.VehicleId)
                               .OnDelete(DeleteBehavior.Restrict);
 
-                        // 磅秤類型關聯
-                        entity.HasOne(sr => sr.ScaleType)
-                              .WithMany(st => st.ScaleRecords)
-                              .HasForeignKey(sr => sr.ScaleTypeId)
-                              .OnDelete(DeleteBehavior.Restrict);
+                        // 品項關聯（Optional）
+                        entity.HasOne(sr => sr.Product)
+                              .WithMany()
+                              .HasForeignKey(sr => sr.ProductId)
+                              .OnDelete(DeleteBehavior.SetNull);
 
                         // 客戶關聯（Optional）
                         entity.HasOne(sr => sr.Customer)
@@ -1412,10 +1413,16 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(je => je.CompanyId)
                               .OnDelete(DeleteBehavior.Restrict);
 
-                        // 沖銷傳票自我參照（此傳票被哪張傳票沖銷）
+                        // ReversalEntry：原傳票 A 的 ReversalEntryId → 沖銷傳票 B（A 被哪張傳票沖銷）
                         entity.HasOne(je => je.ReversalEntry)
                               .WithMany()
                               .HasForeignKey(je => je.ReversalEntryId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        // ReversedEntry：沖銷傳票 B 的 ReversedEntryId → 原傳票 A（此傳票是哪張的沖銷傳票）
+                        entity.HasOne(je => je.ReversedEntry)
+                              .WithMany()
+                              .HasForeignKey(je => je.ReversedEntryId)
                               .OnDelete(DeleteBehavior.Restrict);
 
                         // 金額精度
@@ -1539,9 +1546,14 @@ namespace ERPCore2.Data.Context
                   modelBuilder.Entity<EmployeeBankAccount>(entity =>
                   {
                         entity.HasIndex(e => e.EmployeeId);
+                        entity.HasIndex(e => e.BankId);
                         entity.HasOne(e => e.Employee)
                               .WithMany()
                               .HasForeignKey(e => e.EmployeeId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                        entity.HasOne(e => e.Bank)
+                              .WithMany()
+                              .HasForeignKey(e => e.BankId)
                               .OnDelete(DeleteBehavior.Restrict);
                   });
 

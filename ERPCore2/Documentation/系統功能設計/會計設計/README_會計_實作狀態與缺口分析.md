@@ -1,11 +1,11 @@
 # 會計模組 — 實作狀態與缺口分析
 
 ## 更新日期
-2026-03-16（程式碼修正記錄同步更新）
+2026-03-17（Phase 1 完成 + 缺口補強）
 
 ## 說明
 
-本文件記錄截至 2026-03-14 的會計模組**實際程式碼狀態**，
+本文件記錄截至 2026-03-17 的會計模組**實際程式碼狀態**，
 與設計文件（Phase 1–4）逐項比對，列出缺口、文件錯誤、及待決策事項。
 
 ---
@@ -27,7 +27,10 @@
 | 沖款單 IsJournalized | `Data/Entities/FinancialManagement/SetoffDocument.cs` | line 100 |
 | 子科目服務 | `Services/FinancialManagement/SubAccountService.cs` | |
 | FN005 科目表報表 | `Services/Reports/AccountItemListReportService.cs` | |
-| FN006 試算表 | `Services/Reports/TrialBalanceReportService.cs` | ⚠ 五欄，缺期初餘額欄（見 P1-C） |
+| FN006 試算表 | `Services/Reports/TrialBalanceReportService.cs` | ✅ 2026-03-17 改為八欄（期初借/貸 + 本期借/貸 + 期末借/貸） |
+| 會計期間管理 | `Data/Entities/FinancialManagement/FiscalPeriod.cs` | ✅ 2026-03-17 新增（含稽核欄位 ClosedAt/ReopenedAt/ReopenReason） |
+| 期初餘額精靈 | `Components/Pages/Accounting/OpeningBalancePage.razor` | ✅ 2026-03-17 新增（含已過帳唯讀模式） |
+| P3-C 業務單據顯示傳票 | 五個 EditModal | ✅ 2026-03-17 完成，含相關傳票折疊區塊 |
 | FN007 損益表 | `Services/Reports/IncomeStatementReportService.cs` | |
 | FN008 資產負債表 | `Services/Reports/BalanceSheetReportService.cs` | ✅ 2026-03-16 修正：移除 StartDate 篩選 + 加入本期淨利合成行 |
 | FN009 總分類帳 | `Services/Reports/GeneralLedgerReportService.cs` | |
@@ -49,65 +52,34 @@
 
 ---
 
-## 三、Phase 1 缺口（最高優先 🔴）
+## 三、Phase 1 缺口（✅ 已完成 — 2026-03-17）
 
-> 缺少 Phase 1，所有財務報表數字不可靠。
+### P1-A：會計期間管理 ✅
 
-### P1-A：會計期間管理 — 完全未實作
+| 項目 | 檔案 | 狀態 |
+|------|------|------|
+| `FiscalPeriod` Entity | `Data/Entities/FinancialManagement/FiscalPeriod.cs` | ✅ 含稽核欄位（ClosedAt、ClosedByEmployeeId、ReopenedAt、ReopenReason） |
+| `FiscalPeriodStatus` Enum | `Models/Enums/AccountingEnums.cs` | ✅ Open / Closed / Locked |
+| `IFiscalPeriodService` | `Services/FinancialManagement/IFiscalPeriodService.cs` | ✅ 含 InitializeYearAsync、ClosePeriodAsync（記錄關帳人）、ReopenPeriodAsync（記錄原因） |
+| `FiscalPeriodService` | `Services/FinancialManagement/FiscalPeriodService.cs` | ✅ |
+| `FiscalPeriodIndex.razor` | `Components/Pages/Accounting/FiscalPeriodIndex.razor` | ✅ |
+| Migration | `Migrations/AddFiscalPeriodTable` | ✅（待 `dotnet ef migrations add` 執行） |
+| `PostEntryAsync` 期間鎖定 | `JournalEntryService.cs` | ✅ Closed/Locked 期間拒絕過帳，OpeningBalance 傳票豁免 |
+| `ReverseEntryAsync` 期間驗證 | `JournalEntryService.cs` | ✅ 沖銷日期對應期間若 Closed/Locked 拒絕並提示改用次月 |
+| `Accounting.*` 權限 | `PermissionRegistry.cs` | ✅ PostEntry / ClosePeriod / OpeningBalance / YearEndClosing（均 Sensitive 級） |
 
-**缺少的程式碼：**
+### P1-B：期初餘額機制 ✅
 
-| 缺少項目 | 說明 |
-|---------|------|
-| `Data/Entities/FinancialManagement/FiscalPeriod.cs` | Entity 完全不存在 |
-| `Models/Enums/FiscalPeriodStatus.cs` | Enum 不存在 |
-| `Services/FinancialManagement/IFiscalPeriodService.cs` | Service 不存在 |
-| `Services/FinancialManagement/FiscalPeriodService.cs` | Service 不存在 |
-| `Components/Pages/Accounting/FiscalPeriodIndex.razor` | UI 不存在 |
-| Migration `AddFiscalPeriodTable` | 尚未建立 |
+| 項目 | 說明 |
+|------|------|
+| `JournalEntryType.OpeningBalance = 6` | ✅ |
+| `GetOpeningBalanceEntryAsync` / `SaveOpeningBalanceAsync` | ✅ JournalEntryService 已實作 |
+| `OpeningBalancePage.razor` | ✅ 三步驟精靈；草稿可編輯；**已過帳後切換唯讀模式**，顯示已過帳資料並引導建立調整分錄 |
+| 借貸平衡強制檢查 | ✅ 差額不為零時過帳按鈕禁用 |
 
-**`JournalEntryService.PostEntryAsync` 目前無期間鎖定：**
-目前任何時候均可對任意歷史月份過帳，無法防止補登已關帳期間。
+### P1-C：FN006 試算表格式 ✅
 
-**`JournalEntryService.ReverseEntryAsync` 同樣無期間驗證：**
-沖銷傳票（ReverseEntryAsync）的 `reversalDate` 對應的期間若已關帳，目前不會阻擋，需同步補充驗證邏輯。
-
----
-
-### P1-B：期初餘額機制 — 完全未實作
-
-**設計決策（已確認）：**
-- 期初餘額傳票**必須借貸平衡**才可過帳，系統拒絕不平衡提交
-- 已過帳後不提供「重設」功能，改以建立**調整分錄**方式修正
-- 借貸平衡是因為任何時間點的歷史帳務都應符合會計恆等式
-
-**缺少的程式碼：**
-
-| 缺少項目 | 說明 |
-|---------|------|
-| `JournalEntryType.OpeningBalance = 6` | Enum 目前只到 value 5（Reversing）|
-| `Components/Pages/Accounting/OpeningBalancePage.razor` | 精靈 UI 不存在 |
-| 期初餘額傳票建立邏輯 | JournalEntryService 無相關方法 |
-| 每公司一筆限制驗證 | 未設計 |
-| 借貸平衡強制檢查 | 未設計（舊設計允許不平衡） |
-
----
-
-### P1-C：FN006 試算表格式修正 — 部分缺失
-
-**現行 FN006 格式（五欄）：**
-
-```
-科目代碼 | 科目名稱 | 本期借方 | 本期貸方 | 期末借方餘額 | 期末貸方餘額
-```
-
-**標準格式應為（六欄）：**
-
-```
-科目代碼 | 科目名稱 | 期初餘額（借）| 期初餘額（貸）| 本期借方 | 本期貸方 | 期末借方餘額 | 期末貸方餘額
-```
-
-需修改：`Services/Reports/TrialBalanceReportService.cs` 補充期初餘額查詢邏輯。
+改為八欄標準格式：`科目代碼 | 科目名稱 | 期初借方 | 期初貸方 | 本期借方 | 本期貸方 | 期末借方 | 期末貸方`
 
 ---
 

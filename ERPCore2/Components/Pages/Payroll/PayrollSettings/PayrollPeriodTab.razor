@@ -1,0 +1,127 @@
+@* 薪資週期管理 Tab *@
+@inject IPayrollPeriodService PeriodService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<div class="d-flex justify-content-end mb-2">
+    <button class="btn btn-primary" @onclick="ShowAdd">
+        <i class="bi bi-plus-lg me-1"></i>@L["Button.Add"]
+    </button>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]</div>
+}
+else
+{
+    <GenericInteractiveTableComponent TItem="PayrollPeriod"
+                                     Items="@periods"
+                                     ColumnDefinitions="@GetColumnDefinitions()"
+                                     ShowRowNumbers="false"
+                                     ShowBuiltInActions="false"
+                                     ShowActions="true"
+                                     IsReadOnly="true"
+                                     ActionsColumnWidth="100px"
+                                     EmptyMessage="@L["Message.NoData"]">
+        <ActionsTemplate Context="p">
+            <div class="d-flex gap-1 justify-content-center">
+                <GenericButtonComponent IconClass="bi bi-pencil"
+                                       Variant="ButtonVariant.OutlineDarkBlue"
+                                       Size="ButtonSize.Large"
+                                       Title="@L["Button.Edit"]"
+                                       OnClick="@(() => ShowEdit(p))"
+                                       CssClass="btn-square" />
+            </div>
+        </ActionsTemplate>
+    </GenericInteractiveTableComponent>
+}
+
+<PayrollPeriodEditModalComponent IsVisible="@showModal"
+                                  IsVisibleChanged="@((bool v) => showModal = v)"
+                                  PayrollPeriodId="@editingId"
+                                  OnPayrollPeriodSaved="@HandleSaved"
+                                  OnCancel="@(() => showModal = false)"
+                                  OnClosePeriod="@HandleClosePeriodAsync" />
+
+@code {
+    private List<PayrollPeriod> periods = new();
+    private bool isLoading = true;
+    private bool showModal = false;
+    private int? editingId;
+    private bool _loaded = false;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    public async Task LoadAsync()
+    {
+        if (_loaded) return;
+        _loaded = true;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        periods = await PeriodService.GetAllAsync();
+        isLoading = false;
+    }
+
+    private void ShowAdd() { editingId = null; showModal = true; }
+    private void ShowEdit(PayrollPeriod item) { editingId = item.Id; showModal = true; }
+
+    private async Task HandleSaved(PayrollPeriod _)
+    {
+        showModal = false;
+        _loaded = false;
+        await ReloadAsync();
+        _loaded = true;
+    }
+
+    private async Task HandleClosePeriodAsync(int periodId)
+    {
+        var result = await PeriodService.ClosePeriodAsync(periodId);
+        showModal = false;
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync(L["Payroll.PeriodClosed"].ToString());
+            _loaded = false;
+            await ReloadAsync();
+            _loaded = true;
+        }
+        else
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailed"].ToString());
+    }
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions() => new()
+    {
+        new() { Title = L["Field.PayrollYear"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "Year",
+                DisplayFormatter = obj => (obj as PayrollPeriod)?.Year.ToString() ?? "",
+                HeaderCssClass = "text-center", CellCssClass = "text-center", Width = "90px" },
+        new() { Title = L["Field.PayrollMonth"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "Month",
+                DisplayFormatter = obj => { var p = obj as PayrollPeriod; return p == null ? "" : $"{p.Month} 月"; },
+                HeaderCssClass = "text-center", CellCssClass = "text-center", Width = "70px" },
+        new() { Title = L["Field.PayrollPeriodStatus"].ToString(), ColumnType = InteractiveColumnType.Custom, PropertyName = "PeriodStatus",
+                CustomTemplate = obj =>
+                {
+                    var p = obj as PayrollPeriod;
+                    if (p == null) return _ => { };
+                    var (text, css) = p.PeriodStatus switch
+                    {
+                        PayrollPeriodStatus.Draft      => (L["Payroll.PeriodDraft"].ToString(),      "badge bg-secondary"),
+                        PayrollPeriodStatus.Processing => (L["Payroll.PeriodProcessing"].ToString(), "badge bg-warning text-dark"),
+                        PayrollPeriodStatus.Closed     => (L["Payroll.PeriodClosed"].ToString(),     "badge bg-success"),
+                        _ => ("—", "text-muted")
+                    };
+                    return builder => { builder.OpenElement(0, "span"); builder.AddAttribute(1, "class", css); builder.AddContent(2, text); builder.CloseElement(); };
+                },
+                HeaderCssClass = "text-center", CellCssClass = "text-center", Width = "90px" },
+        new() { Title = L["Field.PayrollRecordCount"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "RecordCount",
+                DisplayFormatter = obj => (obj as PayrollPeriod)?.Records.Count.ToString("N0") ?? "0",
+                HeaderCssClass = "text-center", CellCssClass = "text-center", Width = "80px" },
+        new() { Title = L["Field.ClosedAt"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "ClosedAt",
+                DisplayFormatter = obj => { var p = obj as PayrollPeriod; return p?.ClosedAt.HasValue == true ? p.ClosedAt.Value.ToString("yyyy-MM-dd HH:mm") : "—"; },
+                HideOnMobile = true, Width = "140px" },
+    };
+}

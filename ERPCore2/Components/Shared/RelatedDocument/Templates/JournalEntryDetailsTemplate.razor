@@ -1,0 +1,43 @@
+@* 傳票詳細欄位範本 - 單行行內顯示 *@
+@using ERPCore2.Models
+@using ERPCore2.Helpers
+
+<span class="text-muted">
+    <i class="bi bi-calendar3 me-1"></i>@Document.DocumentDate.ToString("yyyy-MM-dd")
+</span>
+@if (!string.IsNullOrEmpty(Document.Remarks))
+{
+    @* Remarks 格式："{狀態} | {摘要}"，以 | 分割取出狀態與摘要 *@
+    var parts = Document.Remarks.Split('|', 2);
+    var statusText = parts[0].Trim();
+    var description = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+
+    var statusClass = statusText switch
+    {
+        "已過帳" => "success",
+        "草稿"   => "secondary",
+        "已沖銷" => "warning",
+        "已取消" => "danger",
+        _        => "secondary"
+    };
+
+    <span class="badge bg-@statusClass bg-opacity-75">@statusText</span>
+
+    @if (!string.IsNullOrEmpty(description))
+    {
+        <span class="text-muted text-truncate" style="max-width: 180px;" title="@description">
+            <i class="bi bi-chat-left-text me-1"></i>@description
+        </span>
+    }
+}
+@if (Document.Amount.HasValue)
+{
+    <span class="text-muted">
+        <i class="bi bi-currency-dollar me-1"></i>@NumberFormatHelper.FormatSmart(Document.Amount.Value)
+    </span>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public RelatedDocumentInfo Document { get; set; } = null!;
+}

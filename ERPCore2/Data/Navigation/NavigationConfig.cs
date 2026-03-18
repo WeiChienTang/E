@@ -125,41 +125,6 @@ public static class NavigationConfig
                         QuickActionId = "NewEmployeePosition",
                         QuickActionName = "新增職位"
                     },
-                    NavigationActionHelper.CreateActionItem(
-                        name: "權限分配",
-                        description: "管理權限組與權限關係",
-                        iconClass: "bi bi-caret-right-fill",
-                        actionId: "OpenRolePermissionManagement",
-                        category: "人力管理",
-                        requiredPermission: "Role.Read",
-                        searchKeywords: new List<string> { "權限分配", "角色權限", "role permission", "權限設定", "权限分配", "権限設定", "アクセス権" },
-                        nameKey: "Nav.RolePermission"
-                    ),
-                    new NavigationItem
-                    {
-                        Name = "權限組",
-                        NameKey = "Nav.Roles",
-                        Description = "管理使用者權限組",
-                        Route = "/roles",
-                        IconClass = "",
-                        Category = "人力管理",
-                        RequiredPermission = PermissionRegistry.Role.Read,
-                        SearchKeywords = new List<string> { "權限組", "角色", "role", "权限组", "角色管理", "ロール", "権限グループ" },
-                        QuickActionId = "NewRole",
-                        QuickActionName = "新增權限組"
-                    },
-                    new NavigationItem
-                    {
-                        Name = "權限",
-                        NameKey = "Nav.Permissions",
-                        Description = "管理系統權限設定",
-                        Route = "/permissions",
-                        IconClass = "",
-                        Category = "人力管理",
-                        RequiredPermission = PermissionRegistry.Permission.Read,
-                        SearchKeywords = new List<string> { "權限", "permission", "授權", "权限", "権限", "アクセス権限" }
-                    },
-
                     new NavigationItem
                     {
                         IsDivider = true
@@ -446,6 +411,17 @@ public static class NavigationConfig
                         searchKeywords: new List<string> { "生產排程", "排程管理", "production schedule", "生产排程", "生産計画", "製造スケジュール", "工単", "工作排程" },
                         nameKey: "Nav.ProductionSchedules"
                     ),
+                    new NavigationItem
+                    {
+                        Name = "製令單",
+                        NameKey = "Nav.ManufacturingOrders",
+                        Description = "查詢與列印製令單",
+                        IconClass = "bi bi-file-earmark-text",
+                        Route = "/production/manufacturing-orders",
+                        Category = "品項管理",
+                        RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
+                        SearchKeywords = new List<string> { "製令單", "manufacturing order", "工单", "製造命令", "製造指示" }
+                    },
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
@@ -940,20 +916,6 @@ public static class NavigationConfig
                         QuickActionId = "NewScaleRecord",
                         QuickActionName = "新增磅秤紀錄"
                     },
-                    new NavigationItem
-                    {
-                        Name = "磅秤類型",
-                        NameKey = "Nav.WasteTypes",
-                        Description = "管理磅秤類型分類設定",
-                        Route = "/scale-types",
-                        IconClass = "",
-                        Category = "磅秤管理",
-                        RequiredPermission = PermissionRegistry.ScaleType.Read,
-                        SearchKeywords = new List<string> { "磅秤類型", "磅秤分類", "scale type", "磅秤类型", "計量タイプ" },
-                        QuickActionId = "NewScaleType",
-                        QuickActionName = "新增磅秤類型"
-                    },
-
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
@@ -1105,6 +1067,28 @@ public static class NavigationConfig
                     // 批次轉傳票已整合至傳票管理頁面 (/journal-entries) 的 Modal 中
                     new NavigationItem
                     {
+                        Name = "期初餘額",
+                        NameKey = "Nav.OpeningBalance",
+                        Description = "輸入各科目的期初餘額（開帳設定），每個會計年度只需輸入一次",
+                        Route = "/opening-balance",
+                        IconClass = "",
+                        Category = "會計管理",
+                        RequiredPermission = PermissionRegistry.JournalEntry.Read,
+                        SearchKeywords = new List<string> { "期初餘額", "開帳", "期初", "opening balance", "期首残高", "期初余额" }
+                    },
+                    new NavigationItem
+                    {
+                        Name = "會計期間管理",
+                        NameKey = "Nav.FiscalPeriods",
+                        Description = "管理會計期間（關帳、鎖定，控制可開立傳票的期間範圍）",
+                        Route = "/fiscal-periods",
+                        IconClass = "",
+                        Category = "會計管理",
+                        RequiredPermission = PermissionRegistry.FiscalPeriod.Read,
+                        SearchKeywords = new List<string> { "會計期間", "關帳", "鎖定期間", "fiscal period", "会计期间", "会計期間", "決算", "期間管理" }
+                    },
+                    new NavigationItem
+                    {
                         Name = "會計科目",
                         NameKey = "Nav.AccountItems",
                         Description = "管理標準會計科目表（Chart of Accounts）",
@@ -1185,72 +1169,6 @@ public static class NavigationConfig
                         RequiredPermission = PermissionRegistry.Payroll.RateTable,
                         SearchKeywords = new List<string> { "薪資項目", "薪資科目", "payroll item", "薪资项目", "給与項目", "加給", "扣除項目", "薪資明細" }
                     },
-                    new NavigationItem
-                    {
-                        Name = "薪資週期管理",
-                        NameKey = "Nav.PayrollPeriods",
-                        Description = "管理薪資週期（開帳、關帳）",
-                        Route = "/payroll/periods",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "薪資管理",
-                        RequiredPermission = PermissionRegistry.Payroll.Close,
-                        SearchKeywords = new List<string> { "薪資週期", "開帳", "關帳", "payroll period", "薪资周期", "給与期間", "月結", "結算週期" }
-                    },
-                    new NavigationItem
-                    {
-                        Name = "出勤彙總",
-                        NameKey = "Nav.AttendanceSummary",
-                        Description = "輸入及維護員工每月出勤天數與加班時數",
-                        Route = "/payroll/attendance",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "薪資管理",
-                        RequiredPermission = PermissionRegistry.Payroll.Attendance,
-                        SearchKeywords = new List<string> { "出勤彙總", "出勤記錄", "加班時數", "attendance", "出勤汇总", "勤怠管理", "勤務時間", "出勤管理" }
-                    },
-                    new NavigationItem
-                    {
-                        Name = "保費費率設定",
-                        NameKey = "Nav.InsuranceRate",
-                        Description = "維護勞保、健保、勞退費率及免稅上限",
-                        Route = "/payroll/insurance-rates",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "薪資管理",
-                        RequiredPermission = PermissionRegistry.Payroll.RateTable,
-                        SearchKeywords = new List<string> { "保費費率", "勞保費率", "健保費率", "insurance rate", "保费费率", "劳保", "健保", "社会保険", "労働保険", "保険料率" }
-                    },
-                    new NavigationItem
-                    {
-                        Name = "勞保投保分級表",
-                        NameKey = "Nav.LaborInsuranceGrade",
-                        Description = "維護勞工保險投保薪資分級表",
-                        Route = "/payroll/labor-insurance-grades",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "薪資管理",
-                        RequiredPermission = PermissionRegistry.Payroll.RateTable,
-                        SearchKeywords = new List<string> { "勞保分級", "投保薪資分級", "labor insurance grade", "劳保分级", "労働保険等級", "勞保投保" }
-                    },
-                    new NavigationItem
-                    {
-                        Name = "健保投保分級表",
-                        NameKey = "Nav.HealthInsuranceGrade",
-                        Description = "維護全民健康保險投保金額分級表",
-                        Route = "/payroll/health-insurance-grades",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "薪資管理",
-                        RequiredPermission = PermissionRegistry.Payroll.RateTable,
-                        SearchKeywords = new List<string> { "健保分級", "投保金額分級", "health insurance grade", "健保分级", "健康保険等級", "健保投保" }
-                    },
-                    new NavigationItem
-                    {
-                        Name = "薪資所得扣繳稅額表",
-                        NameKey = "Nav.WithholdingTaxTable",
-                        Description = "維護財政部薪資所得扣繳稅額表",
-                        Route = "/payroll/withholding-tax-tables",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "薪資管理",
-                        RequiredPermission = PermissionRegistry.Payroll.RateTable,
-                        SearchKeywords = new List<string> { "扣繳稅額", "扣繳稅率", "withholding tax", "扣缴税额", "源泉徴収税", "所得稅扣繳", "稅率表" }
-                    },
                 }
             },
 
@@ -1278,6 +1196,48 @@ public static class NavigationConfig
                         searchKeywords: new List<string> { "系統參數", "參數設定", "parameter", "config", "設定", "系统参数", "システムパラメータ", "環境設定" },
                         nameKey: "Nav.SystemParameters"
                     ),
+
+                    // ── 存取控制 ──────────────────────────────
+                    new NavigationItem { IsDivider = true },
+
+                    NavigationActionHelper.CreateActionItem(
+                        name: "權限分配",
+                        description: "管理權限組與權限關係",
+                        iconClass: "bi bi-caret-right-fill",
+                        actionId: "OpenRolePermissionManagement",
+                        category: "系統管理",
+                        requiredPermission: "Role.Read",
+                        searchKeywords: new List<string> { "權限分配", "角色權限", "role permission", "權限設定", "权限分配", "権限設定", "アクセス権" },
+                        nameKey: "Nav.RolePermission"
+                    ),
+                    new NavigationItem
+                    {
+                        Name = "權限組",
+                        NameKey = "Nav.Roles",
+                        Description = "管理使用者權限組",
+                        Route = "/roles",
+                        IconClass = "",
+                        Category = "系統管理",
+                        RequiredPermission = PermissionRegistry.Role.Read,
+                        SearchKeywords = new List<string> { "權限組", "角色", "role", "权限组", "角色管理", "ロール", "権限グループ" },
+                        QuickActionId = "NewRole",
+                        QuickActionName = "新增權限組"
+                    },
+                    new NavigationItem
+                    {
+                        Name = "權限",
+                        NameKey = "Nav.Permissions",
+                        Description = "管理系統權限設定",
+                        Route = "/permissions",
+                        IconClass = "",
+                        Category = "系統管理",
+                        RequiredPermission = PermissionRegistry.Permission.Read,
+                        SearchKeywords = new List<string> { "權限", "permission", "授權", "权限", "権限", "アクセス権限" }
+                    },
+
+                    // ── 基礎設定 ──────────────────────────────
+                    new NavigationItem { IsDivider = true },
+
                     new NavigationItem
                     {
                         Name = "公司",

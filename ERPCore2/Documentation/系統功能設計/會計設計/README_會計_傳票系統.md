@@ -1,7 +1,7 @@
 # 傳票系統設計
 
 ## 更新日期
-2026-02-25
+2026-03-17
 
 ---
 
@@ -24,6 +24,7 @@
 | 3 | Adjusting | 調整分錄 |
 | 4 | Closing | 結帳分錄 |
 | 5 | Reversing | 沖銷分錄 |
+| 6 | OpeningBalance | 期初餘額傳票（過帳時不受期間鎖定限制） |
 
 ### JournalEntryStatus（傳票狀態）
 
@@ -98,12 +99,16 @@
 |------|------|
 | `IsJournalEntryCodeExistsAsync` | 供 EntityCodeGenerationHelper 反射呼叫 |
 | `GetByFiscalPeriodAsync` | 依會計年度+期間查詢（含分錄明細） |
-| `GetBySourceDocumentAsync` | 依來源單據查詢已產生的傳票 |
+| `GetBySourceDocumentAsync` | 依來源單據查詢已產生的傳票（單筆） |
+| `GetAllBySourceDocumentAsync` | 依來源單據查詢所有相關傳票（含沖銷傳票） |
 | `GetDraftEntriesAsync` | 查詢所有草稿傳票 |
 | `GetWithLinesAsync` | 取得含分錄明細的傳票（供 EditModal 使用） |
-| `PostEntryAsync` | 過帳：Draft → Posted，須借貸平衡 |
-| `ReverseEntryAsync` | 沖銷：建立反向傳票，原傳票標記 Reversed |
+| `PostEntryAsync` | 過帳：Draft → Posted，須借貸平衡；驗證會計期間未鎖定 |
+| `ReverseEntryAsync` | 沖銷：建立反向傳票，原傳票標記 Reversed；驗證沖銷日期期間未鎖定 |
+| `CancelDraftEntryAsync` | 取消草稿傳票（Draft → Cancelled） |
 | `SaveWithLinesAsync` | 儲存傳票及分錄（含新增/更新/刪除行） |
+| `GetOpeningBalanceEntryAsync` | 取得指定年度+公司的期初餘額傳票 |
+| `SaveOpeningBalanceAsync` | 儲存或更新期初餘額草稿（已過帳者拒絕修改） |
 
 ---
 
@@ -155,13 +160,57 @@
 ### 導覽與權限
 
 - 導覽：`NavigationConfig.cs` 已新增，QuickActionId = `"NewJournalEntry"`
-- `PermissionSeeder.cs`：新增 `JournalEntry.Read` 權限
+- `PermissionRegistry.cs`：`JournalEntry.Read`、`Accounting.PostEntry`（過帳）、`Accounting.OpeningBalance`（期初餘額）
 - `QuickActionModalHost.razor`：`"NewJournalEntry"` → `JournalEntryEditModalComponent`
+
+---
+
+## 7. 期初餘額機制（OpeningBalance）
+
+期初餘額是特殊類型傳票，用於記錄新系統啟用時各科目的起始餘額，或每年度開始的結轉餘額。
+
+### 傳票特性
+
+- `JournalEntryType = OpeningBalance（6）`
+- 每個公司每個年度最多一筆期初餘額傳票
+- 過帳時不受會計期間鎖定限制（可跨期補建）
+- 草稿可反覆修改；**過帳後不可修改**，差額須另建調整分錄
+
+### OpeningBalancePage 精靈
+
+**檔案：** `Components/Pages/Accounting/OpeningBalancePage.razor`
+
+**路由：** `/opening-balance`
+
+**流程：**
+
+```
+步驟 1：選擇年度與公司 → 載入資料
+步驟 2：輸入各科目期初餘額（僅明細科目）
+步驟 3：驗證借貸平衡 → 儲存草稿 / 儲存並過帳
+```
+
+**已過帳唯讀模式：**
+- 傳票已過帳後，頁面自動切換唯讀
+- 顯示藍色提示區塊，引導前往傳票頁面建立調整分錄
+- 步驟 3（儲存按鈕區）自動隱藏
+
+### SaveOpeningBalanceAsync 邏輯
+
+1. 查詢是否已有該年度+公司的期初餘額傳票
+2. 若有且已過帳 → 拒絕：「期初餘額傳票已過帳，不可修改」
+3. 若有且為草稿 → 更新現有傳票（清除舊行、寫入新行）
+4. 若無 → 建立新傳票（Draft 狀態）
+
+### 借貸平衡要求
+
+期初餘額傳票必須借貸平衡才能過帳。若不平衡代表輸入有誤，系統拒絕並顯示差額。
 
 ---
 
 ## 相關文件
 
 - [README_會計設計總綱.md](README_會計設計總綱.md)
+- [README_會計_會計期間管理.md](README_會計_會計期間管理.md)（FiscalPeriod 期間狀態機與過帳驗證）
 - [README_會計_批次轉傳票.md](README_會計_批次轉傳票.md)（業務單據自動產生傳票）
 - [README_會計_財務報表.md](README_會計_財務報表.md)（基於傳票資料的財務報表）

@@ -59,5 +59,31 @@ namespace ERPCore2.Services
         /// 應付沖款：借 應付帳款(2171) / 貸 銀行存款(1113)+進貨折讓(5124)+預付貨款(1266)
         /// </summary>
         Task<(bool Success, string ErrorMessage)> JournalizeSetoffDocumentAsync(int id, string createdBy);
+
+        /// <summary>
+        /// 查詢尚未轉傳票的已確認領料單
+        /// 篩選條件：IsConfirmed = true AND IsJournalized = false
+        /// </summary>
+        Task<List<MaterialIssue>> GetPendingMaterialIssuesAsync(DateTime? from = null, DateTime? to = null);
+
+        /// <summary>
+        /// 將指定領料單轉為傳票
+        /// 生產用料：借 在製品(1321) / 貸 品項存貨(1231)
+        /// 一般消耗：借 物料費用(6311) / 貸 品項存貨(1231)
+        /// 樣品：借 物料費用(6311) / 貸 品項存貨(1231)
+        /// </summary>
+        Task<(bool Success, string ErrorMessage)> JournalizeMaterialIssueAsync(int id, string createdBy);
+
+        /// <summary>
+        /// 查詢尚未轉傳票的生產完工記錄
+        /// 篩選條件：IsJournalized = false AND InventoryTransactionId IS NOT NULL
+        /// </summary>
+        Task<List<ProductionScheduleCompletion>> GetPendingProductionCompletionsAsync(DateTime? from = null, DateTime? to = null);
+
+        /// <summary>
+        /// 將指定生產完工記錄轉為傳票
+        /// 借 製成品存貨(1241) / 貸 在製品(1321)，金額取自 InventoryTransaction.TotalAmount
+        /// </summary>
+        Task<(bool Success, string ErrorMessage)> JournalizeProductionCompletionAsync(int id, string createdBy);
     }
 }

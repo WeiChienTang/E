@@ -38,7 +38,7 @@ namespace ERPCore2.Services
         {
             return context.ScaleRecords
                 .Include(sr => sr.Vehicle)
-                .Include(sr => sr.ScaleType)
+                .Include(sr => sr.Product)
                 .Include(sr => sr.Customer)
                 .Include(sr => sr.Warehouse)
                 .Include(sr => sr.WarehouseLocation)
@@ -53,8 +53,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ScaleRecords
                     .Include(sr => sr.Vehicle)
-                    .Include(sr => sr.ScaleType)
-                        .ThenInclude(st => st!.Product)
+                    .Include(sr => sr.Product)
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.Warehouse)
                     .Include(sr => sr.WarehouseLocation)
@@ -79,13 +78,13 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ScaleRecords
                     .Include(sr => sr.Vehicle)
-                    .Include(sr => sr.ScaleType)
+                    .Include(sr => sr.Product)
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.Warehouse)
                     .Include(sr => sr.WarehouseLocation)
                     .Where(sr => (sr.Code != null && sr.Code.ToLower().Contains(lowerSearchTerm)) ||
                                  (sr.Vehicle != null && sr.Vehicle.LicensePlate.ToLower().Contains(lowerSearchTerm)) ||
-                                 (sr.ScaleType != null && sr.ScaleType.Name.ToLower().Contains(lowerSearchTerm)) ||
+                                 (sr.Product != null && sr.Product.Name != null && sr.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
                                  (sr.Warehouse != null && sr.Warehouse.Name.ToLower().Contains(lowerSearchTerm)) ||
                                  (sr.Customer != null && sr.Customer.CompanyName != null &&
                                   sr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)))
@@ -109,14 +108,8 @@ namespace ERPCore2.Services
                 if (!entity.VehicleId.HasValue || entity.VehicleId.Value <= 0)
                     errors.Add("車輛為必填欄位");
 
-                if (!entity.ScaleTypeId.HasValue || entity.ScaleTypeId.Value <= 0)
-                    errors.Add("磅秤類型為必填欄位");
-
                 if (!entity.WarehouseId.HasValue || entity.WarehouseId.Value <= 0)
                     errors.Add("入庫倉庫為必填欄位");
-
-                if (!entity.TotalWeight.HasValue || entity.TotalWeight.Value <= 0)
-                    errors.Add("總重量為必填欄位且必須大於 0");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
 
@@ -188,7 +181,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ScaleRecords
                     .Include(sr => sr.Vehicle)
-                    .Include(sr => sr.ScaleType)
+                    .Include(sr => sr.Product)
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.Warehouse)
                     .Include(sr => sr.WarehouseLocation)
@@ -211,7 +204,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ScaleRecords
                     .Include(sr => sr.Vehicle)
-                    .Include(sr => sr.ScaleType)
+                    .Include(sr => sr.Product)
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.Warehouse)
                     .Include(sr => sr.WarehouseLocation)
@@ -234,7 +227,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ScaleRecords
                     .Include(sr => sr.Vehicle)
-                    .Include(sr => sr.ScaleType)
+                    .Include(sr => sr.Product)
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.Warehouse)
                     .Include(sr => sr.WarehouseLocation)
@@ -256,7 +249,7 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 新增磅秤紀錄後確認入庫
-        /// 若磅秤類型沒有關聯品項，則跳過入庫（不視為錯誤）
+        /// 若磅秤紀錄沒有關聯品項，則跳過入庫（不視為錯誤）
         /// </summary>
         public async Task<ServiceResult> ConfirmScaleReceiptAsync(int id)
         {
@@ -268,22 +261,21 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 var scaleRecord = await context.ScaleRecords
-                    .Include(sr => sr.ScaleType)
                     .FirstOrDefaultAsync(sr => sr.Id == id);
 
                 if (scaleRecord == null)
                     return ServiceResult.Failure("找不到指定的磅秤紀錄");
 
-                // 若磅秤類型無關聯品項，跳過入庫
-                if (scaleRecord.ScaleType == null || !scaleRecord.ScaleType.ProductId.HasValue)
+                // 若無關聯品項，跳過入庫
+                if (!scaleRecord.ProductId.HasValue)
                     return ServiceResult.Success();
 
-                var quantity = scaleRecord.TotalWeight ?? 0;
+                var quantity = scaleRecord.NetWeight ?? 0;
                 if (quantity <= 0)
                     return ServiceResult.Success();
 
                 return await _inventoryStockService.AddStockAsync(
-                    scaleRecord.ScaleType.ProductId.Value,
+                    scaleRecord.ProductId.Value,
                     scaleRecord.WarehouseId!.Value,
                     quantity,
                     InventoryTransactionTypeEnum.WasteReceiving,
@@ -307,7 +299,6 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 編輯磅秤紀錄後先逆轉舊庫存，再以當前數值重新入庫（Void and Repost）
-        /// 此方式確保倉庫或庫位變更時，舊倉庫庫存正確移除，新倉庫庫存正確新增
         /// </summary>
         public async Task<ServiceResult> ReverseAndRepostScaleInventoryAsync(int id)
         {
@@ -328,7 +319,6 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 逆轉此磅秤紀錄的所有庫存影響
-        /// 查詢歷史異動明細的 signed 淨值，對有淨正值的倉庫/庫位執行 ReduceStock
         /// </summary>
         private async Task<ServiceResult> ReverseScaleInventoryAsync(int id)
         {
@@ -338,16 +328,15 @@ namespace ERPCore2.Services
             using var context = await _contextFactory.CreateDbContextAsync();
 
             var scaleRecord = await context.ScaleRecords
-                .Include(sr => sr.ScaleType)
                 .FirstOrDefaultAsync(sr => sr.Id == id);
 
             if (scaleRecord == null)
                 return ServiceResult.Failure("找不到指定的磅秤紀錄");
 
-            if (scaleRecord.ScaleType == null || !scaleRecord.ScaleType.ProductId.HasValue)
+            if (!scaleRecord.ProductId.HasValue)
                 return ServiceResult.Success();
 
-            // 查詢此磅秤紀錄的所有庫存異動明細（含 Delete 操作，用於計算正確淨值）
+            // 查詢此磅秤紀錄的所有庫存異動明細
             var allDetails = await context.InventoryTransactionDetails
                 .Include(d => d.InventoryTransaction)
                 .Include(d => d.InventoryStockDetail)
@@ -358,8 +347,6 @@ namespace ERPCore2.Services
             if (!allDetails.Any())
                 return ServiceResult.Success();
 
-            // 以 signed quantity 加總計算每個（倉庫, 庫位）的淨庫存貢獻
-            // AddStock 存正數、ReduceStock 存負數，加總後 > 0 表示目前有淨入庫需要逆轉
             var groups = allDetails
                 .GroupBy(d => new
                 {
@@ -403,9 +390,6 @@ namespace ERPCore2.Services
 
         #region 覆寫刪除方法
 
-        /// <summary>
-        /// 永久刪除磅秤紀錄前先逆轉庫存，確保庫存資料一致性
-        /// </summary>
         public override async Task<ServiceResult> PermanentDeleteAsync(int id)
         {
             try
@@ -438,7 +422,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                IQueryable<ScaleRecord> query = context.ScaleRecords.Include(sr => sr.ScaleType);
+                IQueryable<ScaleRecord> query = context.ScaleRecords.Include(sr => sr.Product);
                 if (filterFunc != null) query = filterFunc(query);
                 var totalCount = await query.CountAsync();
                 var items = await query

@@ -201,40 +201,9 @@ C0002    客戶乙      80,000      40,000                                     1
 
 ## P3-C：業務單據相關傳票顯示
 
-> ✅ **可立即執行：** `JournalEntryService.GetBySourceDocumentAsync` 已實作，
-> 五個 EditModal 的 UI 折疊區塊是唯一待完成部分，無任何後端依賴。
+> ✅ **已完成（2026-03-17）**，詳見 [README_會計_批次轉傳票.md](README_會計_批次轉傳票.md) 第 4 節。
 
-### 問題說明
-
-目前業務單據（進貨入庫、銷貨出貨等）的 EditModal 無法直接看到對應傳票，
-需要去傳票列表搜尋 SourceDocumentCode 才能找到。
-
-### 設計方案
-
-在以下 EditModal 的**底部**新增一個折疊區塊「相關傳票」：
-- `PurchaseReceivingEditModal.razor`
-- `SalesDeliveryEditModal.razor`
-- `PurchaseReturnEditModal.razor`
-- `SalesReturnEditModal.razor`
-- `SetoffDocumentEditModal.razor`
-
-**折疊區塊內容：**
-| 欄位 | 說明 |
-|------|------|
-| 傳票號碼 | 超連結，點擊開啟 JournalEntryEditModal |
-| 傳票日期 | |
-| 狀態 badge | Draft / Posted / Reversed |
-| 借方合計 / 貸方合計 | |
-
-**查詢方式：**
-```csharp
-// SourceDocumentType = "PurchaseReceiving"，SourceDocumentId = 當前單據 ID
-var entries = await JournalEntryService.GetBySourceDocumentAsync(
-    "PurchaseReceiving", document.Id);
-```
-
-**未轉傳票時顯示：**
-> 此單據尚未轉傳票。[前往批次轉傳票] （連結）
+五個業務單據 EditModal 底部均已實作「相關傳票」折疊區塊，使用 `GetAllBySourceDocumentAsync` 查詢（含沖銷傳票），透過 `RelatedDocumentsModalComponent` + `JournalEntryDetailsTemplate.razor` 展示。
 
 ---
 
@@ -261,10 +230,10 @@ var entries = await JournalEntryService.GetBySourceDocumentAsync(
 - [ ] FiscalPeriodIndex UI 支援年度結帳操作
 - [ ] 結帳後無法對已鎖定期間過帳
 
-### P3-C
-- [ ] 五個 EditModal 新增「相關傳票」折疊區塊
-- [ ] 傳票連結正確開啟 JournalEntryEditModal
-- [ ] 未轉傳票時顯示提示連結
+### P3-C（✅ 已完成 2026-03-17）
+- [x] 五個 EditModal 新增「相關傳票」折疊區塊
+- [x] 傳票連結正確開啟 JournalEntryEditModal
+- [x] 未轉傳票時顯示提示連結
 
 ---
 
@@ -273,5 +242,4 @@ var entries = await JournalEntryService.GetBySourceDocumentAsync(
 - [README_會計設計總綱.md](README_會計設計總綱.md)
 - [README_會計_傳票系統.md](README_會計_傳票系統.md)
 - [README_會計_財務報表.md](README_會計_財務報表.md)
-- [README_會計_Phase1_基礎補強.md](README_會計_Phase1_基礎補強.md)
 - [README_會計_Phase4_進階功能.md](README_會計_Phase4_進階功能.md)

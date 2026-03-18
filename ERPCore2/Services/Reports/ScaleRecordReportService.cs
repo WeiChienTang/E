@@ -199,7 +199,7 @@ namespace ERPCore2.Services.Reports
                     (r.Vehicle != null && r.Vehicle.LicensePlate.Contains(kw, StringComparison.OrdinalIgnoreCase))).ToList();
             }
 
-            return results.OrderBy(r => r.ScaleType?.Name).ThenBy(r => r.RecordDate).ToList();
+            return results.OrderBy(r => r.Product?.Name).ThenBy(r => r.RecordDate).ToList();
         }
 
         /// <summary>根據 ScaleRecordCriteria 查詢磅秤紀錄</summary>
@@ -211,7 +211,7 @@ namespace ERPCore2.Services.Reports
                 results = results.Where(r => r.Status == EntityStatus.Active).ToList();
 
             if (criteria.ScaleTypeIds.Any())
-                results = results.Where(r => r.ScaleTypeId.HasValue && criteria.ScaleTypeIds.Contains(r.ScaleTypeId.Value)).ToList();
+                results = results.Where(r => r.ProductId.HasValue && criteria.ScaleTypeIds.Contains(r.ProductId.Value)).ToList();
 
             if (criteria.VehicleIds.Any())
                 results = results.Where(r => r.VehicleId.HasValue && criteria.VehicleIds.Contains(r.VehicleId.Value)).ToList();
@@ -237,7 +237,7 @@ namespace ERPCore2.Services.Reports
                     (r.Vehicle != null && r.Vehicle.LicensePlate.Contains(kw, StringComparison.OrdinalIgnoreCase))).ToList();
             }
 
-            return results.OrderBy(r => r.ScaleType?.Name).ThenBy(r => r.RecordDate).ToList();
+            return results.OrderBy(r => r.Product?.Name).ThenBy(r => r.RecordDate).ToList();
         }
 
         #endregion
@@ -276,16 +276,16 @@ namespace ERPCore2.Services.Reports
                 header.AddSpacing(5);
             });
 
-            // === 依磅秤類型分組顯示 ===
+            // === 依品項分組顯示 ===
             var typeGroups = records
-                .GroupBy(r => r.ScaleType?.Name ?? "未分類")
+                .GroupBy(r => r.Product?.Name ?? "未分類")
                 .OrderBy(g => g.Key);
 
             foreach (var group in typeGroups)
             {
-                // 磅秤類型標題
+                // 品項標題
                 doc.AddKeyValueRow(
-                    ("磅秤類型", $"{group.Key}（{group.Count()} 筆）"));
+                    ("品項", $"{group.Key}（{group.Count()} 筆）"));
 
                 doc.AddSpacing(3);
 
@@ -298,7 +298,7 @@ namespace ERPCore2.Services.Reports
                          .AddColumn("車牌號碼", 0.70f, TextAlignment.Left)
                          .AddColumn("客戶", 0.90f, TextAlignment.Left)
                          .AddColumn("入庫倉庫", 0.70f, TextAlignment.Left)
-                         .AddColumn("總重量(kg)", 0.70f, TextAlignment.Right)
+                         .AddColumn("淨重(kg)", 0.70f, TextAlignment.Right)
                          .AddColumn("處理費", 0.65f, TextAlignment.Right)
                          .AddColumn("採購費", 0.65f, TextAlignment.Right)
                          .AddColumn("淨額", 0.65f, TextAlignment.Right)
@@ -317,7 +317,7 @@ namespace ERPCore2.Services.Reports
                             record.Vehicle?.LicensePlate ?? "",
                             record.Customer?.CompanyName ?? "",
                             record.Warehouse?.Name ?? "",
-                            record.TotalWeight?.ToString("N2") ?? "",
+                            record.NetWeight?.ToString("N2") ?? "",
                             record.DisposalFee?.ToString("N0") ?? "",
                             record.PurchaseFee?.ToString("N0") ?? "",
                             record.NetAmount?.ToString("N0") ?? ""
@@ -334,7 +334,7 @@ namespace ERPCore2.Services.Reports
             {
                 footer.AddSpacing(10);
 
-                var totalWeight = records.Sum(r => r.TotalWeight ?? 0);
+                var totalWeight = records.Sum(r => r.NetWeight ?? 0);
                 var totalDisposalFee = records.Sum(r => r.DisposalFee ?? 0);
                 var totalPurchaseFee = records.Sum(r => r.PurchaseFee ?? 0);
                 var totalNetAmount = records.Sum(r => r.NetAmount ?? 0);
@@ -342,7 +342,7 @@ namespace ERPCore2.Services.Reports
                 var summaryLines = new List<string>
                 {
                     $"記錄總數：{records.Count} 筆",
-                    $"總重量：{totalWeight:N2} kg",
+                    $"總淨重：{totalWeight:N2} kg",
                     $"處理費合計：{totalDisposalFee:N0}",
                     $"採購費合計：{totalPurchaseFee:N0}",
                     $"淨額合計：{totalNetAmount:N0}"

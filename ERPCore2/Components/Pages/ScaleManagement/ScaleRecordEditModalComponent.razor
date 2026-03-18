@@ -4,11 +4,11 @@
 @using ERPCore2.Services.Reports.Interfaces
 @inject IScaleRecordService ScaleRecordService
 @inject IScaleRecordReportService ScaleRecordReportService
-@inject IScaleTypeService ScaleTypeService
 @inject IVehicleService VehicleService
 @inject ICustomerService CustomerService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
+@inject IProductService ProductService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
@@ -58,29 +58,27 @@
                               IconClass="bi-gear"
                               OnClick="@(() => _showSerialPortSettings = true)"
                               Title="RS-232C 串列埠參數設定" />
-        <GenericButtonComponent Text="@(_isReading ? "停止讀取" : "讀取")"
-                              Variant="@(_isReading ? ButtonVariant.Red : ButtonVariant.Green)"
-                              IconClass="@(_isReading ? "bi-stop-circle" : "bi-broadcast")"
-                              OnClick="HandleToggleReading"
-                              IsDisabled="@(!SerialPortService.IsOpen && !_isReading)"
-                              Title="@(!SerialPortService.IsOpen ? "請先在參數設定中連線串列埠" : (_isReading ? "停止讀取磅秤數據" : "開始讀取磅秤數據"))" />
-        @if (_isReading)
+        <GenericButtonComponent Text="@(_readingTarget == "entry" ? "停止讀取進場" : "讀取進場重量")"
+                              Variant="@(_readingTarget == "entry" ? ButtonVariant.Red : ButtonVariant.Green)"
+                              IconClass="@(_readingTarget == "entry" ? "bi-stop-circle" : "bi-box-arrow-in-right")"
+                              OnClick="@(() => HandleToggleReading("entry"))"
+                              IsDisabled="@(_readingTarget == "exit")"
+                              Title="讀取進場重量（磅秤穩定後自動帶入）" />
+        <GenericButtonComponent Text="@(_readingTarget == "exit" ? "停止讀取出場" : "讀取出場重量")"
+                              Variant="@(_readingTarget == "exit" ? ButtonVariant.Red : ButtonVariant.Green)"
+                              IconClass="@(_readingTarget == "exit" ? "bi-stop-circle" : "bi-box-arrow-right")"
+                              OnClick="@(() => HandleToggleReading("exit"))"
+                              IsDisabled="@(_readingTarget == "entry")"
+                              Title="讀取出場重量（磅秤穩定後自動帶入）" />
+        @if (_readingTarget != null)
         {
             <span class="badge bg-warning text-dark ms-1 d-flex align-items-center">
                 <span class="spinner-grow spinner-grow-sm me-1"></span>
-                讀取中... @(_lastStableWeight.HasValue ? $"穩定值: {_lastStableWeight.Value} kg" : "等待穩定...")
+                讀取中... @(_lastReadWeight.HasValue ? $"穩定值: {_lastReadWeight.Value} kg" : "等待穩定...")
             </span>
         }
     </CustomActionButtons>
 </GenericEditModalComponent>
-
-@* 磅秤類型編輯 Modal *@
-<ScaleTypeEditModalComponent @ref="scaleTypeEditModal"
-                             IsVisible="@scaleTypeModalManager.IsModalVisible"
-                             IsVisibleChanged="@scaleTypeModalManager.HandleModalVisibilityChangedAsync"
-                             ScaleTypeId="@scaleTypeModalManager.SelectedEntityId"
-                             OnScaleTypeSaved="@scaleTypeModalManager.OnSavedAsync"
-                             OnCancel="@scaleTypeModalManager.HandleModalCancelAsync" />
 
 @* 串列埠參數設定 Modal *@
 <ScaleSerialPortSettingsModalComponent IsVisible="@_showSerialPortSettings"
@@ -112,19 +110,15 @@
     private AutoCompleteConfig? autoCompleteConfig;
 
     // 選項資料
-    private List<ScaleType> availableScaleTypes = new();
     private List<Vehicle> availableVehicles = new();
     private List<Customer> availableCustomers = new();
     private List<Warehouse> availableWarehouses = new();
     private List<WarehouseLocation> availableWarehouseLocations = new();
     private List<WarehouseLocation> filteredWarehouseLocations = new();
+    private List<Product> availableProducts = new();
 
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
-
-    // 磅秤類型編輯 Modal
-    private ScaleTypeEditModalComponent? scaleTypeEditModal;
-    private RelatedEntityModalManager<ScaleType> scaleTypeModalManager = default!;
 
     // 客戶編輯 Modal
     private CustomerEditModalComponent? customerEditModal;
@@ -138,14 +132,14 @@
 
     // ===== 串列埠讀取狀態 =====
     private bool _showSerialPortSettings = false;
-    private bool _isReading = false;
-    private decimal? _lastStableWeight = null;
+    /// <summary>目前讀取目標："entry"=進場重量, "exit"=出場重量, null=未讀取</summary>
+    private string? _readingTarget = null;
+    private decimal? _lastReadWeight = null;
 
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
         try
         {
-            // 編輯模式載入後，依載入記錄的 WarehouseId 篩選庫位
             var warehouseId = editModalComponent?.Entity?.WarehouseId ?? 0;
             filteredWarehouseLocations = warehouseId > 0
                 ? availableWarehouseLocations.Where(wl => wl.WarehouseId == warehouseId).ToList()
@@ -170,6 +164,9 @@
             await HandleCustomerChangedAsync();
         else if (fieldChange.PropertyName == nameof(ScaleRecord.WarehouseId))
             await HandleWarehouseChangedAsync();
+        else if (fieldChange.PropertyName == nameof(ScaleRecord.EntryWeight) ||
+                 fieldChange.PropertyName == nameof(ScaleRecord.ExitWeight))
+            RecalculateNetWeight();
     }
 
     // 選擇車輛 → 自動帶入所屬客戶
@@ -190,7 +187,7 @@
             customer.CompanyName ?? "");
     }
 
-    // 選擇客戶 → 若該客戶只有一台車則自動帶入，多台車不帶入（使用者自選）
+    // 選擇客戶 → 若該客戶只有一台車則自動帶入
     private async Task HandleCustomerChangedAsync()
     {
         var customerId = editModalComponent!.Entity.CustomerId;
@@ -209,7 +206,7 @@
             vehicle.LicensePlate);
     }
 
-    // 選擇倉庫 → 篩選庫位下拉、清空已選庫位、更新欄位狀態
+    // 選擇倉庫 → 篩選庫位
     private async Task HandleWarehouseChangedAsync()
     {
         var warehouseId = editModalComponent!.Entity.WarehouseId;
@@ -218,14 +215,21 @@
             ? availableWarehouseLocations.Where(wl => wl.WarehouseId == warehouseId).ToList()
             : new List<WarehouseLocation>();
 
-        // 清空已選庫位（傳入空字串讓 ConvertValue 正確轉為 null，避免設成 0 違反 FK 約束）
         await editModalComponent.SetAutoCompleteFieldValueAsync(
             nameof(ScaleRecord.WarehouseLocationId), "", "");
 
-        // 重建 AutoComplete（更新庫位清單）與表單欄位（更新 IsReadOnly 狀態）
         RebuildAutoCompleteConfig();
         await InitializeFormFieldsAsync();
         StateHasChanged();
+    }
+
+    // 進場/出場重量變更 → 自動計算淨重
+    private void RecalculateNetWeight()
+    {
+        if (editModalComponent?.Entity == null) return;
+        var entity = editModalComponent.Entity;
+        if (entity.EntryWeight.HasValue && entity.ExitWeight.HasValue)
+            entity.NetWeight = entity.EntryWeight.Value - entity.ExitWeight.Value;
     }
 
     protected override async Task OnInitializedAsync()
@@ -238,11 +242,9 @@
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
-                .AddManager<ScaleType>(nameof(ScaleRecord.ScaleTypeId), "磅秤類型")
                 .AddManager<Customer>(nameof(ScaleRecord.CustomerId), "客戶")
                 .Build();
 
-            scaleTypeModalManager = modalManagers.Get<ScaleType>(nameof(ScaleRecord.ScaleTypeId));
             customerModalManager = modalManagers.Get<Customer>(nameof(ScaleRecord.CustomerId));
         }
         catch (Exception)
@@ -255,7 +257,6 @@
     {
         if (IsVisible && !isDataLoaded)
         {
-            // 在資料載入前記錄是否為新增
             _isNewRecord = !ScaleRecordId.HasValue;
 
             await LoadAdditionalDataAsync();
@@ -278,6 +279,7 @@
                 {
                     Code = await EntityCodeGenerationHelper.GenerateForEntity<ScaleRecord, IScaleRecordService>(ScaleRecordService, "WR"),
                     RecordDate = DateTime.Today,
+                    EntryTime = DateTime.Now,
                     Status = EntityStatus.Active
                 };
 
@@ -334,17 +336,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(ScaleRecord.ScaleTypeId),
-                    Label = L["Entity.WasteType"],
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.WasteType"]],
-                    IsRequired = true,
-                    MinSearchLength = 0,
-                    HelpText = "此次送來的磅秤類型",
-                    ActionButtons = await GetScaleTypeActionButtonsAsync()
-                },
-                new()
-                {
                     PropertyName = nameof(ScaleRecord.CustomerId),
                     Label = L["Entity.Customer"],
                     FieldType = FormFieldType.AutoComplete,
@@ -353,6 +344,59 @@
                     MinSearchLength = 0,
                     HelpText = "送料客戶，可由車輛自動帶入或手動選擇",
                     ActionButtons = await GetCustomerActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(ScaleRecord.ProductId),
+                    Label = "品項",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇品項",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "此次磅秤的品項（有品項時會自動入庫）"
+                },
+                new()
+                {
+                    PropertyName = nameof(ScaleRecord.EntryWeight),
+                    Label = "進場重量 (kg)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入進場重量",
+                    IsRequired = false,
+                    HelpText = "車輛滿載進場時的重量（公斤）"
+                },
+                new()
+                {
+                    PropertyName = nameof(ScaleRecord.EntryTime),
+                    Label = "進場時間",
+                    FieldType = FormFieldType.DateTime,
+                    IsRequired = false,
+                    HelpText = "車輛進場時間"
+                },
+                new()
+                {
+                    PropertyName = nameof(ScaleRecord.ExitWeight),
+                    Label = "出場重量 (kg)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入出場重量",
+                    IsRequired = false,
+                    HelpText = "車輛空載出場時的重量（公斤）"
+                },
+                new()
+                {
+                    PropertyName = nameof(ScaleRecord.ExitTime),
+                    Label = "出場時間",
+                    FieldType = FormFieldType.DateTime,
+                    IsRequired = false,
+                    HelpText = "車輛出場時間"
+                },
+                new()
+                {
+                    PropertyName = nameof(ScaleRecord.NetWeight),
+                    Label = "淨重 (kg)",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "進場重量減出場重量自動計算",
+                    IsRequired = false,
+                    HelpText = "淨重 = 進場重量 - 出場重量"
                 },
                 new()
                 {
@@ -374,15 +418,6 @@
                     IsReadOnly = locationIsReadOnly,
                     MinSearchLength = 0,
                     HelpText = "倉庫內的具體庫位（選填，需先選擇倉庫）"
-                },
-                new()
-                {
-                    PropertyName = nameof(ScaleRecord.TotalWeight),
-                    Label = L["Field.TotalWeight"],
-                    FieldType = FormFieldType.Number,
-                    Placeholder = L["Placeholder.PleaseInput", L["Field.TotalWeight"]],
-                    IsRequired = true,
-                    HelpText = "磅秤的總重量"
                 },
                 new()
                 {
@@ -412,9 +447,14 @@
                     sr => sr.RecordDate,
                     sr => sr.VehicleId,
                     sr => sr.CustomerId,
-                    sr => sr.ScaleTypeId,
-                    sr => sr.Quantity,
-                    sr => sr.TotalWeight,
+                    sr => sr.ProductId)
+                .AddToSection("磅秤重量",
+                    sr => sr.EntryWeight,
+                    sr => sr.EntryTime,
+                    sr => sr.ExitWeight,
+                    sr => sr.ExitTime,
+                    sr => sr.NetWeight)
+                .AddToSection("入庫資訊",
                     sr => sr.WarehouseId,
                     sr => sr.WarehouseLocationId)
                 .AddToSection(L["Section.FeeInfo"],
@@ -435,13 +475,12 @@
     {
         try
         {
-            availableScaleTypes = await ScaleTypeService.GetAllAsync();
             availableVehicles = await VehicleService.GetAllAsync();
             availableCustomers = await CustomerService.GetAllAsync();
             availableWarehouses = await WarehouseService.GetAllAsync();
             availableWarehouseLocations = await WarehouseLocationService.GetAllAsync();
+            availableProducts = await ProductService.GetAllAsync();
 
-            // 初始化時依目前選取的倉庫篩選庫位（編輯模式）
             var currentWarehouseId = editModalComponent?.Entity?.WarehouseId ?? 0;
             filteredWarehouseLocations = currentWarehouseId > 0
                 ? availableWarehouseLocations.Where(wl => wl.WarehouseId == currentWarehouseId).ToList()
@@ -452,12 +491,12 @@
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("載入磅秤紀錄編輯相關資料時發生錯誤");
-            availableScaleTypes = new List<ScaleType>();
             availableVehicles = new List<Vehicle>();
             availableCustomers = new List<Customer>();
             availableWarehouses = new List<Warehouse>();
             availableWarehouseLocations = new List<WarehouseLocation>();
             filteredWarehouseLocations = new List<WarehouseLocation>();
+            availableProducts = new List<Product>();
         }
     }
 
@@ -465,8 +504,8 @@
     {
         autoCompleteConfig = new AutoCompleteConfigBuilder<ScaleRecord>()
             .AddField(nameof(ScaleRecord.VehicleId), "LicensePlate", availableVehicles)
-            .AddField(nameof(ScaleRecord.ScaleTypeId), "Name", availableScaleTypes)
             .AddField(nameof(ScaleRecord.CustomerId), "CompanyName", availableCustomers)
+            .AddField(nameof(ScaleRecord.ProductId), "Name", availableProducts)
             .AddField(nameof(ScaleRecord.WarehouseId), "Name", availableWarehouses)
             .AddField(nameof(ScaleRecord.WarehouseLocationId), "Name", filteredWarehouseLocations)
             .Build();
@@ -483,7 +522,6 @@
             else
                 inventoryResult = await ScaleRecordService.ReverseAndRepostScaleInventoryAsync(savedRecord.Id);
 
-            // 首次儲存後記錄已存在，後續在同一 Modal Session 內再儲存時應執行 ReverseAndRepost
             _isNewRecord = false;
 
             if (!inventoryResult.IsSuccess)
@@ -495,15 +533,6 @@
         }
 
         await OnScaleRecordSaved.InvokeAsync(savedRecord);
-    }
-
-    private async Task<List<FieldActionButton>> GetScaleTypeActionButtonsAsync()
-    {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent,
-            scaleTypeModalManager,
-            nameof(ScaleRecord.ScaleTypeId)
-        );
     }
 
     private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
@@ -518,37 +547,54 @@
     // ===== 串列埠讀取磅秤數據 =====
 
     /// <summary>
-    /// 切換讀取狀態：開始/停止監聽串列埠數據
-    /// 當收到穩定狀態 (ST) 的重量資料時，自動帶入「總重量」欄位
+    /// 切換讀取狀態：開始/停止讀取進場或出場重量
+    /// 若串列埠未開啟，自動使用已儲存設定連線
     /// </summary>
-    private async Task HandleToggleReading()
+    private async Task HandleToggleReading(string target)
     {
-        if (_isReading)
+        if (_readingTarget == target)
         {
             // 停止讀取
             SerialPortService.DataReceived -= OnScaleDataReceived;
-            _isReading = false;
+            _readingTarget = null;
             await NotificationService.ShowInfoAsync("已停止讀取磅秤數據");
+            StateHasChanged();
+            return;
         }
-        else
+
+        // 若串列埠未開啟，自動連線
+        if (!SerialPortService.IsOpen)
         {
-            if (!SerialPortService.IsOpen)
+            var settings = SerialPortService.CurrentSettings;
+            if (string.IsNullOrEmpty(settings.PortName))
             {
-                await NotificationService.ShowWarningAsync("請先在『參數設定』中連線串列埠");
+                await NotificationService.ShowWarningAsync("請先在『參數設定』中設定串列埠");
                 return;
             }
 
-            // 開始讀取
-            _lastStableWeight = null;
-            SerialPortService.DataReceived += OnScaleDataReceived;
-            _isReading = true;
-            await NotificationService.ShowInfoAsync("開始讀取磅秤數據，等待穩定重量...");
+            try
+            {
+                SerialPortService.Open(settings);
+            }
+            catch (Exception ex)
+            {
+                await NotificationService.ShowErrorAsync($"串列埠連線失敗：{ex.Message}，請至『參數設定』確認設定");
+                return;
+            }
         }
+
+        // 開始讀取
+        _lastReadWeight = null;
+        _readingTarget = target;
+        SerialPortService.DataReceived += OnScaleDataReceived;
+        var label = target == "entry" ? "進場重量" : "出場重量";
+        await NotificationService.ShowInfoAsync($"開始讀取{label}，等待穩定重量...");
+        StateHasChanged();
     }
 
     /// <summary>
     /// 串列埠數據接收事件處理
-    /// 當磅秤回傳穩定狀態 (ST) 時，自動將重量帶入 TotalWeight 欄位
+    /// 當磅秤回傳穩定狀態 (ST) 時，自動將重量帶入對應欄位並計算淨重
     /// </summary>
     private async void OnScaleDataReceived(object? sender, ScaleDataReceivedEventArgs e)
     {
@@ -560,21 +606,33 @@
             {
                 if (e.IsStable && editModalComponent?.Entity != null)
                 {
-                    // 穩定狀態：自動帶入重量並停止讀取
-                    _lastStableWeight = e.WeightValue;
-                    editModalComponent.Entity.TotalWeight = e.WeightValue;
+                    _lastReadWeight = e.WeightValue;
+
+                    if (_readingTarget == "entry")
+                    {
+                        editModalComponent.Entity.EntryWeight = e.WeightValue;
+                        editModalComponent.Entity.EntryTime = DateTime.Now;
+                    }
+                    else if (_readingTarget == "exit")
+                    {
+                        editModalComponent.Entity.ExitWeight = e.WeightValue;
+                        editModalComponent.Entity.ExitTime = DateTime.Now;
+                    }
+
+                    // 自動計算淨重
+                    RecalculateNetWeight();
 
                     // 停止讀取
                     SerialPortService.DataReceived -= OnScaleDataReceived;
-                    _isReading = false;
+                    var label = _readingTarget == "entry" ? "進場重量" : "出場重量";
+                    _readingTarget = null;
 
-                    await NotificationService.ShowSuccessAsync($"已讀取穩定重量：{e.WeightValue} {e.Unit}");
+                    await NotificationService.ShowSuccessAsync($"已讀取穩定{label}：{e.WeightValue} {e.Unit}");
                     StateHasChanged();
                 }
                 else if (!e.IsStable)
                 {
-                    // 不穩定狀態：更新顯示但不帶入
-                    _lastStableWeight = null;
+                    _lastReadWeight = null;
                     StateHasChanged();
                 }
                 else if (e.IsOverload)
@@ -591,7 +649,6 @@
 
     public void Dispose()
     {
-        // 確保組件釋放時取消事件訂閱（不關閉串列埠，因為其他組件可能還在使用）
         SerialPortService.DataReceived -= OnScaleDataReceived;
     }
 }

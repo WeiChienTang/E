@@ -19,9 +19,14 @@ namespace ERPCore2.Services
         Task<List<JournalEntry>> GetByFiscalPeriodAsync(int fiscalYear, int fiscalPeriod);
 
         /// <summary>
-        /// 依來源單據查詢已產生的傳票
+        /// 依來源單據查詢已產生的傳票（排除已沖銷/已取消，僅回傳有效傳票）
         /// </summary>
         Task<JournalEntry?> GetBySourceDocumentAsync(string sourceDocumentType, int sourceDocumentId);
+
+        /// <summary>
+        /// 依來源單據查詢所有歷史傳票（含草稿、已過帳、已沖銷、已取消，用於單據 Modal 的傳票歷史檢視）
+        /// </summary>
+        Task<List<JournalEntry>> GetAllBySourceDocumentAsync(string sourceDocumentType, int sourceDocumentId);
 
         /// <summary>
         /// 取得尚未過帳的草稿傳票清單
@@ -62,5 +67,20 @@ namespace ERPCore2.Services
             Func<IQueryable<JournalEntry>, IQueryable<JournalEntry>>? filterFunc,
             int pageNumber,
             int pageSize);
+
+        /// <summary>
+        /// 依會計年度與公司取得期初餘額傳票（含分錄明細）
+        /// 回傳 null 表示尚未建立期初餘額
+        /// </summary>
+        Task<JournalEntry?> GetOpeningBalanceEntryAsync(int fiscalYear, int companyId);
+
+        /// <summary>
+        /// 儲存期初餘額傳票（含分錄明細）；已存在則更新，不存在則新增
+        /// lines 為各科目的期初餘額行（借方/貸方各一行，Amount > 0）
+        /// 儲存前會驗證借貸必須平衡
+        /// </summary>
+        Task<(bool Success, string ErrorMessage)> SaveOpeningBalanceAsync(
+            int fiscalYear, int companyId, DateTime entryDate,
+            List<JournalEntryLine> lines, string savedBy);
     }
 }

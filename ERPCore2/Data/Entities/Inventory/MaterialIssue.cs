@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data.Entities
@@ -13,6 +14,8 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(IssueDate))]
     [Index(nameof(EmployeeId), nameof(IssueDate))]
     [Index(nameof(DepartmentId), nameof(IssueDate))]
+    [Index(nameof(IsConfirmed))]
+    [Index(nameof(IsJournalized))]
     public class MaterialIssue : BaseEntity
     {
         [Required(ErrorMessage = "領貨日期為必填")]
@@ -42,10 +45,42 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(ProductionSchedule))]
         public int? ProductionScheduleId { get; set; }
 
+        /// <summary>
+        /// 領用用途分類（決定借方科目）
+        /// </summary>
+        [Display(Name = "領用用途")]
+        public MaterialIssueType IssueType { get; set; } = MaterialIssueType.Production;
+
+        /// <summary>
+        /// 是否已確認（確認後才能轉傳票）
+        /// </summary>
+        [Display(Name = "已確認")]
+        public bool IsConfirmed { get; set; } = false;
+
+        /// <summary>確認時間</summary>
+        [Display(Name = "確認時間")]
+        public DateTime? ConfirmedAt { get; set; }
+
+        /// <summary>確認人員 ID</summary>
+        [Display(Name = "確認人員")]
+        [ForeignKey(nameof(ConfirmedByEmployee))]
+        public int? ConfirmedByEmployeeId { get; set; }
+
+        /// <summary>
+        /// 是否已轉傳票
+        /// </summary>
+        [Display(Name = "已轉傳票")]
+        public bool IsJournalized { get; set; } = false;
+
+        /// <summary>轉傳票時間</summary>
+        [Display(Name = "轉傳票時間")]
+        public DateTime? JournalizedAt { get; set; }
+
         // Navigation Properties
         public Employee? Employee { get; set; }
         public Department? Department { get; set; }
         public ProductionSchedule? ProductionSchedule { get; set; }
+        public Employee? ConfirmedByEmployee { get; set; }
         public ICollection<MaterialIssueDetail> MaterialIssueDetails { get; set; } = new List<MaterialIssueDetail>();
     }
 }

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:element name="root" msdata:IsDataSet="true">
@@ -588,6 +588,12 @@
   <data name="Nav.JournalEntryBatch" xml:space="preserve">
     <value>批次轉傳票</value>
   </data>
+  <data name="Nav.OpeningBalance" xml:space="preserve">
+    <value>期初餘額</value>
+  </data>
+  <data name="Nav.FiscalPeriods" xml:space="preserve">
+    <value>會計期間管理</value>
+  </data>
   <data name="Nav.AccountItems" xml:space="preserve">
     <value>會計科目</value>
   </data>
@@ -776,6 +782,7 @@
   <data name="Entity.SetoffDocument" xml:space="preserve"><value>沖款單</value></data>
   <data name="Entity.AccountItem" xml:space="preserve"><value>會計科目</value></data>
   <data name="Entity.JournalEntry" xml:space="preserve"><value>傳票</value></data>
+  <data name="Entity.FiscalPeriod" xml:space="preserve"><value>會計期間</value></data>
   <data name="Entity.Vehicle" xml:space="preserve"><value>車輛</value></data>
   <data name="Entity.VehicleType" xml:space="preserve"><value>車型</value></data>
   <data name="Entity.VehicleMaintenance" xml:space="preserve"><value>保養紀錄</value></data>
@@ -986,6 +993,7 @@
   <!-- ===== Employee Placeholder keys ===== -->
   <data name="Placeholder.TrainingResultExample" xml:space="preserve"><value>例：通過、優秀、不合格</value></data>
   <!-- ===== Bank Account Button/Message/Label/Hint keys ===== -->
+  <data name="Button.AddDocument" xml:space="preserve"><value>新增文件</value></data>
   <data name="Button.AddBankAccount" xml:space="preserve"><value>新增銀行帳號</value></data>
   <data name="Button.SetPrimary" xml:space="preserve"><value>設為主要</value></data>
   <data name="Label.Primary" xml:space="preserve"><value>主要</value></data>
@@ -993,6 +1001,7 @@
   <data name="Hint.OnePrimaryPerCustomer" xml:space="preserve"><value>同一客戶僅能有一個主要帳戶</value></data>
   <data name="Hint.OnePrimaryPerSupplier" xml:space="preserve"><value>同一廠商僅能有一個主要帳戶</value></data>
   <data name="Hint.OnePrimaryPerCompany" xml:space="preserve"><value>同一公司僅能有一個主要帳戶</value></data>
+  <data name="Hint.OnePrimaryPerEmployee" xml:space="preserve"><value>同一員工僅能有一個主要轉帳帳戶</value></data>
   <!-- ===== Vehicle Button/Message keys ===== -->
   <data name="Button.AddVehicle" xml:space="preserve"><value>增車</value></data>
   <data name="Button.SelectVehicle" xml:space="preserve"><value>選車</value></data>
@@ -1048,6 +1057,9 @@
   <data name="Column.RequiredQuantity" xml:space="preserve"><value>所需用量</value></data>
   <!-- ===== Field - Accounting keys ===== -->
   <data name="Field.AccountCategory" xml:space="preserve"><value>科目分類</value></data>
+  <data name="Field.FiscalYear" xml:space="preserve"><value>會計年度</value></data>
+  <data name="Field.PeriodNumber" xml:space="preserve"><value>期間編號</value></data>
+  <data name="Field.PeriodStatus" xml:space="preserve"><value>期間狀態</value></data>
   <data name="Field.AccountCode" xml:space="preserve"><value>科目代碼</value></data>
   <data name="Field.AccountDescription" xml:space="preserve"><value>科目說明</value></data>
   <data name="Field.AccountDescriptionEn" xml:space="preserve"><value>科目英文說明</value></data>
@@ -1321,6 +1333,7 @@
   <data name="Payroll.TaxResident" xml:space="preserve"><value>居住者（按月薪 5%）</value></data>
   <data name="Payroll.TaxNonResident" xml:space="preserve"><value>非居住者（按月薪 18%）</value></data>
   <!-- ===== EmployeeBankAccount keys ===== -->
+  <data name="Field.Bank" xml:space="preserve"><value>銀行</value></data>
   <data name="Entity.EmployeeBankAccount" xml:space="preserve"><value>銀行帳戶</value></data>
   <data name="Page.EmployeeBankAccountTitle" xml:space="preserve"><value>員工銀行帳戶</value></data>
   <data name="Page.EmployeeBankAccountSubtitle" xml:space="preserve"><value>管理員工薪資轉帳銀行帳戶</value></data>
@@ -1336,7 +1349,7 @@
   <data name="Page.PayrollPeriodSubtitle" xml:space="preserve"><value>管理每月薪資週期的開帳與關帳</value></data>
   <data name="Field.PayrollYear" xml:space="preserve"><value>年份（民國）</value></data>
   <data name="Field.PayrollMonth" xml:space="preserve"><value>月份</value></data>
-  <data name="Field.PeriodStatus" xml:space="preserve"><value>週期狀態</value></data>
+  <data name="Field.PayrollPeriodStatus" xml:space="preserve"><value>週期狀態</value></data>
   <data name="Field.PayrollRecordCount" xml:space="preserve"><value>薪資筆數</value></data>
   <data name="Field.ClosedAt" xml:space="preserve"><value>關帳時間</value></data>
   <data name="Field.ClosedBy" xml:space="preserve"><value>關帳人員</value></data>
@@ -1391,6 +1404,17 @@
   <data name="Nav.LaborInsuranceGrade" xml:space="preserve"><value>勞保投保分級表</value></data>
   <data name="Nav.HealthInsuranceGrade" xml:space="preserve"><value>健保投保分級表</value></data>
   <data name="Nav.WithholdingTaxTable" xml:space="preserve"><value>薪資所得扣繳稅額表</value></data>
+  <data name="Nav.PayrollSettings" xml:space="preserve"><value>薪資參考表設定</value></data>
+  <data name="Page.PayrollSettingsTitle" xml:space="preserve"><value>薪資參考表設定</value></data>
+  <data name="Page.PayrollSettingsSubtitle" xml:space="preserve"><value>維護保費費率、勞保分級表、健保分級表及扣繳稅額表</value></data>
+  <data name="Payroll.TabCalculation" xml:space="preserve"><value>薪資計算</value></data>
+  <data name="Payroll.Tab.InsuranceRate" xml:space="preserve"><value>保費費率</value></data>
+  <data name="Payroll.Tab.LaborInsuranceGrade" xml:space="preserve"><value>勞保分級表</value></data>
+  <data name="Payroll.Tab.HealthInsuranceGrade" xml:space="preserve"><value>健保分級表</value></data>
+  <data name="Payroll.Tab.WithholdingTaxTable" xml:space="preserve"><value>扣繳稅額表</value></data>
+  <data name="Payroll.Tab.PayrollPeriods" xml:space="preserve"><value>薪資週期</value></data>
+  <data name="Payroll.Tab.Attendance" xml:space="preserve"><value>出勤彙總</value></data>
+  <data name="Button.SaveAll" xml:space="preserve"><value>儲存全部</value></data>
   <data name="Page.MinimumWageTitle" xml:space="preserve"><value>基本工資維護</value></data>
   <data name="Page.MinimumWageSubtitle" xml:space="preserve"><value>維護歷年基本工資（月薪／時薪）</value></data>
   <data name="Page.InsuranceRateTitle" xml:space="preserve"><value>保費費率設定</value></data>
@@ -1550,6 +1574,7 @@
   <data name="Tab.TransactionRecords" xml:space="preserve"><value>交易紀錄</value></data>
   <data name="Tab.BankAccounts" xml:space="preserve"><value>銀行帳號</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>名片</value></data>
+  <data name="Tab.Documents" xml:space="preserve"><value>文件</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>公司資料</value></data>
   <data name="Tab.CompanyLogo" xml:space="preserve"><value>公司 Logo</value></data>
   <data name="CompanyLogo.SaveFirst" xml:space="preserve"><value>請先儲存公司資料後再上傳 Logo</value></data>
@@ -2256,6 +2281,8 @@
   <data name="Column.OrderType" xml:space="preserve"><value>訂單類型</value></data>
   <data name="Column.OrderNumber" xml:space="preserve"><value>訂單編號</value></data>
   <data name="Column.Amount" xml:space="preserve"><value>金額</value></data>
+  <data name="Column.SalaryFrom" xml:space="preserve"><value>薪資下限</value></data>
+  <data name="Column.SalaryTo" xml:space="preserve"><value>薪資上限</value></data>
   <data name="Column.VisitDate" xml:space="preserve"><value>拜訪日期</value></data>
   <data name="Column.VisitMethod" xml:space="preserve"><value>方式</value></data>
   <data name="Column.SalesEmployee" xml:space="preserve"><value>業務人員</value></data>
@@ -3204,6 +3231,10 @@
   <data name="Page.AccountItemSubtitle" xml:space="preserve"><value>管理標準會計科目表（Chart of Accounts）</value></data>
   <data name="Page.JournalEntryTitle" xml:space="preserve"><value>傳票管理</value></data>
   <data name="Page.JournalEntrySubtitle" xml:space="preserve"><value>管理會計傳票與分錄明細</value></data>
+  <data name="Page.FiscalPeriodTitle" xml:space="preserve"><value>會計期間管理</value></data>
+  <data name="Page.FiscalPeriodSubtitle" xml:space="preserve"><value>管理會計期間設定，控制可開立傳票的期間範圍</value></data>
+  <data name="Page.OpeningBalanceTitle" xml:space="preserve"><value>期初餘額設定</value></data>
+  <data name="Page.OpeningBalanceSubtitle" xml:space="preserve"><value>輸入各科目的期初餘額，每個會計年度只需輸入一次</value></data>
   <data name="Page.CustomerTitle" xml:space="preserve"><value>客戶維護</value></data>
   <data name="Page.CustomerSubtitle" xml:space="preserve"><value>管理所有客戶資料與聯絡資訊</value></data>
   <data name="Page.CustomerVisitTitle" xml:space="preserve"><value>拜訪紀錄維護</value></data>
@@ -3314,6 +3345,15 @@
   <data name="AccountLevel.L2" xml:space="preserve"><value>第2層（子分類）</value></data>
   <data name="AccountLevel.L3" xml:space="preserve"><value>第3層（中分類）</value></data>
   <data name="AccountLevel.L4" xml:space="preserve"><value>第4層（明細科目）</value></data>
+
+  <!-- ===== FiscalPeriod Status ===== -->
+  <data name="FiscalPeriodStatus.Open" xml:space="preserve"><value>開放中</value></data>
+  <data name="FiscalPeriodStatus.Closed" xml:space="preserve"><value>已關帳</value></data>
+  <data name="FiscalPeriodStatus.Locked" xml:space="preserve"><value>已鎖定</value></data>
+  <data name="Button.ClosePeriod" xml:space="preserve"><value>關帳</value></data>
+  <data name="Button.LockPeriod" xml:space="preserve"><value>永久鎖定</value></data>
+  <data name="Button.ReopenPeriod" xml:space="preserve"><value>重新開放</value></data>
+  <data name="Placeholder.ReopenReason" xml:space="preserve"><value>輸入重開原因（選填）</value></data>
 
   <!-- ===== ApprovalSettings Toggle ===== -->
   <data name="Toggle.Manual" xml:space="preserve"><value>人工審核</value></data>
@@ -3468,4 +3508,45 @@
   <data name="Page.SalesTargetTitle" xml:space="preserve"><value>業績目標管理</value></data>
   <data name="Page.SalesTargetSubtitle" xml:space="preserve"><value>設定與追蹤業務員銷售目標</value></data>
   <data name="Nav.SalesTargets" xml:space="preserve"><value>業績目標</value></data>
+  <!-- ===== JournalEntryStatus ===== -->
+  <data name="JournalEntryStatus.Draft" xml:space="preserve"><value>草稿</value></data>
+  <data name="JournalEntryStatus.Posted" xml:space="preserve"><value>已過帳</value></data>
+  <data name="JournalEntryStatus.Reversed" xml:space="preserve"><value>已沖銷</value></data>
+  <data name="JournalEntryStatus.Cancelled" xml:space="preserve"><value>已取消</value></data>
+  <!-- ===== OpeningBalance / FinancialManagement ===== -->
+  <data name="Nav.FinancialManagement" xml:space="preserve"><value>財務管理</value></data>
+  <data name="Message.NoPagePermission" xml:space="preserve"><value>您沒有存取此頁面的權限。</value></data>
+  <data name="Field.OpeningDate" xml:space="preserve"><value>期初日期</value></data>
+  <data name="Label.SelectCompanyAndYear" xml:space="preserve"><value>選擇年度與公司</value></data>
+  <data name="Label.AccountBalanceReadOnly" xml:space="preserve"><value>各科目期初餘額（唯讀）</value></data>
+  <data name="Label.EnterAccountBalance" xml:space="preserve"><value>輸入各科目期初餘額</value></data>
+  <data name="Label.ShowDetailAccountsHint" xml:space="preserve"><value>僅顯示明細科目，金額為 0 的行不會儲存</value></data>
+  <data name="Label.Balanced" xml:space="preserve"><value>借貸平衡</value></data>
+  <data name="Label.Difference" xml:space="preserve"><value>差額</value></data>
+  <data name="Label.Total" xml:space="preserve"><value>合計</value></data>
+  <data name="Label.ValidateAndSave" xml:space="preserve"><value>驗證與儲存</value></data>
+  <data name="Button.SaveAndPost" xml:space="preserve"><value>儲存並過帳</value></data>
+  <data name="Button.GoToJournalEntry" xml:space="preserve"><value>前往傳票頁面建立調整分錄</value></data>
+  <data name="Column.AccountCode" xml:space="preserve"><value>科目代碼</value></data>
+  <data name="Column.AccountName" xml:space="preserve"><value>科目名稱</value></data>
+  <data name="Column.AccountType" xml:space="preserve"><value>科目類型</value></data>
+  <data name="Column.DebitAmount" xml:space="preserve"><value>借方金額</value></data>
+  <data name="Column.CreditAmount" xml:space="preserve"><value>貸方金額</value></data>
+  <data name="Message.OpeningBalancePosted" xml:space="preserve"><value>此期初餘額傳票已過帳（ID: {0}）</value></data>
+  <data name="Message.PostedEntryReadOnly" xml:space="preserve"><value>過帳後的傳票不可直接修改，以維護稽核軌跡。</value></data>
+  <data name="Message.CreateAdjustingEntry" xml:space="preserve"><value>若發現輸入錯誤，請建立調整分錄（Adjusting Entry）來補正差額。</value></data>
+  <data name="Message.OpeningBalanceDraftExists" xml:space="preserve"><value>已存在期初餘額草稿（ID: {0}），儲存將更新現有資料</value></data>
+  <data name="Message.LoadDataFailed" xml:space="preserve"><value>載入資料失敗</value></data>
+  <data name="Message.SaveSuccessButPostFailed" xml:space="preserve"><value>儲存成功，但過帳失敗：{0}</value></data>
+  <data name="Message.OpeningBalanceSavedAndPosted" xml:space="preserve"><value>期初餘額已儲存並過帳</value></data>
+  <data name="Message.OpeningBalanceDraftSaved" xml:space="preserve"><value>期初餘額草稿已儲存</value></data>
+  <data name="Message.SaveError" xml:space="preserve"><value>儲存時發生錯誤</value></data>
+  <data name="Section.PeriodDateRange" xml:space="preserve"><value>期間日期</value></data>
+  <data name="Section.PeriodStatus" xml:space="preserve"><value>期間狀態</value></data>
+  <data name="Message.InitPageFailed" xml:space="preserve"><value>初始化頁面失敗</value></data>
+  <data name="RelatedDoc.Title" xml:space="preserve"><value>相關單據 - {0}</value></data>
+  <data name="Payroll.CalculateAllSuccess" xml:space="preserve"><value>全員試算完成</value></data>
+  <data name="Payroll.CalculateFailed" xml:space="preserve"><value>試算失敗</value></data>
+  <data name="Payroll.ConfirmFailed" xml:space="preserve"><value>確認失敗</value></data>
+  <data name="Payroll.UnconfirmFailed" xml:space="preserve"><value>取消確認失敗</value></data>
 </root>

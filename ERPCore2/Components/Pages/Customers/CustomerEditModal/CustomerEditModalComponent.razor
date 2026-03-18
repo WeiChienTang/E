@@ -134,6 +134,7 @@
     private GenericAccountingTabComponent? accountingTab;
     private CustomerProductTab? productTab;
     private BusinessCardTab? businessCardTab;
+    private DocumentsTab? documentsTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -175,6 +176,11 @@
     private RenderFragment CreateBusinessCardTabContent() => __builder =>
     {
         <BusinessCardTab @ref="businessCardTab" OwnerType="Customer" OwnerId="@CustomerId" />
+    };
+
+    private RenderFragment CreateDocumentsTabContent() => __builder =>
+    {
+        <DocumentsTab @ref="documentsTab" RelatedEntityType="Customer" EntityId="@CustomerId" />
     };
 
     // ===== 生命週期 =====
@@ -232,6 +238,7 @@
                 if (accountingTab != null)    await accountingTab.LoadAsync(loadedEntityId);
                 if (productTab != null)       await productTab.LoadAsync(loadedEntityId);
                 if (businessCardTab != null)  await businessCardTab.LoadAsync(loadedEntityId);
+                if (documentsTab != null)     await documentsTab.LoadAsync(loadedEntityId);
             }
             else
             {
@@ -243,6 +250,7 @@
                 accountingTab?.Clear();
                 productTab?.Clear();
                 businessCardTab?.Clear();
+                documentsTab?.Clear();
             }
             StateHasChanged();
         }
@@ -677,6 +685,7 @@
                 .GroupIntoCustomTab(L["Tab.ComplaintRecords"].ToString(), "bi-exclamation-circle", CreateComplaintTabContent(), nameof(CustomerComplaintTab))
                 .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), nameof(CustomerTransactionTab))
                 .GroupIntoCustomTab(L["Tab.BusinessCards"].ToString(), "bi-person-vcard", CreateBusinessCardTabContent(), nameof(BusinessCardTab))
+                .GroupIntoCustomTab(L["Tab.Documents"].ToString(), "bi-file-earmark-text", CreateDocumentsTabContent(), nameof(DocumentsTab))
                 .BuildAll();
 
             formSections = layout.FieldSections;

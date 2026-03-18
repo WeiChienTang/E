@@ -1,7 +1,7 @@
 # 薪資系統設計總綱
 
 > 適用地區：中華民國台灣
-> 文件版本：v1.1（2026-03-09）
+> 文件版本：v1.2（2026-03-17）
 > ModuleKey：`Payroll`
 
 ---
@@ -24,10 +24,10 @@
 ### 核心原則
 
 - **法規優先**：所有計算規則以勞動基準法、全民健康保險法、勞工保險條例為依據
-- **費率可維護**：基本工資、投保薪資分級表、健保費率、所得稅扣繳表均存於 DB（Phase 1 暫以常數替代，Phase 2 完整移入）
+- **費率可維護**：基本工資、投保薪資分級表、健保費率、所得稅扣繳表均存於 DB
 - **月結鎖定**：薪資關帳後不可回溯修改
-- **出勤連動**：計算依賴出勤模組提供實際出勤天數、加班時數（Phase 3）
-- **會計連動**：關帳後自動產生會計傳票（Phase 4）
+- **出勤連動**：計算依賴出勤模組提供實際出勤天數、加班時數（Phase 3 已完成）
+- **會計連動**：關帳後自動產生會計傳票（Phase 4 規劃中）
 
 ---
 
@@ -37,38 +37,48 @@
 薪資管理（NavMenu / ModuleKey = Payroll）
     │
     ├─ 薪資計算作業（/payroll）
-    │       └─ PayslipModalComponent         唯讀薪資單 Modal
+    │       └─ PayrollModalComponent          薪資作業主介面（含 6 個 Tab）
+    │               ├─ Tab 0：薪資計算         員工列表、試算、確認、薪資單列印
+    │               ├─ Tab 1：保費費率         InsuranceRateTab（需 RateTable 權限）
+    │               ├─ Tab 2：勞保分級表       LaborInsuranceGradeTab（需 RateTable 權限）
+    │               ├─ Tab 3：健保分級表       HealthInsuranceGradeTab（需 RateTable 權限）
+    │               ├─ Tab 4：扣繳稅額表       WithholdingTaxTableTab（需 RateTable 權限）
+    │               ├─ Tab 5：薪資週期         PayrollPeriodTab（需 Close 權限）
+    │               └─ Tab 6：出勤彙總         AttendanceTab 內聯可編輯表格（需 Attendance 權限）
     │
-    ├─ 員工薪資設定（/employee-salaries）    含薪資歷史 Tab
+    ├─ 員工薪資設定（/payroll/salary-config）  含薪資歷史 Tab
     │
-    ├─ 員工銀行帳戶（/employee-bank-accounts）
+    ├─ 薪資項目設定（/payroll/items）          系統項目 + 自訂項目（⚠ 見改進項目）
     │
-    ├─ 薪資項目維護（/payroll-items）
-    │
-    └─ 薪資週期管理（/payroll-periods）      含開帳 / 關帳按鈕
+    └─ 基本工資維護（/payroll/minimum-wages）
 
 員工 EditModal
     └─ EmployeePayrollTab                   薪資歷史唯讀 Tab（Payroll 模組啟用時顯示）
 ```
 
-### 計算流程
+> **設計決策（v1.2）**：將薪資週期管理、出勤彙總、參考費率表統一整合進 `PayrollModalComponent` 的 Tab 系統，以減少頁面跳轉、提升月結操作效率。各功能依權限顯示對應 Tab。
+
+### 計算流程（Phase 3 更新版）
 
 ```
 CalculateEmployeeAsync(employeeId, periodId)
     │
     ├─ 1. 取得員工有效薪資設定（EmployeeSalary，EffectiveDate ≤ 薪資月份）
     ├─ 2. 計算應出勤天數（GetWorkDaysInMonth，排除週末）
-    ├─ 3. 計算本薪（BaseSalary × 出勤比例）
-    ├─ 4. 加計職務加給（全額，不依出勤比例）
-    ├─ 5. 加計津貼（餐飲/交通，全額）
-    ├─ 6. 加計加班費（OT1 ×4/3、OT2 ×5/3、OT_HOLIDAY ×2）
-    ├─ 7. 計算勞保費（員工負擔：InsuredSalary × 2%）
-    ├─ 8. 計算健保費（員工負擔：HealthInsuredAmount × 2.35% × 眷屬加乘）
-    ├─ 9. 計算勞退自提（BaseSalary × VoluntaryRetirementRate）
-    ├─ 10. 計算課稅所得 → 查 WithholdingTaxTable → 代扣所得稅
-    ├─ 11. 計算雇主負擔（勞保 10%、健保 6.11%、勞退強制 6%，存入 PayrollRecord）
-    └─ 12. 寫入 PayrollRecord + PayrollRecordDetail
+    ├─ 3. 查詢 MonthlyAttendanceSummary（若有該月出勤記錄，以實際出勤資料覆蓋步驟 2）
+    ├─ 4. 計算本薪（BaseSalary × 出勤比例）
+    ├─ 5. 加計職務加給（全額，不依出勤比例）
+    ├─ 6. 加計津貼（餐飲/交通，全額）
+    ├─ 7. 加計加班費（OT1 ×4/3、OT2 ×5/3、OT_HOLIDAY ×2）
+    ├─ 8. 計算勞保費（員工負擔：InsuredSalary × 費率）
+    ├─ 9. 計算健保費（員工負擔：HealthInsuredAmount × 費率 × 眷屬加乘）
+    ├─ 10. 計算勞退自提（BaseSalary × VoluntaryRetirementRate）
+    ├─ 11. 計算課稅所得 → 查 WithholdingTaxTable → 代扣所得稅
+    ├─ 12. 計算雇主負擔（勞保、健保、勞退強制，存入 PayrollRecord）
+    └─ 13. 寫入 PayrollRecord + PayrollRecordDetail
 ```
+
+> 步驟 8-9 的費率自 Phase 2 起從 InsuranceRate DB 讀取，常數為備援值。
 
 ---
 
@@ -101,34 +111,22 @@ CalculateEmployeeAsync(employeeId, periodId)
 | PayrollItemService | IPayrollItemService | ✅ |
 | PayrollCalculationService | IPayrollCalculationService | ✅ |
 
-**UI 元件**
+**UI 元件（v1.2 更新）**
 
-| 元件 | 路由 / 位置 | 類型 | 狀態 |
-|------|------------|------|------|
-| PayrollIndex | `/payroll` | 客製（工作流程型） | ✅ |
-| PayslipModalComponent | — | 客製 Modal（唯讀文件型） | ✅ |
-| PayrollPeriodIndex | `/payroll-periods` | 標準 + 自訂按鈕 | ✅ |
+| 元件 | 位置 | 類型 | 狀態 |
+|------|------|------|------|
+| PayrollIndex | `/payroll` | 客製頁面（開啟 Modal） | ✅ |
+| PayrollModalComponent | Modal（Tab 0-6） | 薪資作業主控台 | ✅ |
+| PayslipModalComponent | — | 唯讀薪資單 Modal | ✅ |
+| ~~PayrollPeriodIndex~~ | ~~`/payroll/periods`~~ | ~~已移入 Modal Tab 5~~ | 🗑 已移除 |
 | PayrollPeriodEditModalComponent | — | 標準 Modal | ✅ |
-| EmployeeSalaryIndex | `/employee-salaries` | 標準 | ✅ |
+| EmployeeSalaryIndex | `/payroll/salary-config` | 標準 | ✅ |
 | EmployeeSalaryEditModalComponent | — | 標準 Modal | ✅ |
-| EmployeeBankAccountIndex | `/employee-bank-accounts` | 標準 | ✅ |
+| EmployeeBankAccountIndex | `/payroll/employee-bank-accounts` | 標準 | ✅ |
 | EmployeeBankAccountEditModalComponent | — | 標準 Modal | ✅ |
-| PayrollItemIndex | `/payroll-items` | 標準 | ✅ |
+| PayrollItemIndex | `/payroll/items` | 標準 | ✅ ⚠ 見改進項目問題一 |
 | PayrollItemEditModalComponent | — | 標準 Modal | ✅ |
 | EmployeePayrollTab | Employee EditModal 薪資 Tab | 半客製嵌入型 | ✅ |
-
-**整合**
-
-| 項目 | 狀態 |
-|------|------|
-| NavigationConfig.cs — Payroll 導覽節點 | ✅ |
-| CompanyModule 種子資料（ModuleKey = Payroll） | ✅ |
-| PermissionRegistry.Payroll 權限定義 | ✅ |
-| RolePermissionSeeder — Payroll 權限種子 | ✅ |
-| PayrollItemSeeder — 系統預設項目 | ✅ |
-| i18n — 所有 Payroll.* / Page.Payroll* 鍵值 | ✅（5 語系）|
-
-> **Phase 1 限制**：計算費率（勞健保比率、餐費免稅上限）目前以常數寫於 `PayrollCalculationService`，Phase 2 移入 DB 費率表。
 
 ---
 
@@ -151,21 +149,23 @@ CalculateEmployeeAsync(employeeId, periodId)
 | WithholdingTaxTableService | IWithholdingTaxTableService | ✅ |
 | PayrollCalculationService | — | ✅ 修改：費率從 InsuranceRate DB 讀取，常數改為備援 |
 
-**UI 元件**
+**UI 元件（v1.2 更新）**
 
-| 元件 | 路由 | 狀態 |
+| 元件 | 位置 | 狀態 |
 |------|------|------|
-| MinimumWageIndex + EditModal | `/payroll/minimum-wages` | ✅ |
-| InsuranceRateIndex + EditModal | `/payroll/insurance-rates` | ✅ |
-| LaborInsuranceGradeIndex + EditModal | `/payroll/labor-insurance-grades` | ✅ 含年度選擇 + 複製功能 |
-| HealthInsuranceGradeIndex + EditModal | `/payroll/health-insurance-grades` | ✅ 含年度選擇 + 複製功能 |
-| WithholdingTaxTableIndex + EditModal | `/payroll/withholding-tax-tables` | ✅ 含年度/扶養人數篩選 |
+| MinimumWageIndex + EditModal | `/payroll/minimum-wages` | ✅ 獨立頁面 |
+| InsuranceRateTab + EditModal | Modal Tab 1 | ✅ 已整合至 PayrollModalComponent |
+| LaborInsuranceGradeTab + EditModal | Modal Tab 2 | ✅ 含年度選擇 + 複製功能 |
+| HealthInsuranceGradeTab + EditModal | Modal Tab 3 | ✅ 含年度選擇 + 複製功能 |
+| WithholdingTaxTableTab + EditModal | Modal Tab 4 | ✅ 含年度/扶養人數篩選 |
+| ~~InsuranceRateIndex~~ | ~~獨立頁面~~ | 🗑 已移除（整合至 Modal） |
+| ~~PayrollSettingsPage~~ | ~~/payroll/settings~~ | 🗑 已移除（整合至 Modal） |
 
-> **Phase 2 說明**：年度扣繳憑單（格式 50）、勞保/健保申報報表列為 Phase 2b，待規劃。
+> **Phase 2b（待規劃）**：年度扣繳憑單（格式 50）、勞保/健保申報報表。
 
 ---
 
-### Phase 3 — 出勤整合 ✅ 完成（2026-03-09）
+### Phase 3 — 出勤整合 ✅ 完成（2026-03-17 更新）
 
 **資料庫**
 
@@ -178,25 +178,25 @@ CalculateEmployeeAsync(employeeId, periodId)
 | 服務 | 介面 | 狀態 |
 |------|------|------|
 | MonthlyAttendanceSummaryService | IMonthlyAttendanceSummaryService | ✅ |
-| PayrollCalculationService | — | ✅ 修改：計算前自動同步 MonthlyAttendanceSummary 出勤資料 |
+| PayrollCalculationService | — | ✅ 修改：計算前查詢 MonthlyAttendanceSummary，有記錄則以出勤資料覆蓋預設值 |
 
-**UI 元件**
+**UI 元件（v1.2 更新）**
 
-| 元件 | 路由 | 狀態 |
+| 元件 | 位置 | 狀態 |
 |------|------|------|
-| MonthlyAttendanceSummaryIndex | `/payroll/attendance` | ✅ 含批次初始化 |
-| MonthlyAttendanceSummaryEditModalComponent | — | ✅ 含鎖定狀態唯讀 |
+| AttendanceTab | Modal Tab 6 | ✅ 內聯可編輯表格，自動對應選定薪資週期 |
+| ~~MonthlyAttendanceSummaryIndex~~ | ~~/payroll/attendance~~ | 🗑 已移除（整合至 Modal Tab 6）|
+| MonthlyAttendanceSummaryEditModalComponent | — | ✅（保留，AtendanceTab 複雜編輯時使用）|
 
 **整合**
 
 | 項目 | 狀態 |
 |------|------|
 | PermissionRegistry.Payroll.Attendance | ✅ |
-| NavigationConfig — Nav.AttendanceSummary | ✅ |
 | Migration: AddMonthlyAttendanceSummary | ✅ |
 | i18n — Attendance.* / Field.* 鍵值 | ✅（5 語系）|
 
-> **計算流程**：`CalculateEmployeeAsync` 會先查 `MonthlyAttendanceSummaries`，若該員工該月份有記錄則以其出勤資料覆蓋薪資單預設值（全勤）。鎖定機制：出勤記錄可設 `IsLocked = true` 防止修改。
+> **AttendanceTab 設計**：顯示所有在職員工為列，每月出勤欄位為內聯輸入格，批次初始化後直接在表格中輸入，「儲存全部」一鍵批次儲存。鎖定記錄顯示唯讀。Tab 自動從 PayrollModalComponent 接收當前選定週期的年份與月份。
 
 ---
 
@@ -239,7 +239,9 @@ CalculateEmployeeAsync(employeeId, periodId)
 
 | 功能 | 路徑 |
 |------|------|
-| 所有 Payroll 頁面 | `Components/Pages/Payroll/` |
+| 薪資主入口頁面 | `Components/Pages/Payroll/PayrollIndex.razor` |
+| 薪資作業主 Modal（Tab 0-6） | `Components/Pages/Payroll/PayrollModalComponent.razor` |
+| 所有 Tab 元件 | `Components/Pages/Payroll/PayrollSettings/` |
 | 員工薪資歷史 Tab | `Components/Pages/Employees/EmployeeEditModal/EmployeePayrollTab.razor` |
 | FieldConfiguration | `Components/FieldConfiguration/PayrollItemFieldConfiguration.cs` |
 | FieldConfiguration | `Components/FieldConfiguration/PayrollPeriodFieldConfiguration.cs` |
@@ -258,37 +260,36 @@ CalculateEmployeeAsync(employeeId, periodId)
 
 ## 五、法規遵循摘要
 
-| 項目 | 費率 / 規則 | Phase 1 實作方式 |
-|------|------------|----------------|
-| 勞保（員工） | 2% × InsuredSalary | 常數 |
-| 勞保（雇主） | 10% × InsuredSalary | 常數 |
-| 健保（員工） | 2.35% × HealthInsuredAmount × 眷屬加乘 | 常數 |
-| 健保（雇主） | 6.11% × HealthInsuredAmount × 眷屬加乘 | 常數 |
-| 勞退（雇主強制） | 6% × BaseSalary | 常數 |
+| 項目 | 費率 / 規則 | 實作方式 |
+|------|------------|---------|
+| 勞保（員工） | 依 InsuranceRate.LaborInsuranceEmployeeRate | DB 讀取（Phase 2）|
+| 勞保（雇主） | 依 InsuranceRate.LaborInsuranceEmployerRate | DB 讀取（Phase 2）|
+| 健保（員工） | 依 InsuranceRate.HealthInsuranceEmployeeRate × 眷屬加乘 | DB 讀取（Phase 2）|
+| 健保（雇主） | 依 InsuranceRate.HealthInsuranceEmployerRate × 眷屬加乘 | DB 讀取（Phase 2）|
+| 勞退（雇主強制） | 依 InsuranceRate.RetirementEmployerRate | DB 讀取（Phase 2）|
 | 勞退（員工自提） | 0–6%（VoluntaryRetirementRate） | DB 欄位 |
-| 餐費免稅上限 | 3,000 元/月 | 常數 |
-| 交通費免稅上限 | 3,000 元/月 | 常數 |
+| 餐費免稅上限 | 依 InsuranceRate.MealTaxFreeLimit | DB 讀取（Phase 2）|
+| 交通費免稅上限 | 依 InsuranceRate.TransportTaxFreeLimit | DB 讀取（Phase 2）|
 | 健保眷屬加乘 | `Min(DependentCount, 3) + 1` | 常數邏輯 |
 | 所得稅扣繳 | 查 WithholdingTaxTable | DB 查表 |
-
-> Phase 2 將把所有「常數」欄改為從 DB 費率表讀取，支援年度費率更新。
 
 ---
 
 ## 六、權限設計
 
-| 權限代碼 | 說明 | 敏感度 |
-|---------|------|--------|
-| `Payroll.Read` | 進入薪資計算頁面 | 一般 |
-| `Payroll.ReadAmount` | 查看薪資金額 | **高** |
-| `Payroll.Calculate` | 執行薪資計算 | 敏感 |
-| `Payroll.Confirm` | 確認薪資單 | 敏感 |
-| `Payroll.Close` | 薪資週期關帳 | 敏感 |
-| `Payroll.SalaryConfig` | 維護員工薪資設定 | 敏感 |
-| `Payroll.RateTable` | 維護費率參照表 | 敏感 |
-| `Payroll.Declaration` | 產生申報文件（Phase 2） | 敏感 |
-| `Payroll.Payslip` | 列印薪資單 | 一般 |
-| `Payroll.SelfView` | 員工查看本人薪資（Phase 5） | 一般 |
+| 權限代碼 | 說明 | 對應 Modal Tab | 敏感度 |
+|---------|------|---------------|--------|
+| `Payroll.Read` | 進入薪資計算頁面 | — | 一般 |
+| `Payroll.ReadAmount` | 查看薪資金額 | Tab 0 | **高** |
+| `Payroll.Calculate` | 執行薪資計算 | Tab 0 | 敏感 |
+| `Payroll.Confirm` | 確認薪資單 | Tab 0 | 敏感 |
+| `Payroll.Payslip` | 列印薪資單 | Tab 0 | 一般 |
+| `Payroll.RateTable` | 維護費率參照表 | Tab 1-4 | 敏感 |
+| `Payroll.Close` | 薪資週期關帳 | Tab 5 | 敏感 |
+| `Payroll.Attendance` | 維護出勤彙總 | Tab 6 | 一般 |
+| `Payroll.SalaryConfig` | 維護員工薪資設定 | 獨立頁面 | 敏感 |
+| `Payroll.Declaration` | 產生申報文件（Phase 2b） | 待設計 | 敏感 |
+| `Payroll.SelfView` | 員工查看本人薪資（Phase 5） | 待設計 | 一般 |
 
 > `Payroll.ReadAmount` 屬高度敏感個資，應僅授予 HR / 財務主管。
 

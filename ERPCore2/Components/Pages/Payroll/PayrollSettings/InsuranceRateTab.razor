@@ -1,0 +1,111 @@
+@* 保費費率設定 Tab *@
+@inject IInsuranceRateService RateService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<div class="d-flex justify-content-end mb-2">
+    <button class="btn btn-primary" @onclick="ShowAdd">
+        <i class="bi bi-plus-lg me-1"></i>@L["Button.Add"]
+    </button>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]</div>
+}
+else
+{
+    <GenericInteractiveTableComponent TItem="InsuranceRate"
+                                     Items="@rates"
+                                     ColumnDefinitions="@GetColumnDefinitions()"
+                                     ShowRowNumbers="false"
+                                     ShowBuiltInActions="false"
+                                     ShowActions="true"
+                                     IsReadOnly="true"
+                                     ActionsColumnWidth="100px"
+                                     EmptyMessage="@L["Message.NoData"]">
+        <ActionsTemplate Context="r">
+            <div class="d-flex gap-1 justify-content-center">
+                <GenericButtonComponent IconClass="bi bi-pencil"
+                                       Variant="ButtonVariant.OutlineDarkBlue"
+                                       Size="ButtonSize.Large"
+                                       Title="@L["Button.Edit"]"
+                                       OnClick="@(() => ShowEdit(r))"
+                                       CssClass="btn-square" />
+                <GenericButtonComponent IconClass="bi bi-trash"
+                                       Variant="ButtonVariant.OutlineRed"
+                                       Size="ButtonSize.Large"
+                                       Title="@L["Button.Delete"]"
+                                       OnClick="@(() => ConfirmDeleteAsync(r))"
+                                       CssClass="btn-square" />
+            </div>
+        </ActionsTemplate>
+    </GenericInteractiveTableComponent>
+}
+
+<InsuranceRateEditModalComponent IsVisible="@showModal"
+                                 IsVisibleChanged="@((bool v) => showModal = v)"
+                                 EditingItem="@editingItem"
+                                 OnSaved="@ReloadAsync" />
+
+@code {
+    private List<InsuranceRate> rates = new();
+    private bool isLoading = true;
+    private bool showModal = false;
+    private InsuranceRate? editingItem;
+    private bool _loaded = false;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    public async Task LoadAsync()
+    {
+        if (_loaded) return;
+        _loaded = true;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        rates = await RateService.GetAllAsync();
+        isLoading = false;
+    }
+
+    private void ShowAdd() { editingItem = null; showModal = true; }
+    private void ShowEdit(InsuranceRate item) { editingItem = item; showModal = true; }
+
+    private async Task ConfirmDeleteAsync(InsuranceRate item)
+    {
+        var result = await RateService.DeleteAsync(item.Id);
+        if (result.IsSuccess) { await NotificationService.ShowSuccessAsync(L["Message.DeleteSuccess"].ToString()); await ReloadAsync(); }
+        else await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.DeleteFailed"].ToString());
+    }
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions() => new()
+    {
+        new() { Title = L["Field.EffectiveDate"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "EffectiveDate",
+                DisplayFormatter = obj => (obj as InsuranceRate)?.EffectiveDate.ToString("yyyy-MM-dd") ?? "", Width = "120px" },
+        new() { Title = L["Field.LaborInsEERate"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "LaborInsuranceEmployeeRate",
+                DisplayFormatter = obj => (obj as InsuranceRate)?.LaborInsuranceEmployeeRate.ToString("P2") ?? "",
+                HeaderCssClass = "text-end", CellCssClass = "text-end", Width = "100px", HideOnMobile = true },
+        new() { Title = L["Field.LaborInsERRate"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "LaborInsuranceEmployerRate",
+                DisplayFormatter = obj => (obj as InsuranceRate)?.LaborInsuranceEmployerRate.ToString("P2") ?? "",
+                HeaderCssClass = "text-end", CellCssClass = "text-end", Width = "100px", HideOnMobile = true },
+        new() { Title = L["Field.HealthInsEERate"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "HealthInsuranceEmployeeRate",
+                DisplayFormatter = obj => (obj as InsuranceRate)?.HealthInsuranceEmployeeRate.ToString("P2") ?? "",
+                HeaderCssClass = "text-end", CellCssClass = "text-end", Width = "100px", HideOnMobile = true },
+        new() { Title = L["Field.HealthInsERRate"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "HealthInsuranceEmployerRate",
+                DisplayFormatter = obj => (obj as InsuranceRate)?.HealthInsuranceEmployerRate.ToString("P2") ?? "",
+                HeaderCssClass = "text-end", CellCssClass = "text-end", Width = "100px", HideOnMobile = true },
+        new() { Title = L["Field.RetirementERRate"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "RetirementEmployerRate",
+                DisplayFormatter = obj => (obj as InsuranceRate)?.RetirementEmployerRate.ToString("P2") ?? "",
+                HeaderCssClass = "text-end", CellCssClass = "text-end", Width = "100px", HideOnMobile = true },
+        new() { Title = L["Field.MealTaxFreeLimit"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "MealTaxFreeLimit",
+                DisplayFormatter = obj => (obj as InsuranceRate)?.MealTaxFreeLimit.ToString("N0") ?? "",
+                HeaderCssClass = "text-end", CellCssClass = "text-end", Width = "100px", HideOnMobile = true },
+        new() { Title = L["Field.TransportTaxFreeLimit"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "TransportTaxFreeLimit",
+                DisplayFormatter = obj => (obj as InsuranceRate)?.TransportTaxFreeLimit.ToString("N0") ?? "",
+                HeaderCssClass = "text-end", CellCssClass = "text-end", Width = "100px", HideOnMobile = true },
+    };
+}

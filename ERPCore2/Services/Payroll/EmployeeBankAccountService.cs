@@ -18,9 +18,10 @@ namespace ERPCore2.Services.Payroll
         {
             return context.EmployeeBankAccounts
                 .Include(x => x.Employee)
+                .Include(x => x.Bank)
                 .OrderBy(x => x.Employee.Name)
                 .ThenByDescending(x => x.IsPrimary)
-                .ThenBy(x => x.BankCode);
+                .ThenBy(x => x.Bank.BankName);
         }
 
         public override async Task<List<EmployeeBankAccount>> SearchAsync(string searchTerm)
@@ -35,9 +36,9 @@ namespace ERPCore2.Services.Payroll
 
                 return await context.EmployeeBankAccounts
                     .Include(x => x.Employee)
+                    .Include(x => x.Bank)
                     .Where(x => x.Employee.Name!.ToUpper().Contains(upper) ||
-                                x.BankCode.ToUpper().Contains(upper) ||
-                                (x.BankName != null && x.BankName.ToUpper().Contains(upper)) ||
+                                x.Bank.BankName.ToUpper().Contains(upper) ||
                                 x.AccountNumber.ToUpper().Contains(upper) ||
                                 x.AccountName.ToUpper().Contains(upper))
                     .OrderBy(x => x.Employee.Name)
@@ -58,6 +59,7 @@ namespace ERPCore2.Services.Payroll
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.EmployeeBankAccounts
                     .Include(x => x.Employee)
+                    .Include(x => x.Bank)
                     .FirstOrDefaultAsync(x => x.Id == id);
             }
             catch (Exception ex)
@@ -73,10 +75,10 @@ namespace ERPCore2.Services.Payroll
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.EmployeeBankAccounts
-                    .Include(x => x.Employee)
+                    .Include(x => x.Bank)
                     .Where(x => x.EmployeeId == employeeId)
                     .OrderByDescending(x => x.IsPrimary)
-                    .ThenBy(x => x.BankCode)
+                    .ThenBy(x => x.Bank.BankName)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -92,7 +94,7 @@ namespace ERPCore2.Services.Payroll
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.EmployeeBankAccounts
-                    .Include(x => x.Employee)
+                    .Include(x => x.Bank)
                     .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && x.IsPrimary);
             }
             catch (Exception ex)
@@ -108,7 +110,6 @@ namespace ERPCore2.Services.Payroll
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 取消同員工所有帳戶的主要標記
                 var allAccounts = await context.EmployeeBankAccounts
                     .Where(x => x.EmployeeId == employeeId)
                     .ToListAsync();
@@ -138,8 +139,8 @@ namespace ERPCore2.Services.Payroll
                 if (entity.EmployeeId <= 0)
                     errors.Add("請選擇員工");
 
-                if (string.IsNullOrWhiteSpace(entity.BankCode))
-                    errors.Add("銀行代號不能為空");
+                if (entity.BankId <= 0)
+                    errors.Add("請選擇銀行");
 
                 if (string.IsNullOrWhiteSpace(entity.AccountNumber))
                     errors.Add("帳號不能為空");
@@ -172,38 +173,6 @@ namespace ERPCore2.Services.Payroll
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger);
                 return ServiceResult.Failure("檢查刪除條件時發生錯誤");
-            }
-        }
-
-        public async Task<(List<EmployeeBankAccount> Items, int TotalCount)> GetPagedWithFiltersAsync(
-            Func<IQueryable<EmployeeBankAccount>, IQueryable<EmployeeBankAccount>>? filterFunc,
-            int pageNumber,
-            int pageSize)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                IQueryable<EmployeeBankAccount> query = context.EmployeeBankAccounts
-                    .Include(x => x.Employee);
-
-                if (filterFunc != null)
-                    query = filterFunc(query);
-
-                var totalCount = await query.CountAsync();
-                var items = await query
-                    .OrderBy(x => x.Employee!.Name)
-                    .ThenByDescending(x => x.IsPrimary)
-                    .ThenBy(x => x.BankCode)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
-
-                return (items, totalCount);
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
-                return (new List<EmployeeBankAccount>(), 0);
             }
         }
     }

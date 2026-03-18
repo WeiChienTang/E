@@ -1,5 +1,6 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Reports.FilterAttributes;
+using ERPCore2.Services;
 
 namespace ERPCore2.Models.Reports.FilterCriteria;
 
@@ -10,6 +11,16 @@ namespace ERPCore2.Models.Reports.FilterCriteria;
 /// </summary>
 public class BalanceSheetCriteria : IReportFilterCriteria
 {
+    /// <summary>
+    /// 公司篩選（多公司環境下必填；留空時僅查詢主要公司）
+    /// </summary>
+    [FilterFK(typeof(ICompanyService),
+        Group = FilterGroup.Basic,
+        Label = "公司",
+        EmptyMessage = "全部公司",
+        Order = 0)]
+    public int? CompanyId { get; set; }
+
     /// <summary>
     /// 截止日期（EndDate 為資產負債表快照日）
     /// StartDate 通常不填；若填入，則限制只看 StartDate 後的傳票（非標準用法，保留彈性）

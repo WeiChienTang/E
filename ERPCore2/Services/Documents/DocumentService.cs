@@ -154,6 +154,29 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<List<Document>> GetByRelatedEntityAsync(string entityType, int entityId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Documents
+                    .Include(d => d.DocumentCategory)
+                    .Include(d => d.DocumentFiles)
+                    .Where(d => d.RelatedEntityType == entityType && d.RelatedEntityId == entityId)
+                    .OrderByDescending(d => d.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByRelatedEntityAsync), GetType(), _logger, new
+                {
+                    EntityType = entityType,
+                    EntityId = entityId
+                });
+                return new List<Document>();
+            }
+        }
+
         #region 伺服器端分頁
 
         public async Task<(List<Document> Items, int TotalCount)> GetPagedWithFiltersAsync(

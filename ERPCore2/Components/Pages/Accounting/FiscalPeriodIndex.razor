@@ -1,0 +1,346 @@
+@page "/fiscal-periods"
+@inject IFiscalPeriodService FiscalPeriodService
+@inject IFiscalYearClosingService FiscalYearClosingService
+@inject ICompanyService CompanyService
+@rendermode InteractiveServer
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericIndexPageComponent TEntity="FiscalPeriod"
+                          TService="IFiscalPeriodService"
+                          Service="@FiscalPeriodService"
+                          EntityBasePath="/fiscal-periods"
+                          PageTitle="@L["Page.FiscalPeriodTitle"]"
+                          PageSubtitle="@L["Page.FiscalPeriodSubtitle"]"
+                          EntityName="@L["Entity.FiscalPeriod"]"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          ServerDataLoader="@ServerLoadDataAsync"
+                          GetEntityDisplayName="@(f => f.DisplayName)"
+                          RequiredPermission="@PermissionRegistry.FiscalPeriod.Read"
+                          RequiredModule="Accounting"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          CustomIndexButtons="@yearEndButton"
+                          DebugPageName="FiscalPeriodIndex"
+                          @ref="indexComponent" />
+
+<FiscalPeriodEditModalComponent IsVisible="@showEditModal"
+                               IsVisibleChanged="@((bool v) => showEditModal = v)"
+                               FiscalPeriodId="@editingId"
+                               OnFiscalPeriodSaved="@modalHandler.OnEntitySavedAsync"
+                               OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@* ===== 年底結帳 Modal ===== *@
+<BaseModalComponent IsVisible="@showYearEndModal"
+                   IsVisibleChanged="@((bool v) => { showYearEndModal = v; if (!v) ResetYearEndModal(); })"
+                   Title="年底結帳"
+                   Icon="bi-calendar-check"
+                   Size="BaseModalComponent.ModalSize.Large"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                   UseWhiteCloseButton="true"
+                   CloseOnEscape="@(!isClosingInProgress)"
+                   CloseOnBackdropClick="false"
+                   DebugComponentName="YearEndClosingModal">
+    <HeaderButtons>
+        @if (preCheck != null && preCheck.CanClose && !isClosingInProgress && !closingDone)
+        {
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                    Text="確認執行結帳"
+                                    Icon="bi-lock-fill"
+                                    OnClick="ExecuteYearEndClosingAsync" />
+        }
+    </HeaderButtons>
+    <BodyContent>
+        @* 年度選擇 *@
+        @if (preCheck == null && !isClosingInProgress)
+        {
+            <div class="row g-3 align-items-end mb-3">
+                <div class="col-auto">
+                    <label class="form-label fw-semibold">選擇結帳年度</label>
+                    <input type="number" class="form-control" style="width:120px"
+                           @bind="selectedYear" min="2000" max="2099" />
+                </div>
+                <div class="col-auto">
+                    <GenericButtonComponent Variant="ButtonVariant.Blue"
+                                            Text="前置檢查"
+                                            Icon="bi-search"
+                                            OnClick="RunPreCheckAsync" />
+                </div>
+            </div>
+        }
+
+        @* 前置檢查結果 *@
+        @if (preCheck != null && !isClosingInProgress && !closingDone)
+        {
+            <div class="mb-3">
+                <h6 class="fw-bold">@selectedYear 年度結帳前置檢查</h6>
+
+                @* 已結帳 *@
+                @if (preCheck.AlreadyClosed)
+                {
+                    <div class="alert alert-warning d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <span>@selectedYear 年度已執行過年底結帳，無法重複執行。</span>
+                    </div>
+                }
+                else
+                {
+                    @* 期間狀態 *@
+                    <div class="mb-2">
+                        <span class="badge bg-secondary me-1">期間數：@preCheck.TotalPeriods / 12</span>
+                        <span class="badge bg-success me-1">已關帳：@preCheck.ClosedOrLockedPeriods</span>
+                        @if (preCheck.OpenPeriodNumbers.Any())
+                        {
+                            <span class="badge bg-danger">仍開放：@string.Join("、", preCheck.OpenPeriodNumbers.Select(n => $"{n}月"))</span>
+                        }
+                    </div>
+
+                    @* 預估損益 *@
+                    <div class="mb-2">
+                        @if (preCheck.EstimatedNetIncome >= 0)
+                        {
+                            <span class="badge bg-success fs-6">預估本期損益：盈利 @preCheck.EstimatedNetIncome.ToString("N0") 元</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger fs-6">預估本期損益：虧損 @((-preCheck.EstimatedNetIncome).ToString("N0")) 元</span>
+                        }
+                    </div>
+
+                    @* 錯誤清單 *@
+                    @if (preCheck.Errors.Any())
+                    {
+                        <div class="alert alert-danger py-2">
+                            <div class="fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i>無法執行結帳</div>
+                            <ul class="mb-0 ps-3">
+                                @foreach (var err in preCheck.Errors)
+                                {
+                                    <li>@err</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @* 警告清單 *@
+                    @if (preCheck.Warnings.Any())
+                    {
+                        <div class="alert alert-warning py-2">
+                            <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>注意事項</div>
+                            <ul class="mb-0 ps-3">
+                                @foreach (var warn in preCheck.Warnings)
+                                {
+                                    <li>@warn</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @* 可執行時的確認提示 *@
+                    @if (preCheck.CanClose)
+                    {
+                        <div class="alert alert-danger py-2">
+                            <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                            <strong>執行後將鎖定 @selectedYear 年所有期間，無法再修改該年度任何傳票。</strong><br />
+                            確認所有傳票已完成審核後，點擊右上角「確認執行結帳」。
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="d-flex gap-2">
+                <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                        Text="重新選擇年度"
+                                        Icon="bi-arrow-left"
+                                        OnClick="@(() => { preCheck = null; StateHasChanged(); })" />
+            </div>
+        }
+
+        @* 執行中 *@
+        @if (isClosingInProgress)
+        {
+            <div class="text-center py-4">
+                <div class="spinner-border text-warning mb-3" role="status"></div>
+                <p class="fw-bold">@selectedYear 年度結帳執行中，請稍候⋯</p>
+                <small class="text-muted">正在產生結帳傳票並鎖定期間，請勿關閉此視窗</small>
+            </div>
+        }
+
+        @* 完成 *@
+        @if (closingDone)
+        {
+            <div class="text-center py-4">
+                @if (string.IsNullOrEmpty(closingError))
+                {
+                    <i class="bi bi-check-circle-fill text-success fs-1 mb-3 d-block"></i>
+                    <p class="fw-bold text-success fs-5">@selectedYear 年度結帳完成！</p>
+                    <p class="text-muted">已產生結帳傳票、鎖定年度期間，並初始化 @(selectedYear + 1) 年度期間。</p>
+                }
+                else
+                {
+                    <i class="bi bi-x-circle-fill text-danger fs-1 mb-3 d-block"></i>
+                    <p class="fw-bold text-danger fs-5">年底結帳失敗</p>
+                    <p class="text-muted">@closingError</p>
+                }
+            </div>
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+@code {
+    private GenericIndexPageComponent<FiscalPeriod, IFiscalPeriodService> indexComponent = default!;
+    private bool showEditModal = false;
+    private int? editingId = null;
+    private ModalHandler<FiscalPeriod, GenericIndexPageComponent<FiscalPeriod, IFiscalPeriodService>> modalHandler = default!;
+    private FiscalPeriodFieldConfiguration fieldConfiguration = default!;
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    // 年底結帳按鈕（追加在預設按鈕列後）
+    private RenderFragment yearEndButton => __builder =>
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Yellow"
+                                Text="年度結帳"
+                                Icon="bi-calendar-check"
+                                OnClick="OpenYearEndModalAsync" />;
+    };
+
+    // 年底結帳 Modal 狀態
+    private bool showYearEndModal = false;
+    private int selectedYear = DateTime.Today.Year - 1;
+    private YearEndClosingPreCheck? preCheck = null;
+    private bool isClosingInProgress = false;
+    private bool closingDone = false;
+    private string closingError = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<FiscalPeriod,
+                GenericIndexPageComponent<FiscalPeriod, IFiscalPeriodService>>(
+                id => editingId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new FiscalPeriodFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(
+                ex, nameof(OnInitializedAsync), GetType(),
+                additionalData: "初始化會計期間頁面失敗");
+            await NotificationService.ShowErrorAsync(L["Message.InitPageFailed"].ToString());
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
+            L["Nav.FinancialManagement"].ToString(), L["Nav.FiscalPeriods"].ToString(), null, NotificationService, GetType());
+
+    private Task<(List<FiscalPeriod> Items, int TotalCount)> ServerLoadDataAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return FiscalPeriodService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(f => f.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadDataAsync), GetType());
+                return q;
+            },
+            page,
+            pageSize);
+    }
+
+    private Task OpenYearEndModalAsync()
+    {
+        ResetYearEndModal();
+        showYearEndModal = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void ResetYearEndModal()
+    {
+        preCheck = null;
+        isClosingInProgress = false;
+        closingDone = false;
+        closingError = string.Empty;
+    }
+
+    private async Task RunPreCheckAsync()
+    {
+        try
+        {
+            var company = await CompanyService.GetPrimaryCompanyAsync();
+            if (company == null)
+            {
+                await NotificationService.ShowErrorAsync("找不到預設公司資料");
+                return;
+            }
+
+            preCheck = await FiscalYearClosingService.PreCheckAsync(selectedYear, company.Id);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(RunPreCheckAsync), GetType());
+            await NotificationService.ShowErrorAsync("前置檢查失敗，請稍後再試");
+        }
+    }
+
+    private async Task ExecuteYearEndClosingAsync()
+    {
+        try
+        {
+            var company = await CompanyService.GetPrimaryCompanyAsync();
+            if (company == null)
+            {
+                await NotificationService.ShowErrorAsync("找不到預設公司資料");
+                return;
+            }
+
+            isClosingInProgress = true;
+            closingDone = false;
+            closingError = string.Empty;
+            StateHasChanged();
+
+            var (success, error) = await FiscalYearClosingService.ExecuteYearEndClosingAsync(
+                selectedYear, company.Id, "system");
+
+            isClosingInProgress = false;
+            closingDone = true;
+            closingError = error;
+            StateHasChanged();
+
+            if (success)
+            {
+                await NotificationService.ShowSuccessAsync($"{selectedYear} 年度結帳完成");
+                await indexComponent.Refresh();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"年底結帳失敗：{error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            isClosingInProgress = false;
+            closingDone = true;
+            closingError = "執行過程發生未預期錯誤";
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ExecuteYearEndClosingAsync), GetType());
+            StateHasChanged();
+        }
+    }
+}

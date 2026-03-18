@@ -10,11 +10,15 @@ namespace ERPCore2.Services
 {
     public class JournalEntryService : GenericManagementService<JournalEntry>, IJournalEntryService
     {
+        private readonly IFiscalPeriodService _fiscalPeriodService;
+
         public JournalEntryService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<JournalEntry>> logger)
+            ILogger<GenericManagementService<JournalEntry>> logger,
+            IFiscalPeriodService fiscalPeriodService)
             : base(contextFactory, logger)
         {
+            _fiscalPeriodService = fiscalPeriodService;
         }
 
         protected override IQueryable<JournalEntry> BuildGetAllQuery(AppDbContext context)
@@ -143,6 +147,31 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<List<JournalEntry>> GetAllBySourceDocumentAsync(string sourceDocumentType, int sourceDocumentId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.JournalEntries
+                    .Include(je => je.Lines)
+                    .Where(je =>
+                        je.SourceDocumentType == sourceDocumentType &&
+                        je.SourceDocumentId == sourceDocumentId)
+                    .OrderBy(je => je.EntryDate)
+                    .ThenBy(je => je.Id)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllBySourceDocumentAsync), GetType(), _logger, new
+                {
+                    SourceDocumentType = sourceDocumentType,
+                    SourceDocumentId = sourceDocumentId
+                });
+                return new List<JournalEntry>();
+            }
+        }
+
         public async Task<List<JournalEntry>> GetDraftEntriesAsync()
         {
             try
@@ -223,6 +252,19 @@ namespace ERPCore2.Services
                 if (nonDetailAccounts.Any())
                     return (false, $"以下科目非明細科目，不可記帳：{string.Join("、", nonDetailAccounts)}");
 
+                // 驗證會計期間是否開放（期初餘額傳票跳過期間鎖定檢查）
+                if (entry.EntryType != JournalEntryType.OpeningBalance)
+                {
+                    var period = await _fiscalPeriodService.GetByYearAndPeriodAsync(
+                        entry.FiscalYear, entry.FiscalPeriod, entry.CompanyId);
+
+                    if (period != null && period.PeriodStatus == FiscalPeriodStatus.Locked)
+                        return (false, $"會計期間 {entry.FiscalYear}/{entry.FiscalPeriod:D2} 已永久鎖定，不允許過帳");
+
+                    if (period != null && period.PeriodStatus == FiscalPeriodStatus.Closed)
+                        return (false, $"會計期間 {entry.FiscalYear}/{entry.FiscalPeriod:D2} 已關帳，如需補登請先重開期間");
+                }
+
                 entry.JournalEntryStatus = JournalEntryStatus.Posted;
                 entry.UpdatedAt = DateTime.UtcNow;
                 entry.UpdatedBy = updatedBy;
@@ -263,6 +305,20 @@ namespace ERPCore2.Services
                 if (original.EntryType == JournalEntryType.Reversing)
                     return (false, "沖銷傳票本身不能再被沖銷", null);
 
+                // 驗證沖銷日期所在的會計期間是否開放
+                {
+                    var reversalYear   = reversalDate.Year;
+                    var reversalPeriod = reversalDate.Month;
+                    var period = await _fiscalPeriodService.GetByYearAndPeriodAsync(
+                        reversalYear, reversalPeriod, original.CompanyId);
+
+                    if (period != null && period.PeriodStatus == FiscalPeriodStatus.Locked)
+                        return (false, $"沖銷日期 {reversalDate:yyyy/MM/dd} 所在期間（{reversalYear}/{reversalPeriod:D2}）已永久鎖定，請選擇開放中的期間（建議：次月 1 日）", null);
+
+                    if (period != null && period.PeriodStatus == FiscalPeriodStatus.Closed)
+                        return (false, $"沖銷日期 {reversalDate:yyyy/MM/dd} 所在期間（{reversalYear}/{reversalPeriod:D2}）已關帳，請選擇開放中的期間（建議：次月 1 日）", null);
+                }
+
                 // 建立沖銷傳票（借貸對調）
                 // 沖銷傳票不繼承 SourceDocumentType/Id/Code，避免與原傳票索引衝突，
                 // 且沖銷傳票本身不代表一張業務單據
@@ -302,6 +358,9 @@ namespace ERPCore2.Services
 
                 context.JournalEntries.Add(reversalEntry);
                 await context.SaveChangesAsync();
+
+                // 更新沖銷傳票的反向指向（Bug-3 修正：沖銷傳票 B 可追溯原傳票 A）
+                reversalEntry.ReversedEntryId = original.Id;
 
                 // 更新原傳票的沖銷狀態
                 original.IsReversed = true;
@@ -529,7 +588,7 @@ namespace ERPCore2.Services
                 if (entity.CompanyId <= 0)
                     errors.Add("公司為必填欄位");
 
-                if (entity.FiscalYear < 2000 || entity.FiscalYear > 2100)
+                if (entity.FiscalYear < 1900 || entity.FiscalYear > 2100)
                     errors.Add("會計年度無效");
 
                 if (entity.FiscalPeriod < 1 || entity.FiscalPeriod > 12)
@@ -582,6 +641,121 @@ namespace ERPCore2.Services
                     var doc = await context.SetoffDocuments.FindAsync(sourceDocumentId);
                     if (doc != null) { doc.IsJournalized = false; doc.JournalizedAt = null; }
                     break;
+            }
+        }
+
+        public async Task<JournalEntry?> GetOpeningBalanceEntryAsync(int fiscalYear, int companyId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.JournalEntries
+                    .Include(je => je.Lines)
+                        .ThenInclude(l => l.AccountItem)
+                    .Where(je =>
+                        je.FiscalYear == fiscalYear &&
+                        je.CompanyId == companyId &&
+                        je.EntryType == JournalEntryType.OpeningBalance)
+                    .OrderByDescending(je => je.Id)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetOpeningBalanceEntryAsync), GetType(), _logger,
+                    new { FiscalYear = fiscalYear, CompanyId = companyId });
+                return null;
+            }
+        }
+
+        public async Task<(bool Success, string ErrorMessage)> SaveOpeningBalanceAsync(
+            int fiscalYear, int companyId, DateTime entryDate,
+            List<JournalEntryLine> lines, string savedBy)
+        {
+            try
+            {
+                // 驗證借貸平衡
+                var totalDebit  = lines.Where(l => l.Direction == AccountDirection.Debit).Sum(l => l.Amount);
+                var totalCredit = lines.Where(l => l.Direction == AccountDirection.Credit).Sum(l => l.Amount);
+                if (totalDebit != totalCredit)
+                    return (false, $"借貸不平衡：借方合計 {totalDebit:N2}，貸方合計 {totalCredit:N2}");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 查找是否已存在期初餘額傳票
+                var existing = await context.JournalEntries
+                    .Include(je => je.Lines)
+                    .Where(je =>
+                        je.FiscalYear == fiscalYear &&
+                        je.CompanyId == companyId &&
+                        je.EntryType == JournalEntryType.OpeningBalance)
+                    .OrderByDescending(je => je.Id)
+                    .FirstOrDefaultAsync();
+
+                if (existing != null)
+                {
+                    // 已過帳的期初餘額傳票不可直接覆寫，必須建立調整分錄
+                    if (existing.JournalEntryStatus == JournalEntryStatus.Posted)
+                        return (false, $"期初餘額傳票（ID: {existing.Id}）已過帳，不可修改。若有誤，請建立調整分錄補正差額。");
+
+                    // 更新草稿傳票
+                    existing.EntryDate = entryDate;
+                    existing.FiscalYear = fiscalYear;
+                    existing.FiscalPeriod = 1;
+                    existing.Description = $"{fiscalYear} 年期初餘額";
+                    existing.UpdatedAt = DateTime.UtcNow;
+                    existing.UpdatedBy = savedBy;
+
+                    // 刪除舊分錄行
+                    context.JournalEntryLines.RemoveRange(existing.Lines);
+
+                    // 加入新分錄行
+                    var lineNum = 1;
+                    foreach (var line in lines.Where(l => l.Amount > 0))
+                    {
+                        line.JournalEntryId = existing.Id;
+                        line.LineNumber = lineNum++;
+                        line.CreatedAt = DateTime.UtcNow;
+                        line.CreatedBy = savedBy;
+                        context.JournalEntryLines.Add(line);
+                    }
+                }
+                else
+                {
+                    // 建立新傳票
+                    var entry = new JournalEntry
+                    {
+                        EntryDate = entryDate,
+                        EntryType = JournalEntryType.OpeningBalance,
+                        JournalEntryStatus = JournalEntryStatus.Draft,
+                        Description = $"{fiscalYear} 年期初餘額",
+                        CompanyId = companyId,
+                        FiscalYear = fiscalYear,
+                        FiscalPeriod = 1,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = savedBy
+                    };
+                    context.JournalEntries.Add(entry);
+                    await context.SaveChangesAsync();
+
+                    var lineNum = 1;
+                    foreach (var line in lines.Where(l => l.Amount > 0))
+                    {
+                        line.JournalEntryId = entry.Id;
+                        line.LineNumber = lineNum++;
+                        line.CreatedAt = DateTime.UtcNow;
+                        line.CreatedBy = savedBy;
+                        context.JournalEntryLines.Add(line);
+                    }
+                }
+
+                await context.SaveChangesAsync();
+                return (true, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SaveOpeningBalanceAsync), GetType(), _logger,
+                    new { FiscalYear = fiscalYear, CompanyId = companyId });
+                return (false, "儲存期初餘額時發生錯誤");
             }
         }
     }

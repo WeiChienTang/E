@@ -1,0 +1,95 @@
+@page "/production/manufacturing-orders"
+@using ERPCore2.Models.Reports
+@using ERPCore2.FieldConfiguration
+@inject IProductionScheduleItemService ProductionScheduleItemService
+@inject IProductService ProductService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResource> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IManufacturingOrderReportService ManufacturingOrderReportService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="ProductionScheduleItem"
+                          TService="IProductionScheduleItemService"
+                          Service="@ProductionScheduleItemService"
+                          EntityBasePath="/production/manufacturing-orders"
+                          PageTitle="@L["Page.ManufacturingOrderTitle", "製令單管理"]"
+                          PageSubtitle="@L["Page.ManufacturingOrderSubtitle", "查詢與列印製令單"]"
+                          EntityName="製令單"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          ServerDataLoader="@ServerLoadManufacturingOrdersAsync"
+                          GetEntityDisplayName="@(item => item.Code ?? $"製令單#{item.Id}")"
+                          RequiredPermission="@PermissionRegistry.ProductionSchedule.Read"
+                          RequiredModule="Production"
+                          ShowBatchPrintButton="true"
+                          OnBatchPrintClick="@HandleBatchPrintAsync"
+                          RowPrintService="@ManufacturingOrderReportService"
+                          RowPrintReportId="@ReportIds.ManufacturingOrder"
+                          @ref="indexComponent">
+</GenericIndexPageComponent>
+
+@* 批次列印篩選 Modal *@
+<GenericReportFilterModalComponent IsVisible="@showBatchPrintModal"
+                                  IsVisibleChanged="@((bool v) => showBatchPrintModal = v)"
+                                  ReportId="@ReportIds.ManufacturingOrder"
+                                  OnPrintSuccess="@(() => showBatchPrintModal = false)" />
+
+@code {
+    private GenericIndexPageComponent<ProductionScheduleItem, IProductionScheduleItemService> indexComponent = default!;
+
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    private bool showBatchPrintModal = false;
+
+    private ManufacturingOrderFieldConfiguration fieldConfiguration = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await InitializeBreadcrumbsAsync();
+
+            var products = await DataLoaderHelper.LoadAsync(() => ProductService.GetAllAsync(), "品項", NotificationService, GetType());
+            var employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
+
+            fieldConfiguration = new ManufacturingOrderFieldConfiguration(products, employees, NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化製令單頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化製令單頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("生產管理", "製令單管理", "/production", NotificationService, GetType());
+
+    private Task<(List<ProductionScheduleItem> Items, int TotalCount)> ServerLoadManufacturingOrdersAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return ProductionScheduleItemService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadManufacturingOrdersAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
+
+    private Task HandleBatchPrintAsync()
+    {
+        showBatchPrintModal = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+}

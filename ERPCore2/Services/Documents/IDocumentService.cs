@@ -8,6 +8,8 @@ namespace ERPCore2.Services
         Task<bool> IsDocumentCodeExistsAsync(string code, int? excludeId = null);
         Task<Document?> GetWithFilesAsync(int id);
 
+        Task<List<Document>> GetByRelatedEntityAsync(string entityType, int entityId);
+
         #region 伺服器端分頁
 
         /// <summary>

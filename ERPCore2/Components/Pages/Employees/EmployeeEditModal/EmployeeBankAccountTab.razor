@@ -1,0 +1,160 @@
+@* 員工銀行帳號 Tab - 管理員工的薪資轉帳銀行帳戶資訊 *@
+@inject IEmployeeBankAccountService BankAccountService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@if (accounts.Count == 0)
+{
+    <div class="text-center py-4 text-muted">
+        <i class="bi bi-bank fs-3 d-block mb-2"></i>
+        <span>@L["Message.NoBankAccounts"]</span>
+    </div>
+}
+else
+{
+    <div class="table-responsive px-3 pt-2">
+        <table class="table table-sm table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>@L["Field.BankName"]</th>
+                    <th>@L["Field.BranchName"]</th>
+                    <th>@L["Field.AccountNumber"]</th>
+                    <th>@L["Field.AccountName"]</th>
+                    <th class="text-center">@L["Field.IsPrimary"]</th>
+                    <th class="text-center" style="width:100px">@L["Label.Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var acc in accounts)
+                {
+                    <tr>
+                        <td>@acc.Bank?.BankName</td>
+                        <td>@acc.BranchName</td>
+                        <td>@acc.AccountNumber</td>
+                        <td>@acc.AccountName</td>
+                        <td class="text-center">
+                            @if (acc.IsPrimary)
+                            {
+                                <span class="badge bg-primary">@L["Label.Primary"]</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex gap-1 justify-content-center">
+                                <GenericButtonComponent IconClass="bi bi-pencil"
+                                                       Variant="ButtonVariant.OutlineDarkBlue"
+                                                       Size="ButtonSize.Small"
+                                                       Title="@L["Button.Edit"]"
+                                                       OnClick="@(() => HandleEdit(acc.Id))"
+                                                       CssClass="btn-square" />
+                                @if (!acc.IsPrimary)
+                                {
+                                    <GenericButtonComponent IconClass="bi bi-star"
+                                                           Variant="ButtonVariant.OutlineGray"
+                                                           Size="ButtonSize.Small"
+                                                           Title="@L["Button.SetPrimary"]"
+                                                           OnClick="@(() => HandleSetPrimary(acc.Id))"
+                                                           CssClass="btn-square" />
+                                }
+                                <GenericButtonComponent IconClass="bi bi-trash"
+                                                       Variant="ButtonVariant.OutlineRed"
+                                                       Size="ButtonSize.Small"
+                                                       Title="@L["Button.Delete"]"
+                                                       OnClick="@(() => HandleDelete(acc.Id))"
+                                                       CssClass="btn-square" />
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="px-3 pb-3">
+    <GenericButtonComponent IconClass="bi bi-plus-circle"
+                            Variant="ButtonVariant.OutlineGreen"
+                            Size="ButtonSize.Small"
+                            Text="@L["Button.AddBankAccount"]"
+                            OnClick="@HandleAdd"
+                            IsDisabled="@(!EmployeeId.HasValue)" />
+</div>
+
+@* 銀行帳號編輯 Modal *@
+<EmployeeBankAccountEditModalComponent @ref="editModal"
+                                       IsVisible="@isModalVisible"
+                                       IsVisibleChanged="@((bool v) => isModalVisible = v)"
+                                       BankAccountId="@editingId"
+                                       PrefilledEmployeeId="@EmployeeId"
+                                       OnBankAccountSaved="@HandleSaved"
+                                       OnCancel="@(() => isModalVisible = false)" />
+
+@code {
+    [Parameter] public int? EmployeeId { get; set; }
+
+    private List<EmployeeBankAccount> accounts = new();
+    private EmployeeBankAccountEditModalComponent? editModal;
+    private bool isModalVisible = false;
+    private int? editingId = null;
+
+    public async Task LoadAsync(int employeeId)
+    {
+        accounts = await BankAccountService.GetByEmployeeIdAsync(employeeId);
+        StateHasChanged();
+    }
+
+    public void Clear()
+    {
+        accounts = new();
+        StateHasChanged();
+    }
+
+    private void HandleAdd()
+    {
+        editingId = null;
+        isModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleEdit(int id)
+    {
+        editingId = id;
+        isModalVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleDelete(int id)
+    {
+        var result = await BankAccountService.DeleteAsync(id);
+        if (result.IsSuccess)
+        {
+            accounts.RemoveAll(a => a.Id == id);
+            await NotificationService.ShowSuccessAsync(L["Message.DeleteSuccess"].ToString());
+            StateHasChanged();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.DeleteFailed"].ToString());
+        }
+    }
+
+    private async Task HandleSetPrimary(int id)
+    {
+        if (!EmployeeId.HasValue) return;
+        var result = await BankAccountService.SetPrimaryAsync(id, EmployeeId.Value);
+        if (result.IsSuccess)
+        {
+            await LoadAsync(EmployeeId.Value);
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailed"].ToString());
+        }
+    }
+
+    private async Task HandleSaved(EmployeeBankAccount saved)
+    {
+        isModalVisible = false;
+        if (EmployeeId.HasValue)
+            await LoadAsync(EmployeeId.Value);
+    }
+}

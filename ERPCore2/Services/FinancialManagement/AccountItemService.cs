@@ -281,6 +281,25 @@ namespace ERPCore2.Services
                     await IsAccountItemCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("科目代碼已存在");
 
+                // 驗證科目大類與借貸方向的對應關係
+                // 資產/成本/費用 → 借方正常；負債/權益/收入 → 貸方正常
+                // 營業外收益及費損、綜合損益總額可為任意方向（跳過驗證）
+                var expectedDirection = entity.AccountType switch
+                {
+                    AccountType.Asset    => AccountDirection.Debit,
+                    AccountType.Cost     => AccountDirection.Debit,
+                    AccountType.Expense  => AccountDirection.Debit,
+                    AccountType.Liability => AccountDirection.Credit,
+                    AccountType.Equity   => AccountDirection.Credit,
+                    AccountType.Revenue  => AccountDirection.Credit,
+                    _ => (AccountDirection?)null  // NonOperating / ComprehensiveIncome 不驗證
+                };
+                if (expectedDirection.HasValue && entity.Direction != expectedDirection.Value)
+                {
+                    var directionName = expectedDirection.Value == AccountDirection.Debit ? "借方" : "貸方";
+                    errors.Add($"{EnumHelper.GetDisplayName(entity.AccountType)} 科目的借貸方向必須設定為【{directionName}】");
+                }
+
                 // 更新時：若已有已過帳傳票，鎖定關鍵欄位（科目大類、借貸方向、上層科目）
                 if (entity.Id > 0)
                 {

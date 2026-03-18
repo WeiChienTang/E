@@ -16,7 +16,7 @@
                           ColumnDefinitions="@columnDefinitions"
                           ServerDataLoader="@ServerLoadScaleTypesAsync"
                           GetEntityDisplayName="@(st => st.Name)"
-                          RequiredPermission="@PermissionRegistry.ScaleType.Read"
+                          RequiredPermission="@PermissionRegistry.ScaleRecord.Read"
                           RequiredModule="ScaleManagement"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"

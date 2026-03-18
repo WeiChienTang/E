@@ -2,16 +2,21 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
+using ERPCore2.Helpers.EditModal;
 
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 生產排程項目 - 記錄要生產的品項項目（以產品為單位）
+    /// 生產排程項目（製令單）- 記錄要生產的品項項目（以產品為單位）
     /// 每個銷售訂單明細轉排程會產生一筆 ProductionScheduleItem
+    /// Code 欄位用作製令單號，格式：MO-YYYYMMDD-001
     /// </summary>
+    [CodeGenerationStrategy(CodeGenerationStrategy.TimestampWithSequence, Prefix = "MO-")]
+    [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(ProductionScheduleId), nameof(ProductId))]
     [Index(nameof(SalesOrderDetailId))]
     [Index(nameof(ProductionItemStatus))]
+    [Index(nameof(ResponsibleEmployeeId))]
     public class ProductionScheduleItem : BaseEntity
     {
         // === 生產資訊 ===
@@ -120,6 +125,13 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "入庫倉庫位置")]
         [ForeignKey(nameof(WarehouseLocation))]
         public int? WarehouseLocationId { get; set; }
+
+        /// <summary>
+        /// 負責人員 ID - 製令單負責人（可與排程製單人不同）
+        /// </summary>
+        [Display(Name = "負責人員")]
+        [ForeignKey(nameof(ResponsibleEmployee))]
+        public int? ResponsibleEmployeeId { get; set; }
         
         // === Navigation Properties ===
         
@@ -147,6 +159,11 @@ namespace ERPCore2.Data.Entities
         /// 入庫倉庫位置
         /// </summary>
         public WarehouseLocation? WarehouseLocation { get; set; }
+
+        /// <summary>
+        /// 負責人員
+        /// </summary>
+        public Employee? ResponsibleEmployee { get; set; }
         
         /// <summary>
         /// 此項目的組件明細（需要領料的物料）

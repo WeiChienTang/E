@@ -91,7 +91,17 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "庫存異動紀錄")]
         [ForeignKey(nameof(InventoryTransaction))]
         public int? InventoryTransactionId { get; set; }
-        
+
+        /// <summary>
+        /// 是否已轉傳票（每次分批完工獨立追蹤）
+        /// </summary>
+        [Display(Name = "已轉傳票")]
+        public bool IsJournalized { get; set; } = false;
+
+        /// <summary>轉傳票時間</summary>
+        [Display(Name = "轉傳票時間")]
+        public DateTime? JournalizedAt { get; set; }
+
         // === Navigation Properties ===
         
         /// <summary>

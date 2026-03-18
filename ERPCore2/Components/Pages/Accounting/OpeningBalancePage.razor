@@ -1,0 +1,414 @@
+@page "/opening-balance"
+@rendermode InteractiveServer
+@inject IJournalEntryService JournalEntryService
+@inject IAccountItemService AccountItemService
+@inject ICompanyService CompanyService
+@inject IFiscalPeriodService FiscalPeriodService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IStringLocalizer<SharedResource> L
+
+@using ERPCore2.Data.Entities
+@using ERPCore2.Models.Enums
+
+<PageTitle>@L["Page.OpeningBalanceTitle"]</PageTitle>
+
+<div class="container-fluid px-3">
+    <!-- 麵包屑 -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">@L["Nav.FinancialManagement"]</li>
+            <li class="breadcrumb-item active">@L["Page.OpeningBalanceTitle"]</li>
+        </ol>
+    </nav>
+
+    <!-- 標題 -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">@L["Page.OpeningBalanceTitle"]</h4>
+            <small class="text-muted">@L["Page.OpeningBalanceSubtitle"]</small>
+        </div>
+    </div>
+
+    @if (!isAuthorized)
+    {
+        <div class="alert alert-warning">@L["Message.NoPagePermission"]</div>
+    }
+    else
+    {
+        <!-- 步驟 1：選擇年度與公司 -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <strong><i class="bi bi-1-circle me-2"></i>@L["Label.SelectCompanyAndYear"]</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">@L["Entity.Company"] <span class="text-danger">*</span></label>
+                        <select class="form-select" @bind="selectedCompanyId" @bind:after="OnSelectionChanged">
+                            <option value="0">@L["Placeholder.PleaseSelect", L["Entity.Company"].ToString()]</option>
+                            @foreach (var c in companies)
+                            {
+                                <option value="@c.Id">@(c.CompanyName ?? c.Code)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">@L["Field.FiscalYear"] <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" @bind="selectedFiscalYear" @bind:after="OnSelectionChanged"
+                               min="1900" max="2100" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">@L["Field.OpeningDate"] <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" @bind="entryDate" />
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary" @onclick="LoadDataAsync" disabled="@(selectedCompanyId == 0)">
+                            <i class="bi bi-download me-1"></i>@L["Button.LoadData"]
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (isDataLoaded)
+        {
+            <!-- 已過帳唯讀提示 -->
+            @if (isPosted)
+            {
+                <div class="alert alert-info d-flex align-items-start gap-3 mb-3">
+                    <i class="bi bi-lock-fill fs-4 mt-1"></i>
+                    <div>
+                        <strong>@string.Format(L["Message.OpeningBalancePosted"].ToString(), existingEntryId)</strong><br />
+                        @L["Message.PostedEntryReadOnly"]<br />
+                        @L["Message.CreateAdjustingEntry"]
+                        <div class="mt-2">
+                            <a href="/journal-entries" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil-square me-1"></i>@L["Button.GoToJournalEntry"]
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- 步驟 2：各科目期初餘額（過帳後唯讀，草稿可編輯） -->
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    @if (isPosted)
+                    {
+                        <strong><i class="bi bi-2-circle me-2"></i>@L["Label.AccountBalanceReadOnly"]</strong>
+                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>@L["JournalEntryStatus.Posted"]</span>
+                    }
+                    else
+                    {
+                        <strong><i class="bi bi-2-circle me-2"></i>@L["Label.EnterAccountBalance"]</strong>
+                        <small class="text-muted">@L["Label.ShowDetailAccountsHint"]</small>
+                    }
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:100px">@L["Column.AccountCode"]</th>
+                                    <th>@L["Column.AccountName"]</th>
+                                    <th style="width:120px">@L["Column.AccountType"]</th>
+                                    <th style="width:150px" class="text-end">@L["Column.DebitAmount"]</th>
+                                    <th style="width:150px" class="text-end">@L["Column.CreditAmount"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in balanceRows.Where(r => isPosted ? (r.DebitAmount != 0 || r.CreditAmount != 0) : true))
+                                {
+                                    <tr>
+                                        <td class="font-monospace">@row.AccountCode</td>
+                                        <td>@row.AccountName</td>
+                                        <td><span class="badge @GetAccountTypeBadge(row.AccountType)">@EnumHelper.GetDisplayName(row.AccountType)</span></td>
+                                        @if (isPosted)
+                                        {
+                                            <td class="text-end font-monospace">
+                                                @(row.DebitAmount != 0 ? row.DebitAmount.ToString("N2") : string.Empty)
+                                            </td>
+                                            <td class="text-end font-monospace">
+                                                @(row.CreditAmount != 0 ? row.CreditAmount.ToString("N2") : string.Empty)
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td>
+                                                <input type="number" class="form-control form-control-sm text-end"
+                                                       @bind="row.DebitAmount" @bind:after="StateHasChanged"
+                                                       min="0" step="0.01" placeholder="0.00" />
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control form-control-sm text-end"
+                                                       @bind="row.CreditAmount" @bind:after="StateHasChanged"
+                                                       min="0" step="0.01" placeholder="0.00" />
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-secondary fw-bold">
+                                <tr>
+                                    <td colspan="3" class="text-end">@L["Label.Total"]</td>
+                                    <td class="text-end">@TotalDebit.ToString("N2")</td>
+                                    <td class="text-end">@TotalCredit.ToString("N2")</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步驟 3：驗證與儲存（已過帳時隱藏） -->
+            @if (!isPosted)
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <strong><i class="bi bi-3-circle me-2"></i>@L["Label.ValidateAndSave"]</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center g-3">
+                            <div class="col-auto">
+                                @if (IsBalanced)
+                                {
+                                    <span class="badge bg-success fs-6"><i class="bi bi-check-circle me-1"></i>@L["Label.Balanced"]</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger fs-6">
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        @L["Label.Difference"]：@Math.Abs(TotalDebit - TotalCredit).ToString("N2")
+                                    </span>
+                                }
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-success me-2" @onclick="SaveAsync"
+                                        disabled="@(!IsBalanced || isSaving)">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1"></span>
+                                    }
+                                    <i class="bi bi-save me-1"></i>@L["Button.SaveDraft"]
+                                </button>
+                                <button class="btn btn-primary" @onclick="SaveAndPostAsync"
+                                        disabled="@(!IsBalanced || isSaving || TotalDebit == 0)">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1"></span>
+                                    }
+                                    <i class="bi bi-check2-circle me-1"></i>@L["Button.SaveAndPost"]
+                                </button>
+                            </div>
+                            @if (existingEntryId.HasValue)
+                            {
+                                <div class="col-auto">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        @string.Format(L["Message.OpeningBalanceDraftExists"].ToString(), existingEntryId)
+                                    </small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+</div>
+
+@code {
+    // ===== 狀態 =====
+    private bool isAuthorized = false;
+    private bool isDataLoaded = false;
+    private bool isPosted = false;    // 期初餘額傳票是否已過帳（唯讀模式）
+    private bool isSaving = false;
+    private int selectedCompanyId = 0;
+    private int selectedFiscalYear = DateTime.Today.Year;
+    private DateTime entryDate = new DateTime(DateTime.Today.Year, 1, 1);
+    private int? existingEntryId = null;
+    private List<Company> companies = new();
+    private List<BalanceRow> balanceRows = new();
+
+    // ===== 計算屬性 =====
+    private decimal TotalDebit => balanceRows.Sum(r => r.DebitAmount);
+    private decimal TotalCredit => balanceRows.Sum(r => r.CreditAmount);
+    private bool IsBalanced => TotalDebit == TotalCredit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 權限檢查
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            isAuthorized = authState.User.Identity?.IsAuthenticated ?? false;
+            if (!isAuthorized) return;
+
+            companies = await CompanyService.GetActiveCompaniesAsync();
+            if (companies.Count == 1)
+                selectedCompanyId = companies[0].Id;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType());
+        }
+    }
+
+    private void OnSelectionChanged()
+    {
+        isDataLoaded = false;
+        isPosted = false;
+        balanceRows = new();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        if (selectedCompanyId == 0) return;
+        try
+        {
+            // 載入所有明細科目
+            var accounts = await AccountItemService.GetDetailAccountsAsync();
+
+            // 載入已存在的期初餘額傳票
+            var existing = await JournalEntryService.GetOpeningBalanceEntryAsync(selectedFiscalYear, selectedCompanyId);
+            existingEntryId = existing?.Id;
+            isPosted = existing?.JournalEntryStatus == JournalEntryStatus.Posted;
+
+            // 建立行資料
+            balanceRows = accounts
+                .OrderBy(a => a.Code)
+                .Select(a =>
+                {
+                    var row = new BalanceRow
+                    {
+                        AccountItemId = a.Id,
+                        AccountCode = a.Code ?? "",
+                        AccountName = a.Name,
+                        AccountType = a.AccountType
+                    };
+                    if (existing != null)
+                    {
+                        var debitLine  = existing.Lines.FirstOrDefault(l => l.AccountItemId == a.Id && l.Direction == AccountDirection.Debit);
+                        var creditLine = existing.Lines.FirstOrDefault(l => l.AccountItemId == a.Id && l.Direction == AccountDirection.Credit);
+                        row.DebitAmount  = debitLine?.Amount  ?? 0;
+                        row.CreditAmount = creditLine?.Amount ?? 0;
+                    }
+                    return row;
+                })
+                .ToList();
+
+            isDataLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync(L["Message.LoadDataFailed"].ToString());
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        await DoSaveAsync(postAfterSave: false);
+    }
+
+    private async Task SaveAndPostAsync()
+    {
+        await DoSaveAsync(postAfterSave: true);
+    }
+
+    private async Task DoSaveAsync(bool postAfterSave)
+    {
+        if (isSaving || !IsBalanced) return;
+        isSaving = true;
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var savedBy = authState.User.Identity?.Name ?? "System";
+
+            var lines = new List<JournalEntryLine>();
+            foreach (var row in balanceRows)
+            {
+                if (row.DebitAmount > 0)
+                    lines.Add(new JournalEntryLine
+                    {
+                        AccountItemId = row.AccountItemId,
+                        Direction = AccountDirection.Debit,
+                        Amount = row.DebitAmount,
+                        LineDescription = $"期初餘額 - {row.AccountName}"
+                    });
+                if (row.CreditAmount > 0)
+                    lines.Add(new JournalEntryLine
+                    {
+                        AccountItemId = row.AccountItemId,
+                        Direction = AccountDirection.Credit,
+                        Amount = row.CreditAmount,
+                        LineDescription = $"期初餘額 - {row.AccountName}"
+                    });
+            }
+
+            var (success, error) = await JournalEntryService.SaveOpeningBalanceAsync(
+                selectedFiscalYear, selectedCompanyId, entryDate, lines, savedBy);
+
+            if (!success)
+            {
+                await NotificationService.ShowErrorAsync($"{L["Message.SaveFailed"]}：{error}");
+                return;
+            }
+
+            if (postAfterSave)
+            {
+                // 重新載入以取得 ID，再過帳
+                var saved = await JournalEntryService.GetOpeningBalanceEntryAsync(selectedFiscalYear, selectedCompanyId);
+                if (saved != null)
+                {
+                    var (postOk, postError) = await JournalEntryService.PostEntryAsync(saved.Id, savedBy);
+                    if (!postOk)
+                    {
+                        await NotificationService.ShowWarningAsync(string.Format(L["Message.SaveSuccessButPostFailed"].ToString(), postError));
+                        return;
+                    }
+                }
+                await NotificationService.ShowSuccessAsync(L["Message.OpeningBalanceSavedAndPosted"].ToString());
+            }
+            else
+            {
+                await NotificationService.ShowSuccessAsync(L["Message.OpeningBalanceDraftSaved"].ToString());
+            }
+
+            // 重新載入
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(DoSaveAsync), GetType());
+            await NotificationService.ShowErrorAsync(L["Message.SaveError"].ToString());
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private static string GetAccountTypeBadge(AccountType type) => type switch
+    {
+        AccountType.Asset    => "bg-primary",
+        AccountType.Liability => "bg-danger",
+        AccountType.Equity   => "bg-success",
+        AccountType.Revenue  => "bg-info",
+        AccountType.Cost     => "bg-warning text-dark",
+        AccountType.Expense  => "bg-secondary",
+        _ => "bg-secondary"
+    };
+
+    // ===== 資料列模型 =====
+    private class BalanceRow
+    {
+        public int AccountItemId { get; set; }
+        public string AccountCode { get; set; } = "";
+        public string AccountName { get; set; } = "";
+        public AccountType AccountType { get; set; }
+        public decimal DebitAmount { get; set; }
+        public decimal CreditAmount { get; set; }
+    }
+}

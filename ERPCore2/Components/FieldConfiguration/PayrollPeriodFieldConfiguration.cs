@@ -54,7 +54,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PayrollPeriod>
                         {
                             PropertyName = nameof(PayrollPeriod.PeriodStatus),
-                            DisplayName = Dn("Field.PeriodStatus", "週期狀態"),
+                            DisplayName = Dn("Field.PayrollPeriodStatus", "週期狀態"),
                             TableOrder = 3,
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>

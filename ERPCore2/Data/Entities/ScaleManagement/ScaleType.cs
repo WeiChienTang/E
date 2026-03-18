@@ -32,7 +32,5 @@ namespace ERPCore2.Data.Entities
 
         public Product? Product { get; set; }
 
-        // Navigation Properties
-        public ICollection<ScaleRecord> ScaleRecords { get; set; } = new List<ScaleRecord>();
     }
 }

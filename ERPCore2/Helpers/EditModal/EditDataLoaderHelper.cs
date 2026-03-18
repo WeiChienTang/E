@@ -40,9 +40,13 @@ public static class EditDataLoaderHelper
         {
             if (!entityId.HasValue)
             {
+                var generatedCode = string.IsNullOrEmpty(codePrefix)
+                    ? EntityCodeGenerationHelper.GenerateSimpleCode("", true)
+                    : await EntityCodeGenerationHelper.GenerateForEntity<TEntity, TService>(service, codePrefix);
+
                 var newEntity = new TEntity
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<TEntity, TService>(service, codePrefix),
+                    Code = generatedCode,
                     Status = EntityStatus.Active
                 };
 

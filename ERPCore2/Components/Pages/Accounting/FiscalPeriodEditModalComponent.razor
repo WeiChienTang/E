@@ -1,0 +1,353 @@
+@* 可重用的會計期間編輯組件 - 可在任何頁面中嵌入 *@
+@inject IFiscalPeriodService FiscalPeriodService
+@inject ICompanyService CompanyService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="FiscalPeriod"
+                          TService="IFiscalPeriodService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@FiscalPeriodId"
+                          Service="@FiscalPeriodService"
+                          EntityName="@L["Entity.FiscalPeriod"]"
+                          EntityNamePlural="@L["Entity.FiscalPeriod"]"
+                          ModalTitle="@(FiscalPeriodId.HasValue ? L["Message.EditTitle", L["Entity.FiscalPeriod"]].ToString() : L["Message.CreateTitle", L["Entity.FiscalPeriod"]].ToString())"
+                          Size="GenericEditModalComponent<FiscalPeriod, IFiscalPeriodService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadFiscalPeriodData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(FiscalPeriodId.HasValue ? L["Message.UpdateSuccess", L["Entity.FiscalPeriod"]].ToString() : L["Message.CreateSuccess", L["Entity.FiscalPeriod"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.FiscalPeriod"]]"
+                          RequiredPermission="@PermissionRegistry.FiscalPeriod.Read"
+                          OnEntitySaved="@OnFiscalPeriodSaved"
+                          OnCancel="@OnCancel"
+                          ComponentName="FiscalPeriodEditModalComponent">
+    <AdditionalSections>
+        @* 期間狀態管理區塊（僅編輯現有記錄時顯示） *@
+        @if (FiscalPeriodId.HasValue && currentPeriodStatus.HasValue)
+        {
+            <div class="card mb-3">
+                <div class="card-header fw-semibold">@L["Section.PeriodStatus"]</div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="text-muted">@L["Label.CurrentStatus"]</span>
+                        <span class="badge @GetStatusBadgeClass()">@L[$"FiscalPeriodStatus.{currentPeriodStatus}"]</span>
+                    </div>
+
+                    @if (currentPeriodStatus == FiscalPeriodStatus.Open)
+                    {
+                        <button class="btn btn-warning btn-sm" @onclick="HandleClosePeriodAsync" disabled="@isTransitioning">
+                            @if (isTransitioning) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            @L["Button.ClosePeriod"]
+                        </button>
+                    }
+                    else if (currentPeriodStatus == FiscalPeriodStatus.Closed)
+                    {
+                        <div class="d-flex flex-column gap-2">
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-success btn-sm" @onclick="ShowReopenInputAsync" disabled="@isTransitioning">
+                                    @L["Button.ReopenPeriod"]
+                                </button>
+                                <button class="btn btn-danger btn-sm" @onclick="HandleLockPeriodAsync" disabled="@isTransitioning">
+                                    @if (isTransitioning) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                    @L["Button.LockPeriod"]
+                                </button>
+                            </div>
+
+                            @if (showReopenInput)
+                            {
+                                <div class="mt-2">
+                                    <input type="text" class="form-control form-control-sm mb-2"
+                                           placeholder="@L["Placeholder.ReopenReason"]"
+                                           @bind="reopenReason" />
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-success btn-sm" @onclick="HandleReopenPeriodAsync" disabled="@isTransitioning">
+                                            @if (isTransitioning) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                            @L["Button.Confirm"]
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" @onclick="CancelReopen" disabled="@isTransitioning">
+                                            @L["Button.Cancel"]
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (currentPeriodStatus == FiscalPeriodStatus.Locked)
+                    {
+                        <span class="text-muted small">
+                            <i class="bi bi-lock-fill me-1"></i>此期間已永久鎖定，無法變更狀態。
+                        </span>
+                    }
+                </div>
+            </div>
+        }
+    </AdditionalSections>
+</GenericEditModalComponent>
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? FiscalPeriodId { get; set; }
+    [Parameter] public EventCallback<FiscalPeriod> OnFiscalPeriodSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<FiscalPeriod, IFiscalPeriodService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<Company> companies = new();
+
+    // 期間狀態機
+    private FiscalPeriodStatus? currentPeriodStatus;
+    private bool isTransitioning = false;
+    private bool showReopenInput = false;
+    private string reopenReason = string.Empty;
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !formFields.Any())
+        {
+            await LoadCompanyOptionsAsync();
+            InitializeFormFields();
+        }
+    }
+
+    private async Task LoadCompanyOptionsAsync()
+    {
+        try
+        {
+            companies = await CompanyService.GetActiveCompaniesAsync();
+        }
+        catch (Exception)
+        {
+            companies = new List<Company>();
+        }
+    }
+
+    private async Task<FiscalPeriod?> LoadFiscalPeriodData()
+    {
+        var now = DateTime.Today;
+        var firstDay = new DateTime(now.Year, now.Month, 1);
+        var lastDay = firstDay.AddMonths(1).AddDays(-1);
+        var primaryCompany = companies.FirstOrDefault();
+
+        var period = await EditDataLoaderHelper.LoadOrCreateAsync<FiscalPeriod, IFiscalPeriodService>(
+            FiscalPeriodId, FiscalPeriodService, NotificationService, L["Entity.FiscalPeriod"], "FP", PrefilledValues,
+            f =>
+            {
+                f.FiscalYear = now.Year;
+                f.PeriodNumber = now.Month;
+                f.StartDate = firstDay;
+                f.EndDate = lastDay;
+                f.PeriodStatus = FiscalPeriodStatus.Open;
+                f.CompanyId = primaryCompany?.Id ?? 0;
+            });
+
+        currentPeriodStatus = period?.PeriodStatus;
+        showReopenInput = false;
+        reopenReason = string.Empty;
+        return period;
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            var companyOptions = companies
+                .Select(c => new SelectOption { Value = c.Id.ToString(), Text = c.CompanyName ?? c.Code ?? c.Id.ToString() })
+                .ToList();
+
+            var periodOptions = Enumerable.Range(1, 12)
+                .Select(m => new SelectOption { Value = m.ToString(), Text = $"{m:D2}" })
+                .ToList();
+
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(FiscalPeriod.CompanyId),
+                    Label = L["Entity.Company"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = companyOptions
+                },
+                new()
+                {
+                    PropertyName = nameof(FiscalPeriod.FiscalYear),
+                    Label = L["Field.FiscalYear"],
+                    FieldType = FormFieldType.Number,
+                    IsRequired = true,
+                    Min = 1900,
+                    Max = 2100,
+                    Step = 1
+                },
+                new()
+                {
+                    PropertyName = nameof(FiscalPeriod.PeriodNumber),
+                    Label = L["Field.PeriodNumber"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = periodOptions
+                },
+                new()
+                {
+                    PropertyName = nameof(FiscalPeriod.StartDate),
+                    Label = L["Field.StartDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true
+                },
+                new()
+                {
+                    PropertyName = nameof(FiscalPeriod.EndDate),
+                    Label = L["Field.EndDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<FiscalPeriod>()
+            };
+
+            formSections = FormSectionHelper<FiscalPeriod>.Create()
+                .AddCustomFields(FormSectionNames.BasicInfo,
+                    nameof(FiscalPeriod.CompanyId),
+                    nameof(FiscalPeriod.FiscalYear),
+                    nameof(FiscalPeriod.PeriodNumber))
+                .AddCustomFields(L["Section.PeriodDateRange"].ToString(),
+                    nameof(FiscalPeriod.StartDate),
+                    nameof(FiscalPeriod.EndDate))
+                .AddToSection(FormSectionNames.AdditionalData,
+                    f => f.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync(L["Message.SaveError"].ToString());
+        }
+    }
+
+    // ===== 狀態機操作 =====
+    private async Task HandleClosePeriodAsync()
+    {
+        if (!FiscalPeriodId.HasValue || isTransitioning) return;
+        isTransitioning = true;
+        StateHasChanged();
+        try
+        {
+            var (success, error) = await FiscalPeriodService.ClosePeriodAsync(FiscalPeriodId.Value);
+            if (success)
+            {
+                currentPeriodStatus = FiscalPeriodStatus.Closed;
+                await NotificationService.ShowSuccessAsync($"期間已成功關帳");
+                await editModalComponent!.RefreshEntityAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(error);
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync(L["Message.SaveError"].ToString());
+        }
+        finally
+        {
+            isTransitioning = false;
+        }
+    }
+
+    private async Task HandleLockPeriodAsync()
+    {
+        if (!FiscalPeriodId.HasValue || isTransitioning) return;
+        isTransitioning = true;
+        StateHasChanged();
+        try
+        {
+            var (success, error) = await FiscalPeriodService.LockPeriodAsync(FiscalPeriodId.Value);
+            if (success)
+            {
+                currentPeriodStatus = FiscalPeriodStatus.Locked;
+                await NotificationService.ShowSuccessAsync($"期間已永久鎖定");
+                await editModalComponent!.RefreshEntityAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(error);
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync(L["Message.SaveError"].ToString());
+        }
+        finally
+        {
+            isTransitioning = false;
+        }
+    }
+
+    private Task ShowReopenInputAsync()
+    {
+        showReopenInput = true;
+        reopenReason = string.Empty;
+        return Task.CompletedTask;
+    }
+
+    private void CancelReopen()
+    {
+        showReopenInput = false;
+        reopenReason = string.Empty;
+    }
+
+    private async Task HandleReopenPeriodAsync()
+    {
+        if (!FiscalPeriodId.HasValue || isTransitioning) return;
+        isTransitioning = true;
+        StateHasChanged();
+        try
+        {
+            var reason = string.IsNullOrWhiteSpace(reopenReason) ? null : reopenReason.Trim();
+            var (success, error) = await FiscalPeriodService.ReopenPeriodAsync(FiscalPeriodId.Value, reason);
+            if (success)
+            {
+                currentPeriodStatus = FiscalPeriodStatus.Open;
+                showReopenInput = false;
+                reopenReason = string.Empty;
+                await NotificationService.ShowSuccessAsync($"期間已重新開放");
+                await editModalComponent!.RefreshEntityAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(error);
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync(L["Message.SaveError"].ToString());
+        }
+        finally
+        {
+            isTransitioning = false;
+        }
+    }
+
+    // ===== 狀態顯示輔助 =====
+    private string GetStatusBadgeClass() => currentPeriodStatus switch
+    {
+        FiscalPeriodStatus.Open   => "bg-success",
+        FiscalPeriodStatus.Closed => "bg-warning text-dark",
+        FiscalPeriodStatus.Locked => "bg-secondary",
+        _ => "bg-light text-dark"
+    };
+
+    // ===== 公開方法 (供父組件調用) =====
+    public Task ShowAddModal() => editModalComponent!.ShowAddModal();
+    public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);
+}

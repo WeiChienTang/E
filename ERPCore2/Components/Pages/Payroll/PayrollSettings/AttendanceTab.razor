@@ -1,0 +1,272 @@
+@* 出勤彙總 Tab — 內嵌於 PayrollModalComponent，內聯可編輯表格 *@
+@inject IMonthlyAttendanceSummaryService AttendanceService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<div class="d-flex align-items-center justify-content-between mb-2">
+    <span class="text-muted small">
+        @Year 年 @Month @L["Label.Month"]
+        — @rows.Count(r => r.Attendance != null) / @rows.Count @L["Attendance.TotalRecords"]
+    </span>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" @onclick="BatchInitializeAsync" disabled="@(isInitializing || Year == 0)">
+            @if (isInitializing) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            <i class="bi bi-people me-1"></i>@L["Attendance.BatchInit"]
+        </button>
+        <button class="btn btn-primary btn-sm" @onclick="SaveAllDirtyAsync"
+                disabled="@(!rows.Any(r => r.IsDirty) || isSaving)">
+            @if (isSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            <i class="bi bi-save me-1"></i>@L["Button.SaveAll"]
+        </button>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]</div>
+}
+else if (Year == 0 || Month == 0)
+{
+    <div class="text-center text-muted py-4">@L["Payroll.SelectPeriod"]</div>
+}
+else if (!rows.Any())
+{
+    <div class="text-center text-muted py-4">@L["Message.NoData"]</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="min-width:90px">@L["Field.Employee"]</th>
+                    <th class="text-center" style="width:65px" title="@L["Field.ScheduledWorkDays"]">應出勤</th>
+                    <th class="text-center" style="width:65px" title="@L["Field.ActualWorkDays"]">實際出勤</th>
+                    <th class="text-center" style="width:55px" title="@L["Field.AbsentDays"]">曠工</th>
+                    <th class="text-center" style="width:55px" title="@L["Field.SickLeaveDays"]">病假</th>
+                    <th class="text-center d-none d-lg-table-cell" style="width:55px" title="@L["Field.OvertimeHours1"]">OT1</th>
+                    <th class="text-center d-none d-lg-table-cell" style="width:55px" title="@L["Field.OvertimeHours2"]">OT2</th>
+                    <th class="text-center d-none d-xl-table-cell" style="width:55px" title="@L["Field.HolidayOvertimeHours"]">假日OT</th>
+                    <th class="text-center d-none d-xl-table-cell" style="width:55px" title="@L["Field.NationalHolidayHours"]">國定OT</th>
+                    <th class="text-center" style="width:75px">@L["Field.Status"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr class="@(row.IsDirty ? "table-warning" : row.IsLocked ? "table-secondary" : "")">
+                        <td class="fw-semibold align-middle">@row.Employee.Name</td>
+                        @if (row.IsLocked)
+                        {
+                            <td class="text-center text-muted align-middle">@row.ScheduledWorkDays</td>
+                            <td class="text-center text-muted align-middle">@row.ActualWorkDays</td>
+                            <td class="text-center text-muted align-middle @(row.AbsentDays > 0 ? "text-danger fw-bold" : "")">@row.AbsentDays</td>
+                            <td class="text-center text-muted align-middle">@row.SickLeaveDays</td>
+                            <td class="text-center text-muted align-middle d-none d-lg-table-cell">@row.OvertimeHours1</td>
+                            <td class="text-center text-muted align-middle d-none d-lg-table-cell">@row.OvertimeHours2</td>
+                            <td class="text-center text-muted align-middle d-none d-xl-table-cell">@row.HolidayOvertimeHours</td>
+                            <td class="text-center text-muted align-middle d-none d-xl-table-cell">@row.NationalHolidayHours</td>
+                        }
+                        else
+                        {
+                            <td class="p-1"><input type="number" class="form-control form-control-sm text-center px-1"
+                                       value="@row.ScheduledWorkDays" min="0" max="31" step="0.5"
+                                       @onchange="e => SetField(row, e, (r, v) => r.ScheduledWorkDays = v)" /></td>
+                            <td class="p-1"><input type="number" class="form-control form-control-sm text-center px-1"
+                                       value="@row.ActualWorkDays" min="0" max="31" step="0.5"
+                                       @onchange="e => SetField(row, e, (r, v) => r.ActualWorkDays = v)" /></td>
+                            <td class="p-1"><input type="number" class="form-control form-control-sm text-center px-1"
+                                       value="@row.AbsentDays" min="0" max="31" step="0.5"
+                                       @onchange="e => SetField(row, e, (r, v) => r.AbsentDays = v)" /></td>
+                            <td class="p-1"><input type="number" class="form-control form-control-sm text-center px-1"
+                                       value="@row.SickLeaveDays" min="0" max="31" step="0.5"
+                                       @onchange="e => SetField(row, e, (r, v) => r.SickLeaveDays = v)" /></td>
+                            <td class="p-1 d-none d-lg-table-cell"><input type="number" class="form-control form-control-sm text-center px-1"
+                                       value="@row.OvertimeHours1" min="0" step="0.5"
+                                       @onchange="e => SetField(row, e, (r, v) => r.OvertimeHours1 = v)" /></td>
+                            <td class="p-1 d-none d-lg-table-cell"><input type="number" class="form-control form-control-sm text-center px-1"
+                                       value="@row.OvertimeHours2" min="0" step="0.5"
+                                       @onchange="e => SetField(row, e, (r, v) => r.OvertimeHours2 = v)" /></td>
+                            <td class="p-1 d-none d-xl-table-cell"><input type="number" class="form-control form-control-sm text-center px-1"
+                                       value="@row.HolidayOvertimeHours" min="0" step="0.5"
+                                       @onchange="e => SetField(row, e, (r, v) => r.HolidayOvertimeHours = v)" /></td>
+                            <td class="p-1 d-none d-xl-table-cell"><input type="number" class="form-control form-control-sm text-center px-1"
+                                       value="@row.NationalHolidayHours" min="0" step="0.5"
+                                       @onchange="e => SetField(row, e, (r, v) => r.NationalHolidayHours = v)" /></td>
+                        }
+                        <td class="text-center align-middle">
+                            @if (row.IsLocked)
+                            {
+                                <span class="badge bg-warning text-dark">@L["Label.Locked"]</span>
+                            }
+                            else if (row.Attendance == null)
+                            {
+                                <span class="badge bg-secondary">未建立</span>
+                            }
+                            else if (row.IsDirty)
+                            {
+                                <span class="badge bg-info text-dark">已修改</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter] public int Year { get; set; }
+    [Parameter] public int Month { get; set; }
+
+    private List<RowViewModel> rows = new();
+    private bool isLoading = true;
+    private bool isInitializing = false;
+    private bool isSaving = false;
+    private int _loadedYear = -1;
+    private int _loadedMonth = -1;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Year != _loadedYear || Month != _loadedMonth)
+        {
+            _loadedYear = Year;
+            _loadedMonth = Month;
+            if (Year > 0 && Month > 0)
+                await LoadAsync();
+            else
+            {
+                rows = new();
+                isLoading = false;
+            }
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        var empResult = await EmployeeService.GetActiveEmployeesAsync();
+        var employees = empResult.IsSuccess ? (empResult.Data ?? new()) : new();
+        var records = await AttendanceService.GetByPeriodAsync(Year, Month);
+
+        rows = employees.Select(emp =>
+        {
+            var att = records.FirstOrDefault(r => r.EmployeeId == emp.Id);
+            var row = new RowViewModel { Employee = emp, Attendance = att };
+            row.InitFromAttendance();
+            return row;
+        }).ToList();
+
+        isLoading = false;
+    }
+
+    private void SetField(RowViewModel row, ChangeEventArgs e, Action<RowViewModel, decimal> setter)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var value))
+        {
+            setter(row, value);
+            row.IsDirty = true;
+        }
+    }
+
+    private async Task SaveAllDirtyAsync()
+    {
+        var dirtyRows = rows.Where(r => r.IsDirty && !r.IsLocked).ToList();
+        if (!dirtyRows.Any()) return;
+
+        isSaving = true;
+        StateHasChanged();
+
+        int saved = 0, failed = 0;
+        foreach (var row in dirtyRows)
+        {
+            var model = row.ToEntity(Year, Month);
+            ServiceResult<MonthlyAttendanceSummary> result = row.Attendance == null
+                ? await AttendanceService.CreateAsync(model)
+                : await AttendanceService.UpdateAsync(model);
+
+            if (result.IsSuccess)
+            {
+                row.Attendance = result.Data;
+                row.IsDirty = false;
+                saved++;
+            }
+            else
+            {
+                failed++;
+            }
+        }
+
+        isSaving = false;
+        if (failed == 0)
+            await NotificationService.ShowSuccessAsync(L["Message.SaveSuccess"].ToString());
+        else
+            await NotificationService.ShowErrorAsync($"{failed} 筆儲存失敗，{saved} 筆成功");
+    }
+
+    private async Task BatchInitializeAsync()
+    {
+        isInitializing = true;
+        StateHasChanged();
+        var result = await AttendanceService.BatchInitializeAsync(Year, Month);
+        isInitializing = false;
+
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync(result.ErrorMessage ?? L["Message.SaveSuccess"].ToString());
+            await LoadAsync();
+        }
+        else
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailed"].ToString());
+    }
+
+    private class RowViewModel
+    {
+        public Employee Employee { get; set; } = null!;
+        public MonthlyAttendanceSummary? Attendance { get; set; }
+        public bool IsDirty { get; set; }
+
+        public decimal ScheduledWorkDays { get; set; }
+        public decimal ActualWorkDays { get; set; }
+        public decimal AbsentDays { get; set; }
+        public decimal SickLeaveDays { get; set; }
+        public decimal OvertimeHours1 { get; set; }
+        public decimal OvertimeHours2 { get; set; }
+        public decimal HolidayOvertimeHours { get; set; }
+        public decimal NationalHolidayHours { get; set; }
+
+        public bool IsLocked => Attendance?.IsLocked == true;
+
+        public void InitFromAttendance()
+        {
+            if (Attendance == null) return;
+            ScheduledWorkDays = Attendance.ScheduledWorkDays;
+            ActualWorkDays = Attendance.ActualWorkDays;
+            AbsentDays = Attendance.AbsentDays;
+            SickLeaveDays = Attendance.SickLeaveDays;
+            OvertimeHours1 = Attendance.OvertimeHours1;
+            OvertimeHours2 = Attendance.OvertimeHours2;
+            HolidayOvertimeHours = Attendance.HolidayOvertimeHours;
+            NationalHolidayHours = Attendance.NationalHolidayHours;
+        }
+
+        public MonthlyAttendanceSummary ToEntity(int year, int month) => new()
+        {
+            Id = Attendance?.Id ?? 0,
+            EmployeeId = Employee.Id,
+            Year = year,
+            Month = month,
+            ScheduledWorkDays = ScheduledWorkDays,
+            ActualWorkDays = ActualWorkDays,
+            AbsentDays = AbsentDays,
+            SickLeaveDays = SickLeaveDays,
+            OvertimeHours1 = OvertimeHours1,
+            OvertimeHours2 = OvertimeHours2,
+            HolidayOvertimeHours = HolidayOvertimeHours,
+            NationalHolidayHours = NationalHolidayHours,
+        };
+    }
+}

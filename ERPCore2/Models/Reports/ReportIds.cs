@@ -162,6 +162,11 @@ public static class ReportIds
     /// <summary>明細科目餘額表</summary>
     public const string DetailAccountBalance = "FN011";
 
+    // ==================== 製令單報表 (MO) ====================
+
+    /// <summary>製令單</summary>
+    public const string ManufacturingOrder = "MO001";
+
     // ==================== 磅秤紀錄報表 (WL) ====================
     /// <summary>磅秤紀錄報表</summary>
     public const string ScaleRecord = "WL001";

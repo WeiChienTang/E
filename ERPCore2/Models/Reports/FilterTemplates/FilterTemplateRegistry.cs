@@ -444,6 +444,26 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // 製令單（每筆 ProductionScheduleItem 獨立一份文件）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.ManufacturingOrder,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(ManufacturingOrderCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IManufacturingOrderReportService),
+            PreviewTitle = "製令單預覽",
+            FilterTitle = "製令單篩選條件",
+            IconClass = "bi-file-earmark-text",
+            GetDocumentName = criteria =>
+            {
+                var c = (ManufacturingOrderCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"製令單-{dateRange}";
+            }
+        });
+
         // 生產排程表（依排程單分組顯示排程項目明細）
         RegisterConfig(new ReportFilterConfig
         {

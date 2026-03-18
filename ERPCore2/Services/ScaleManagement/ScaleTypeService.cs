@@ -111,9 +111,8 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var hasRecords = await context.ScaleRecords.AnyAsync(sr => sr.ScaleTypeId == entity.Id);
-                if (hasRecords)
-                    return ServiceResult.Failure("此磅秤類型已有磅秤紀錄使用，無法刪除");
+                // ScaleTypeId 已從 ScaleRecord 移除，允許刪除
+                _ = context;
 
                 return ServiceResult.Success();
             }

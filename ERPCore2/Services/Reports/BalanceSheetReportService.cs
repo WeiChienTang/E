@@ -67,7 +67,9 @@ namespace ERPCore2.Services.Reports
                 if (!accountLines.Any())
                     return BatchPreviewResult.Failure($"無符合條件的傳票資料\n截止日：{criteria.AsOfDate:yyyy/MM/dd}");
 
-                var company = await _companyService.GetPrimaryCompanyAsync();
+                var company = criteria.CompanyId.HasValue
+                    ? await _companyService.GetByIdAsync(criteria.CompanyId.Value)
+                    : await _companyService.GetPrimaryCompanyAsync();
                 var document = BuildBalanceSheetDocument(accountLines, company, criteria);
                 var images = criteria.PaperSetting != null
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
@@ -92,13 +94,18 @@ namespace ERPCore2.Services.Reports
             // （損益表才需要 StartDate，B/S 用 StartDate 會導致期初餘額消失）
             var asOfDate = criteria.AsOfDate.Date.AddDays(1).AddTicks(-1);
 
+            // CompanyId 篩選（留空時自動使用主要公司）
+            var primaryCompany = await _companyService.GetPrimaryCompanyAsync();
+            var companyId = criteria.CompanyId ?? primaryCompany?.Id;
+
             // === 1. 資產/負債/權益科目餘額（累積至截止日）===
             var bsRawLines = await context.JournalEntryLines
                 .Include(l => l.AccountItem)
                 .Include(l => l.JournalEntry)
                 .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted
                          && BalanceSheetTypes.Contains(l.AccountItem.AccountType)
-                         && l.JournalEntry.EntryDate <= asOfDate)
+                         && l.JournalEntry.EntryDate <= asOfDate
+                         && (!companyId.HasValue || l.JournalEntry.CompanyId == companyId.Value))
                 .ToListAsync();
 
             var result = bsRawLines
@@ -139,7 +146,8 @@ namespace ERPCore2.Services.Reports
                 .Include(l => l.JournalEntry)
                 .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted
                          && IncomeStatementTypes.Contains(l.AccountItem.AccountType)
-                         && l.JournalEntry.EntryDate <= asOfDate)
+                         && l.JournalEntry.EntryDate <= asOfDate
+                         && (!companyId.HasValue || l.JournalEntry.CompanyId == companyId.Value))
                 .ToListAsync();
 
             var totalPLCredit = plRawLines.Where(l => l.Direction == AccountDirection.Credit).Sum(l => l.Amount);

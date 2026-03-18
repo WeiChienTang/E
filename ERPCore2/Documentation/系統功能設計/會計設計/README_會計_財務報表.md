@@ -1,7 +1,7 @@
 # 會計財務報表設計（FN005–FN011）
 
 ## 更新日期
-2026-02-25
+2026-03-17
 
 ---
 
@@ -62,14 +62,23 @@
 | ShowZeroBalance | FilterToggle | 顯示零餘額科目（預設 false） |
 
 **查詢邏輯（兩次查詢）：**
-- Query 1：`EntryDate BETWEEN StartDate AND EndDate` → 本期借方/貸方發生額
-- Query 2：`EntryDate <= EndDate`（不限起始）→ 期末累計借方/貸方餘額
 
-**期末餘額計算：**
-- 借方正常科目：`EndingDebitBalance = CumulativeDebit - CumulativeCredit`
-- 貸方正常科目：`EndingCreditBalance = CumulativeCredit - CumulativeDebit`
+| 查詢 | 條件 | 用途 |
+|------|------|------|
+| 期初 Query | `EntryDate < StartDate`，已過帳 | 計算期初借方/貸方餘額 |
+| 本期 Query | `StartDate ≤ EntryDate ≤ EndDate`，已過帳 | 計算本期借方/貸方發生額 |
 
-**報表格式：** 依 AccountType 分組，欄位：科目代碼 | 科目名稱 | 本期借方 | 本期貸方 | 期末借方餘額 | 期末貸方餘額。頁尾驗證借方/貸方合計平衡，製表人員/財務主管簽名欄。
+- 期末借方餘額 = 期初借方 − 期初貸方 + 本期借方 − 本期貸方（借方科目正常方向）
+- 期末貸方餘額 = 期初貸方 − 期初借方 + 本期貸方 − 本期借方（貸方科目正常方向）
+
+**報表格式（標準八欄式）：**
+
+| 科目代碼 | 科目名稱 | 期初借方 | 期初貸方 | 本期借方 | 本期貸方 | 期末借方 | 期末貸方 |
+|---------|---------|---------|---------|---------|---------|---------|---------|
+
+依 AccountType 分組；頁尾驗證借方/貸方合計平衡；製表人員/財務主管簽名欄。
+
+> **注意：** 期初餘額欄包含所有 StartDate 前的已過帳傳票，含 `JournalEntryType.OpeningBalance`（期初餘額傳票）。若尚未執行年底結帳，損益類科目的期初餘額欄將包含歷史累計，需搭配 StartDate 設定正確年度起始日，或先執行年底結帳（Phase 3-B）。
 
 ---
 
@@ -256,5 +265,6 @@
 ## 相關文件
 
 - [README_會計設計總綱.md](README_會計設計總綱.md)
-- [README_會計_傳票系統.md](README_會計_傳票系統.md)（報表資料來源：JournalEntry / JournalEntryLine）
+- [README_會計_傳票系統.md](README_會計_傳票系統.md)（報表資料來源：JournalEntry / JournalEntryLine，以及期初餘額機制）
+- [README_會計_會計期間管理.md](README_會計_會計期間管理.md)（FiscalPeriod，影響試算表期初餘額計算）
 - [報表系統總綱](../../報表系統/README_報表系統總綱.md)（報表架構與通用元件）

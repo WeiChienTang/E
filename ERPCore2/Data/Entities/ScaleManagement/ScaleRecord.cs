@@ -25,15 +25,25 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "記錄日期")]
         public DateTime RecordDate { get; set; } = DateTime.Today;
 
-        // ===== 磅秤紀錄數量 =====
+        // ===== 磅秤重量欄位 =====
 
-        [Display(Name = "數量")]
+        [Display(Name = "進場重量(公斤)")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal? Quantity { get; set; }
+        public decimal? EntryWeight { get; set; }
 
-        [Display(Name = "總重量(公斤)")]
+        [Display(Name = "進場時間")]
+        public DateTime? EntryTime { get; set; }
+
+        [Display(Name = "出場重量(公斤)")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal? TotalWeight { get; set; }
+        public decimal? ExitWeight { get; set; }
+
+        [Display(Name = "出場時間")]
+        public DateTime? ExitTime { get; set; }
+
+        [Display(Name = "淨重(公斤)")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? NetWeight { get; set; }
 
         // ===== 費用欄位 =====
 
@@ -54,15 +64,15 @@ namespace ERPCore2.Data.Entities
 
         // ===== 外鍵 =====
 
+        [Display(Name = "品項")]
+        [ForeignKey(nameof(Product))]
+        public int? ProductId { get; set; }
+        public Product? Product { get; set; }
+
         [Display(Name = "車輛")]
         [ForeignKey(nameof(Vehicle))]
         public int? VehicleId { get; set; }
         public Vehicle? Vehicle { get; set; }
-
-        [Display(Name = "磅秤類型")]
-        [ForeignKey(nameof(ScaleType))]
-        public int? ScaleTypeId { get; set; }
-        public ScaleType? ScaleType { get; set; }
 
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]

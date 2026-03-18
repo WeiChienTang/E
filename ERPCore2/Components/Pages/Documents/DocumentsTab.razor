@@ -1,0 +1,130 @@
+@* 文件 Tab - 顯示與特定實體關聯的文件清單 *@
+@inject IDocumentService DocumentService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@if (documents.Count == 0)
+{
+    <div class="text-center py-4 text-muted">
+        <i class="bi bi-file-earmark-text fs-3 d-block mb-2"></i>
+        <span>@L["Message.NoDocuments"]</span>
+    </div>
+}
+else
+{
+    <div class="table-responsive px-3 pt-2">
+        <table class="table table-sm table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>@L["Field.DocumentTitle"]</th>
+                    <th>@L["Field.DocumentCategory"]</th>
+                    <th>@L["Field.IssuedBy"]</th>
+                    <th>@L["Field.ExpiryDate"]</th>
+                    <th>@L["Field.AttachmentCount"]</th>
+                    <th class="text-center" style="width:80px">@L["Label.Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var doc in documents)
+                {
+                    <tr>
+                        <td>@doc.Title</td>
+                        <td>@(doc.DocumentCategory?.Name ?? "-")</td>
+                        <td>@(doc.IssuedBy ?? "-")</td>
+                        <td>
+                            @if (doc.ExpiryDate.HasValue)
+                            {
+                                var isExpired = doc.ExpiryDate.Value < DateTime.Today;
+                                var isExpiringSoon = !isExpired && doc.ExpiryDate.Value <= DateTime.Today.AddDays(30);
+                                <span class="@(isExpired ? "text-danger" : isExpiringSoon ? "text-warning" : "")">
+                                    @doc.ExpiryDate.Value.ToString("yyyy/MM/dd")
+                                </span>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </td>
+                        <td>@doc.DocumentFiles.Count 個</td>
+                        <td class="text-center">
+                            <GenericButtonComponent IconClass="bi bi-pencil"
+                                                   Variant="ButtonVariant.OutlineDarkBlue"
+                                                   Size="ButtonSize.Small"
+                                                   Title="@L["Button.Edit"]"
+                                                   OnClick="@(() => HandleEdit(doc.Id))"
+                                                   CssClass="btn-square" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="px-3 pb-3">
+    <GenericButtonComponent IconClass="bi bi-plus-circle"
+                            Variant="ButtonVariant.OutlineGreen"
+                            Size="ButtonSize.Small"
+                            Text="@L["Button.AddDocument"]"
+                            OnClick="@HandleAdd"
+                            IsDisabled="@(!EntityId.HasValue)" />
+</div>
+
+@* 文件編輯 Modal *@
+<DocumentEditModalComponent @ref="editModal"
+                            IsVisible="@isModalVisible"
+                            IsVisibleChanged="@((bool v) => isModalVisible = v)"
+                            DocumentId="@editingId"
+                            PrefilledValues="@prefilledValues"
+                            OnDocumentSaved="@HandleSaved"
+                            OnCancel="@(() => isModalVisible = false)" />
+
+@code {
+    [Parameter] public string RelatedEntityType { get; set; } = string.Empty;
+    [Parameter] public int? EntityId { get; set; }
+
+    private List<Document> documents = new();
+    private DocumentEditModalComponent? editModal;
+    private bool isModalVisible = false;
+    private int? editingId = null;
+    private Dictionary<string, object?>? prefilledValues;
+
+    public async Task LoadAsync(int entityId)
+    {
+        documents = await DocumentService.GetByRelatedEntityAsync(RelatedEntityType, entityId);
+        StateHasChanged();
+    }
+
+    public void Clear()
+    {
+        documents = new();
+        StateHasChanged();
+    }
+
+    private void HandleAdd()
+    {
+        editingId = null;
+        prefilledValues = new Dictionary<string, object?>
+        {
+            { nameof(Document.RelatedEntityType), RelatedEntityType },
+            { nameof(Document.RelatedEntityId), EntityId }
+        };
+        isModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleEdit(int id)
+    {
+        editingId = id;
+        prefilledValues = null;
+        isModalVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleSaved(Document saved)
+    {
+        isModalVisible = false;
+        if (EntityId.HasValue)
+            await LoadAsync(EntityId.Value);
+    }
+}

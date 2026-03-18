@@ -1,29 +1,10 @@
-@page "/payroll/health-insurance-grades"
-@inject IHealthInsuranceGradeService GradeService
+@* 勞保投保分級表 Tab *@
+@inject ILaborInsuranceGradeService GradeService
 @inject INotificationService NotificationService
-@inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
-@rendermode InteractiveServer
 
-<PageTitle>@L["Page.HealthInsuranceGradeTitle"]</PageTitle>
-
-<div class="container-fluid">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <div>
-            <h4 class="mb-0">@L["Page.HealthInsuranceGradeTitle"]</h4>
-            <small class="text-muted">@L["Page.HealthInsuranceGradeSubtitle"]</small>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-secondary" @onclick="ShowCopyYear">
-                <i class="bi bi-copy me-1"></i>@L["Payroll.CopyYear"]
-            </button>
-            <button class="btn btn-primary" @onclick="ShowAdd">
-                <i class="bi bi-plus-lg me-1"></i>@L["Button.Add"]
-            </button>
-        </div>
-    </div>
-
-    <div class="mb-3 d-flex align-items-center gap-2">
+<div class="d-flex align-items-center justify-content-between mb-2">
+    <div class="d-flex align-items-center gap-2">
         <label class="form-label mb-0 fw-semibold">@L["Field.EffectiveDate"]：</label>
         <select class="form-select form-select-sm w-auto" @onchange="OnYearChanged">
             @foreach (var date in availableYears)
@@ -35,59 +16,55 @@
         </select>
         <span class="text-muted small">@L["Payroll.TotalGrades"]：@grades.Count</span>
     </div>
-
-    @if (isLoading)
-    {
-        <div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]</div>
-    }
-    else
-    {
-        <div class="card shadow-sm">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover table-bordered mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="text-center">@L["Field.InsuranceGrade"]</th>
-                            <th class="text-end">@L["Field.SalaryFrom"]</th>
-                            <th class="text-end">@L["Field.SalaryTo"]</th>
-                            <th class="text-end">@L["Field.InsuredAmount"]</th>
-                            <th class="text-center" style="width:100px">@L["Label.Actions"]</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var g in grades)
-                        {
-                            <tr>
-                                <td class="text-center">@g.Grade</td>
-                                <td class="text-end">@g.SalaryFrom.ToString("N0")</td>
-                                <td class="text-end">@(g.SalaryTo.HasValue ? g.SalaryTo.Value.ToString("N0") : "—")</td>
-                                <td class="text-end">@g.InsuredAmount.ToString("N0")</td>
-                                <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowEdit(g)" title="@L["Button.Edit"]">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDeleteAsync(g)" title="@L["Button.Delete"]">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                        @if (!grades.Any())
-                        {
-                            <tr><td colspan="5" class="text-center text-muted py-3">@L["Message.NoData"]</td></tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    }
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" @onclick="ShowCopyYear">
+            <i class="bi bi-copy me-1"></i>@L["Payroll.CopyYear"]
+        </button>
+        <button class="btn btn-primary" @onclick="ShowAdd">
+            <i class="bi bi-plus-lg me-1"></i>@L["Button.Add"]
+        </button>
+    </div>
 </div>
 
-<HealthInsuranceGradeEditModalComponent IsVisible="@showModal"
-                                        IsVisibleChanged="@((bool v) => showModal = v)"
-                                        EditingItem="@editingItem"
-                                        DefaultEffectiveDate="@selectedYear"
-                                        OnSaved="@ReloadGradesAsync" />
+@if (isLoading)
+{
+    <div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]</div>
+}
+else
+{
+    <GenericInteractiveTableComponent TItem="LaborInsuranceGrade"
+                                     Items="@grades"
+                                     ColumnDefinitions="@GetColumnDefinitions()"
+                                     ShowRowNumbers="false"
+                                     ShowBuiltInActions="false"
+                                     ShowActions="true"
+                                     IsReadOnly="true"
+                                     ActionsColumnWidth="100px"
+                                     EmptyMessage="@L["Message.NoData"]">
+        <ActionsTemplate Context="g">
+            <div class="d-flex gap-1 justify-content-center">
+                <GenericButtonComponent IconClass="bi bi-pencil"
+                                       Variant="ButtonVariant.OutlineDarkBlue"
+                                       Size="ButtonSize.Large"
+                                       Title="@L["Button.Edit"]"
+                                       OnClick="@(() => ShowEdit(g))"
+                                       CssClass="btn-square" />
+                <GenericButtonComponent IconClass="bi bi-trash"
+                                       Variant="ButtonVariant.OutlineRed"
+                                       Size="ButtonSize.Large"
+                                       Title="@L["Button.Delete"]"
+                                       OnClick="@(() => ConfirmDeleteAsync(g))"
+                                       CssClass="btn-square" />
+            </div>
+        </ActionsTemplate>
+    </GenericInteractiveTableComponent>
+}
+
+<LaborInsuranceGradeEditModalComponent IsVisible="@showModal"
+                                       IsVisibleChanged="@((bool v) => showModal = v)"
+                                       EditingItem="@editingItem"
+                                       DefaultEffectiveDate="@selectedYear"
+                                       OnSaved="@ReloadGradesAsync" />
 
 @if (showCopyDialog)
 {
@@ -126,21 +103,24 @@
 }
 
 @code {
-    private List<HealthInsuranceGrade> grades = new();
+    private List<LaborInsuranceGrade> grades = new();
     private List<DateOnly> availableYears = new();
     private DateOnly selectedYear;
     private bool isLoading = true;
     private bool showModal = false;
-    private HealthInsuranceGrade? editingItem;
+    private LaborInsuranceGrade? editingItem;
     private bool showCopyDialog = false;
     private string copySourceDate = "";
     private DateOnly copyTargetDate = DateOnly.FromDateTime(DateTime.Today);
     private bool isCopying = false;
+    private bool _loaded = false;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    public async Task LoadAsync()
     {
-        var hasAccess = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.RateTable);
-        if (!hasAccess) return;
+        if (_loaded) return;
+        _loaded = true;
         availableYears = await GradeService.GetAvailableYearsAsync();
         selectedYear = availableYears.FirstOrDefault();
         await ReloadGradesAsync();
@@ -155,7 +135,7 @@
             selectedYear = availableYears.First();
         grades = selectedYear != default
             ? await GradeService.GetByEffectiveDateAsync(selectedYear)
-            : new List<HealthInsuranceGrade>();
+            : new List<LaborInsuranceGrade>();
         isLoading = false;
     }
 
@@ -166,10 +146,10 @@
     }
 
     private void ShowAdd() { editingItem = null; showModal = true; }
-    private void ShowEdit(HealthInsuranceGrade item) { editingItem = item; showModal = true; }
+    private void ShowEdit(LaborInsuranceGrade item) { editingItem = item; showModal = true; }
     private void ShowCopyYear() { copySourceDate = availableYears.FirstOrDefault().ToString("yyyy-MM-dd"); showCopyDialog = true; }
 
-    private async Task ConfirmDeleteAsync(HealthInsuranceGrade item)
+    private async Task ConfirmDeleteAsync(LaborInsuranceGrade item)
     {
         var result = await GradeService.DeleteAsync(item.Id);
         if (result.IsSuccess) { await NotificationService.ShowSuccessAsync(L["Message.DeleteSuccess"].ToString()); await ReloadGradesAsync(); }
@@ -185,4 +165,20 @@
         if (result.IsSuccess) { await NotificationService.ShowSuccessAsync(L["Message.SaveSuccess"].ToString()); selectedYear = copyTargetDate; await ReloadGradesAsync(); }
         else await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailed"].ToString());
     }
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions() => new()
+    {
+        new() { Title = L["Field.InsuranceGrade"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "Grade",
+                DisplayFormatter = obj => (obj as LaborInsuranceGrade)?.Grade.ToString() ?? "",
+                HeaderCssClass = "text-center", CellCssClass = "text-center", Width = "80px" },
+        new() { Title = L["Field.SalaryFrom"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "SalaryFrom",
+                DisplayFormatter = obj => (obj as LaborInsuranceGrade)?.SalaryFrom.ToString("N0") ?? "",
+                HeaderCssClass = "text-end", CellCssClass = "text-end", Width = "110px" },
+        new() { Title = L["Field.SalaryTo"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "SalaryTo",
+                DisplayFormatter = obj => { var g = obj as LaborInsuranceGrade; return g == null ? "" : g.SalaryTo.HasValue ? g.SalaryTo.Value.ToString("N0") : "—"; },
+                HeaderCssClass = "text-end", CellCssClass = "text-end", Width = "110px" },
+        new() { Title = L["Field.InsuredSalary"].ToString(), ColumnType = InteractiveColumnType.Display, PropertyName = "InsuredSalary",
+                DisplayFormatter = obj => (obj as LaborInsuranceGrade)?.InsuredSalary.ToString("N0") ?? "",
+                HeaderCssClass = "text-end", CellCssClass = "text-end", Width = "110px" },
+    };
 }

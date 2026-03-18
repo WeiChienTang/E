@@ -11,33 +11,21 @@
                    CloseOnEscape="true"
                    CloseOnBackdropClick="true"
                    ShowCloseButton="true"
-                   ShowFooter="false">
-    <HeaderButtons>
-        <GenericButtonComponent Text="@(SerialPortService.IsOpen ? "中斷連線" : "連線")"
-                              Variant="@(SerialPortService.IsOpen ? ButtonVariant.Red : ButtonVariant.Green)"
-                              IconClass="@(SerialPortService.IsOpen ? "bi-plug" : "bi-plug-fill")"
-                              OnClick="HandleToggleConnection" />
-    </HeaderButtons>
+                   ShowFooter="false"
+                   DebugComponentName="ScaleSerialPortSettingsModalComponent">
     <BodyContent>
         <div class="p-3">
-            @* 連線狀態提示 *@
-            @if (SerialPortService.IsOpen)
-            {
-                <div class="alert alert-success py-2 mb-3">
-                    <i class="bi-check-circle-fill me-2"></i>
-                    已連線至 <strong>@SerialPortService.CurrentSettings.PortName</strong>
-                    （@SerialPortService.CurrentSettings.BaudRate, 
-                      @GetParityDisplay(SerialPortService.CurrentSettings.Parity), 
-                      @SerialPortService.CurrentSettings.DataBits, 
-                      @SerialPortService.CurrentSettings.StopBits）
-                </div>
-            }
+            @* 說明提示 *@
+            <div class="alert alert-info py-2 mb-3">
+                <i class="bi-info-circle-fill me-2"></i>
+                設定完成後點選<strong>套用</strong>，之後點選「讀取」按鈕時將自動使用此設定連線。
+            </div>
 
             @* 串列埠選擇 *@
             <div class="mb-3">
                 <label class="form-label fw-semibold">串列埠 (COM Port)</label>
                 <div class="d-flex gap-2">
-                    <select class="form-select" @bind="_selectedPortName" disabled="@SerialPortService.IsOpen">
+                    <select class="form-select" @bind="_selectedPortName">
                         @if (_availablePorts.Length == 0)
                         {
                             <option value="">-- 未偵測到可用串列埠 --</option>
@@ -47,8 +35,7 @@
                             <option value="@port">@port</option>
                         }
                     </select>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="RefreshPorts" title="重新偵測串列埠"
-                            disabled="@SerialPortService.IsOpen">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="RefreshPorts" title="重新偵測串列埠">
                         <i class="bi-arrow-clockwise"></i>
                     </button>
                 </div>
@@ -57,7 +44,7 @@
             @* 鮑率 *@
             <div class="mb-3">
                 <label class="form-label fw-semibold">速率 (Baudrate)</label>
-                <select class="form-select" @bind="_baudRate" disabled="@SerialPortService.IsOpen">
+                <select class="form-select" @bind="_baudRate">
                     <option value="1200">1200</option>
                     <option value="2400">2400</option>
                     <option value="4800">4800</option>
@@ -72,7 +59,7 @@
             @* 同位檢查 *@
             <div class="mb-3">
                 <label class="form-label fw-semibold">同位檢查 (Parity)</label>
-                <select class="form-select" @bind="_parity" disabled="@SerialPortService.IsOpen">
+                <select class="form-select" @bind="_parity">
                     <option value="Even">Even (偶同位)</option>
                     <option value="Odd">Odd (奇同位)</option>
                     <option value="None">None (無)</option>
@@ -83,7 +70,7 @@
             @* 資料位元 *@
             <div class="mb-3">
                 <label class="form-label fw-semibold">資料位元 (Data Bits)</label>
-                <select class="form-select" @bind="_dataBits" disabled="@SerialPortService.IsOpen">
+                <select class="form-select" @bind="_dataBits">
                     <option value="7">7</option>
                     <option value="8">8</option>
                 </select>
@@ -93,7 +80,7 @@
             @* 停止位元 *@
             <div class="mb-3">
                 <label class="form-label fw-semibold">停止位元 (Stop Bits)</label>
-                <select class="form-select" @bind="_stopBits" disabled="@SerialPortService.IsOpen">
+                <select class="form-select" @bind="_stopBits">
                     <option value="1">1</option>
                     <option value="2">2</option>
                 </select>
@@ -101,22 +88,26 @@
             </div>
 
             @* 常用預設組合快捷 *@
-            <div class="mb-2">
+            <div class="mb-3">
                 <label class="form-label fw-semibold">常用預設組合</label>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button class="btn btn-outline-primary btn-sm" @onclick="@(() => ApplyPreset(2400, "Even", 7, 1))"
-                            disabled="@SerialPortService.IsOpen">
+                    <button class="btn btn-outline-primary btn-sm" @onclick="@(() => ApplyPreset(2400, "Even", 7, 1))">
                         E.7.1 / 2400 (LT-100 預設)
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => ApplyPreset(9600, "None", 8, 1))"
-                            disabled="@SerialPortService.IsOpen">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => ApplyPreset(9600, "None", 8, 1))">
                         N.8.1 / 9600
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => ApplyPreset(2400, "Odd", 7, 1))"
-                            disabled="@SerialPortService.IsOpen">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => ApplyPreset(2400, "Odd", 7, 1))">
                         O.7.1 / 2400
                     </button>
                 </div>
+            </div>
+
+            @* 套用按鈕 *@
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary" @onclick="HandleApplySettings">
+                    <i class="bi-check-lg me-1"></i> 套用
+                </button>
             </div>
         </div>
     </BodyContent>
@@ -137,6 +128,14 @@
     protected override void OnInitialized()
     {
         RefreshPorts();
+
+        // 載入目前已儲存的設定
+        var s = SerialPortService.CurrentSettings;
+        _selectedPortName = s.PortName;
+        _baudRate = s.BaudRate;
+        _parity = s.Parity;
+        _dataBits = s.DataBits;
+        _stopBits = s.StopBits;
     }
 
     protected override void OnParametersSet()
@@ -145,16 +144,13 @@
         {
             RefreshPorts();
 
-            // 若已連線，將目前設定值載入
-            if (SerialPortService.IsOpen)
-            {
-                var s = SerialPortService.CurrentSettings;
-                _selectedPortName = s.PortName;
-                _baudRate = s.BaudRate;
-                _parity = s.Parity;
-                _dataBits = s.DataBits;
-                _stopBits = s.StopBits;
-            }
+            // 載入目前已儲存的設定
+            var s = SerialPortService.CurrentSettings;
+            _selectedPortName = s.PortName;
+            _baudRate = s.BaudRate;
+            _parity = s.Parity;
+            _dataBits = s.DataBits;
+            _stopBits = s.StopBits;
         }
     }
 
@@ -167,40 +163,25 @@
         }
     }
 
-    private async Task HandleToggleConnection()
+    private async Task HandleApplySettings()
     {
-        try
+        if (string.IsNullOrEmpty(_selectedPortName))
         {
-            if (SerialPortService.IsOpen)
-            {
-                SerialPortService.Close();
-                await NotificationService.ShowSuccessAsync("串列埠已中斷連線");
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(_selectedPortName))
-                {
-                    await NotificationService.ShowWarningAsync("請選擇串列埠");
-                    return;
-                }
-
-                var settings = new SerialPortSettings
-                {
-                    PortName = _selectedPortName,
-                    BaudRate = _baudRate,
-                    Parity = _parity,
-                    DataBits = _dataBits,
-                    StopBits = _stopBits
-                };
-
-                SerialPortService.Open(settings);
-                await NotificationService.ShowSuccessAsync($"已連線至 {_selectedPortName}");
-            }
+            await NotificationService.ShowWarningAsync("請選擇串列埠");
+            return;
         }
-        catch (Exception ex)
+
+        SerialPortService.ApplySettings(new SerialPortSettings
         {
-            await NotificationService.ShowErrorAsync($"連線操作失敗：{ex.Message}");
-        }
+            PortName = _selectedPortName,
+            BaudRate = _baudRate,
+            Parity = _parity,
+            DataBits = _dataBits,
+            StopBits = _stopBits
+        });
+
+        await NotificationService.ShowSuccessAsync($"已套用串列埠設定：{_selectedPortName}（{_baudRate}）");
+        await IsVisibleChanged.InvokeAsync(false);
     }
 
     private void ApplyPreset(int baudRate, string parity, int dataBits, int stopBits)
@@ -210,14 +191,6 @@
         _dataBits = dataBits;
         _stopBits = stopBits;
     }
-
-    private static string GetParityDisplay(string parity) => parity switch
-    {
-        "Even" => "E",
-        "Odd" => "O",
-        "None" => "N",
-        _ => parity
-    };
 
     private async Task HandleVisibilityChanged(bool visible)
     {

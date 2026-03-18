@@ -112,11 +112,18 @@ namespace ERPCore2.Data.Entities
         public bool IsReversed { get; set; } = false;
 
         /// <summary>
-        /// 沖銷傳票ID - 若此傳票已被沖銷，指向沖銷用的傳票
+        /// 沖銷傳票ID - 若此傳票已被沖銷，指向沖銷用的傳票（A → B：原傳票 A 的 ReversalEntryId = 沖銷傳票 B 的 Id）
         /// </summary>
         [Display(Name = "沖銷傳票")]
         [ForeignKey(nameof(ReversalEntry))]
         public int? ReversalEntryId { get; set; }
+
+        /// <summary>
+        /// 被沖銷原傳票ID - 若此傳票為沖銷傳票，指向被沖銷的原始傳票（B → A：沖銷傳票 B 的 ReversedEntryId = 原傳票 A 的 Id）
+        /// </summary>
+        [Display(Name = "被沖銷原傳票")]
+        [ForeignKey(nameof(ReversedEntry))]
+        public int? ReversedEntryId { get; set; }
 
         // Navigation Properties
 
@@ -126,9 +133,14 @@ namespace ERPCore2.Data.Entities
         public Company Company { get; set; } = null!;
 
         /// <summary>
-        /// 沖銷傳票導航屬性
+        /// 沖銷傳票導航屬性（此傳票被哪張傳票沖銷）
         /// </summary>
         public JournalEntry? ReversalEntry { get; set; }
+
+        /// <summary>
+        /// 被沖銷原傳票導航屬性（此傳票是哪張傳票的沖銷傳票）
+        /// </summary>
+        public JournalEntry? ReversedEntry { get; set; }
 
         /// <summary>
         /// 傳票分錄集合

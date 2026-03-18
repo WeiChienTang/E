@@ -46,7 +46,9 @@ namespace ERPCore2.Services.Reports
                 if (!lines.Any())
                     return BatchPreviewResult.Failure($"無符合條件的傳票資料\n篩選條件：{criteria.GetSummary()}");
 
-                var company = await _companyService.GetPrimaryCompanyAsync();
+                var company = criteria.CompanyId.HasValue
+                    ? await _companyService.GetByIdAsync(criteria.CompanyId.Value)
+                    : await _companyService.GetPrimaryCompanyAsync();
                 var document = BuildDetailAccountBalanceDocument(lines, company, criteria);
                 var images = criteria.PaperSetting != null
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
@@ -67,13 +69,18 @@ namespace ERPCore2.Services.Reports
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
+            // CompanyId 篩選（留空時自動使用主要公司）
+            var primaryCompany = await _companyService.GetPrimaryCompanyAsync();
+            var companyId = criteria.CompanyId ?? primaryCompany?.Id;
+
             // Query 1: 期初餘額（StartDate 之前所有 Posted）
             // 重要：StartDate 為 null 時不應載入任何分錄作為期初，否則 openingBalance 會
             // 包含所有歷史資料（甚至 EndDate 之後的未來傳票），造成期初/本期雙重計算。
             var openingQuery = context.JournalEntryLines
                 .Include(l => l.AccountItem)
                 .Include(l => l.JournalEntry)
-                .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted);
+                .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted)
+                .Where(l => !companyId.HasValue || l.JournalEntry.CompanyId == companyId.Value);
 
             if (criteria.StartDate.HasValue)
                 openingQuery = openingQuery.Where(l => l.JournalEntry.EntryDate < criteria.StartDate.Value.Date);
@@ -84,7 +91,8 @@ namespace ERPCore2.Services.Reports
             var periodQuery = context.JournalEntryLines
                 .Include(l => l.AccountItem)
                 .Include(l => l.JournalEntry)
-                .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted);
+                .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted)
+                .Where(l => !companyId.HasValue || l.JournalEntry.CompanyId == companyId.Value);
 
             if (criteria.StartDate.HasValue)
                 periodQuery = periodQuery.Where(l => l.JournalEntry.EntryDate >= criteria.StartDate.Value.Date);

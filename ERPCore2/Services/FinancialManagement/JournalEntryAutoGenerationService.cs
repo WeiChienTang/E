@@ -9,13 +9,13 @@ namespace ERPCore2.Services
 {
     /// <summary>
     /// 批次轉傳票服務實作
-    /// 分錄規則（含稅；稅額為零時省略稅額行；COGS 為零時省略成本行）：
+    /// 分錄規則（含稅；稅額為零時省略稅額行；COGS 必須存在，為零時拒絕轉傳票）：
     ///   進貨入庫：借 品項存貨(1231) + 進項稅額(1268) / 貸 應付帳款(2171)
     ///   進貨退回：借 應付帳款(2171) / 貸 品項存貨(1231) + 進項稅額(1268)
     ///   銷貨出貨：借 應收帳款(1191) / 貸 銷貨收入(4111) + 銷項稅額(2204)
-    ///             借 銷貨成本(5111) / 貸 品項存貨(1231)             ← COGS（移動加權平均）
+    ///             借 銷貨成本(5111) / 貸 品項存貨(1231)             ← COGS 必須（移動加權平均，需先完成 ReduceStock）
     ///   銷貨退回：借 銷貨收入(4111) + 銷項稅額(2204) / 貸 應收帳款(1191)
-    ///             借 品項存貨(1231) / 貸 銷貨成本(5111)             ← COGS 沖回
+    ///             借 品項存貨(1231) / 貸 銷貨成本(5111)             ← COGS 沖回（需先完成 AddStock）
     /// </summary>
     public class JournalEntryAutoGenerationService : IJournalEntryAutoGenerationService
     {
@@ -383,39 +383,36 @@ namespace ERPCore2.Services
 
                 // 銷貨成本分錄（COGS）：借 銷貨成本(5111) / 貸 品項存貨(1231)
                 // 金額來源：InventoryTransaction.TotalAmount（ReduceStockAsync 寫入的出庫成本 = 出庫量 × 移動加權均價）
+                // ⚠ COGS 為必要分錄（系統設定需追蹤成本）：若找不到庫存異動，拒絕轉傳票並要求先完成出庫作業
                 var cogsAmount = await context.InventoryTransactions
                     .Where(t => t.SourceDocumentType == "SalesDelivery" && t.SourceDocumentId == id)
                     .SumAsync(t => t.TotalAmount);
 
                 if (cogsAmount == 0)
-                    _logger.LogWarning("銷貨出貨 {Id}（{Code}）找不到對應的庫存異動記錄，COGS 分錄未加入傳票。若品項需計成本，請確認出庫流程是否正常執行。",
-                        id, doc.Code);
+                    return (false, $"銷貨出貨單 {doc.Code} 找不到對應的庫存異動記錄，無法計算銷貨成本（COGS）。請確認已執行出庫作業（ReduceStock），再重新轉傳票。");
 
-                if (cogsAmount > 0)
+                var cogs      = await _accountItemService.GetByCodeAsync(CostOfGoodsSoldCode);
+                var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
+
+                if (cogs == null || inventory == null)
+                    return (false, $"找不到銷貨成本科目（{CostOfGoodsSoldCode}）或品項存貨科目（{InventoryCode}），請確認種子資料已正確載入");
+
+                lines.Add(new JournalEntryLine
                 {
-                    var cogs      = await _accountItemService.GetByCodeAsync(CostOfGoodsSoldCode);
-                    var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
-
-                    if (cogs != null && inventory != null)
-                    {
-                        lines.Add(new JournalEntryLine
-                        {
-                            LineNumber = lines.Count + 1,
-                            AccountItemId = cogs.Id,
-                            Direction = AccountDirection.Debit,
-                            Amount = cogsAmount,
-                            LineDescription = "銷貨成本"
-                        });
-                        lines.Add(new JournalEntryLine
-                        {
-                            LineNumber = lines.Count + 1,
-                            AccountItemId = inventory.Id,
-                            Direction = AccountDirection.Credit,
-                            Amount = cogsAmount,
-                            LineDescription = "品項存貨－銷貨出倉"
-                        });
-                    }
-                }
+                    LineNumber = lines.Count + 1,
+                    AccountItemId = cogs.Id,
+                    Direction = AccountDirection.Debit,
+                    Amount = cogsAmount,
+                    LineDescription = "銷貨成本"
+                });
+                lines.Add(new JournalEntryLine
+                {
+                    LineNumber = lines.Count + 1,
+                    AccountItemId = inventory.Id,
+                    Direction = AccountDirection.Credit,
+                    Amount = cogsAmount,
+                    LineDescription = "品項存貨－銷貨出倉"
+                });
 
                 var result = await CreateAndPostEntryAsync(
                     doc.DeliveryDate,
@@ -504,39 +501,36 @@ namespace ERPCore2.Services
 
                 // 銷貨退回成本沖回：借 品項存貨(1231) / 貸 銷貨成本(5111)
                 // 金額來源：InventoryTransaction.TotalAmount（AddStockAsync 寫入的退回入庫成本）
+                // ⚠ COGS 沖回為必要分錄：若找不到庫存異動，拒絕轉傳票並要求先完成退回入庫作業
                 var returnCogsAmount = await context.InventoryTransactions
                     .Where(t => t.SourceDocumentType == "SalesReturn" && t.SourceDocumentId == id)
                     .SumAsync(t => t.TotalAmount);
 
                 if (returnCogsAmount == 0)
-                    _logger.LogWarning("銷貨退回 {Id}（{Code}）找不到對應的庫存異動記錄，COGS 沖回分錄未加入傳票。若品項需計成本，請確認退回入庫流程是否正常執行。",
-                        id, doc.Code);
+                    return (false, $"銷貨退回單 {doc.Code} 找不到對應的庫存異動記錄，無法計算成本沖回金額。請確認已執行退回入庫作業（AddStock），再重新轉傳票。");
 
-                if (returnCogsAmount > 0)
+                var returnCogs      = await _accountItemService.GetByCodeAsync(CostOfGoodsSoldCode);
+                var returnInventory = await _accountItemService.GetByCodeAsync(InventoryCode);
+
+                if (returnCogs == null || returnInventory == null)
+                    return (false, $"找不到銷貨成本科目（{CostOfGoodsSoldCode}）或品項存貨科目（{InventoryCode}），請確認種子資料已正確載入");
+
+                lines.Add(new JournalEntryLine
                 {
-                    var cogs      = await _accountItemService.GetByCodeAsync(CostOfGoodsSoldCode);
-                    var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
-
-                    if (cogs != null && inventory != null)
-                    {
-                        lines.Add(new JournalEntryLine
-                        {
-                            LineNumber = lines.Count + 1,
-                            AccountItemId = inventory.Id,
-                            Direction = AccountDirection.Debit,
-                            Amount = returnCogsAmount,
-                            LineDescription = "品項存貨－退回入庫"
-                        });
-                        lines.Add(new JournalEntryLine
-                        {
-                            LineNumber = lines.Count + 1,
-                            AccountItemId = cogs.Id,
-                            Direction = AccountDirection.Credit,
-                            Amount = returnCogsAmount,
-                            LineDescription = "銷貨成本沖回"
-                        });
-                    }
-                }
+                    LineNumber = lines.Count + 1,
+                    AccountItemId = returnInventory.Id,
+                    Direction = AccountDirection.Debit,
+                    Amount = returnCogsAmount,
+                    LineDescription = "品項存貨－退回入庫"
+                });
+                lines.Add(new JournalEntryLine
+                {
+                    LineNumber = lines.Count + 1,
+                    AccountItemId = returnCogs.Id,
+                    Direction = AccountDirection.Credit,
+                    Amount = returnCogsAmount,
+                    LineDescription = "銷貨成本沖回"
+                });
 
                 var result = await CreateAndPostEntryAsync(
                     doc.ReturnDate,
@@ -792,6 +786,229 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(JournalizeSetoffDocumentAsync), GetType(), _logger, new { Id = id });
+                return (false, "轉傳票過程發生錯誤，請稍後再試");
+            }
+        }
+
+        // ===== P2-B：材料領用傳票 =====
+
+        // 材料領用科目代碼
+        private const string WorkInProgressCode  = "1321"; // 在製品
+        private const string SuppliesExpenseCode = "6311"; // 物料費用
+        private const string FinishedGoodsCode   = "1241"; // 製成品
+
+        public async Task<List<MaterialIssue>> GetPendingMaterialIssuesAsync(DateTime? from = null, DateTime? to = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.MaterialIssues
+                    .Include(m => m.Employee)
+                    .Include(m => m.MaterialIssueDetails)
+                    .Where(m => m.IsConfirmed && !m.IsJournalized);
+
+                if (from.HasValue)
+                    query = query.Where(m => m.IssueDate >= from.Value.Date);
+                if (to.HasValue)
+                    query = query.Where(m => m.IssueDate <= to.Value.Date.AddDays(1).AddSeconds(-1));
+
+                return await query.OrderByDescending(m => m.IssueDate).ThenByDescending(m => m.Code).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingMaterialIssuesAsync), GetType(), _logger);
+                return new List<MaterialIssue>();
+            }
+        }
+
+        public async Task<(bool Success, string ErrorMessage)> JournalizeMaterialIssueAsync(int id, string createdBy)
+        {
+            try
+            {
+                var existing = await _journalEntryService.GetBySourceDocumentAsync("MaterialIssue", id);
+                if (existing != null)
+                    return (false, $"領料單已有對應傳票（{existing.Code}），請先沖銷後再重新轉傳票");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var doc = await context.MaterialIssues
+                    .Include(m => m.MaterialIssueDetails)
+                    .FirstOrDefaultAsync(m => m.Id == id);
+
+                if (doc == null)
+                    return (false, "找不到指定的領料單");
+                if (!doc.IsConfirmed)
+                    return (false, "領料單尚未確認，無法轉傳票");
+
+                // 計算總成本（UnitCost × IssueQuantity）
+                var totalCost = doc.MaterialIssueDetails
+                    .Where(d => d.UnitCost.HasValue)
+                    .Sum(d => d.UnitCost!.Value * d.IssueQuantity);
+
+                if (totalCost <= 0)
+                    return (false, "領料單各明細的 UnitCost 均未設定或為零，無法計算傳票金額。請先確認各明細的單位成本");
+
+                // 依用途決定借方科目
+                var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);
+                if (inventory == null)
+                    return (false, $"找不到品項存貨科目（代碼 {InventoryCode}）");
+
+                string debitCode = doc.IssueType == Models.Enums.MaterialIssueType.Production
+                    ? WorkInProgressCode
+                    : SuppliesExpenseCode;
+
+                var debitAccount = await _accountItemService.GetByCodeAsync(debitCode);
+                if (debitAccount == null)
+                    return (false, $"找不到借方科目（代碼 {debitCode}）");
+
+                string issueTypeLabel = doc.IssueType switch
+                {
+                    Models.Enums.MaterialIssueType.Production         => "在製品",
+                    Models.Enums.MaterialIssueType.GeneralConsumption => "物料費用",
+                    Models.Enums.MaterialIssueType.Sample             => "物料費用（樣品）",
+                    _                                                  => "物料費用"
+                };
+
+                var lines = new List<JournalEntryLine>
+                {
+                    new JournalEntryLine
+                    {
+                        LineNumber    = 1,
+                        AccountItemId = debitAccount.Id,
+                        Direction     = AccountDirection.Debit,
+                        Amount        = totalCost,
+                        LineDescription = $"{issueTypeLabel}－{doc.Code}"
+                    },
+                    new JournalEntryLine
+                    {
+                        LineNumber    = 2,
+                        AccountItemId = inventory.Id,
+                        Direction     = AccountDirection.Credit,
+                        Amount        = totalCost,
+                        LineDescription = $"品項存貨領用－{doc.Code}"
+                    }
+                };
+
+                var result = await CreateAndPostEntryAsync(
+                    doc.IssueDate, $"領料：{doc.Code}",
+                    "MaterialIssue", doc.Id, doc.Code ?? string.Empty,
+                    lines, createdBy);
+
+                if (result.Success)
+                {
+                    doc.IsJournalized = true;
+                    doc.JournalizedAt = DateTime.UtcNow;
+                    await context.SaveChangesAsync();
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(JournalizeMaterialIssueAsync), GetType(), _logger, new { Id = id });
+                return (false, "轉傳票過程發生錯誤，請稍後再試");
+            }
+        }
+
+        // ===== P2-C：生產完工傳票 =====
+
+        public async Task<List<ProductionScheduleCompletion>> GetPendingProductionCompletionsAsync(DateTime? from = null, DateTime? to = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.ProductionScheduleCompletions
+                    .Include(c => c.ProductionScheduleItem)
+                        .ThenInclude(i => i.Product)
+                    .Include(c => c.InventoryTransaction)
+                    .Where(c => !c.IsJournalized && c.InventoryTransactionId != null);
+
+                if (from.HasValue)
+                    query = query.Where(c => c.CompletionDate >= from.Value.Date);
+                if (to.HasValue)
+                    query = query.Where(c => c.CompletionDate <= to.Value.Date.AddDays(1).AddSeconds(-1));
+
+                return await query.OrderByDescending(c => c.CompletionDate).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingProductionCompletionsAsync), GetType(), _logger);
+                return new List<ProductionScheduleCompletion>();
+            }
+        }
+
+        public async Task<(bool Success, string ErrorMessage)> JournalizeProductionCompletionAsync(int id, string createdBy)
+        {
+            try
+            {
+                var existing = await _journalEntryService.GetBySourceDocumentAsync("ProductionScheduleCompletion", id);
+                if (existing != null)
+                    return (false, $"完工記錄已有對應傳票（{existing.Code}），請先沖銷後再重新轉傳票");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var completion = await context.ProductionScheduleCompletions
+                    .Include(c => c.InventoryTransaction)
+                    .Include(c => c.ProductionScheduleItem)
+                        .ThenInclude(i => i.Product)
+                    .FirstOrDefaultAsync(c => c.Id == id);
+
+                if (completion == null)
+                    return (false, "找不到指定的完工記錄");
+
+                if (completion.InventoryTransactionId == null || completion.InventoryTransaction == null)
+                    return (false, "完工記錄尚未建立庫存異動記錄，無法取得成本金額。請先完成入庫作業");
+
+                var totalAmount = completion.InventoryTransaction.TotalAmount;
+                if (totalAmount <= 0)
+                    return (false, $"庫存異動金額為零或負數（{totalAmount}），無法建立有效的傳票分錄");
+
+                var finishedGoods  = await _accountItemService.GetByCodeAsync(FinishedGoodsCode);
+                var workInProgress = await _accountItemService.GetByCodeAsync(WorkInProgressCode);
+
+                if (finishedGoods == null)
+                    return (false, $"找不到製成品科目（代碼 {FinishedGoodsCode}）");
+                if (workInProgress == null)
+                    return (false, $"找不到在製品科目（代碼 {WorkInProgressCode}）");
+
+                var productName = completion.ProductionScheduleItem?.Product?.Name ?? $"完工記錄 #{id}";
+
+                var lines = new List<JournalEntryLine>
+                {
+                    new JournalEntryLine
+                    {
+                        LineNumber    = 1,
+                        AccountItemId = finishedGoods.Id,
+                        Direction     = AccountDirection.Debit,
+                        Amount        = totalAmount,
+                        LineDescription = $"製成品入庫－{productName}"
+                    },
+                    new JournalEntryLine
+                    {
+                        LineNumber    = 2,
+                        AccountItemId = workInProgress.Id,
+                        Direction     = AccountDirection.Credit,
+                        Amount        = totalAmount,
+                        LineDescription = $"在製品轉出－{productName}"
+                    }
+                };
+
+                var docCode = completion.Code ?? $"Comp#{id}";
+                var result = await CreateAndPostEntryAsync(
+                    completion.CompletionDate, $"生產完工入庫：{productName}",
+                    "ProductionScheduleCompletion", completion.Id, docCode,
+                    lines, createdBy);
+
+                if (result.Success)
+                {
+                    completion.IsJournalized = true;
+                    completion.JournalizedAt = DateTime.UtcNow;
+                    await context.SaveChangesAsync();
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(JournalizeProductionCompletionAsync), GetType(), _logger, new { Id = id });
                 return (false, "轉傳票過程發生錯誤，請稍後再試");
             }
         }

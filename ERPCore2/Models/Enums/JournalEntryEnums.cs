@@ -26,7 +26,11 @@ namespace ERPCore2.Models.Enums
 
         [Description("沖銷分錄")]
         [Display(Name = "沖銷分錄")]
-        Reversing = 5
+        Reversing = 5,
+
+        [Description("期初餘額")]
+        [Display(Name = "期初餘額")]
+        OpeningBalance = 6
     }
 
     /// <summary>

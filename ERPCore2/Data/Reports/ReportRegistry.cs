@@ -357,6 +357,21 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
+                Id = ReportIds.ManufacturingOrder,
+                Name = "製令單",
+                NameKey = "Report.ManufacturingOrder",
+                Description = "列印製令單，含用料清單、完工入庫記錄及簽核區",
+                DescriptionKey = "Report.ManufacturingOrderDesc",
+                IconClass = "bi bi-file-earmark-text",
+                Category = ReportCategory.Product,
+                ModuleKey = "Products",
+                RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
+                ActionId = "OpenManufacturingOrderReport",
+                SortOrder = 4,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
                 Id = ReportIds.ProductionSchedule,
                 Name = "生產排程表",
                 NameKey = "Report.ProductionSchedule",

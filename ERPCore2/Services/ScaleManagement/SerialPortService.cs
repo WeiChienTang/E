@@ -46,6 +46,11 @@ namespace ERPCore2.Services
             }
         }
 
+        public void ApplySettings(SerialPortSettings settings)
+        {
+            CurrentSettings = settings;
+        }
+
         public void Open(SerialPortSettings settings)
         {
             lock (_lock)

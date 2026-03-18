@@ -15,6 +15,9 @@ namespace ERPCore2.Services
         /// <summary>取得系統可用的串列埠名稱清單</summary>
         string[] GetAvailablePortNames();
 
+        /// <summary>儲存連線參數（不實際開啟串列埠，供"讀取"按鈕自動連線時使用）</summary>
+        void ApplySettings(SerialPortSettings settings);
+
         /// <summary>開啟串列埠連線</summary>
         void Open(SerialPortSettings settings);
 

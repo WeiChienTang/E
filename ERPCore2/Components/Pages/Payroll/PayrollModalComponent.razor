@@ -20,65 +20,136 @@
                     BodyCssClass="p-0"
                     DebugComponentName="PayrollModalComponent">
 
-    <HeaderButtons>
-        @if (canCalculate && selectedPeriod != null)
-        {
-            <GenericButtonComponent Text="@L["Payroll.CalculateAll"]"
-                                   IconClass="bi bi-calculator"
-                                   Variant="ButtonVariant.DarkBlue"
-                                   Size="ButtonSize.Small"
-                                   IsDisabled="@(selectedPeriod.PeriodStatus == PayrollPeriodStatus.Closed)"
-                                   IsLoading="@isCalculating"
-                                   OnClick="CalculateAllAsync" />
-        }
-    </HeaderButtons>
-
     <BodyContent>
-        @* ===== 帳期選擇器 ===== *@
-        <div class="px-3 pt-3 pb-2 border-bottom">
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <span class="fw-semibold text-nowrap">@L["Payroll.SelectPeriod"]：</span>
-                @if (_isInitialLoading)
-                {
-                    <span class="text-muted">
-                        <span class="spinner-border spinner-border-sm me-1"></span>@L["Label.Loading"]
-                    </span>
-                }
-                else if (periods.Any())
-                {
-                    <select class="form-select form-select-sm w-auto" @onchange="OnPeriodChanged">
-                        @foreach (var p in periods)
-                        {
-                            <option value="@p.Id" selected="@(p.Id == selectedPeriodId)">
-                                @p.Year 年 @p.Month 月 — @GetPeriodStatusLabel(p.PeriodStatus)
-                            </option>
-                        }
-                    </select>
-                    @if (selectedPeriod != null)
-                    {
-                        <span class="badge @GetPeriodStatusBadgeCss(selectedPeriod.PeriodStatus)">
-                            @GetPeriodStatusLabel(selectedPeriod.PeriodStatus)
-                        </span>
-                    }
-                }
-            </div>
+        @* ===== Tab 導覽 ===== *@
+        <div class="form-tab-btn-group px-3 pt-2">
+            <button type="button" class="form-tab-btn @(activeTab == 0 ? "active" : "")" @onclick="() => SetTab(0)">
+                <i class="bi bi-calculator"></i>@L["Payroll.TabCalculation"]
+            </button>
+            @if (canRateTable)
+            {
+                <button type="button" class="form-tab-btn @(activeTab == 1 ? "active" : "")" @onclick="() => SetTab(1)">
+                    @L["Payroll.Tab.InsuranceRate"]
+                </button>
+                <button type="button" class="form-tab-btn @(activeTab == 2 ? "active" : "")" @onclick="() => SetTab(2)">
+                    @L["Payroll.Tab.LaborInsuranceGrade"]
+                </button>
+                <button type="button" class="form-tab-btn @(activeTab == 3 ? "active" : "")" @onclick="() => SetTab(3)">
+                    @L["Payroll.Tab.HealthInsuranceGrade"]
+                </button>
+                <button type="button" class="form-tab-btn @(activeTab == 4 ? "active" : "")" @onclick="() => SetTab(4)">
+                    @L["Payroll.Tab.WithholdingTaxTable"]
+                </button>
+            }
+            @if (canClose)
+            {
+                <button type="button" class="form-tab-btn @(activeTab == 5 ? "active" : "")" @onclick="() => SetTab(5)">
+                    @L["Payroll.Tab.PayrollPeriods"]
+                </button>
+            }
+            @if (canAttendance)
+            {
+                <button type="button" class="form-tab-btn @(activeTab == 6 ? "active" : "")" @onclick="() => SetTab(6)">
+                    @L["Payroll.Tab.Attendance"]
+                </button>
+            }
         </div>
 
-        @* ===== 薪資單表格 ===== *@
-        @if (selectedPeriod != null)
+        @* ===== Tab 0：薪資計算 ===== *@
+        @if (activeTab == 0)
         {
-            <PayrollEmployeeTable RowViewModels="@rowViewModels"
-                                  IsLoading="@isLoading"
-                                  CanCalculate="@canCalculate"
-                                  CanConfirm="@canConfirm"
-                                  CanReadAmount="@canReadAmount"
-                                  CanViewPayslip="@canViewPayslip"
-                                  SelectedPeriod="@selectedPeriod"
-                                  CalculatingEmployeeId="@calculatingEmployeeId"
-                                  OnCalculateOne="@CalculateOneAsync"
-                                  OnConfirmRecord="@ConfirmRecordAsync"
-                                  OnUnconfirmRecord="@UnconfirmRecordAsync"
-                                  OnShowPayslip="@ShowPayslip" />
+            <div class="px-3 pt-3 pb-2 border-bottom">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="fw-semibold text-nowrap">@L["Payroll.SelectPeriod"]：</span>
+                    @if (_isInitialLoading)
+                    {
+                        <span class="text-muted">
+                            <span class="spinner-border spinner-border-sm me-1"></span>@L["Label.Loading"]
+                        </span>
+                    }
+                    else if (periods.Any())
+                    {
+                        <select class="form-select form-select-sm w-auto" @onchange="OnPeriodChanged">
+                            @foreach (var p in periods)
+                            {
+                                <option value="@p.Id" selected="@(p.Id == selectedPeriodId)">
+                                    @p.Year 年 @p.Month 月 — @GetPeriodStatusLabel(p.PeriodStatus)
+                                </option>
+                            }
+                        </select>
+                        @if (selectedPeriod != null)
+                        {
+                            <span class="badge @GetPeriodStatusBadgeCss(selectedPeriod.PeriodStatus)">
+                                @GetPeriodStatusLabel(selectedPeriod.PeriodStatus)
+                            </span>
+                        }
+                    }
+                </div>
+            </div>
+
+            @if (selectedPeriod != null)
+            {
+                <PayrollEmployeeTable RowViewModels="@rowViewModels"
+                                      IsLoading="@isLoading"
+                                      CanCalculate="@canCalculate"
+                                      CanConfirm="@canConfirm"
+                                      CanReadAmount="@canReadAmount"
+                                      CanViewPayslip="@canViewPayslip"
+                                      SelectedPeriod="@selectedPeriod"
+                                      CalculatingEmployeeId="@calculatingEmployeeId"
+                                      OnCalculateOne="@CalculateOneAsync"
+                                      OnConfirmRecord="@ConfirmRecordAsync"
+                                      OnUnconfirmRecord="@UnconfirmRecordAsync"
+                                      OnShowPayslip="@ShowPayslip" />
+            }
+        }
+
+        @* ===== Tab 1：保費費率 ===== *@
+        @if (activeTab == 1)
+        {
+            <div class="p-3">
+                <InsuranceRateTab />
+            </div>
+        }
+
+        @* ===== Tab 2：勞保分級表 ===== *@
+        @if (activeTab == 2)
+        {
+            <div class="p-3">
+                <LaborInsuranceGradeTab />
+            </div>
+        }
+
+        @* ===== Tab 3：健保分級表 ===== *@
+        @if (activeTab == 3)
+        {
+            <div class="p-3">
+                <HealthInsuranceGradeTab />
+            </div>
+        }
+
+        @* ===== Tab 4：扣繳稅額表 ===== *@
+        @if (activeTab == 4)
+        {
+            <div class="p-3">
+                <WithholdingTaxTableTab />
+            </div>
+        }
+
+        @* ===== Tab 5：薪資週期 ===== *@
+        @if (activeTab == 5)
+        {
+            <div class="p-3">
+                <PayrollPeriodTab />
+            </div>
+        }
+
+        @* ===== Tab 6：出勤彙總 ===== *@
+        @if (activeTab == 6)
+        {
+            <div class="p-3">
+                <AttendanceTab Year="@(selectedPeriod?.Year ?? 0)" Month="@(selectedPeriod?.Month ?? 0)" />
+            </div>
         }
     </BodyContent>
 
@@ -111,12 +182,16 @@
     private bool isLoading = false;
     private bool isCalculating = false;
     private int? calculatingEmployeeId;
+    private int activeTab = 0;
 
     // ── 權限 ──────────────────────────────────────────────────────
     private bool canCalculate = false;
     private bool canConfirm = false;
     private bool canReadAmount = false;
     private bool canViewPayslip = false;
+    private bool canRateTable = false;
+    private bool canClose = false;
+    private bool canAttendance = false;
 
     // ── 薪資單 Modal ──────────────────────────────────────────────
     private bool showPayslip = false;
@@ -128,10 +203,13 @@
     {
         try
         {
-            canCalculate  = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Calculate);
-            canConfirm    = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Confirm);
-            canReadAmount = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.ReadAmount);
+            canCalculate   = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Calculate);
+            canConfirm     = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Confirm);
+            canReadAmount  = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.ReadAmount);
             canViewPayslip = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Payslip);
+            canRateTable   = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.RateTable);
+            canClose       = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Close);
+            canAttendance  = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Attendance);
         }
         catch (Exception ex)
         {
@@ -149,6 +227,7 @@
         else if (!IsVisible && _lastVisible)
         {
             _lastVisible = false;
+            activeTab = 0;
         }
     }
 
@@ -180,7 +259,7 @@
         {
             _isInitialLoading = false;
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadInitialDataAsync), GetType());
-            await NotificationService.ShowErrorAsync("載入薪資計算頁面失敗");
+            await NotificationService.ShowErrorAsync(L["Message.InitPageFailed"].ToString());
         }
     }
 
@@ -213,6 +292,10 @@
         }
     }
 
+    // ── Tab 切換 ─────────────────────────────────────────────────
+
+    private void SetTab(int index) => activeTab = index;
+
     // ── 事件處理 ─────────────────────────────────────────────────
 
     private async Task OnPeriodChanged(ChangeEventArgs e)
@@ -234,11 +317,11 @@
             var result = await CalculationService.CalculateAllAsync(selectedPeriod.Id);
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync("全員試算完成");
+                await NotificationService.ShowSuccessAsync(L["Payroll.CalculateAllSuccess"].ToString());
                 await LoadPeriodDataAsync();
             }
             else
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "試算失敗");
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Payroll.CalculateFailed"].ToString());
         }
         catch (Exception ex)
         {
@@ -266,7 +349,7 @@
                     rowViewModels[idx] = new PayrollEmployeeTable.RowViewModel { Employee = rowViewModels[idx].Employee, Record = result.Data };
             }
             else
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "試算失敗");
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Payroll.CalculateFailed"].ToString());
         }
         catch (Exception ex)
         {
@@ -290,7 +373,7 @@
                 StateHasChanged();
             }
             else
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "確認失敗");
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Payroll.ConfirmFailed"].ToString());
         }
         catch (Exception ex)
         {
@@ -310,7 +393,7 @@
                 StateHasChanged();
             }
             else
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "取消確認失敗");
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Payroll.UnconfirmFailed"].ToString());
         }
         catch (Exception ex)
         {

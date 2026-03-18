@@ -244,11 +244,6 @@ public static class PermissionRegistry
         public const string Read = "ScaleRecord.Read";
     }
 
-    public static class ScaleType
-    {
-        public const string Read = "ScaleType.Read";
-    }
-
     public static class SetoffDocument
     {
         public const string Read = "SetoffDocument.Read";
@@ -343,6 +338,23 @@ public static class PermissionRegistry
     public static class JournalEntry
     {
         public const string Read = "JournalEntry.Read";
+    }
+
+    public static class FiscalPeriod
+    {
+        public const string Read = "FiscalPeriod.Read";
+    }
+
+    public static class Accounting
+    {
+        /// <summary>關帳 / 重開期間</summary>
+        public const string ClosePeriod    = "Accounting.ClosePeriod";
+        /// <summary>建立 / 編輯期初餘額傳票</summary>
+        public const string OpeningBalance = "Accounting.OpeningBalance";
+        /// <summary>傳票過帳</summary>
+        public const string PostEntry      = "Accounting.PostEntry";
+        /// <summary>執行年底結帳</summary>
+        public const string YearEndClosing = "Accounting.YearEndClosing";
     }
 
     public static class Payroll
@@ -449,7 +461,6 @@ public static class PermissionRegistry
 
         // ===== 一般權限：磅秤紀錄 =====
         new(ScaleRecord.Read,   "檢視磅秤紀錄", PermissionLevel.Normal, "檢視磅秤紀錄基本資料與相關資訊", "Nav.WasteGroup"),
-        new(ScaleType.Read,     "檢視磅秤類型", PermissionLevel.Normal, "檢視磅秤類型基本資料與相關資訊", "Nav.WasteGroup"),
 
         // ===== 一般權限：財務 =====
         new(SetoffDocument.Read,"檢視沖款單",   PermissionLevel.Normal, "檢視客戶應收帳款與交易紀錄",     "Nav.FinanceGroup"),
@@ -475,9 +486,14 @@ public static class PermissionRegistry
         new(PurchaseReturnReason.Read,  "檢視採購退回原因", PermissionLevel.Normal, "檢視採購退回原因設定與管理",     "Nav.PurchaseGroup"),
 
         // ===== 一般權限：會計 =====
-        new(AccountItem.Read,                  "檢視會計科目",   PermissionLevel.Normal, "檢視會計科目與相關設定",                       "Nav.AccountingGroup"),
-        new(AccountItem.SubAccountRead,        "檢視子科目設定", PermissionLevel.Normal, "檢視子科目設定（統制科目代碼、自動產生開關）", "Nav.AccountingGroup"),
-        new(JournalEntry.Read,                 "檢視傳票",       PermissionLevel.Normal, "檢視會計傳票與分錄明細",                       "Nav.AccountingGroup"),
+        new(AccountItem.Read,                  "檢視會計科目",   PermissionLevel.Normal,    "檢視會計科目與相關設定",                       "Nav.AccountingGroup"),
+        new(AccountItem.SubAccountRead,        "檢視子科目設定", PermissionLevel.Normal,    "檢視子科目設定（統制科目代碼、自動產生開關）", "Nav.AccountingGroup"),
+        new(JournalEntry.Read,                 "檢視傳票",       PermissionLevel.Normal,    "檢視會計傳票與分錄明細",                       "Nav.AccountingGroup"),
+        new(FiscalPeriod.Read,                 "檢視會計期間",   PermissionLevel.Normal,    "檢視與管理會計期間（關帳、鎖定）",              "Nav.AccountingGroup"),
+        new(Accounting.PostEntry,              "傳票過帳",       PermissionLevel.Sensitive, "執行傳票過帳（Draft → Posted）",               "Nav.AccountingGroup"),
+        new(Accounting.ClosePeriod,            "關帳／重開期間", PermissionLevel.Sensitive, "執行會計期間關帳、鎖定及重新開放作業",         "Nav.AccountingGroup"),
+        new(Accounting.OpeningBalance,         "期初餘額設定",   PermissionLevel.Sensitive, "建立或編輯期初餘額傳票",                       "Nav.AccountingGroup"),
+        new(Accounting.YearEndClosing,         "年底結帳",       PermissionLevel.Sensitive, "執行年底結帳、損益科目歸零並轉保留盈餘",       "Nav.AccountingGroup"),
 
         // ===== 一般權限：文件 =====
         new(Document.Read, "瀏覽文件", PermissionLevel.Normal, "瀏覽與下載一般存取層級的文件", "Nav.DocumentGroup"),

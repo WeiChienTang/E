@@ -19,6 +19,7 @@
 @inject IJSRuntime JSRuntime
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IStringLocalizer<SharedResource> L
+@inject IJournalEntryService JournalEntryService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @implements IDisposable
 
@@ -84,6 +85,15 @@
                                      SetoffDocumentId="@selectedSetoffDocumentId"
                                      OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
                                      OnCancel="@(() => showSetoffDocumentModal = false)" />
+}
+
+@* 傳票編輯 Modal *@
+@if (showJournalEntryModal)
+{
+    <JournalEntryEditModalComponent IsVisible="@showJournalEntryModal"
+                                    IsVisibleChanged="@((bool visible) => showJournalEntryModal = visible)"
+                                    JournalEntryId="@selectedJournalEntryId"
+                                    OnCancel="@(() => showJournalEntryModal = false)" />
 }
 
 @code {
@@ -155,7 +165,10 @@
     // ===== 相關單據 Modal =====
     private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
     private bool showSetoffDocumentModal = false;
+    private bool showJournalEntryModal = false;
     private int? selectedSetoffDocumentId = null;
+    private int? selectedJournalEntryId = null;
+    private List<RelatedDocumentInfo> _relatedJournalEntries = new();
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
@@ -944,6 +957,25 @@
             else
                 customerInfoTab?.Clear();
 
+            // 載入相關傳票
+            if (loadedEntityId > 0)
+            {
+                var entries = await JournalEntryService.GetAllBySourceDocumentAsync("SalesReturn", loadedEntityId);
+                _relatedJournalEntries = entries.Select(je => new RelatedDocumentInfo
+                {
+                    DocumentId     = je.Id,
+                    DocumentType   = RelatedDocumentType.JournalEntry,
+                    DocumentNumber = je.Code ?? $"JE-{je.Id}",
+                    DocumentDate   = je.EntryDate,
+                    Amount  = je.Lines?.Where(l => l.Direction == ERPCore2.Models.Enums.AccountDirection.Debit).Sum(l => l.Amount),
+                    Remarks = $"{GetJournalEntryStatusName(je.JournalEntryStatus)} | {je.Description ?? string.Empty}"
+                }).ToList();
+            }
+            else
+            {
+                _relatedJournalEntries = new();
+            }
+
             StateHasChanged();
         }
         catch (Exception ex)
@@ -953,6 +985,15 @@
             await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
         }
     }
+
+    private string GetJournalEntryStatusName(ERPCore2.Models.Enums.JournalEntryStatus status) => status switch
+    {
+        ERPCore2.Models.Enums.JournalEntryStatus.Draft     => L["JournalEntryStatus.Draft"].ToString(),
+        ERPCore2.Models.Enums.JournalEntryStatus.Posted    => L["JournalEntryStatus.Posted"].ToString(),
+        ERPCore2.Models.Enums.JournalEntryStatus.Reversed  => L["JournalEntryStatus.Reversed"].ToString(),
+        ERPCore2.Models.Enums.JournalEntryStatus.Cancelled => L["JournalEntryStatus.Cancelled"].ToString(),
+        _ => status.ToString()
+    };
 
     private void UpdateFieldsReadOnlyState()
     {
@@ -1321,6 +1362,12 @@
                     Title = "",
                     Content = CreateReturnDetailManagerContent(),
                     Order = 1
+                },
+                new GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule
+                {
+                    Title = "",
+                    Content = CreateJournalEntriesContent(),
+                    Order = 2
                 }
             };
         }
@@ -1374,6 +1421,12 @@
                 // 開啟沖款單
                 selectedSetoffDocumentId = args.id;
                 showSetoffDocumentModal = true;
+                StateHasChanged();
+            }
+            else if (args.type == RelatedDocumentType.JournalEntry)
+            {
+                selectedJournalEntryId = args.id;
+                showJournalEntryModal = true;
                 StateHasChanged();
             }
             else
@@ -1431,6 +1484,21 @@
             <GenericButtonComponent Text="@L["Button.ConvertToSetoff"]"
                                   Variant="ButtonVariant.Green"
                                   OnClick="HandleCreateSetoffFromSalesReturn" />
+        }
+    };
+
+    private RenderFragment<RelatedDocumentInfo>? GetJournalEntryTemplate() =>
+        doc => @<JournalEntryDetailsTemplate Document="@doc" />;
+
+    private RenderFragment CreateJournalEntriesContent() => __builder =>
+    {
+        if (_relatedJournalEntries.Any())
+        {
+            <RelatedDocumentSectionComponent
+                Documents="@_relatedJournalEntries"
+                Config="@DocumentSectionConfig.GetConfig(RelatedDocumentType.JournalEntry)"
+                OnDocumentClick="@(doc => HandleOpenRelatedDocument((RelatedDocumentType.JournalEntry, doc.DocumentId)))"
+                DetailsTemplate="@GetJournalEntryTemplate()" />
         }
     };
 

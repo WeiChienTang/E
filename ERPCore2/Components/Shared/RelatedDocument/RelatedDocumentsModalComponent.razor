@@ -6,7 +6,7 @@
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
-                   Title="@($"相關單據 - {ProductName}")"
+                   Title="@(string.Format(L["RelatedDoc.Title"].ToString(), ProductName))"
                    Icon="bi bi-link-45deg"
                    Size="BaseModalComponent.ModalSize.Large"
                    HeaderColor="BaseModalComponent.HeaderVariant.Primary"
@@ -102,6 +102,7 @@
                     RelatedDocumentType.SetoffDocument         => "SetoffDetailsTemplate",
                     RelatedDocumentType.SupplierRecommendation => "SupplierRecommendationDetailsTemplate",
                     RelatedDocumentType.InventoryTransaction   => "InventoryTransactionDetailsTemplate",
+                    RelatedDocumentType.JournalEntry           => "JournalEntryDetailsTemplate",
                     _                                          => t.ToString()
                 });
 
@@ -157,9 +158,12 @@
             RelatedDocumentType.SupplierRecommendation => doc => 
                 @<SupplierRecommendationDetailsTemplate Document="@doc" />,
             
-            RelatedDocumentType.InventoryTransaction => doc => 
+            RelatedDocumentType.InventoryTransaction => doc =>
                 @<InventoryTransactionDetailsTemplate Document="@doc" />,
-            
+
+            RelatedDocumentType.JournalEntry => doc =>
+                @<JournalEntryDetailsTemplate Document="@doc" />,
+
             _ => null // 使用預設範本
         };
     }

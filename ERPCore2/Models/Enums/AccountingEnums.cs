@@ -4,6 +4,25 @@ using System.ComponentModel.DataAnnotations;
 namespace ERPCore2.Models.Enums
 {
     /// <summary>
+    /// 領料用途分類（決定借方科目）
+    /// </summary>
+    public enum MaterialIssueType
+    {
+        [Description("生產用料")]
+        [Display(Name = "生產用料")]
+        Production = 1,
+
+        [Description("一般消耗")]
+        [Display(Name = "一般消耗")]
+        GeneralConsumption = 2,
+
+        [Description("樣品")]
+        [Display(Name = "樣品")]
+        Sample = 3
+    }
+
+
+    /// <summary>
     /// 會計科目大類
     /// </summary>
     public enum AccountType
@@ -101,6 +120,24 @@ namespace ERPCore2.Models.Enums
         Customer = 1,
         Supplier = 2,
         Product = 3
+    }
+
+    /// <summary>
+    /// 會計期間狀態
+    /// </summary>
+    public enum FiscalPeriodStatus
+    {
+        [Description("開放中")]
+        [Display(Name = "開放中")]
+        Open = 1,
+
+        [Description("已關帳")]
+        [Display(Name = "已關帳")]
+        Closed = 2,
+
+        [Description("已鎖定")]
+        [Display(Name = "已鎖定")]
+        Locked = 3
     }
 
     /// <summary>

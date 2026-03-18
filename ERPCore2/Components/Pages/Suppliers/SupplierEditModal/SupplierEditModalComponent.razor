@@ -114,6 +114,7 @@
     private SupplierVisitTab? visitTab;
     private SupplierTransactionTab? transactionTab;
     private BusinessCardTab? businessCardTab;
+    private DocumentsTab? documentsTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -150,6 +151,11 @@
     private RenderFragment CreateBankAccountTabContent() => __builder =>
     {
         <SupplierBankAccountTab @ref="bankAccountTab" SupplierId="@SupplierId" />
+    };
+
+    private RenderFragment CreateDocumentsTabContent() => __builder =>
+    {
+        <DocumentsTab @ref="documentsTab" RelatedEntityType="Supplier" EntityId="@SupplierId" />
     };
 
     // ===== 生命週期 =====
@@ -204,6 +210,7 @@
                 if (visitTab != null)           await visitTab.LoadAsync(loadedEntityId);
                 if (transactionTab != null)     await transactionTab.LoadAsync(loadedEntityId);
                 if (businessCardTab != null)    await businessCardTab.LoadAsync(loadedEntityId);
+                if (documentsTab != null)       await documentsTab.LoadAsync(loadedEntityId);
             }
             else
             {
@@ -214,6 +221,7 @@
                 visitTab?.Clear();
                 transactionTab?.Clear();
                 businessCardTab?.Clear();
+                documentsTab?.Clear();
             }
             StateHasChanged();
         }
@@ -653,6 +661,7 @@
                 .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), nameof(SupplierVisitTab))
                 .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), nameof(SupplierTransactionTab))
                 .GroupIntoCustomTab(L["Tab.BusinessCards"].ToString(), "bi-person-vcard", CreateBusinessCardTabContent(), nameof(BusinessCardTab))
+                .GroupIntoCustomTab(L["Tab.Documents"].ToString(), "bi-file-earmark-text", CreateDocumentsTabContent(), nameof(DocumentsTab))
                 .BuildAll();
 
             formSections = layout.FieldSections;

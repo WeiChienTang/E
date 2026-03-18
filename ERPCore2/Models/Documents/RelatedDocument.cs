@@ -70,6 +70,7 @@ namespace ERPCore2.Models.Documents
             RelatedDocumentType.SupplierRecommendation => "bi-shop",
             RelatedDocumentType.InventoryTransaction => "bi-arrow-left-right",
             RelatedDocumentType.Quotation => "bi-file-earmark-text",
+            RelatedDocumentType.JournalEntry => "bi-journal-text",
             _ => "bi-file-text"
         };
 
@@ -88,6 +89,7 @@ namespace ERPCore2.Models.Documents
             RelatedDocumentType.SupplierRecommendation => "success",
             RelatedDocumentType.InventoryTransaction => "secondary",
             RelatedDocumentType.Quotation => "warning",
+            RelatedDocumentType.JournalEntry => "dark",
             _ => "secondary"
         };
 
@@ -106,6 +108,7 @@ namespace ERPCore2.Models.Documents
             RelatedDocumentType.SupplierRecommendation => "供應商推薦",
             RelatedDocumentType.InventoryTransaction => "庫存異動",
             RelatedDocumentType.Quotation => "報價單",
+            RelatedDocumentType.JournalEntry => "傳票",
             _ => "未知單據"
         };
     }

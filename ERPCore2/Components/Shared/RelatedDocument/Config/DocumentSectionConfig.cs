@@ -143,6 +143,15 @@ public class DocumentSectionConfig
                 ShowAddButton = false
             },
 
+            RelatedDocumentType.JournalEntry => new()
+            {
+                Title = "會計傳票",
+                Icon = "journal-text",
+                TextColor = "dark",
+                BadgeColor = "dark",
+                ShowAddButton = false
+            },
+
             _ => throw new ArgumentException($"未知的單據類型: {type}")
         };
     }

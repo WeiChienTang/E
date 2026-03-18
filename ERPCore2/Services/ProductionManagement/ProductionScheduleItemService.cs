@@ -31,6 +31,64 @@ namespace ERPCore2.Services
             _inventoryStockService = inventoryStockService;
         }
 
+        /// <summary>
+        /// 檢查製令單號是否已存在（供 EntityCodeGenerationHelper 使用）
+        /// </summary>
+        public async Task<bool> IsProductionScheduleItemCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.ProductionScheduleItems.Where(psi => psi.Code == code);
+                if (excludeId.HasValue)
+                    query = query.Where(psi => psi.Id != excludeId.Value);
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductionScheduleItemCodeExistsAsync), GetType(), _logger, new { code });
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 分頁查詢（含篩選）- 供製令單 Index 頁面使用
+        /// </summary>
+        public async Task<(List<ProductionScheduleItem> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ProductionScheduleItem>, IQueryable<ProductionScheduleItem>>? filterFunc,
+            int pageNumber,
+            int pageSize)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                IQueryable<ProductionScheduleItem> query = context.ProductionScheduleItems
+                    .Include(psi => psi.ProductionSchedule)
+                    .Include(psi => psi.Product)
+                    .Include(psi => psi.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
+                    .Include(psi => psi.Warehouse)
+                    .Include(psi => psi.ResponsibleEmployee);
+
+                if (filterFunc != null)
+                    query = filterFunc(query);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderByDescending(psi => psi.CreatedAt)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
+                return (new List<ProductionScheduleItem>(), 0);
+            }
+        }
+
         // 覆寫 GetAllAsync 以包含相關資料
         protected override IQueryable<ProductionScheduleItem> BuildGetAllQuery(AppDbContext context)
         {
@@ -40,6 +98,7 @@ namespace ERPCore2.Services
                 .Include(psi => psi.SalesOrderDetail)
                     .ThenInclude(sod => sod!.SalesOrder)
                 .Include(psi => psi.Warehouse)
+                .Include(psi => psi.ResponsibleEmployee)
                 .OrderByDescending(psi => psi.ProductionSchedule.ScheduleDate)
                 .ThenBy(psi => psi.Priority);
         }
@@ -58,6 +117,7 @@ namespace ERPCore2.Services
                         .ThenInclude(sod => sod!.SalesOrder)
                     .Include(psi => psi.Warehouse)
                     .Include(psi => psi.WarehouseLocation)
+                    .Include(psi => psi.ResponsibleEmployee)
                     .FirstOrDefaultAsync(psi => psi.Id == id);
             }
             catch (Exception ex)
