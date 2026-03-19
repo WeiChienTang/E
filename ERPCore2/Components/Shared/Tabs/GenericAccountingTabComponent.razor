@@ -20,6 +20,21 @@ else if (_isLoading)
 }
 else
 {
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        <div class="d-flex gap-2">
+            @if (_rows.Any(r => r.Item == null))
+            {
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                       Size="ButtonSize.Small"
+                                       Text="@L["Accounting.CreateSubAccount"].ToString()"
+                                       OnClick="HandleCreateAsync"
+                                       IsLoading="@_isCreating"
+                                       IsDisabled="@_isCreating"
+                                       Title="@L["Accounting.CreateSubAccountTitle"].ToString()" />
+            }
+        </div>
+    </div>
+
     <div class="table-responsive">
         <table class="table table-sm table-hover mb-3">
             <thead class="accounting-thead">
@@ -52,16 +67,6 @@ else
             </tbody>
         </table>
     </div>
-
-    @if (_rows.Any(r => r.Item == null))
-    {
-        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                               Text="@L["Accounting.CreateSubAccount"].ToString()"
-                               OnClick="HandleCreateAsync"
-                               IsLoading="@_isCreating"
-                               IsDisabled="@_isCreating"
-                               Title="@L["Accounting.CreateSubAccountTitle"].ToString()" />
-    }
 }
 
 @code {

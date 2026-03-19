@@ -21,6 +21,17 @@
                 設定完成後點選<strong>套用</strong>，之後點選「讀取」按鈕時將自動使用此設定連線。
             </div>
 
+            @* LT-100 端設定提醒 *@
+            <div class="alert alert-warning py-2 mb-3">
+                <i class="bi-exclamation-triangle-fill me-2"></i>
+                <strong>LT-100 磅秤端設定提醒：</strong>
+                <ul class="mb-0 mt-1 small">
+                    <li><strong>SF4 Output Port</strong>：請設為「連續傳送」或「穩定後連續傳送」，否則程式無法接收數據。</li>
+                    <li><strong>SF5 傳送格式</strong>：支援所有格式（Format 1～4），建議維持預設 Format 1。</li>
+                    <li><strong>SF6 資料格式</strong>：支援所有正負號/前導零組合，建議維持預設「有+-、有0000」。</li>
+                </ul>
+            </div>
+
             @* 串列埠選擇 *@
             <div class="mb-3">
                 <label class="form-label fw-semibold">串列埠 (COM Port)</label>

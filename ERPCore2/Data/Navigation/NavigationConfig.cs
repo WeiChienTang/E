@@ -438,6 +438,20 @@ public static class NavigationConfig
                         searchKeywords: new List<string> { "品項報表", "品項報表集", "product report", "產品報表", "品项报表", "産品レポート" },
                         nameKey: "Nav.ProductReportIndex"
                     ),
+                    new NavigationItem
+                    {
+                        Name = "品項圖表",
+                        NameKey = "Nav.ProductCharts",
+                        Description = "依多維度查看品項銷售與成本統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenProductCharts",
+                        Category = "品項管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.Product.ChartRead,
+                        SearchKeywords = new List<string> { "品項圖表", "品項分析", "統計分析", "product chart", "item analytics", "品项图表", "品目分析" },
+                        IsChartWidget = true
+                    },
                 }
             },
 

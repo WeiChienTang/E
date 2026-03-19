@@ -437,6 +437,9 @@
   <data name="Nav.InventoryCharts" xml:space="preserve">
     <value>Tsart ng Imbentaryo</value>
   </data>
+  <data name="Nav.ProductCharts" xml:space="preserve">
+    <value>Tsart ng Produkto</value>
+  </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>Ulat ng Pagbisita</value>
   </data>
@@ -2228,6 +2231,8 @@
   <data name="Sales.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Benta</value></data>
   <!-- ===== Inventory Module ===== -->
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Imbentaryo</value></data>
+  <!-- ===== Product Module ===== -->
+  <data name="Product.ChartTitle" xml:space="preserve"><value>Mga Tsart ng Pagsusuri ng Produkto</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>Walang kaugnay na mga transaksyon</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>Wala pang mga rekord ng pagbisita</value></data>
   <data name="Customer.NoComplaints" xml:space="preserve"><value>Wala pang mga rekord ng reklamo</value></data>
@@ -3456,4 +3461,22 @@
   <data name="Payroll.CalculateFailed" xml:space="preserve"><value>Nabigo ang pagkalkula</value></data>
   <data name="Payroll.ConfirmFailed" xml:space="preserve"><value>Nabigo ang kumpirmasyon</value></data>
   <data name="Payroll.UnconfirmFailed" xml:space="preserve"><value>Nabigo ang pag-alis ng kumpirmasyon</value></data>
+  <data name="Nav.ManufacturingOrders" xml:space="preserve"><value>Mga Manufacturing Order</value></data>
+  <data name="Page.ManufacturingOrderTitle" xml:space="preserve"><value>Mga Manufacturing Order</value></data>
+  <data name="Page.ManufacturingOrderSubtitle" xml:space="preserve"><value>Tingnan at i-print ang mga manufacturing order</value></data>
+  <data name="Entity.ManufacturingOrder" xml:space="preserve"><value>Manufacturing Order</value></data>
+  <data name="Field.ManufacturingOrderCode" xml:space="preserve"><value>MO No.</value></data>
+  <data name="Field.PlannedStartDate" xml:space="preserve"><value>Naplanong Simula</value></data>
+  <data name="Field.PlannedEndDate" xml:space="preserve"><value>Naplanong Tapusin</value></data>
+  <data name="Field.ScheduledQuantity" xml:space="preserve"><value>Naplanong Dami</value></data>
+  <data name="Field.CompletedQuantity" xml:space="preserve"><value>Nakumpletong Dami</value></data>
+  <data name="Field.ProductionStatus" xml:space="preserve"><value>Katayuan ng Produksyon</value></data>
+  <data name="Report.ManufacturingOrder" xml:space="preserve"><value>Manufacturing Order</value></data>
+  <data name="Report.ManufacturingOrderDesc" xml:space="preserve"><value>I-print ang mga manufacturing order kasama ang mga detalye ng materyales at rekord ng pagkumpleto</value></data>
+  <data name="Production.Pending" xml:space="preserve"><value>Naghihintay</value></data>
+  <data name="Production.WaitingMaterial" xml:space="preserve"><value>Naghihintay ng Materyales</value></data>
+  <data name="Production.InProgress" xml:space="preserve"><value>Ginagawa</value></data>
+  <data name="Production.Paused" xml:space="preserve"><value>Naka-pause</value></data>
+  <data name="Production.Completed" xml:space="preserve"><value>Nakumpleto</value></data>
+  <data name="Production.Aborted" xml:space="preserve"><value>Na-abort</value></data>
 </root>

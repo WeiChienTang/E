@@ -1,0 +1,233 @@
+@* 製令單檢視/編輯組件 - 供製令單 Index 頁面使用 *@
+@using ERPCore2.Helpers
+@using ERPCore2.Models.Reports
+@using ERPCore2.Services.Reports.Interfaces
+@inject IProductionScheduleItemService ProductionScheduleItemService
+@inject IEmployeeService EmployeeService
+@inject IWarehouseService WarehouseService
+@inject INotificationService NotificationService
+@inject IManufacturingOrderReportService ManufacturingOrderReportService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="ProductionScheduleItem"
+                          TService="IProductionScheduleItemService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@ManufacturingOrderId"
+                          Service="@ProductionScheduleItemService"
+                          EntityName="@L["Entity.ManufacturingOrder"]"
+                          EntityNamePlural="@L["Entity.ManufacturingOrder"]"
+                          ModalTitle="@L["Entity.ManufacturingOrder"]"
+                          Size="GenericEditModalComponent<ProductionScheduleItem, IProductionScheduleItemService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadManufacturingOrderData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@L["Message.UpdateSuccess", L["Entity.ManufacturingOrder"]]"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ManufacturingOrder"]]"
+                          RequiredPermission="@PermissionRegistry.ProductionSchedule.Read"
+                          OnEntitySaved="@OnManufacturingOrderSaved"
+                          OnCancel="@OnCancel"
+                          ShowPrintButton="true"
+                          PrintButtonText="@L["Button.Print"]"
+                          ReportService="@ManufacturingOrderReportService"
+                          ReportId="@ReportIds.ManufacturingOrder"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.ManufacturingOrder"]]"
+                          GetReportDocumentName="@(e => $"{L["Entity.ManufacturingOrder"]}-{e.Code}")"
+                          ComponentName="ManufacturingOrderEditModalComponent">
+</GenericEditModalComponent>
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? ManufacturingOrderId { get; set; }
+    [Parameter] public EventCallback<ProductionScheduleItem> OnManufacturingOrderSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<ProductionScheduleItem, IProductionScheduleItemService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    private List<SelectOption> employeeOptions = new();
+    private List<SelectOption> warehouseOptions = new();
+    private bool isDataLoaded = false;
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            var employeesTask = EmployeeService.GetAllAsync();
+            var warehousesTask = WarehouseService.GetAllAsync();
+            await Task.WhenAll(employeesTask, warehousesTask);
+
+            var employees = (await employeesTask).Where(e => !e.IsSuperAdmin).ToList();
+            var warehouses = await warehousesTask;
+
+            employeeOptions = employees.Select(e => new SelectOption
+            {
+                Text = string.IsNullOrWhiteSpace(e.Code) ? (e.Name ?? "") : $"{e.Code} - {e.Name}",
+                Value = e.Id.ToString()
+            }).ToList();
+
+            warehouseOptions = warehouses.Select(w => new SelectOption
+            {
+                Text = w.Name ?? "",
+                Value = w.Id.ToString()
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(),
+                additionalData: "載入製令單相關資料失敗");
+            employeeOptions = new List<SelectOption>();
+            warehouseOptions = new List<SelectOption>();
+        }
+    }
+
+    private async Task<ProductionScheduleItem?> LoadManufacturingOrderData()
+    {
+        try
+        {
+            if (!ManufacturingOrderId.HasValue)
+                return null;
+
+            return await ProductionScheduleItemService.GetWithDetailsAsync(ManufacturingOrderId.Value);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadManufacturingOrderData), GetType(),
+                additionalData: $"載入製令單資料失敗 - ID: {ManufacturingOrderId}");
+            await NotificationService.ShowErrorAsync(L["Message.LoadFailed", L["Entity.ManufacturingOrder"]]);
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(ProductionScheduleItem.Code),
+                    Label = L["Field.ManufacturingOrderCode"],
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(ProductionScheduleItem.ProductionItemStatus),
+                    Label = L["Field.ProductionStatus"],
+                    FieldType = FormFieldType.Select,
+                    IsReadOnly = true,
+                    Options = Enum.GetValues<ProductionItemStatus>().Select(s => new SelectOption
+                    {
+                        Text = s switch
+                        {
+                            ProductionItemStatus.Pending => L["Production.Pending"].ToString() ?? "待生產",
+                            ProductionItemStatus.WaitingMaterial => L["Production.WaitingMaterial"].ToString() ?? "等待領料",
+                            ProductionItemStatus.InProgress => L["Production.InProgress"].ToString() ?? "生產中",
+                            ProductionItemStatus.Paused => L["Production.Paused"].ToString() ?? "已暫停",
+                            ProductionItemStatus.Completed => L["Production.Completed"].ToString() ?? "已完成",
+                            ProductionItemStatus.Aborted => L["Production.Aborted"].ToString() ?? "已終止",
+                            _ => s.ToString()
+                        },
+                        Value = ((int)s).ToString()
+                    }).ToList()
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(ProductionScheduleItem.ScheduledQuantity),
+                    Label = L["Field.ScheduledQuantity"],
+                    FieldType = FormFieldType.Number,
+                    IsReadOnly = true
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(ProductionScheduleItem.CompletedQuantity),
+                    Label = L["Field.CompletedQuantity"],
+                    FieldType = FormFieldType.Number,
+                    IsReadOnly = true
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(ProductionScheduleItem.PlannedStartDate),
+                    Label = L["Field.PlannedStartDate"],
+                    FieldType = FormFieldType.Date,
+                    IsReadOnly = false
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(ProductionScheduleItem.PlannedEndDate),
+                    Label = L["Field.PlannedEndDate"],
+                    FieldType = FormFieldType.Date,
+                    IsReadOnly = false
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(ProductionScheduleItem.ResponsibleEmployeeId),
+                    Label = L["Field.ResponsibleEmployee"],
+                    FieldType = FormFieldType.Select,
+                    IsReadOnly = false,
+                    Options = employeeOptions,
+                    Placeholder = L["Placeholder.PleaseSelect", L["Field.ResponsibleEmployee"]]
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(ProductionScheduleItem.WarehouseId),
+                    Label = L["Schedule.TargetWarehouse"],
+                    FieldType = FormFieldType.Select,
+                    IsReadOnly = false,
+                    Options = warehouseOptions,
+                    Placeholder = L["Placeholder.PleaseSelect", L["Schedule.TargetWarehouse"]]
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<ProductionScheduleItem>()
+            };
+
+            var layout = FormSectionHelper<ProductionScheduleItem>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    i => i.Code,
+                    i => i.ProductionItemStatus,
+                    i => i.ScheduledQuantity,
+                    i => i.CompletedQuantity,
+                    i => i.PlannedStartDate,
+                    i => i.PlannedEndDate,
+                    i => i.ResponsibleEmployeeId,
+                    i => i.WarehouseId)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    i => i.Remarks)
+                .BuildAll();
+
+            formSections = layout.FieldSections;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFieldsAsync), GetType(),
+                additionalData: "初始化製令單表單欄位失敗");
+            formFields = new List<FormFieldDefinition>();
+            formSections = new Dictionary<string, string>();
+        }
+    }
+}

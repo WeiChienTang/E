@@ -200,7 +200,7 @@ namespace ERPCore2.Services.Reports
                 .SetDocumentName($"製令單-{item.Code ?? item.Id.ToString()}")
                 .SetMargins(0.8f, 0.3f, 0.8f, 0.3f);
 
-            // === 頁首 ===
+            // === 頁首（每頁重複）===
             doc.BeginHeader(header =>
             {
                 header.AddReportHeaderBlock(
@@ -217,9 +217,8 @@ namespace ERPCore2.Services.Reports
                     },
                     rightFontSize: 10f);
 
-                header.AddSpacing(4);
+                header.AddSpacing(3);
 
-                // 基本資訊列
                 header.AddKeyValueRow(
                     ("品項名稱", item.Product?.Name ?? "-"),
                     ("品項編號", item.Product?.Code ?? "-"),
@@ -228,7 +227,7 @@ namespace ERPCore2.Services.Reports
                 header.AddKeyValueRow(
                     ("計劃數量", item.ScheduledQuantity.ToString("N0")),
                     ("完成數量", item.CompletedQuantity.ToString("N0")),
-                    ("未完成", item.PendingQuantity.ToString("N0")));
+                    ("未完成數量", item.PendingQuantity.ToString("N0")));
 
                 header.AddKeyValueRow(
                     ("預計開始", item.PlannedStartDate?.ToString("yyyy/MM/dd") ?? "-"),
@@ -242,19 +241,12 @@ namespace ERPCore2.Services.Reports
 
                 var salesOrderCode = item.SalesOrderDetail?.SalesOrder?.Code;
                 if (!string.IsNullOrEmpty(salesOrderCode))
-                {
                     header.AddKeyValueRow(("來源銷售單", salesOrderCode));
-                }
 
-                if (!string.IsNullOrEmpty(item.Remarks))
-                {
-                    header.AddKeyValueRow(("備註", item.Remarks));
-                }
-
-                header.AddSpacing(4);
+                header.AddSpacing(3);
             });
 
-            // === 用料明細表 ===
+            // === 用料清單 ===
             var details = item.ScheduleDetails?.ToList() ?? new List<ProductionScheduleDetail>();
             if (details.Any())
             {
@@ -262,7 +254,8 @@ namespace ERPCore2.Services.Reports
                 doc.AddTable(table =>
                 {
                     table.AddColumn("項次", 0.4f, Models.Reports.TextAlignment.Center)
-                         .AddColumn("原料品項", 2.5f, Models.Reports.TextAlignment.Left)
+                         .AddColumn("原料品項名稱", 2.8f, Models.Reports.TextAlignment.Left)
+                         .AddColumn("品項編號", 1.2f, Models.Reports.TextAlignment.Left)
                          .AddColumn("需求數量", 0.8f, Models.Reports.TextAlignment.Right)
                          .AddColumn("已領數量", 0.8f, Models.Reports.TextAlignment.Right)
                          .AddColumn("待領數量", 0.8f, Models.Reports.TextAlignment.Right)
@@ -277,6 +270,7 @@ namespace ERPCore2.Services.Reports
                         table.AddRow(
                             rowNum.ToString(),
                             detail.ComponentProduct?.Name ?? $"品項#{detail.ComponentProductId}",
+                            detail.ComponentProduct?.Code ?? "-",
                             detail.RequiredQuantity.ToString("N2"),
                             detail.IssuedQuantity.ToString("N2"),
                             detail.PendingIssueQuantity.ToString("N2"),
@@ -298,7 +292,7 @@ namespace ERPCore2.Services.Reports
                          .AddColumn("完工數量", 0.8f, Models.Reports.TextAlignment.Right)
                          .AddColumn("批號", 1.2f, Models.Reports.TextAlignment.Left)
                          .AddColumn("有效日期", 1.0f, Models.Reports.TextAlignment.Center)
-                         .AddColumn("品質檢驗", 1.5f, Models.Reports.TextAlignment.Left)
+                         .AddColumn("品質檢驗結果", 2.0f, Models.Reports.TextAlignment.Left)
                          .AddColumn("入庫倉庫", 1.2f, Models.Reports.TextAlignment.Left)
                          .ShowBorder(true)
                          .ShowHeaderBackground(true)
@@ -317,19 +311,24 @@ namespace ERPCore2.Services.Reports
                 });
             }
 
-            // === 頁尾簽核區 ===
-            doc.AddSpacing(8);
-            doc.AddTable(table =>
+            // === 頁尾（最後一頁：備註 + 簽核區）===
+            doc.BeginFooter(footer =>
             {
-                table.AddColumn("製令人員", 2.0f, Models.Reports.TextAlignment.Center)
-                     .AddColumn("生產負責人", 2.0f, Models.Reports.TextAlignment.Center)
-                     .AddColumn("品管確認", 2.0f, Models.Reports.TextAlignment.Center)
-                     .AddColumn("主管核准", 2.0f, Models.Reports.TextAlignment.Center)
-                     .ShowBorder(true)
-                     .ShowHeaderBackground(false)
-                     .SetRowHeight(35);
+                var remarkLines = new List<string>
+                {
+                    $"備　註：{item.Remarks ?? ""}"
+                };
 
-                table.AddRow("", "", "", "");
+                footer.AddSpacing(5)
+                      .AddTwoColumnSection(
+                          leftContent: remarkLines,
+                          leftTitle: null,
+                          leftHasBorder: false,
+                          rightContent: new List<string>(),
+                          leftWidthRatio: 1.0f);
+
+                footer.AddSpacing(16)
+                      .AddSignatureSection("製令人員", "生產負責人", "品管確認", "主管核准");
             });
 
             return doc;

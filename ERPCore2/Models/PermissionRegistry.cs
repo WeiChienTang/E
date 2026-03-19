@@ -120,7 +120,8 @@ public static class PermissionRegistry
 
     public static class Product
     {
-        public const string Read = "Product.Read";
+        public const string Read      = "Product.Read";
+        public const string ChartRead = "ProductChart.Read";
     }
 
     public static class ProductCategory
@@ -430,6 +431,7 @@ public static class PermissionRegistry
 
         // ===== 一般權限：品項 =====
         new(Product.Read,               "檢視品項",         PermissionLevel.Normal, "檢視品項基本資料與規格",         "Nav.ProductGroup"),
+        new(Product.ChartRead,          "檢視品項圖表",     PermissionLevel.Normal, "檢視品項統計分析圖表（主管層級）", "Nav.ProductGroup"),
         new(ProductCategory.Read,       "檢視品項分類",     PermissionLevel.Normal, "檢視品項分類階層與設定",         "Nav.ProductGroup"),
         new(ProductComposition.Read,    "檢視品項合成",     PermissionLevel.Normal, "檢視品項合成（BOM）結構與明細", "Nav.ProductGroup"),
         new(CompositionCategory.Read,   "檢視物料清單類型", PermissionLevel.Normal, "檢視品項物料清單的類型分類",     "Nav.ProductGroup"),

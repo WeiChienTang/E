@@ -437,6 +437,9 @@
   <data name="Nav.InventoryCharts" xml:space="preserve">
     <value>库存图表</value>
   </data>
+  <data name="Nav.ProductCharts" xml:space="preserve">
+    <value>品项图表</value>
+  </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>拜访报告</value>
   </data>
@@ -2232,6 +2235,8 @@
   <data name="Sales.ChartTitle" xml:space="preserve"><value>销货分析图表</value></data>
   <!-- ===== Inventory 库存模块 ===== -->
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>库存分析图表</value></data>
+  <!-- ===== Product 品项模块 ===== -->
+  <data name="Product.ChartTitle" xml:space="preserve"><value>品项分析图表</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>没有相关交易记录</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>暂无拜访记录</value></data>
   <data name="Customer.NoComplaints" xml:space="preserve"><value>暂无投诉记录</value></data>
@@ -3469,4 +3474,22 @@
   <data name="Payroll.CalculateFailed" xml:space="preserve"><value>试算失败</value></data>
   <data name="Payroll.ConfirmFailed" xml:space="preserve"><value>确认失败</value></data>
   <data name="Payroll.UnconfirmFailed" xml:space="preserve"><value>取消确认失败</value></data>
+  <data name="Nav.ManufacturingOrders" xml:space="preserve"><value>制令单管理</value></data>
+  <data name="Page.ManufacturingOrderTitle" xml:space="preserve"><value>制令单管理</value></data>
+  <data name="Page.ManufacturingOrderSubtitle" xml:space="preserve"><value>查询与打印制令单</value></data>
+  <data name="Entity.ManufacturingOrder" xml:space="preserve"><value>制令单</value></data>
+  <data name="Field.ManufacturingOrderCode" xml:space="preserve"><value>制令单号</value></data>
+  <data name="Field.PlannedStartDate" xml:space="preserve"><value>预计开始</value></data>
+  <data name="Field.PlannedEndDate" xml:space="preserve"><value>预计完成</value></data>
+  <data name="Field.ScheduledQuantity" xml:space="preserve"><value>计划数量</value></data>
+  <data name="Field.CompletedQuantity" xml:space="preserve"><value>完成数量</value></data>
+  <data name="Field.ProductionStatus" xml:space="preserve"><value>生产状态</value></data>
+  <data name="Report.ManufacturingOrder" xml:space="preserve"><value>制令单</value></data>
+  <data name="Report.ManufacturingOrderDesc" xml:space="preserve"><value>打印制令单，含用料明细与完工入库记录</value></data>
+  <data name="Production.Pending" xml:space="preserve"><value>待生产</value></data>
+  <data name="Production.WaitingMaterial" xml:space="preserve"><value>等待领料</value></data>
+  <data name="Production.InProgress" xml:space="preserve"><value>生产中</value></data>
+  <data name="Production.Paused" xml:space="preserve"><value>已暂停</value></data>
+  <data name="Production.Completed" xml:space="preserve"><value>已完成</value></data>
+  <data name="Production.Aborted" xml:space="preserve"><value>已终止</value></data>
 </root>

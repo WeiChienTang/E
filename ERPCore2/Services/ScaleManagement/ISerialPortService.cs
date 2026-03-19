@@ -53,7 +53,8 @@ namespace ERPCore2.Services
 
     /// <summary>
     /// 磅秤資料接收事件參數
-    /// 解析 LT-100 RS-232C 傳送格式：ST,GS,+0052050kg
+    /// 解析 LT-100 RS-232C 傳送格式（支援 Format 1～4、SF6 有無正負號/前導零組合）
+    /// 範例：ST,GS,+03000.0kg 或 ST,GS,+03000.0,kg 或 +03000.0kg 或 03000.0kg
     /// </summary>
     public class ScaleDataReceivedEventArgs : EventArgs
     {

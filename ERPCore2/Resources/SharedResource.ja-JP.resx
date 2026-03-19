@@ -437,6 +437,9 @@
   <data name="Nav.InventoryCharts" xml:space="preserve">
     <value>在庫グラフ</value>
   </data>
+  <data name="Nav.ProductCharts" xml:space="preserve">
+    <value>品目グラフ</value>
+  </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>訪問レポート</value>
   </data>
@@ -2228,6 +2231,8 @@
   <data name="Sales.ChartTitle" xml:space="preserve"><value>売上分析チャート</value></data>
   <!-- ===== Inventory 在庫モジュール ===== -->
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>在庫分析チャート</value></data>
+  <!-- ===== Product 品目モジュール ===== -->
+  <data name="Product.ChartTitle" xml:space="preserve"><value>品目分析チャート</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>訪問記録がありません</value></data>
   <data name="Customer.NoComplaints" xml:space="preserve"><value>クレーム記録がありません</value></data>
@@ -3456,4 +3461,22 @@
   <data name="Payroll.CalculateFailed" xml:space="preserve"><value>試算に失敗しました</value></data>
   <data name="Payroll.ConfirmFailed" xml:space="preserve"><value>確認に失敗しました</value></data>
   <data name="Payroll.UnconfirmFailed" xml:space="preserve"><value>確認取消に失敗しました</value></data>
+  <data name="Nav.ManufacturingOrders" xml:space="preserve"><value>製令単管理</value></data>
+  <data name="Page.ManufacturingOrderTitle" xml:space="preserve"><value>製令単管理</value></data>
+  <data name="Page.ManufacturingOrderSubtitle" xml:space="preserve"><value>製令単の照会と印刷</value></data>
+  <data name="Entity.ManufacturingOrder" xml:space="preserve"><value>製令単</value></data>
+  <data name="Field.ManufacturingOrderCode" xml:space="preserve"><value>製令単番号</value></data>
+  <data name="Field.PlannedStartDate" xml:space="preserve"><value>予定開始</value></data>
+  <data name="Field.PlannedEndDate" xml:space="preserve"><value>予定完了</value></data>
+  <data name="Field.ScheduledQuantity" xml:space="preserve"><value>計画数量</value></data>
+  <data name="Field.CompletedQuantity" xml:space="preserve"><value>完成数量</value></data>
+  <data name="Field.ProductionStatus" xml:space="preserve"><value>生産状態</value></data>
+  <data name="Report.ManufacturingOrder" xml:space="preserve"><value>製令単</value></data>
+  <data name="Report.ManufacturingOrderDesc" xml:space="preserve"><value>材料明細と完成入庫記録を含む製令単を印刷</value></data>
+  <data name="Production.Pending" xml:space="preserve"><value>生産待ち</value></data>
+  <data name="Production.WaitingMaterial" xml:space="preserve"><value>材料待ち</value></data>
+  <data name="Production.InProgress" xml:space="preserve"><value>生産中</value></data>
+  <data name="Production.Paused" xml:space="preserve"><value>一時停止</value></data>
+  <data name="Production.Completed" xml:space="preserve"><value>完了</value></data>
+  <data name="Production.Aborted" xml:space="preserve"><value>中止</value></data>
 </root>

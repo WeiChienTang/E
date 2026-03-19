@@ -4,22 +4,27 @@
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
-<div class="d-flex align-items-center justify-content-between mb-2">
+<div class="d-flex align-items-center justify-content-between mb-2 px-1">
+    <div class="d-flex gap-2">
+        <GenericButtonComponent IconClass="bi bi-people"
+                                Variant="ButtonVariant.DarkBlue"
+                                Size="ButtonSize.Small"
+                                Text="@L["Attendance.BatchInit"]"
+                                OnClick="@BatchInitializeAsync"
+                                IsDisabled="@(isInitializing || Year == 0)"
+                                IsLoading="@isInitializing" />
+        <GenericButtonComponent IconClass="bi bi-save"
+                                Variant="ButtonVariant.DarkBlue"
+                                Size="ButtonSize.Small"
+                                Text="@L["Button.SaveAll"]"
+                                OnClick="@SaveAllDirtyAsync"
+                                IsDisabled="@(!rows.Any(r => r.IsDirty) || isSaving)"
+                                IsLoading="@isSaving" />
+    </div>
     <span class="text-muted small">
         @Year 年 @Month @L["Label.Month"]
         — @rows.Count(r => r.Attendance != null) / @rows.Count @L["Attendance.TotalRecords"]
     </span>
-    <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary btn-sm" @onclick="BatchInitializeAsync" disabled="@(isInitializing || Year == 0)">
-            @if (isInitializing) { <span class="spinner-border spinner-border-sm me-1"></span> }
-            <i class="bi bi-people me-1"></i>@L["Attendance.BatchInit"]
-        </button>
-        <button class="btn btn-primary btn-sm" @onclick="SaveAllDirtyAsync"
-                disabled="@(!rows.Any(r => r.IsDirty) || isSaving)">
-            @if (isSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
-            <i class="bi bi-save me-1"></i>@L["Button.SaveAll"]
-        </button>
-    </div>
 </div>
 
 @if (isLoading)

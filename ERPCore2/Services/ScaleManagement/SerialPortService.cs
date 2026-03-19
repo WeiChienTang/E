@@ -8,13 +8,18 @@ namespace ERPCore2.Services
     /// RS-232C 串列埠通訊服務實作
     /// 用於連接磅秤設備（如 LT-100）讀取重量資料
     /// 
-    /// LT-100 傳送格式（Format 1）：
-    ///   ST,GS,+0052050kg CR LF
-    ///   ├─ ST/US/OL  穩定/不穩/過載
-    ///   ├─ GS/NT     總重/淨重
-    ///   ├─ +/-       正負號
-    ///   ├─ 7位數     六位重量值+小數點（無小數點時補 "0"）
-    ///   └─ kg/lb/g/t 單位
+    /// 支援 LT-100 所有傳送格式（SF5 設定）：
+    ///   Format 1: ST,GS,+03000.0kg        （預設格式，狀態+模式+正負號+數值+單位）
+    ///   Format 2: ST,GS,+03000.0,kg        （單位前有逗號）
+    ///   Format 3: +03000.0kg               （僅正負號+數值+單位，無狀態/模式前綴）
+    ///   Format 4: ST,GS,+03000.0,kg        （無小數點時補空白）
+    /// 
+    /// 同時相容 SF6 設定（有無正負號、有無前導零）：
+    ///   有 +- 有 0000（LT100 預設）/ 有 +- 無 0000 / 無 +- 有 0000 / 無 +- 無 0000
+    /// 
+    /// 穩定狀態：ST=穩定, US=不穩定, OL=過載
+    /// 重量模式：GS=總重, NT=淨重
+    /// 單位：kg/lb/g/t
     /// </summary>
     public partial class SerialPortService : ISerialPortService
     {
@@ -164,8 +169,15 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 解析 LT-100 磅秤資料格式
-        /// 範例：ST,GS,+0052050kg  或  US,GS,+0052090kg
+        /// 解析 LT-100 磅秤資料格式（支援所有 SF5/SF6 組合）
+        /// 
+        /// 支援範例：
+        ///   Format 1: ST,GS,+03000.0kg     （預設）
+        ///   Format 2: ST,GS,+03000.0,kg    （單位前有逗號）
+        ///   Format 3: +03000.0kg            （無狀態/模式前綴）
+        ///   Format 4: ST,GS,+03000.0,kg    （無小數點補空白）
+        ///   SF6 無正負號: ST,GS,03000.0kg 或 03000.0kg
+        ///   SF6 無前導零: ST,GS,+3000.0kg
         /// </summary>
         internal static ScaleDataReceivedEventArgs ParseScaleData(string rawData)
         {
@@ -176,9 +188,14 @@ namespace ERPCore2.Services
                 // 清除前後空白與不可見字元
                 var cleaned = rawData.Trim();
 
-                // 使用正則表達式解析
-                // 格式：(ST|US|OL),(GS|NT),(+|-)\d+(\.\d+)?(kg|lb|g|t)
-                var match = ScaleDataPattern().Match(cleaned);
+                // 嘗試完整格式（Format 1/2/4：含狀態+模式前綴）
+                var match = ScaleDataPatternFull().Match(cleaned);
+
+                if (!match.Success)
+                {
+                    // 嘗試簡潔格式（Format 3：僅正負號+數值+單位，無狀態/模式前綴）
+                    match = ScaleDataPatternShort().Match(cleaned);
+                }
 
                 if (!match.Success)
                 {
@@ -187,11 +204,21 @@ namespace ERPCore2.Services
                     return result;
                 }
 
-                result.StabilityStatus = match.Groups["status"].Value;
-                result.WeightMode = match.Groups["mode"].Value;
-                result.IsPositive = match.Groups["sign"].Value != "-";
+                // 狀態與模式：可能不存在（Format 3 無狀態前綴）
+                // Format 3 預設為 "US"（不穩定），因為無法從資料中判斷穩定狀態
+                // 若 SF4 設為「穩定後連續傳送」+ SF5 設為 Format 3，則每筆資料理論上皆穩定，
+                // 但程式無法確認，寧可保守處理。建議使用者維持 Format 1 預設。
+                var statusGroup = match.Groups["status"];
+                var modeGroup = match.Groups["mode"];
+                result.StabilityStatus = statusGroup.Success ? statusGroup.Value.ToUpperInvariant() : "US";
+                result.WeightMode = modeGroup.Success ? modeGroup.Value.ToUpperInvariant() : "GS";
 
-                var numStr = match.Groups["value"].Value;
+                // 正負號：可能不存在（SF6 無 +- 設定），預設為正值
+                var signGroup = match.Groups["sign"];
+                result.IsPositive = !signGroup.Success || signGroup.Value != "-";
+
+                // 重量數值：去除可能的空白（Format 4 無小數點時補空白）
+                var numStr = match.Groups["value"].Value.Trim();
                 if (decimal.TryParse(numStr, System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.InvariantCulture, out var weightValue))
                 {
@@ -204,7 +231,7 @@ namespace ERPCore2.Services
                     return result;
                 }
 
-                result.Unit = match.Groups["unit"].Value;
+                result.Unit = match.Groups["unit"].Value.ToLowerInvariant();
                 result.IsValid = true;
             }
             catch (Exception ex)
@@ -216,8 +243,22 @@ namespace ERPCore2.Services
             return result;
         }
 
-        [GeneratedRegex(@"(?<status>ST|US|OL)\s*,\s*(?<mode>GS|NT)\s*,\s*(?<sign>[+\-])(?<value>[\d.]+)\s*(?<unit>kg|lb|g|t)", RegexOptions.IgnoreCase)]
-        private static partial Regex ScaleDataPattern();
+        /// <summary>
+        /// 完整格式正則（Format 1/2/4）：含狀態 + 模式前綴
+        /// 範例：ST,GS,+03000.0kg 或 ST,GS,+03000.0,kg 或 US,NT,03000.0kg
+        /// 正負號為可選（相容 SF6 無 +- 設定）
+        /// 單位前逗號為可選（相容 Format 2/4）
+        /// </summary>
+        [GeneratedRegex(@"(?<status>ST|US|OL)\s*,\s*(?<mode>GS|NT)\s*,\s*(?<sign>[+\-])?(?<value>[\d.\s]+)\s*,?\s*(?<unit>kg|lb|g|t)", RegexOptions.IgnoreCase)]
+        private static partial Regex ScaleDataPatternFull();
+
+        /// <summary>
+        /// 簡潔格式正則（Format 3）：僅正負號 + 數值 + 單位，無狀態/模式前綴
+        /// 範例：+03000.0kg 或 03000.0kg
+        /// 正負號為可選（相容 SF6 無 +- 設定）
+        /// </summary>
+        [GeneratedRegex(@"^\s*(?<sign>[+\-])?(?<value>[\d.\s]+)\s*,?\s*(?<unit>kg|lb|g|t)\s*$", RegexOptions.IgnoreCase)]
+        private static partial Regex ScaleDataPatternShort();
 
         private static Parity ParseParity(string parity) => parity?.ToUpperInvariant() switch
         {

@@ -417,6 +417,9 @@
   <data name="Nav.InventoryCharts" xml:space="preserve">
     <value>Inventory Charts</value>
   </data>
+  <data name="Nav.ProductCharts" xml:space="preserve">
+    <value>Product Charts</value>
+  </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>Visit Report</value>
   </data>
@@ -2228,6 +2231,8 @@
   <data name="Sales.ChartTitle" xml:space="preserve"><value>Sales Analysis Charts</value></data>
   <!-- ===== Inventory Module ===== -->
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>Inventory Analysis Charts</value></data>
+  <!-- ===== Product Module ===== -->
+  <data name="Product.ChartTitle" xml:space="preserve"><value>Product Analysis Charts</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>No related transaction records</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>No visit records yet</value></data>
   <data name="Customer.NoComplaints" xml:space="preserve"><value>No complaint records yet</value></data>
@@ -3485,4 +3490,22 @@
   <data name="Payroll.CalculateFailed" xml:space="preserve"><value>Calculation failed</value></data>
   <data name="Payroll.ConfirmFailed" xml:space="preserve"><value>Confirmation failed</value></data>
   <data name="Payroll.UnconfirmFailed" xml:space="preserve"><value>Unconfirm failed</value></data>
+  <data name="Nav.ManufacturingOrders" xml:space="preserve"><value>Manufacturing Orders</value></data>
+  <data name="Page.ManufacturingOrderTitle" xml:space="preserve"><value>Manufacturing Orders</value></data>
+  <data name="Page.ManufacturingOrderSubtitle" xml:space="preserve"><value>View and print manufacturing orders</value></data>
+  <data name="Entity.ManufacturingOrder" xml:space="preserve"><value>Manufacturing Order</value></data>
+  <data name="Field.ManufacturingOrderCode" xml:space="preserve"><value>MO No.</value></data>
+  <data name="Field.PlannedStartDate" xml:space="preserve"><value>Planned Start</value></data>
+  <data name="Field.PlannedEndDate" xml:space="preserve"><value>Planned End</value></data>
+  <data name="Field.ScheduledQuantity" xml:space="preserve"><value>Planned Qty</value></data>
+  <data name="Field.CompletedQuantity" xml:space="preserve"><value>Completed Qty</value></data>
+  <data name="Field.ProductionStatus" xml:space="preserve"><value>Production Status</value></data>
+  <data name="Report.ManufacturingOrder" xml:space="preserve"><value>Manufacturing Order</value></data>
+  <data name="Report.ManufacturingOrderDesc" xml:space="preserve"><value>Print manufacturing orders with material details and completion records</value></data>
+  <data name="Production.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Production.WaitingMaterial" xml:space="preserve"><value>Waiting Material</value></data>
+  <data name="Production.InProgress" xml:space="preserve"><value>In Progress</value></data>
+  <data name="Production.Paused" xml:space="preserve"><value>Paused</value></data>
+  <data name="Production.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Production.Aborted" xml:space="preserve"><value>Aborted</value></data>
 </root>

@@ -48,4 +48,11 @@ public static class ChartIds
     public const string InventoryByWarehouse        = "IN003";
     public const string InventoryLowStock           = "IN004";
     public const string InventoryTransactionTypes   = "IN005";
+
+    public const string ProductByCategory              = "PR001";
+    public const string ProductTopSalesByQuantity      = "PR002";
+    public const string ProductTopSalesByAmount        = "PR003";
+    public const string ProductMonthlySalesTrend       = "PR004";
+    public const string ProductBySupplierCount         = "PR005";
+    public const string ProductByStandardCostRange     = "PR006";
 }

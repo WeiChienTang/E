@@ -77,19 +77,22 @@
     {
         if (!item.IsDeleted)
         {
-            if (!item.IsPending && !string.IsNullOrEmpty(item.FilePath))
-            {
-                <a href="@item.FilePath" download="@item.FileName"
-                   class="btn btn-sm btn-outline-secondary me-1"
-                   title="@L["Button.Download"]">
-                    <i class="bi bi-download"></i>
-                </a>
-            }
-            <button type="button" class="btn btn-sm btn-outline-danger"
-                    title="@L["Button.Delete"]"
-                    @onclick="() => OnRemoveFile.InvokeAsync(item)">
-                <i class="bi bi-trash"></i>
-            </button>
+            <div class="d-flex gap-1">
+                @if (!item.IsPending && !string.IsNullOrEmpty(item.FilePath))
+                {
+                    <a href="@item.FilePath" download="@item.FileName"
+                       class="btn btn-primary btn-square"
+                       title="@L["Button.Download"]">
+                        <i class="bi bi-download"></i>
+                    </a>
+                }
+                <GenericButtonComponent IconClass="bi bi-trash"
+                                       Variant="ButtonVariant.Red"
+                                       Size="ButtonSize.Large"
+                                       Title="@L["Button.Delete"]"
+                                       OnClick="@(() => OnRemoveFile.InvokeAsync(item))"
+                                       CssClass="btn-square" />
+            </div>
         }
     };
 }

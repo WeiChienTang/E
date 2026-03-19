@@ -124,6 +124,10 @@
 <InventoryChartModalComponent IsVisible="@showInventoryCharts"
                               IsVisibleChanged="@((bool visible) => showInventoryCharts = visible)" />
 
+@* 品項分析圖表 Modal *@
+<ProductChartModalComponent IsVisible="@showProductCharts"
+                            IsVisibleChanged="@((bool visible) => showProductCharts = visible)" />
+
 @* 系統參數設定 Modal *@
 <SystemParameterSettingsModal IsVisible="@showSystemParameterSettings"
                              IsVisibleChanged="@((bool visible) => showSystemParameterSettings = visible)" />
@@ -254,6 +258,9 @@
     // 庫存分析圖表 Modal 狀態
     private bool showInventoryCharts = false;
 
+    // 品項分析圖表 Modal 狀態
+    private bool showProductCharts = false;
+
     // 系統參數設定 Modal 狀態
     private bool showSystemParameterSettings = false;
 
@@ -333,6 +340,7 @@
         actionRegistry.Register("OpenPurchaseCharts", OpenPurchaseCharts);
         actionRegistry.Register("OpenSalesCharts", OpenSalesCharts);
         actionRegistry.Register("OpenInventoryCharts", OpenInventoryCharts);
+        actionRegistry.Register("OpenProductCharts", OpenProductCharts);
         actionRegistry.Register("OpenSupplierReportIndex", OpenSupplierReportIndex);        
         actionRegistry.Register("OpenProductReportIndex", OpenProductReportIndex);
         actionRegistry.Register("OpenPurchaseReportIndex", OpenPurchaseReportIndex);
@@ -769,6 +777,16 @@
     public void OpenInventoryCharts()
     {
         try { showInventoryCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 開啟品項分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenProductCharts()
+    {
+        try { showProductCharts = true; StateHasChanged(); }
         catch { }
     }
 

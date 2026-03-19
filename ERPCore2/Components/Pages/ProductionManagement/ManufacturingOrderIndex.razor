@@ -1,5 +1,4 @@
 @page "/production/manufacturing-orders"
-@using ERPCore2.Models.Reports
 @using ERPCore2.FieldConfiguration
 @inject IProductionScheduleItemService ProductionScheduleItemService
 @inject IProductService ProductService
@@ -8,35 +7,35 @@
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IManufacturingOrderReportService ManufacturingOrderReportService
 @rendermode InteractiveServer
 
 <GenericIndexPageComponent TEntity="ProductionScheduleItem"
                           TService="IProductionScheduleItemService"
                           Service="@ProductionScheduleItemService"
                           EntityBasePath="/production/manufacturing-orders"
-                          PageTitle="@L["Page.ManufacturingOrderTitle", "製令單管理"]"
-                          PageSubtitle="@L["Page.ManufacturingOrderSubtitle", "查詢與列印製令單"]"
-                          EntityName="製令單"
+                          PageTitle="@L["Page.ManufacturingOrderTitle"]"
+                          PageSubtitle="@L["Page.ManufacturingOrderSubtitle"]"
+                          EntityName="@L["Entity.ManufacturingOrder"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ServerDataLoader="@ServerLoadManufacturingOrdersAsync"
-                          GetEntityDisplayName="@(item => item.Code ?? $"製令單#{item.Id}")"
+                          GetEntityDisplayName="@(item => item.Code ?? $"{L["Entity.ManufacturingOrder"]}#{item.Id}")"
                           RequiredPermission="@PermissionRegistry.ProductionSchedule.Read"
                           RequiredModule="Production"
-                          ShowBatchPrintButton="true"
-                          OnBatchPrintClick="@HandleBatchPrintAsync"
-                          RowPrintService="@ManufacturingOrderReportService"
-                          RowPrintReportId="@ReportIds.ManufacturingOrder"
+                          ShowAddButton="false"
+                          OnRowClick="@HandleRowClick"
+                          DebugPageName="ManufacturingOrderIndex"
                           @ref="indexComponent">
 </GenericIndexPageComponent>
 
-@* 批次列印篩選 Modal *@
-<GenericReportFilterModalComponent IsVisible="@showBatchPrintModal"
-                                  IsVisibleChanged="@((bool v) => showBatchPrintModal = v)"
-                                  ReportId="@ReportIds.ManufacturingOrder"
-                                  OnPrintSuccess="@(() => showBatchPrintModal = false)" />
+@* 製令單編輯/列印 Modal *@
+<ManufacturingOrderEditModalComponent IsVisible="@showEditModal"
+                                      IsVisibleChanged="@((bool v) => showEditModal = v)"
+                                      ManufacturingOrderId="@selectedItemId"
+                                      OnManufacturingOrderSaved="@HandleItemSaved"
+                                      OnCancel="@(() => showEditModal = false)" />
+
 
 @code {
     private GenericIndexPageComponent<ProductionScheduleItem, IProductionScheduleItemService> indexComponent = default!;
@@ -45,7 +44,8 @@
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<BreadcrumbItem> breadcrumbItems = new();
 
-    private bool showBatchPrintModal = false;
+    private bool showEditModal = false;
+    private int? selectedItemId;
 
     private ManufacturingOrderFieldConfiguration fieldConfiguration = default!;
 
@@ -71,7 +71,10 @@
     }
 
     private async Task InitializeBreadcrumbsAsync() =>
-        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("生產管理", "製令單管理", "/production", NotificationService, GetType());
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
+            "生產管理",
+            L["Page.ManufacturingOrderTitle"],
+            "/production", NotificationService, GetType());
 
     private Task<(List<ProductionScheduleItem> Items, int TotalCount)> ServerLoadManufacturingOrdersAsync(
         SearchFilterModel filter, int page, int pageSize)
@@ -86,10 +89,19 @@
             page, pageSize);
     }
 
-    private Task HandleBatchPrintAsync()
+    private Task HandleRowClick(ProductionScheduleItem item)
     {
-        showBatchPrintModal = true;
+        selectedItemId = item.Id;
+        showEditModal = true;
         StateHasChanged();
         return Task.CompletedTask;
     }
+
+    private Task HandleItemSaved(ProductionScheduleItem item)
+    {
+        showEditModal = false;
+        indexComponent?.Refresh();
+        return Task.CompletedTask;
+    }
+
 }

@@ -438,6 +438,9 @@
   <data name="Nav.InventoryCharts" xml:space="preserve">
     <value>庫存圖表</value>
   </data>
+  <data name="Nav.ProductCharts" xml:space="preserve">
+    <value>品項圖表</value>
+  </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>拜訪報告</value>
   </data>
@@ -2253,6 +2256,8 @@
   <data name="Sales.ChartTitle" xml:space="preserve"><value>銷貨分析圖表</value></data>
   <!-- ===== Inventory 庫存模組 ===== -->
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>庫存分析圖表</value></data>
+  <!-- ===== Product 品項模組 ===== -->
+  <data name="Product.ChartTitle" xml:space="preserve"><value>品項分析圖表</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>沒有相關交易紀錄</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>尚無拜訪紀錄</value></data>
   <data name="Customer.NoComplaints" xml:space="preserve"><value>尚無投訴紀錄</value></data>
@@ -3549,4 +3554,22 @@
   <data name="Payroll.CalculateFailed" xml:space="preserve"><value>試算失敗</value></data>
   <data name="Payroll.ConfirmFailed" xml:space="preserve"><value>確認失敗</value></data>
   <data name="Payroll.UnconfirmFailed" xml:space="preserve"><value>取消確認失敗</value></data>
+  <data name="Nav.ManufacturingOrders" xml:space="preserve"><value>製令單管理</value></data>
+  <data name="Page.ManufacturingOrderTitle" xml:space="preserve"><value>製令單管理</value></data>
+  <data name="Page.ManufacturingOrderSubtitle" xml:space="preserve"><value>查詢與列印製令單</value></data>
+  <data name="Entity.ManufacturingOrder" xml:space="preserve"><value>製令單</value></data>
+  <data name="Field.ManufacturingOrderCode" xml:space="preserve"><value>製令單號</value></data>
+  <data name="Field.PlannedStartDate" xml:space="preserve"><value>預計開始</value></data>
+  <data name="Field.PlannedEndDate" xml:space="preserve"><value>預計完成</value></data>
+  <data name="Field.ScheduledQuantity" xml:space="preserve"><value>計劃數量</value></data>
+  <data name="Field.CompletedQuantity" xml:space="preserve"><value>完成數量</value></data>
+  <data name="Field.ProductionStatus" xml:space="preserve"><value>生產狀態</value></data>
+  <data name="Report.ManufacturingOrder" xml:space="preserve"><value>製令單</value></data>
+  <data name="Report.ManufacturingOrderDesc" xml:space="preserve"><value>列印製令單，含用料明細與完工入庫記錄</value></data>
+  <data name="Production.Pending" xml:space="preserve"><value>待生產</value></data>
+  <data name="Production.WaitingMaterial" xml:space="preserve"><value>等待領料</value></data>
+  <data name="Production.InProgress" xml:space="preserve"><value>生產中</value></data>
+  <data name="Production.Paused" xml:space="preserve"><value>已暫停</value></data>
+  <data name="Production.Completed" xml:space="preserve"><value>已完成</value></data>
+  <data name="Production.Aborted" xml:space="preserve"><value>已終止</value></data>
 </root>

@@ -80,6 +80,7 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Purchase.IPurchaseChartService, ERPCore2.Services.Purchase.PurchaseChartService>();
             services.AddScoped<ERPCore2.Services.Sales.ISalesChartService, ERPCore2.Services.Sales.SalesChartService>();
             services.AddScoped<ERPCore2.Services.Inventory.IInventoryChartService, ERPCore2.Services.Inventory.InventoryChartService>();
+            services.AddScoped<ERPCore2.Services.Products.IProductChartService, ERPCore2.Services.Products.ProductChartService>();
 
             services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 

@@ -4,6 +4,17 @@
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
+<div class="d-flex justify-content-between align-items-center mb-2 px-1">
+    <div class="d-flex gap-2">
+        <GenericButtonComponent IconClass="bi bi-plus-circle"
+                                Variant="ButtonVariant.DarkBlue"
+                                Size="ButtonSize.Small"
+                                Text="@L["Button.AddBankAccount"]"
+                                OnClick="@HandleAdd"
+                                IsDisabled="@(!CustomerId.HasValue)" />
+    </div>
+</div>
+
 @if (accounts.Count == 0)
 {
     <div class="text-center py-4 text-muted">
@@ -70,15 +81,6 @@ else
         </table>
     </div>
 }
-
-<div class="px-3 pb-3">
-    <GenericButtonComponent IconClass="bi bi-plus-circle"
-                            Variant="ButtonVariant.OutlineGreen"
-                            Size="ButtonSize.Small"
-                            Text="@L["Button.AddBankAccount"]"
-                            OnClick="@HandleAdd"
-                            IsDisabled="@(!CustomerId.HasValue)" />
-</div>
 
 @* 銀行帳號編輯 Modal *@
 <CustomerBankAccountEditModalComponent @ref="editModal"

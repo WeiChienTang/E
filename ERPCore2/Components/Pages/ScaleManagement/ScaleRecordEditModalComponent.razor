@@ -74,7 +74,7 @@
         {
             <span class="badge bg-warning text-dark ms-1 d-flex align-items-center">
                 <span class="spinner-grow spinner-grow-sm me-1"></span>
-                讀取中... @(_lastReadWeight.HasValue ? $"穩定值: {_lastReadWeight.Value} kg" : "等待穩定...")
+                讀取中... @(_lastReadWeight.HasValue ? $"即時: {_lastReadWeight.Value} {_lastReadUnit}" : "等待穩定...")
             </span>
         }
     </CustomActionButtons>
@@ -135,6 +135,10 @@
     /// <summary>目前讀取目標："entry"=進場重量, "exit"=出場重量, null=未讀取</summary>
     private string? _readingTarget = null;
     private decimal? _lastReadWeight = null;
+    private string _lastReadUnit = "kg";
+    /// <summary>讀取逾時計時器（60秒無穩定值後自動停止）</summary>
+    private CancellationTokenSource? _readingTimeoutCts = null;
+    private const int ReadingTimeoutSeconds = 60;
 
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
@@ -223,13 +227,15 @@
         StateHasChanged();
     }
 
-    // 進場/出場重量變更 → 自動計算淨重
+    // 進場/出場重量變更 → 自動計算淨重（任一重量清空時同步清空淨重）
     private void RecalculateNetWeight()
     {
         if (editModalComponent?.Entity == null) return;
         var entity = editModalComponent.Entity;
         if (entity.EntryWeight.HasValue && entity.ExitWeight.HasValue)
             entity.NetWeight = entity.EntryWeight.Value - entity.ExitWeight.Value;
+        else
+            entity.NetWeight = null;
     }
 
     protected override async Task OnInitializedAsync()
@@ -396,7 +402,8 @@
                     FieldType = FormFieldType.Number,
                     Placeholder = "進場重量減出場重量自動計算",
                     IsRequired = false,
-                    HelpText = "淨重 = 進場重量 - 出場重量"
+                    IsReadOnly = true,
+                    HelpText = "淨重 = 進場重量 - 出場重量（自動計算，不可手動修改）"
                 },
                 new()
                 {
@@ -549,16 +556,14 @@
     /// <summary>
     /// 切換讀取狀態：開始/停止讀取進場或出場重量
     /// 若串列埠未開啟，自動使用已儲存設定連線
+    /// 開始讀取後啟動 60 秒逾時計時器，超時未收到穩定值時自動停止
     /// </summary>
     private async Task HandleToggleReading(string target)
     {
         if (_readingTarget == target)
         {
-            // 停止讀取
-            SerialPortService.DataReceived -= OnScaleDataReceived;
-            _readingTarget = null;
-            await NotificationService.ShowInfoAsync("已停止讀取磅秤數據");
-            StateHasChanged();
+            // 手動停止讀取
+            await StopReadingAsync("已停止讀取磅秤數據");
             return;
         }
 
@@ -585,28 +590,81 @@
 
         // 開始讀取
         _lastReadWeight = null;
+        _lastReadUnit = "kg";
         _readingTarget = target;
         SerialPortService.DataReceived += OnScaleDataReceived;
+
+        // 啟動逾時計時器（60 秒）
+        _readingTimeoutCts?.Cancel();
+        _readingTimeoutCts = new CancellationTokenSource();
+        _ = StartReadingTimeoutAsync(_readingTimeoutCts.Token);
+
         var label = target == "entry" ? "進場重量" : "出場重量";
-        await NotificationService.ShowInfoAsync($"開始讀取{label}，等待穩定重量...");
+        await NotificationService.ShowInfoAsync($"開始讀取{label}，等待穩定重量（{ReadingTimeoutSeconds}秒後逾時）...");
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 逾時計時器：超過指定秒數未收到穩定值時自動停止讀取
+    /// </summary>
+    private async Task StartReadingTimeoutAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(ReadingTimeoutSeconds), cancellationToken);
+
+            // 逾時後若仍在讀取中，自動停止
+            if (_readingTarget != null)
+            {
+                await InvokeAsync(async () =>
+                {
+                    await StopReadingAsync($"讀取逾時（{ReadingTimeoutSeconds}秒），未收到穩定重量，請檢查磅秤狀態或重新讀取");
+                });
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // 讀取成功或手動停止時取消計時器，正常情況
+        }
+    }
+
+    /// <summary>
+    /// 停止讀取磅秤數據（共用方法：手動停止、穩定後自動停止、逾時停止）
+    /// </summary>
+    private async Task StopReadingAsync(string message)
+    {
+        SerialPortService.DataReceived -= OnScaleDataReceived;
+        _readingTimeoutCts?.Cancel();
+        _readingTarget = null;
+        await NotificationService.ShowInfoAsync(message);
         StateHasChanged();
     }
 
     /// <summary>
     /// 串列埠數據接收事件處理
     /// 當磅秤回傳穩定狀態 (ST) 時，自動將重量帶入對應欄位並計算淨重
+    /// 當解析失敗時，顯示警告讓使用者知道可能的設定問題
     /// </summary>
     private async void OnScaleDataReceived(object? sender, ScaleDataReceivedEventArgs e)
     {
-        if (!e.IsValid) return;
-
         try
         {
             await InvokeAsync(async () =>
             {
+                // 解析失敗：通知使用者檢查 LT-100 端的傳送格式設定
+                if (!e.IsValid)
+                {
+                    _lastReadWeight = null;
+                    await NotificationService.ShowWarningAsync(
+                        $"磅秤資料解析失敗：{e.ErrorMessage}，請確認 LT-100 的 SF4/SF5/SF6 設定是否正確");
+                    StateHasChanged();
+                    return;
+                }
+
                 if (e.IsStable && editModalComponent?.Entity != null)
                 {
                     _lastReadWeight = e.WeightValue;
+                    _lastReadUnit = e.Unit;
 
                     if (_readingTarget == "entry")
                     {
@@ -622,33 +680,39 @@
                     // 自動計算淨重
                     RecalculateNetWeight();
 
-                    // 停止讀取
-                    SerialPortService.DataReceived -= OnScaleDataReceived;
+                    // 停止讀取（含取消逾時計時器）
                     var label = _readingTarget == "entry" ? "進場重量" : "出場重量";
-                    _readingTarget = null;
-
-                    await NotificationService.ShowSuccessAsync($"已讀取穩定{label}：{e.WeightValue} {e.Unit}");
+                    await StopReadingAsync($"已讀取穩定{label}：{e.WeightValue} {e.Unit}");
+                }
+                else if (e.IsOverload)
+                {
+                    _lastReadWeight = null;
+                    await NotificationService.ShowWarningAsync("磅秤過載 (OL)，請檢查秤台");
                     StateHasChanged();
                 }
                 else if (!e.IsStable)
                 {
-                    _lastReadWeight = null;
+                    // 不穩定狀態：更新顯示目前讀到的即時重量（但不帶入欄位）
+                    _lastReadWeight = e.WeightValue;
+                    _lastReadUnit = e.Unit;
                     StateHasChanged();
-                }
-                else if (e.IsOverload)
-                {
-                    await NotificationService.ShowWarningAsync("磅秤過載 (OL)，請檢查秤台");
                 }
             });
         }
+        catch (ObjectDisposedException)
+        {
+            // 組件已被釋放，静默忽略
+        }
         catch (Exception)
         {
-            // 組件可能已被釋放，忽略錯誤
+            // 其他非預期錯誤，靈默忽略避免背景執行緒崩潰
         }
     }
 
     public void Dispose()
     {
         SerialPortService.DataReceived -= OnScaleDataReceived;
+        _readingTimeoutCts?.Cancel();
+        _readingTimeoutCts?.Dispose();
     }
 }

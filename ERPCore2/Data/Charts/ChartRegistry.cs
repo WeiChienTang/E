@@ -2,6 +2,7 @@ using ERPCore2.Models.Charts;
 using ERPCore2.Services.Customers;
 using ERPCore2.Services.Employees;
 using ERPCore2.Services.Inventory;
+using ERPCore2.Services.Products;
 using ERPCore2.Services.Purchase;
 using ERPCore2.Services.Sales;
 using ERPCore2.Services.Suppliers;
@@ -34,6 +35,7 @@ public static class ChartRegistry
         PurchaseChartDefinitions.Register(_definitions);
         SalesChartDefinitions.Register(_definitions);
         InventoryChartDefinitions.Register(_definitions);
+        ProductChartDefinitions.Register(_definitions);
     }
 
     /// <summary>取得指定分類的圖表定義（依 SortOrder 排序）</summary>

@@ -3,7 +3,19 @@
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
-<div class="d-flex align-items-center justify-content-between mb-2">
+<div class="d-flex align-items-center justify-content-between mb-2 px-1">
+    <div class="d-flex gap-2">
+        <GenericButtonComponent IconClass="bi bi-plus-lg"
+                                Variant="ButtonVariant.DarkBlue"
+                                Size="ButtonSize.Small"
+                                Text="@L["Button.Add"]"
+                                OnClick="@ShowAdd" />
+        <GenericButtonComponent IconClass="bi bi-copy"
+                                Variant="ButtonVariant.DarkBlue"
+                                Size="ButtonSize.Small"
+                                Text="@L["Payroll.CopyYear"]"
+                                OnClick="@ShowCopyYear" />
+    </div>
     <div class="d-flex align-items-center gap-3 flex-wrap">
         <div class="d-flex align-items-center gap-2">
             <label class="form-label mb-0 fw-semibold">@L["Field.EffectiveDate"]：</label>
@@ -28,14 +40,6 @@
             </select>
         </div>
         <span class="text-muted small">@L["Payroll.TotalRows"]：@filtered.Count</span>
-    </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary" @onclick="ShowCopyYear">
-            <i class="bi bi-copy me-1"></i>@L["Payroll.CopyYear"]
-        </button>
-        <button class="btn btn-primary" @onclick="ShowAdd">
-            <i class="bi bi-plus-lg me-1"></i>@L["Button.Add"]
-        </button>
     </div>
 </div>
 
